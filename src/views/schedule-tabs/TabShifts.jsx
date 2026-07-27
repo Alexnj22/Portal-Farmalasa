@@ -41,7 +41,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
             </div>
 
             <div className="flex items-center justify-between relative z-10 pr-8">
-                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border
+                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-caption font-black uppercase tracking-widest border
                     ${isError ? 'text-danger bg-danger/10 border-danger/20' : 'text-chart-5 bg-chart-5/10 border-chart-5/20'}`}>
                     <Bot size={12} strokeWidth={2} /> {isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}
                 </span>
@@ -55,13 +55,13 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
             </button>
 
             <div className="relative z-10 flex-1">
-                <h4 className="font-black text-white text-[16px] leading-tight tracking-tight mb-2">{insight.branch}</h4>
-                <p className={`text-[12px] font-medium leading-relaxed ${isError ? 'text-danger/80' : 'text-chart-5/70'}`}>{insight.text}</p>
+                <h4 className="font-black text-white text-input leading-tight tracking-tight mb-2">{insight.branch}</h4>
+                <p className={`text-body-sm font-medium leading-relaxed ${isError ? 'text-danger/80' : 'text-chart-5/70'}`}>{insight.text}</p>
             </div>
 
             {insight.action && (
                 <div className="mt-auto pt-4 relative z-10">
-                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-chart-5 hover:bg-chart-5 text-content rounded-xl text-[11px] font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
+                    <button type="button" onClick={() => onApply(insight.action)} className="w-full py-3 bg-chart-5 hover:bg-chart-5 text-content rounded-xl text-label font-black uppercase tracking-widest shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all active:scale-[0.97] flex items-center justify-center gap-2">
                         <Zap size={14} strokeWidth={2.5} /> Crear este turno
                     </button>
                 </div>
@@ -110,18 +110,18 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         {confirmAction === 'archive' ? <AlertTriangle size={20} strokeWidth={2.5} /> : <RotateCcw size={20} strokeWidth={2.5} />}
                     </div>
                     <div className="text-center px-4">
-                        <h4 className="font-black text-content text-[14px] uppercase tracking-widest mb-1">
+                        <h4 className="font-black text-content text-body-lg uppercase tracking-widest mb-1">
                             {confirmAction === 'archive' ? '¿Archivar?' : '¿Reactivar?'}
                         </h4>
-                        <p className="text-[11px] font-bold text-content-3 leading-tight">
+                        <p className="text-label font-bold text-content-3 leading-tight">
                             {confirmAction === 'archive' ? 'El turno se ocultará del catálogo.' : 'Volverá a estar disponible.'}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-surface-card shadow-sm border border-divider text-content-2 text-[10px] font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="flex-1 py-3 rounded-xl bg-surface-card shadow-sm border border-divider text-content-2 text-caption font-black uppercase tracking-widest hover:bg-surface-card-hover transition-all active:scale-[0.97]">
                             Cancelar
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
                             {confirmAction === 'archive' ? 'Archivar' : 'Reactivar'}
                         </button>
                     </div>
@@ -150,33 +150,33 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex flex-wrap items-center gap-1 pr-16 relative z-10">
-                <span className="flex items-center gap-1 text-content-3 bg-surface-card-hover px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest border border-divider">
+                <span className="flex items-center gap-1 text-content-3 bg-surface-card-hover px-2 py-1 rounded-md text-micro font-bold uppercase tracking-widest border border-divider">
                     <Globe size={10} strokeWidth={2} /> Catálogo Global
                 </span>
                 {hours > 9 && (
-                    <span className="flex items-center gap-1 text-white bg-danger-solid px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
+                    <span className="flex items-center gap-1 text-white bg-danger-solid px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
                         <AlertTriangle size={10} strokeWidth={2.5} /> +8H
                     </span>
                 )}
                 {isArchived && (
-                    <span className="text-[9px] font-bold text-content-3 bg-surface-card border border-border-card px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest">
+                    <span className="text-micro font-bold text-content-3 bg-surface-card border border-border-card px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest">
                         <Archive size={10} strokeWidth={2.5} /> Archivo
                     </span>
                 )}
             </div>
 
             <div className="pr-2 relative z-10">
-                <h4 className="font-black text-content text-[16px] leading-tight tracking-tight line-clamp-2">{group.name}</h4>
+                <h4 className="font-black text-content text-input leading-tight tracking-tight line-clamp-2">{group.name}</h4>
             </div>
 
             <div className="flex items-center gap-3 mt-auto border-t border-border-card pt-4 relative z-10">
                 <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.9)]">
-                    <span className="text-[9px] font-black text-content-3 uppercase block mb-1 tracking-widest">Entrada</span>
-                    <span className="text-[14px] font-bold text-content-2 tracking-tight">{formatTime12h(group.start)}</span>
+                    <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Entrada</span>
+                    <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.start)}</span>
                 </div>
                 <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.9)]">
-                    <span className="text-[9px] font-black text-content-3 uppercase block mb-1 tracking-widest">Salida</span>
-                    <span className="text-[14px] font-bold text-content-2 tracking-tight">{formatTime12h(group.end)}</span>
+                    <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Salida</span>
+                    <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.end)}</span>
                 </div>
             </div>
         </div>
@@ -421,14 +421,14 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 <div className={`bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border p-6 md:p-8 rounded-[2.5rem] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col hover:border-white hover:bg-surface-card hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_1px_6px_rgba(255,255,255,0.7)] transform-gpu ${editingGroup ? 'border-warning/40 shadow-[0_8px_30px_rgba(245,158,11,0.08),inset_0_1px_4px_rgba(255,255,255,0.7)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-10">
-                        <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
+                        <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-warning-solid' : 'bg-brand'}`}>
                                 {editingGroup ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                             </div>
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
                         </h3>
                         {editingGroup && (
-                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                            <button onClick={cancelEditing} className="flex items-center gap-1.5 text-caption md:text-label font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                 <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                             </button>
                         )}
@@ -437,7 +437,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                     <form onSubmit={handleSaveShift} className="space-y-6 relative z-10 flex-1 flex flex-col">
                         <div className="bg-surface-card-hover border border-divider p-3 rounded-xl flex items-start gap-2.5 mb-2">
                             <Globe size={16} className="text-content-3 mt-0.5 shrink-0" strokeWidth={2.5} />
-                            <p className="text-[11px] font-medium text-content-3 leading-snug">
+                            <p className="text-label font-medium text-content-3 leading-snug">
                                 Este turno se añadirá al <strong>Catálogo Global</strong> y podrá ser utilizado por cualquier sucursal.
                             </p>
                         </div>
@@ -445,23 +445,23 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="pt-2 grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
+                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
                                     <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm(f => ({ ...f, start: v }))} />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
+                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
                                     <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm(f => ({ ...f, end: v }))} />
                                 </div>
                             </div>
                         </div>
 
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                            <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
+                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
                             <div className="flex gap-2 mb-2">
                                 {['Apertura', 'Enlace', 'Cierre'].map(tipo => (
                                     <button key={tipo} type="button"
                                         onClick={() => setCurrentForm(f => ({ ...f, name: tipo }))}
-                                        className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border active:scale-[0.97] ${
+                                        className={`flex-1 py-2 rounded-xl text-caption font-black uppercase tracking-wider transition-all border active:scale-[0.97] ${
                                             currentForm.name === tipo
                                                 ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
                                                 : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card hover:text-content-2 hover:border-divider'
@@ -475,7 +475,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 value={currentForm.name}
                                 onChange={e => setCurrentForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder={`Nombre personalizado (ej: ${autoName})`}
-                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-[16px] font-semibold text-content placeholder-content-3 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
+                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-input font-semibold text-content placeholder-content-3 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
                             />
                         </div>
 
@@ -484,10 +484,10 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-chart-5/30 shadow-[inset_0_2px_10px_rgba(6,182,212,0.1),0_10px_30px_rgba(0,0,0,0.15)] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-chart-5 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-10">
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black text-chart-5 uppercase tracking-widest">
+                                        <div className="flex items-center gap-1.5 text-caption font-black text-chart-5 uppercase tracking-widest">
                                             <Bot size={13} /> SALY AI AUDITOR
                                         </div>
-                                        <div className="flex items-center gap-1 text-chart-5/70 font-bold text-[12px] uppercase tracking-tight">
+                                        <div className="flex items-center gap-1 text-chart-5/70 font-bold text-body-sm uppercase tracking-tight">
                                             <Sparkles size={13} className="text-chart-5" /> {autoName}
                                         </div>
                                     </div>
@@ -497,14 +497,14 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                                 {activeAlerts.map((alert, idx) => (
                                                     <div key={idx} className={`p-3 rounded-xl flex items-start gap-2.5 border ${alert.type === 'error' ? 'bg-danger/20 border-danger/30 text-danger' : 'bg-warning/20 border-warning/30 text-warning'}`}>
                                                         {alert.type === 'error' ? <AlertCircle size={15} className="shrink-0 mt-0.5 text-danger-text" /> : <AlertTriangle size={15} className="shrink-0 mt-0.5 text-warning" />}
-                                                        <span className="text-[11px] font-bold leading-snug">{alert.text}</span>
+                                                        <span className="text-label font-bold leading-snug">{alert.text}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
                                             <div className="p-3 text-center">
                                                 <CheckCircle2 size={24} className="text-success mx-auto" strokeWidth={1.5} />
-                                                <p className="text-[10px] font-black text-success uppercase tracking-widest mt-2">Horario coherente</p>
+                                                <p className="text-caption font-black text-success uppercase tracking-widest mt-2">Horario coherente</p>
                                             </div>
                                         )}
                                     </div>
@@ -515,7 +515,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <button
                             type="submit"
                             disabled={isLoading || hasBlockingError || !currentForm.start || !currentForm.end}
-                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[12px] transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]' : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'}`}
+                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-body-sm transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]' : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'}`}
                         >
                             {isLoading
                                 ? <><Loader2 size={18} className="animate-spin" /> Procesando...</>
@@ -534,11 +534,11 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 <div className="flex items-center px-3 md:px-4 pt-4 pb-2">
                     <div className="flex items-center bg-surface-card rounded-full p-0.5 border border-border-card shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)]">
                         <button onClick={() => setShiftTab('ACTIVE')}
-                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
+                            className={`px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
                             Activos
                         </button>
                         <button onClick={() => setShiftTab('ARCHIVED')}
-                            className={`px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ARCHIVED' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
+                            className={`px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ARCHIVED' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
                             Archivo
                         </button>
                     </div>
@@ -552,10 +552,10 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${searchTerm ? 'text-brand-text' : shiftTab === 'ACTIVE' ? 'text-success' : 'text-content-3'}`}>
                                     {searchTerm ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                                 </div>
-                                <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">
+                                <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
                                     {searchTerm ? 'Sin resultados' : shiftTab === 'ACTIVE' ? 'Catálogo al día' : 'Archivo vacío'}
                                 </h3>
-                                <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
+                                <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
                                     {searchTerm ? `No hay turnos que coincidan con "${searchTerm}".` : shiftTab === 'ACTIVE' ? 'No hay turnos activos registrados.' : 'Aquí aparecerán los turnos archivados.'}
                                 </p>
                             </div>

@@ -516,8 +516,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
                     {isExpanded && (
                         <>
-                            <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap text-white/45">{label}</span>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-warning bg-warning/15 border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="text-body-sm xl:text-body font-medium flex-1 whitespace-nowrap text-white/45">{label}</span>
+                            <span className="text-micro font-black uppercase tracking-wider text-warning bg-warning/15 border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 Próximamente
                             </span>
                         </>
@@ -564,7 +564,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </span>
                     )}
                     {!isExpanded && badge > 0 && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center z-20">
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-20">
                             {badge > 9 ? '9+' : badge}
                         </span>
                     )}
@@ -572,7 +572,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {isExpanded && (
                     <>
-                        <span className={`text-[12px] xl:text-[13px] flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`text-body-sm xl:text-body flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
                             {label}
                         </span>
                         {alert && (
@@ -582,7 +582,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </span>
                         )}
                         {badge > 0 && (
-                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
                                 {badge > 9 ? '9+' : badge}
                             </span>
                         )}
@@ -665,11 +665,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     />
                     {isExpanded && (
                         <>
-                            <span className={`text-[12px] xl:text-[13px] flex-1 whitespace-nowrap transition-colors ${hasActiveChild ? 'font-semibold' : 'font-medium'}`}>
+                            <span className={`text-body-sm xl:text-body flex-1 whitespace-nowrap transition-colors ${hasActiveChild ? 'font-semibold' : 'font-medium'}`}>
                                 {label}
                             </span>
                             {!isOpen && groupBadge > 0 && (
-                                <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
                                     {groupBadge > 9 ? '9+' : groupBadge}
                                 </span>
                             )}
@@ -800,8 +800,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                 {isExpanded && (
                                     <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
-                                        <h1 className="font-black text-[15px] leading-tight tracking-tight text-white">Portal</h1>
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/50">La Salud & La Popular</p>
+                                        <h1 className="font-black text-subtitle leading-tight tracking-tight text-white">Portal</h1>
+                                        <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/50">La Salud & La Popular</p>
                                     </div>
                                 )}
                             </div>
@@ -837,8 +837,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <Search size={20} strokeWidth={1.5} className="flex-shrink-0 text-white/50 group-hover:text-white/80 transition-colors" />
                                 {isExpanded && (
                                     <>
-                                        <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap">Buscar</span>
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40 whitespace-nowrap">{SHORTCUT_LABEL}</span>
+                                        <span className="text-body-sm xl:text-body font-medium flex-1 whitespace-nowrap">Buscar</span>
+                                        <span className="text-micro font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40 whitespace-nowrap">{SHORTCUT_LABEL}</span>
                                     </>
                                 )}
                             </button>
@@ -897,7 +897,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 )}
                                             </div>
                                             <div className="flex-1 overflow-hidden">
-                                                <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}{myBirthday ? ' 🎂' : ''}</p>
+                                                <p className="text-body font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}{myBirthday ? ' 🎂' : ''}</p>
                                             </div>
                                         </button>
                                         <button onClick={handleLogout} aria-label="Cerrar sesión"
@@ -907,7 +907,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         </button>
                                     </div>
 
-                                    <p className="text-center text-[9px] font-medium text-white/20 tracking-wider pt-1">
+                                    <p className="text-center text-micro font-medium text-white/20 tracking-wider pt-1">
                                         Edwin Nunez · v{APP_VERSION}
                                     </p>
                                 </>
@@ -951,7 +951,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:shadow-[0_4px_14px_rgba(239,68,68,0.2),inset_0_1px_0_rgba(255,255,255,0.12)] ${focusRing}`}>
                                         <LogOut size={15} strokeWidth={1.8} />
                                     </button>
-                                    <span className="text-[9px] font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
+                                    <span className="text-micro font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
                                 </div>
                             )}
                         </div>
@@ -998,8 +998,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </button>
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
-                                    <h1 className="text-[14px] font-black leading-none tracking-tight text-slate-800">Portal</h1>
-                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
+                                    <h1 className="text-body-lg font-black leading-none tracking-tight text-slate-800">Portal</h1>
+                                    <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1056,12 +1056,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
                                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand-text' : 'text-slate-500'} />
                                                 {badge > 0 && (
-                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center">
                                                         {badge > 9 ? '9+' : badge}
                                                     </span>
                                                 )}
                                             </div>
-                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-brand-text' : 'text-slate-600'}`}>{label}</span>
+                                            <span className={`text-micro font-black uppercase tracking-widest leading-none ${isActive ? 'text-brand-text' : 'text-slate-600'}`}>{label}</span>
                                         </button>
                                     );
                                 })}
@@ -1097,9 +1097,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             className={flyout.isActive ? 'text-[#7DB8FF]' : 'text-white/55 group-hover/fi:text-[#7DB8FF]'}
                                         />
                                     </div>
-                                    <span className="text-[13px] font-semibold whitespace-nowrap text-white pr-1">{flyout.label}</span>
+                                    <span className="text-body font-semibold whitespace-nowrap text-white pr-1">{flyout.label}</span>
                                     {flyout.badge > 0 && (
-                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center">
                                             {flyout.badge > 9 ? '9+' : flyout.badge}
                                         </span>
                                     )}
@@ -1121,7 +1121,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                     <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">
                                         <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.6)]" />
-                                        <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.18em]">{flyout.label}</span>
+                                        <span className="text-white/60 text-caption font-black uppercase tracking-[0.18em]">{flyout.label}</span>
                                     </div>
 
                                     <div className="p-1.5 space-y-0.5">
@@ -1134,8 +1134,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/6">
                                                         <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
                                                     </div>
-                                                    <span className="text-[13px] font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
-                                                    <span className="text-[9px] font-black uppercase tracking-wider text-warning/80 bg-warning/10 border border-warning/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    <span className="text-body font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
+                                                    <span className="text-micro font-black uppercase tracking-wider text-warning/80 bg-warning/10 border border-warning/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                                         Próximamente
                                                     </span>
                                                 </div>
@@ -1160,10 +1160,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                             className={m.isActive ? 'text-[#7DB8FF]' : 'text-white/70 group-hover/fi:text-white'}
                                                         />
                                                     </div>
-                                                    <span className="text-[13px] font-medium whitespace-nowrap flex-1">{m.label}</span>
+                                                    <span className="text-body font-medium whitespace-nowrap flex-1">{m.label}</span>
                                                     {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[0_0_6px_rgba(77,148,255,0.8)] flex-shrink-0" />}
                                                     {m.badge > 0 && (
-                                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center">
                                                             {m.badge > 9 ? '9+' : m.badge}
                                                         </span>
                                                     )}
@@ -1193,8 +1193,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} className="text-[#7DB8FF]" />}
                                     </div>
                                     <div className="flex flex-col items-start pr-1">
-                                        <span className="text-[13px] font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
-                                        <span className="text-[11px] text-[#7DB8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
+                                        <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
+                                        <span className="text-label text-[#7DB8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
                                     </div>
                                 </button>
                             </div>

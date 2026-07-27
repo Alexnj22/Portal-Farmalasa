@@ -17,8 +17,8 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             <Pause size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-content text-[15px]">Pausar despacho</h3>
-                            <p className="text-[12px] text-content-2 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
+                            <h3 className="font-bold text-content text-subtitle">Pausar despacho</h3>
+                            <p className="text-body-sm text-content-2 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -28,14 +28,14 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-chart-9/10 border border-chart-9/30">
                             <Coffee size={15} className="text-chart-9-text shrink-0" />
                             <div>
-                                <p className="text-[12px] font-semibold text-chart-9-text">Almuerzo detectado en el kiosko</p>
-                                <p className="text-[11px] text-chart-9-text">Tu marcaje de salida a almuerzo se registró hoy.</p>
+                                <p className="text-body-sm font-semibold text-chart-9-text">Almuerzo detectado en el kiosko</p>
+                                <p className="text-label text-chart-9-text">Tu marcaje de salida a almuerzo se registró hoy.</p>
                             </div>
                         </div>
                     )}
 
                     <div>
-                        <p className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
+                        <p className="text-label font-semibold text-content-2 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
                         <div className="grid grid-cols-2 gap-2">
                             {PAUSE_REASONS.map(opt => {
                                 const Icon     = opt.icon;
@@ -46,7 +46,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                         key={opt.key}
                                         disabled={isUsed}
                                         onClick={() => !isUsed && setRazonSel(opt.key)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-body-sm font-medium transition-all text-left ${
                                             isUsed ? 'border-divider bg-surface-card-hover text-content-3 cursor-not-allowed' :
                                             isSel  ? 'border-warning bg-warning/10 text-warning-text shadow-sm' :
                                                      'border-divider text-content-2 hover:bg-surface-card-hover'
@@ -55,7 +55,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                         <Icon size={15} className={isUsed ? 'text-content-3' : isSel ? 'text-warning' : 'text-content-3'} />
                                         <div>
                                             <div>{opt.label}</div>
-                                            {isUsed && <div className="text-[10px] text-content-3">Ya registrado</div>}
+                                            {isUsed && <div className="text-caption text-content-3">Ya registrado</div>}
                                         </div>
                                     </button>
                                 );
@@ -64,7 +64,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                     </div>
 
                     <div>
-                        <label className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
+                        <label className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
                             {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
                         </label>
                         <textarea
@@ -72,20 +72,20 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-[16px] border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-warning bg-surface-card resize-none transition-colors text-content-2"
+                            className="w-full text-input border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-warning bg-surface-card resize-none transition-colors text-content-2"
                         />
                     </div>
                 </PedidoModal.Body>
 
                 <PedidoModal.Footer>
                     <div className="flex justify-end gap-2">
-                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
+                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body font-medium transition-colors">
                             Cancelar
                         </button>
                         <button
                             disabled={!canConfirm || busy}
                             onClick={onConfirm}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-warning-solid text-white font-semibold hover:bg-warning-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-warning-solid text-white font-semibold hover:bg-warning-hover text-body transition-colors disabled:opacity-50 shadow-sm"
                         >
                             {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
                             Confirmar pausa

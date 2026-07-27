@@ -102,7 +102,7 @@ const PdfZoomViewer = ({ src }) => {
                     >
                         <ZoomOut size={14} strokeWidth={2} />
                     </button>
-                    <span className="w-11 text-center text-[10px] font-bold text-content-2 tabular-nums">{Math.round(zoom * 100)}%</span>
+                    <span className="w-11 text-center text-caption font-bold text-content-2 tabular-nums">{Math.round(zoom * 100)}%</span>
                     <button
                         type="button"
                         onClick={zoomIn}
@@ -127,7 +127,7 @@ const PdfZoomViewer = ({ src }) => {
                     href={src}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-brand-text hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 transition-colors"
+                    className="flex items-center gap-1.5 text-caption font-bold text-brand-text hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 transition-colors"
                 >
                     <ExternalLink size={12} /> Abrir en pestaña nueva
                 </a>
@@ -244,7 +244,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <h3 className="text-lg font-black text-content truncate">
                                 {document?.supplier_nombre || document?.emisor_nombre || 'Documento'}
                             </h3>
-                            <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate">
+                            <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate">
                                 {dteTypeLabel(document?.tipo_dte)} · {document?.numero_control || document?.codigo_generacion}
                             </p>
                         </div>
@@ -255,14 +255,14 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 <button
                                     type="button"
                                     onClick={() => setTab('detalle')}
-                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'detalle' ? 'bg-surface-card shadow-sm text-content' : 'text-content-3'}`}
+                                    className={`px-3 py-1.5 rounded-xl text-label font-bold transition-colors ${tab === 'detalle' ? 'bg-surface-card shadow-sm text-content' : 'text-content-3'}`}
                                 >
                                     Detalle
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setTab('pdf')}
-                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'pdf' ? 'bg-surface-card shadow-sm text-content' : 'text-content-3'}`}
+                                    className={`px-3 py-1.5 rounded-xl text-label font-bold transition-colors ${tab === 'pdf' ? 'bg-surface-card shadow-sm text-content' : 'text-content-3'}`}
                                 >
                                     PDF
                                 </button>
@@ -274,7 +274,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 onClick={downloadAll}
                                 disabled={downloadingAll}
                                 title="Descargar PDF + JSON en un ZIP"
-                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
                             >
                                 <Archive size={14} strokeWidth={2} className={downloadingAll ? 'animate-pulse' : ''} />
                                 {downloadingAll ? 'Armando ZIP…' : 'Todo'}
@@ -284,7 +284,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <button
                                 type="button"
                                 onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-surface-card border border-divider hover:bg-surface-card-hover text-content-2 rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                             >
                                 <Download size={14} strokeWidth={2} /> PDF
                             </button>
@@ -292,20 +292,20 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         <button
                             type="button"
                             onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                         >
                             <Download size={14} strokeWidth={2} /> JSON
                         </button>
                     </div>
                 </div>
                 {downloadAllError && (
-                    <p className="mt-2 text-[10px] font-bold text-danger">{downloadAllError}</p>
+                    <p className="mt-2 text-caption font-bold text-danger">{downloadAllError}</p>
                 )}
                 {document?.invalidado && (
                     <div className="mt-3 flex items-start gap-2.5 rounded-[1rem] border border-danger/25 bg-danger/10 px-4 py-3">
                         <AlertTriangle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2} />
                         <div className="min-w-0">
-                            <p className="text-[11px] font-bold text-danger-text leading-snug">
+                            <p className="text-label font-bold text-danger-text leading-snug">
                                 Este documento está invalidado
                                 {document.invalidado_motivo ? `: ${document.invalidado_motivo}` : ''}
                                 {document.invalidado_at ? ` (${document.invalidado_at.slice(0, 10)})` : ''}.
@@ -316,7 +316,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                     type="button"
                                     onClick={openInvalidacionPdf}
                                     disabled={openingInvalidacionPdf}
-                                    className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-black text-danger-text hover:text-danger-text underline disabled:opacity-50"
+                                    className="mt-1.5 inline-flex items-center gap-1.5 text-caption font-black text-danger-text hover:text-danger-text underline disabled:opacity-50"
                                 >
                                     <ExternalLink size={11} strokeWidth={2} />
                                     {openingInvalidacionPdf ? 'Abriendo…' : 'Ver PDF de anulación'}
@@ -339,7 +339,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 ) : loading ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
-                        <p className="font-bold text-[11px] uppercase tracking-widest">Cargando detalle…</p>
+                        <p className="font-bold text-label uppercase tracking-widest">Cargando detalle…</p>
                     </div>
                 ) : error ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm border-dashed">
@@ -348,7 +348,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-[1.5rem] border border-divider bg-surface-card shadow-sm p-6">
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4 mb-4 border-b border-divider text-[12px]">
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4 mb-4 border-b border-divider text-body-sm">
                             <div><span className="text-content-3">Emisor: </span><span className="font-semibold text-content">{dte?.emisor?.nombre || document?.emisor_nombre || '—'}</span></div>
                             <div><span className="text-content-3">NIT / NRC: </span><span className="font-semibold text-content">{dte?.emisor?.nit || document?.emisor_nit || '—'} / {dte?.emisor?.nrc || document?.emisor_nrc || '—'}</span></div>
                             <div><span className="text-content-3">Receptor: </span><span className="font-semibold text-content">{dte?.receptor?.nombre || '—'}</span></div>
@@ -357,7 +357,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
                         {items.length > 0 ? (
                             <div className="overflow-x-auto mb-4">
-                                <table className="w-full text-[11px]">
+                                <table className="w-full text-label">
                                     <thead>
                                         <tr className="border-b border-divider text-content-3 font-semibold">
                                             <th className="text-left py-2">#</th>
@@ -384,13 +384,13 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-[11px] text-content-3 mb-4">Sin ítems detallados en el documento.</p>
+                            <p className="text-label text-content-3 mb-4">Sin ítems detallados en el documento.</p>
                         )}
 
-                        <div className="flex flex-col items-end gap-1 text-[12px] pt-3 border-t border-divider">
+                        <div className="flex flex-col items-end gap-1 text-body-sm pt-3 border-t border-divider">
                             <div className="flex justify-between w-56"><span className="text-content-3">Subtotal</span><span className="tabular-nums">{fmt$(resumen.subTotal ?? resumen.totalGravada)}</span></div>
                             <div className="flex justify-between w-56"><span className="text-content-3">IVA</span><span className="tabular-nums">{fmt$(resumen.totalIva ?? document?.total_iva)}</span></div>
-                            <div className="flex justify-between w-56 font-black text-content text-[13px]"><span>Total</span><span className="tabular-nums">{fmt$(resumen.totalPagar ?? resumen.montoTotalOperacion ?? document?.monto_total)}</span></div>
+                            <div className="flex justify-between w-56 font-black text-content text-body"><span>Total</span><span className="tabular-nums">{fmt$(resumen.totalPagar ?? resumen.montoTotalOperacion ?? document?.monto_total)}</span></div>
                         </div>
                     </div>
                 )}

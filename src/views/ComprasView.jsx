@@ -78,16 +78,16 @@ function ItemsExpand({ receiptId }) {
     }, [receiptId]);
 
     if (loading) return (
-        <div className="px-6 py-4 text-[11px] text-content-3 animate-pulse">Cargando ítems…</div>
+        <div className="px-6 py-4 text-label text-content-3 animate-pulse">Cargando ítems…</div>
     );
     if (!items?.length) return (
-        <div className="px-6 py-4 text-[11px] text-content-3">Sin ítems registrados.</div>
+        <div className="px-6 py-4 text-label text-content-3">Sin ítems registrados.</div>
     );
 
     return (
         <div className="px-4 py-3">
             <div className="overflow-x-auto rounded-xl border border-divider bg-surface-card">
-                <table className="w-full text-[11px]">
+                <table className="w-full text-label">
                     <thead>
                         <tr className="border-b border-divider bg-surface-card-hover/60">
                             <th className="text-left px-3 py-2 font-semibold text-content-3">#</th>
@@ -113,7 +113,7 @@ function ItemsExpand({ receiptId }) {
                                     <td className="px-3 py-2 text-right font-semibold text-content tabular-nums">{fmt$(it.total_linea)}</td>
                                     <td className="px-3 py-2 text-center text-content-3 hidden md:table-cell">
                                         {lote
-                                            ? <span className="bg-chart-3/10 text-chart-3-text text-[10px] font-bold px-2 py-0.5 rounded-full">{lote}</span>
+                                            ? <span className="bg-chart-3/10 text-chart-3-text text-caption font-bold px-2 py-0.5 rounded-full">{lote}</span>
                                             : <span className="text-content-3">—</span>
                                         }
                                     </td>
@@ -166,8 +166,8 @@ function TabFacturas({
 
     const estadoBadge = (estado) => {
         if (!estado || estado === 'VIGENTE')
-            return <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">Vigente</span>;
-        return <span className="text-[10px] font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">{estado}</span>;
+            return <span className="text-caption font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">Vigente</span>;
+        return <span className="text-caption font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">{estado}</span>;
     };
 
     return (
@@ -176,7 +176,7 @@ function TabFacturas({
             {unlinkedCount > 0 && (
                 <button
                     onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
-                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors w-fit ${
+                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-label font-semibold border transition-colors w-fit ${
                         sinProveedor
                             ? 'bg-warning/10 border-warning/40 text-warning-text'
                             : 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
@@ -184,7 +184,7 @@ function TabFacturas({
                 >
                     <AlertTriangle size={12} className="text-warning" />
                     {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
-                    <span className="ml-1 text-[10px] font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
+                    <span className="ml-1 text-caption font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
                 </button>
             )}
 
@@ -218,7 +218,7 @@ function TabFacturas({
             </div>
 
             {/* Summary line */}
-            <div className="text-[11px] text-content-3 font-medium px-1">
+            <div className="text-label text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
             </div>
 
@@ -234,9 +234,9 @@ function TabFacturas({
                                     {!row.supplier_id && (
                                         <AlertTriangle size={12} className="text-warning shrink-0" title="Proveedor no linkeado — verificar en ERP" />
                                     )}
-                                    <span className="text-content font-medium text-[12px]">{provName(row)}</span>
+                                    <span className="text-content font-medium text-body-sm">{provName(row)}</span>
                                     {!row.supplier_id && (
-                                        <span className="text-[9px] font-mono text-content-3">#{row.erp_purchase_id}</span>
+                                        <span className="text-micro font-mono text-content-3">#{row.erp_purchase_id}</span>
                                     )}
                                 </div>
                             </DataCell>
@@ -245,10 +245,10 @@ function TabFacturas({
                                 <span className="tabular-nums text-content-2">{row.purchase_receipt_items?.length ?? '—'}</span>
                             </DataCell>
                             <DataCell align="right" hideBelow="md">
-                                <span className="tabular-nums text-content-2 text-[11px]">{fmt$(row.subtotal)}</span>
+                                <span className="tabular-nums text-content-2 text-label">{fmt$(row.subtotal)}</span>
                             </DataCell>
                             <DataCell align="right" hideBelow="lg">
-                                <span className="tabular-nums text-content-3 text-[11px]">{fmt$(row.iva)}</span>
+                                <span className="tabular-nums text-content-3 text-label">{fmt$(row.iva)}</span>
                             </DataCell>
                             <DataCell align="right">
                                 <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
@@ -306,7 +306,7 @@ function TabProductos({ searchTerm }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="text-[11px] text-content-3 font-medium px-1">
+            <div className="text-label text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} con historial`}
             </div>
 
@@ -314,28 +314,28 @@ function TabProductos({ searchTerm }) {
                 {rows.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
                         <DataCell align="center">
-                            <span className="font-mono text-[11px] text-content-2 tabular-nums">{row.erp_product_id}</span>
+                            <span className="font-mono text-label text-content-2 tabular-nums">{row.erp_product_id}</span>
                         </DataCell>
                         <DataCell align="center">
-                            <span className="tabular-nums text-content-2 text-[11px]">{fmtDate(row.first_purchase_date)}</span>
+                            <span className="tabular-nums text-content-2 text-label">{fmtDate(row.first_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center">
-                            <span className="tabular-nums text-content-2 font-medium text-[11px]">{fmtDate(row.last_purchase_date)}</span>
+                            <span className="tabular-nums text-content-2 font-medium text-label">{fmtDate(row.last_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="md">
-                            <span className="tabular-nums text-chart-7-text font-bold text-[11px]">{row.days_since_first_purchase ?? '—'}d</span>
+                            <span className="tabular-nums text-chart-7-text font-bold text-label">{row.days_since_first_purchase ?? '—'}d</span>
                         </DataCell>
                         <DataCell align="center">
                             <span className="tabular-nums text-content-2">{row.total_receipts}</span>
                         </DataCell>
                         <DataCell align="right" hideBelow="md">
-                            <span className="tabular-nums text-content-2 text-[11px]">{fmtNum(row.total_units_received)}</span>
+                            <span className="tabular-nums text-content-2 text-label">{fmtNum(row.total_units_received)}</span>
                         </DataCell>
                         <DataCell align="right">
-                            <span className="tabular-nums text-content-2 text-[11px]">{fmt$(row.avg_cost)}</span>
+                            <span className="tabular-nums text-content-2 text-label">{fmt$(row.avg_cost)}</span>
                         </DataCell>
                         <DataCell align="right">
-                            <span className="tabular-nums font-bold text-content text-[11px]">{fmt$(row.latest_cost)}</span>
+                            <span className="tabular-nums font-bold text-content text-label">{fmt$(row.latest_cost)}</span>
                         </DataCell>
                     </DataRow>
                 ))}

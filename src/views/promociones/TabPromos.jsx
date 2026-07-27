@@ -63,21 +63,21 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${es.bg} ${es.text} ${es.border}`}>
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-bold border ${es.bg} ${es.text} ${es.border}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${es.dot}`} />
                                 {es.label}
                             </span>
                             {promo.fecha_inicio && (
-                                <span className="flex items-center gap-1 text-[10px] text-content-3">
+                                <span className="flex items-center gap-1 text-caption text-content-3">
                                     <Calendar size={9} />
                                     {fmtDate(promo.fecha_inicio)}
                                     {promo.fecha_fin && ` → ${fmtDate(promo.fecha_fin)}`}
                                 </span>
                             )}
                         </div>
-                        <h3 className="text-[14px] font-bold text-content leading-tight">{promo.nombre}</h3>
+                        <h3 className="text-body-lg font-bold text-content leading-tight">{promo.nombre}</h3>
                         {labs.length > 0 && (
-                            <p className="flex items-center gap-1 text-[10px] text-content-3 mt-0.5">
+                            <p className="flex items-center gap-1 text-caption text-content-3 mt-0.5">
                                 <FlaskConical size={9} /> {labs.join(', ')}
                             </p>
                         )}
@@ -138,16 +138,16 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 {/* Meta row */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mb-3">
                     {branches.length > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] text-content-3">
+                        <span className="flex items-center gap-1 text-caption text-content-3">
                             <Building2 size={9} />
                             {branches.length <= 3 ? branches.join(', ') : `${branches.slice(0, 2).join(', ')} +${branches.length - 2}`}
                         </span>
                     )}
-                    <span className="flex items-center gap-1 text-[10px] text-content-3">
+                    <span className="flex items-center gap-1 text-caption text-content-3">
                         <Package size={9} /> {pps.length} {pps.length === 1 ? 'producto' : 'productos'}
                     </span>
                     {pps.some(pp => pp.bono_vendedor > 0 || pp.bono_admin_pool > 0 || pp.bono_bodega_pool > 0) && (
-                        <span className="flex items-center gap-1 text-[10px] text-success">
+                        <span className="flex items-center gap-1 text-caption text-success">
                             <Gift size={9} /> Con bonificación
                         </span>
                     )}
@@ -157,8 +157,8 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 {pct !== null && (
                     <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] text-content-3">Stock vendido</span>
-                            <span className="text-[10px] font-semibold text-content-2">{totalSold}/{totalStock} und · {pct}%</span>
+                            <span className="text-caption text-content-3">Stock vendido</span>
+                            <span className="text-caption font-semibold text-content-2">{totalSold}/{totalStock} und · {pct}%</span>
                         </div>
                         <div className="h-2 bg-surface-card-hover rounded-full overflow-hidden">
                             <div
@@ -170,7 +170,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 )}
 
                 {promo.notas && (
-                    <p className="text-[10px] text-content-3 italic mb-3 leading-relaxed">"{promo.notas}"</p>
+                    <p className="text-caption text-content-3 italic mb-3 leading-relaxed">"{promo.notas}"</p>
                 )}
 
                 {/* Expand toggle */}
@@ -178,7 +178,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                     <button
                         type="button"
                         onClick={() => setExpanded(e => !e)}
-                        className="flex items-center gap-1 text-[10px] text-content-3 hover:text-content-2 transition-colors w-full justify-center pt-1 border-t border-divider"
+                        className="flex items-center gap-1 text-caption text-content-3 hover:text-content-2 transition-colors w-full justify-center pt-1 border-t border-divider"
                     >
                         {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                         {expanded ? 'Ocultar productos' : 'Ver productos'}
@@ -203,24 +203,24 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-[11px] font-semibold text-content-2 truncate">{pp.products?.nombre}</span>
+                                        <span className="text-label font-semibold text-content-2 truncate">{pp.products?.nombre}</span>
                                         {pp.presentaciones?.tipo && (
-                                            <span className="text-[10px] font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
+                                            <span className="text-caption font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
                                         )}
                                         {pp.factor_descripcion && (
-                                            <span className="text-[10px] text-chart-3-text font-medium bg-chart-3/10 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
+                                            <span className="text-caption text-chart-3-text font-medium bg-chart-3/10 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
                                         )}
                                     </div>
                                     {/* Bonos */}
                                     <div className="flex flex-wrap gap-x-2 mt-0.5">
                                         {pp.bono_vendedor > 0 && (
-                                            <span className="text-[10px] text-success">Vend: ${parseFloat(pp.bono_vendedor).toFixed(2)}</span>
+                                            <span className="text-caption text-success">Vend: ${parseFloat(pp.bono_vendedor).toFixed(2)}</span>
                                         )}
                                         {pp.bono_admin_pool > 0 && (
-                                            <span className="text-[10px] text-chart-1-text">Admin: ${parseFloat(pp.bono_admin_pool).toFixed(2)}</span>
+                                            <span className="text-caption text-chart-1-text">Admin: ${parseFloat(pp.bono_admin_pool).toFixed(2)}</span>
                                         )}
                                         {pp.bono_bodega_pool > 0 && (
-                                            <span className="text-[10px] text-warning">Bodega: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}</span>
+                                            <span className="text-caption text-warning">Bodega: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}</span>
                                         )}
                                     </div>
                                     {/* Mini progress */}
@@ -232,7 +232,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                                     style={{ width: `${ppPct}%` }}
                                                 />
                                             </div>
-                                            <span className="text-[9px] text-content-3 w-8 text-right">{sold}/{pp.stock_inicial}</span>
+                                            <span className="text-micro text-content-3 w-8 text-right">{sold}/{pp.stock_inicial}</span>
                                         </div>
                                     )}
                                 </div>
@@ -329,7 +329,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                             {idx > 0 && <div className="h-5 w-px bg-divider shrink-0" />}
                             <button
                                 onClick={() => setFilterState(pf.key)}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-label font-semibold transition-all ${
                                     filterState === pf.key
                                         ? 'bg-chart-1-solid text-white shadow-sm'
                                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover'
@@ -337,7 +337,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                             >
                                 {pf.label}
                                 {pf.count > 0 && (
-                                    <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
+                                    <span className={`text-micro font-bold px-1 py-0.5 rounded-full ${
                                         filterState === pf.key ? 'bg-surface-card text-white' : 'bg-surface-card-hover text-content-3'
                                     }`}>
                                         {pf.count}
@@ -352,7 +352,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                             <div className="h-5 w-px bg-divider shrink-0" />
                             <button
                                 onClick={() => setShowModal(true)}
-                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-chart-1-text hover:bg-chart-1/10 transition-all"
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-label font-bold text-chart-1-text hover:bg-chart-1/10 transition-all"
                             >
                                 <Plus size={12} /> Nueva
                             </button>
@@ -365,7 +365,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
             {loading && (
                 <div className="flex items-center justify-center py-16 text-content-3">
                     <Loader2 size={20} className="animate-spin mr-2" />
-                    <span className="text-[12px]">Cargando promociones...</span>
+                    <span className="text-body-sm">Cargando promociones...</span>
                 </div>
             )}
 
@@ -373,13 +373,13 @@ export default function TabPromos({ searchTerm, canEdit }) {
             {!loading && filtered.length === 0 && (
                 <div className="text-center py-16">
                     <Tag size={32} className="mx-auto mb-3 text-content-3" />
-                    <p className="text-[13px] text-content-3 font-medium">
+                    <p className="text-body text-content-3 font-medium">
                         {searchTerm ? 'Sin resultados para esa búsqueda' : 'No hay promociones aquí'}
                     </p>
                     {canEdit && !searchTerm && (
                         <button
                             onClick={() => setShowModal(true)}
-                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-[11px] font-semibold bg-chart-1-solid text-white rounded-xl hover:bg-brand transition-colors mx-auto"
+                            className="mt-3 flex items-center gap-1.5 px-4 py-2 text-label font-semibold bg-chart-1-solid text-white rounded-xl hover:bg-brand transition-colors mx-auto"
                         >
                             <Plus size={12} /> Nueva Promoción
                         </button>

@@ -22,7 +22,7 @@ export default function ThemeMigrationRibbon() {
       style={{ height: RIBBON_HEIGHT }}
     >
       <div
-        className="w-full h-9 flex items-center justify-center gap-2 px-3 text-[#2b1c02] text-[12px] font-bold leading-tight"
+        className="w-full h-9 flex items-center justify-center gap-2 px-3 text-[#2b1c02] text-body-sm font-bold leading-tight"
         style={{
           backgroundImage: 'repeating-linear-gradient(135deg, #f2a93b 0 14px, #f7c876 14px 28px)',
           boxShadow: '0 2px 10px rgba(0,0,0,0.18)',

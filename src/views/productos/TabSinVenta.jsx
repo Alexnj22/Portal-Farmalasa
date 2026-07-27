@@ -160,7 +160,7 @@ function UltimaVentaCell({ row, allBranches }) {
     if (!fecha) {
         return (
             <div>
-                <span className="text-[10px] text-content-3 italic">Nunca vendido</span>
+                <span className="text-caption text-content-3 italic">Nunca vendido</span>
             </div>
         );
     }
@@ -172,8 +172,8 @@ function UltimaVentaCell({ row, allBranches }) {
     if (!allBranches) {
         return (
             <div>
-                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-content-3">hace {days}d</span>
+                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-micro text-content-3">hace {days}d</span>
             </div>
         );
     }
@@ -187,15 +187,15 @@ function UltimaVentaCell({ row, allBranches }) {
         const name = ERP_NAMES[s.esid] || `Suc.${s.esid}`;
         const tipContent = (
             <div className="flex items-center justify-between gap-6 whitespace-nowrap">
-                <span className="text-[12px] font-semibold text-content-2">{name}</span>
-                <span className="text-[12px] font-black tabular-nums text-brand-text">{fmtSucDate(s.fecha)}</span>
+                <span className="text-body-sm font-semibold text-content-2">{name}</span>
+                <span className="text-body-sm font-black tabular-nums text-brand-text">{fmtSucDate(s.fecha)}</span>
             </div>
         );
         return (
             <LiquidTooltip content={tipContent}>
                 <div>
-                    <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                    <span className="block text-[9px] text-content-3">{name}</span>
+                    <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+                    <span className="block text-micro text-content-3">{name}</span>
                 </div>
             </LiquidTooltip>
         );
@@ -205,14 +205,14 @@ function UltimaVentaCell({ row, allBranches }) {
     const sorted = [...porSuc].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     const tipContent = (
         <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
+            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
                 const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
                 const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
                 return (
                     <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                        <span className="text-[12px] font-semibold text-content-2">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
-                        <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
+                        <span className="text-body-sm font-semibold text-content-2">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
+                        <span className={`text-body-sm font-black tabular-nums ${c}`}>{fmtSucDate(s.fecha)}</span>
                     </div>
                 );
             })}
@@ -221,8 +221,8 @@ function UltimaVentaCell({ row, allBranches }) {
     return (
         <LiquidTooltip content={tipContent}>
             <div className="cursor-help">
-                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-content-3">{porSuc.length} suc. ⓘ</span>
+                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-micro text-content-3">{porSuc.length} suc. ⓘ</span>
             </div>
         </LiquidTooltip>
     );
@@ -296,10 +296,10 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0 flex-1">
-                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-content-3 text-[16px]">–</span> : counts[c.id].toLocaleString()}
+                            <div className={`text-title-lg font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-content-3 text-input">–</span> : counts[c.id].toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
+                            <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
                         </div>
                         {active && (
                             <div className="shrink-0 w-5 h-5 rounded-full bg-surface-card flex items-center justify-center">
@@ -348,10 +348,10 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0 flex-1">
-                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-content-3 text-[16px]">–</span> : counts[c.id].toLocaleString()}
+                            <div className={`text-title-lg font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                                {loading ? <span className="text-content-3 text-input">–</span> : counts[c.id].toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
+                            <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
                         </div>
                         {active && (
                             <div className="shrink-0 w-5 h-5 rounded-full bg-surface-card flex items-center justify-center">
@@ -567,13 +567,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                             <Package size={15} className="text-brand-text/60" />
                         </div>
                         <div className="text-left min-w-0">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
+                            <div className="text-title-lg font-black leading-none tabular-nums text-content-2">
                                 {activeLoading ? <span className="text-content-3">–</span> : activeData.length.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">
+                            <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">
                                 {mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
                             </div>
-                            <div className="text-[9px] text-content-3">en la sucursal activa</div>
+                            <div className="text-micro text-content-3">en la sucursal activa</div>
                         </div>
                     </div>
 
@@ -584,13 +584,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 <DollarSign size={15} className="text-chart-4-text" />
                             </div>
                             <div className="text-left min-w-0">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-chart-4-text">
+                                <div className="text-title-lg font-black leading-none tabular-nums text-chart-4-text">
                                     {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalCost)}
                                 </div>
-                                <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">Costo retenido</div>
+                                <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">Costo retenido</div>
                                 {filteredCost > 0 && filteredCost !== totalCost
-                                    ? <div className="text-[9px] text-chart-4-text">{fmtMoney(filteredCost)} en filtro</div>
-                                    : <div className="text-[9px] text-content-3">total sucursal</div>
+                                    ? <div className="text-micro text-chart-4-text">{fmtMoney(filteredCost)} en filtro</div>
+                                    : <div className="text-micro text-content-3">total sucursal</div>
                                 }
                             </div>
                         </div>
@@ -603,11 +603,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 <TrendingUp size={15} className="text-warning" />
                             </div>
                             <div className="text-left min-w-0">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-warning">
+                                <div className="text-title-lg font-black leading-none tabular-nums text-warning">
                                     {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalRevenue)}
                                 </div>
-                                <div className="text-[10px] font-bold leading-tight text-content-2 mt-0.5">Revenue 6m</div>
-                                <div className="text-[9px] text-content-3">sin parámetros min/max</div>
+                                <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">Revenue 6m</div>
+                                <div className="text-micro text-content-3">sin parámetros min/max</div>
                             </div>
                         </div>
                     )}
@@ -637,13 +637,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                             return (
                                 <button key={m.key}
                                     onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold transition-all duration-200 whitespace-nowrap ${
                                         active
                                             ? 'bg-brand/[0.12] text-brand-text shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
                                             : tk.filterBtn
                                     }`}>
                                     {m.label}
-                                    <span className={`text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[22px] text-center leading-tight transition-all duration-200 ${
+                                    <span className={`text-caption font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[22px] text-center leading-tight transition-all duration-200 ${
                                         active ? 'bg-brand text-white shadow-sm' : 'bg-surface-card-hover/80 text-content-3'
                                     }`}>
                                         {loadingMap[m.key] ? '…' : count.toLocaleString()}
@@ -673,7 +673,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
             {/* ── Error ── */}
             {activeError && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger font-semibold">
                     <AlertTriangle size={14} /> {activeError}
                     <button onClick={() => loadMode(selectedErp, mode)} className="ml-auto text-danger hover:text-danger-text font-bold">Reintentar</button>
                 </div>
@@ -729,61 +729,61 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
                                                 className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand-text transition-colors">
+                                                <span className="text-body font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </button>
-                                            <span className="text-[10px] text-content-3">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
+                                            <span className="text-caption text-content-3">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                         </DataCell>
-                                        <DataCell hideBelow="md" className="text-[12px] text-content-3">{row.laboratorio || '—'}</DataCell>
+                                        <DataCell hideBelow="md" className="text-body-sm text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="center" hideBelow="lg">
                                             <div className="flex items-center justify-center gap-0.5">
                                                 {Array.from({ length: 6 }).map((_, i) => (
                                                     <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-warning' : 'bg-surface-card-hover'}`} />
                                                 ))}
                                             </div>
-                                            <div className="text-[9px] text-content-3 mt-0.5 text-center">{sugg.months}/6</div>
+                                            <div className="text-micro text-content-3 mt-0.5 text-center">{sugg.months}/6</div>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
-                                            <span className="text-[13px] font-bold text-warning tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
-                                            <span className="text-[10px] text-warning ml-1">uds.</span>
+                                            <span className="text-body font-bold text-warning tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
+                                            <span className="text-caption text-warning ml-1">uds.</span>
                                         </DataCell>
                                         <DataCell align="right">
-                                            <span className="text-[13px] font-bold text-content-2 tabular-nums">{fmtMoney(row.revenue)}</span>
+                                            <span className="text-body font-bold text-content-2 tabular-nums">{fmtMoney(row.revenue)}</span>
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {isIgnored ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit">
+                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit">
                                                     <EyeOff size={9} />No sugerir
                                                 </span>
                                             ) : (
                                                 <div className="flex flex-col gap-1">
                                                     {lvl === 'agregar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
-                                                        <span className="text-[9px] text-content-3 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
-                                                        <span className="text-[9px] text-content-3 italic">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
+                                                        <span className="text-micro text-content-3 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
+                                                        <span className="text-micro text-content-3 italic">{sugg.reason}</span>
+                                                        <span className="text-micro text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'evaluar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-warning/10 text-warning-text border-warning/30 w-fit"><AlertTriangle size={9} />Evaluar</span>
-                                                        <span className="text-[9px] text-content-3 italic">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-warning/10 text-warning-text border-warning/30 w-fit"><AlertTriangle size={9} />Evaluar</span>
+                                                        <span className="text-micro text-content-3 italic">{sugg.reason}</span>
+                                                        <span className="text-micro text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'encargo' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-chart-4/10 text-chart-4-text border-chart-4/30 w-fit"><ShoppingBag size={9} />Posible encargo</span>
-                                                        <span className="text-[9px] text-chart-4-text font-semibold">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
+                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-chart-4/10 text-chart-4-text border-chart-4/30 w-fit"><ShoppingBag size={9} />Posible encargo</span>
+                                                        <span className="text-micro text-chart-4-text font-semibold">{sugg.reason}</span>
+                                                        <span className="text-micro text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'mayorista' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30 w-fit"><Truck size={9} />Venta mayorista</span>
-                                                        <span className="text-[9px] text-chart-3-text font-semibold">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-content-3 italic">No agregar a min/max</span>
+                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30 w-fit"><Truck size={9} />Venta mayorista</span>
+                                                        <span className="text-micro text-chart-3-text font-semibold">{sugg.reason}</span>
+                                                        <span className="text-micro text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'omitir' && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit"><Minus size={9} />Sin acción</span>
+                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit"><Minus size={9} />Sin acción</span>
                                                     )}
                                                 </div>
                                             )}
@@ -816,43 +816,43 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
                                                 className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand-text transition-colors">
+                                                <span className="text-body font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </button>
                                             {row.fecha_vencimiento_min && (() => {
                                                 const exp = new Date(row.fecha_vencimiento_min);
                                                 const expired = exp < new Date();
-                                                return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-danger' : 'text-content-3'}`}>
+                                                return <span className={`text-micro mt-0.5 block font-semibold ${expired ? 'text-danger' : 'text-content-3'}`}>
                                                     {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
                                                 </span>;
                                             })()}
                                         </DataCell>
-                                        <DataCell hideBelow="md" className="text-[12px] text-content-3">{row.laboratorio || '—'}</DataCell>
+                                        <DataCell hideBelow="md" className="text-body-sm text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {stock === 0 ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30">Sin stock</span>
+                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30">Sin stock</span>
                                             ) : (
                                                 <>
-                                                    <span className="text-[13px] font-bold text-content-2 tabular-nums">{stock.toLocaleString()}</span>
-                                                    <span className="text-[10px] text-content-3 ml-1">und</span>
+                                                    <span className="text-body font-bold text-content-2 tabular-nums">{stock.toLocaleString()}</span>
+                                                    <span className="text-caption text-content-3 ml-1">und</span>
                                                 </>
                                             )}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {cost > 0
-                                                ? <span className="text-[12px] font-bold text-chart-4-text tabular-nums">{fmtMoney(cost)}</span>
-                                                : <span className="text-[11px] text-content-3">—</span>}
+                                                ? <span className="text-body-sm font-bold text-chart-4-text tabular-nums">{fmtMoney(cost)}</span>
+                                                : <span className="text-label text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell align="center" hideBelow="md">
                                             {row.in_minmax ? (
                                                 <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30"><CheckCircle2 size={9} />Con Min/Max</span>
+                                                    <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30"><CheckCircle2 size={9} />Con Min/Max</span>
                                                     {(row.min_qty != null || row.max_qty != null) && (
-                                                        <span className="text-[9px] font-mono text-content-3 tabular-nums">
+                                                        <span className="text-micro font-mono text-content-3 tabular-nums">
                                                             <span className="text-chart-4-text font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
                                                             <span className="text-content-3 mx-0.5">/</span>
                                                             <span className="text-chart-1-text font-bold">{Number(row.max_qty ?? 0).toLocaleString()}</span>
@@ -860,13 +860,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30"><CircleDashed size={9} />Sin Min/Max</span>
+                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30"><CircleDashed size={9} />Sin Min/Max</span>
                                             )}
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {sug
-                                                ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
-                                                : <span className="text-[11px] text-content-3">—</span>}
+                                                ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
+                                                : <span className="text-label text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             <UltimaVentaCell row={row} allBranches={false} />
@@ -874,10 +874,10 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell>
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 {soldIn.length === 0
-                                                    ? <span className="text-[10px] font-semibold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                    ? <span className="text-caption font-semibold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full italic">Sin historial</span>
                                                     : soldIn.map(s => (
                                                         <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-divider'}`}>
+                                                            className={`inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                                             {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
                                                         </span>
                                                     ))}

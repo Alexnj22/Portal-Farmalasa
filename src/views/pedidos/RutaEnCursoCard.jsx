@@ -104,17 +104,17 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-black text-content">Ruta #{ruta.numero}</span>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
+              <span className="text-body font-black text-content">Ruta #{ruta.numero}</span>
+              <span className={`text-micro font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
               {ruta.salida_at && (
-                <span className="text-[10px] text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
+                <span className="text-caption text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[11px] text-content-3 font-medium">{ruta.conductor_nombre}</span>
-              <span className="text-[10px] text-content-3">· {entregadas}/{total} entregadas</span>
+              <span className="text-label text-content-3 font-medium">{ruta.conductor_nombre}</span>
+              <span className="text-caption text-content-3">· {entregadas}/{total} entregadas</span>
               {driverOnline && (
-                <span className="flex items-center gap-1 text-[10px] text-success font-semibold">
+                <span className="flex items-center gap-1 text-caption text-success font-semibold">
                   <Radio size={8} className="animate-pulse" /> En vivo
                 </span>
               )}
@@ -161,25 +161,25 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                   <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
                     done ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
                   }`}>
-                    <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
+                    <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                       done ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                     }`}>{stop.orden_entrega}</span>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-bold text-content truncate">{stop.suc_name}</p>
+                      <p className="text-body-sm font-bold text-content truncate">{stop.suc_name}</p>
                       <div className="flex items-center gap-2 flex-wrap mt-0.5">
                         {stop.numeros?.length > 0 && (
-                          <span className="text-[10px] text-content-3">
+                          <span className="text-caption text-content-3">
                             Pedido{stop.numeros.length > 1 ? 's' : ''} {stop.numeros.map(n => `#${n}`).join(', ')}
                           </span>
                         )}
                         {stop.distancia_desde_anterior_m > 0 && (
-                          <span className="text-[10px] text-content-3">
+                          <span className="text-caption text-content-3">
                             · {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
                           </span>
                         )}
                         {done && (
-                          <span className="text-[10px] text-success font-semibold">✓ {fmtTime(stop.entregado_at)}</span>
+                          <span className="text-caption text-success font-semibold">✓ {fmtTime(stop.entregado_at)}</span>
                         )}
                       </div>
                     </div>
@@ -188,7 +188,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                       <button
                         onClick={() => handleEntregarStop(stop)}
                         disabled={busy}
-                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
+                        className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
                       >
                         {busy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
                         Entregué
@@ -206,7 +206,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     <button
                       onClick={handleIniciarRuta}
                       disabled={busyRuta === 'iniciar'}
-                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                      className="flex items-center gap-1.5 text-label font-bold px-3 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                       {busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
                       Iniciar ruta
@@ -216,14 +216,14 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                     <button
                       onClick={handleVueltaBase}
                       disabled={busyRuta === 'vuelta'}
-                      className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                      className="flex items-center gap-1.5 text-label font-bold px-3 py-2 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                       {busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
                       Vuelta en base
                     </button>
                   )}
                   {ruta.vuelta_base_at && (
-                    <span className="text-[10px] text-content-3 flex items-center gap-1 px-2">
+                    <span className="text-caption text-content-3 flex items-center gap-1 px-2">
                       <Home size={10} /> Llegó {fmtTime(ruta.vuelta_base_at)}
                     </span>
                   )}

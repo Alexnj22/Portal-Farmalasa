@@ -38,22 +38,22 @@ const BranchTabLegal = ({
 
                 {/* ISLA 1: LICENCIA SRS */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
+                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <ShieldCheck size={18} strokeWidth={2.5} /> Licencia de Funcionamiento (CSSP/DNM)
                     </h4>
                     {/* 🚨 CONTENIDO EN 1 COLUMNA (flex-col) */}
                     <div className="flex flex-col flex-1 gap-4">
                         <div>
-                            <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block">Número de Resolución</label>
+                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Número de Resolución</label>
                             <LazyInput
                                 placeholder="Ej: SRS-2024-001"
                                 value={legal.srsPermit || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'srsPermit', val)}
-                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`}
+                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
                             />
                         </div>
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia
                             </label>
                             <div className={`bg-warning/10 rounded-[1rem] border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
@@ -81,14 +81,14 @@ const BranchTabLegal = ({
 
                 {/* ISLA 2: REGENCIA FARMACÉUTICA */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
+                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <FileBadge size={18} strokeWidth={2.5} /> Regencia Farmacéutica
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
+                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Regente Asignado
-                                {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-[9px] border border-warning/30">Sin personal</span>}
+                                {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
                             </label>
                             <div className={`rounded-[1rem] h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect
@@ -100,7 +100,7 @@ const BranchTabLegal = ({
                             </div>
                         </div>
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
                             </label>
                             <div className={`bg-warning/10 rounded-[1rem] border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
@@ -127,14 +127,14 @@ const BranchTabLegal = ({
 
                 {/* ISLA 3: FARMACOVIGILANCIA */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
+                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <ShieldAlert size={18} strokeWidth={2.5} /> Referente de Farmacovigilancia
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
+                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Referente Asignado
-                                {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-[9px] border border-warning/30">Sin personal</span>}
+                                {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
                             </label>
                             <div className={`rounded-[1rem] h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect
@@ -146,7 +146,7 @@ const BranchTabLegal = ({
                             </div>
                         </div>
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
                             </label>
                             <div className={`bg-warning/10 rounded-[1rem] border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
@@ -174,7 +174,7 @@ const BranchTabLegal = ({
                 {/* ISLA 4: ÁREA DE INYECTABLES */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex items-center justify-between mb-5">
-                        <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
+                        <h4 className="text-body font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                             <Syringe size={18} strokeWidth={2.5} /> Área Inyectables
                         </h4>
                         <Switch on={legal.injections || false} onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />
@@ -182,9 +182,9 @@ const BranchTabLegal = ({
                     {legal.injections ? (
                         <div className="flex flex-col flex-1 gap-4">
                             <div>
-                                <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block">Enfermeros Autorizados</label>
+                                <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Enfermeros Autorizados</label>
                                 {availableNurses.length === 0 ? (
-                                    <p className="text-warning text-[10px] font-bold p-3 bg-warning/10 rounded-[1rem] border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
+                                    <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-[1rem] border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
                                 ) : (
                                     <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-[1.5rem] border border-white max-h-[100px] overflow-y-auto custom-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.03)]">
                                         {availableNurses.map(emp => {
@@ -194,7 +194,7 @@ const BranchTabLegal = ({
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}
-                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-[11px] font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/30 hover:shadow-sm'}`}
+                                                    className={`px-3 py-1.5 rounded-[0.8rem] text-label font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/30 hover:shadow-sm'}`}
                                                 >
                                                     {emp.name.split(' ')[0]} {isSelected && '✓'}
                                                 </button>
@@ -217,7 +217,7 @@ const BranchTabLegal = ({
                         </div>
                     ) : (
                         <div className="flex-1 flex items-center justify-center py-8 text-center bg-surface-card backdrop-blur-sm rounded-[1.5rem] border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]">
-                            <p className="text-content-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5">
+                            <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center gap-1.5">
                                 <AlertCircle size={14} /> Módulo Desactivado
                             </p>
                         </div>
@@ -229,7 +229,7 @@ const BranchTabLegal = ({
             {/* 🚨 BLOQUE FINAL (FULL WIDTH / 1 COLUMNA): LIBROS CONTROLADOS */}
             <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
                 <div className="flex items-center justify-between mb-5">
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
+                    <h4 className="text-body font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                         <FileWarning size={18} strokeWidth={2.5} /> Libros Controlados
                     </h4>
                     <Switch on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />
@@ -237,12 +237,12 @@ const BranchTabLegal = ({
                 {legal.controlledBooks ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
                         <div>
-                            <label className="text-[10px] font-black uppercase text-content-3 ml-1 mb-2 block">Nº Resolución Autorización</label>
+                            <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block">Nº Resolución Autorización</label>
                             <LazyInput
                                 placeholder="Ej: RES-LIB-2025"
                                 value={legal.controlledBooksRes || ""}
                                 onChange={(val) => updateNestedSetting('legal', 'controlledBooksRes', val)}
-                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`}
+                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
                             />
                         </div>
                         <div className="pt-2 md:pt-0">
@@ -259,7 +259,7 @@ const BranchTabLegal = ({
                     </div>
                 ) : (
                     <div className="py-8 text-center bg-surface-card backdrop-blur-sm rounded-[1.5rem] border-2 border-dashed border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)] animate-in fade-in duration-300">
-                        <p className="text-content-2 font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5">
+                        <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-1.5">
                             <AlertCircle size={14} /> Módulo Desactivado
                         </p>
                     </div>

@@ -60,13 +60,13 @@ const KioskConfigModal = ({
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Kiosco Activo
             </h2>
-            <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-success/80 transition-colors px-2 mb-6">
+            <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-success/80 transition-colors px-2 mb-6">
               Dispositivo Autorizado
             </p>
 
             {/* Info de Sucursal (Mini Glass Card) */}
             <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 shadow-[inset_0_2px_10px_rgba(255,255,255,0.02)] mb-6 flex flex-col items-center justify-center">
-              <p className="text-white/40 text-[9px] font-semibold uppercase tracking-widest mb-1">
+              <p className="text-white/40 text-micro font-semibold uppercase tracking-widest mb-1">
                 Sucursal Asignada
               </p>
               <p className="text-white text-lg sm:text-xl font-bold truncate w-full px-2">
@@ -78,7 +78,7 @@ const KioskConfigModal = ({
               type="button"
               onClick={onRevoke}
               disabled={isProcessing}
-              className="relative z-20 w-full text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="relative z-20 w-full text-caption sm:text-label uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={16} /> Revocar Permisos Locales
             </button>
@@ -95,7 +95,7 @@ const KioskConfigModal = ({
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Vincular Kiosco
             </h2>
-            <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
+            <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
               Configuración Inicial
             </p>
 
@@ -103,7 +103,7 @@ const KioskConfigModal = ({
               
               {/* 🚨 REEMPLAZO DEL SELECT NATIVO POR LIQUIDSELECT */}
               <div className="flex flex-col gap-1.5 relative z-40">
-                <label className="text-white/50 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest ml-2">
+                <label className="text-white/50 text-micro sm:text-caption font-semibold uppercase tracking-widest ml-2">
                   Sucursal Física
                 </label>
                 {/* Este modal solo se monta dentro de TimeClockView, que fuerza
@@ -124,13 +124,13 @@ const KioskConfigModal = ({
 
               {/* Input de Nombre del Equipo */}
               <div className="flex flex-col gap-1.5 relative z-10">
-                <label className="text-white/50 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest ml-2">
+                <label className="text-white/50 text-micro sm:text-caption font-semibold uppercase tracking-widest ml-2">
                   Identificador del Equipo
                 </label>
                 <div className="relative">
                   <Laptop size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" strokeWidth={2} />
                   <input
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-[1.5rem] p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-[16px] shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-[1.5rem] p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-input shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
                     placeholder="Ej: Tablet Entrada"
                     value={deviceNameInput}
                     onChange={(e) => onChangeDeviceName?.(e.target.value)}
@@ -145,7 +145,7 @@ const KioskConfigModal = ({
                 type="button"
                 onClick={onSave}
                 disabled={isProcessing || !selectedBranchId || !deviceNameInput}
-                className="relative z-10 w-full mt-2 text-[10px] sm:text-[11px] uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-full border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+                className="relative z-10 w-full mt-2 text-caption sm:text-label uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-full border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isProcessing ? (
                   <span className="w-4 h-4 border-2 border-chart-1/30 border-t-blue-400 rounded-full animate-spin" />
@@ -163,7 +163,7 @@ const KioskConfigModal = ({
           type="button"
           onClick={onClose}
           disabled={isProcessing}
-          className="relative z-10 w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-[9px] sm:text-[10px] transition-colors"
+          className="relative z-10 w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-micro sm:text-caption transition-colors"
         >
           Cerrar Configuración
         </button>

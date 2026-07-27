@@ -367,7 +367,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const getStatusBadge = (status, isLate, lateText) => {
     if (isLate && status !== "FINISHED") {
       return (
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-danger/10 text-danger-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-danger/30">
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-danger/10 text-danger-text rounded-xl text-caption font-bold uppercase tracking-widest border border-danger/30">
           <AlertTriangle size={14} /> {lateText}
         </div>
       );
@@ -375,55 +375,55 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     switch (status) {
       case "WORKING":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-success/30">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-success/10 text-success-text rounded-xl text-caption font-bold uppercase tracking-widest border border-success/30">
             <CheckCircle size={14} /> En Turno
           </div>
         );
       case "EXTRA_WORKING":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-3/10 text-chart-3-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-3/30">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-3/10 text-chart-3-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-3/30">
             <PlusCircle size={14} /> Turno Extra
           </div>
         );
       case "LUNCH":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-4/10 text-chart-4-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-4/30">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-4/10 text-chart-4-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-4/30">
             <Utensils size={14} /> Almorzando
           </div>
         );
       case "LACTATION":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-6/10 text-chart-6-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-6/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-6/10 text-chart-6-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-6/20">
             <Baby size={14} /> Lactancia
           </div>
         );
       case "FINISHED":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-black/[0.06]">
             <LogOut size={14} /> Finalizado
           </div>
         );
       case "EARLY_EXIT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 text-brand-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-brand/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 text-brand-text rounded-xl text-caption font-bold uppercase tracking-widest border border-brand/20">
             <DoorOpen size={14} /> Permiso / Retiro
           </div>
         );
       case "BUSINESS_OUT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-7/10 text-chart-7-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-chart-7/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-chart-7/10 text-chart-7-text rounded-xl text-caption font-bold uppercase tracking-widest border border-chart-7/20">
             <MapPin size={14} /> Gestión Externa
           </div>
         );
       case "OFF_DAY":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-3 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-3 rounded-xl text-caption font-bold uppercase tracking-widest border border-black/[0.06]">
             <Clock size={14} /> Día Libre
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-black/[0.06]">
             <CircleDashed size={14} /> Sin Marcar
           </div>
         );
@@ -501,10 +501,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           )}
         </div>
         <div className="min-w-0">
-          <h3 className="font-bold text-content text-[13px] leading-tight truncate group-hover:text-brand-text transition-colors">
+          <h3 className="font-bold text-content text-body leading-tight truncate group-hover:text-brand-text transition-colors">
             {emp.name}
           </h3>
-          <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
+          <p className="text-micro font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
             {emp.role || "Empleado"}
           </p>
         </div>
@@ -512,27 +512,27 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
       <div className="mb-2.5">{getStatusBadge(status, isLate, lateText)}</div>
 
-      <div className="flex items-center gap-1.5 text-[10px] font-semibold text-content-3 mb-2 px-0.5">
+      <div className="flex items-center gap-1.5 text-caption font-semibold text-content-3 mb-2 px-0.5">
         <MapPin size={11} className="shrink-0" />
         <span className="truncate">{shiftName}</span>
       </div>
 
       {scheduleDetails?.start && (
         <div className="bg-surface-card-hover/50 rounded-lg p-2 border border-black/[0.04] space-y-1 mb-2">
-          <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-2">
+          <div className="flex items-center gap-1.5 text-micro font-semibold text-content-2">
             <Clock size={11} className="text-brand-text shrink-0" />
             <span className="truncate">
               {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
             </span>
           </div>
           {scheduleDetails.lunch && (
-            <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-3">
+            <div className="flex items-center gap-1.5 text-micro font-semibold text-content-3">
               <Utensils size={11} className="text-chart-4-text shrink-0" />
               <span className="truncate">{formatTime12h(scheduleDetails.lunch)} Almuerzo</span>
             </div>
           )}
           {scheduleDetails.lactation && (
-            <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-3">
+            <div className="flex items-center gap-1.5 text-micro font-semibold text-content-3">
               <Baby size={11} className="text-chart-6-text shrink-0" />
               <span className="truncate">{formatTime12h(scheduleDetails.lactation)} Lactancia</span>
             </div>
@@ -540,13 +540,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         </div>
       )}
 
-      <div className="flex items-center justify-between text-[10px] pt-2 border-t border-black/[0.04]">
+      <div className="flex items-center justify-between text-caption pt-2 border-t border-black/[0.04]">
         <span className="text-content-3 font-bold uppercase tracking-wider flex items-center gap-1">
           <Timer size={11} /> Último
         </span>
         <span
           className={[
-            "font-black text-[12px]",
+            "font-black text-body-sm",
             isLate && status !== "FINISHED" ? "text-danger" : "text-content",
           ].join(" ")}
         >
@@ -564,7 +564,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div
                 key={`${p.timestamp}-${idx}`}
                 className={[
-                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider",
+                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-micro font-bold uppercase tracking-wider",
                   isLatest
                     ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
                     : "bg-surface-card border-black/5 text-content-3",
@@ -601,7 +601,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           ref={searchInputRef}
           type="text"
           placeholder="Buscar por nombre o código..."
-          className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
+          className="flex-1 bg-transparent border-none outline-none text-input font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -691,12 +691,12 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 </div>
               )}
 
-              <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
+              <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
                 {card.label}
               </p>
               <p
                 className={[
-                  "text-[28px] font-black relative z-10 leading-none",
+                  "text-display font-black relative z-10 leading-none",
                   isActive ? "text-brand-text" : card.color,
                 ].join(" ")}
               >
@@ -720,10 +720,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             <Users size={32} className="text-content-3" />
           </div>
           <div>
-            <p className="text-[14px] font-black uppercase tracking-widest text-content-2">
+            <p className="text-body-lg font-black uppercase tracking-widest text-content-2">
               No hay empleados en esta categoría
             </p>
-            <p className="text-[12px] text-content-3 mt-1 font-medium">
+            <p className="text-body-sm text-content-3 mt-1 font-medium">
               Intenta cambiar el filtro o seleccionar otra tarjeta.
             </p>
           </div>
@@ -739,13 +739,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dot}`} />
-                    <h3 className="text-[11px] font-black uppercase tracking-widest text-content-2">{col.label}</h3>
+                    <h3 className="text-label font-black uppercase tracking-widest text-content-2">{col.label}</h3>
                   </div>
-                  <span className="text-[11px] font-bold text-content-3">{rows.length}</span>
+                  <span className="text-label font-bold text-content-3">{rows.length}</span>
                 </div>
 
                 {rows.length === 0 ? (
-                  <p className="text-[11px] text-content-3 italic px-1 pb-2">Sin empleados</p>
+                  <p className="text-label text-content-3 italic px-1 pb-2">Sin empleados</p>
                 ) : (
                   <div className="flex flex-col gap-4">
                     {groups.map((group) => {
@@ -763,11 +763,11 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                               onClick={() => toggleSectionCollapsed(sectionKey)}
                               className="w-full flex items-center justify-between px-1 py-1 -my-1 rounded-lg hover:bg-black/[0.03] transition-colors"
                             >
-                              <span className="text-[10px] font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
+                              <span className="text-caption font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
                                 <ChevronDown size={12} className={`transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`} />
                                 {group.branchName}
                               </span>
-                              <span className="text-[10px] font-bold text-content-3">{group.rows.length}</span>
+                              <span className="text-caption font-bold text-content-3">{group.rows.length}</span>
                             </button>
                           )}
                           {!isCollapsed && (
@@ -779,7 +779,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                                 <button
                                   type="button"
                                   onClick={() => showMoreInSection(sectionKey)}
-                                  className="text-[10px] font-black uppercase tracking-widest text-brand-text hover:text-brand-hover text-center py-2 rounded-xl hover:bg-brand/5 transition-colors"
+                                  className="text-caption font-black uppercase tracking-widest text-brand-text hover:text-brand-hover text-center py-2 rounded-xl hover:bg-brand/5 transition-colors"
                                 >
                                   Ver más ({remaining} restantes)
                                 </button>

@@ -81,18 +81,18 @@ const FormServicePayment = ({ formData, setFormData }) => {
                     </div>
                     <div>
                         <h3 className="text-xl font-black tracking-tight">{config.title}</h3>
-                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>
+                        <p className="text-caption font-bold uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>
                     </div>
                 </div>
                 <div className={`px-4 py-2 flex items-center gap-2 rounded-xl border shadow-sm ${statusPreview.color}`}>
                     <PreviewIcon size={16}/>
-                    <span className="text-[10px] font-black uppercase tracking-widest">{statusPreview.state}</span>
+                    <span className="text-caption font-black uppercase tracking-widest">{statusPreview.state}</span>
                 </div>
             </div>
 
             <div className="bg-surface-card-hover/50 border border-divider rounded-[2rem] p-6 shadow-sm space-y-5">
                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{config.providerLabel}</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{config.providerLabel}</label>
                     <input 
                         required
                         type="text" 
@@ -105,7 +105,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Monto Mensual Aprox. ($)</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Monto Mensual Aprox. ($)</label>
                         <input 
                             required
                             type="number" min="0" step="0.01" 
@@ -116,7 +116,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
                         <input 
                             required
                             type="number" min="1" max="31" 
@@ -129,7 +129,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
 
                 <div className="pt-4 border-t border-divider">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-brand-text ml-1 mb-2 flex items-center gap-2">
+                    <label className="text-caption font-black uppercase tracking-widest text-brand-text ml-1 mb-2 flex items-center gap-2">
                         <CalendarCheck size={14}/> Último Mes Pagado
                     </label>
                     <LiquidDatePicker
@@ -137,7 +137,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         value={currentData.paidThrough && currentData.paidThrough.split('-').length === 2 ? `${currentData.paidThrough}-01` : currentData.paidThrough}
                         onChange={(val) => handleChange('paidThrough', val)}
                     />
-                    <p className="mt-2 text-[10px] font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
+                    <p className="mt-2 text-caption font-semibold text-content-3 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
                 </div>
             </div>
         </div>

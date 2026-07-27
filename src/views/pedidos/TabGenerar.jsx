@@ -319,13 +319,13 @@ export default function TabGenerar({ searchTerm = '' }) {
             {/* ── Sucursal selector ──────────────────────────── */}
             <div className={GLASS + ' p-4'}>
                 <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-content-2 text-[15px]">Selecciona las sucursales a reponer</h3>
+                    <h3 className="font-semibold text-content-2 text-subtitle">Selecciona las sucursales a reponer</h3>
                     <button onClick={toggleAll}
-                        className="text-[12px] text-chart-1-text hover:text-chart-1-text font-medium transition-colors p-3.5 -m-3.5">
+                        className="text-body-sm text-chart-1-text hover:text-chart-1-text font-medium transition-colors p-3.5 -m-3.5">
                         {visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}
                     </button>
                 </div>
-                <p className="text-[11px] text-content-3 mb-2 flex items-center gap-1">
+                <p className="text-label text-content-3 mb-2 flex items-center gap-1">
                     <Info size={11} />
                     Elige las sucursales a reponer y genera el pedido directamente.
                 </p>
@@ -334,7 +334,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <button
                         onClick={() => setGlobalMode(v => !v)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-label font-semibold transition-all ${
                             globalMode
                                 ? 'bg-chart-3-solid border-chart-3 text-white shadow-sm'
                                 // `bg-surface-card` opaco + text-content-3: en dark quedaba una pastilla
@@ -350,7 +350,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 </div>
 
                 {globalMode && (
-                    <p className="text-[10px] text-chart-3-text mb-2 flex items-center gap-1">
+                    <p className="text-caption text-chart-3-text mb-2 flex items-center gap-1">
                         <Info size={10} />
                         La bodega se distribuye considerando las necesidades de TODAS las sucursales, pero el pedido solo incluye las marcadas.
                     </p>
@@ -374,11 +374,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 >
                                     <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent pointer-events-none" />
                                     <Building2 size={20} className="text-content-3 mt-1" />
-                                    <span className="text-[12px] font-bold leading-tight text-content-3">{ERP_NAMES[id]}</span>
+                                    <span className="text-body-sm font-bold leading-tight text-content-3">{ERP_NAMES[id]}</span>
                                     {dashLoading ? (
                                         <div className="h-6 w-14 rounded-lg bg-surface-card-hover animate-pulse mt-0.5" />
                                     ) : (
-                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30 mt-0.5 text-center leading-tight">
+                                        <span className="inline-flex items-center gap-0.5 text-micro font-semibold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30 mt-0.5 text-center leading-tight">
                                             Pendiente MIN/MAX
                                         </span>
                                     )}
@@ -426,10 +426,10 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (
                                     <span className="absolute top-2 left-2 flex items-center gap-1 z-10">
-                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none bg-chart-8-solid text-white">
+                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-caption font-black leading-none bg-chart-8-solid text-white">
                                             {urgRankMap[id]}
                                         </span>
-                                        <span className={`min-w-[34px] h-5 px-1.5 rounded-full flex items-center justify-center text-[10px] font-black leading-none border ${urgBadgeCls}`}>
+                                        <span className={`min-w-[34px] h-5 px-1.5 rounded-full flex items-center justify-center text-caption font-black leading-none border ${urgBadgeCls}`}>
                                             {urgPct}%
                                         </span>
                                     </span>
@@ -446,19 +446,19 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     size={20}
                                     className="text-content-3 group-hover:text-content-2 transition-colors relative z-10 mt-1"
                                 />
-                                <span className="text-[12px] font-bold leading-tight relative z-10 text-content">
+                                <span className="text-body-sm font-bold leading-tight relative z-10 text-content">
                                     {ERP_NAMES[id]}
                                 </span>
 
                                 {stat && !dashLoading ? (
                                     <>
                                         <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
-                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text">
-                                                <span className="text-[9px]">✓</span>
+                                            <span className="inline-flex items-center gap-0.5 text-caption font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text">
+                                                <span className="text-micro">✓</span>
                                                 {(stat.con_bodega_productos ?? 0)}
                                             </span>
-                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">
-                                                <span className="text-[9px]">✗</span>
+                                            <span className="inline-flex items-center gap-0.5 text-caption font-bold px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">
+                                                <span className="text-micro">✗</span>
                                                 {(stat.sin_bodega_productos ?? 0)}
                                             </span>
                                         </div>
@@ -466,7 +466,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         {(() => {
                                             const label = fmtTimeSince(stat.last_pedido_at);
                                             if (!label) return (
-                                                <span className="text-[9px] relative z-10 text-content-3">sin pedidos</span>
+                                                <span className="text-micro relative z-10 text-content-3">sin pedidos</span>
                                             );
                                             const days = stat.last_pedido_at
                                                 ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
@@ -475,7 +475,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                                           : days <= 14 ? 'text-warning'
                                                           : 'text-danger';
                                             return (
-                                                <span className={`text-[9px] font-medium relative z-10 ${timeCls}`}>
+                                                <span className={`text-micro font-medium relative z-10 ${timeCls}`}>
                                                     {label}
                                                 </span>
                                             );
@@ -494,7 +494,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <button
                         onClick={handleGenerarDirecto}
                         disabled={confirming || selected.size === 0}
-                        className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
+                        className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-subtitle transition-all duration-200 ${
                             selected.size === 0
                                 ? 'bg-surface-card-hover text-content-3 cursor-not-allowed'
                                 : 'bg-success-solid text-white hover:bg-success/90 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
@@ -506,7 +506,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
                     </button>
                     {error && (
-                        <span className="text-[13px] text-danger flex items-center gap-1">
+                        <span className="text-body text-danger flex items-center gap-1">
                             <AlertTriangle size={14} /> {error}
                         </span>
                     )}
@@ -516,19 +516,19 @@ export default function TabGenerar({ searchTerm = '' }) {
             {/* ── Productos sin stock en Bodega ──────────────── */}
             <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>
                 <TriangleAlert size={15} className="text-danger" />
-                <span className="font-semibold text-content-2 text-[14px]">Productos sin stock en Bodega</span>
+                <span className="font-semibold text-content-2 text-body-lg">Productos sin stock en Bodega</span>
                 {sinBodega.length > 0 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-danger/10 text-danger border border-danger/30 font-semibold">
+                    <span className="text-label px-2 py-0.5 rounded-full bg-danger/10 text-danger border border-danger/30 font-semibold">
                         {sinBodega.length.toLocaleString()} productos
                     </span>
                 )}
                 {searchTerm && (
-                    <span className="ml-auto text-[11px] text-content-3">"{searchTerm}"</span>
+                    <span className="ml-auto text-label text-content-3">"{searchTerm}"</span>
                 )}
             </div>
 
             {isSinFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -550,21 +550,21 @@ export default function TabGenerar({ searchTerm = '' }) {
             >
                 {filteredSinBodega.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
-                        <td className="px-4 py-3 text-[13px] font-semibold text-content">
+                        <td className="px-4 py-3 text-body font-semibold text-content">
                             {row.product_name}
                         </td>
-                        <td className="px-4 py-3 text-[12px] text-content-3">{row.laboratorio || '—'}</td>
+                        <td className="px-4 py-3 text-body-sm text-content-3">{row.laboratorio || '—'}</td>
                         <td className="px-4 py-3">
                             <div className="flex flex-wrap gap-1">
                                 {(row.sucursales || []).map(s => (
                                     <span key={s.erp_sucursal_id}
-                                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover border border-divider whitespace-nowrap"
+                                        className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-surface-card-hover border border-divider whitespace-nowrap"
                                         title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
                                         <span className="font-medium text-content-2">{ERP_NAMES[s.erp_sucursal_id]}</span>
                                         <span className="text-danger font-semibold">{s.reponer}</span>
                                         {s.ventas_6m > 0 && (
                                             <span className="text-content-3 flex items-center gap-0.5">
-                                                ↻<span className="text-[9px] font-semibold">{Math.round(s.ventas_6m)}</span>
+                                                ↻<span className="text-micro font-semibold">{Math.round(s.ventas_6m)}</span>
                                             </span>
                                         )}
                                     </span>
@@ -572,16 +572,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                             </div>
                         </td>
                         <td className="px-4 py-3 text-center hidden sm:table-cell">
-                            <span className="text-[13px] font-bold text-danger tabular-nums">{row.total_necesidad}</span>
+                            <span className="text-body font-bold text-danger tabular-nums">{row.total_necesidad}</span>
                         </td>
                         <td className="px-4 py-3 text-center hidden sm:table-cell">
                             {row.total_ventas_6m > 0 ? (
-                                <span className="inline-flex items-center justify-center gap-1 text-[12px] text-success font-semibold tabular-nums">
+                                <span className="inline-flex items-center justify-center gap-1 text-body-sm text-success font-semibold tabular-nums">
                                     <TrendingUp size={11} />
                                     {Math.round(row.total_ventas_6m).toLocaleString()}
                                 </span>
                             ) : (
-                                <span className="text-[11px] text-content-3">—</span>
+                                <span className="text-label text-content-3">—</span>
                             )}
                         </td>
                     </DataRow>

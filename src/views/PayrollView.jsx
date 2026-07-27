@@ -289,8 +289,8 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                     <Building2 size={14} className="text-white" strokeWidth={2} />
                                 </div>
                                 <div>
-                                    <p className="text-[13px] font-black text-content tracking-tight">{branchName}</p>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2">{grp.length} empleado{grp.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-body font-black text-content tracking-tight">{branchName}</p>
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2">{grp.length} empleado{grp.length !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
 
@@ -298,14 +298,14 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 {/* Print all boletas for this branch */}
                                 <button
                                     onClick={() => printBoletasBatch(grp, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
                                     title="Imprimir todas las boletas de esta sucursal">
                                     <Printer size={11} strokeWidth={2.5} /> Boletas
                                 </button>
                                 {/* Print branch planilla */}
                                 <button
                                     onClick={() => printBranchPlanilla(grp, branch, period, branches)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm"
                                     title="Imprimir planilla de esta sucursal">
                                     <Printer size={11} strokeWidth={2.5} /> Planilla
                                 </button>
@@ -313,8 +313,8 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 <div className="w-px h-5 bg-divider mx-1" />
 
                                 <div className="text-right">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Total a pagar</p>
-                                    <p className="text-[15px] font-black text-success-text">{fmt(branchNet)}</p>
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2">Total a pagar</p>
+                                    <p className="text-subtitle font-black text-success-text">{fmt(branchNet)}</p>
                                 </div>
                             </div>
                         </div>
@@ -330,9 +330,9 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                             <div className="flex items-center gap-3">
                                                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
                                                 <div>
-                                                    <p className="font-black text-content text-[11px] leading-tight">{emp.name || '—'}</p>
-                                                    {emp.role && <p className="text-[9px] text-content-3 font-medium leading-tight">{emp.role}</p>}
-                                                    {edited && <span className="text-[9px] font-black text-warning bg-warning/10 px-1.5 py-0.5 rounded-full border border-warning/30 inline-block mt-0.5">editado</span>}
+                                                    <p className="font-black text-content text-label leading-tight">{emp.name || '—'}</p>
+                                                    {emp.role && <p className="text-micro text-content-3 font-medium leading-tight">{emp.role}</p>}
+                                                    {edited && <span className="text-micro font-black text-warning bg-warning/10 px-1.5 py-0.5 rounded-full border border-warning/30 inline-block mt-0.5">editado</span>}
                                                 </div>
                                             </div>
                                         </DataCell>
@@ -502,11 +502,11 @@ const PayrollView = ({ openModal }) => {
                     <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-content-3 w-full" />
+                        className="bg-transparent outline-none text-input font-semibold text-content-2 placeholder-content-3 w-full" />
                     {searchTerm && <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
                 </div>
                 <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
+                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-caption font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
                     Cancelar
                 </button>
             </div>
@@ -548,14 +548,14 @@ const PayrollView = ({ openModal }) => {
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div className="backdrop-blur-[30px] rounded-[2.5rem] p-5 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex items-center justify-between mb-4">
-                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
+                                <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
                                     className="w-8 h-8 bg-brand text-white rounded-xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
                                     <Plus size={14} strokeWidth={2.5} />
                                 </button>
                             </div>
                             {filteredPeriods.length === 0 ? (
-                                <p className="text-center py-10 text-content-3 text-[11px] font-medium">Sin períodos aún</p>
+                                <p className="text-center py-10 text-content-3 text-label font-medium">Sin períodos aún</p>
                             ) : (
                                 <div className="space-y-2">
                                     {filteredPeriods.map((p, i) => {
@@ -565,10 +565,10 @@ const PayrollView = ({ openModal }) => {
                                             <button key={p.id} onClick={() => setActivePeriod(p)}
                                                 className="w-full text-left p-3.5 rounded-2xl border transition-all duration-300 animate-in fade-in"
                                                 style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,82,204,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,82,204,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,82,204,0.12)':'none' }}>
-                                                <p className={`text-[11px] font-black leading-tight ${active?'text-brand-text':'text-content'}`}>{p.name}</p>
+                                                <p className={`text-label font-black leading-tight ${active?'text-brand-text':'text-content'}`}>{p.name}</p>
                                                 <div className="flex items-center justify-between mt-1.5">
-                                                    <p className="text-[9px] text-content-3">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
-                                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
+                                                    <p className="text-micro text-content-3">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
+                                                    <span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
                                                 </div>
                                             </button>
                                         );
@@ -585,8 +585,8 @@ const PayrollView = ({ openModal }) => {
                                 <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[15px] font-black text-content-2 uppercase tracking-tight">Selecciona un período</p>
-                                <p className="text-[12px] text-content-3 mt-1">O crea una nueva quincena con el botón +</p>
+                                <p className="text-subtitle font-black text-content-2 uppercase tracking-tight">Selecciona un período</p>
+                                <p className="text-body-sm text-content-3 mt-1">O crea una nueva quincena con el botón +</p>
                             </div>
                         ) : (
                             <>
@@ -594,16 +594,16 @@ const PayrollView = ({ openModal }) => {
                                 <div className="backdrop-blur-[30px] rounded-[2.5rem] p-6 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
-                                            <h2 className="text-[16px] font-black text-content tracking-tight">{activePeriod.name}</h2>
-                                            <p className="text-[10px] text-content-3 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
+                                            <h2 className="text-input font-black text-content tracking-tight">{activePeriod.name}</h2>
+                                            <p className="text-caption text-content-3 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <span className={`text-[9px] font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).color}`}>
+                                            <span className={`text-micro font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).color}`}>
                                                 {(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).label}
                                             </span>
                                             {(isDraft||isApproved) && (
                                                 <button onClick={handleGenerate} disabled={generating}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all disabled:opacity-50 shadow-sm">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all disabled:opacity-50 shadow-sm">
                                                     <RotateCcw size={12} strokeWidth={2.5} className={generating?'animate-spin':''} />
                                                     {generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}
                                                 </button>
@@ -612,29 +612,29 @@ const PayrollView = ({ openModal }) => {
                                                 <>
                                                     {/* Print ALL boletas in batch */}
                                                     <button onClick={() => printBoletasBatch(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
                                                         <Printer size={12} strokeWidth={2.5} /> Todas las Boletas
                                                     </button>
                                                     {/* Global planilla */}
                                                     <button onClick={() => printGlobalPlanilla(filteredEntries, activePeriod, branches)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
                                                         <Printer size={12} strokeWidth={2.5} /> Planilla Global
                                                     </button>
                                                     <button onClick={downloadCSV}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-[10px] font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-card border border-border-card text-caption font-black text-content-2 hover:bg-surface-card-hover transition-all shadow-sm">
                                                         <Download size={12} strokeWidth={2.5} /> CSV Banco
                                                     </button>
                                                 </>
                                             )}
                                             {isDraft && payrollEntries.length > 0 && (
                                                 <button onClick={() => setConfirming({ action:'APPROVED', label:'aprobar' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-[10px] font-black transition-all shadow-[0_3px_8px_rgba(34,197,94,0.35)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-caption font-black transition-all shadow-[0_3px_8px_rgba(34,197,94,0.35)]">
                                                     <CheckCircle2 size={12} strokeWidth={2.5} /> Aprobar
                                                 </button>
                                             )}
                                             {isApproved && (
                                                 <button onClick={() => setConfirming({ action:'PAID', label:'marcar como pagada' })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-[10px] font-black transition-all shadow-[var(--shadow-glow-brand)]">
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand hover:bg-brand-hover text-white text-caption font-black transition-all shadow-[var(--shadow-glow-brand)]">
                                                     <Banknote size={12} strokeWidth={2.5} /> Marcar Pagada
                                                 </button>
                                             )}
@@ -650,8 +650,8 @@ const PayrollView = ({ openModal }) => {
                                                 { label:'Total a Pagar',  value:totals.net,      color:'text-success-text' },
                                             ].map(t => (
                                                 <div key={t.label} className="text-center bg-surface-card rounded-2xl py-3 px-2 border border-border-card">
-                                                    <p className="text-[9px] text-content-2 uppercase tracking-widest font-black">{t.label}</p>
-                                                    <p className={`text-[16px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
+                                                    <p className="text-micro text-content-2 uppercase tracking-widest font-black">{t.label}</p>
+                                                    <p className={`text-input font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
                                             ))}
                                         </div>
@@ -661,10 +661,10 @@ const PayrollView = ({ openModal }) => {
                                     {unapprovedCount > 0 && (
                                         <div className="mt-3 flex items-center gap-3 bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
                                             <AlertTriangle size={14} className="text-warning flex-shrink-0" strokeWidth={2.5} />
-                                            <p className="text-[11px] font-bold text-warning-text flex-1">
+                                            <p className="text-label font-bold text-warning-text flex-1">
                                                 {unapprovedCount} timesheet{unapprovedCount !== 1 ? 's' : ''} sin aprobar en este período
                                             </p>
-                                            <span className="text-[9px] font-black text-warning uppercase tracking-widest">
+                                            <span className="text-micro font-black text-warning uppercase tracking-widest">
                                                 Revisa en Auditoría
                                             </span>
                                         </div>
@@ -681,7 +681,7 @@ const PayrollView = ({ openModal }) => {
                                                 <div className="h-2 w-16 skeleton rounded-full" />
                                             </div>
                                         </div>
-                                        <table className="w-full text-[10px]">
+                                        <table className="w-full text-caption">
                                             <tbody className="divide-y divide-white/30">
                                                 {Array.from({ length: 6 }).map((_, i) => (
                                                     <tr key={i} className="border-b border-black/[0.04]">
@@ -709,13 +709,13 @@ const PayrollView = ({ openModal }) => {
                                         </table>
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card text-center text-content-3 text-[12px] animate-in fade-in duration-500">
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-surface-card border border-border-card text-center text-content-3 text-body-sm animate-in fade-in duration-500">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (
                                     <>
                                     {isPayrollSearchFuzzy && searchTerm && (
-                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                         </div>

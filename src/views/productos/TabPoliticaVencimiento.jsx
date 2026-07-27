@@ -305,7 +305,7 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
             </div>
             <div className="min-w-0">
                 <p className="text-2xl font-black text-content leading-none tracking-tight">{value}</p>
-                <p className={`text-[11px] mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
+                <p className={`text-label mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
             </div>
         </div>
     );
@@ -360,12 +360,12 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                         <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3 space-y-2">
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-content-2">Proveedores</span>
+                                    <span className="text-caption font-bold uppercase tracking-wide text-content-2">Proveedores</span>
                                     <button
                                         onClick={onMarkND}
                                         disabled={markingND}
                                         title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-divider bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-divider bg-surface-card text-content-3 hover:text-warning hover:bg-warning/10 hover:border-warning/30 transition-colors text-micro font-bold disabled:opacity-50 shrink-0"
                                     >
                                         {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                                         Marcar todo como ND
@@ -373,7 +373,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                                 </div>
                             )}
                             {proveedores.length === 0 && newRowIds.length === 0 && (
-                                <p className="text-[11px] text-content-3 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
+                                <p className="text-label text-content-3 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
                             )}
                             {proveedores.map(p => (
                                 <ProveedorRow key={p.id} proveedor={p} canEdit={canEdit} proveedorNameOptions={proveedorNameOptions} onUpdate={onUpdate} onDelete={onDelete} />
@@ -391,7 +391,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                             {canEdit && (
                                 <button
                                     onClick={onStartAdd}
-                                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-chart-9/30 text-chart-9-text hover:bg-chart-9/10 hover:border-chart-9/40 transition-colors text-[11px] font-bold"
+                                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-chart-9/30 text-chart-9-text hover:bg-chart-9/10 hover:border-chart-9/40 transition-colors text-label font-bold"
                                 >
                                     <Plus className="w-3.5 h-3.5" /> Agregar proveedor
                                 </button>
@@ -424,25 +424,25 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-card border border-divider shadow-sm">
             <Truck className="w-3.5 h-3.5 text-content-3 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-content-2 truncate flex items-center gap-1.5">
+                <p className="text-body-sm font-semibold text-content-2 truncate flex items-center gap-1.5">
                     {isCofarsal(proveedor.nombre) && (
                         <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
                     )}
                     {proveedor.nombre}
                 </p>
-                {proveedor.notas && <p className="text-[10px] text-content-3 truncate mt-0.5">{proveedor.notas}</p>}
+                {proveedor.notas && <p className="text-caption text-content-3 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
             {proveedor.vineta != null && (
-                <span className="text-[9px] font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
+                <span className="text-micro font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
                     v{proveedor.vineta}
                 </span>
             )}
             {proveedor.devolutivo ? (
-                <span className="text-[9px] font-black uppercase text-success-text bg-success/10 border border-success/30 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-micro font-black uppercase text-success-text bg-success/10 border border-success/30 px-2 py-0.5 rounded-full shrink-0">
                     Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
                 </span>
             ) : (
-                <span className="text-[9px] font-black uppercase text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-micro font-black uppercase text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full shrink-0">
                     No devolutivo
                 </span>
             )}
@@ -527,11 +527,11 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         placeholder="0"
                         disabled={!draft.devolutivo}
                         title="Meses antes de vencer por política de devolución"
-                        className={`w-12 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 text-content-2 text-center ${
+                        className={`w-12 text-input font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 text-content-2 text-center ${
                             draft.devolutivo && draft.meses_devolucion === '' ? 'border-danger/40 focus:border-danger/40' : 'border-border-card focus:border-chart-9/40'
                         }`}
                     />
-                    <span className="text-[9px] font-semibold text-content-3 whitespace-nowrap">meses</span>
+                    <span className="text-micro font-semibold text-content-3 whitespace-nowrap">meses</span>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
@@ -543,9 +543,9 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
                         title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
-                        className="w-14 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 border-border-card focus:border-chart-9/40 text-content-2 text-center"
+                        className="w-14 text-input font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 border-border-card focus:border-chart-9/40 text-content-2 text-center"
                     />
-                    <span className="text-[9px] font-semibold text-content-3 whitespace-nowrap">viñeta</span>
+                    <span className="text-micro font-semibold text-content-3 whitespace-nowrap">viñeta</span>
                 </div>
 
                 <button
@@ -564,7 +564,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
-                    className="flex-1 min-w-[110px] text-[16px] px-2 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
+                    className="flex-1 min-w-[110px] text-input px-2 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
                 />
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -590,11 +590,11 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}
                     placeholder="Nombre del proveedor/droguería"
-                    className="w-full mt-1.5 text-[16px] font-semibold px-2.5 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
+                    className="w-full mt-1.5 text-input font-semibold px-2.5 py-1.5 rounded-lg border border-border-card bg-surface-card outline-none focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40 text-content-2 placeholder-content-3"
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (
-                <p className="text-[9px] font-black uppercase text-danger mt-1 px-0.5">Meses requeridos para guardar</p>
+                <p className="text-micro font-black uppercase text-danger mt-1 px-0.5">Meses requeridos para guardar</p>
             )}
         </motion.div>
     );

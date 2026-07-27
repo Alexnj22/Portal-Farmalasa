@@ -30,8 +30,8 @@ export default function CostCards({ summary, isBodega }) {
                     title={tooltip}>
                     <Icon size={13} className={`shrink-0 ${iconCls}`} />
                     <div className="flex flex-col leading-snug gap-0.5">
-                        <span className="text-[10px] font-semibold text-content-3">{label}</span>
-                        <span className={`text-[14px] font-black tabular-nums leading-none ${color}`}>{value}</span>
+                        <span className="text-caption font-semibold text-content-3">{label}</span>
+                        <span className={`text-body-lg font-black tabular-nums leading-none ${color}`}>{value}</span>
                     </div>
                 </div>
             ))}

@@ -78,8 +78,8 @@ function vencimientoStatus(fechaVencimiento) {
 }
 function VencimientoBadge({ status }) {
     if (!status) return null;
-    if (status === 'VENCIDO') return <span className="text-[9px] font-black uppercase text-danger-text bg-danger/10 border border-danger/40 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
-    return <span className="text-[9px] font-black uppercase text-warning-text bg-warning/10 border border-warning/40 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
+    if (status === 'VENCIDO') return <span className="text-micro font-black uppercase text-danger-text bg-danger/10 border border-danger/40 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
+    return <span className="text-micro font-black uppercase text-warning-text bg-warning/10 border border-warning/40 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
 }
 
 // Indicador "en vivo" — animate-pulse de Tailwind usa un único keyframe
@@ -88,7 +88,7 @@ function VencimientoBadge({ status }) {
 function LiveBadge() {
     return (
         <span
-            className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wide text-success-text bg-success/10 border border-success/40 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
+            className="inline-flex items-center gap-1 text-micro font-black uppercase tracking-wide text-success-text bg-success/10 border border-success/40 px-1.5 py-0.5 rounded-full animate-pulse shrink-0"
             title="En vivo — se actualiza hasta que se cuente"
         >
             <Radio size={9} strokeWidth={3} /> Vivo
@@ -159,12 +159,12 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
 
     return (
         <DataRow index={index} className="bg-surface-card-hover/30">
-            <DataCell><span className="text-content-3 text-[11px]">↳</span></DataCell>
+            <DataCell><span className="text-content-3 text-label">↳</span></DataCell>
             <DataCell hideBelow="lg" />
-            <DataCell align="center" hideBelow="md"><span className="text-[11px] font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
+            <DataCell align="center" hideBelow="md"><span className="text-label font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
             <DataCell hideBelow="md">
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-content-2 tabular-nums">{item.lote || '—'}</span>
+                    <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
                     {editable && (
                         <button onClick={() => onEditLote(item)} disabled={saving} className="text-content-3 hover:text-chart-9-text transition-colors shrink-0" title="Corregir lote/vencimiento">
                             <Pencil size={10} />
@@ -174,13 +174,13 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
             </DataCell>
             <DataCell align="center" hideBelow="lg">
                 <div className="flex items-center justify-center gap-1">
-                    <span className="text-[11px] text-content-3 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
+                    <span className="text-label text-content-3 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
                     <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
                 </div>
             </DataCell>
             <DataCell align="center">
                 <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-[12px] font-bold text-content-2 tabular-nums">{sistema}</span>
+                    <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema}</span>
                     {isLive && <LiveBadge />}
                 </div>
             </DataCell>
@@ -194,11 +194,11 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onBlur={commit}
                     onKeyDown={handleFisicoKeyDown}
                     placeholder="—"
-                    className="w-16 text-center text-[16px] font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover disabled:text-content-3"
+                    className="w-16 text-center text-input font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover disabled:text-content-3"
                 />
             </DataCell>
             <DataCell align="center">
-                <span className={`text-[12px] font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
             </DataCell>
             <DataCell hideBelow="lg">
                 <input
@@ -208,14 +208,14 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onChange={(e) => setNota(e.target.value)}
                     onBlur={commit}
                     placeholder="Nota..."
-                    className="w-full text-[16px] bg-surface-card border border-border-card rounded-lg px-2 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover"
+                    className="w-full text-input bg-surface-card border border-border-card rounded-lg px-2 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover"
                 />
             </DataCell>
             <DataCell align="center">
                 <div className="flex flex-col items-center gap-0.5">
-                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-success" /> : <span className="text-content-3 text-[9px]">Pendiente</span>)}
+                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-success" /> : <span className="text-content-3 text-micro">Pendiente</span>)}
                     {contadoPorNombre && (
-                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[9px] font-semibold text-content-3 hover:text-chart-9-text transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
+                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-micro font-semibold text-content-3 hover:text-chart-9-text transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
                             <History size={9} /> {contadoPorNombre}
                         </button>
                     )}
@@ -234,15 +234,15 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                     <ChevronRight size={14} className={`text-content-3 shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-content text-[12px] truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
-                            {product.es_antibiotico && <span className="text-[9px] font-black uppercase text-danger-text bg-danger/10 border border-danger/30 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
+                            <p className="font-bold text-content text-body-sm truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
+                            {product.es_antibiotico && <span className="text-micro font-black uppercase text-danger-text bg-danger/10 border border-danger/30 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
                         </div>
                     </div>
                 </div>
             </DataCell>
-            <DataCell hideBelow="lg"><span className="text-[11px] text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
+            <DataCell hideBelow="lg"><span className="text-label text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
             <DataCell align="center" hideBelow="md">
-                <span className="text-[10px] font-bold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
+                <span className="text-caption font-bold text-content-3 bg-surface-card-hover border border-divider px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
             </DataCell>
             <DataCell hideBelow="md" />
             <DataCell align="center" hideBelow="lg">
@@ -251,12 +251,12 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
                 </div>
             </DataCell>
-            <DataCell align="center"><span className="text-[12px] font-black text-content-2 tabular-nums">{product.sistema_total}</span></DataCell>
-            <DataCell align="center"><span className="text-[12px] font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
-            <DataCell align="center"><span className={`text-[12px] font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span></DataCell>
+            <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.sistema_total}</span></DataCell>
+            <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
+            <DataCell align="center"><span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span></DataCell>
             <DataCell hideBelow="lg" />
             <DataCell align="center">
-                <span className={`text-[10px] font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-success' : 'text-content-3'}`}>
+                <span className={`text-caption font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-success' : 'text-content-3'}`}>
                     {product.contados_count}/{product.item_count}
                 </span>
             </DataCell>
@@ -278,8 +278,8 @@ function ItemHistoryModal({ item, onClose }) {
         <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-10">
                 <div>
-                    <h3 className="font-black text-content text-[15px]">{item?.product_nombre}</h3>
-                    <p className="text-[10px] text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
+                    <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
                 </div>
                 <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
             </div>
@@ -287,20 +287,20 @@ function ItemHistoryModal({ item, onClose }) {
                 {history === null ? (
                     <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-content-3" /></div>
                 ) : history.length === 0 ? (
-                    <p className="text-[12px] text-content-3 text-center py-8">Sin registros todavía.</p>
+                    <p className="text-body-sm text-content-3 text-center py-8">Sin registros todavía.</p>
                 ) : (
                     <div className="space-y-2">
                         {history.map((h) => (
                             <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-bold text-content-2">{h.contado_por_nombre || 'Desconocido'}</p>
-                                    <p className="text-[9px] text-content-3">{fmtDateTime(h.contado_at)}</p>
-                                    {h.nota && <p className="text-[10px] text-content-3 italic mt-0.5">"{h.nota}"</p>}
+                                    <p className="text-label font-bold text-content-2">{h.contado_por_nombre || 'Desconocido'}</p>
+                                    <p className="text-micro text-content-3">{fmtDateTime(h.contado_at)}</p>
+                                    {h.nota && <p className="text-caption text-content-3 italic mt-0.5">"{h.nota}"</p>}
                                 </div>
                                 <div className="text-right shrink-0">
-                                    <p className="text-[11px] font-bold text-content-2 tabular-nums">Sist. {h.sistema_cantidad} · Fís. {h.fisico_cantidad ?? '—'}</p>
+                                    <p className="text-label font-bold text-content-2 tabular-nums">Sist. {h.sistema_cantidad} · Fís. {h.fisico_cantidad ?? '—'}</p>
                                     {h.diferencia != null && (
-                                        <p className={`text-[10px] font-black tabular-nums ${difClass(h.diferencia)}`}>{difLabel(h.diferencia)}</p>
+                                        <p className={`text-caption font-black tabular-nums ${difClass(h.diferencia)}`}>{difLabel(h.diferencia)}</p>
                                     )}
                                 </div>
                             </div>
@@ -337,22 +337,22 @@ function EditLoteModal({ item, onClose, onSave }) {
         <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-10">
                 <div>
-                    <h3 className="font-black text-content text-[15px]">Corregir lote</h3>
-                    <p className="text-[10px] text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
+                    <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
                 <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
             </div>
             <div className="px-6 py-5 flex flex-col gap-3 relative z-10">
-                <p className="text-[11px] text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
+                <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
-                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-[16px] bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
+                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-input bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
                 </div>
                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
                     <LiquidDatePicker value={fecha} onChange={setFecha} />
                 </div>
-                <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-[11px] font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-50 transition-all">
+                <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-label font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-50 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección
                 </button>
             </div>
@@ -549,7 +549,7 @@ export default function ConteoDetailView() {
                     ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
                     type="text"
                     placeholder="Buscar producto, laboratorio o lote..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -572,7 +572,7 @@ export default function ConteoDetailView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 lg:p-8 space-y-6">
-                <button onClick={() => navigate('/conteo-inventario')} className="flex items-center gap-1.5 text-[11px] font-bold text-content-3 hover:text-chart-9-text transition-colors">
+                <button onClick={() => navigate('/conteo-inventario')} className="flex items-center gap-1.5 text-label font-bold text-content-3 hover:text-chart-9-text transition-colors">
                     <ChevronLeft size={14} /> Volver a Conteos
                 </button>
 
@@ -581,27 +581,27 @@ export default function ConteoDetailView() {
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <h2 className="text-[16px] font-black text-content">{conteo.branches?.name}</h2>
-                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${es.bg} ${es.text}`}>{es.label}</span>
+                                    <h2 className="text-input font-black text-content">{conteo.branches?.name}</h2>
+                                    <span className={`text-micro font-bold px-2 py-0.5 rounded-full ${es.bg} ${es.text}`}>{es.label}</span>
                                 </div>
-                                <p className="text-[10px] text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
+                                <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <button onClick={() => handlePrint('hoja')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-content-2 bg-surface-card border border-border-card rounded-xl hover:border-chart-9/40 transition-all disabled:opacity-50">
+                                <button onClick={() => handlePrint('hoja')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-content-2 bg-surface-card border border-border-card rounded-xl hover:border-chart-9/40 transition-all disabled:opacity-50">
                                     <Printer size={13} /> Imprimir Hoja
                                 </button>
                                 {hasResults && (
-                                    <button onClick={() => handlePrint('resultados')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-content-2 bg-surface-card border border-border-card rounded-xl hover:border-chart-9/40 transition-all disabled:opacity-50">
+                                    <button onClick={() => handlePrint('resultados')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-content-2 bg-surface-card border border-border-card rounded-xl hover:border-chart-9/40 transition-all disabled:opacity-50">
                                         <Printer size={13} /> Imprimir Resultados
                                     </button>
                                 )}
                                 {canFinalize && (
-                                    <button onClick={handleFinalizar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-white bg-brand rounded-xl hover:bg-brand-hover transition-all disabled:opacity-50">
+                                    <button onClick={handleFinalizar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-white bg-brand rounded-xl hover:bg-brand-hover transition-all disabled:opacity-50">
                                         {busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Finalizar Conteo
                                     </button>
                                 )}
                                 {canApproveNow && (
-                                    <button onClick={handleAprobar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-white bg-success-solid rounded-xl hover:bg-success-hover transition-all disabled:opacity-50">
+                                    <button onClick={handleAprobar} disabled={busy} className="flex items-center gap-1.5 px-3 py-2 text-label font-bold text-white bg-success-solid rounded-xl hover:bg-success-hover transition-all disabled:opacity-50">
                                         {busy ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />} Aprobar
                                     </button>
                                 )}
@@ -611,20 +611,20 @@ export default function ConteoDetailView() {
                         {hasResults && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                                 <div className="bg-surface-card-hover rounded-xl px-3 py-2 text-center">
-                                    <p className="text-[16px] font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
-                                    <p className="text-[9px] uppercase tracking-widest text-content-2 font-bold">Contados</p>
+                                    <p className="text-input font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
+                                    <p className="text-micro uppercase tracking-widest text-content-2 font-bold">Contados</p>
                                 </div>
                                 <div className="bg-warning/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-[16px] font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
-                                    <p className="text-[9px] uppercase tracking-widest text-warning font-bold">Diferencias</p>
+                                    <p className="text-input font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
+                                    <p className="text-micro uppercase tracking-widest text-warning font-bold">Diferencias</p>
                                 </div>
                                 <div className="bg-danger/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-[14px] font-black text-danger tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
-                                    <p className="text-[9px] uppercase tracking-widest text-danger font-bold">Faltante</p>
+                                    <p className="text-body-lg font-black text-danger tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
+                                    <p className="text-micro uppercase tracking-widest text-danger font-bold">Faltante</p>
                                 </div>
                                 <div className="bg-chart-1/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-[14px] font-black text-chart-1-text tabular-nums">{fmtMoney(conteo.valor_sobrante)}</p>
-                                    <p className="text-[9px] uppercase tracking-widest text-chart-1-text font-bold">Sobrante</p>
+                                    <p className="text-body-lg font-black text-chart-1-text tabular-nums">{fmtMoney(conteo.valor_sobrante)}</p>
+                                    <p className="text-micro uppercase tracking-widest text-chart-1-text font-bold">Sobrante</p>
                                 </div>
                             </div>
                         )}
@@ -636,14 +636,14 @@ export default function ConteoDetailView() {
                         {FILTRO_PILLS.map((f, idx) => (
                             <React.Fragment key={f.key}>
                                 {idx > 0 && <div className="h-5 w-px bg-divider" />}
-                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-[11px] font-semibold transition-all ${filtro === f.key ? 'bg-chart-9-solid text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
+                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-label font-semibold transition-all ${filtro === f.key ? 'bg-chart-9-solid text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
                                     {f.label}
                                 </button>
                             </React.Fragment>
                         ))}
                     </div>
                     {editable && canEdit && (
-                        <button onClick={() => setShowAddForm((v) => !v)} className="flex items-center gap-1.5 ml-auto px-3 py-2 text-[11px] font-bold text-chart-9-text bg-chart-9/10 border border-chart-9/30 rounded-xl hover:bg-chart-9/20 transition-all">
+                        <button onClick={() => setShowAddForm((v) => !v)} className="flex items-center gap-1.5 ml-auto px-3 py-2 text-label font-bold text-chart-9-text bg-chart-9/10 border border-chart-9/30 rounded-xl hover:bg-chart-9/20 transition-all">
                             <Plus size={13} /> Agregar Producto/Lote
                         </button>
                     )}
@@ -818,7 +818,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
     return (
         <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-                <p className="text-[11px] font-black uppercase tracking-widest text-chart-9-text flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
+                <p className="text-label font-black uppercase tracking-widest text-chart-9-text flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
                 <button onClick={onCancel} className="text-content-3 hover:text-danger"><X size={14} /></button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -835,17 +835,17 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                     clearable={false}
                 />
                 {lote === '__OTRO__' && (
-                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-[16px] bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-input bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
                 )}
             </div>
             <div className="flex items-center gap-2">
                 <div>
-                    <label className="text-[9px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Vencimiento</label>
+                    <label className="text-micro font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Vencimiento</label>
                     <div className={lote !== '__OTRO__' ? 'opacity-50 pointer-events-none' : ''}>
                         <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
                     </div>
                 </div>
-                <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
+                <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-label font-bold text-white bg-chart-9-solid rounded-xl hover:bg-chart-9/80 disabled:opacity-40 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo
                 </button>
             </div>

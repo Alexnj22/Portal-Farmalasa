@@ -53,10 +53,10 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
     return (
         <DataRow>
             <DataCell>
-                <div className="text-[11px] md:text-xs font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand-text">
+                <div className="text-label md:text-xs font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand-text">
                     {logDate.toLocaleDateString()}
                 </div>
-                <div className="text-[9px] md:text-[10px] font-bold text-content-3 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
+                <div className="text-micro md:text-caption font-bold text-content-3 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
                     <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                     <span className="hidden md:inline mx-1 text-content-3/50">|</span>
                     {/* 🚨 MEJORA: Muestra si fue Kiosco o Panel */}
@@ -70,7 +70,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             </DataCell>
             <DataCell>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[var(--shadow-elevation-xs)] flex items-center justify-center text-content-2 font-black text-[10px] md:text-[11px] uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
+                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[var(--shadow-elevation-xs)] flex items-center justify-center text-content-2 font-black text-caption md:text-label uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
                         {userPhoto ? (
                             <img src={userPhoto} alt={log.user_name} className="w-full h-full object-cover" />
                         ) : (
@@ -78,12 +78,12 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         )}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[11px] md:text-[13px] font-bold text-content-2 truncate max-w-[120px] md:max-w-none leading-tight">
+                        <span className="text-label md:text-body font-bold text-content-2 truncate max-w-[120px] md:max-w-none leading-tight">
                             {log.user_name || 'Sistema/Anónimo'}
                         </span>
                         {/* 🚨 MEJORA: Muestra la sucursal debajo del nombre si existe */}
                         {log.branch_name && (
-                            <span className="text-[9px] md:text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
+                            <span className="text-micro md:text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
                                 {log.branch_name}
                             </span>
                         )}
@@ -91,14 +91,14 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </div>
             </DataCell>
             <DataCell>
-                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-[9px] md:text-[9px] font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-surface-card backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
+                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-micro md:text-micro font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-surface-card backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
                     {severityInfo.icon} <span className="hidden sm:inline">{log.action?.replace(/_/g, ' ') || 'ACCIÓN'}</span>
                 </span>
             </DataCell>
             <DataCell align="right">
                 <button
                     onClick={() => openModal('viewAuditDetail', log)}
-                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand-text rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand-text rounded-full font-bold text-caption uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
                     title="Ver Detalles"
                 >
                     <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
@@ -298,7 +298,7 @@ const filtersContent = (
                 <input
                     type="text"
                     placeholder="Buscar usuario, equipo, acción..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearchTerm}
                     onChange={(e) => setRawSearchTerm(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100) }}
@@ -345,7 +345,7 @@ const filtersContent = (
                                 size={16}
                                 className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${actionFilter !== 'ALL' ? 'text-brand-text' : 'group-hover:scale-110'}`}
                             />
-                            <span className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider">
+                            <span className="text-label md:text-body-sm font-bold uppercase tracking-wider">
                                 {ACTION_OPTIONS.find((o) => o.value === actionFilter)?.label || "Acciones"}
                             </span>
                         </button>
@@ -363,7 +363,7 @@ const filtersContent = (
                                         setActionFilter(opt.value);
                                         setIsActionPickerOpen(false);
                                     }}
-                                    className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive
+                                    className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive
                                         ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
                                         : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                         }`}
@@ -454,7 +454,7 @@ const filtersContent = (
             filtersContent={filtersContent}
         >
             <div className="px-4 md:px-8 py-4 md:py-5 bg-surface-card border-b border-border-card flex justify-between items-center">
-                <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold uppercase text-content-2 tracking-widest">
+                <div className="flex items-center gap-2 text-caption md:text-label font-bold uppercase text-content-2 tracking-widest">
                     <Hash size={12} className="text-brand-text md:w-3 md:h-3" />
                     {totalItems} <span className="hidden sm:inline">Registros</span>
                 </div>
@@ -462,7 +462,7 @@ const filtersContent = (
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger-solid text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-surface-card-hover hover:text-brand-text'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-caption uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger-solid text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-surface-card-hover hover:text-brand-text'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
@@ -471,7 +471,7 @@ const filtersContent = (
                     <button
                         onClick={exportToCSV}
                         disabled={processedLogs.length === 0 || isExporting}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-surface-card-hover text-content-2 border-divider hover:text-brand-text'}`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-micro md:text-caption uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-surface-card-hover text-content-2 border-divider hover:text-brand-text'}`}
                     >
                         {isExporting ? <Check size={12} className="text-success" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
                         <span>{isExporting ? 'Ok' : 'Exportar'}</span>
@@ -499,7 +499,7 @@ const filtersContent = (
                 footer={totalItems > 0 ? (
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
                         <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                            <span className="text-[9px] md:text-[10px] font-bold text-content-3 uppercase tracking-widest">Mostrar</span>
+                            <span className="text-micro md:text-caption font-bold text-content-3 uppercase tracking-widest">Mostrar</span>
                             <div className="w-[110px]">
                                 <LiquidSelect
                                     value={itemsPerPage}
@@ -516,7 +516,7 @@ const filtersContent = (
                             </div>
                         </div>
                         <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                            <span className="text-[9px] md:text-[10px] font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
+                            <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
                             <div className="flex gap-2">
                                 <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand-text disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
                                 <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand-text disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
@@ -526,7 +526,7 @@ const filtersContent = (
                 ) : null}
             >
                 {isLogSearchFuzzy && debouncedSearchTerm && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                         Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
                     </div>

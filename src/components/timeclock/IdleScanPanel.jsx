@@ -22,7 +22,7 @@ function ScanReadyRing({ specialMode }) {
             : <ScanBarcode size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={1.75} />}
         </div>
       </div>
-      <p className="text-[13px] [@media(max-height:800px)]:text-[11px] font-bold text-white/85 text-center">
+      <p className="text-body [@media(max-height:800px)]:text-label font-bold text-white/85 text-center">
         {specialMode ? 'Acerca tu carné para autorizar' : 'Acerca tu carné al lector'}
       </p>
       <p className="text-[9.5px] [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.12em] text-white/35 text-center">
@@ -54,7 +54,7 @@ export default function IdleScanPanel({
               : <ScanBarcode size={42} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />}
           </div>
           <h1 className="text-2xl sm:text-4xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1 [@media(max-height:800px)]:mb-0.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
-          <p className={`text-[9px] sm:text-xs [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
+          <p className={`text-micro sm:text-xs [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
         </div>
 
         {/* MIDDLE: estado de espera del escáner (nada se teclea a mano) */}
@@ -63,11 +63,11 @@ export default function IdleScanPanel({
 
           <div className="mt-5 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-caption uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <XCircle size={14} /> Cancelar Permiso
               </button>
             ) : (
-              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-[10px] uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <ShieldAlert size={14} /> Autorizar Permiso / Salida
               </button>
             )}
@@ -82,17 +82,17 @@ export default function IdleScanPanel({
           <div className="bg-chart-4/10 backdrop-blur-xl border border-chart-4/25 rounded-[1.5rem] px-4 py-3 shadow-[var(--shadow-glow-chart-4)]">
             <div className="flex items-center gap-2 mb-2">
               <Bell size={13} className="text-chart-4-text shrink-0" strokeWidth={2.5} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-chart-4-text">
+              <span className="text-caption font-black uppercase tracking-widest text-chart-4-text">
                 Hora de Almuerzo
               </span>
             </div>
             <div className="flex flex-col gap-1.5">
               {lunchAlerts.map(alert => (
                 <div key={alert.employee.id} className="flex items-center justify-between gap-2">
-                  <span className="text-white/80 text-[11px] font-semibold truncate">
+                  <span className="text-white/80 text-label font-semibold truncate">
                     {alert.employee.name}
                   </span>
-                  <span className={`text-[10px] font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-danger' : 'text-chart-4-text'}`}>
+                  <span className={`text-caption font-bold shrink-0 ${alert.minsOverdue > 0 ? 'text-danger' : 'text-chart-4-text'}`}>
                     {alert.minsOverdue > 0 ? `${alert.minsOverdue} min tarde` : `${alert.lunchTime}`}
                   </span>
                 </div>

@@ -17,7 +17,7 @@ const SCOPE_OPTIONS = [
 ];
 
 const islandClass = "bg-surface-card rounded-[1.5rem] p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
-const fieldLabel = "text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
+const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
 const reqBadge = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>;
 
 const AREA_TYPE_LABEL = { FARMACIA: 'Farmacias', BODEGA: 'Bodega', ADMINISTRATIVA: 'Administración', EXTERNA: 'Personal Externo' };
@@ -109,7 +109,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                     <div className={`${squircleClass} text-chart-9-text`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>
                     <div>
                         <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">Nuevo Conteo de Inventario</h3>
-                        <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">Auditoría Física</p>
+                        <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Auditoría Física</p>
                     </div>
                 </div>
                 <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
@@ -135,7 +135,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                         key={opt.value}
                                         type="button"
                                         onClick={() => setScopeType(opt.value)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all ${active ? 'bg-chart-9-solid border-chart-9 text-white shadow-sm' : 'bg-surface-card border-divider text-content-2 hover:border-chart-9/50'}`}
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-label font-bold text-left transition-all ${active ? 'bg-chart-9-solid border-chart-9 text-white shadow-sm' : 'bg-surface-card border-divider text-content-2 hover:border-chart-9/50'}`}
                                     >
                                         <Icon size={14} className="shrink-0" /> {opt.label}
                                     </button>
@@ -162,7 +162,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 {manualSelected.length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-2">
                                         {manualSelected.map((p) => (
-                                            <span key={p.id} className="flex items-center gap-1 text-[10px] font-semibold bg-chart-9/10 text-chart-9-text border border-chart-9/30 px-2 py-1 rounded-full">
+                                            <span key={p.id} className="flex items-center gap-1 text-caption font-semibold bg-chart-9/10 text-chart-9-text border border-chart-9/30 px-2 py-1 rounded-full">
                                                 {p.nombre}
                                                 <button type="button" onClick={() => setManualSelected((prev) => prev.filter((x) => x.id !== p.id))} className="hover:text-danger"><X size={10} /></button>
                                             </span>
@@ -176,14 +176,14 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
             </div>
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-10 shrink-0">
-                <button type="button" onClick={onClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
+                <button type="button" onClick={onClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>
                 <button
                     type="button"
                     onClick={handleCreate}
                     disabled={saving || !isValid || !canEdit}
-                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9-solid text-white shadow-[0_8px_20px_rgba(13,148,136,0.3)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9-solid text-white shadow-[0_8px_20px_rgba(13,148,136,0.3)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Generando snapshot...</> : <><Check size={16} strokeWidth={3} /> Iniciar Conteo</>}
                 </button>

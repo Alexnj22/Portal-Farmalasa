@@ -269,12 +269,12 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
       <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 transition-[transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08]" style={{ background: color + '18', border: `1px solid ${color}20` }}>
         <Icon size={14} strokeWidth={2} style={{ color }} />
       </div>
-      <p className="text-[11px] font-semibold text-content-3 leading-snug">{label}</p>
+      <p className="text-label font-semibold text-content-3 leading-snug">{label}</p>
     </div>
     {/* Value + sub as context pair */}
     <div className="relative flex items-end justify-between gap-1">
-      <p className="text-[24px] font-black text-content leading-none">{value}</p>
-      {sub && <span className="text-[11px] font-bold text-content-3 pb-0.5">{sub}</span>}
+      <p className="text-display font-black text-content leading-none">{value}</p>
+      {sub && <span className="text-label font-bold text-content-3 pb-0.5">{sub}</span>}
     </div>
   </div>
 );
@@ -295,7 +295,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
             style={{ background: cat.accent, border: `1px solid ${cat.border}` }}>
             <Icon size={13} style={{ color: cat.color }} strokeWidth={2.2} />
           </div>
-          <h3 className="text-[12px] font-black text-content tracking-tight truncate">{title}</h3>
+          <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -323,7 +323,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
     <>
       {/* py-2.5 en mobile: sube la altura del touch target de ~24px a ~40px
           (el ancho ya es generoso, min-w-[120px], v2.47.4) */}
-      <button ref={btnRef} onClick={openPicker} className={`text-[11px] font-black text-content-2 capitalize hover:text-brand-text transition-colors px-2 ${isMobile ? 'py-2.5' : 'py-1'} rounded-xl hover:bg-surface-card-hover min-w-[120px] text-center`}>
+      <button ref={btnRef} onClick={openPicker} className={`text-label font-black text-content-2 capitalize hover:text-brand-text transition-colors px-2 ${isMobile ? 'py-2.5' : 'py-1'} rounded-xl hover:bg-surface-card-hover min-w-[120px] text-center`}>
         {value.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
       </button>
       {open && createPortal(
@@ -331,7 +331,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
           <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
             <div className="flex items-center justify-between mb-3 px-1">
               <button onClick={() => setViewYear(y => y - 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={14} strokeWidth={2.5} /></button>
-              <span className="text-[13px] font-black text-content">{viewYear}</span>
+              <span className="text-body font-black text-content">{viewYear}</span>
               <button onClick={() => setViewYear(y => y + 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={14} strokeWidth={2.5} /></button>
             </div>
             <div className="grid grid-cols-3 gap-1">
@@ -340,7 +340,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
                 const isCur = new Date().getMonth() === i && new Date().getFullYear() === viewYear;
                 return (
                   <button key={i} onClick={() => { onChange(new Date(viewYear, i, 1)); setOpen(false); }}
-                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isCur ? 'text-brand-text font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
+                    className={`text-label font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isCur ? 'text-brand-text font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
                     {m}
                   </button>
                 );
@@ -1115,7 +1115,7 @@ const DashboardView = ({ openModal }) => {
         >
           <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
-            <span className="text-[9px] font-black text-content-2 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
+            <span className="text-micro font-black text-content-2 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
         </div>
 
@@ -1141,20 +1141,20 @@ const DashboardView = ({ openModal }) => {
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}
                 <div className={`bg-surface-card backdrop-blur-sm border border-divider rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
-                  <span className="text-[9px] font-black text-content-2 uppercase tracking-widest mr-0.5">W</span>
+                  <span className="text-micro font-black text-content-2 uppercase tracking-widest mr-0.5">W</span>
                   {Array.from({length: activeCols}, (_, i) => i + 1).map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
-                      className={`relative w-6 h-6 rounded-full text-[10px] font-black transition-[background-color,color] active:scale-[0.97] ${n === eCols ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:bg-surface-card-hover hover:text-content'} ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}>
+                      className={`relative w-6 h-6 rounded-full text-caption font-black transition-[background-color,color] active:scale-[0.97] ${n === eCols ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:bg-surface-card-hover hover:text-content'} ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}>
                       {n}
                     </button>
                   ))}
                   <div className="w-px h-3 bg-divider mx-0.5" />
-                  <span className="text-[9px] font-black text-content-2 uppercase tracking-widest mr-0.5">H</span>
+                  <span className="text-micro font-black text-content-2 uppercase tracking-widest mr-0.5">H</span>
                   {[1,2,3,4].map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'rows', n); }}
-                      className={`relative w-6 h-6 rounded-full text-[10px] font-black transition-[background-color,color] active:scale-[0.97] ${n === eRows ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:bg-surface-card-hover hover:text-content'} ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}>
+                      className={`relative w-6 h-6 rounded-full text-caption font-black transition-[background-color,color] active:scale-[0.97] ${n === eRows ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:bg-surface-card-hover hover:text-content'} ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}>
                       {n}
                     </button>
                   ))}
@@ -1180,7 +1180,7 @@ const DashboardView = ({ openModal }) => {
           action={
             <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl px-1 py-0.5">
               <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
-              <span className="text-[11px] font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
+              <span className="text-label font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
               <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
             </div>
           }>
@@ -1238,14 +1238,14 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : shiftStatusData.length===0?(
-              <div className="flex flex-col items-center justify-center py-10 text-content-3"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
+              <div className="flex flex-col items-center justify-center py-10 text-content-3"><Users size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin empleados</p></div>
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
                 return (
                   <div key={status} className="px-4 py-3">
-                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-[10px] font-black uppercase tracking-wide text-content-2">{cfg.label}</span><span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>{group.length}</span></div>
-                    <div className="flex flex-wrap gap-1">{group.map(e=><span key={e.id} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{e.name?.split(' ')[0]}</span>)}</div>
+                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-wide text-content-2">{cfg.label}</span><span className={`text-caption font-black px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>{group.length}</span></div>
+                    <div className="flex flex-wrap gap-1">{group.map(e=><span key={e.id} className={`text-caption font-semibold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{e.name?.split(' ')[0]}</span>)}</div>
                   </div>
                 );
               })
@@ -1279,7 +1279,7 @@ const DashboardView = ({ openModal }) => {
               <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-divider w-full"/><div className="border-t border-dashed border-divider w-full"/></div>
               <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
                 {!effectiveSalesBranch?(
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-[9px] font-black text-content-2/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-micro font-black text-content-2/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
                 ):salesLoading?(
                   <div className="absolute inset-0 flex items-end gap-1.5 px-1 pb-1">
                     {[55,80,42,95,68,72,50,38,85,60,45,78].map((h,i) => (
@@ -1290,23 +1290,23 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
-                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-[9px] font-black text-brand-text/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
+                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-micro font-black text-brand-text/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
-                        <p className="font-black text-[9px] uppercase tracking-widest text-content-2 mb-1 border-b border-border-card pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
+                        <p className="font-black text-micro uppercase tracking-widest text-content-2 mb-1 border-b border-border-card pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
-                            <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / hora punta (P75)</p>
-                            <p className="text-[10px] text-content-3 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
+                            <p className="text-label font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / hora punta (P75)</p>
+                            <p className="text-caption text-content-3 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
                           </>
                         ):(
-                          <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
+                          <p className="text-label font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
                         )}
-                        {salesView==='DAYS'&&<p className="text-[9px] text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
+                        {salesView==='DAYS'&&<p className="text-micro text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
                       <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
-                      <span className="text-[9px] font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
+                      <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
                     </div>
                   ));
                 })()}
@@ -1314,7 +1314,7 @@ const DashboardView = ({ openModal }) => {
             </div>
             <div className="flex flex-wrap gap-3 mt-6 shrink-0">
               {[['var(--txvol-muerta)','Muerta'],['var(--txvol-normal)','Normal'],['var(--txvol-pico)','Pico'],['var(--txvol-critica)','Crítica']].map(([c,l])=>(
-                <div key={l} className="flex items-center gap-1 text-[9px] font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
+                <div key={l} className="flex items-center gap-1 text-micro font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
               ))}
             </div>
           </div>
@@ -1351,8 +1351,8 @@ const DashboardView = ({ openModal }) => {
           <div className="absolute inset-0 pointer-events-none rounded-[1.75rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           <div className="relative h-full p-3.5 flex flex-col gap-1.5">
             <div className="flex items-start justify-between gap-1">
-              <p className="text-[12px] font-black text-content-2 leading-tight truncate">{b.name}</p>
-              <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-success-text':'text-content-3'}`}>{fS(totalS)??'—'}</span>
+              <p className="text-body-sm font-black text-content-2 leading-tight truncate">{b.name}</p>
+              <span className={`text-label font-black shrink-0 ${dH.length?'text-success-text':'text-content-3'}`}>{fS(totalS)??'—'}</span>
             </div>
             {todayLoading?(
               <div className="skeleton rounded-lg flex-1"/>
@@ -1375,7 +1375,7 @@ const DashboardView = ({ openModal }) => {
                 <div className="flex gap-[1px] w-full mt-0.5">
                   {allH.map((h)=>(
                     <div key={h} className="flex-1 text-center overflow-hidden">
-                      <span className={`text-[9px] font-bold leading-none ${h===nowH?'text-success-text':'text-content-3'}`}>{fHr(h)}</span>
+                      <span className={`text-micro font-bold leading-none ${h===nowH?'text-success-text':'text-content-3'}`}>{fHr(h)}</span>
                     </div>
                   ))}
                 </div>
@@ -1398,7 +1398,7 @@ const DashboardView = ({ openModal }) => {
         : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
-          action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -1410,15 +1410,15 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
-              :displayAbsences.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
+              :displayAbsences.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><UserCheck size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin ausencias activas</p></div>
               :displayAbsences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-[0.6rem] border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
-                    <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-[10px] font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</span>
+                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
+                    <span className={`text-micro font-black px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</span>
                   </div>
                 );
               })}
@@ -1439,7 +1439,7 @@ const DashboardView = ({ openModal }) => {
         : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
-          action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todas <ChevronRight size={11}/></button>}>
+          action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todas <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -1451,13 +1451,13 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
-              :displayReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
+              :displayReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><ClipboardList size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin solicitudes pendientes</p></div>
               :displayReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
                   className={`w-full flex items-center gap-3 px-5 py-3 transition-colors text-left ${canManage('dash_requests')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
                   <div className="w-7 h-7 rounded-[0.6rem] bg-warning/10 border border-warning/30 flex items-center justify-center shrink-0"><ClipboardList size={13} className="text-warning"/></div>
-                  <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-[10px] text-content-3 font-medium">{REQUEST_TYPE_LABELS[r.type]||r.type}</p></div>
-                  <span className="text-[10px] text-content-3 shrink-0">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>
+                  <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption text-content-3 font-medium">{REQUEST_TYPE_LABELS[r.type]||r.type}</p></div>
+                  <span className="text-caption text-content-3 shrink-0">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>
                 </button>
               ))}
           </div>
@@ -1477,7 +1477,7 @@ const DashboardView = ({ openModal }) => {
         : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
-          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
@@ -1492,8 +1492,8 @@ const DashboardView = ({ openModal }) => {
             ) : displayBranchAlerts.length===0?(
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center"><CheckCircle2 size={20} className="text-success"/></div>
-                <p className="text-[12px] font-bold text-content-3">Todo en orden</p>
-                <p className="text-[10px] text-content-3">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
+                <p className="text-body-sm font-bold text-content-3">Todo en orden</p>
+                <p className="text-caption text-content-3">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
               </div>
             ):(
               displayBranchAlerts.map(b=>{
@@ -1502,7 +1502,7 @@ const DashboardView = ({ openModal }) => {
                   <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
                     className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
                     <AlertTriangle size={13} className="text-warning shrink-0"/>
-                    <div className="flex-1 min-w-0"><p className="text-[11px] font-black text-content-2 truncate">{b.name}</p><p className="text-[9px] text-warning-text font-semibold">{issue}</p></div>
+                    <div className="flex-1 min-w-0"><p className="text-label font-black text-content-2 truncate">{b.name}</p><p className="text-micro text-warning-text font-semibold">{issue}</p></div>
                     {canManage('dash_branches')&&<ChevronRight size={11} className="text-content-3 shrink-0"/>}
                   </button>
                 );
@@ -1530,7 +1530,7 @@ const DashboardView = ({ openModal }) => {
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
             {/* Day headers — always visible */}
             <div className="grid grid-cols-7 mb-0.5 shrink-0">
-              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-[9px] font-black text-content-3 uppercase py-1">{d}</div>)}
+              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-micro font-black text-content-3 uppercase py-1">{d}</div>)}
             </div>
             {/* Day grid — scrolls internally if widget is too small */}
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
@@ -1552,7 +1552,7 @@ const DashboardView = ({ openModal }) => {
                       onMouseEnter={e=>{if(!hasH)return; const r=e.currentTarget.getBoundingClientRect(); setCalTooltip({holidays:ev?.holidays||[],x:r.left+r.width/2,y:r.top});}}
                       onMouseLeave={()=>setCalTooltip(null)}
                       className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-150 ${isToday?'bg-brand':hasH?'bg-danger/10 hover:bg-danger/10':'hover:bg-surface-card-hover/80'}`}>
-                      <span className={`text-[12px] font-bold leading-none ${isToday?'text-white':hasH?'text-danger-text':'text-content-2'}`}>{day}</span>
+                      <span className={`text-body-sm font-bold leading-none ${isToday?'text-white':hasH?'text-danger-text':'text-content-2'}`}>{day}</span>
                       {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-danger"/></div>}
                     </div>
                   );
@@ -1570,7 +1570,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
-          action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todos <ChevronRight size={11}/></button>}>
+          action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todos <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
@@ -1580,15 +1580,15 @@ const DashboardView = ({ openModal }) => {
                   <Skel className="h-2.5 w-1/3" />
                 </div>
               </div>
-            )) : recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
+            )) : recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><Megaphone size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin avisos recientes</p></div>
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
                   <div className={`w-7 h-7 rounded-[0.6rem] flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-danger/10 border border-danger/30':'bg-chart-1/10 border border-chart-1/30'}`}>
                     {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-chart-1-text"/>}
                   </div>
-                  <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-content truncate">{a.title}</p><p className="text-[10px] text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
-                  {a.priority==='URGENT'&&<span className="text-[9px] font-black text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
+                  <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{a.title}</p><p className="text-caption text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
+                  {a.priority==='URGENT'&&<span className="text-micro font-black text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
                 </button>
               ))}
           </div>
@@ -1618,11 +1618,11 @@ const DashboardView = ({ openModal }) => {
                 <div className="w-7 h-7 rounded-[0.6rem] bg-brand/10 border border-brand/15 flex items-center justify-center">
                   <Gift size={13} className="text-brand-text" strokeWidth={2.2}/>
                 </div>
-                <h3 className="text-[12px] font-black text-content tracking-tight">Cumpleaños</h3>
+                <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronLeft size={11} strokeWidth={2.5}/></button>
-                <span className="text-[10px] font-black text-brand-text uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
+                <span className="text-caption font-black text-brand-text uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
                 <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronRight size={11} strokeWidth={2.5}/></button>
               </div>
             </div>
@@ -1648,7 +1648,7 @@ const DashboardView = ({ openModal }) => {
             ) : displayBirthdays.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-8 text-content-3">
                 <Gift size={32} strokeWidth={1}/>
-                <p className="text-[12px] font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
+                <p className="text-body-sm font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -1668,24 +1668,24 @@ const DashboardView = ({ openModal }) => {
                       <div className="relative flex-shrink-0">
                         {e.photo_url||e.photo
                           ?<img src={e.photo||e.photo_url} alt={e.name} className={`w-9 h-9 rounded-full object-cover border-2 shadow-sm ${e.isToday?'border-brand/30':e.isTomorrow?'border-warning/40':'border-white'}`}/>
-                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-[12px] ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-white'}`}>{initials}</div>
+                          :<div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shadow-sm font-black text-body-sm ${e.isToday?'bg-brand text-white border-brand/30':e.isTomorrow?'bg-warning-solid text-white border-warning/40':'bg-surface-card-hover text-content-3 border-white'}`}>{initials}</div>
                         }
                         {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-white shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
                         {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-white shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content'}`}>{e.name}</p>
-                        <p className="text-[9px] text-content-3 font-medium truncate">{e.branchName}</p>
+                        <p className={`text-body-sm font-black truncate leading-tight ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content'}`}>{e.name}</p>
+                        <p className="text-micro text-content-3 font-medium truncate">{e.branchName}</p>
                       </div>
                       {/* Badges */}
                       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span className={`text-[10px] font-black ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content-2'}`}>{dayLabel}</span>
+                        <span className={`text-caption font-black ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content-2'}`}>{dayLabel}</span>
                         {e.isToday
-                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text">Hoy</span>
+                          ?<span className="text-micro font-black px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text">Hoy</span>
                           :e.isTomorrow
-                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-warning/10 text-warning-text">Mañana</span>
-                          :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-surface-card-hover text-content-3':'bg-surface-card-hover text-content-3'}`}>{e.age} años</span>
+                          ?<span className="text-micro font-black px-1.5 py-0.5 rounded-full bg-warning/10 text-warning-text">Mañana</span>
+                          :<span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-surface-card-hover text-content-3':'bg-surface-card-hover text-content-3'}`}>{e.age} años</span>
                         }
                       </div>
                     </div>
@@ -1704,7 +1704,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
-          action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/cotizaciones')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
               <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-divider shrink-0">
@@ -1734,27 +1734,27 @@ const DashboardView = ({ openModal }) => {
           <div className="flex flex-col h-full">
             <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-divider shrink-0">
               <div>
-                <p className="text-[32px] font-black text-content leading-none">{cotizStats.activas}</p>
-                <p className="text-[10px] font-semibold text-content-3 mt-0.5">últ. 30 días</p>
+                <p className="text-display-lg font-black text-content leading-none">{cotizStats.activas}</p>
+                <p className="text-caption font-semibold text-content-3 mt-0.5">últ. 30 días</p>
               </div>
               <div className="mb-1">
-                <p className="text-[13px] font-black text-success-text">{fmt(cotizStats.total)}</p>
-                <p className="text-[9px] font-bold text-content-2 uppercase tracking-wide">monto total</p>
+                <p className="text-body font-black text-success-text">{fmt(cotizStats.total)}</p>
+                <p className="text-micro font-bold text-content-2 uppercase tracking-wide">monto total</p>
               </div>
             </div>
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
               {cotizStats.recent.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-content-3"><Receipt size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin cotizaciones activas</p></div>
+                <div className="flex flex-col items-center justify-center py-8 text-content-3"><Receipt size={28} strokeWidth={1}/><p className="text-label font-medium mt-2">Sin cotizaciones activas</p></div>
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="w-6 h-6 rounded-lg bg-chart-1/10 border border-chart-1/30 flex items-center justify-center shrink-0">
                     <Receipt size={11} className="text-brand-text"/>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-content truncate">{c.customer_name || '—'}</p>
-                    <p className="text-[9px] text-content-3">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}</p>
+                    <p className="text-label font-semibold text-content truncate">{c.customer_name || '—'}</p>
+                    <p className="text-micro text-content-3">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}</p>
                   </div>
-                  <span className="text-[11px] font-black text-content-2 shrink-0">{fmt(c.total)}</span>
+                  <span className="text-label font-black text-content-2 shrink-0">{fmt(c.total)}</span>
                 </div>
               ))}
             </div>
@@ -1770,7 +1770,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
-          action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/facturacion')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
               <div className="grid grid-cols-2 gap-3">
@@ -1798,27 +1798,27 @@ const DashboardView = ({ openModal }) => {
           <div className="flex flex-col h-full px-4 py-3 gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-surface-card-hover/80 rounded-2xl p-3">
-                <p className="text-[28px] font-black text-content leading-none">{factStats.count}</p>
-                <p className="text-[10px] font-semibold text-content-3 mt-1">documentos</p>
+                <p className="text-display font-black text-content leading-none">{factStats.count}</p>
+                <p className="text-caption font-semibold text-content-3 mt-1">documentos</p>
               </div>
               <div className="bg-success/10 rounded-2xl p-3">
-                <p className="text-[16px] font-black text-success-text leading-none">{fmt(factStats.total)}</p>
-                <p className="text-[10px] font-semibold text-success-text mt-1">total emitido</p>
+                <p className="text-input font-black text-success-text leading-none">{fmt(factStats.total)}</p>
+                <p className="text-caption font-semibold text-success-text mt-1">total emitido</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 bg-danger/10 rounded-xl px-3 py-2">
                 <span className="w-2 h-2 rounded-full bg-danger shrink-0"/>
                 <div>
-                  <p className="text-[14px] font-black text-danger-text">{factStats.ccf}</p>
-                  <p className="text-[9px] font-bold text-danger-text uppercase tracking-wide">CCF</p>
+                  <p className="text-body-lg font-black text-danger-text">{factStats.ccf}</p>
+                  <p className="text-micro font-bold text-danger-text uppercase tracking-wide">CCF</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-surface-card-hover rounded-xl px-3 py-2">
                 <span className="w-2 h-2 rounded-full bg-content-3 shrink-0"/>
                 <div>
-                  <p className="text-[14px] font-black text-content-2">{factStats.fcf}</p>
-                  <p className="text-[9px] font-bold text-content-2 uppercase tracking-wide">FCF / otros</p>
+                  <p className="text-body-lg font-black text-content-2">{factStats.fcf}</p>
+                  <p className="text-micro font-bold text-content-2 uppercase tracking-wide">FCF / otros</p>
                 </div>
               </div>
             </div>
@@ -1835,7 +1835,7 @@ const DashboardView = ({ openModal }) => {
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
-          action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/ventas')} className="text-label font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
               <div className="space-y-0.5 py-1">
@@ -1853,19 +1853,19 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : topProductos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-content-3"><Package size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin datos este mes</p></div>
+              <div className="flex flex-col items-center justify-center py-10 text-content-3"><Package size={28} strokeWidth={1}/><p className="text-label font-medium mt-2">Sin datos este mes</p></div>
             ) : topProductos.map((p, i) => {
               const pct = Math.max(Math.round((p.neto / maxNeto) * 100), 4);
               return (
                 <div key={p.erp_product_id} className="flex items-center gap-2.5 py-1.5">
-                  <span className="text-[9px] font-black text-content-3 w-4 shrink-0 text-right">{i + 1}</span>
+                  <span className="text-micro font-black text-content-3 w-4 shrink-0 text-right">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-semibold text-content-2 truncate leading-tight">{p.descripcion}</p>
+                    <p className="text-caption font-semibold text-content-2 truncate leading-tight">{p.descripcion}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="flex-1 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }}/>
                       </div>
-                      <span className="text-[9px] font-black text-content-3 shrink-0">{fmt(p.neto)}</span>
+                      <span className="text-micro font-black text-content-3 shrink-0">{fmt(p.neto)}</span>
                     </div>
                   </div>
                 </div>
@@ -1997,7 +1997,7 @@ const DashboardView = ({ openModal }) => {
       <div className="w-px h-5 bg-divider" />
 
       {/* Personalizar — py-3 en mobile para alcanzar el touch target de 44px (v2.47.4) */}
-      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 ${isMobile ? 'py-3' : 'py-2'} rounded-full text-[12px] font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${
+      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 ${isMobile ? 'py-3' : 'py-2'} rounded-full text-body-sm font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${
         showConfig
           ? 'bg-brand text-white border-brand'
           : 'bg-surface-card text-content-2 border-border-card hover:bg-surface-card-hover backdrop-blur-sm'
@@ -2020,8 +2020,8 @@ const DashboardView = ({ openModal }) => {
             <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
-                <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
-                <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-content-3 hover:text-brand-text transition-colors px-2 py-1 rounded-lg hover:bg-surface-card-hover">
+                <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
+                <button onClick={resetAll} className="flex items-center gap-1.5 text-label font-bold text-content-3 hover:text-brand-text transition-colors px-2 py-1 rounded-lg hover:bg-surface-card-hover">
                   <RotateCcw size={11}/> Restablecer todo
                 </button>
               </div>
@@ -2031,7 +2031,7 @@ const DashboardView = ({ openModal }) => {
                   const TabIcon = tab.icon;
                   return (
                     <button key={tab.id} onClick={() => setConfigTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-label font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
                         configTab === tab.id ? 'bg-surface-card text-brand-text shadow-sm' : 'text-content-3 hover:text-content-2'
                       }`}>
                       <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
@@ -2049,7 +2049,7 @@ const DashboardView = ({ openModal }) => {
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
                       className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
-                      <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
+                      <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-brand' : 'bg-surface-card-hover'}`}>
                         <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled && hasAccess ? 'translate-x-4' : 'translate-x-0.5'}`}/>
                       </div>
@@ -2145,9 +2145,9 @@ const DashboardView = ({ openModal }) => {
       {salesBarTip && createPortal(
         <div style={{position:'fixed',top:salesBarTip.y-8,left:salesBarTip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
           className="bg-slate-900 text-white rounded-xl shadow-xl px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
-          <span className="text-[9px] text-content-3 font-semibold">{salesBarTip.label}</span>
-          {salesBarTip.amount&&<span className="text-[10px] text-success font-black">{salesBarTip.amount}</span>}
-          {salesBarTip.txCount>0&&<span className="text-[9px] text-content-3 font-semibold">{salesBarTip.txCount} tx</span>}
+          <span className="text-micro text-content-3 font-semibold">{salesBarTip.label}</span>
+          {salesBarTip.amount&&<span className="text-caption text-success font-black">{salesBarTip.amount}</span>}
+          {salesBarTip.txCount>0&&<span className="text-micro text-content-3 font-semibold">{salesBarTip.txCount} tx</span>}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900"/>
         </div>,
         document.body
@@ -2160,7 +2160,7 @@ const DashboardView = ({ openModal }) => {
           {calTooltip.holidays?.length>0&&(
             <div className="px-3 py-2 border-b border-white/10">
               {calTooltip.holidays.map((h,i)=>(
-                <div key={i} className="flex items-center gap-1.5 text-[11px] font-medium text-danger">
+                <div key={i} className="flex items-center gap-1.5 text-label font-medium text-danger">
                   <span>📅</span><span>{h}</span>
                 </div>
               ))}
@@ -2174,7 +2174,7 @@ const DashboardView = ({ openModal }) => {
       {/* Drag ghost pill */}
       {dndActive && createPortal(
         <div style={{position:'fixed',left:dndPos.x,top:dndPos.y,transform:'translate(-50%,-50%) rotate(-2deg)',zIndex:99999,pointerEvents:'none'}}
-          className="bg-brand text-white text-[11px] font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in zoom-in-95 duration-100">
+          className="bg-brand text-white text-label font-bold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in zoom-in-95 duration-100">
           <GripVertical size={12}/>
           {getWidgetSize(dndActive).label}
         </div>,

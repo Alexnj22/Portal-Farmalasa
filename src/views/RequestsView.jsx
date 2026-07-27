@@ -72,32 +72,32 @@ const fmtDateFull = (iso) => !iso ? '—' : new Date(iso).toLocaleDateString('es
 const CompactSummary = ({ req }) => {
     const meta = typeof req.metadata === 'object' && req.metadata ? req.metadata : {};
     if (req.type === 'VACATION' && meta.startDate)
-        return <span className="text-[10px] text-content-3">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}</span>;
+        return <span className="text-caption text-content-3">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}</span>;
     if (req.type === 'SHIFT_CHANGE' && meta.targetEmployeeName)
-        return <span className="text-[10px] text-content-3">↔ {meta.targetEmployeeName.split(' ')[0]}{meta.date ? ` · ${fmtDate(meta.date)}` : ''}</span>;
+        return <span className="text-caption text-content-3">↔ {meta.targetEmployeeName.split(' ')[0]}{meta.date ? ` · ${fmtDate(meta.date)}` : ''}</span>;
     if (req.type === 'DISABILITY' && meta.startDate) {
         const days = meta.days || (meta.endDate ? Math.max(1, Math.round((new Date(meta.endDate+'T00:00:00') - new Date(meta.startDate+'T00:00:00')) / 86400000) + 1) : null);
-        return <span className="text-[10px] text-content-3">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}{days ? ` · ${days}d` : ''}</span>;
+        return <span className="text-caption text-content-3">{fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}{days ? ` · ${days}d` : ''}</span>;
     }
     if (req.type === 'PERMIT') {
         const dates = meta.permissionDates || [];
-        if (dates.length) return <span className="text-[10px] text-content-3">{dates.length === 1 ? fmtDate(dates[0]) : `${dates.length} días`}</span>;
+        if (dates.length) return <span className="text-caption text-content-3">{dates.length === 1 ? fmtDate(dates[0]) : `${dates.length} días`}</span>;
     }
     if (req.type === 'ADVANCE' && meta.amount)
-        return <span className="text-[10px] text-content-3">${Number(meta.amount).toLocaleString('es-SV')}</span>;
+        return <span className="text-caption text-content-3">${Number(meta.amount).toLocaleString('es-SV')}</span>;
     if (req.type === 'CERTIFICATE' && meta.certificateType) {
         const labels = { LABORAL: 'Laboral', SALARIO: 'Salario', BANCARIA: 'Bancaria' };
-        return <span className="text-[10px] text-content-3">{labels[meta.certificateType] || meta.certificateType}</span>;
+        return <span className="text-caption text-content-3">{labels[meta.certificateType] || meta.certificateType}</span>;
     }
     if (req.type === 'ANNULMENT_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-content-3">{meta.correlativo}{meta.reason ? ` · ${meta.reason}` : ''}</span>;
+        return <span className="text-caption text-content-3">{meta.correlativo}{meta.reason ? ` · ${meta.reason}` : ''}</span>;
     if (req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-content-3">{meta.correlativo} · {meta.current_pago} → {meta.new_pago}</span>;
+        return <span className="text-caption text-content-3">{meta.correlativo} · {meta.current_pago} → {meta.new_pago}</span>;
     if (req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-content-3">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
+        return <span className="text-caption text-content-3">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
     if (req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo)
-        return <span className="text-[10px] text-content-3">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
-    if (req.note) return <span className="text-[10px] text-content-3 italic truncate max-w-[160px]">"{req.note}"</span>;
+        return <span className="text-caption text-content-3">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
+    if (req.note) return <span className="text-caption text-content-3 italic truncate max-w-[160px]">"{req.note}"</span>;
     return null;
 };
 
@@ -133,21 +133,21 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                         {req.employee && (
-                            <span className="text-[13px] font-semibold text-content truncate leading-tight max-w-[160px]">
+                            <span className="text-body font-semibold text-content truncate leading-tight max-w-[160px]">
                                 {req.employee.name}
                             </span>
                         )}
-                        <span className={`flex items-center gap-1 text-[10px] font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
+                        <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
                         </span>
-                        {isUrgent && <span className="text-[9px] font-black text-danger animate-pulse shrink-0">URGENTE</span>}
+                        {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <CompactSummary req={req} />
-                        <span className="text-[9px] text-content-3 shrink-0">{fmtDateFull(req.created_at)}</span>
+                        <span className="text-micro text-content-3 shrink-0">{fmtDateFull(req.created_at)}</span>
                         {req.current_level && req.status === 'PENDING' && req.type !== 'DISABILITY' && (
-                            <span className="text-[9px] text-content-3 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
+                            <span className="text-micro text-content-3 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
                         )}
                     </div>
                 </div>
@@ -167,20 +167,20 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-3/10 border border-chart-3/30">
                                     <ArrowLeftRight size={12} className="text-chart-3-text flex-shrink-0" strokeWidth={2} />
                                     <div className="flex flex-wrap items-center gap-2">
-                                        {meta.targetEmployeeName && <span className="text-[12px] font-bold text-chart-3-text">↔ {meta.targetEmployeeName}</span>}
-                                        {meta.date && <span className="text-[11px] text-chart-3-text">{new Date(meta.date+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
+                                        {meta.targetEmployeeName && <span className="text-body-sm font-bold text-chart-3-text">↔ {meta.targetEmployeeName}</span>}
+                                        {meta.date && <span className="text-label text-chart-3-text">{new Date(meta.date+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })}</span>}
                                     </div>
                                 </div>
                             )}
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                        <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
-                                        <p className="text-[11px] font-black text-content-2">{meta.myShift || '—'}</p>
+                                        <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
+                                        <p className="text-label font-black text-content-2">{meta.myShift || '—'}</p>
                                     </div>
                                     <div className="bg-chart-3/10 border border-chart-3/30 rounded-2xl p-2.5">
-                                        <p className="text-[9px] font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
-                                        <p className="text-[11px] font-black text-content-2">{meta.targetShift || '—'}</p>
+                                        <p className="text-micro font-black text-chart-3-text uppercase tracking-widest mb-0.5">{meta.targetEmployeeName?.split(' ')[0]}</p>
+                                        <p className="text-label font-black text-content-2">{meta.targetShift || '—'}</p>
                                     </div>
                                 </div>
                             )}
@@ -194,24 +194,24 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
                                     <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-danger mb-0.5">Período</p>
-                                        <p className="text-[13px] font-bold text-danger-text">
+                                        <p className="text-caption font-black uppercase tracking-widest text-danger mb-0.5">Período</p>
+                                        <p className="text-body font-bold text-danger-text">
                                             {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                             {meta.days && <span className="text-danger font-medium ml-1.5">· {meta.days}d</span>}
                                         </p>
-                                        {Number(meta.days) > 3 && <p className="text-[10px] text-warning font-black mt-0.5">Requiere boleta ISSS</p>}
+                                        {Number(meta.days) > 3 && <p className="text-caption text-warning font-black mt-0.5">Requiere boleta ISSS</p>}
                                     </div>
                                 </div>
                             )}
                             {meta.docUrl ? (
                                 <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-bold text-content-2 hover:text-brand-text transition-all">
+                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-label font-bold text-content-2 hover:text-brand-text transition-all">
                                     <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
                                 </a>
                             ) : (
                                 <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-warning/10 border border-warning/30">
                                     <AlertTriangle size={11} className="text-warning flex-shrink-0" strokeWidth={2} />
-                                    <p className="text-[10px] text-warning-text font-medium">Sin certificado adjunto.</p>
+                                    <p className="text-caption text-warning-text font-medium">Sin certificado adjunto.</p>
                                 </div>
                             )}
                         </div>
@@ -222,8 +222,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                         <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-success/10 border border-success/30">
                             <CalendarDays size={13} className="text-success flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-success mb-0.5">Período</p>
-                                <p className="text-[12px] font-bold text-success-text">
+                                <p className="text-caption font-black uppercase tracking-widest text-success mb-0.5">Período</p>
+                                <p className="text-body-sm font-bold text-success-text">
                                     {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                 </p>
                             </div>
@@ -233,10 +233,10 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* PERMIT */}
                     {req.type === 'PERMIT' && (meta.permissionDates || []).length > 0 && (
                         <div className="px-3 py-2.5 rounded-2xl bg-chart-2/10 border border-chart-2/30">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-chart-2-text mb-2">Días de Permiso</p>
+                            <p className="text-caption font-black uppercase tracking-widest text-chart-2-text mb-2">Días de Permiso</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {meta.permissionDates.map(d => (
-                                    <span key={d} className="text-[10px] font-bold text-chart-2-text bg-chart-2/10 border border-chart-2/30 px-2 py-0.5 rounded-full">
+                                    <span key={d} className="text-caption font-bold text-chart-2-text bg-chart-2/10 border border-chart-2/30 px-2 py-0.5 rounded-full">
                                         {new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}
                                     </span>
                                 ))}
@@ -249,8 +249,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                         <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-5/10 border border-chart-5/30">
                             <Banknote size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-chart-5-text mb-0.5">Monto solicitado</p>
-                                <p className="text-[13px] font-black text-chart-5-text">${Number(meta.amount).toLocaleString('es-SV')}</p>
+                                <p className="text-caption font-black uppercase tracking-widest text-chart-5-text mb-0.5">Monto solicitado</p>
+                                <p className="text-body font-black text-chart-5-text">${Number(meta.amount).toLocaleString('es-SV')}</p>
                             </div>
                         </div>
                     )}
@@ -260,8 +260,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                         <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-6/10 border border-chart-6/30">
                             <FileCheck2 size={13} className="text-chart-6-text flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-chart-6-text mb-0.5">Tipo</p>
-                                <p className="text-[12px] font-bold text-chart-6-text">
+                                <p className="text-caption font-black uppercase tracking-widest text-chart-6-text mb-0.5">Tipo</p>
+                                <p className="text-body-sm font-bold text-chart-6-text">
                                     {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                                 </p>
                             </div>
@@ -274,18 +274,18 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
                                 <Ban size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-warning-text mb-0.5">Factura a anular</p>
-                                    <p className="text-[12px] font-bold text-warning-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
-                                    {meta.fecha && <p className="text-[10px] text-warning-text">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">Factura a anular</p>
+                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    {meta.fecha && <p className="text-caption text-warning-text">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
                                 </div>
                                 {meta.tipo_documento && (
-                                    <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text border border-danger/30' : 'bg-surface-card-hover text-content-2 border border-border-card'}`}>{meta.tipo_documento}</span>
+                                    <span className={`shrink-0 text-micro font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text border border-danger/30' : 'bg-surface-card-hover text-content-2 border border-border-card'}`}>{meta.tipo_documento}</span>
                                 )}
                             </div>
                             {meta.reason && (
                                 <div className="px-3 py-2 rounded-2xl bg-surface-card border border-border-card">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-0.5">Motivo de anulación</p>
-                                    <p className="text-[11px] font-bold text-content-2">{meta.reason}</p>
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Motivo de anulación</p>
+                                    <p className="text-label font-bold text-content-2">{meta.reason}</p>
                                 </div>
                             )}
                         </div>
@@ -297,18 +297,18 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-7/10 border border-chart-7/30">
                                 <CreditCard size={13} className="text-chart-7-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-chart-7-text mb-0.5">Factura</p>
-                                    <p className="text-[12px] font-bold text-chart-7-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-chart-7-text mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-chart-7-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
-                                    <p className="text-[12px] font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
+                                    <p className="text-body-sm font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
                                 <div className="bg-chart-7/10 border border-chart-7/30 rounded-2xl p-2.5">
-                                    <p className="text-[9px] font-black text-chart-7-text uppercase tracking-widest mb-0.5">Cambiar a</p>
-                                    <p className="text-[12px] font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
+                                    <p className="text-micro font-black text-chart-7-text uppercase tracking-widest mb-0.5">Cambiar a</p>
+                                    <p className="text-body-sm font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                                 </div>
                             </div>
                         </div>
@@ -320,26 +320,26 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-8/10 border border-chart-8/30">
                                 <Receipt size={13} className="text-chart-8-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-chart-8-text mb-0.5">Factura</p>
-                                    <p className="text-[12px] font-bold text-chart-8-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-chart-8-text mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-chart-8-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Vendedor actual</p>
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Vendedor actual</p>
                                     {meta.current_vendor_photo && (
                                         <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
-                                    <p className="text-[11px] font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
-                                    {meta.current_vendor_code && <p className="text-[9px] text-content-3 font-mono">#{meta.current_vendor_code}</p>}
+                                    <p className="text-label font-black text-content-2">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
+                                    {meta.current_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.current_vendor_code}</p>}
                                 </div>
                                 <div className="bg-chart-8/10 border border-chart-8/30 rounded-2xl p-2.5">
-                                    <p className="text-[9px] font-black text-chart-8-text uppercase tracking-widest mb-0.5">Asignar a</p>
+                                    <p className="text-micro font-black text-chart-8-text uppercase tracking-widest mb-0.5">Asignar a</p>
                                     {meta.new_vendor_photo && (
                                         <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
-                                    <p className="text-[11px] font-black text-content-2">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
-                                    {meta.new_vendor_code && <p className="text-[9px] text-content-3 font-mono">#{meta.new_vendor_code}</p>}
+                                    <p className="text-label font-black text-content-2">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
+                                    {meta.new_vendor_code && <p className="text-micro text-content-3 font-mono">#{meta.new_vendor_code}</p>}
                                 </div>
                             </div>
                         </div>
@@ -351,26 +351,26 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-9/10 border border-chart-9/30">
                                 <Receipt size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-chart-9-text mb-0.5">Factura</p>
-                                    <p className="text-[12px] font-bold text-chart-9-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-chart-9-text mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-chart-9-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-surface-card border border-border-card rounded-2xl p-2.5">
-                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Cliente actual</p>
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Cliente actual</p>
                                     <div className="w-6 h-6 rounded-full bg-surface-card-hover flex items-center justify-center mb-1">
-                                        <span className="text-content-3 font-black text-[10px] leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
+                                        <span className="text-content-3 font-black text-caption leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
                                     </div>
-                                    <p className="text-[11px] font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
+                                    <p className="text-label font-black text-content-2 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
                                 </div>
                                 <div className="bg-chart-9/10 border border-chart-9/30 rounded-2xl p-2.5">
-                                    <p className="text-[9px] font-black text-chart-9-text uppercase tracking-widest mb-1">Cambiar a</p>
+                                    <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">Cambiar a</p>
                                     <div className="w-6 h-6 rounded-full bg-chart-9/10 flex items-center justify-center mb-1">
-                                        <span className="text-chart-9-text font-black text-[10px] leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
+                                        <span className="text-chart-9-text font-black text-caption leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
                                     </div>
-                                    <p className="text-[11px] font-black text-content-2 leading-tight">{meta.new_client_name}</p>
+                                    <p className="text-label font-black text-content-2 leading-tight">{meta.new_client_name}</p>
                                     {(meta.new_client_nit || meta.new_client_dui) && (
-                                        <p className="text-[9px] text-content-3 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
+                                        <p className="text-micro text-content-3 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
                                     )}
                                 </div>
                             </div>
@@ -380,38 +380,38 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* Note */}
                     {req.note && (
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo del empleado</p>
-                            <p className="text-[12px] text-content-2 bg-surface-card rounded-2xl p-3 border border-border-card leading-relaxed">{req.note}</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo del empleado</p>
+                            <p className="text-body-sm text-content-2 bg-surface-card rounded-2xl p-3 border border-border-card leading-relaxed">{req.note}</p>
                         </div>
                     )}
 
                     {/* Rejection reason */}
                     {isRejected && req.approver_note && (
                         <div className="px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
-                            <p className="text-[12px] text-danger-text font-medium leading-relaxed">{req.approver_note}</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-danger mb-1">Motivo de rechazo</p>
+                            <p className="text-body-sm text-danger-text font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
                     )}
 
                     {/* Approval note */}
                     {!isRejected && req.approver_note && (
                         <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-success mb-1">Nota del aprobador</p>
-                            <p className="text-[12px] text-success-text font-medium leading-relaxed">{req.approver_note}</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-success mb-1">Nota del aprobador</p>
+                            <p className="text-body-sm text-success-text font-medium leading-relaxed">{req.approver_note}</p>
                         </div>
                     )}
 
                     {/* Approval history */}
                     {req.approvals && req.approvals.length > 0 && (
                         <div className="space-y-1.5">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Historial</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Historial</p>
                             {req.approvals.map((ap, i) => (
                                 <div key={i} className="flex items-start gap-2 bg-success/10 border border-success/30 rounded-2xl p-2.5">
                                     <CheckCircle2 size={12} className="text-success mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-black text-success-text">{getApproverLabel(ap)}</p>
-                                        <p className="text-[9px] text-content-3 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
-                                        {ap.approverNote && <p className="text-[10px] text-content-2 mt-0.5 italic">"{ap.approverNote}"</p>}
+                                        <p className="text-label font-black text-success-text">{getApproverLabel(ap)}</p>
+                                        <p className="text-micro text-content-3 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                        {ap.approverNote && <p className="text-caption text-content-2 mt-0.5 italic">"{ap.approverNote}"</p>}
                                     </div>
                                 </div>
                             ))}
@@ -419,17 +419,17 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     )}
 
                     {req.employee?.code && (
-                        <p className="text-[10px] text-content-3">Código: <span className="font-mono font-bold text-content-2">{req.employee.code}</span></p>
+                        <p className="text-caption text-content-3">Código: <span className="font-mono font-bold text-content-2">{req.employee.code}</span></p>
                     )}
 
                     {req.status === 'PENDING' && (
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => onApprove(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success-solid hover:bg-success-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-success)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-success-solid hover:bg-success-hover text-white text-body-sm font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-success)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Check size={13} strokeWidth={2.5} /> Aprobar
                             </button>
                             <button onClick={() => onReject(req)} disabled={!canApprove}
-                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger-solid hover:bg-danger-hover text-white text-[12px] font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-danger)] disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-danger-solid hover:bg-danger-hover text-white text-body-sm font-bold transition-all active:scale-[0.97] shadow-sm hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-danger)] disabled:opacity-50 disabled:cursor-not-allowed">
                                 <X size={13} strokeWidth={2.5} /> Rechazar
                             </button>
                         </div>
@@ -611,7 +611,7 @@ const RequestsView = () => {
         <div className="flex items-center gap-2 md:gap-3">
             {canCreate && (
                 <button onClick={() => openCreateModal()}
-                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 active:scale-[0.97] shrink-0">
+                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-brand/72 to-brand-hover/78 backdrop-blur-xl border border-border-card hover:border-border-card text-white rounded-full font-black text-caption uppercase tracking-widest shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 active:scale-[0.97] shrink-0">
                     <span className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
                         <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
                     </span>
@@ -625,7 +625,7 @@ const RequestsView = () => {
                 <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 z-50 pointer-events-none">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-60" />
                     <span className="relative inline-flex rounded-full h-4 w-4 bg-danger border-2 border-surface-card items-center justify-center">
-                        <span className="text-[9px] font-black text-white leading-none">{pendingCount > 9 ? '9+' : pendingCount}</span>
+                        <span className="text-micro font-black text-white leading-none">{pendingCount > 9 ? '9+' : pendingCount}</span>
                     </span>
                 </span>
             )}
@@ -635,7 +635,7 @@ const RequestsView = () => {
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
@@ -649,14 +649,14 @@ const RequestsView = () => {
                 ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[800px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
                 {STATUS_TABS.map(tab => (
                     <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
+                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             statusFilter === tab.key
                                 ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
                                 : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         {tab.label}
                         {tab.key === 'PENDING' && pendingCount > 0 && (
-                            <span className={`ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-surface-card-hover text-content-2' : 'bg-danger/10 text-danger'}`}>
+                            <span className={`ml-1.5 text-micro font-black px-1.5 py-0.5 rounded-full ${statusFilter === 'PENDING' ? 'bg-surface-card-hover text-content-2' : 'bg-danger/10 text-danger'}`}>
                                 {pendingCount}
                             </span>
                         )}
@@ -707,10 +707,10 @@ const RequestsView = () => {
                             <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
-                            <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">
+                            <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
                                 {statusFilter === 'PENDING' ? 'Todo al día' : 'Sin resultados'}
                             </h3>
-                            <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
+                            <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
                                 {statusFilter === 'PENDING' ? 'No hay solicitudes pendientes de revisión.' : 'Sin solicitudes en esta categoría.'}
                             </p>
                         </div>
@@ -718,7 +718,7 @@ const RequestsView = () => {
                 ) : (
                     <>
                     {isReqSearchFuzzy && rawSearch.trim() && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -735,8 +735,8 @@ const RequestsView = () => {
                                     <div className={`w-6 h-6 rounded-lg flex items-center justify-center border ${tc.sectionIcon}`}>
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>
-                                    <h3 className={`text-[11px] font-black uppercase tracking-widest ${tc.section}`}>{typeConf.label}</h3>
-                                    <span className="text-[10px] font-bold text-content-3">{cards.length}</span>
+                                    <h3 className={`text-label font-black uppercase tracking-widest ${tc.section}`}>{typeConf.label}</h3>
+                                    <span className="text-caption font-bold text-content-3">{cards.length}</span>
                                     <div className="flex-1 h-px bg-divider mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}
                                         className={`text-content-3 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
@@ -768,28 +768,28 @@ const RequestsView = () => {
                         <div className={`w-14 h-14 rounded-[1.75rem] flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
                         </div>
-                        <h3 className="text-[18px] font-bold text-content text-center mb-1">
+                        <h3 className="text-title-sm font-bold text-content text-center mb-1">
                             {actionModal.mode === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
                         </h3>
-                        <p className="text-[12px] text-content-3 text-center mb-5">
+                        <p className="text-body-sm text-content-3 text-center mb-5">
                             {REQUEST_TYPES[actionModal.req.type]?.label} · {actionModal.req.employee?.name}
                         </p>
-                        <label className="text-[11px] font-black uppercase tracking-widest text-content-2 mb-1.5 block">
+                        <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
                             {actionModal.mode === 'reject' ? 'Motivo de rechazo' : 'Nota para el empleado'}
                             {actionModal.mode === 'reject' && <span className="text-danger ml-1">*</span>}
                         </label>
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
+                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-input text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
-                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-[13px] font-medium hover:bg-surface-card transition-all disabled:opacity-50">
+                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button onClick={handleConfirmAction}
                                 disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-body font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
                                     actionModal.mode === 'approve'
                                         ? 'bg-success hover:bg-success-hover shadow-[var(--shadow-glow-success)]'
                                         : 'bg-danger hover:bg-danger-hover shadow-[var(--shadow-glow-danger)]'
@@ -812,13 +812,13 @@ const RequestsView = () => {
                                 <ClipboardList size={20} className="text-brand-text" strokeWidth={2} />
                             </div>
                             <div>
-                                <h3 className="text-[16px] font-bold text-content">Nueva Solicitud</h3>
-                                <p className="text-[11px] text-content-3">A nombre de un empleado</p>
+                                <h3 className="text-input font-bold text-content">Nueva Solicitud</h3>
+                                <p className="text-label text-content-3">A nombre de un empleado</p>
                             </div>
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1.5">Empleado <span className="text-danger">*</span></p>
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">Empleado <span className="text-danger">*</span></p>
                             <LiquidSelect
                                 value={createEmployeeId}
                                 onChange={setCreateEmployeeId}
@@ -831,7 +831,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Tipo</p>
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Tipo</p>
                             <div className="flex flex-wrap gap-2">
                                 {CREATABLE_TYPES.map(({ key, icon: Icon }) => {
                                     const conf = REQUEST_TYPES[key];
@@ -840,7 +840,7 @@ const RequestsView = () => {
                                             key={key}
                                             type="button"
                                             onClick={() => { setCreateType(key); setCreatePayload({}); }}
-                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-label font-bold transition-all ${
                                                 createType === key
                                                     ? `${conf.color} ${conf.border} shadow-sm`
                                                     : 'border-divider text-content-3 hover:border-divider bg-surface-card'
@@ -855,7 +855,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1.5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">
                                 {createType === 'VACATION' ? 'Período de Vacaciones' :
                                  createType === 'PERMIT'   ? 'Días de Permiso' :
                                  'Fecha'}
@@ -880,25 +880,25 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo / Descripción <span className="text-danger">*</span></p>
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo / Descripción <span className="text-danger">*</span></p>
                             <textarea
                                 value={createNote}
                                 onChange={e => setCreateNote(e.target.value)}
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-[16px] text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-input text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 
                         <div className="flex items-center gap-2 pt-1">
                             <button onClick={() => !isCreatingReq && setCreateModalOpen(false)} disabled={isCreatingReq}
-                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-[13px] font-medium hover:bg-surface-card transition-all disabled:opacity-50">
+                                className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button onClick={handleCreateRequest}
                                 disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]">
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-body font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]">
                                 {isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}
                             </button>
                         </div>

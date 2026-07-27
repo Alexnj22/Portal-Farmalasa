@@ -73,7 +73,7 @@ export default function SidebarSyncStatus() {
             ? <AlertTriangle size={10} className="text-danger" />
             : <CheckCircle2  size={10} className={allGood ? 'text-success' : dimIconCls} />
           }
-          <span className={`text-[9px] font-semibold uppercase tracking-wider ${labelCls}`}>Sync</span>
+          <span className={`text-micro font-semibold uppercase tracking-wider ${labelCls}`}>Sync</span>
         </div>
         {/* Dots row */}
         <div className="flex items-center justify-center gap-[3px] flex-wrap">
@@ -86,7 +86,7 @@ export default function SidebarSyncStatus() {
                 return (
                   <div key={b.erp_sucursal_id} className="relative group/sdot">
                     <div className={`w-[5px] h-[5px] rounded-full ${dotClass(m, !b.success)}`} />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 bg-slate-900 border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/sdot:opacity-100 transition-opacity pointer-events-none z-[300] shadow-xl">
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 bg-slate-900 border border-white/10 text-white text-caption font-bold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover/sdot:opacity-100 transition-opacity pointer-events-none z-[300] shadow-xl">
                       Suc. {b.erp_sucursal_id} · {Math.round(m)}min
                       {!b.success && <><br /><span className="text-danger font-medium">{b.error_msg}</span></>}
                     </div>
@@ -97,7 +97,7 @@ export default function SidebarSyncStatus() {
         </div>
         {/* Time ago */}
         {minsAgoLatest !== null && (
-          <span className={`text-[9px] tabular-nums mt-0.5 ${timeAgoCls}`}>
+          <span className={`text-micro tabular-nums mt-0.5 ${timeAgoCls}`}>
             {minsAgoLatest === 0 ? '<1' : minsAgoLatest}m
           </span>
         )}
@@ -107,7 +107,7 @@ export default function SidebarSyncStatus() {
       {!isSupported ? (
         <div className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border opacity-30 ${cardCls}`}>
           <BellOff size={14} className={dimIconCls} />
-          <span className={`text-[9px] uppercase tracking-wider font-semibold ${labelCls}`}>N/D</span>
+          <span className={`text-micro uppercase tracking-wider font-semibold ${labelCls}`}>N/D</span>
         </div>
       ) : (
         <button
@@ -127,13 +127,13 @@ export default function SidebarSyncStatus() {
               ? <CheckCircle2 size={10} className="text-success" />
               : <Bell size={10} className={bellDenied ? dimIconCls : labelCls} />
             }
-            <span className={`text-[9px] font-semibold uppercase tracking-wider ${
+            <span className={`text-micro font-semibold uppercase tracking-wider ${
               bellGranted ? 'text-success/70' : labelCls
             }`}>
               Alertas
             </span>
           </div>
-          <span className={`text-[9px] font-black text-center leading-tight ${
+          <span className={`text-micro font-black text-center leading-tight ${
             bellGranted ? 'text-success' : bellDenied ? timeAgoCls : 'text-white/55'
           }`}>
             {bellGranted ? 'Activas' : bellDenied ? 'Bloqueadas' : 'Activar'}

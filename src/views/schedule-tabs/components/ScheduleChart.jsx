@@ -75,7 +75,7 @@ const ScheduleChart = ({
                 ) : currentChartData.length === 0 ? (
                     <div className="absolute inset-0 flex items-center justify-center gap-2 text-content-3 z-10">
                         <BarChart2 size={18} strokeWidth={1.5} />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Sin historial</span>
+                        <span className="text-micro font-black uppercase tracking-widest">Sin historial</span>
                     </div>
                 ) : (
                     currentChartData.map((item, i) => (
@@ -86,7 +86,7 @@ const ScheduleChart = ({
                             {/* Tooltip */}
                             <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/bar:opacity-100 transition-all duration-150 pointer-events-none w-max z-[100] translate-y-1 group-hover/bar:-translate-y-0 border border-border-card">
                                 <p className="font-black text-[7.5px] uppercase tracking-widest text-content-2">{item.label}</p>
-                                <p className="text-[10px] font-bold flex items-center gap-1 mt-0.5">
+                                <p className="text-caption font-bold flex items-center gap-1 mt-0.5">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
                                     {item.avg} Tx
                                 </p>
@@ -99,7 +99,7 @@ const ScheduleChart = ({
                             <div
                                 className={`relative w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-10 overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
                                 style={{ height: item.height, backgroundColor: item.color }}>
-                                <span className="absolute bottom-0.5 inset-x-0 text-center text-[9px] font-black text-white/90 leading-none pointer-events-none">
+                                <span className="absolute bottom-0.5 inset-x-0 text-center text-micro font-black text-white/90 leading-none pointer-events-none">
                                     {item.label}
                                 </span>
                             </div>

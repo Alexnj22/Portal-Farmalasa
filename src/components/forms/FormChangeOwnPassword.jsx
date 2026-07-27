@@ -27,7 +27,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
             <div className="w-14 h-14 rounded-full bg-success/10 border border-success/30 flex items-center justify-center">
                 <CheckCircle size={28} className="text-success" strokeWidth={2} />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-success">Contraseña actualizada</p>
+            <p className="text-label font-black uppercase tracking-widest text-success">Contraseña actualizada</p>
         </div>
     );
 
@@ -35,7 +35,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
         <div className="flex flex-col gap-5 p-1">
             {[['Nueva contraseña', newPass, setNewPass, false], ['Confirmar contraseña', confirm, setConfirm, true]].map(([label, val, setter, isLast]) => (
                 <div key={label}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
                     <div className="relative flex items-center">
                         <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
                         <input
@@ -43,7 +43,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                             placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
                             value={val}
                             onChange={e => setter(e.target.value)}
-                            className="w-full pl-10 pr-10 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-[16px] font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full pl-10 pr-10 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-input font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                         {isLast && (
                             <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3 text-content-3 hover:text-content-2">
@@ -54,7 +54,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
                 </div>
             ))}
             <button type="button" onClick={save} disabled={loading || !newPass || !confirm}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}
             </button>
         </div>

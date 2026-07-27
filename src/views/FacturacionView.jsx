@@ -106,8 +106,8 @@ function EmptyState({ icon: Icon, iconClass, glowClass, title, subtitle }) {
                 <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${iconClass}`}>
                     <Icon size={40} strokeWidth={2} />
                 </div>
-                <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">{title}</h3>
-                <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">{subtitle}</p>
+                <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">{title}</h3>
+                <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">{subtitle}</p>
             </div>
         </div>
     );
@@ -120,19 +120,19 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
             <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
                     <textarea
-                        className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                        className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                         rows={2} autoFocus
                         placeholder={placeholder || 'Comentario (opcional)'}
                         value={comment} onChange={e => setComment(e.target.value)}
                     />
                     <div className="flex flex-col gap-2 shrink-0">
                         <button onClick={onConfirm} disabled={saving}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-success-solid hover:bg-success-hover text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-4 py-2 bg-success-solid hover:bg-success-hover text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-all hover:-translate-y-0.5 disabled:opacity-50">
                             {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
                             Confirmar
                         </button>
                         <button onClick={onCancel}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
+                            className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-all hover:-translate-y-0.5">
                             <X size={12} /> Cancelar
                         </button>
                     </div>
@@ -155,7 +155,7 @@ function AuditThead({ cols, sortKey, sortDir, onSort, firstPl = 'pl-8', lastPr =
                     return (
                         <th key={label}
                             onClick={key ? () => onSort?.(key) : undefined}
-                            className={`p-5 text-[11px] font-bold text-content-3 uppercase tracking-widest whitespace-nowrap
+                            className={`p-5 text-label font-bold text-content-3 uppercase tracking-widest whitespace-nowrap
                                 ${i === 0 ? firstPl : ''} ${i === cols.length - 1 ? lastPr : ''}
                                 ${key ? 'cursor-pointer hover:text-content-2 select-none' : ''}`}>
                             <span className="inline-flex items-center gap-1">
@@ -191,7 +191,7 @@ function Pagination({ page, total, onChange }) {
             </button>
             {pages.map(p => (
                 <button key={p} onClick={() => onChange(p)}
-                    className={`w-8 h-8 rounded-full text-[12px] font-bold transition-all ${
+                    className={`w-8 h-8 rounded-full text-body-sm font-bold transition-all ${
                         page === p
                             ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]'
                             : 'text-content-3 hover:bg-black/[0.05]'
@@ -393,20 +393,20 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                             <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-content-2">{label}</span>
-                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
+                        <span className="text-caption font-bold uppercase tracking-wider text-content-2">{label}</span>
+                        <span className={`text-subtitle font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
                 {activeVisitedCount > 0 && (
                     <button onClick={clearVisited}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-[10px] font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-caption font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
                         <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
-                    {lastRefresh && <span className="text-[10px] font-bold text-content-2 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
+                    {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
                     <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-black uppercase tracking-wider border transition-all ${
                             paused
                                 ? 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
                                 : 'bg-surface-card-hover border-divider text-content-3 hover:bg-surface-card-hover'
@@ -438,12 +438,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="space-y-3">
                     {isAnuladasFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand-text font-medium">
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
                         <Info size={13} className="text-brand-text shrink-0" />
                         Al resolverse la anulación en sistema, el estado se actualiza automáticamente en el portal.
                     </div>
@@ -457,11 +457,11 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                     className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
-                                        <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        {branchHasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
+                                        <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
+                                        {branchHasCCF && <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black text-content-3">{branchTotal} doc</span>
+                                        <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
                                         <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
                                     </div>
                                 </button>
@@ -473,8 +473,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                         return (
                                             <div key={fecha} className="px-4 py-3">
                                                 <div className="flex items-center gap-2 mb-2.5">
-                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-brand/10 text-brand-text' : hasCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
+                                                    <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
+                                                    <span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-brand/10 text-brand-text' : hasCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {fechaRows.map(r => {
@@ -491,7 +491,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                                   'border-divider hover:border-divider'
                                                                 }`}>
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
                                                                             isCopied  ? 'bg-success/10 text-success-text border-success/30' :
                                                                             isVisited ? 'bg-warning/10 text-warning-text border-warning/30' :
                                                                             isCCF     ? 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10' :
@@ -501,7 +501,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     </button>
                                                                     <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
-                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
+                                                                        <span className={`text-micro font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
                                                                         className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
@@ -511,16 +511,16 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                         <div>
-                                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                            <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
+                                                                            <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
+                                                                            <p className={`font-mono text-body-sm font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
                                                                         </div>
                                                                         {r.cliente && <div>
-                                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
-                                                                            <p className="text-[11px] font-semibold text-content-2 truncate">{r.cliente}</p>
+                                                                            <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
+                                                                            <p className="text-label font-semibold text-content-2 truncate">{r.cliente}</p>
                                                                         </div>}
                                                                         <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
-                                                                            <p className="text-[9px] font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                            <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
+                                                                            <p className="text-micro font-bold uppercase tracking-widest text-content-2">Total</p>
+                                                                            <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                         </div>
                                                                     </div>
                                                                     <div className="w-3 h-3 bg-surface-card border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
@@ -535,21 +535,21 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                     return (
                                                         <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                             <div className="flex items-center gap-2 mb-2.5">
-                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
-                                                                {r.cliente && <span className="text-[11px] text-content-3 truncate">· {r.cliente}</span>}
-                                                                <span className="ml-auto text-[12px] font-black text-content-2">{fmt(r.total)}</span>
+                                                                <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
+                                                                {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
+                                                                <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
-                                                                <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                                <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                         <X size={10} /> Cancelar
                                                                     </button>
                                                                 </div>
@@ -577,8 +577,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                 <Check size={13} className="text-success" strokeWidth={3} />
                             </div>
                             <div className="text-left">
-                                <p className="text-[13px] font-bold text-content-2">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventada{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
-                                <p className="text-[11px] text-content-3">Historial de resoluciones</p>
+                                <p className="text-body font-bold text-content-2">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventada{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
+                                <p className="text-label text-content-3">Historial de resoluciones</p>
                             </div>
                         </div>
                         <ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />
@@ -594,19 +594,19 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                         {photo
                                             ? <img src={photo} alt={r.resolved_by} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
                                             : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-[9px] font-black text-success-text">{initials}</span>
+                                                <span className="text-micro font-black text-success-text">{initials}</span>
                                               </div>
                                         }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <span className="text-[10px] font-bold bg-success/10 text-success-text px-2 py-0.5 rounded-md">{inv?.tipo_documento}</span>
-                                                {inv?.erp_invoice_id && <span className="font-mono text-[12px] font-black text-content">#{inv.erp_invoice_id}</span>}
-                                                <span className="font-mono text-[11px] text-content-3">{inv?.correlativo}</span>
-                                                <span className="text-[11px] text-content-3">{getBranch(inv?.branch_id)}</span>
-                                                {inv?.total && <span className="text-[12px] font-bold text-content-2 ml-auto">{fmt(inv.total)}</span>}
+                                                <span className="text-caption font-bold bg-success/10 text-success-text px-2 py-0.5 rounded-md">{inv?.tipo_documento}</span>
+                                                {inv?.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{inv.erp_invoice_id}</span>}
+                                                <span className="font-mono text-label text-content-3">{inv?.correlativo}</span>
+                                                <span className="text-label text-content-3">{getBranch(inv?.branch_id)}</span>
+                                                {inv?.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{fmt(inv.total)}</span>}
                                             </div>
-                                            {r.comment && <p className="text-[12px] text-content-3 mb-1">"{r.comment}"</p>}
-                                            <p className="text-[11px] text-content-3">
+                                            {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
+                                            <p className="text-label text-content-3">
                                                 <span className="font-semibold text-content-2">{r.resolved_by || '—'}</span>
                                                 {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
                                             </p>
@@ -616,7 +616,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                             })}
                             <div className="px-5 py-3 border-t border-black/[0.04] flex justify-center">
                                 <button onClick={() => setShowAllResolved(v => !v)}
-                                    className="text-[11px] font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
+                                    className="text-label font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
                                     {showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}
                                 </button>
                             </div>
@@ -848,20 +848,20 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                             <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-content-2">{label}</span>
-                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
+                        <span className="text-caption font-bold uppercase tracking-wider text-content-2">{label}</span>
+                        <span className={`text-subtitle font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
                 {activeVisitedCount > 0 && (
                     <button onClick={clearVisited}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-[10px] font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-warning/30 bg-warning/10 text-warning-text text-caption font-bold uppercase tracking-wider hover:bg-warning/10 transition-all">
                         <Check size={10} strokeWidth={3} /> {activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar
                     </button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
-                    {lastRefresh && <span className="text-[10px] font-bold text-content-2 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
+                    {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
                     <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-black uppercase tracking-wider border transition-all ${
                             paused
                                 ? 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
                                 : 'bg-surface-card-hover border-divider text-content-3 hover:bg-surface-card-hover'
@@ -894,12 +894,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="space-y-3">
                     {isPendienteFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand-text font-medium">
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
                         <Info size={13} className="text-brand-text shrink-0" />
                         Al corregirse en sistema se confirman automáticamente en el portal.
                     </div>
@@ -914,11 +914,11 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                     className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
-                                        <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        {branchHasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
+                                        <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
+                                        {branchHasCCF && <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black text-content-3">{branchTotal} doc</span>
+                                        <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
                                         <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
                                     </div>
                                 </button>
@@ -934,8 +934,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                             <div key={fecha} className="px-4 py-3">
                                                 {/* Date label */}
                                                 <div className="flex items-center gap-2 mb-2.5">
-                                                    <span className={`text-[11px] font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                                                    <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
+                                                    <span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${
                                                         isToday ? 'bg-brand/10 text-brand-text' :
                                                         hasCCF  ? 'bg-danger/10 text-danger-text' :
                                                                   'bg-surface-card-hover text-content-3'
@@ -962,7 +962,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 }`}>
                                                                     {/* Copy zone */}
                                                                     <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${
+                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
                                                                             isCopied      ? 'bg-success/10 text-success-text border-success/30' :
                                                                             isVisited     ? 'bg-warning/10 text-warning-text border-warning/30' :
                                                                             hasNullCampos ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30 hover:bg-chart-3/20' :
@@ -974,7 +974,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     </button>
                                                                     {/* Tipo label (tooltip trigger) */}
                                                                     <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : hasNullCampos ? 'bg-chart-3/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
-                                                                        <span className={`text-[9px] font-black uppercase select-none ${isVisited ? 'text-warning-text' : hasNullCampos ? 'text-chart-3-text' : isCCF ? 'text-danger-text' : 'text-content-3'}`}>{r.tipo_documento}</span>
+                                                                        <span className={`text-micro font-black uppercase select-none ${isVisited ? 'text-warning-text' : hasNullCampos ? 'text-chart-3-text' : isCCF ? 'text-danger-text' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     {/* Solventar / cancel button */}
                                                                     <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
@@ -992,16 +992,16 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3">
                                                                         <div className="space-y-2">
                                                                             <div>
-                                                                                <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                                <p className={`font-mono text-[12px] font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
+                                                                                <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
+                                                                                <p className={`font-mono text-body-sm font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
                                                                             </div>
                                                                             {r.cliente && <div>
-                                                                                <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
-                                                                                <p className="text-[11px] font-semibold text-content-2 truncate">{r.cliente}</p>
+                                                                                <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Cliente</p>
+                                                                                <p className="text-label font-semibold text-content-2 truncate">{r.cliente}</p>
                                                                             </div>}
                                                                             <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
-                                                                                <p className="text-[9px] font-bold uppercase tracking-widest text-content-2">Total</p>
-                                                                                <p className={`text-[13px] font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
+                                                                                <p className="text-micro font-bold uppercase tracking-widest text-content-2">Total</p>
+                                                                                <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1020,23 +1020,23 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                     return (
                                                         <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                             <div className="flex items-center gap-2 mb-2.5">
-                                                                <span className={`font-mono text-[11px] font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
-                                                                {r.cliente && <span className="text-[11px] text-content-3 truncate">· {r.cliente}</span>}
-                                                                <span className="ml-auto text-[12px] font-black text-content-2">{fmt(r.total)}</span>
+                                                                <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
+                                                                {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
+                                                                <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <textarea
-                                                                    className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                                    className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)}
                                                                 />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <button onClick={() => handleSolve(r.id)} disabled={saving}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => { setSolvingId(null); setComment(''); }}
-                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                         <X size={10} /> Cancelar
                                                                     </button>
                                                                 </div>
@@ -1064,8 +1064,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                 <Check size={13} className="text-success" strokeWidth={3} />
                             </div>
                             <div className="text-left">
-                                <p className="text-[13px] font-bold text-content-2">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventado{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
-                                <p className="text-[11px] text-content-3">Historial de envíos al MH</p>
+                                <p className="text-body font-bold text-content-2">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventado{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
+                                <p className="text-label text-content-3">Historial de envíos al MH</p>
                             </div>
                         </div>
                         <ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />
@@ -1081,19 +1081,19 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                         {photo
                                             ? <img src={photo} alt={resolvedBy} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
                                             : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-[9px] font-black text-success-text">{initials}</span>
+                                                <span className="text-micro font-black text-success-text">{initials}</span>
                                               </div>
                                         }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text' : 'bg-success/10 text-success-text'}`}>{r.tipo_documento}</span>
-                                                {r.erp_invoice_id && <span className="font-mono text-[12px] font-black text-content">#{r.erp_invoice_id}</span>}
-                                                <span className="font-mono text-[11px] text-content-3">{r.correlativo}</span>
-                                                <span className="text-[11px] text-content-3">{getBranch(r.branch_id)}</span>
-                                                {r.total && <span className="text-[12px] font-bold text-content-2 ml-auto">{fmt(r.total)}</span>}
+                                                <span className={`text-caption font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text' : 'bg-success/10 text-success-text'}`}>{r.tipo_documento}</span>
+                                                {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
+                                                <span className="font-mono text-label text-content-3">{r.correlativo}</span>
+                                                <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
+                                                {r.total && <span className="text-body-sm font-bold text-content-2 ml-auto">{fmt(r.total)}</span>}
                                             </div>
-                                            {r.resolution?.comment && <p className="text-[12px] text-content-3 mb-1">"{r.resolution.comment}"</p>}
-                                            <p className="text-[11px] text-content-3">
+                                            {r.resolution?.comment && <p className="text-body-sm text-content-3 mb-1">"{r.resolution.comment}"</p>}
+                                            <p className="text-label text-content-3">
                                                 {resolvedBy
                                                     ? <span className="font-semibold text-content-2">{resolvedBy}</span>
                                                     : 'Marcado como recibido'}
@@ -1106,7 +1106,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                             })}
                             <div className="px-5 py-3 border-t border-black/[0.04] flex justify-center">
                                 <button onClick={() => setShowAllResolved(v => !v)}
-                                    className="text-[11px] font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
+                                    className="text-label font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
                                     {showAllResolved ? `Ver solo este mes (${resolvedThisMonth.length})` : `Ver todos (${resolved.length})`}
                                 </button>
                             </div>
@@ -1264,22 +1264,22 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                         <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                             <Icon size={11} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-content-2">{label}</span>
-                        <span className={`text-[15px] font-black leading-none ${text}`}>{value}</span>
+                        <span className="text-caption font-bold uppercase tracking-wider text-content-2">{label}</span>
+                        <span className={`text-subtitle font-black leading-none ${text}`}>{value}</span>
                     </div>
                 ))}
             </div>
 
             {/* ── Saltos pendientes ── */}
             <div className="space-y-3">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-content-3">Saltos en correlativos</h3>
+                <h3 className="text-label font-black uppercase tracking-widest text-content-3">Saltos en correlativos</h3>
 
                 {pendingGaps.length === 0 ? (
                     <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
                         title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas." />
                 ) : (
                     <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand-text font-medium">
+                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
                             <Info size={13} className="text-brand-text shrink-0" />
                             Cada salto indica correlativos faltantes entre dos documentos consecutivos.
                         </div>
@@ -1292,11 +1292,11 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                         className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'} ${hasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
                                         <div className="flex items-center gap-2">
                                             <Building2 size={13} className={hasCCF ? 'text-danger' : 'text-content-3'} />
-                                            <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                            {hasCCF && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
+                                            <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
+                                            {hasCCF && <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-content-3">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>
+                                            <span className="text-caption font-black text-content-3">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>
                                             <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
                                         </div>
                                     </button>
@@ -1310,11 +1310,11 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     return (
                                                         <div key={i} className="relative group/tip">
                                                             <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-success shadow-emerald-100' : isCCF ? 'border-danger/30 hover:border-danger/40' : 'border-chart-4/30 hover:border-chart-4/40'}`}>
-                                                                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-[10px] font-black ${isCCF ? 'bg-danger/10 text-danger-text border-danger/30' : 'bg-chart-4/10 text-chart-4-text border-chart-4/30'}`}>
+                                                                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-caption font-black ${isCCF ? 'bg-danger/10 text-danger-text border-danger/30' : 'bg-chart-4/10 text-chart-4-text border-chart-4/30'}`}>
                                                                     {pad7(g.gap_from)}–{pad7(g.gap_to)}
                                                                 </div>
                                                                 <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
-                                                                    <span className={`text-[9px] font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
+                                                                    <span className={`text-micro font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
                                                                     className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
@@ -1324,16 +1324,16 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     <div>
-                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
-                                                                        <p className="font-mono text-[11px] font-black text-content">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
+                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
+                                                                        <p className="font-mono text-label font-black text-content">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
                                                                     </div>
                                                                     <div className="flex items-center justify-between pt-1 border-t border-black/[0.05]">
-                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2">Faltantes</p>
-                                                                        <p className="text-[13px] font-black text-chart-4-text">{g.gap_count}</p>
+                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2">Faltantes</p>
+                                                                        <p className="text-body font-black text-chart-4-text">{g.gap_count}</p>
                                                                     </div>
                                                                     {g.siguiente_correlativo && <div>
-                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Siguiente</p>
-                                                                        <p className="font-mono text-[11px] font-semibold text-content-2">{g.siguiente_correlativo}</p>
+                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Siguiente</p>
+                                                                        <p className="font-mono text-label font-semibold text-content-2">{g.siguiente_correlativo}</p>
                                                                     </div>}
                                                                 </div>
                                                                 <div className="w-3 h-3 bg-surface-card border-r border-b border-black/[0.08] rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
@@ -1346,18 +1346,18 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                 const g = branchGaps.find(g => solvingGap === gapKey(g));
                                                 return (
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
-                                                        <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
+                                                        <p className="font-mono text-label font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <button onClick={() => handleSolveGap(g)} disabled={saving}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
                                                                 <button onClick={() => { setSolvingGap(null); setComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                     <X size={10} /> Cancelar
                                                                 </button>
                                                             </div>
@@ -1376,7 +1376,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
             {/* ── Campos nulos ── */}
             <div className="space-y-3">
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-content-3">Campos indefinidos / nulos</h3>
+                <h3 className="text-label font-black uppercase tracking-widest text-content-3">Campos indefinidos / nulos</h3>
                 {activeNulls.length === 0 ? (
                     <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
                         title="Sin campos indefinidos" subtitle="Todos los documentos tienen sus campos completos." />
@@ -1390,10 +1390,10 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                         className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors bg-surface-card-hover/60 hover:bg-surface-card-hover/60 ${isCollapsed ? 'rounded-2xl' : 'border-b border-black/[0.05] rounded-t-2xl'}`}>
                                         <div className="flex items-center gap-2">
                                             <Building2 size={13} className="text-content-3" />
-                                            <span className="text-[13px] font-black text-content-2">{getBranch(Number(branchId))}</span>
+                                            <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-black text-content-3">{branchNulls.length} doc</span>
+                                            <span className="text-caption font-black text-content-3">{branchNulls.length} doc</span>
                                             <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
                                         </div>
                                     </button>
@@ -1408,15 +1408,15 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                         <div key={n.id} className="relative group/tip">
                                                             <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-success shadow-emerald-100' : 'border-danger/30 hover:border-danger/40'}`}>
                                                                 <button onClick={() => copyNullId(copyVal)}
-                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-[10px] font-black border-r transition-all active:scale-[0.97] ${isCopied ? 'bg-success/10 text-success-text border-success/30' : 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10'}`}>
+                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${isCopied ? 'bg-success/10 text-success-text border-success/30' : 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10'}`}>
                                                                     {isCopied ? <Check size={8} /> : <Copy size={8} />}
                                                                     {n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
                                                                 </button>
                                                                 <div className="flex items-center gap-1 px-2 py-1.5 border-r border-divider bg-danger/10">
                                                                     {(n.campos_nulos || []).slice(0, 2).map(c => (
-                                                                        <span key={c} className="text-[9px] font-black text-danger uppercase">{c}</span>
+                                                                        <span key={c} className="text-micro font-black text-danger uppercase">{c}</span>
                                                                     ))}
-                                                                    {(n.campos_nulos || []).length > 2 && <span className="text-[9px] font-black text-danger">+{n.campos_nulos.length - 2}</span>}
+                                                                    {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black text-danger">+{n.campos_nulos.length - 2}</span>}
                                                                 </div>
                                                                 <button onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
                                                                     className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
@@ -1426,18 +1426,18 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-black/[0.08] rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>
-                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
-                                                                        <p className="font-mono text-[12px] font-black text-content">{n.correlativo}</p>
+                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
+                                                                        <p className="font-mono text-body-sm font-black text-content">{n.correlativo}</p>
                                                                     </div>}
                                                                     {n.fecha && <div>
-                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-0.5">Fecha</p>
-                                                                        <p className="text-[11px] font-semibold text-content-2">{n.fecha}</p>
+                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Fecha</p>
+                                                                        <p className="text-label font-semibold text-content-2">{n.fecha}</p>
                                                                     </div>}
                                                                     <div className="pt-1 border-t border-black/[0.05]">
-                                                                        <p className="text-[9px] font-bold uppercase tracking-widest text-content-2 mb-1">Campos nulos</p>
+                                                                        <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-1">Campos nulos</p>
                                                                         <div className="flex flex-wrap gap-1">
                                                                             {(n.campos_nulos || []).map(c => (
-                                                                                <span key={c} className="text-[9px] font-bold bg-danger/10 text-danger-text px-1.5 py-0.5 rounded">{c}</span>
+                                                                                <span key={c} className="text-micro font-bold bg-danger/10 text-danger-text px-1.5 py-0.5 rounded">{c}</span>
                                                                             ))}
                                                                         </div>
                                                                     </div>
@@ -1452,18 +1452,18 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                 const n = branchNulls.find(n => n.id === solvingNull);
                                                 return (
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
-                                                        <p className="font-mono text-[11px] font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
+                                                        <p className="font-mono text-label font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <button onClick={() => handleSolveNull(n)} disabled={nullSaving}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-success-solid hover:bg-success-hover text-white rounded-full text-micro font-black uppercase tracking-widest shadow transition-all disabled:opacity-50">
                                                                     {nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
                                                                 </button>
                                                                 <button onClick={() => { setSolvingNull(null); setNullComment(''); }}
-                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-[9px] font-black uppercase border border-divider hover:border-danger/30 transition-all">
+                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-danger/10 text-content-3 hover:text-danger rounded-full text-micro font-black uppercase border border-divider hover:border-danger/30 transition-all">
                                                                     <X size={10} /> Cancelar
                                                                 </button>
                                                             </div>
@@ -1490,8 +1490,8 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                 <Check size={13} className="text-success" strokeWidth={3} />
                             </div>
                             <div className="text-left">
-                                <p className="text-[13px] font-bold text-content-2">{showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
-                                <p className="text-[11px] text-content-3">Historial de resoluciones</p>
+                                <p className="text-body font-bold text-content-2">{showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
+                                <p className="text-label text-content-3">Historial de resoluciones</p>
                             </div>
                         </div>
                         <ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />
@@ -1506,17 +1506,17 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                         {photo
                                             ? <img src={photo} alt={r.resolved_by} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
                                             : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                <span className="text-[9px] font-black text-success-text">{initials}</span>
+                                                <span className="text-micro font-black text-success-text">{initials}</span>
                                               </div>
                                         }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <span className="text-[10px] font-bold bg-success/10 text-success-text px-2 py-0.5 rounded-md">{r.tipo_documento}</span>
-                                                <span className="text-[13px] font-bold text-content-2">{getBranch(r.branch_id)}</span>
-                                                <span className="font-mono text-[11px] text-content-3">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
+                                                <span className="text-caption font-bold bg-success/10 text-success-text px-2 py-0.5 rounded-md">{r.tipo_documento}</span>
+                                                <span className="text-body font-bold text-content-2">{getBranch(r.branch_id)}</span>
+                                                <span className="font-mono text-label text-content-3">{pad7(r.gap_from)} → {pad7(r.gap_to)}</span>
                                             </div>
-                                            {r.comment && <p className="text-[12px] text-content-3 mb-1">"{r.comment}"</p>}
-                                            <p className="text-[11px] text-content-3">
+                                            {r.comment && <p className="text-body-sm text-content-3 mb-1">"{r.comment}"</p>}
+                                            <p className="text-label text-content-3">
                                                 <span className="font-semibold text-content-2">{r.resolved_by || '—'}</span>
                                                 {r.resolved_at && <> · {new Date(r.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
                                             </p>
@@ -1526,7 +1526,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                             })}
                             <div className="px-5 py-3 border-t border-black/[0.04] flex justify-center">
                                 <button onClick={() => setShowAllResolved(v => !v)}
-                                    className="text-[11px] font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
+                                    className="text-label font-bold text-chart-1-text hover:text-chart-1-text transition-colors">
                                     {showAllResolved ? `Ver solo este mes (${resolvedGapsThisMonth.length})` : `Ver todos (${resolvedGaps.length})`}
                                 </button>
                             </div>
@@ -1725,10 +1725,10 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Top bar */}
             <div className="px-5 pl-8 py-4 bg-surface-card border-b border-black/[0.04] flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-[11px] font-bold uppercase text-content-3 tracking-widest">{pendingFiltered.length} pendientes</span>
-                    <span className="text-[11px] font-bold text-chart-1-text">{fmt(totalPending)}</span>
+                    <span className="text-label font-bold uppercase text-content-3 tracking-widest">{pendingFiltered.length} pendientes</span>
+                    <span className="text-label font-bold text-chart-1-text">{fmt(totalPending)}</span>
                     {Object.entries(byTipo).map(([tipo, rows]) => (
-                        <span key={tipo} className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${TIPO_PAGO_COLORS[tipo] || 'bg-surface-card-hover text-content-3 border-divider'}`}>
+                        <span key={tipo} className={`inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border ${TIPO_PAGO_COLORS[tipo] || 'bg-surface-card-hover text-content-3 border-divider'}`}>
                             {tipo} {rows.length}
                         </span>
                     ))}
@@ -1761,7 +1761,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="p-4 md:p-6 space-y-5">
                     {isNoEfectivoFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                             <Search size={12} strokeWidth={2.5} className="shrink-0" />
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
@@ -1780,16 +1780,16 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                 <div className={`bg-gradient-to-r ${theme.header} px-6 py-4 flex items-center justify-between`}>
                                     <div className="flex items-center gap-3">
                                         <CreditCard size={20} className="text-white/80 shrink-0" />
-                                        <h3 className="text-white font-black text-[15px] uppercase tracking-widest">
+                                        <h3 className="text-white font-black text-subtitle uppercase tracking-widest">
                                             {TIPO_PAGO_LABELS[tipo] || tipo}
                                         </h3>
-                                        <span className="bg-surface-card text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                                        <span className="bg-surface-card text-white text-label font-black px-2.5 py-0.5 rounded-full">
                                             {tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}
                                         </span>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-white/60 text-[9px] font-bold uppercase tracking-widest">Total pendiente</div>
-                                        <div className="text-white font-black text-[18px] leading-none mt-0.5">{fmt(tipoTotal)}</div>
+                                        <div className="text-white/60 text-micro font-bold uppercase tracking-widest">Total pendiente</div>
+                                        <div className="text-white font-black text-title-sm leading-none mt-0.5">{fmt(tipoTotal)}</div>
                                     </div>
                                 </div>
                                 {/* Table */}
@@ -1812,16 +1812,16 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             <React.Fragment key={r.id}>
                                                 <DataRow index={ri}>
                                                     <DataCell>
-                                                        <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-surface-card-hover text-content-3 border-divider">{r.tipo_documento}</span>
-                                                        <div className="font-mono text-[12px] text-content-2 mt-1">{r.correlativo}</div>
+                                                        <span className="inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border bg-surface-card-hover text-content-3 border-divider">{r.tipo_documento}</span>
+                                                        <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
                                                     </DataCell>
                                                     <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
                                                     <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
                                                     <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
-                                                    <DataCell className="text-[14px] font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                                                    <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                     <DataCell align="right">
                                                         <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                            className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                            className={`text-white px-4 py-2 rounded-[1rem] text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                             <Check size={13} strokeWidth={2.5} /> Confirmar
                                                         </button>
                                                     </DataCell>
@@ -1832,12 +1832,12 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <div className="flex items-start gap-3 max-w-3xl">
                                                                 <div className="flex-1 space-y-2">
                                                                     <textarea
-                                                                        className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                        className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                         rows={2} autoFocus
                                                                         placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                         value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
                                                                     />
-                                                                    <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-content-3 hover:text-content-2 transition-colors">
+                                                                    <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-content-3 hover:text-content-2 transition-colors">
                                                                         <Paperclip size={14} />
                                                                         {confirmFile ? (
                                                                             <span className="text-content-2 font-bold">{confirmFile.name}</span>
@@ -1850,11 +1850,11 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 </div>
                                                                 <div className="flex flex-col gap-2 shrink-0">
                                                                     <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                        className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
+                                                                        className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                         {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                     </button>
                                                                     <button onClick={() => setConfirmingId(null)}
-                                                                        className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
+                                                                        className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
                                                                         <X size={12} /> Cancelar
                                                                     </button>
                                                                 </div>
@@ -1875,7 +1875,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                         <>
                             <div className="flex items-center gap-3 pt-2">
                                 <div className="flex-1 h-px bg-black/[0.07]" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.15em] text-content-3">Ventas a crédito</span>
+                                <span className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Ventas a crédito</span>
                                 <div className="flex-1 h-px bg-black/[0.07]" />
                             </div>
                             {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {
@@ -1890,16 +1890,16 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                         <div className={`bg-gradient-to-r ${theme.header} px-6 py-4 flex items-center justify-between`}>
                                             <div className="flex items-center gap-3">
                                                 <CreditCard size={20} className="text-white/80 shrink-0" />
-                                                <h3 className="text-white font-black text-[15px] uppercase tracking-widest">
+                                                <h3 className="text-white font-black text-subtitle uppercase tracking-widest">
                                                     {TIPO_PAGO_LABELS[tipo] || tipo}
                                                 </h3>
-                                                <span className="bg-surface-card text-white text-[11px] font-black px-2.5 py-0.5 rounded-full">
+                                                <span className="bg-surface-card text-white text-label font-black px-2.5 py-0.5 rounded-full">
                                                     {tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}
                                                 </span>
                                             </div>
                                             <div className="text-right">
-                                                <div className="text-white/60 text-[9px] font-bold uppercase tracking-widest">Total pendiente</div>
-                                                <div className="text-white font-black text-[18px] leading-none mt-0.5">{fmt(tipoTotal)}</div>
+                                                <div className="text-white/60 text-micro font-bold uppercase tracking-widest">Total pendiente</div>
+                                                <div className="text-white font-black text-title-sm leading-none mt-0.5">{fmt(tipoTotal)}</div>
                                             </div>
                                         </div>
                                         <DataTable
@@ -1921,16 +1921,16 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     <React.Fragment key={r.id}>
                                                         <DataRow index={ri}>
                                                             <DataCell>
-                                                                <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border bg-surface-card-hover text-content-3 border-divider">{r.tipo_documento}</span>
-                                                                <div className="font-mono text-[12px] text-content-2 mt-1">{r.correlativo}</div>
+                                                                <span className="inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border bg-surface-card-hover text-content-3 border-divider">{r.tipo_documento}</span>
+                                                                <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
                                                             </DataCell>
                                                             <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
                                                             <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
                                                             <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
-                                                            <DataCell className="text-[14px] font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                                                            <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                             <DataCell align="right">
                                                                 <button onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                                                    className={`text-white px-4 py-2 rounded-[1rem] text-[11px] font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
+                                                                    className={`text-white px-4 py-2 rounded-[1rem] text-label font-bold uppercase tracking-widest transition-[transform,box-shadow] shadow-sm active:scale-[0.97] flex items-center gap-2 ml-auto hover:-translate-y-0.5 ${theme.btn}`}>
                                                                     <Check size={13} strokeWidth={2.5} /> Confirmar
                                                                 </button>
                                                             </DataCell>
@@ -1941,12 +1941,12 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="flex items-start gap-3 max-w-3xl">
                                                                         <div className="flex-1 space-y-2">
                                                                             <textarea
-                                                                                className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-[16px] text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                                className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                                 rows={2} autoFocus
                                                                                 placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
                                                                                 value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
                                                                             />
-                                                                            <label className="flex items-center gap-2 cursor-pointer text-[12px] font-semibold text-content-3 hover:text-content-2 transition-colors">
+                                                                            <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-content-3 hover:text-content-2 transition-colors">
                                                                                 <Paperclip size={14} />
                                                                                 {confirmFile ? <span className="text-content-2 font-bold">{confirmFile.name}</span> : <span>Adjuntar documento de crédito</span>}
                                                                                 <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden"
@@ -1955,11 +1955,11 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         </div>
                                                                         <div className="flex flex-col gap-2 shrink-0">
                                                                             <button onClick={() => handleConfirm(r.id)} disabled={confirmSaving}
-                                                                                className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
+                                                                                className={`flex items-center gap-1.5 px-4 py-2 text-white rounded-full text-caption font-black uppercase tracking-widest shadow transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 ${theme.btn}`}>
                                                                                 {confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
                                                                             </button>
                                                                             <button onClick={() => setConfirmingId(null)}
-                                                                                className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-[10px] font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
+                                                                                className="flex items-center gap-1.5 px-4 py-2 bg-surface-card hover:bg-danger/10 text-content-2 hover:text-danger rounded-full text-caption font-black uppercase tracking-widest border border-border-card hover:border-danger/30 shadow transition-[transform,background-color] hover:-translate-y-0.5">
                                                                                 <X size={12} /> Cancelar
                                                                             </button>
                                                                         </div>
@@ -1983,14 +1983,14 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             {confirmed.length > 0 && (
                 <div className="border-t border-black/[0.06]">
                     <button onClick={() => setShowConfirmed(v => !v)}
-                        className="w-full flex items-center justify-between px-5 pl-8 py-3 text-[11px] font-bold uppercase tracking-widest text-content-2 hover:text-content-2 hover:bg-black/[0.02] transition-colors">
+                        className="w-full flex items-center justify-between px-5 pl-8 py-3 text-label font-bold uppercase tracking-widest text-content-2 hover:text-content-2 hover:bg-black/[0.02] transition-colors">
                         <span className="flex items-center gap-2"><Check size={12} className="text-chart-1-text" strokeWidth={3} />{confirmed.length} confirmado{confirmed.length !== 1 ? 's' : ''}</span>
                         {showConfirmed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
                     {showConfirmed && (
                         <div>
                             <div className="px-5 pl-8 py-3 border-b border-black/[0.04] flex items-center gap-3 bg-black/[0.01]">
-                                <span className="text-[10px] font-bold uppercase text-content-3 tracking-widest shrink-0">Filtrar:</span>
+                                <span className="text-caption font-bold uppercase text-content-3 tracking-widest shrink-0">Filtrar:</span>
                                 <div className="w-[160px]">
                                     <LiquidSelect value={filterConfirmedTipo} onChange={setFilterConfirmedTipo} options={tipoFilterOpts} placeholder="Tipo pago" compact bare />
                                 </div>
@@ -1999,11 +1999,11 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                 </div>
                                 {(filterConfirmedTipo || filterConfirmedBranch) && (
                                     <button onClick={() => { setFilterConfirmedTipo(''); setFilterConfirmedBranch(''); }}
-                                        className="text-[10px] font-bold text-content-3 hover:text-danger flex items-center gap-1 transition-colors">
+                                        className="text-caption font-bold text-content-3 hover:text-danger flex items-center gap-1 transition-colors">
                                         <X size={12} /> Limpiar
                                     </button>
                                 )}
-                                <span className="ml-auto text-[10px] text-content-3">{confirmedFiltered.length} resultado{confirmedFiltered.length !== 1 ? 's' : ''}</span>
+                                <span className="ml-auto text-caption text-content-3">{confirmedFiltered.length} resultado{confirmedFiltered.length !== 1 ? 's' : ''}</span>
                             </div>
                             <DataTable
                                 columns={[
@@ -2032,10 +2032,10 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                     return (
                                         <DataRow key={r.id} index={ci}>
                                             <DataCell>
-                                                <span className={`inline-flex px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-surface-card-hover text-content-3 border-divider'}`}>{r.tipo_pago}</span>
+                                                <span className={`inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-surface-card-hover text-content-3 border-divider'}`}>{r.tipo_pago}</span>
                                             </DataCell>
                                             <DataCell>
-                                                <div className="font-mono text-[12px] text-content-2">{inv?.correlativo || '—'}</div>
+                                                <div className="font-mono text-body-sm text-content-2">{inv?.correlativo || '—'}</div>
                                             </DataCell>
                                             <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
                                             <DataCell hideBelow="lg" className="max-w-[140px] truncate">{inv?.cliente || '—'}</DataCell>
@@ -2046,21 +2046,21 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     {r.confirmed_by_photo ? (
                                                         <img src={r.confirmed_by_photo} alt="" className="w-7 h-7 rounded-full object-cover border border-divider shrink-0" />
                                                     ) : (
-                                                        <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center text-content-2 text-[10px] font-bold shrink-0">
+                                                        <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center text-content-2 text-caption font-bold shrink-0">
                                                             {r.confirmed_by?.charAt(0)?.toUpperCase() || '?'}
                                                         </div>
                                                     )}
-                                                    <span className="text-[12px] font-semibold text-content-2 whitespace-nowrap">{r.confirmed_by || '—'}</span>
+                                                    <span className="text-body-sm font-semibold text-content-2 whitespace-nowrap">{r.confirmed_by || '—'}</span>
                                                 </div>
                                             </DataCell>
                                             <DataCell className="whitespace-nowrap">{dt}</DataCell>
                                             <DataCell>
                                                 {r.proof_url ? (
                                                     <button type="button" onClick={() => openStoredFile(r.proof_url)}
-                                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-chart-1-text hover:text-brand-text transition-colors">
+                                                        className="inline-flex items-center gap-1.5 text-label font-bold text-chart-1-text hover:text-brand-text transition-colors">
                                                         <Paperclip size={12} /> Ver <ExternalLink size={10} />
                                                     </button>
-                                                ) : <span className="text-[12px] text-content-3 italic">Sin comprobante</span>}
+                                                ) : <span className="text-body-sm text-content-3 italic">Sin comprobante</span>}
                                             </DataCell>
                                             <DataCell className="max-w-[180px]">{r.notes || <span className="italic text-content-3">—</span>}</DataCell>
                                         </DataRow>
@@ -2143,7 +2143,7 @@ export default function FacturacionView() {
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>
@@ -2158,7 +2158,7 @@ export default function FacturacionView() {
 
                 {allowedTabs.map(tab => (
                     <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
+                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             activeTab === tab.key
                                 ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
                                 : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
@@ -2175,7 +2175,7 @@ export default function FacturacionView() {
 
                 <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-chart-8-solid hover:opacity-90 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-micro md:text-caption font-black uppercase tracking-widest bg-chart-8-solid hover:opacity-90 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
                     <ExternalLink size={12} /> Admin Facturas
                 </a>
 

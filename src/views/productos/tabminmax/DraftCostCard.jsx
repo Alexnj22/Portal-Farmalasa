@@ -21,7 +21,7 @@ export default function DraftCostCard({ draftCost, isBodega }) {
             title={tooltip}>
             <Target size={13} className={`shrink-0 ${isBodega ? 'text-warning' : 'text-chart-3-text'}`} />
             <div className="flex flex-col leading-snug gap-0.5">
-                <span className="text-[10px] font-semibold text-content-3">
+                <span className="text-caption font-semibold text-content-3">
                     {label}
                     {hasAnyDelta && (
                         <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -30,9 +30,9 @@ export default function DraftCostCard({ draftCost, isBodega }) {
                     )}
                 </span>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-[14px] font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-[10px] text-content-3 leading-none">→</span>
-                    <span className="text-[14px] font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
+                    <span className="text-body-lg font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
+                    <span className="text-caption text-content-3 leading-none">→</span>
+                    <span className="text-body-lg font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
             </div>
         </div>

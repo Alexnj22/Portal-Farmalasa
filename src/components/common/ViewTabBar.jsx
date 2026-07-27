@@ -80,7 +80,7 @@ export default function ViewTabBar({
           type="text"
           placeholder={placeholder}
           className={`flex-1 bg-transparent border-none outline-none focus:ring-0
-            text-[16px] font-bold
+            text-input font-bold
             w-[180px] sm:w-[280px] md:w-[380px] ${inputCls}`}
           value={searchValue}
           onChange={e => onSearchChange?.(e.target.value)}
@@ -113,7 +113,7 @@ export default function ViewTabBar({
             return (
               <button key={tab.key}
                 onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
-                className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-[9px] md:text-[10px] font-black
+                className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-micro md:text-caption font-black
                   uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap
                   border shrink-0 flex items-center gap-1.5
                   ${isActive ? activeTabCls : inactiveTabCls}`}>

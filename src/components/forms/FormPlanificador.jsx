@@ -139,8 +139,8 @@ const DayRow = memo(({
                 {/* BLOQUE 1: SWITCH Y DÍA */}
                 <div className="w-full xl:w-36 flex items-center justify-between xl:mt-2.5 flex-shrink-0">
                     <div>
-                        <h4 className="text-[13px] md:text-[14px] font-black text-content uppercase tracking-widest">{day.name}</h4>
-                        <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-brand-text' : 'text-content-2'}`}>
+                        <h4 className="text-body md:text-body-lg font-black text-content uppercase tracking-widest">{day.name}</h4>
+                        <p className={`text-micro font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-brand-text' : 'text-content-2'}`}>
                             {conflict ? conflict.label : isWorking ? 'Día Laboral' : 'Día de Descanso'}
                         </p>
                     </div>
@@ -165,7 +165,7 @@ const DayRow = memo(({
                             {/* SUCURSAL */}
                             {isMultiBranch && (
                                 <div className="lg:col-span-1 overflow-visible">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
+                                    <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
                                         <Building2 size={12} className="text-chart-3-text"/> Ubicación
                                     </label>
                                     <LiquidSelect 
@@ -180,7 +180,7 @@ const DayRow = memo(({
 
                             {/* TURNO */}
                             <div className="lg:col-span-1 overflow-visible z-[100]">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
+                                <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
                                     <Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand-text'}/> Turno Asignado
                                 </label>
                                 <LiquidSelect 
@@ -196,7 +196,7 @@ const DayRow = memo(({
                             {/* ALMUERZO */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
+                                    <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                         <Utensils size={12} className="text-chart-4-text"/> Almuerzo (-1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} theme="orange" />
@@ -214,14 +214,14 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-[9px] font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
+                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-micro font-bold text-content-2 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
                                 )}
                             </div>
 
                             {/* LACTANCIA */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
+                                    <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                         <Baby size={12} className="text-chart-6"/> Lactancia (+1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} theme="pink" />
@@ -239,7 +239,7 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-[9px] font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
+                                    <div className="h-[34px] rounded-[10px] bg-surface-card border border-dashed border-divider flex items-center justify-center text-micro font-bold text-content-2 uppercase tracking-widest shadow-inner">No Aplica</div>
                                 )}
                             </div>
                         </div>
@@ -392,17 +392,17 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                 <div className="flex-1 w-full">
                     <div className="flex justify-between items-end mb-1.5">
                         <div>
-                            <h3 className="text-[10px] font-black text-content uppercase tracking-widest flex items-center gap-1.5">
+                            <h3 className="text-caption font-black text-content uppercase tracking-widest flex items-center gap-1.5">
                                 <Clock size={12} className={currentStats.isExcess ? 'text-danger' : 'text-brand-text'}/>
                                 Horas Asignadas
                             </h3>
-                            <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-0.5">
+                            <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-0.5">
                                 {isMonthlyLimitedRole ? 'Límite Mensual (Especial)' : 'Límite Semanal Estándar'}
                             </p>
                         </div>
                         <div className="text-right">
-                            <span className={`text-[18px] font-black leading-none ${currentStats.isExcess ? 'text-danger' : 'text-content'}`}>{currentStats.hours}h</span>
-                            <span className="text-[10px] font-bold text-content-3"> / {maxHours}h</span>
+                            <span className={`text-title-sm font-black leading-none ${currentStats.isExcess ? 'text-danger' : 'text-content'}`}>{currentStats.hours}h</span>
+                            <span className="text-caption font-bold text-content-3"> / {maxHours}h</span>
                         </div>
                     </div>
                     <div className="h-1.5 bg-surface-card rounded-full overflow-hidden shadow-inner border border-border-card">
@@ -414,19 +414,19 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                     {currentStats.isExcess && (
                         <div className="flex items-center gap-1.5 bg-danger/10 border border-danger/30 text-danger px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
                             <AlertTriangle size={10} strokeWidth={2.5}/>
-                            <span className="text-[9px] font-black uppercase tracking-widest">Exceso (+{Number((currentStats.hours - maxHours).toFixed(1))}h)</span>
+                            <span className="text-micro font-black uppercase tracking-widest">Exceso (+{Number((currentStats.hours - maxHours).toFixed(1))}h)</span>
                         </div>
                     )}
                     {currentStats.noDaysOff && (
                         <div className="flex items-center gap-1.5 bg-warning/10 border border-warning/30 text-warning px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
                             <AlertTriangle size={10} strokeWidth={2.5}/>
-                            <span className="text-[9px] font-black uppercase tracking-widest">Sin días de descanso</span>
+                            <span className="text-micro font-black uppercase tracking-widest">Sin días de descanso</span>
                         </div>
                     )}
                     {!currentStats.isExcess && !currentStats.noDaysOff && (
                         <div className="flex items-center gap-1.5 bg-success/10 border border-success/30 text-success px-2 py-1 rounded-[8px] shadow-sm animate-in fade-in">
                             <CheckCircle2 size={10} strokeWidth={2.5}/>
-                            <span className="text-[9px] font-black uppercase tracking-widest">Programación Óptima</span>
+                            <span className="text-micro font-black uppercase tracking-widest">Programación Óptima</span>
                         </div>
                     )}
                 </div>

@@ -22,10 +22,10 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                     <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5">
                         Declara tu Horario
                     </h1>
-                    <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-warning/80">
+                    <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-warning/80">
                         Turno Extra — {employee?.name || 'Empleado'}
                     </p>
-                    <p className="text-white/40 text-[10px] sm:text-xs leading-relaxed mt-2.5 px-2">
+                    <p className="text-white/40 text-caption sm:text-xs leading-relaxed mt-2.5 px-2">
                         Indica el horario que trabajarás hoy. Talento Humano lo revisará y confirmará.
                     </p>
                 </div>
@@ -33,7 +33,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-1.5">
+                            <label className="text-micro font-bold uppercase tracking-widest text-white/40 block mb-1.5">
                                 Hora Entrada
                             </label>
                             <TimePicker12
@@ -43,7 +43,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-[9px] font-bold uppercase tracking-widest text-white/40 block mb-1.5">
+                            <label className="text-micro font-bold uppercase tracking-widest text-white/40 block mb-1.5">
                                 Hora Salida
                             </label>
                             <TimePicker12
@@ -56,7 +56,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
 
                     <button
                         type="submit"
-                        className="relative z-20 pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-warning font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.97] transition-all duration-300"
+                        className="relative z-20 pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-warning font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.97] transition-all duration-300"
                     >
                         <CheckCircle size={14} /> Confirmar Horario
                     </button>
@@ -66,7 +66,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                     <button
                         type="button"
                         onClick={() => onSubmit(null, null)}
-                        className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-white/40 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]"
+                        className="relative z-20 pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/40 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]"
                     >
                         <SkipForward size={14} /> No sé mi horario — Solo registrar entrada
                     </button>

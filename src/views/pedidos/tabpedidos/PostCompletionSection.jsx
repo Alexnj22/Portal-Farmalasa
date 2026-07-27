@@ -29,9 +29,9 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
     return (
         <div className="border-t border-divider px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Resumen de recepción</p>
+                <p className="text-caption font-bold text-content-2 uppercase tracking-wide">Resumen de recepción</p>
                 {llegadaEmp && (
-                    <span className="flex items-center gap-1 text-[10px] text-content-3">
+                    <span className="flex items-center gap-1 text-caption text-content-3">
                         {llegadaEmp.photo_url
                             ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
                             : <UserCircle2 size={12} className="text-content-3" />}
@@ -41,27 +41,27 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
             </div>
             <div className="flex flex-wrap gap-1.5">
                 {tipoInfo && (
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tipoInfo.cls}`}>
+                    <span className={`inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border ${tipoInfo.cls}`}>
                         <span>{tipoInfo.icon}</span>{tipoInfo.label}
                     </span>
                 )}
                 {hasCajasDanadas && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
+                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
                         ⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}
                     </span>
                 )}
                 {reenvios.length > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-chart-3/10 border-chart-3/30 text-chart-3-text">
+                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-chart-3/10 border-chart-3/30 text-chart-3-text">
                         <Truck size={9} />{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}
                     </span>
                 )}
                 {difResueltas > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-success/10 border-success/30 text-success-text">
+                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-success/10 border-success/30 text-success-text">
                         <CheckCircle2 size={9} />{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}
                     </span>
                 )}
                 {difPendientes > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
+                    <span className="inline-flex items-center gap-1 text-caption font-semibold px-2 py-0.5 rounded-full border bg-warning/10 border-warning/30 text-warning-text">
                         <AlertCircle size={9} />{difPendientes} dif. pendiente{difPendientes > 1 ? 's' : ''}
                     </span>
                 )}

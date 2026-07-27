@@ -113,7 +113,7 @@ function ExpiryBadge({ date }) {
   const isExpired = days <= 0;
   const isNear    = days > 0 && days <= 60;
   return (
-    <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${
+    <span className={`shrink-0 text-micro font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${
       isExpired ? 'bg-danger/10 text-danger-text' :
       isNear    ? 'bg-warning/10 text-warning-text' :
                   'bg-surface-card-hover text-content-3'
@@ -223,14 +223,14 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
     <div className="rounded-xl border border-divider bg-surface-card backdrop-blur-sm px-3 py-2.5 flex flex-col gap-1.5">
       {/* Header row: nombre + estatus + reportar */}
       <div className="flex items-start gap-1.5">
-        <p className="text-[11px] font-black text-content leading-tight flex-1">{nombre || '—'}</p>
-        <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+        <p className="text-label font-black text-content leading-tight flex-1">{nombre || '—'}</p>
+        <span className={`shrink-0 text-micro font-black px-1.5 py-0.5 rounded-full ${
           activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
         }`}>
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
         {rState === 'done' ? (
-          <span className="shrink-0 flex items-center gap-1 text-[9px] font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
+          <span className="shrink-0 flex items-center gap-1 text-micro font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
             <CheckCircle2 size={8} strokeWidth={2.5} />OK
           </span>
         ) : formOpen ? (
@@ -239,12 +239,12 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
               type="number" min="1"
               value={qty}
               onChange={e => setQty(e.target.value)}
-              className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-[16px] font-black text-content-2 text-center outline-none focus:border-danger"
+              className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-input font-black text-content-2 text-center outline-none focus:border-danger"
             />
             <button
               onClick={submit}
               disabled={rState === 'saving'}
-              className="px-1.5 py-0.5 rounded-full bg-danger-solid hover:bg-danger/80 text-white text-[9px] font-black transition-colors disabled:opacity-50"
+              className="px-1.5 py-0.5 rounded-full bg-danger-solid hover:bg-danger/80 text-white text-micro font-black transition-colors disabled:opacity-50"
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>
@@ -255,7 +255,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
         ) : (
           <button
             onClick={() => setFormOpen(true)}
-            className="shrink-0 flex items-center gap-0.5 text-[9px] font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full transition-colors"
+            className="shrink-0 flex items-center gap-0.5 text-micro font-black text-danger-text bg-danger/10 hover:bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full transition-colors"
           >
             <PackageMinus size={8} strokeWidth={2.5} />
             Reportar
@@ -265,12 +265,12 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
       {principio && (
         <div className="flex items-center gap-1.5 bg-chart-3/10 rounded-lg px-2 py-1">
           <FlaskConical size={9} className="text-chart-3-text shrink-0" />
-          <p className="text-[10px] text-chart-3-text font-semibold leading-tight">
+          <p className="text-caption text-chart-3-text font-semibold leading-tight">
             {principio}{conc ? ` ${conc}` : ''}
           </p>
         </div>
       )}
-      {lab && <p className="text-[9px] text-content-3 font-medium truncate">{lab}</p>}
+      {lab && <p className="text-micro text-content-3 font-medium truncate">{lab}</p>}
     </div>
   );
 }
@@ -291,10 +291,10 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-divider" />
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
-            <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
+            <span className={`text-caption font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
             <span className="w-px h-3 bg-divider mx-1" />
-            <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
-            <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
+            <span className={`text-body-sm font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
+            <span className="text-micro font-semibold text-content-3 ml-0.5">uds</span>
           </div>
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-divider" />
         </div>
@@ -319,23 +319,23 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                     <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-surface-card transition-colors">
                       {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-black text-content leading-tight">{prod.descripcion}</p>
+                        <p className="text-label font-black text-content leading-tight">{prod.descripcion}</p>
                         {prod.principioActivo && (
-                          <p className="text-[9px] text-chart-3-text font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
+                          <p className="text-micro text-chart-3-text font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
                         )}
                         {prod.presentacion && (
-                          <p className="text-[9px] text-content-3 font-medium mt-0.5">{prod.presentacion}</p>
+                          <p className="text-micro text-content-3 font-medium mt-0.5">{prod.presentacion}</p>
                         )}
                       </div>
-                      <span className="text-[10px] font-black text-content-3 shrink-0 tabular-nums">{lotTotal} uds</span>
+                      <span className="text-caption font-black text-content-3 shrink-0 tabular-nums">{lotTotal} uds</span>
                       <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
                     </div>
                     <div className="divide-y divide-white/40" style={{ background: 'rgba(255,255,255,0.18)' }}>
                       {prod.lots.map((row, li) => (
                         <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
+                          <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                           <ExpiryBadge date={row.fecha_vencimiento} />
-                          <span className="text-[10px] font-black text-content-2 shrink-0 tabular-nums w-14 text-right">{row.cantidad} uds</span>
+                          <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">{row.cantidad} uds</span>
                         </div>
                       ))}
                     </div>
@@ -348,19 +348,19 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                   >
                     {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold text-content truncate leading-tight">{prod.descripcion}</p>
+                      <p className="text-label font-bold text-content truncate leading-tight">{prod.descripcion}</p>
                       {prod.principioActivo && (
-                        <p className="text-[9px] text-chart-3-text font-semibold truncate">{prod.principioActivo}</p>
+                        <p className="text-micro text-chart-3-text font-semibold truncate">{prod.principioActivo}</p>
                       )}
                       {prod.presentacion && (
-                        <p className="text-[9px] text-content-3">{prod.presentacion}</p>
+                        <p className="text-micro text-content-3">{prod.presentacion}</p>
                       )}
                     </div>
-                    <span className="text-[9px] font-mono text-content-3 shrink-0 max-w-[60px] truncate">
+                    <span className="text-micro font-mono text-content-3 shrink-0 max-w-[60px] truncate">
                       {prod.lots[0].lote || '—'}
                     </span>
                     <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
-                    <span className="text-[10px] font-black text-content-2 shrink-0 tabular-nums w-14 text-right">
+                    <span className="text-caption font-black text-content-2 shrink-0 tabular-nums w-14 text-right">
                       {prod.lots[0].cantidad} uds
                     </span>
                     <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
@@ -381,7 +381,7 @@ function SectionLabel({ icon: Icon, label, color = 'text-content-3', bg = 'bg-su
     <div className="flex items-center gap-2 mb-2 mt-1">
       <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bg}`}>
         <Icon size={10} className={color} strokeWidth={2.5} />
-        <span className={`text-[9px] font-black uppercase tracking-wider ${color}`}>{label}</span>
+        <span className={`text-micro font-black uppercase tracking-wider ${color}`}>{label}</span>
       </div>
       <div className="h-px flex-1 bg-divider" />
     </div>
@@ -532,14 +532,14 @@ export default function WidgetInventorySearch() {
           )}
 
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-black text-content leading-tight truncate">{drillProduct.descripcion}</p>
+            <p className="text-body-sm font-black text-content leading-tight truncate">{drillProduct.descripcion}</p>
             {drillProduct.principioActivo && (
-              <p className="text-[9px] text-chart-3-text font-semibold truncate">{drillProduct.principioActivo}</p>
+              <p className="text-micro text-chart-3-text font-semibold truncate">{drillProduct.principioActivo}</p>
             )}
             {drillProduct.presentacion && (
-              <p className="text-[10px] text-content-3 font-medium">{drillProduct.presentacion}</p>
+              <p className="text-caption text-content-3 font-medium">{drillProduct.presentacion}</p>
             )}
-            <p className="text-[9px] text-content-3 font-bold mt-0.5">{grandTotal} uds · {drillBranches.length} sucursal{drillBranches.length !== 1 ? 'es' : ''}</p>
+            <p className="text-micro text-content-3 font-bold mt-0.5">{grandTotal} uds · {drillBranches.length} sucursal{drillBranches.length !== 1 ? 'es' : ''}</p>
           </div>
         </div>
 
@@ -547,7 +547,7 @@ export default function WidgetInventorySearch() {
           {drillBranches.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <Package size={24} strokeWidth={1.5} className="text-content-3" />
-              <p className="text-[11px] text-content-3 font-semibold">Sin stock en ninguna sucursal</p>
+              <p className="text-label text-content-3 font-semibold">Sin stock en ninguna sucursal</p>
             </div>
           ) : (
             drillBranches.map((branch, bi) => {
@@ -566,10 +566,10 @@ export default function WidgetInventorySearch() {
                       {branch.isVencidos
                         ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                         : <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />}
-                      <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
+                      <span className={`text-caption font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
                       <span className="w-px h-3 bg-divider mx-1" />
-                      <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{total}</span>
-                      <span className="text-[9px] font-semibold text-content-3 ml-0.5">uds</span>
+                      <span className={`text-body-sm font-black tabular-nums ${theme.label}`}>{total}</span>
+                      <span className="text-micro font-semibold text-content-3 ml-0.5">uds</span>
                     </div>
                     <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-danger/20' : 'to-divider'}`} />
                   </div>
@@ -582,17 +582,17 @@ export default function WidgetInventorySearch() {
                   >
                     {prod.lots.length === 1 ? (
                       <div className="flex items-center gap-2 px-3 py-2">
-                        <span className="text-[9px] font-mono text-content-3 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
+                        <span className="text-micro font-mono text-content-3 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
-                        <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{prod.lots[0].cantidad} uds</span>
+                        <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{prod.lots[0].cantidad} uds</span>
                       </div>
                     ) : (
                       <div className="divide-y divide-white/40">
                         {prod.lots.map((row, li) => (
                           <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                            <span className="text-[9px] font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
+                            <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                             <ExpiryBadge date={row.fecha_vencimiento} />
-                            <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{row.cantidad} uds</span>
+                            <span className={`text-caption font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-danger-text' : 'text-content-2'}`}>{row.cantidad} uds</span>
                           </div>
                         ))}
                       </div>
@@ -629,7 +629,7 @@ export default function WidgetInventorySearch() {
         />
       </div>
 
-      {error && <p className="shrink-0 px-1 text-[11px] text-danger-text font-medium">{error}</p>}
+      {error && <p className="shrink-0 px-1 text-label text-danger-text font-medium">{error}</p>}
 
       {/* Results area */}
       <div className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -641,7 +641,7 @@ export default function WidgetInventorySearch() {
         {!loading && results === null && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-content-3" />
-            <p className="text-[11px] font-semibold text-content-3 text-center leading-snug">
+            <p className="text-label font-semibold text-content-3 text-center leading-snug">
               Busca un producto para ver<br />su stock por sucursal
             </p>
           </div>
@@ -663,12 +663,12 @@ export default function WidgetInventorySearch() {
               <div className="h-px flex-1 bg-danger/20" />
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30 backdrop-blur-sm shadow-sm">
                 <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
+                <span className="text-caption font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
                 <span className="w-px h-3 bg-danger/20 mx-1" />
-                <span className="text-[12px] font-black tabular-nums text-danger-text">
+                <span className="text-body-sm font-black tabular-nums text-danger-text">
                   {vencidosProds.reduce((s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0)}
                 </span>
-                <span className="text-[9px] font-semibold text-danger-text ml-0.5">uds</span>
+                <span className="text-micro font-semibold text-danger-text ml-0.5">uds</span>
               </div>
               <div className="h-px flex-1 bg-danger/20" />
             </div>
@@ -682,15 +682,15 @@ export default function WidgetInventorySearch() {
                     style={{ background: 'rgba(255,241,242,0.60)', border: '1px solid rgba(253,164,175,0.40)', boxShadow: '0 2px 8px rgba(225,29,72,0.05)', animationDelay: `${pi * 25}ms` }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold text-content-2 truncate leading-tight">{prod.descripcion}</p>
-                      {prod.presentacion && <p className="text-[9px] text-content-3">{prod.presentacion}</p>}
+                      <p className="text-label font-bold text-content-2 truncate leading-tight">{prod.descripcion}</p>
+                      {prod.presentacion && <p className="text-micro text-content-3">{prod.presentacion}</p>}
                       {prod.lots.length > 1 && (
                         <div className="mt-1 space-y-0.5">
                           {prod.lots.map((r, li) => (
                             <div key={li} className="flex items-center gap-1.5">
-                              <span className="text-[9px] font-mono text-content-3 truncate">{r.lote || '—'}</span>
+                              <span className="text-micro font-mono text-content-3 truncate">{r.lote || '—'}</span>
                               <ExpiryBadge date={r.fecha_vencimiento} />
-                              <span className="text-[9px] font-black text-danger-text tabular-nums ml-auto">{r.cantidad}</span>
+                              <span className="text-micro font-black text-danger-text tabular-nums ml-auto">{r.cantidad}</span>
                             </div>
                           ))}
                         </div>
@@ -698,11 +698,11 @@ export default function WidgetInventorySearch() {
                     </div>
                     {prod.lots.length === 1 && (
                       <>
-                        <span className="text-[9px] font-mono text-content-3 shrink-0 max-w-[55px] truncate">{prod.lots[0].lote || '—'}</span>
+                        <span className="text-micro font-mono text-content-3 shrink-0 max-w-[55px] truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
                       </>
                     )}
-                    <span className="text-[10px] font-black text-danger-text shrink-0 tabular-nums w-14 text-right">{lotTotal} uds</span>
+                    <span className="text-caption font-black text-danger-text shrink-0 tabular-nums w-14 text-right">{lotTotal} uds</span>
                   </div>
                 );
               })}
@@ -717,7 +717,7 @@ export default function WidgetInventorySearch() {
             {/* No stock banner */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30">
               <Package size={13} className="text-warning shrink-0" strokeWidth={2} />
-              <p className="text-[11px] text-warning-text font-semibold flex-1">
+              <p className="text-label text-warning-text font-semibold flex-1">
                 Sin stock para <span className="font-black">"{query}"</span>
               </p>
             </div>
@@ -726,7 +726,7 @@ export default function WidgetInventorySearch() {
             {srsLoading && (
               <div className="flex items-center gap-2 px-1">
                 <Loader2 size={11} className="text-chart-3-text animate-spin shrink-0" />
-                <p className="text-[10px] text-content-3 font-medium">Consultando Registro SRS...</p>
+                <p className="text-caption text-content-3 font-medium">Consultando Registro SRS...</p>
               </div>
             )}
 
@@ -755,7 +755,7 @@ export default function WidgetInventorySearch() {
 
             {/* Nothing anywhere */}
             {!srsLoading && srsResults !== null && srsResults.length === 0 && alternatives.length === 0 && (
-              <p className="text-center text-[11px] text-content-3 font-medium py-4">
+              <p className="text-center text-label text-content-3 font-medium py-4">
                 Sin resultados en SRS ni alternativas en inventario
               </p>
             )}

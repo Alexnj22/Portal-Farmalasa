@@ -90,37 +90,37 @@ const SyncHealthView = () => {
                         return (
                             <DataRow key={`${row.domain}-${row.checked_at}-${i}`} index={i}>
                                 <DataCell>
-                                    <div className="text-[11px] font-bold text-content-2">{dt.toLocaleDateString('es-SV')}</div>
-                                    <div className="text-[10px] text-content-3 flex items-center gap-1 mt-0.5">
+                                    <div className="text-label font-bold text-content-2">{dt.toLocaleDateString('es-SV')}</div>
+                                    <div className="text-caption text-content-3 flex items-center gap-1 mt-0.5">
                                         <Clock size={9} /> {dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </DataCell>
                                 <DataCell>
-                                    <span className="text-[11px] font-black uppercase tracking-wide text-content-2">
+                                    <span className="text-label font-black uppercase tracking-wide text-content-2">
                                         {DOMAIN_LABELS[row.domain] || row.domain}
                                     </span>
                                     {row.source && (
-                                        <div className="text-[9px] text-content-3 mt-0.5">{row.source}</div>
+                                        <div className="text-micro text-content-3 mt-0.5">{row.source}</div>
                                     )}
                                 </DataCell>
                                 <DataCell>
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-content-2">
+                                    <span className="inline-flex items-center gap-1 text-caption font-semibold text-content-2">
                                         <Globe2 size={10} className="text-content-3" />
                                         {scopeLabel(row, branchMap)}
                                     </span>
                                 </DataCell>
                                 <DataCell>
                                     {row.success ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30">
                                             <CheckCircle2 size={10} /> OK
                                         </span>
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-danger/10 text-danger border border-danger/30">
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-micro font-black uppercase tracking-widest bg-danger/10 text-danger border border-danger/30">
                                             <AlertCircle size={10} /> Falló
                                         </span>
                                     )}
                                 </DataCell>
-                                <DataCell hideBelow="md" className="text-[10px] text-content-3 max-w-[320px] truncate" title={row.error_msg || ''}>
+                                <DataCell hideBelow="md" className="text-caption text-content-3 max-w-[320px] truncate" title={row.error_msg || ''}>
                                     {row.error_msg || '—'}
                                 </DataCell>
                             </DataRow>

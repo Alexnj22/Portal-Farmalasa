@@ -23,12 +23,12 @@ import { updatePedidoSucursalStatus } from '../../data/pedidos';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
-    const avatarCls = size === 'sm' ? 'w-6 h-6 rounded-full text-[10px]' : 'w-8 h-8 rounded-full text-[12px]';
+    const avatarCls = size === 'sm' ? 'w-6 h-6 rounded-full text-caption' : 'w-8 h-8 rounded-full text-body-sm';
     return (
         <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-surface-card border border-divider shadow-sm">
             <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={emp.name} className={avatarCls} />
-            <span className="text-[11px] font-semibold text-content-2 whitespace-nowrap">{emp.name}</span>
-            {sub && <span className="text-[9px] text-content-3 whitespace-nowrap">{sub}</span>}
+            <span className="text-label font-semibold text-content-2 whitespace-nowrap">{emp.name}</span>
+            {sub && <span className="text-micro text-content-3 whitespace-nowrap">{sub}</span>}
             {onRemove && (
                 <button onClick={onRemove} className="text-content-3 hover:text-danger transition-colors">
                     <X size={11} />
@@ -595,13 +595,13 @@ export default function RecepcionModal({
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-[15px] font-bold text-content leading-snug">Confirmar recepción</h3>
-                            <p className="text-[11px] text-content-3 mt-0.5">
+                            <h3 className="text-subtitle font-bold text-content leading-snug">Confirmar recepción</h3>
+                            <p className="text-label text-content-3 mt-0.5">
                                 {sucursalNombre} · {rows.length} prod. · {allBoxNums.length} caja{allBoxNums.length !== 1 ? 's' : ''}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                            <span className={`text-label font-bold px-2.5 py-1 rounded-full border ${
                                 allAccessibleDone
                                     ? 'bg-success/10 text-success-text border-success/30'
                                     : 'bg-surface-card-hover text-content-2 border-divider'
@@ -649,13 +649,13 @@ export default function RecepcionModal({
                                                       <Box size={16} className="text-white" />}
                                     </div>
                                     <div>
-                                        <p className={`text-[12px] font-black leading-none ${
+                                        <p className={`text-body-sm font-black leading-none ${
                                             isRecibida ? 'text-success-text' : isFalta ? 'text-content-3' : 'text-content-2'
                                         }`}>Caja {boxNum}</p>
                                         {pageHint && (
-                                            <p className="text-[9px] font-semibold text-chart-3-text mt-0.5 leading-none">{pageHint}</p>
+                                            <p className="text-micro font-semibold text-chart-3-text mt-0.5 leading-none">{pageHint}</p>
                                         )}
-                                        <p className={`text-[9px] font-medium mt-0.5 ${
+                                        <p className={`text-micro font-medium mt-0.5 ${
                                             isRecibida ? 'text-success' : isFalta ? 'text-content-3' : isDanada ? 'text-warning' : 'text-content-3'
                                         }`}>
                                             {isRecibida ? '✓ Recibida' : isFalta ? 'En reenvío' : isDanada ? `${itemCount} prod. ⚠` : `${itemCount} prod.`}
@@ -668,11 +668,11 @@ export default function RecepcionModal({
 
                     {!allAccessibleDone && accessibleBoxNums.length > 0 && (
                         <button onClick={handleConfirmarTodo} disabled={saving}
-                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-success/40 bg-success/10 text-success-text font-bold text-[13px] hover:bg-success/10 active:scale-[0.97] transition-all disabled:opacity-40">
+                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-success/40 bg-success/10 text-success-text font-bold text-body hover:bg-success/10 active:scale-[0.97] transition-all disabled:opacity-40">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             Confirmar todo OK
                             {faltaCajas.length > 0 && (
-                                <span className="text-[10px] font-medium text-success">(omite cajas en reenvío)</span>
+                                <span className="text-caption font-medium text-success">(omite cajas en reenvío)</span>
                             )}
                         </button>
                     )}
@@ -680,7 +680,7 @@ export default function RecepcionModal({
                     {allAccessibleDone && (
                         <div className={`mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl border ${faltaCajas.length > 0 || hasFaltaItems ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30'}`}>
                             <PackageCheck size={15} className={`shrink-0 mt-0.5 ${faltaCajas.length > 0 || hasFaltaItems ? 'text-warning' : 'text-success'}`} />
-                            <p className={`text-[12px] font-medium leading-snug ${faltaCajas.length > 0 || hasFaltaItems ? 'text-warning-text' : 'text-success-text'}`}>
+                            <p className={`text-body-sm font-medium leading-snug ${faltaCajas.length > 0 || hasFaltaItems ? 'text-warning-text' : 'text-success-text'}`}>
                                 {faltaCajas.length > 0
                                     ? `Cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
                                     : hasFaltaItems
@@ -694,7 +694,7 @@ export default function RecepcionModal({
                     {faltaCajas.length > 0 && !allAccessibleDone && (
                         <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                             <Truck size={12} className="text-content-3 shrink-0" />
-                            <p className="text-[11px] text-content-3">
+                            <p className="text-label text-content-3">
                                 Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío — se recibirá por separado.
                             </p>
                         </div>
@@ -703,7 +703,7 @@ export default function RecepcionModal({
                     {/* Cajas especiales */}
                     {especialItems.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-[10px] font-bold text-content-2 uppercase tracking-wide mb-2">Cajas especiales</p>
+                            <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2">Cajas especiales</p>
                             <div className={`grid gap-2 ${especialItems.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                                 {especialItems.map(({ label, item }) => {
                                     const isDamaged   = especialesLlegadas[label] === 'danada';
@@ -731,13 +731,13 @@ export default function RecepcionModal({
                                                                <Star size={14} className="text-white" />}
                                             </div>
                                             <div>
-                                                <p className={`text-[12px] font-black leading-none ${
+                                                <p className={`text-body-sm font-black leading-none ${
                                                     isConfirmed ? 'text-success-text' : isFaltante ? 'text-content-3' : 'text-content-2'
                                                 }`}>{label}</p>
-                                                <p className="text-[9px] text-content-3 mt-0.5 leading-tight max-w-[90px] truncate">
+                                                <p className="text-micro text-content-3 mt-0.5 leading-tight max-w-[90px] truncate">
                                                     {item.products?.nombre ?? ''}
                                                 </p>
-                                                <p className={`text-[9px] font-medium mt-0.5 ${
+                                                <p className={`text-micro font-medium mt-0.5 ${
                                                     isConfirmed ? 'text-success' : isFaltante ? 'text-content-3' : isDamaged ? 'text-warning' : 'text-chart-3-text'
                                                 }`}>
                                                     {isConfirmed ? '✓ Confirmado' : isFaltante ? 'En reenvío' : isDamaged ? '⚠ Dañada' : `${item.cantidad_asignada} unid.`}
@@ -754,23 +754,23 @@ export default function RecepcionModal({
                 {/* Extras section on cajas screen */}
                 <div className="flex-none border-t border-divider px-4 py-3">
                     <button onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
-                        className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
+                        className="flex items-center gap-1.5 text-label font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
                         <PackagePlus size={13} />
                         ¿Llegó un producto extra?
-                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
                     </button>
                 </div>
 
                 {allAccessibleDone && (
                     <PedidoModal.Footer className="space-y-2">
                         {saveError && (
-                            <div className="flex items-center gap-2 text-danger text-[12px] bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-2 text-danger text-body-sm bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                                 <AlertTriangle size={13} /> {saveError}
                             </div>
                         )}
                         <div className="flex justify-end">
                             <button onClick={handleFinalizar} disabled={saving}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success-solid text-white font-bold text-[13px] hover:bg-success-hover disabled:opacity-50 transition-colors shadow-sm">
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-success-solid text-white font-bold text-body hover:bg-success-hover disabled:opacity-50 transition-colors shadow-sm">
                                 {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                                 Finalizar recepción
                             </button>
@@ -796,8 +796,8 @@ export default function RecepcionModal({
                             <ChevronLeft size={14} />
                         </button>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-[15px] font-bold text-content leading-snug">Productos extra</h3>
-                            <p className="text-[11px] text-content-3 mt-0.5">
+                            <h3 className="text-subtitle font-bold text-content leading-snug">Productos extra</h3>
+                            <p className="text-label text-content-3 mt-0.5">
                                 {extras.length === 0
                                     ? 'Productos recibidos que no estaban en el pedido'
                                     : `${extras.length} producto${extras.length !== 1 ? 's' : ''} agregado${extras.length !== 1 ? 's' : ''}`}
@@ -816,16 +816,16 @@ export default function RecepcionModal({
                         <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
-                                <span className="col-span-2 text-center text-[10px] font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
-                                <span className="col-span-2 text-center text-[10px] font-bold text-chart-3-text uppercase tracking-widest border-b-2 border-chart-3 pb-1">Sistema</span>
+                                <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
+                                <span className="col-span-2 text-center text-caption font-bold text-chart-3-text uppercase tracking-widest border-b-2 border-chart-3 pb-1">Sistema</span>
                                 <span />
                             </div>
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
-                                <span className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Producto</span>
-                                <span className="text-[10px] font-bold text-chart-9-text uppercase text-center">Pres.</span>
-                                <span className="text-[10px] font-bold text-chart-9-text uppercase text-center">Qty</span>
-                                <span className="text-[10px] font-bold text-chart-3-text uppercase text-center">Pres.</span>
-                                <span className="text-[10px] font-bold text-chart-3-text uppercase text-center">Qty</span>
+                                <span className="text-caption font-bold text-content-2 uppercase tracking-wide">Producto</span>
+                                <span className="text-caption font-bold text-chart-9-text uppercase text-center">Pres.</span>
+                                <span className="text-caption font-bold text-chart-9-text uppercase text-center">Qty</span>
+                                <span className="text-caption font-bold text-chart-3-text uppercase text-center">Pres.</span>
+                                <span className="text-caption font-bold text-chart-3-text uppercase text-center">Qty</span>
                                 <span />
                             </div>
                         </div>
@@ -833,8 +833,8 @@ export default function RecepcionModal({
                         {extras.length === 0 && (
                             <div className="py-12 text-center">
                                 <PackagePlus size={30} className="text-brand-text/40 mx-auto mb-2" />
-                                <p className="text-[13px] font-semibold text-content-3">Sin productos extra</p>
-                                <p className="text-[11px] text-content-3 mt-1">Buscá un producto abajo para agregarlo</p>
+                                <p className="text-body font-semibold text-content-3">Sin productos extra</p>
+                                <p className="text-label text-content-3 mt-1">Buscá un producto abajo para agregarlo</p>
                             </div>
                         )}
 
@@ -850,11 +850,11 @@ export default function RecepcionModal({
                                     <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-danger/10' : eDiff ? 'bg-warning/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
                                         <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                             <div className="min-w-0">
-                                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text mb-0.5">
+                                                <span className="inline-flex items-center gap-0.5 text-micro font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text mb-0.5">
                                                     <Plus size={8} /> Extra
                                                 </span>
-                                                <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
-                                                {eBothZero && <p className="text-[10px] text-danger font-medium">Al menos uno &gt; 0</p>}
+                                                <p className={`text-body-sm font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
+                                                {eBothZero && <p className="text-caption text-danger font-medium">Al menos uno &gt; 0</p>}
                                             </div>
 
                                             <div className={eDiff ? 'ring-2 ring-warning ring-offset-0 rounded-2xl' : ''}>
@@ -870,10 +870,10 @@ export default function RecepcionModal({
                                             <div className="relative">
                                                 <input type="number" min={0} value={e.fQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-chart-9-text focus:border-chart-9'}`}
+                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-input font-bold focus:outline-none tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-chart-9-text focus:border-chart-9'}`}
                                                 />
                                                 {eDiff && delta !== 0 && (
-                                                    <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
+                                                    <span className={`absolute -top-1.5 -right-1.5 text-micro font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
                                                         {delta > 0 ? '+' : ''}{delta}
                                                     </span>
                                                 )}
@@ -891,7 +891,7 @@ export default function RecepcionModal({
 
                                             <input type="number" min={0} value={e.sQty}
                                                 onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-chart-3-text focus:border-chart-3'}`}
+                                                className={`w-full text-center border rounded-lg px-1 py-1 text-input font-bold focus:outline-none tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-chart-3-text focus:border-chart-3'}`}
                                             />
 
                                             <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
@@ -903,7 +903,7 @@ export default function RecepcionModal({
                                             <div className="px-5 pb-2">
                                                 <input type="text" placeholder="Nota (opcional)…" value={e.nota}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
-                                                    className="w-full text-[16px] border border-brand/30 rounded-lg px-3 py-1.5 bg-surface-card focus:outline-none focus:border-brand placeholder-content-3"
+                                                    className="w-full text-input border border-brand/30 rounded-lg px-3 py-1.5 bg-surface-card focus:outline-none focus:border-brand placeholder-content-3"
                                                 />
                                             </div>
                                         )}
@@ -942,7 +942,7 @@ export default function RecepcionModal({
                         }} className="rounded-xl border border-brand/30 bg-surface-card backdrop-blur-xl shadow-2xl overflow-hidden">
                             {extraResults.map(prod => (
                                 <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-content-2 hover:bg-brand/10 transition-colors border-b border-divider last:border-0">
+                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-body-sm text-content-2 hover:bg-brand/10 transition-colors border-b border-divider last:border-0">
                                     <Plus size={12} className="text-brand-text shrink-0" />
                                     {prod.nombre}
                                 </button>
@@ -954,17 +954,17 @@ export default function RecepcionModal({
 
                 <PedidoModal.Footer className="space-y-2">
                     {saveError && (
-                        <div className="flex items-center gap-2 text-danger text-[12px] bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2 text-danger text-body-sm bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                             <AlertTriangle size={13} /> {saveError}
                         </div>
                     )}
                     <div className="flex items-center justify-between gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
+                            className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body transition-colors disabled:opacity-40">
                             Volver
                         </button>
                         <button onClick={goBackFromExtras}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-[13px] hover:bg-brand-hover transition-colors shadow-sm">
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-body hover:bg-brand-hover transition-colors shadow-sm">
                             <Check size={14} />
                             {extras.length > 0 ? `Listo · ${extras.length} extra${extras.length !== 1 ? 's' : ''}` : 'Listo'}
                         </button>
@@ -1000,28 +1000,28 @@ export default function RecepcionModal({
                                 exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
                                 {selectedEspecial !== null ? (
                                     <>
-                                        <h3 className="text-[15px] font-bold text-content leading-snug">
+                                        <h3 className="text-subtitle font-bold text-content leading-snug">
                                             {selectedEspecial.label} — Caja especial
-                                            {isDanadaEspecial && <span className="ml-2 text-[11px] font-semibold text-warning">⚠ Dañada</span>}
+                                            {isDanadaEspecial && <span className="ml-2 text-label font-semibold text-warning">⚠ Dañada</span>}
                                         </h3>
-                                        <p className="text-[11px] text-content-3 mt-0.5">
+                                        <p className="text-label text-content-3 mt-0.5">
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : hasCajaMap ? (
                                     <>
-                                        <h3 className="text-[15px] font-bold text-content leading-snug">
+                                        <h3 className="text-subtitle font-bold text-content leading-snug">
                                             Caja {selectedCaja}
-                                            {isDanadaBox && <span className="ml-2 text-[11px] font-semibold text-warning">⚠ Dañada</span>}
+                                            {isDanadaBox && <span className="ml-2 text-label font-semibold text-warning">⚠ Dañada</span>}
                                         </h3>
-                                        <p className="text-[11px] text-content-3 mt-0.5">
+                                        <p className="text-label text-content-3 mt-0.5">
                                             {selectedCajaRows.length} productos · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="text-[15px] font-bold text-content leading-snug">Confirmar recepción</h3>
-                                        <p className="text-[11px] text-content-3 mt-0.5">
+                                        <h3 className="text-subtitle font-bold text-content leading-snug">Confirmar recepción</h3>
+                                        <p className="text-label text-content-3 mt-0.5">
                                             {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
                                         </p>
                                     </>
@@ -1029,7 +1029,7 @@ export default function RecepcionModal({
                                 {(isDanadaBox || isDanadaEspecial) && (
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
-                                        <span className="text-[10px] text-warning-text font-medium">
+                                        <span className="text-caption text-warning-text font-medium">
                                             {isDanadaEspecial ? 'Esta caja especial llegó dañada — revisá el estado físico al contar' : 'Esta caja llegó dañada — revisá el estado físico al contar'}
                                         </span>
                                     </div>
@@ -1037,7 +1037,7 @@ export default function RecepcionModal({
                                 {!hasCajaMap && !isDanadaBox && cajaDanada.length > 0 && (
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/30">
                                         <AlertTriangle size={11} className="text-warning shrink-0" />
-                                        <span className="text-[10px] text-warning-text font-medium">
+                                        <span className="text-caption text-warning-text font-medium">
                                             Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisá el estado físico
                                         </span>
                                     </div>
@@ -1078,23 +1078,23 @@ export default function RecepcionModal({
                 <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
                     <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                         <span /><span />
-                        <span className="col-span-2 text-center text-[10px] font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
-                        <span className="col-span-2 text-center text-[10px] font-bold text-chart-3-text uppercase tracking-widest border-b-2 border-chart-3 pb-1">Sistema</span>
+                        <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
+                        <span className="col-span-2 text-center text-caption font-bold text-chart-3-text uppercase tracking-widest border-b-2 border-chart-3 pb-1">Sistema</span>
                         <span />
                     </div>
                     <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                        <span className="text-[10px] font-bold text-content-2 uppercase tracking-wide">Producto</span>
-                        <span className="text-[10px] font-bold text-content-2 uppercase text-center">Asig.</span>
-                        <span className="text-[10px] font-bold text-chart-9-text uppercase text-center">Pres.</span>
-                        <span className="text-[10px] font-bold text-chart-9-text uppercase text-center">Qty</span>
-                        <span className="text-[10px] font-bold text-chart-3-text uppercase text-center">Pres.</span>
-                        <span className="text-[10px] font-bold text-chart-3-text uppercase text-center">Qty</span>
+                        <span className="text-caption font-bold text-content-2 uppercase tracking-wide">Producto</span>
+                        <span className="text-caption font-bold text-content-2 uppercase text-center">Asig.</span>
+                        <span className="text-caption font-bold text-chart-9-text uppercase text-center">Pres.</span>
+                        <span className="text-caption font-bold text-chart-9-text uppercase text-center">Qty</span>
+                        <span className="text-caption font-bold text-chart-3-text uppercase text-center">Pres.</span>
+                        <span className="text-caption font-bold text-chart-3-text uppercase text-center">Qty</span>
                         <span />
                     </div>
                 </div>
 
                 {visibleRows.length === 0 && !extras.length && (
-                    <p className="text-center text-[12px] text-content-3 py-6">No se encontraron productos.</p>
+                    <p className="text-center text-body-sm text-content-3 py-6">No se encontraron productos.</p>
                 )}
 
                 <div className="divide-y divide-divider">
@@ -1137,15 +1137,15 @@ export default function RecepcionModal({
                         return (
                             <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-warning/10' : hasProb ? 'bg-chart-4/10' : 'bg-surface-card hover:bg-surface-card-hover/50'}`}>
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                                    <span className="text-[12px] text-content-2 font-semibold leading-snug">
+                                    <span className="text-body-sm text-content-2 font-semibold leading-snug">
                                         {r.products?.nombre}
                                         {!hasCajaMap && r.caja_especial && (
-                                            <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/30 rounded-full px-1.5 py-0.5">
+                                            <span className="ml-1.5 inline-flex items-center gap-0.5 text-micro font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/30 rounded-full px-1.5 py-0.5">
                                                 <Star size={8} />Especial
                                             </span>
                                         )}
                                     </span>
-                                    <span className="text-[12px] font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
+                                    <span className="text-body-sm font-bold text-content-3 tabular-nums text-center">{defDispQty}</span>
 
                                     <div className={fPres !== sPres ? 'ring-2 ring-warning ring-offset-0 rounded-2xl' : ''}>
                                         <LiquidSelect
@@ -1162,10 +1162,10 @@ export default function RecepcionModal({
                                             data-qty-row={rowIdx} data-qty-col="fqty"
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                             onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
-                                            className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-content-2 focus:border-chart-9'}`}
+                                            className={`w-full text-center border rounded-lg px-1 py-1 text-input font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-content-2 focus:border-chart-9'}`}
                                         />
                                         {hasDiff && (
-                                            <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
+                                            <span className={`absolute -top-1.5 -right-1.5 text-micro font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
                                                 {delta > 0 ? '+' : ''}{delta}
                                             </span>
                                         )}
@@ -1185,7 +1185,7 @@ export default function RecepcionModal({
                                         data-qty-row={rowIdx} data-qty-col="sqty"
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                         onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-content-2 focus:border-chart-3'}`}
+                                        className={`w-full text-center border rounded-lg px-1 py-1 text-input font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-content-2 focus:border-chart-3'}`}
                                     />
 
                                     <button onClick={toggleProblema}
@@ -1206,7 +1206,7 @@ export default function RecepcionModal({
                                         {ERROR_TIPOS.map(t => (
                                             <button key={t.value}
                                                 onClick={() => setErrorVals(p => ({ ...p, [r.id]: (p[r.id] === t.value ? '' : t.value) }))}
-                                                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
+                                                className={`text-caption font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
                                                     (errorVals[r.id] || '') === t.value
                                                         ? 'bg-chart-4-solid text-white border-chart-4 shadow-sm'
                                                         : 'bg-surface-card text-content-3 border-divider hover:border-chart-4/40 hover:text-chart-4-text'
@@ -1215,25 +1215,25 @@ export default function RecepcionModal({
                                         ))}
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="text-[10px] text-content-3">¿Cuántos?</span>
+                                                <span className="text-caption text-content-3">¿Cuántos?</span>
                                                 <input type="number" min={1} max={fQty}
                                                     value={cantProblemaVals[r.id] ?? 1}
                                                     onChange={e => setCantProblemaVals(p => ({
                                                         ...p, [r.id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))
                                                     }))}
-                                                    className="w-12 text-center border border-chart-4/40 rounded-full px-2 py-1 text-[16px] font-bold focus:outline-none focus:border-chart-4 bg-surface-tab-active text-chart-4-text"
+                                                    className="w-12 text-center border border-chart-4/40 rounded-full px-2 py-1 text-input font-bold focus:outline-none focus:border-chart-4 bg-surface-tab-active text-chart-4-text"
                                                 />
-                                                <span className="text-[10px] text-content-3">de {fQty}</span>
+                                                <span className="text-caption text-content-3">de {fQty}</span>
                                             </div>
                                         )}
                                         <input type="text" placeholder="Nota…"
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
                                             onKeyDown={e => e.key === 'Enter' && confirmProblema()}
-                                            className="flex-1 min-w-0 text-[16px] border border-chart-4/30 rounded-full px-3 py-1 focus:outline-none focus:border-chart-4 bg-surface-card placeholder-content-3"
+                                            className="flex-1 min-w-0 text-input border border-chart-4/30 rounded-full px-3 py-1 focus:outline-none focus:border-chart-4 bg-surface-card placeholder-content-3"
                                         />
                                         <button onClick={confirmProblema}
-                                            className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-chart-4-solid text-white hover:bg-chart-4/80 transition-colors">
+                                            className="shrink-0 flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-full bg-chart-4-solid text-white hover:bg-chart-4/80 transition-colors">
                                             <Check size={10} /> Listo
                                         </button>
                                     </div>
@@ -1250,17 +1250,17 @@ export default function RecepcionModal({
             {/* Extras — navigate to dedicated screen */}
             <div className="flex-none border-t border-divider px-5 py-3">
                 <button onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
-                    className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
+                    className="flex items-center gap-1.5 text-label font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
                     <PackagePlus size={13} />
                     ¿Llegó un producto extra?
-                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-caption font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
                 </button>
             </div>
 
             {/* Responsables */}
             {apoyo.length > 0 && (
                 <div className="flex-none border-t border-divider px-5 py-3">
-                    <p className="text-[10px] font-semibold text-content-3 uppercase tracking-wide mb-2">Responsables</p>
+                    <p className="text-caption font-semibold text-content-3 uppercase tracking-wide mb-2">Responsables</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         {apoyo.map(a => <EmpChip key={a.id} emp={a} />)}
                     </div>
@@ -1269,7 +1269,7 @@ export default function RecepcionModal({
 
             <PedidoModal.Footer className="space-y-2">
                 {saveError && (
-                    <div className="flex items-center gap-2 text-danger text-[12px] bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 text-danger text-body-sm bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
                         <AlertTriangle size={13} /> {saveError}
                     </div>
                 )}
@@ -1277,18 +1277,18 @@ export default function RecepcionModal({
                     <button
                         onClick={hasCajaMap ? goBack : onClose}
                         disabled={saving}
-                        className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] transition-colors disabled:opacity-40">
+                        className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body transition-colors disabled:opacity-40">
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
                     <div className="flex items-center gap-2">
                         <button onClick={handleTodoOk} disabled={saving}
                             title="Confirma recibido exactamente como se envió, sin revisar línea por línea"
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-success/40 bg-success/10 text-success-text font-semibold hover:bg-success/10 text-[13px] transition-colors disabled:opacity-40 active:scale-[0.97]">
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-success/40 bg-success/10 text-success-text font-semibold hover:bg-success/10 text-body transition-colors disabled:opacity-40 active:scale-[0.97]">
                             <Check size={14} />
                             Todo OK
                         </button>
                         <button onClick={handleConfirmarCaja} disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-success-solid text-white font-semibold hover:bg-success-hover text-[13px] transition-colors disabled:opacity-50">
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-success-solid text-white font-semibold hover:bg-success-hover text-body transition-colors disabled:opacity-50">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
                             {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
                         </button>

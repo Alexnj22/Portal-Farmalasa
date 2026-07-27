@@ -46,12 +46,12 @@ const BranchTabInmueble = ({
             <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border-card pb-5">
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                         <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
                     </h4>
 
                     <div className="flex items-center gap-4 bg-surface-card backdrop-blur-md border border-white shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
+                        <span className={`text-caption font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
                         <Switch on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";
                             setFormData(prev => ({
@@ -64,14 +64,14 @@ const BranchTabInmueble = ({
                                 }
                             }));
                         }} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-brand-text' : 'text-content-2'}`}>Alquilado</span>
+                        <span className={`text-caption font-black uppercase tracking-widest transition-colors ${isRented ? 'text-brand-text' : 'text-content-2'}`}>Alquilado</span>
                     </div>
                 </div>
 
                 {isRented ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-[1.5rem] border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
                         <div className="md:col-span-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
                             <LazyInput
@@ -85,7 +85,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Teléfono * {getTabStatus(3) === 'red' && !rent.landlordPhone && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
                             <LazyInput
@@ -101,7 +101,7 @@ const BranchTabInmueble = ({
 
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Mensualidad ($) * {getTabStatus(3) === 'red' && !rent.amount && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
                             <LazyInput
@@ -116,7 +116,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-danger bg-danger/10' : ''}`}>
@@ -129,7 +129,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Vigencia (Meses) * {getTabStatus(3) === 'red' && !rentContract.termMonths && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
                             <LazyInput
@@ -146,7 +146,7 @@ const BranchTabInmueble = ({
                         {rentContract.endDate && (
                             <div className="md:col-span-2 flex items-center gap-3 bg-warning/10 border border-warning/30 p-3 rounded-2xl">
                                 <AlertCircle size={18} className="text-warning shrink-0" />
-                                <p className="text-[11px] font-black uppercase tracking-widest text-warning-text">
+                                <p className="text-label font-black uppercase tracking-widest text-warning-text">
                                     Vencimiento calculado del contrato: <span className="text-warning-text bg-surface-card px-3 py-1 rounded-lg shadow-sm ml-2">{new Date(rentContract.endDate).toLocaleDateString()}</span>
                                 </p>
                             </div>
@@ -170,10 +170,10 @@ const BranchTabInmueble = ({
                         <div className="w-16 h-16 bg-chart-3/10 text-chart-3-text rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                             <Building2 size={28} strokeWidth={2} />
                         </div>
-                        <p className="text-content-3 font-black uppercase tracking-widest text-[12px]">
+                        <p className="text-content-3 font-black uppercase tracking-widest text-body-sm">
                             Local Propio
                         </p>
-                        <p className="text-content-3 font-bold text-[11px] mt-1">
+                        <p className="text-content-3 font-bold text-label mt-1">
                             No se requiere información de arrendamiento.
                         </p>
                     </div>
@@ -185,12 +185,12 @@ const BranchTabInmueble = ({
 
                 {/* ISLA 2: ALCALDÍA */}
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
                     </h4>
                     <div className="space-y-4 flex-1">
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Nº de Cuenta Municipal</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Nº de Cuenta Municipal</label>
                             <LazyInput
                                 icon={FileText}
                                 placeholder="Ej: 12345-A"
@@ -200,7 +200,7 @@ const BranchTabInmueble = ({
                             />
                         </div>
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Próx. Renovación / Pago
                             </label>
                             <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
@@ -229,7 +229,7 @@ const BranchTabInmueble = ({
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex flex-col mb-5">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
+                            <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                                 <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
                             </h4>
                             <Switch 
@@ -244,7 +244,7 @@ const BranchTabInmueble = ({
                             />
                         </div>
                         {hasInjections && (
-                            <p className="text-[9px] font-bold text-chart-1-text/80 mt-2 flex items-center gap-1 ml-6">
+                            <p className="text-micro font-bold text-chart-1-text/80 mt-2 flex items-center gap-1 ml-6">
                                 <Info size={10} /> Obligatorio por área de inyecciones activa.
                             </p>
                         )}
@@ -253,7 +253,7 @@ const BranchTabInmueble = ({
                     {isWasteManagementActive ? (
                         <div className="space-y-4 flex-1">
                             <div className="relative focus-within:z-50">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
+                                <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                     <AlertCircle size={12} strokeWidth={3} /> Vencimiento Contrato
                                 </label>
                                 <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
@@ -281,7 +281,7 @@ const BranchTabInmueble = ({
                             <div className="w-12 h-12 bg-surface-card-hover text-content-3 rounded-full flex items-center justify-center mb-3">
                                 <Trash2 size={20} strokeWidth={2} />
                             </div>
-                            <p className="text-content-2 font-bold text-[11px] uppercase tracking-widest leading-relaxed">
+                            <p className="text-content-2 font-bold text-label uppercase tracking-widest leading-relaxed">
                                 Gestión de desechos<br />desactivada
                             </p>
                         </div>
@@ -294,13 +294,13 @@ const BranchTabInmueble = ({
 
                 {/* ISLA 4: EXTINTORES */}
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
                         <Flame size={16} strokeWidth={2.5} /> Extintores
                     </h4>
 
                     <div className="space-y-4 flex-1">
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Cant. Extintores</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Cant. Extintores</label>
                             <LazyInput
                                 type="number"
                                 placeholder="Ej: 2"
@@ -311,7 +311,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Tipo Principal</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Tipo Principal</label>
                             <div className={`rounded-2xl ${inputHoverClass}`}>
                                 <LiquidSelect
                                     value={legal.extinguisherType || ""}
@@ -323,7 +323,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento
                             </label>
                             <div className={`bg-warning/10 rounded-2xl border border-warning/30 shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>
@@ -340,13 +340,13 @@ const BranchTabInmueble = ({
 
                 {/* ISLA 5: CONTROL DE PLAGAS Y FUMIGACIÓN */}
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-success mb-5 flex items-center gap-2">
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-success mb-5 flex items-center gap-2">
                         <BugOff size={16} strokeWidth={2.5} /> Control de Plagas y Fumigación
                     </h4>
 
                     <div className="space-y-4 flex-1">
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Empresa Proveedora</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Empresa Proveedora</label>
                             <LazyInput
                                 icon={Building2}
                                 placeholder="Nombre de la empresa"
@@ -357,7 +357,7 @@ const BranchTabInmueble = ({
                         </div>
 
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-success ml-1 mb-2 block flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 block flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={3} /> Última Fumigación
                             </label>
                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass}`}>

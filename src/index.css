@@ -54,6 +54,37 @@
   --warning-text: #9a4507;
   --danger-text:  #a6291e;
 
+
+  /* ═══ ESCALA TIPOGRÁFICA (D2.1, 2026-07-26) ═════════════════════════════
+     No existía. 4,490 `text-[Npx]` literales en 181 archivos con 22 valores
+     distintos, y DESIGN.md §7 documentaba la escala COMO STRINGS LITERALES —
+     consagrando el hand-writing en vez de resolverlo.
+
+     Estos 13 tokens NO cambian ningún tamaño: salen de la distribución real
+     medida, no de un rediseño. Se tokeniza 1:1 todo lo que tiene ≥14 usos y
+     se consolidan solo los one-off (16 usos en total: 17→18, 19→18, 21→22,
+     24→26, 28→26, 36→32). Un rediseño tipográfico de verdad cambiaría cómo
+     se ve el portal entero y necesita mockup y aprobación aparte.
+
+     El 84% de los usos vive en micro/caption/label/body-sm/body — esa es la
+     escala real del producto; el resto de la rampa existe pero es marginal. */
+  --text-micro:      9px;   /* 1,119 usos — badge mínimo, piso legible (§7) */
+  --text-caption:   10px;   /* 1,330 usos — el tamaño más usado del portal */
+  --text-label:     11px;   /*   862 usos — label en mayúsculas */
+  --text-body-sm:   12px;   /*   471 usos */
+  --text-body:      13px;   /*   249 usos — celda de tabla */
+  --text-body-lg:   14px;   /*    93 usos */
+  --text-subtitle:  15px;   /*    63 usos — subtítulo, escalón md: sobre 14 */
+  --text-input:     16px;   /*   205 usos — piso obligatorio de input (iOS) */
+  --text-title-sm:  18px;   /*    25 usos */
+  --text-title:     20px;   /*    14 usos */
+  --text-title-lg:  22px;   /*    45 usos — título de vista */
+  --text-display:   26px;   /*     9 usos */
+  --text-display-lg:32px;   /*     4 usos */
+  /* Fuera de escala a propósito: los 3 numerales hero (72/80/120px) del
+     reloj del kiosco y del contador grande. Son piezas únicas, no una
+     rampa — quedan como valor arbitrario documentado. */
+
   /* Ease functions */
   --ease-spring: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -721,6 +752,21 @@
 
 @theme inline {
   /* Brand & semantic */
+  /* D2.1 — escala tipográfica; genera text-micro, text-caption, … */
+  --text-micro: var(--text-micro);
+  --text-caption: var(--text-caption);
+  --text-label: var(--text-label);
+  --text-body-sm: var(--text-body-sm);
+  --text-body: var(--text-body);
+  --text-body-lg: var(--text-body-lg);
+  --text-subtitle: var(--text-subtitle);
+  --text-input: var(--text-input);
+  --text-title-sm: var(--text-title-sm);
+  --text-title: var(--text-title);
+  --text-title-lg: var(--text-title-lg);
+  --text-display: var(--text-display);
+  --text-display-lg: var(--text-display-lg);
+
   --color-brand:        var(--brand);
   --color-brand-text:   var(--brand-text);
   --color-brand-dark:   var(--brand-dark);

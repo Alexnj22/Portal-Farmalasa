@@ -50,10 +50,10 @@ const AlertModal = ({
                         <Icon size={36} strokeWidth={2.5} />
                     </div>
 
-                    <h3 className="text-[20px] font-black uppercase tracking-tight mb-2 leading-none drop-shadow-sm text-content">
+                    <h3 className="text-title font-black uppercase tracking-tight mb-2 leading-none drop-shadow-sm text-content">
                         {title}
                     </h3>
-                    <p className="text-[13px] font-medium leading-relaxed px-2 mb-2 text-content-3">
+                    <p className="text-body font-medium leading-relaxed px-2 mb-2 text-content-3">
                         {message}
                     </p>
                 </div>
@@ -62,7 +62,7 @@ const AlertModal = ({
                 <div className="p-5 border-t border-divider flex relative z-10 bg-surface-card-hover">
                     <button 
                         onClick={onClose}
-                        className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transform-gpu border-none ${currentConfig.btn}`}
+                        className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-label uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transform-gpu border-none ${currentConfig.btn}`}
                     >
                         {buttonText}
                     </button>

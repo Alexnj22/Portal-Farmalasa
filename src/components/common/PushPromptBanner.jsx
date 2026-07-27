@@ -38,14 +38,14 @@ export default function PushPromptBanner() {
         <Bell size={16} className="text-chart-3-text" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-content leading-tight">Activa las notificaciones</p>
-        <p className="text-[11px] text-content-3 leading-tight mt-0.5">Recibe avisos aunque tengas la app cerrada</p>
+        <p className="text-body font-semibold text-content leading-tight">Activa las notificaciones</p>
+        <p className="text-label text-content-3 leading-tight mt-0.5">Recibe avisos aunque tengas la app cerrada</p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={handleActivar}
           className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover active:scale-[0.97]
-                     text-white text-[12px] font-semibold transition-all"
+                     text-white text-body-sm font-semibold transition-all"
         >
           Activar
         </button>

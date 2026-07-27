@@ -36,7 +36,7 @@ const COLS = [
 const REGIMEN_LABELS = { contribuyente: 'Contribuyente IVA', sujeto_excluido: 'Sujeto Excluido' };
 
 function RegimenCell({ row }) {
-    if (!row.regimen_fiscal) return <span className="text-content-3 text-[11px]">—</span>;
+    if (!row.regimen_fiscal) return <span className="text-content-3 text-label">—</span>;
     const isExcluido = row.regimen_fiscal === 'sujeto_excluido';
     return (
         <span title={isExcluido ? 'Sin NRC (Art. 119 CT) — no da crédito fiscal; retención de Renta 10% si es persona natural por un servicio (Art. 156 CT)' : 'Tiene NRC — da derecho a crédito fiscal de IVA'}>
@@ -58,18 +58,18 @@ const fmtDate = (d) => {
 
 function CategoriaCell({ row }) {
     return row.categoria_nombre
-        ? <span className="text-content-2 text-[12px] font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>
-        : <span className="text-warning text-[11px] font-bold whitespace-nowrap">Sin categoría</span>;
+        ? <span className="text-content-2 text-body-sm font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>
+        : <span className="text-warning text-label font-bold whitespace-nowrap">Sin categoría</span>;
 }
 
 function MatchErpCell({ row }) {
     if (row.supplier_id) {
-        return <span className="text-content font-medium text-[12px] truncate max-w-[180px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
+        return <span className="text-content font-medium text-body-sm truncate max-w-[180px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
     }
     return (
         <div className="flex items-center gap-1.5">
             <AlertTriangle size={12} className="text-warning shrink-0" title="Sin match con proveedor del ERP" />
-            <span className="text-content-3 text-[11px] whitespace-nowrap">Sin match ERP</span>
+            <span className="text-content-3 text-label whitespace-nowrap">Sin match ERP</span>
         </div>
     );
 }
@@ -222,19 +222,19 @@ export default function ProveedoresView({ openModal }) {
                                         <Building2 size={14} className="text-content-3" strokeWidth={1.8} />
                                     </div>
                                     <div className="min-w-0 max-w-[200px]">
-                                        <p className="text-[12px] font-bold text-content-2 truncate" title={row.nombre}>{row.nombre}</p>
+                                        <p className="text-body-sm font-bold text-content-2 truncate" title={row.nombre}>{row.nombre}</p>
                                         {row.alias && (
-                                            <p className="text-[10px] text-content-3 truncate italic">&ldquo;{row.alias}&rdquo;</p>
+                                            <p className="text-caption text-content-3 truncate italic">&ldquo;{row.alias}&rdquo;</p>
                                         )}
                                         {!row.alias && row.nombre_comercial && row.nombre_comercial !== row.nombre && (
-                                            <p className="text-[10px] text-content-3 truncate">{row.nombre_comercial}</p>
+                                            <p className="text-caption text-content-3 truncate">{row.nombre_comercial}</p>
                                         )}
                                     </div>
                                 </div>
                             </DataCell>
                             <DataCell hideBelow="md">
-                                <p className="font-mono text-[10px] text-content-2">{row.nit || row.dui || '—'}</p>
-                                {row.nrc && <p className="font-mono text-[10px] text-content-3">NRC {row.nrc}</p>}
+                                <p className="font-mono text-caption text-content-2">{row.nit || row.dui || '—'}</p>
+                                {row.nrc && <p className="font-mono text-caption text-content-3">NRC {row.nrc}</p>}
                             </DataCell>
                             <DataCell hideBelow="lg">
                                 <RegimenCell row={row} />
@@ -249,7 +249,7 @@ export default function ProveedoresView({ openModal }) {
                                 <span className="tabular-nums font-bold text-content-2">{row.docs_count}</span>
                             </DataCell>
                             <DataCell hideBelow="lg">
-                                <span className="text-content-2 text-[11px] tabular-nums">{fmtDate(row.ultima_vez_visto)}</span>
+                                <span className="text-content-2 text-label tabular-nums">{fmtDate(row.ultima_vez_visto)}</span>
                             </DataCell>
                         </DataRow>
                     ))}

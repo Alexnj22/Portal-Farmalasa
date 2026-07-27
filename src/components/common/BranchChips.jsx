@@ -180,7 +180,7 @@ const BranchChips = ({
                   type="button"
                   onClick={() => selectKey(it.key)}
                   className={[
-                    "py-3 px-3 rounded-[1.25rem] text-[11px] font-semibold",
+                    "py-3 px-3 rounded-[1.25rem] text-label font-semibold",
                     "flex items-center justify-center gap-2 min-w-0",
                     "transition-all duration-250 transform-gpu relative z-10",
                     active
@@ -192,7 +192,7 @@ const BranchChips = ({
                   <span className="truncate">{it.label}</span>
 
                   {counts && (
-                    <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0">
+                    <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-caption font-bold flex-shrink-0">
                       {count}
                     </span>
                   )}
@@ -208,7 +208,7 @@ const BranchChips = ({
                 type="button"
                 onClick={() => setMoreOpen((v) => !v)}
                 className={[
-                  "py-3 px-4 rounded-[1.25rem] text-[11px] font-semibold",
+                  "py-3 px-4 rounded-[1.25rem] text-label font-semibold",
                   "flex items-center justify-center gap-2",
                   "transition-all duration-250 transform-gpu relative z-10",
                   moreOpen
@@ -245,11 +245,11 @@ const BranchChips = ({
                           ].join(" ")}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <span className="text-[13px] font-bold truncate">
+                            <span className="text-body font-bold truncate">
                               {it.label}
                             </span>
                             {counts && (
-                              <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-content-3">
+                              <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-caption font-bold flex-shrink-0 text-content-3">
                                 {count}
                               </span>
                             )}

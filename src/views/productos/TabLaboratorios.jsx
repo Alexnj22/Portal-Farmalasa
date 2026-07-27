@@ -157,7 +157,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                     <span className="text-sm font-bold text-content-2 group-hover:text-content transition-colors">
                                         {sec.label}
                                     </span>
-                                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${sec.pill}`}>
+                                    <span className={`text-label font-semibold px-2 py-0.5 rounded-full border ${sec.pill}`}>
                                         {sectionLabs.length}
                                     </span>
                                     <div className="flex-1 h-px bg-divider ml-1" />
@@ -216,7 +216,7 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
             </div>
             <div className="min-w-0">
                 <p className="text-2xl font-black text-content leading-none tracking-tight">{value}</p>
-                <p className={`text-[11px] mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
+                <p className={`text-label mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
             </div>
         </div>
     );
@@ -376,11 +376,11 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
             <div className="px-3.5 pt-4 pb-3.5">
                 {/* Branch header */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide ${accent.badge}`}>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-caption font-bold uppercase tracking-wide ${accent.badge}`}>
                         {isBodegaBranch ? <Package className="w-2.5 h-2.5" /> : <ShoppingBag className="w-2.5 h-2.5" />}
                         {isBodegaBranch ? 'Bodega' : 'Sala'}
                     </span>
-                    <span className="text-[11px] font-bold text-content-2 truncate flex-1">{branch.name}</span>
+                    <span className="text-label font-bold text-content-2 truncate flex-1">{branch.name}</span>
                     {!editing && (
                         <Pencil className="w-3 h-3 text-content-3 group-hover:text-content-3 transition-opacity opacity-0 hover:opacity-100 flex-shrink-0" />
                     )}
@@ -399,7 +399,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                             {!filled ? (
                                 <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-dashed border-divider bg-surface-card-hover/50">
                                     <MapPin className="w-3 h-3 text-content-3 flex-shrink-0" />
-                                    <span className="text-[11px] text-content-3 italic">Sin ubicación — clic para agregar</span>
+                                    <span className="text-label text-content-3 italic">Sin ubicación — clic para agregar</span>
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
@@ -441,7 +441,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                         <button
                                             key={t.key}
                                             onClick={() => setSection(t.key)}
-                                            className={`flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-[10px] transition-all duration-150 ${
+                                            className={`flex-1 text-label font-semibold py-1.5 px-2 rounded-[10px] transition-all duration-150 ${
                                                 section === t.key ? t.active : 'text-content-3 hover:text-content-2'
                                             }`}
                                         >
@@ -468,7 +468,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                             <button
                                                 key={t.key}
                                                 onClick={() => setSalaType(t.key)}
-                                                className={`flex-1 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 ${
+                                                className={`flex-1 py-1 rounded-lg text-label font-bold border transition-all duration-150 ${
                                                     salaType === t.key
                                                         ? 'bg-chart-9-solid text-white border-chart-9 shadow-sm shadow-chart-9/30'
                                                         : 'bg-surface-card text-content-3 border-border-card hover:border-chart-9/30 hover:text-chart-9-text'
@@ -524,7 +524,7 @@ function GlassChip({ icon, label, sub, color }) {
         ? 'bg-gradient-to-r from-warning/10 to-warning/5 border-warning/30 text-warning-text'
         : 'bg-gradient-to-r from-chart-9/10 to-chart-9/5 border-chart-9/30 text-chart-9-text';
     return (
-        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold backdrop-blur-sm ${cls}`}>
+        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-label font-semibold backdrop-blur-sm ${cls}`}>
             <span className="opacity-60">{icon}</span>
             <span>{label}</span>
             {sub && <span className="opacity-60 font-medium">· {sub}</span>}
@@ -538,12 +538,12 @@ function GlassInput({ label, value, onChange, placeholder, accent }) {
         : 'focus:ring-2 focus:ring-chart-9/20 focus:border-chart-9/40';
     return (
         <div className="flex items-center gap-2.5">
-            <span className="text-[11px] font-bold text-content-3 w-12 flex-shrink-0 text-right">{label}</span>
+            <span className="text-label font-bold text-content-3 w-12 flex-shrink-0 text-right">{label}</span>
             <input
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                className={`flex-1 text-[16px] px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-content-3 transition-all font-medium`}
+                className={`flex-1 text-input px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-content-3 transition-all font-medium`}
             />
         </div>
     );

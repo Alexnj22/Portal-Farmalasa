@@ -36,12 +36,12 @@ const BranchTabGeneral = ({
                     <div className="p-2 bg-brand/10 text-brand-text rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Building2 size={16} strokeWidth={2.5} />
                     </div>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Identidad de Sucursal</h4>
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Identidad de Sucursal</h4>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
                             Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-danger)] border border-danger/30">Requerido</span>}
                         </label>
                         <LazyInput
@@ -50,11 +50,11 @@ const BranchTabGeneral = ({
                             placeholder="Ej: La Popular Centro"
                             value={name}
                             onChange={(val) => setFormData(prev => ({ ...prev, name: val, branchName: val }))}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'red' && !name.trim() ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
+                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'red' && !name.trim() ? '!border-danger !bg-danger/10 hover:!border-danger' : 'border-divider'}`}
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Apertura</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Apertura</label>
                         <div className={`bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 relative z-30 ${inputHoverClass}`}>
                             <LiquidDatePicker
                                 value={openingDate}
@@ -72,12 +72,12 @@ const BranchTabGeneral = ({
                     <div className="p-2 bg-success/10 text-success rounded-[0.8rem] border border-success/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <MapPin size={16} strokeWidth={2.5} />
                     </div>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Ubicación Geográfica</h4>
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Ubicación Geográfica</h4>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative z-20"> 
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
                             <LiquidSelect
                                 value={location.department || ""}
@@ -93,7 +93,7 @@ const BranchTabGeneral = ({
                     </div>
 
                     <div className="relative z-10">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Distrito / Municipio
                             {getTabStatus(1) === 'orange' && !location.municipality && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
@@ -110,7 +110,7 @@ const BranchTabGeneral = ({
                     </div>
 
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Dirección Exacta
                             {getTabStatus(1) === 'orange' && !formData.address?.trim() && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
@@ -118,51 +118,51 @@ const BranchTabGeneral = ({
                             placeholder="Barrio El Centro, 1ra Av. Norte..."
                             value={formData.address || ""}
                             onChange={(val) => setFormData(prev => ({ ...prev, address: val }))}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.address?.trim() ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
+                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.address?.trim() ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Enlace Google Maps</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Enlace Google Maps</label>
                         <LazyInput
                             icon={Map}
                             placeholder="https://maps.google.com/..."
                             value={location.mapsUrl || ""}
                             onChange={(val) => updateNestedSetting('location', 'mapsUrl', val)}
-                            className={`!bg-surface-card border-divider shadow-sm h-[40px] text-[13px] ${inputHoverClass}`}
+                            className={`!bg-surface-card border-divider shadow-sm h-[40px] text-body ${inputHoverClass}`}
                         />
                     </div>
 
                     {/* Coordenadas GPS */}
                     <div className="md:col-span-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center gap-2">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center gap-2">
                             <Navigation size={10} />
                             Coordenadas GPS
-                            <span className="normal-case tracking-normal font-medium text-content-3 text-[9px]">
+                            <span className="normal-case tracking-normal font-medium text-content-3 text-micro">
                                 · Google Maps → click derecho → "¿Qué hay aquí?" → copiar lat, lng
                             </span>
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-[9px] font-semibold text-content-2 ml-1 mb-1 block uppercase tracking-widest">Latitud</label>
+                                <label className="text-micro font-semibold text-content-2 ml-1 mb-1 block uppercase tracking-widest">Latitud</label>
                                 <LazyInput
                                     placeholder="14.0123456"
                                     value={String(location.lat || '')}
                                     onChange={(val) => updateNestedSetting('location', 'lat', val ? Number(val) : null)}
-                                    className={`!bg-surface-card border-divider shadow-sm h-[40px] text-[13px] font-mono ${inputHoverClass}`}
+                                    className={`!bg-surface-card border-divider shadow-sm h-[40px] text-body font-mono ${inputHoverClass}`}
                                 />
                             </div>
                             <div>
-                                <label className="text-[9px] font-semibold text-content-2 ml-1 mb-1 block uppercase tracking-widest">Longitud</label>
+                                <label className="text-micro font-semibold text-content-2 ml-1 mb-1 block uppercase tracking-widest">Longitud</label>
                                 <LazyInput
                                     placeholder="-89.1234567"
                                     value={String(location.lng || '')}
                                     onChange={(val) => updateNestedSetting('location', 'lng', val ? Number(val) : null)}
-                                    className={`!bg-surface-card border-divider shadow-sm h-[40px] text-[13px] font-mono ${inputHoverClass}`}
+                                    className={`!bg-surface-card border-divider shadow-sm h-[40px] text-body font-mono ${inputHoverClass}`}
                                 />
                             </div>
                         </div>
                         {location.lat && location.lng && (
-                            <p className="text-[9px] text-success font-semibold mt-1.5 ml-1">
+                            <p className="text-micro text-success font-semibold mt-1.5 ml-1">
                                 ✓ {Number(location.lat).toFixed(6)}, {Number(location.lng).toFixed(6)}
                             </p>
                         )}
@@ -176,12 +176,12 @@ const BranchTabGeneral = ({
                     <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-[0.8rem] border border-chart-3/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Phone size={16} strokeWidth={2.5} />
                     </div>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Canales de Contacto</h4>
+                    <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Canales de Contacto</h4>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Teléfono Fijo
                             {getTabStatus(1) === 'orange' && !formData.phone && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
@@ -191,11 +191,11 @@ const BranchTabGeneral = ({
                             value={formData.phone || ""}
                             onChange={(val) => setFormData(prev => ({ ...prev, phone: formatPhoneMask(val) }))}
                             maxLength={9}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.phone ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
+                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.phone ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Celular / WhatsApp
                             {getTabStatus(1) === 'orange' && !formData.cell && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
                         </label>
@@ -205,7 +205,7 @@ const BranchTabGeneral = ({
                             value={formData.cell || ""}
                             onChange={(val) => setFormData(prev => ({ ...prev, cell: formatPhoneMask(val) }))}
                             maxLength={9}
-                            className={`!bg-surface-card shadow-sm h-[40px] text-[13px] ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.cell ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
+                            className={`!bg-surface-card shadow-sm h-[40px] text-body ${inputHoverClass} ${getTabStatus(1) === 'orange' && !formData.cell ? '!border-warning !bg-warning/10 hover:!border-warning' : 'border-divider'}`}
                         />
                     </div>
                 </div>

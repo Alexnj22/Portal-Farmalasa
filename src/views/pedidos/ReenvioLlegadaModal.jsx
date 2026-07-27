@@ -70,10 +70,10 @@ export default function ReenvioLlegadaModal({
                     <Truck size={16} className="text-white" />
                 </div>
                 <div className="flex-1">
-                    <p className="text-[11px] font-medium text-content-2 uppercase tracking-wide">
+                    <p className="text-label font-medium text-content-2 uppercase tracking-wide">
                         Pedido #{pedidoNumero} · Reenvío {cicloNum > 1 ? cicloNum : ''}
                     </p>
-                    <h3 className="text-[14px] font-bold text-content leading-tight">¿Cómo llegó el reenvío?</h3>
+                    <h3 className="text-body-lg font-bold text-content leading-tight">¿Cómo llegó el reenvío?</h3>
                 </div>
                 <button onClick={handleClose} disabled={submitting} className="text-content-3 hover:text-content-2 transition-colors">
                     <X size={15} />
@@ -86,7 +86,7 @@ export default function ReenvioLlegadaModal({
                 {/* Cajas regulares */}
                 {cajasCiclo.length > 0 && (
                     <div className="space-y-2">
-                        <p className="text-[10px] text-content-2 uppercase tracking-wide font-semibold">
+                        <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
                             {cajasCiclo.length} caja{cajasCiclo.length !== 1 ? 's' : ''} esperadas
                         </p>
                         {cajasCiclo.map(num => {
@@ -99,12 +99,12 @@ export default function ReenvioLlegadaModal({
                                         :                    'bg-danger shadow-[var(--shadow-glow-danger)]';
                             return (
                                 <div key={num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-body-lg tabular-nums text-white transition-all ${numBg}`}>
                                         {num}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[12px] font-bold text-content-2 leading-tight">Caja #{num}</p>
-                                        <p className="text-[10px] font-medium text-content-3 mt-0.5">
+                                        <p className="text-body-sm font-bold text-content-2 leading-tight">Caja #{num}</p>
+                                        <p className="text-caption font-medium text-content-3 mt-0.5">
                                             {pageHint(cajaMap, num) ?? `Reenvío ${cicloNum}`}
                                         </p>
                                     </div>
@@ -115,7 +115,7 @@ export default function ReenvioLlegadaModal({
                                                 <button key={e} onClick={() => setEst(num, e)}
                                                     className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${est === e ? active : idle}`}>
                                                     <Icon size={14} />
-                                                    <span className="text-[9px] font-bold leading-none">{label}</span>
+                                                    <span className="text-micro font-bold leading-none">{label}</span>
                                                 </button>
                                             );
                                         })}
@@ -131,13 +131,13 @@ export default function ReenvioLlegadaModal({
                     <div className="p-3 rounded-2xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-warning shrink-0" />
-                            <span className="text-[11px] font-semibold text-warning-text flex-1">
+                            <span className="text-label font-semibold text-warning-text flex-1">
                                 ¿Llegaron las cajas de Electrolit?
                             </span>
                             {electrolitOk === null ? (
-                                <span className="text-[9px] font-bold text-danger-text uppercase tracking-wide animate-pulse">Pendiente</span>
+                                <span className="text-micro font-bold text-danger-text uppercase tracking-wide animate-pulse">Pendiente</span>
                             ) : (
-                                <span className="text-[9px] font-bold text-warning uppercase tracking-wide">
+                                <span className="text-micro font-bold text-warning uppercase tracking-wide">
                                     {electrolitCount} caja{electrolitCount > 1 ? 's' : ''}
                                 </span>
                             )}
@@ -145,14 +145,14 @@ export default function ReenvioLlegadaModal({
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setElectrolitOk(true)}
-                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
+                                className={`flex-1 text-caption font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
                                     ? 'bg-success-solid text-white border-success shadow-sm'
                                     : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                 ✓ Sí llegaron
                             </button>
                             <button
                                 onClick={() => setElectrolitOk(false)}
-                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
+                                className={`flex-1 text-caption font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
                                     ? 'bg-danger-solid text-white border-danger shadow-sm'
                                     : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                 ✗ Aún faltan
@@ -166,8 +166,8 @@ export default function ReenvioLlegadaModal({
                     <div className="p-3 rounded-2xl border border-chart-3/30 bg-chart-3/10 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <Package size={13} className="text-chart-3-text shrink-0" />
-                            <span className="text-[11px] font-semibold text-chart-3-text flex-1">Cajas especiales pendientes</span>
-                            <span className="text-[9px] font-bold text-chart-3-text uppercase tracking-wide">
+                            <span className="text-label font-semibold text-chart-3-text flex-1">Cajas especiales pendientes</span>
+                            <span className="text-micro font-bold text-chart-3-text uppercase tracking-wide">
                                 {especialesList.length} caja{especialesList.length !== 1 ? 's' : ''}
                             </span>
                         </div>
@@ -176,14 +176,14 @@ export default function ReenvioLlegadaModal({
                                 const est = espEstados[label] ?? 'ok';
                                 return (
                                     <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'}`}>
-                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{label}</span>
+                                        <span className={`text-label font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
+                                                className={`text-micro font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
+                                                className={`text-micro font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -196,11 +196,11 @@ export default function ReenvioLlegadaModal({
 
                 {hayProblemas && (
                     <div>
-                        <label className="text-[10px] font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
+                        <label className="text-caption font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja dañada en el fondo, caja 4 nunca llegó…"
-                            className="mt-1 w-full text-[16px] rounded-xl border border-divider px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-3/30"
+                            className="mt-1 w-full text-input rounded-xl border border-divider px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-3/30"
                         />
                     </div>
                 )}
@@ -211,22 +211,22 @@ export default function ReenvioLlegadaModal({
                 {hayProblemas && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
                                 ⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}
                             </span>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
                                 ✗ Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío
                             </span>
                         )}
                         {electrolitOk === false && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
                                 ⚡ Electrolit aún pendiente
                             </span>
                         )}
                         {espFaltantes.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
                                 ✗ Esp. aún falta{espFaltantes.length > 1 ? 'n' : ''}: {espFaltantes.join(', ')}
                             </span>
                         )}
@@ -234,11 +234,11 @@ export default function ReenvioLlegadaModal({
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <button onClick={handleClose} disabled={submitting}
-                        className="text-[11px] font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
+                        className="text-label font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
+                        className="text-label font-bold px-5 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
                         {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}
                     </button>

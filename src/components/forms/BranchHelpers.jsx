@@ -87,7 +87,7 @@ export const FileUploader = ({ label, file, url, onChange }) => {
 
     return (
         <div className="mt-2 w-full">
-            {label && <label className="text-[10px] font-black uppercase tracking-[0.15em] text-content-3 ml-1 mb-1.5 block">{label}</label>}
+            {label && <label className="text-caption font-black uppercase tracking-[0.15em] text-content-3 ml-1 mb-1.5 block">{label}</label>}
             
             <div className={`relative flex items-center gap-3 rounded-[1.25rem] p-2 transition-all duration-300 border transform-gpu ${
                 !hasFile 
@@ -106,14 +106,14 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* Textos */}
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                     {file ? (
-                        <><p className="text-[12px] text-success-text font-bold truncate leading-none mb-1">{file.name}</p>
-                        <p className="text-[9px] text-success/70 font-black uppercase tracking-widest leading-none">Archivo Listo</p></>
+                        <><p className="text-body-sm text-success-text font-bold truncate leading-none mb-1">{file.name}</p>
+                        <p className="text-micro text-success/70 font-black uppercase tracking-widest leading-none">Archivo Listo</p></>
                     ) : url ? (
-                        <><p className="text-[12px] text-success-text font-bold truncate leading-none mb-1">Documento Guardado</p>
-                        <p className="text-[9px] text-success/70 font-black uppercase tracking-widest leading-none">En el sistema</p></>
+                        <><p className="text-body-sm text-success-text font-bold truncate leading-none mb-1">Documento Guardado</p>
+                        <p className="text-micro text-success/70 font-black uppercase tracking-widest leading-none">En el sistema</p></>
                     ) : (
-                        <><p className="text-[11px] text-warning-text font-bold leading-none mb-1">Documento Pendiente</p>
-                        <p className="text-[9px] text-warning/80 font-black uppercase tracking-widest leading-none">Tocar para adjuntar</p></>
+                        <><p className="text-label text-warning-text font-bold leading-none mb-1">Documento Pendiente</p>
+                        <p className="text-micro text-warning/80 font-black uppercase tracking-widest leading-none">Tocar para adjuntar</p></>
                     )}
                 </div>
 
@@ -157,7 +157,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
                 minLength={minLength}
                 maxLength={maxLength}
                 // 🚨 Fusión de la clase enviada (className) con la estética base Liquidglass
-                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-[1.25rem] text-[16px] font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
+                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-[1.25rem] text-input font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
                 placeholder={placeholder}
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}

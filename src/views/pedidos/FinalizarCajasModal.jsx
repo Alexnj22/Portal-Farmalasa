@@ -126,8 +126,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     </button>
                 )}
                 <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-semibold text-chart-3-text uppercase tracking-wider">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-[15px] font-black text-content leading-tight">
+                    <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">Pedido #{pedidoNumero}</p>
+                    <h3 className="text-subtitle font-black text-content leading-tight">
                         {screen === 1 ? 'Asignar cajas' : 'Página → Caja'}
                     </h3>
                 </div>
@@ -141,8 +141,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {hasDraft && screen === 1 && (
                 <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-3/10 border border-chart-3/30">
                     <RotateCcw size={12} className="text-chart-3-text shrink-0" />
-                    <span className="text-[11px] text-chart-3-text flex-1">Tenés un borrador guardado</span>
-                    <button onClick={handleRestoreDraft} className="text-[11px] font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
+                    <span className="text-label text-chart-3-text flex-1">Tenés un borrador guardado</span>
+                    <button onClick={handleRestoreDraft} className="text-label font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
                         Restaurar
                     </button>
                     <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-chart-3-text hover:text-chart-3-text">
@@ -164,16 +164,16 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         </div>
                         <div className="flex-1 min-w-0">
                             {loadingPages ? (
-                                <p className="text-[12px] text-content-3 font-medium">Calculando páginas del PDF…</p>
+                                <p className="text-body-sm text-content-3 font-medium">Calculando páginas del PDF…</p>
                             ) : (
                                 <>
-                                    <p className="text-[26px] font-black text-content leading-none tabular-nums">
+                                    <p className="text-display font-black text-content leading-none tabular-nums">
                                         {totalPages}
-                                        <span className="text-[13px] font-semibold text-content-3 ml-1.5">
+                                        <span className="text-body font-semibold text-content-3 ml-1.5">
                                             {totalPages === 1 ? 'página' : 'páginas'}
                                         </span>
                                     </p>
-                                    <p className="text-[11px] text-content-3 mt-0.5">en el PDF del pedido</p>
+                                    <p className="text-label text-content-3 mt-0.5">en el PDF del pedido</p>
                                 </>
                             )}
                         </div>
@@ -181,7 +181,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
                     {/* Box count input */}
                     <div>
-                        <label className="block text-[11px] font-bold text-content-2 mb-2 uppercase tracking-wide">
+                        <label className="block text-label font-bold text-content-2 mb-2 uppercase tracking-wide">
                             ¿Cuántas cajas salen?
                         </label>
                         <div className="relative">
@@ -191,14 +191,14 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                 onChange={e => setTotalCajasInput(e.target.value)}
                                 placeholder="Ej. 4"
                                 autoFocus
-                                className="w-full text-[22px] font-black text-content rounded-2xl border-2 border-divider bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-chart-3 focus:ring-4 focus:ring-chart-3/20 transition-all"
+                                className="w-full text-title-lg font-black text-content rounded-2xl border-2 border-divider bg-surface-card px-4 py-3 pr-16 focus:outline-none focus:border-chart-3 focus:ring-4 focus:ring-chart-3/20 transition-all"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-3 pointer-events-none">
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-label font-semibold text-content-3 pointer-events-none">
                                 cajas
                             </span>
                         </div>
                         {totalCajasInput && parsedCajas > 0 && !loadingPages && totalPages > 0 && (
-                            <p className="text-[10px] text-content-3 mt-1.5 pl-1">
+                            <p className="text-caption text-content-3 mt-1.5 pl-1">
                                 {parsedCajas >= totalPages
                                     ? `1 página por caja`
                                     : `~${(totalPages / parsedCajas).toFixed(1)} páginas por caja`
@@ -214,13 +214,13 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="px-4 py-3 max-h-[56vh] overflow-y-auto scrollbar-hide">
                     {/* Box legend */}
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                        <span className="text-[10px] font-semibold text-content-2 uppercase tracking-wide mr-1">Cajas:</span>
+                        <span className="text-caption font-semibold text-content-2 uppercase tracking-wide mr-1">Cajas:</span>
                         {boxes.map(b => (
-                            <span key={b} className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-chart-3/10 text-chart-3-text border border-chart-3/30">
+                            <span key={b} className="text-caption font-bold px-2 py-0.5 rounded-lg bg-chart-3/10 text-chart-3-text border border-chart-3/30">
                                 C{b}
                             </span>
                         ))}
-                        <span className="ml-auto text-[10px] text-content-3">{totalPages} pág.</span>
+                        <span className="ml-auto text-caption text-content-3">{totalPages} pág.</span>
                     </div>
 
                     {/* Page rows */}
@@ -242,13 +242,13 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 ? 'bg-chart-3-solid text-white shadow-[var(--shadow-glow-chart-3)]'
                                                 : 'bg-warning-solid text-white'
                                         }`}>
-                                            <span className="text-[9px] font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
-                                            <span className="text-[15px] font-black tabular-nums leading-tight">{idx + 1}</span>
+                                            <span className="text-micro font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
+                                            <span className="text-subtitle font-black tabular-nums leading-tight">{idx + 1}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[9px] font-semibold text-content-2 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
-                                            <p className="text-[11px] font-semibold text-content-2 truncate leading-tight">{pg.firstItem}</p>
-                                            <p className="text-[9px] text-content-3 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
+                                            <p className="text-micro font-semibold text-content-2 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
+                                            <p className="text-label font-semibold text-content-2 truncate leading-tight">{pg.firstItem}</p>
+                                            <p className="text-micro text-content-3 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
                                         </div>
                                     </div>
                                     {/* Box selector */}
@@ -257,7 +257,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                             const sel = assigned.includes(box);
                                             return (
                                                 <button key={box} onClick={() => toggleBox(idx, box)}
-                                                    className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
+                                                    className={`text-label font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
                                                             ? 'bg-chart-3-solid border-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
                                                             : 'bg-surface-card border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
@@ -277,13 +277,13 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {/* ── Footer ─────────────────────────────────── */}
             <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-border-card">
                 <button onClick={handleClose} disabled={submitting}
-                    className="text-[12px] font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
+                    className="text-body-sm font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
                     Cancelar
                 </button>
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
                         disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
+                        className="text-body-sm font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
                         {loadingPages
                             ? <Loader2 size={12} className="animate-spin" />
                             : <>Siguiente <span className="opacity-60">→</span></>
@@ -291,7 +291,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     </button>
                 ) : (
                     <button onClick={handleConfirm} disabled={submitting || !isValid}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
+                        className="text-body-sm font-bold px-5 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[var(--shadow-glow-chart-3)]">
                         {submitting
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />

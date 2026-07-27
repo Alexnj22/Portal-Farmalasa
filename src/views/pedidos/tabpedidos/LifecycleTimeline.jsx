@@ -27,7 +27,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     return (
         <div className="group/pb relative">
             <motion.span
-                className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
+                className={`inline-flex items-center gap-0.5 text-micro font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
                     isActive ? 'bg-warning-solid text-white' : 'bg-surface-card text-warning border border-warning/40'
                 }`}
                 animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
@@ -38,12 +38,12 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
             {pause && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
                     <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
-                        <div className="text-[9px] font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
-                        <div className="text-[9px] text-content-3">
+                        <div className="text-micro font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
+                        <div className="text-micro text-content-3">
                             Pausó: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
                             {empName(pause.pausado_por) && <span className="text-content-3"> · {empName(pause.pausado_por)}</span>}
                         </div>
-                        <div className="text-[9px] text-content-3">
+                        <div className="text-micro text-content-3">
                             Reanudó:{' '}
                             {pause.reanudado_at
                                 ? <>
@@ -186,7 +186,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[9px] font-semibold text-center leading-tight ${isFuture ? 'text-content-3' : 'text-content-2'}`}>
+                            <span className={`text-micro font-semibold text-center leading-tight ${isFuture ? 'text-content-3' : 'text-content-2'}`}>
                                 {isPausedDot ? 'Pausado' : node.label}
                             </span>
 
@@ -199,8 +199,8 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     : null;
                                 return (
                                     <span className="tabular-nums leading-tight text-center mt-px flex flex-col items-center">
-                                        {dateLabel && <span className="text-[9px] text-content font-bold leading-none mb-0.5">{dateLabel}</span>}
-                                        <span className="text-[10px] text-content-2 whitespace-nowrap">{fmtHM(node.time) || <span className="text-content-3">——</span>}</span>
+                                        {dateLabel && <span className="text-micro text-content font-bold leading-none mb-0.5">{dateLabel}</span>}
+                                        <span className="text-caption text-content-2 whitespace-nowrap">{fmtHM(node.time) || <span className="text-content-3">——</span>}</span>
                                     </span>
                                 );
                             })()}
@@ -212,7 +212,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-md shrink-0" alt="" />
                                         : <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-content-3" /></span>
                                     }
-                                    <span className="text-[9px] text-content-2 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
+                                    <span className="text-micro text-content-2 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
                                 </div>
                             )}
                             {/* Apoyo avatar stack */}
@@ -259,7 +259,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     const show = isBranch ? !isBodegaSrc : !isSucursalSrc;
                                     return show ? (
                                         <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
-                                            <span className="text-[9px] font-semibold text-content-2 tabular-nums">{segElapsed}</span>
+                                            <span className="text-micro font-semibold text-content-2 tabular-nums">{segElapsed}</span>
                                         </div>
                                     ) : null;
                                 })()}

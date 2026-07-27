@@ -13,7 +13,7 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     const statusBtn = (key, label, activeClass = 'bg-chart-1-solid text-white border-chart-1') => (
         <button
             onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
-            className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1 text-label px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                 filterStatus === key
                     ? activeClass
                     : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'

@@ -25,7 +25,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         <div className={cardClass}>
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-danger' : 'text-brand-text') : 'text-content-2 group-hover:text-content-2'}`}>
+                    <p className={`text-body-sm font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-danger' : 'text-brand-text') : 'text-content-2 group-hover:text-content-2'}`}>
                         {day.name}
                     </p>
                     
@@ -46,7 +46,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
             {open ? (
                 <div className="grid grid-cols-2 gap-3 relative">
                     <div>
-                        <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-danger' : 'text-content-3'}`}>
+                        <p className={`text-micro font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.start ? 'text-danger' : 'text-content-3'}`}>
                             Apertura
                         </p>
                         <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
@@ -59,7 +59,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
 
                     <div>
-                        <p className={`text-[9px] font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-danger' : 'text-content-3'}`}>
+                        <p className={`text-micro font-black uppercase tracking-widest ml-1 mb-1.5 transition-colors ${isInvalid && !d.end ? 'text-danger' : 'text-content-3'}`}>
                             Cierre
                         </p>
                         <div className="transition-all duration-300 rounded-2xl hover:shadow-md focus-within:ring-4 focus-within:ring-brand/10 bg-surface-card">
@@ -73,7 +73,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                 </div>
             ) : (
                 <div className="py-3.5 text-center rounded-[1rem] bg-surface-card-hover/50 border border-divider shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-surface-card-hover">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
+                    <p className="text-caption font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
                         Cerrado
                     </p>
                 </div>
@@ -98,8 +98,8 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div className="flex flex-col">
-                        <h4 className="text-[12px] font-black uppercase tracking-widest text-content leading-none">Definición de Horarios</h4>
-                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-1">Configura la apertura y cierre por día</p>
+                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content leading-none">Definición de Horarios</h4>
+                        <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1">Configura la apertura y cierre por día</p>
                     </div>
                 </div>
                 

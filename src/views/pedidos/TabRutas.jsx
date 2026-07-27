@@ -99,23 +99,23 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] font-black text-content">Ruta #{ruta.numero}</span>
-              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+              <span className="text-body font-black text-content">Ruta #{ruta.numero}</span>
+              <span className={`text-micro font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
                 {badge.label}
               </span>
               {ruta.salida_at && (
-                <span className="text-[10px] text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
+                <span className="text-caption text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[11px] text-content-3 font-medium">{ruta.conductor_nombre}</span>
+              <span className="text-label text-content-3 font-medium">{ruta.conductor_nombre}</span>
               {total > 0 && (
-                <span className="text-[10px] text-content-3">
+                <span className="text-caption text-content-3">
                   · {entregadas}/{total} parada{total !== 1 ? 's' : ''} entregada{entregadas !== 1 ? 's' : ''}
                 </span>
               )}
               {ruta.distancia_total_m > 0 && (
-                <span className="text-[10px] text-content-3">
+                <span className="text-caption text-content-3">
                   · {fmtDist(ruta.distancia_total_m)}
                 </span>
               )}
@@ -158,7 +158,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                   isEntregado ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
                 }`}>
                   {/* Number */}
-                  <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
+                  <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                     isEntregado ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                   }`}>
                     {stop.orden_entrega}
@@ -166,20 +166,20 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-content">{stop.suc_name}</p>
+                    <p className="text-body-sm font-bold text-content">{stop.suc_name}</p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       {stop.numeros?.length > 0 && (
-                        <span className="text-[10px] text-content-3">
+                        <span className="text-caption text-content-3">
                           Pedido{stop.numeros.length > 1 ? 's' : ''} {stop.numeros.map(n => `#${n}`).join(', ')}
                         </span>
                       )}
                       {stop.dist_m != null && (
-                        <span className="text-[10px] text-content-3">
+                        <span className="text-caption text-content-3">
                           · {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
                         </span>
                       )}
                       {isEntregado && (
-                        <span className="text-[10px] text-success font-semibold">
+                        <span className="text-caption text-success font-semibold">
                           ✓ Entregado {fmtTime(stop.entregado_at)}
                         </span>
                       )}
@@ -191,7 +191,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                     <button
                       onClick={() => handleEntregarStop(stop)}
                       disabled={isBusy}
-                      className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
+                      className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm shrink-0"
                     >
                       {isBusy ? <Loader2 size={10} className="animate-spin" /> : <CheckCircle2 size={10} />}
                       Entregué
@@ -212,7 +212,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                 <button
                   onClick={handleIniciarRuta}
                   disabled={busyRuta === 'iniciar'}
-                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-1.5 text-label font-bold px-3 py-2 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                 >
                   {busyRuta === 'iniciar' ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
                   Iniciar ruta
@@ -222,14 +222,14 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                 <button
                   onClick={handleVueltaBase}
                   disabled={busyRuta === 'vuelta'}
-                  className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center gap-1.5 text-label font-bold px-3 py-2 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                 >
                   {busyRuta === 'vuelta' ? <Loader2 size={12} className="animate-spin" /> : <Home size={12} />}
                   Vuelta en base
                 </button>
               )}
               {ruta.vuelta_base_at && (
-                <span className="text-[10px] text-content-3 flex items-center gap-1 px-2">
+                <span className="text-caption text-content-3 flex items-center gap-1 px-2">
                   <Home size={10} /> Llegó {fmtTime(ruta.vuelta_base_at)}
                 </span>
               )}
@@ -317,7 +317,7 @@ export default function TabRutas({ searchTerm = '' }) {
         <div className="flex justify-end">
           <button
             onClick={() => setCrearOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-[12px] hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body-sm hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
           >
             <Plus size={14} /> Nueva Ruta
           </button>
@@ -334,15 +334,15 @@ export default function TabRutas({ searchTerm = '' }) {
             <Navigation size={28} className="text-content-3" />
           </div>
           <div className="text-center">
-            <p className="text-[15px] font-bold text-content-2">Sin rutas activas</p>
-            <p className="text-[12px] text-content-3 mt-1">
+            <p className="text-subtitle font-bold text-content-2">Sin rutas activas</p>
+            <p className="text-body-sm text-content-3 mt-1">
               {canEdit && !isBranch ? 'Crea una ruta para gestionar las entregas.' : 'No hay rutas en curso.'}
             </p>
           </div>
           {canEdit && !isBranch && (
             <button
               onClick={() => setCrearOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-[13px] hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chart-3-solid text-white font-bold text-body hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
             >
               <Plus size={14} /> Nueva Ruta
             </button>
@@ -353,7 +353,7 @@ export default function TabRutas({ searchTerm = '' }) {
           {/* Active routes */}
           {active.length > 0 && (
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+              <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                 <Truck size={10} /> Rutas activas
               </p>
               {active.map(ruta => (
@@ -372,7 +372,7 @@ export default function TabRutas({ searchTerm = '' }) {
           {/* Completed routes */}
           {completed.length > 0 && (
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+              <p className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                 <CheckCircle2 size={10} /> Completadas hoy
               </p>
               {completed.map(ruta => (

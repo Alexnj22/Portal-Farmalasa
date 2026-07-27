@@ -718,7 +718,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const FallbackLoader = () => (
         <div className="w-full h-64 flex flex-col items-center justify-center text-content-3 gap-3">
             <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
-            <p className="font-bold text-[10px] uppercase tracking-widest animate-pulse">Cargando Módulo...</p>
+            <p className="font-bold text-caption uppercase tracking-widest animate-pulse">Cargando Módulo...</p>
         </div>
     );
 
@@ -767,7 +767,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                         {getModalTitle()}
                                     </h3>
                                     {getModalSubtitle() && (
-                                        <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                        <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
                                     )}
                                 </div>
                             </div>
@@ -795,7 +795,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success-solid border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand-text' : isComplete ? 'text-success' : 'text-content-2'}`}>
+                                                <span className={`text-micro font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand-text' : isComplete ? 'text-success' : 'text-content-2'}`}>
                                                     {step.label}
                                                 </span>
                                             </button>
@@ -816,7 +816,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         {validationError && (
                             <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-[1.25rem] flex items-center gap-3 text-danger shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
                                 <AlertCircle size={20} strokeWidth={2.5} className="shrink-0" />
-                                <p className="text-[11px] font-bold uppercase tracking-wide leading-tight">{validationError}</p>
+                                <p className="text-label font-bold uppercase tracking-wide leading-tight">{validationError}</p>
                             </div>
                         )}
 
@@ -889,7 +889,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {/* LEFT: Anterior */}
                                 {prevStep ? (
                                     <button type="button" onClick={() => setEmpActiveTab(prevStep)} disabled={isSaving}
-                                        className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card hover:text-content transition-all disabled:opacity-50 active:scale-[0.97]">
+                                        className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-all disabled:opacity-50 active:scale-[0.97]">
                                         <ChevronLeft size={15} strokeWidth={2.5} />
                                         {EMP_STEP_LABELS[prevStep]}
                                     </button>
@@ -897,7 +897,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                                 {/* CENTER: Cancelar */}
                                 <button type="button" onClick={onClose} disabled={isSaving}
-                                    className="px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-[11px] uppercase tracking-widest hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                    className="px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all disabled:opacity-50 active:scale-[0.97]">
                                     Cancelar
                                 </button>
 
@@ -906,14 +906,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 <div className="flex items-center gap-2">
                                     {nextStep && (
                                         <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
-                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-brand text-white font-black text-[11px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-brand text-white font-black text-label uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
                                             {EMP_STEP_LABELS[nextStep]}
                                             <ChevronRight size={15} strokeWidth={2.5} />
                                         </button>
                                     )}
                                     {(isEditingEmp || !nextStep) && (
                                         <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}
-                                            className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
+                                            className={`flex items-center gap-2 px-6 h-11 font-black text-label uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success-solid text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
                                             {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
                                         </button>
                                     )}
@@ -924,14 +924,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                     return (
                         <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-10 shrink-0">
-                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
+                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button
                                 type="submit"
                                 form="unified-modal-form"
                                 disabled={isSaving || !isFormValid}
-                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                                className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                             >
                                 {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                             </button>

@@ -40,7 +40,7 @@ function EarlyExitForm({
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">
             Solicitud de Permiso
           </h1>
-          <p className="text-[9px] sm:text-xs font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
+          <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
             Registrar salida anticipada
           </p>
         </div>
@@ -58,14 +58,14 @@ function EarlyExitForm({
             </div>
             <div className="text-left flex-1 overflow-hidden">
               <h3 className="text-white font-semibold text-sm sm:text-base leading-tight truncate">{employee.name}</h3>
-              <p className="text-white/40 text-[9px] sm:text-[9px] uppercase tracking-widest mt-0.5 truncate">
+              <p className="text-white/40 text-micro sm:text-micro uppercase tracking-widest mt-0.5 truncate">
                 Perfil a autorizar
               </p>
             </div>
           </div>
 
 <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-  <label className="text-white/50 text-[9px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
+  <label className="text-white/50 text-micro sm:text-micro font-semibold uppercase tracking-widest ml-2">
     Motivo autorizado
   </label>
   {/* Este formulario solo se monta dentro de TimeClockView, que fuerza
@@ -85,7 +85,7 @@ function EarlyExitForm({
   {/* 🚨 NUEVO: Feedback visual preventivo */}
   {exitReason === 'Omisión de Almuerzo' && (
     <div className="mt-1 px-2 animate-in slide-in-from-top-1 duration-300">
-      <p className="text-[10px] text-chart-4-text/80 leading-tight italic">
+      <p className="text-caption text-chart-4-text/80 leading-tight italic">
         * Requiere autorización previa. Solo válido 60 min antes de la salida.
       </p>
     </div>
@@ -93,11 +93,11 @@ function EarlyExitForm({
 </div>
 
           <div className="flex flex-col gap-1 sm:gap-1.5 shrink-0">
-            <label className="text-white/50 text-[9px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
+            <label className="text-white/50 text-micro sm:text-micro font-semibold uppercase tracking-widest ml-2">
               Justificación (Opcional)
             </label>
             <textarea
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-[16px] resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-input resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
               placeholder="Detalle brevemente el motivo..."
               value={exitNotes}
               onChange={(e) => onChangeNotes?.(e.target.value)}
@@ -110,7 +110,7 @@ function EarlyExitForm({
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="flex-1 relative z-20 text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-20 text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={14} /> Cancelar
             </button>
@@ -118,7 +118,7 @@ function EarlyExitForm({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex-1 relative z-20 text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-full border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-20 text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-full border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               {isProcessing ? (
                 <span className="w-3.5 h-3.5 border-2 border-chart-4/30 border-t-chart-4 rounded-full animate-spin" />

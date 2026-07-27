@@ -133,6 +133,12 @@ const EXCEPTIONS = {
   // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
   // gradiente, así que no se puede derivar del token con getComputedStyle.
   'src/context/ThemeContext.jsx': ['hex'],
+  // ── Agregadas en D2.1 (2026-07-26) al tokenizar la escala tipográfica ──
+  // Piezas únicas fuera de la rampa, no una escala: emoji decorativos de
+  // fondo (120/80px, opacity .07 — decoración, no texto) y un numeral hero
+  // de 72px. Con esto la categoría `typography` queda en 0 y bloqueante.
+  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography'],
+  'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography'],
 };
 
 const hasException = (file, category) => (EXCEPTIONS[file] || []).includes(category);

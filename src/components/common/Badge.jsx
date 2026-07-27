@@ -28,7 +28,7 @@ const DOT_CLASSES = {
 };
 
 const Badge = memo(({ variant = 'neutral', dot = false, icon: Icon, className = '', children }) => (
-    <span className={`inline-flex items-center gap-1.5 rounded-badge border font-bold text-[11px]
+    <span className={`inline-flex items-center gap-1.5 rounded-badge border font-bold text-label
         tracking-[-0.005em] px-2.5 py-[3px]
         shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]
         ${VARIANT_CLASSES[variant] || VARIANT_CLASSES.neutral}

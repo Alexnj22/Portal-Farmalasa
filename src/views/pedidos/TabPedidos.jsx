@@ -186,7 +186,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         return (
             <div className="flex items-center justify-center py-20 gap-2 text-content-3">
                 <Loader2 size={20} className="animate-spin" />
-                <span className="text-[14px]">Cargando pedidos…</span>
+                <span className="text-body-lg">Cargando pedidos…</span>
             </div>
         );
     }
@@ -196,7 +196,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             <AnimatePresence>
                 {newAlert && (
-                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-[12px] font-semibold shadow-sm">
+                    <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-body-sm font-semibold shadow-sm">
                         <Send size={13} />¡Nuevo pedido #{newAlert.numero} en camino a {branchName}!
                         <button onClick={() => setNewAlert(null)} className="ml-auto text-chart-3-text/60 hover:text-chart-3-text"><X size={13} /></button>
                     </motion.div>
@@ -224,9 +224,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     <Building2 size={15} className="text-chart-3-text" />
                                 </div>
                                 <div className="text-left">
-                                    <div className={`text-[22px] font-black leading-none tabular-nums ${active ? 'text-chart-3-text' : 'text-content-2'}`}>{total}</div>
-                                    <div className="text-[10px] font-bold text-content-2">{name}</div>
-                                    <div className="text-[9px] text-content-3">pedidos este mes</div>
+                                    <div className={`text-title-lg font-black leading-none tabular-nums ${active ? 'text-chart-3-text' : 'text-content-2'}`}>{total}</div>
+                                    <div className="text-caption font-bold text-content-2">{name}</div>
+                                    <div className="text-micro text-content-3">pedidos este mes</div>
                                 </div>
                                 {active && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                             </button>
@@ -241,9 +241,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     <Building2 size={15} className="text-chart-3-text" />
                                 </div>
                                 <div className="text-left">
-                                    <div className="text-[22px] font-black leading-none tabular-nums text-content-2">{own.total}</div>
-                                    <div className="text-[10px] font-bold text-content-2">{own.name}</div>
-                                    <div className="text-[9px] text-content-3">pedidos este mes</div>
+                                    <div className="text-title-lg font-black leading-none tabular-nums text-content-2">{own.total}</div>
+                                    <div className="text-caption font-bold text-content-2">{own.name}</div>
+                                    <div className="text-micro text-content-3">pedidos este mes</div>
                                 </div>
                             </div>
                         );
@@ -260,7 +260,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-chart-1-text">
                                 <Inbox size={34} strokeWidth={1.5} />
                             </div>
-                            <h3 className="font-bold text-[18px] text-content-2 tracking-tight">Sin pedidos activos</h3>
+                            <h3 className="font-bold text-title-sm text-content-2 tracking-tight">Sin pedidos activos</h3>
                         </div>
                     </div>
                 ) : (
@@ -346,40 +346,40 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
                                         {stage === 'pausado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-warning-solid text-white shrink-0 shadow-sm animate-pulse">
+                                            <span className="inline-flex items-center gap-1 text-caption font-black px-2 py-0.5 rounded-full bg-warning-solid text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado
                                             </span>
                                         )}
-                                        <span className="text-[13px] font-black text-content tabular-nums shrink-0">
+                                        <span className="text-body font-black text-content tabular-nums shrink-0">
                                             {row.codigo ?? `#${row.numero}`}
                                         </span>
                                         <SucPill sucId={row.erp_sucursal_id} />
-                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-surface-card-hover text-content-2 border-divider'}`}>
+                                        <span className={`text-caption font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                             {PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}
                                         </span>
-                                        <span className="ml-auto text-[10px] text-content-3 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
+                                        <span className="ml-auto text-caption text-content-3 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
                                         {isExp ? <ChevronDown size={13} className="text-content-3 shrink-0" /> : <ChevronRight size={13} className="text-content-3 shrink-0" />}
                                     </div>
-                                    {row.notes && <p className="px-3 pb-1.5 text-[11px] text-content-2 italic">{row.notes}</p>}
+                                    {row.notes && <p className="px-3 pb-1.5 text-label text-content-2 italic">{row.notes}</p>}
 
                                     {/* Stats pills */}
                                     {cardStats[cardKey] && (
                                         <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
+                                            <span className="text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                 {cardStats[cardKey].enviados} enviados
                                             </span>
                                             {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
+                                                <span className="text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                     {cardStats[cardKey].agotamiento} stock insuf.
                                                 </span>
                                             )}
                                             {cardStats[cardKey].sinStock > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
+                                                <span className="text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                     {cardStats[cardKey].sinStock} sin stock
                                                 </span>
                                             )}
                                             {cardStats[cardKey].porRegla > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
+                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-2 border-divider">
                                                     <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
                                                 </span>
                                             )}
@@ -389,14 +389,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Apoyo preparación (bodega) */}
                                     {prepApoyo.length > 0 && (
                                         <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
-                                            <span className="text-[10px] font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
+                                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">Prep:</span>
                                             {prepApoyo.map(a => (
                                                 <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-surface-card border border-divider shadow-sm">
                                                     {a.photo_url
                                                         ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
                                                         : <span className="w-5 h-5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0"><UserCircle2 size={10} className="text-content-3" /></span>
                                                     }
-                                                    <span className="text-[11px] font-semibold text-content-2 whitespace-nowrap">{a.name}</span>
+                                                    <span className="text-label font-semibold text-content-2 whitespace-nowrap">{a.name}</span>
                                                 </span>
                                             ))}
                                         </div>
@@ -417,19 +417,19 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Actions + status strip */}
                                     <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                                         {row.total_cajas > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-label font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
                                                 <Box size={10} className="text-content-3 shrink-0" />
                                                 {row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}
                                             </span>
                                         )}
                                         {(row.cajas_electrolit ?? 0) > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-label font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
                                                 <Inbox size={10} className="text-content-3 shrink-0" />
                                                 {row.cajas_electrolit} Electrolit
                                             </span>
                                         )}
                                         {row.electrolit_ok === false && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
                                                 <Zap size={8} className="shrink-0" />
                                                 {(row.electrolit_faltantes ?? 0) > 0
                                                     ? `${row.electrolit_faltantes} Electrolit faltante${row.electrolit_faltantes > 1 ? 's' : ''}`
@@ -437,39 +437,39 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {(row.cajas_especiales ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-label font-black px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider tabular-nums shrink-0">
                                                 <Star size={10} className="text-content-3 shrink-0" />
                                                 {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
                                             </span>
                                         )}
                                         {(row.cajas_danadas ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-warning/10 text-warning-text border border-warning/30 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-warning/10 text-warning-text border border-warning/30 shrink-0">
                                                 <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
                                             </span>
                                         )}
                                         {(row.falta_cajas ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 shrink-0">
                                                 <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
                                             </span>
                                         )}
                                         {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && row.pedido_status !== 'completado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider shrink-0">
                                                 <ClipboardList size={8} /> Difs. pendientes
                                             </span>
                                         )}
-                                        {elapsedPrep  && <span className="text-[10px] text-content-2 tabular-nums">{elapsedPrep}</span>}
+                                        {elapsedPrep  && <span className="text-caption text-content-2 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
-                                            <span className="text-[10px] text-warning-text font-semibold tabular-nums animate-pulse">
+                                            <span className="text-caption text-warning-text font-semibold tabular-nums animate-pulse">
                                                 {elapsedPause} en pausa
                                             </span>
                                         )}
-                                        {elapsedTrans && <span className="text-[10px] text-chart-3-text tabular-nums">{elapsedTrans} en ruta</span>}
+                                        {elapsedTrans && <span className="text-caption text-chart-3-text tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
                                             {canApoyo && !isApoyoBodega && (
                                                 <button
                                                     onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}
                                                     disabled={isLCBusy}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
                                                 >
                                                     <UserPlus size={10} />Apoyo
                                                 </button>
@@ -478,7 +478,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}
                                                     disabled={printingPdf === row.pedido_id}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all disabled:opacity-50"
                                                 >
                                                     {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
@@ -486,7 +486,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
-                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-[0.97] transition-all ${row.entrega_programada_at ? 'bg-chart-3/10 text-chart-3-text hover:bg-chart-3/20 border border-chart-3/30' : 'bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-border-card'}`}
+                                                    className={`flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl active:scale-[0.97] transition-all ${row.entrega_programada_at ? 'bg-chart-3/10 text-chart-3-text hover:bg-chart-3/20 border border-chart-3/30' : 'bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-border-card'}`}
                                                 >
                                                     <CalendarClock size={10} />
                                                     {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}
@@ -499,24 +499,24 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
                                                     <button onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all shadow-sm">
+                                                        className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all shadow-sm">
                                                         <CheckCircle2 size={10} />Entregué
                                                     </button>
                                                 );
                                             })()}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-1-solid    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-warning-solid   text-white hover:bg-warning-hover   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-6-solid  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-1-solid    text-white hover:bg-chart-1/80    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-warning-solid   text-white hover:bg-warning-hover   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-6-solid  text-white hover:bg-chart-6/80  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-success-solid text-white hover:bg-success-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canAnular && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Ban size={10} />Anular
                                                 </button>
                                             )}
-                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -526,13 +526,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
                                                 if (conductorEnRuta) return (
-                                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
+                                                    <div className="flex items-center gap-1 text-caption font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
                                                         <Truck size={10} className="text-content-3" />Esperando vuelta conductor
                                                     </div>
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
+                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                                         {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
                                                     </button>
                                                 );
@@ -545,8 +545,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {isBranch && row.entrega_programada_at && stage !== 'erp' && stage !== 'contando' && (
                                         <div className="flex items-center gap-2 px-3 py-1.5 border-t border-chart-3/30 bg-chart-3/10">
                                             <CalendarClock size={11} className="text-chart-3-text shrink-0" />
-                                            <span className="text-[10px] font-semibold text-chart-3-text">Entrega estimada:</span>
-                                            <span className="text-[10px] font-bold text-chart-3-text">{fmtEntrega(row.entrega_programada_at)}</span>
+                                            <span className="text-caption font-semibold text-chart-3-text">Entrega estimada:</span>
+                                            <span className="text-caption font-bold text-chart-3-text">{fmtEntrega(row.entrega_programada_at)}</span>
                                         </div>
                                     )}
 
@@ -653,17 +653,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[13px] font-black ${isCompletada ? 'text-content-2' : 'text-chart-3-text'}`}>Ruta #{ruta.numero}</span>
+                                                <span className={`text-body font-black ${isCompletada ? 'text-content-2' : 'text-chart-3-text'}`}>Ruta #{ruta.numero}</span>
                                                 {isCompletada
-                                                    ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">
+                                                    ? <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">
                                                         ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
                                                       </span>
-                                                    : dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">🟢 En vivo</span>
+                                                    : dl && <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">🟢 En vivo</span>
                                                 }
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
-                                                <span className="text-[11px] text-content-3">{ruta.conductor_nombre}</span>
-                                                <span className="text-[10px] text-content-3 tabular-nums">{entregadas}/{total} entregas</span>
+                                                <span className="text-label text-content-3">{ruta.conductor_nombre}</span>
+                                                <span className="text-caption text-content-3 tabular-nums">{entregadas}/{total} entregas</span>
                                             </div>
                                         </div>
                                         {/* Acciones */}
@@ -678,7 +678,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Play size={9} fill="currentColor" />Iniciar
                                                 </button>
@@ -693,7 +693,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas(); loadActive();
                                                         } catch { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-chart-8-solid text-white hover:opacity-90 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Home size={9} />Base
                                                 </button>
@@ -701,7 +701,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {!isCompletada && (
                                                 <button
                                                     onClick={() => setRutaMapOpen(ruta)}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all"
+                                                    className="flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl bg-surface-card-hover border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all"
                                                 >
                                                     <MapIcon size={9} />Mapa
                                                 </button>
@@ -876,32 +876,32 @@ export default function TabPedidos({ searchTerm = '' }) {
             {reenviarConfirmModal && (
                 <PedidoModal open onClose={() => setReenviarConfirmModal(null)} maxWidth="max-w-xs">
                     <div className="px-5 pt-5 pb-4 border-b border-border-card">
-                        <h3 className="text-[15px] font-black text-content">¿Confirmar reenvío?</h3>
-                        <p className="text-[11px] text-content-3 mt-0.5">Pedido #{reenviarConfirmModal.numero}</p>
+                        <h3 className="text-subtitle font-black text-content">¿Confirmar reenvío?</h3>
+                        <p className="text-label text-content-3 mt-0.5">Pedido #{reenviarConfirmModal.numero}</p>
                     </div>
                     <div className="px-5 py-4 space-y-2">
-                        <p className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-1">Pendiente de enviar:</p>
+                        <p className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1">Pendiente de enviar:</p>
                         {reenviarConfirmModal.cajas.length > 0 && (
-                            <div className="flex items-center gap-2 text-[12px] text-content-2">
+                            <div className="flex items-center gap-2 text-body-sm text-content-2">
                                 <Box size={13} className="text-danger shrink-0" />
                                 <span>Caja{reenviarConfirmModal.cajas.length > 1 ? 's' : ''}: {reenviarConfirmModal.cajas.map(n => `#${n}`).join(', ')}</span>
                             </div>
                         )}
                         {reenviarConfirmModal.electrolits > 0 && (
-                            <div className="flex items-center gap-2 text-[12px] text-content-2">
+                            <div className="flex items-center gap-2 text-body-sm text-content-2">
                                 <Inbox size={13} className="text-warning shrink-0" />
                                 <span>{reenviarConfirmModal.electrolits} Electrolit faltante{reenviarConfirmModal.electrolits > 1 ? 's' : ''}</span>
                             </div>
                         )}
                         {reenviarConfirmModal.especiales.length > 0 && (
-                            <div className="flex items-center gap-2 text-[12px] text-content-2">
+                            <div className="flex items-center gap-2 text-body-sm text-content-2">
                                 <Star size={13} className="text-chart-6-text shrink-0" />
                                 <span>Especial{reenviarConfirmModal.especiales.length > 1 ? 'es' : ''}: {reenviarConfirmModal.especiales.join(', ')}</span>
                             </div>
                         )}
                     </div>
                     <div className="px-5 pb-5 pt-2 flex gap-2 justify-end border-t border-border-card">
-                        <button onClick={() => setReenviarConfirmModal(null)} className="text-[12px] font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
+                        <button onClick={() => setReenviarConfirmModal(null)} className="text-body-sm font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover/80 transition-all">
                             Cancelar
                         </button>
                         <button
@@ -911,7 +911,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 setReenviarConfirmModal(null);
                                 handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
                             }}
-                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 text-body-sm font-bold px-4 py-2 rounded-xl bg-danger-solid text-white hover:bg-danger-hover active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                         >
                             {busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}
                         </button>

@@ -82,7 +82,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             
             {/* 1. Nombre del Documento */}
             <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
+                <label className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
                     <FilePlus size={12} className="text-brand-text"/> Nombre del Documento
                 </label>
                 <div className="relative">
@@ -91,14 +91,14 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         value={data.title}
                         onChange={(e) => updateField('title', e.target.value)}
                         placeholder="Ej. Permiso de Rótulos Luminosos"
-                        className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-[16px] font-bold text-content-2 focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-surface-card outline-none transition-all shadow-sm placeholder:text-content-3/70"
+                        className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-input font-bold text-content-2 focus:ring-2 focus:ring-brand/20 focus:border-brand focus:bg-surface-card outline-none transition-all shadow-sm placeholder:text-content-3/70"
                     />
                 </div>
             </div>
 
             {/* 2. Categoría */}
             <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
+                <label className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
                     <Tag size={12} className="text-chart-3-text"/> Categoría
                 </label>
                 <LiquidSelect
@@ -111,7 +111,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
 
             {/* 3. Zona de Carga (PDF / Imagen) */}
             <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
+                <label className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
                     <UploadCloud size={12} className="text-brand-text"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
                 </label>
                 <div className="relative">
@@ -135,20 +135,20 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         {data.file ? (
                             <div className="flex flex-col items-center text-success">
                                 <CheckCircle2 size={24} strokeWidth={2.5} className="mb-2" />
-                                <span className="text-[12px] font-black truncate max-w-[200px]">{data.file.name}</span>
-                                <span className="text-[9px] font-bold mt-1 text-success/70 uppercase tracking-widest">Archivo Listo para Subir</span>
+                                <span className="text-body-sm font-black truncate max-w-[200px]">{data.file.name}</span>
+                                <span className="text-micro font-bold mt-1 text-success/70 uppercase tracking-widest">Archivo Listo para Subir</span>
                             </div>
                         ) : data.url ? (
                             <div className="flex flex-col items-center text-success">
                                 <CheckCircle2 size={24} strokeWidth={2.5} className="mb-2" />
-                                <span className="text-[12px] font-black truncate max-w-[200px]">Archivo Subido al Servidor</span>
-                                <span className="text-[9px] font-bold mt-1 text-success/70 uppercase tracking-widest">Click para reemplazar</span>
+                                <span className="text-body-sm font-black truncate max-w-[200px]">Archivo Subido al Servidor</span>
+                                <span className="text-micro font-bold mt-1 text-success/70 uppercase tracking-widest">Click para reemplazar</span>
                             </div>
                         ) : (
                             <div className={`flex flex-col items-center ${isEditing ? 'text-danger' : 'text-content-3'}`}>
                                 <UploadCloud size={24} strokeWidth={1.5} className="mb-2" />
-                                <span className="text-[12px] font-black">{isEditing ? 'Falta Documento - Sube el PDF' : 'Subir PDF o Imagen'}</span>
-                                <span className={`text-[9px] font-bold mt-1 uppercase tracking-widest ${isEditing ? 'text-danger' : 'text-content-2'}`}>Click para explorar</span>
+                                <span className="text-body-sm font-black">{isEditing ? 'Falta Documento - Sube el PDF' : 'Subir PDF o Imagen'}</span>
+                                <span className={`text-micro font-bold mt-1 uppercase tracking-widest ${isEditing ? 'text-danger' : 'text-content-2'}`}>Click para explorar</span>
                             </div>
                         )}
                     </label>
@@ -165,8 +165,8 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         onClick={() => updateField('hasIssueDate', !data.hasIssueDate)}
                     >
                         <div>
-                            <p className="text-[13px] font-black text-content-2 group-hover:text-brand-text transition-colors">¿Tiene fecha de expedición?</p>
-                            <p className="text-[10px] font-bold text-content-3 mt-0.5">Útil para documentos de renovación periódica.</p>
+                            <p className="text-body font-black text-content-2 group-hover:text-brand-text transition-colors">¿Tiene fecha de expedición?</p>
+                            <p className="text-caption font-bold text-content-3 mt-0.5">Útil para documentos de renovación periódica.</p>
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-success' : 'bg-surface-card-hover'}`}>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasIssueDate ? 'translate-x-5' : 'translate-x-0'}`}></div>
@@ -190,8 +190,8 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         onClick={() => updateField('hasExpiration', !data.hasExpiration)}
                     >
                         <div>
-                            <p className="text-[13px] font-black text-content-2 group-hover:text-warning transition-colors">¿Tiene fecha de vencimiento?</p>
-                            <p className="text-[10px] font-bold text-content-3 mt-0.5">El sistema te alertará antes de que caduque.</p>
+                            <p className="text-body font-black text-content-2 group-hover:text-warning transition-colors">¿Tiene fecha de vencimiento?</p>
+                            <p className="text-caption font-bold text-content-3 mt-0.5">El sistema te alertará antes de que caduque.</p>
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasExpiration ? 'bg-warning' : 'bg-surface-card-hover'}`}>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasExpiration ? 'translate-x-5' : 'translate-x-0'}`}></div>

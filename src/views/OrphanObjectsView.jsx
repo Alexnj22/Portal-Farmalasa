@@ -78,7 +78,7 @@ const OrphanObjectsView = () => {
         <GlassViewLayout icon={Ghost} title="Objetos Huérfanos" filtersContent={filtersContent}>
             <div className="p-4 md:p-6">
                 <div className="mb-4 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
-                    <p className="text-[11px] text-content-2 font-medium leading-snug">
+                    <p className="text-label text-content-2 font-medium leading-snug">
                         Tablero de seguimiento de candidatos a código muerto (componentes/funciones/edge
                         functions sin caller real). No es detección automática — cada fila se agrega vía
                         migración cuando se confirma un caso real; acá solo se marca su estado.
@@ -100,17 +100,17 @@ const OrphanObjectsView = () => {
                         return (
                             <DataRow key={row.id} index={i}>
                                 <DataCell>
-                                    <div className="text-[12px] font-black text-content">{row.title}</div>
-                                    <div className="text-[10px] text-content-3 mt-0.5 font-mono truncate max-w-[280px]" title={row.ref}>{row.ref}</div>
+                                    <div className="text-body-sm font-black text-content">{row.title}</div>
+                                    <div className="text-caption text-content-3 mt-0.5 font-mono truncate max-w-[280px]" title={row.ref}>{row.ref}</div>
                                     {row.notes && (
-                                        <div className="text-[10px] text-content-3 mt-1 leading-snug max-w-[360px]">{row.notes}</div>
+                                        <div className="text-caption text-content-3 mt-1 leading-snug max-w-[360px]">{row.notes}</div>
                                     )}
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-content-3">{row.kind}</span>
+                                    <span className="text-caption font-bold uppercase tracking-wide text-content-3">{row.kind}</span>
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    <span className="inline-flex items-center gap-1 text-[10px] text-content-3">
+                                    <span className="inline-flex items-center gap-1 text-caption text-content-3">
                                         <Clock size={9} /> {new Date(row.detected_at).toLocaleDateString('es-SV')}
                                     </span>
                                 </DataCell>
@@ -127,7 +127,7 @@ const OrphanObjectsView = () => {
                                             />
                                         </div>
                                     ) : (
-                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${badge.cls}`}>
+                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-micro font-black uppercase tracking-widest border ${badge.cls}`}>
                                             <BadgeIcon size={10} /> {STATUS_LABELS[row.status] || row.status}
                                         </span>
                                     )}

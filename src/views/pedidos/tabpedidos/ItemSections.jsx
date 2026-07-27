@@ -18,13 +18,13 @@ import { fetchStockParamsForRevision, updateStockParams, effectiveMinMax } from 
 const MINI_PAGE = 15;
 
 function renderLab(row) {
-    return <span className="text-content-3 text-[11px] whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
+    return <span className="text-content-3 text-label whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
 }
 function renderProd(row) {
     return (
         <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-content-2">{row.products?.nombre ?? `Prod. ${row.erp_product_id}`}</span>
-            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-danger/10 border border-danger/30 text-danger font-semibold shrink-0">Bajo Receta</span>}
+            {row.products?.es_antibiotico && <span className="text-micro px-1.5 rounded-full bg-danger/10 border border-danger/30 text-danger font-semibold shrink-0">Bajo Receta</span>}
         </div>
     );
 }
@@ -33,13 +33,13 @@ function renderPresentacion(row) {
     const factor = row.dispatch_factor || row.factor || 1;
     const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
     if (!tipo) {
-        if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">×{factor} unid</span>;
-        return <span className="text-content-3 text-[11px]">Unidad</span>;
+        if (factor > 1) return <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">×{factor} unid</span>;
+        return <span className="text-content-3 text-label">Unidad</span>;
     }
     const label      = TIPO_LABELS[tipo] ?? tipo;
     const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
+        <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
             {label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}
         </span>
     );
@@ -51,7 +51,7 @@ function renderPresStock(row) {
     const dispFactor = row.dispatch_factor || factor;
     if (factor === dispFactor || !row.dispatch_tipo) return renderPresentacion(row);
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
+        <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-surface-card-hover text-content-2 border border-divider whitespace-nowrap">
             {factor <= 1 ? 'Unidad' : `×${factor} unid`}
         </span>
     );
@@ -75,12 +75,12 @@ const COLS_ENVIADOS = [
         const diff = r.cantidad_recibida - r.cantidad_asignada;
         return (
             <span className={`font-bold tabular-nums ${diff < 0 ? 'text-warning' : diff > 0 ? 'text-success' : 'text-content-2'}`}>
-                {r.cantidad_recibida}{diff !== 0 && <span className="text-[10px] ml-0.5">({diff > 0 ? '+' : ''}{diff})</span>}
+                {r.cantidad_recibida}{diff !== 0 && <span className="text-caption ml-0.5">({diff > 0 ? '+' : ''}{diff})</span>}
             </span>
         );
     }},
     { key: 'status', label: 'Estado', render: r => (
-        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+        <span className={`text-micro font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
             r.status === 'recibido'       ? 'bg-success/10 text-success-text border-success/30' :
             r.status === 'con_diferencia' ? 'bg-warning/10   text-warning-text   border-warning/30'   :
                                             'bg-surface-card-hover   text-content-3   border-divider'
@@ -111,14 +111,14 @@ const COLS_SIN_STOCK = [
     { key: 'pres',       label: 'Presentación', render: renderPresentacion },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
     { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
-        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
+        <span className={`tabular-nums text-label font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
             {r.stock_packs_snapshot ?? '—'}
         </span>
     )},
     { key: 'motivo', label: 'Motivo', render: () => (
         <div className="flex flex-col gap-0.5">
-            <span className="text-warning text-[10px] font-semibold">Sin stock en bodega</span>
-            <span className="text-content-3 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
+            <span className="text-warning text-caption font-semibold">Sin stock en bodega</span>
+            <span className="text-content-3 text-micro">Esperar reabastecimiento o generar un pedido manual</span>
         </div>
     )},
 ];
@@ -153,7 +153,7 @@ function fmtRegla(row) {
     const multiplo   = Number(row.dispatch_multiplo ?? 1);
     const showFactor = presFactor > 1 && tipoKey !== 'solo_cajas';
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 whitespace-nowrap">
+        <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-danger/10 text-danger-text border border-danger/30 whitespace-nowrap">
             {base}{showFactor ? ` ×${presFactor}` : ''} | ×{multiplo}
         </span>
     );
@@ -170,7 +170,7 @@ const COLS_REGLA = [
         const units  = packs != null ? Math.round(packs * factor) : null;
         const txt    = units != null ? formatUnitsRegla(units, r.presentations) : null;
         return (
-            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
+            <span className={`tabular-nums text-label font-semibold ${(units ?? 0) === 0 ? 'text-danger-text' : 'text-content-2'}`}>
                 {txt ?? '—'}
             </span>
         );
@@ -183,11 +183,11 @@ const COLS_REGLA = [
         const needUnd = needed != null ? Math.ceil(needed * factor) : null;
         return (
             <div className="flex flex-col gap-0.5">
-                <span className="text-danger-text text-[10px] font-semibold">Necesidad baja</span>
-                <span className="text-content-3 text-[9px]">
+                <span className="text-danger-text text-caption font-semibold">Necesidad baja</span>
+                <span className="text-content-3 text-micro">
                     {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
                 </span>
-                <span className="text-content-3 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
+                <span className="text-content-3 text-micro">Ajustar MAX o reducir el múltiplo en la regla</span>
             </div>
         );
     }},
@@ -248,8 +248,8 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
         <div className="border-t border-divider">
             <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
                 <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
-                    <span className="text-[11px] font-semibold text-content-2 flex-1">{label}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand-text border-brand/30' : badgeCls}`}>
+                    <span className="text-label font-semibold text-content-2 flex-1">{label}</span>
+                    <span className={`text-caption font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand-text border-brand/30' : badgeCls}`}>
                         {search ? `${filteredRows.length}/${count}` : count}
                     </span>
                 </button>
@@ -378,7 +378,7 @@ export default function ItemSections({ allItems, loading }) {
     const porRegla    = allItems.filter(i => i.revision_minmax);
     const total       = allItems.length;
 
-    if (total === 0) return <div className="border-t border-divider py-4 text-center text-[11px] text-content-3">Sin ítems.</div>;
+    if (total === 0) return <div className="border-t border-divider py-4 text-center text-label text-content-3">Sin ítems.</div>;
 
     // Mirrors the DB constraint chk_min_lt_max:
     // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
@@ -460,19 +460,19 @@ export default function ItemSections({ allItems, loading }) {
         const err      = errorMap[row.id] ?? null;
         const v6m      = psp?.units_sold_6m ?? null;
         const inputCls = (hasErr) =>
-            `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-surface-card text-content-2 text-center disabled:opacity-40 transition-colors ${
+            `w-14 text-label font-bold border rounded-lg px-2 py-1 focus:outline-none bg-surface-card text-content-2 text-center disabled:opacity-40 transition-colors ${
                 hasErr ? 'border-danger/40 focus:border-danger bg-danger/10' : 'border-border-card focus:border-brand'
             }`;
         return (
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
                     <div className="rounded-xl border border-divider bg-surface-card-hover/50 px-3 py-2 flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">Ventas 6M</span>
-                        <span className="text-[11px] font-bold tabular-nums text-content-2 shrink-0">
+                        <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">Ventas 6M</span>
+                        <span className="text-label font-bold tabular-nums text-content-2 shrink-0">
                             {psp === undefined ? <span className="text-content-3">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
                         </span>
                         <div className="w-px h-4 bg-divider shrink-0 mx-0.5" />
-                        <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
+                        <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
@@ -482,7 +482,7 @@ export default function ItemSections({ allItems, loading }) {
                             }}
                             className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
                         />
-                        <span className="text-[9px] font-semibold text-content-2 uppercase tracking-wide shrink-0">MAX</span>
+                        <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MAX</span>
                         <input
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
@@ -497,14 +497,14 @@ export default function ItemSections({ allItems, loading }) {
                         <button
                             onClick={() => restoreMinMax(row)} disabled={isSaving}
                             title="Restaurar MIN/MAX original"
-                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-card text-content-3 hover:text-brand-text hover:border-brand/30 hover:bg-brand/10 disabled:opacity-50 transition-colors shrink-0"
+                            className="ml-auto flex items-center gap-1 text-caption font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-card text-content-3 hover:text-brand-text hover:border-brand/30 hover:bg-brand/10 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <RotateCcw size={9} />Restaurar
                         </button>
                         <button
                             onClick={() => resetZero(row)} disabled={isSaving}
                             title="Dejar en 0/0 — excluye del próximo pedido"
-                            className="flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-danger/30 text-danger-text hover:text-danger-text hover:bg-danger/10 disabled:opacity-50 transition-colors shrink-0"
+                            className="flex items-center gap-1 text-caption font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-danger/30 text-danger-text hover:text-danger-text hover:bg-danger/10 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <X size={9} />0 / 0
                         </button>
@@ -517,22 +517,22 @@ export default function ItemSections({ allItems, loading }) {
     return (
         <>
             <div className="border-t border-divider px-4 py-2.5 bg-surface-card-hover/60 flex items-center gap-5 flex-wrap">
-                <span className="text-[11px] text-content-3">Solicitados <strong className="text-content-2">{total}</strong></span>
-                <span className="text-[11px] text-content-3">Enviados <strong className="text-success">{enviados.length}</strong></span>
-                {agotamiento.length > 0 && <span className="text-[11px] text-content-3">Stock insuficiente <strong className="text-warning-text">{agotamiento.length}</strong></span>}
-                {sinStock.length > 0 && <span className="text-[11px] text-content-3">Sin inventario <strong className="text-warning">{sinStock.length}</strong></span>}
-                {porRegla.length > 0 && <span className="text-[11px] text-content-3">Revisar regla <strong className="text-danger-text">{porRegla.length}</strong></span>}
+                <span className="text-label text-content-3">Solicitados <strong className="text-content-2">{total}</strong></span>
+                <span className="text-label text-content-3">Enviados <strong className="text-success">{enviados.length}</strong></span>
+                {agotamiento.length > 0 && <span className="text-label text-content-3">Stock insuficiente <strong className="text-warning-text">{agotamiento.length}</strong></span>}
+                {sinStock.length > 0 && <span className="text-label text-content-3">Sin inventario <strong className="text-warning">{sinStock.length}</strong></span>}
+                {porRegla.length > 0 && <span className="text-label text-content-3">Revisar regla <strong className="text-danger-text">{porRegla.length}</strong></span>}
             </div>
             <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-success/10 text-success-text border-success/30" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
                 label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={agotamiento} columns={COLS_AGOTAMIENTO}
-                noteEl={<p className="text-[10px] text-warning-text/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
+                noteEl={<p className="text-caption text-warning-text/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
-            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-danger/10 text-danger-text border-danger/30" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}
-                noteEl={<div className="flex items-start gap-2 text-[10px] text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
+                noteEl={<div className="flex items-start gap-2 text-caption text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
             />
             <ConfirmModal
                 isOpen={!!resetZeroTarget}

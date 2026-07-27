@@ -72,12 +72,12 @@ const ConfirmModal = ({
                     </div>
 
                     {/* TÍTULO */}
-                    <h3 className="text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-3 leading-tight text-content">
+                    <h3 className="text-title-sm sm:text-title font-black uppercase tracking-tight mb-3 leading-tight text-content">
                         {isProcessing ? "Procesando..." : title}
                     </h3>
 
                     {/* MENSAJE */}
-                    <div className={`text-[13px] font-medium leading-relaxed w-full transition-opacity duration-300 text-content-3 ${isProcessing ? 'opacity-60' : 'opacity-100'}`}>
+                    <div className={`text-body font-medium leading-relaxed w-full transition-opacity duration-300 text-content-3 ${isProcessing ? 'opacity-60' : 'opacity-100'}`}>
                         {isProcessing ? "Por favor, no cierres esta ventana." : message}
                     </div>
                 </div>
@@ -88,7 +88,7 @@ const ConfirmModal = ({
                     <button
                         onClick={onClose}
                         disabled={isProcessing}
-                        className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border border-border-card transition-all duration-300 flex-1 flex items-center justify-center ${
+                        className={`py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest border border-border-card transition-all duration-300 flex-1 flex items-center justify-center ${
                             isProcessing
                                 ? 'hidden'
                                 : 'text-content-2 bg-surface-card hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'
@@ -100,7 +100,7 @@ const ConfirmModal = ({
                     <button
                         onClick={onConfirm}
                         disabled={isProcessing}
-                        className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 flex-1 flex flex-wrap items-center justify-center gap-2 border-transparent shadow-sm ${
+                        className={`py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest text-white transition-all duration-300 flex-1 flex flex-wrap items-center justify-center gap-2 border-transparent shadow-sm ${
                             isProcessing
                                 ? 'cursor-not-allowed opacity-90 ' + (isDestructive ? 'bg-danger' : 'bg-brand')
                                 : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ' + (isDestructive ? 'bg-danger hover:bg-danger-hover' : 'bg-brand hover:bg-brand-hover')

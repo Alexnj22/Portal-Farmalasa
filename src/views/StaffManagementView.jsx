@@ -145,10 +145,10 @@ const PendingBadge = ({ emp }) => {
         <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
           className="animate-in fade-in duration-150 min-w-[190px]">
           <div className="bg-slate-800/95 backdrop-blur-sm text-white rounded-2xl shadow-xl border border-border-card px-3 py-2.5">
-            <p className="text-[9px] font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
+            <p className="text-micro font-black uppercase tracking-widest text-warning mb-1.5">Información pendiente</p>
             <ul className="space-y-1">
               {items.map((item, i) => (
-                <li key={i} className="flex items-baseline gap-1.5 text-[11px] whitespace-nowrap">
+                <li key={i} className="flex items-baseline gap-1.5 text-label whitespace-nowrap">
                   <span className="w-1 h-1 rounded-full bg-warning shrink-0 self-center" />
                   <span className="font-bold">{item.label}</span>
                   <span className="text-content-3 font-medium">— {item.hint}</span>
@@ -297,7 +297,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             </div>
             {birthdayInfo?.isToday && (
                 <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-20 flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
-                    <span className="text-[9px] leading-none">🎂</span>
+                    <span className="text-micro leading-none">🎂</span>
                 </span>
             )}
             {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
@@ -311,14 +311,14 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           <div className="min-w-0 flex-1 relative">
             {birthdayInfo?.isToday && (
               <div className="absolute -top-2 left-0 right-4 h-4 pointer-events-none opacity-70 overflow-visible">
-                <span className="absolute top-0 left-1 text-[10px] animate-bounce">🎉</span>
-                <span className="absolute top-1 left-9 text-[9px] animate-bounce [animation-delay:150ms]">✨</span>
-                <span className="absolute top-0 right-2 text-[10px] animate-bounce [animation-delay:300ms]">🎊</span>
+                <span className="absolute top-0 left-1 text-caption animate-bounce">🎉</span>
+                <span className="absolute top-1 left-9 text-micro animate-bounce [animation-delay:150ms]">✨</span>
+                <span className="absolute top-0 right-2 text-caption animate-bounce [animation-delay:300ms]">🎊</span>
               </div>
             )}
 
             <div className="flex items-center gap-1.5 relative z-10">
-              <p className="font-black text-content text-[12px] md:text-[13px] truncate transition-colors group-hover:text-brand-text tracking-tight" title={emp.name}>
+              <p className="font-black text-content text-body-sm md:text-body truncate transition-colors group-hover:text-brand-text tracking-tight" title={emp.name}>
                 {shortName}
               </p>
               {isPendingData(emp) && <PendingBadge emp={emp} />}
@@ -326,7 +326,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {birthdayInfo && (
                 <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.tooltip}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-chart-6-text scale-125' : 'text-chart-6'} shrink-0`} />
-                  <span className={`text-[9px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6-solid px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
+                  <span className={`text-micro font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6-solid px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
                      {birthdayInfo.label}
                   </span>
                 </div>
@@ -334,19 +334,19 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {anniversaryInfo && (
                 <div className="flex items-center gap-0.5" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
                   <Medal size={12} strokeWidth={2.5} className="text-warning shrink-0" />
-                  <span className="text-[9px] font-black text-warning-text bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
+                  <span className="text-micro font-black text-warning-text bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
                 </div>
               )}
               {expiryInfo && (
                 <div className="flex items-center gap-0.5" title={expiryInfo.tooltip}>
                   <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-danger' : 'text-warning'} shrink-0`} />
-                  <span className={`text-[9px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-danger-text bg-danger/10' : 'text-warning-text bg-warning/10'}`}>{expiryInfo.label}</span>
+                  <span className={`text-micro font-black px-1 rounded ${expiryInfo.isExpired ? 'text-danger-text bg-danger/10' : 'text-warning-text bg-warning/10'}`}>{expiryInfo.label}</span>
                 </div>
               )}
             </div>
             
             <div className="flex items-center gap-2 mt-0.5 h-[16px] relative z-10">
-              <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest truncate">
+              <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest truncate">
                 {emp.code || 'Sin código'}
               </p>
               {phoneDigits.length >= 8 && (
@@ -365,7 +365,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       </DataCell>
 
       <DataCell>
-        <div className="flex items-center gap-1.5 text-content-2 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-1.5 text-content-2 text-caption md:text-label font-bold uppercase tracking-widest">
           <MapPin size={12} className="text-content-3 shrink-0" />
           <span className="truncate">{branchName || 'Sin Asignar'}</span>
         </div>
@@ -376,7 +376,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {rolesArray.map((roleObj, idx) => {
             const theme = getRoleTheme(roleObj.original);
             return (
-              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-[6px] text-[9px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
+              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-[6px] text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
                 {roleObj.display}
               </span>
             );
@@ -385,7 +385,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
       </DataCell>
 
       <DataCell>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-[9px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${statusInfo.className}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-micro font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${statusInfo.className}`}>
           <statusInfo.icon size={12} strokeWidth={2.5} className="shrink-0" />
           {statusInfo.text}
         </span>
@@ -454,10 +454,10 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="font-black text-content text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
-              <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
+              <p className="font-black text-content text-body-sm md:text-body truncate tracking-tight" title={fullName}>{fullName}</p>
+              <span className="text-micro font-black uppercase tracking-widest text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
             </div>
-            <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
+            <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
               {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
             </p>
           </div>
@@ -465,20 +465,20 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell>
-        <div className="flex items-center gap-1.5 text-content-2 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
+        <div className="flex items-center gap-1.5 text-content-2 text-caption md:text-label font-bold uppercase tracking-widest">
           <MapPin size={12} className="text-content-3 shrink-0" />
           <span className="truncate">{branchName || 'Sin Asignar'}</span>
         </div>
       </DataCell>
 
       <DataCell className="max-w-[200px]">
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[9px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-chart-3/10 text-chart-3-text border-chart-3/30">
           <GraduationCap size={10} strokeWidth={2.5} /> Horas Sociales
         </span>
       </DataCell>
 
       <DataCell>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-[9px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${es.bg} ${es.text} ${es.border}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-micro font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${es.bg} ${es.text} ${es.border}`}>
           <es.icon size={12} strokeWidth={2.5} className="shrink-0" />
           {es.label}
         </span>
@@ -528,10 +528,10 @@ function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loadi
         <Icon size={15} strokeWidth={1.5} className={c.iconColor} />
       </div>
       <div className="text-left">
-        <div className={`text-[22px] font-black leading-none tabular-nums ${c.textColor}`}>
+        <div className={`text-title-lg font-black leading-none tabular-nums ${c.textColor}`}>
           {loading ? <span className="text-content-3">–</span> : value.toLocaleString()}
         </div>
-        <div className="text-[10px] font-bold text-content-2">{label}</div>
+        <div className="text-caption font-bold text-content-2">{label}</div>
       </div>
       {active && <X size={11} className="text-content-3 ml-auto shrink-0" />}
     </button>
@@ -877,7 +877,7 @@ const StaffManagementView = ({
           ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
           type="text"
           placeholder="Buscar por nombre, código o cargo..."
-          className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+          className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -892,7 +892,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-brand/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
@@ -901,7 +901,7 @@ const StaffManagementView = ({
             type="button"
             onClick={handleOpenNewPracticante}
             disabled={!canEdit}
-            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3-solid text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-chart-3-solid text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-chart-3)] hover:shadow-[var(--shadow-glow-chart-3)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-chart-3/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <GraduationCap size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Practicante</span>
@@ -1000,7 +1000,7 @@ const StaffManagementView = ({
         </div>
 
         {isStaffSearchFuzzy && normalizedSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
             <Search size={12} strokeWidth={2.5} className="shrink-0" />
             Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
           </div>

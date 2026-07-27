@@ -21,14 +21,14 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
 
     return (
         <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
-            <label htmlFor={name} className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                <span>{label} {helperText && <span className="text-[9px] text-brand-text ml-1">{helperText}</span>}</span>
+            <label htmlFor={name} className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
+                <span>{label} {helperText && <span className="text-micro text-brand-text ml-1">{helperText}</span>}</span>
                 {isMissing && !hasError && <span id={messageId} className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                 {hasError && errorMessage && <span id={messageId} className="text-danger font-bold bg-danger/15 px-2 py-0.5 rounded-md shadow-sm border border-danger/40 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>
             <div data-surface="input" className={`relative flex items-center h-[40px] z-10 ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
                 {Icon && <div className="absolute left-3 text-content-3"><Icon size={14} strokeWidth={2.5} /></div>}
-                {prefix && <div className="absolute left-3 text-content-3 font-black text-[13px]">{prefix}</div>}
+                {prefix && <div className="absolute left-3 text-content-3 font-black text-body">{prefix}</div>}
                 <input
                     id={name}
                     type={type}
@@ -42,7 +42,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
                     aria-describedby={isInvalid ? messageId : undefined}
-                    className={`w-full h-full bg-transparent text-[16px] font-bold text-content outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    className={`w-full h-full bg-transparent text-input font-bold text-content outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}
             </div>

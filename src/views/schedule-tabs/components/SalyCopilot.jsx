@@ -68,7 +68,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
             <div className={`absolute top-0 right-0 w-32 h-32 ${aiGlow} rounded-full blur-[60px] opacity-15 pointer-events-none`}></div>
             
             <div className="flex items-center justify-between border-b border-border-card pb-2 mb-2 relative z-10 shrink-0">
-                <div className="flex items-center gap-1.5 text-[9px] font-black text-chart-5 uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 text-micro font-black text-chart-5 uppercase tracking-widest">
                     <Bot size={12} className={aiIconColor} /> {aiTitle}
                 </div>
                 <Sparkles size={12} className={`${aiIconColor} ${hasCriticalAlerts || hasWarningAlerts ? 'animate-pulse' : ''}`} />
@@ -81,8 +81,8 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                             <HeartPulse size={24} strokeWidth={1.5} className="text-success" />
                             <div className="absolute inset-0 bg-success blur-xl opacity-40 animate-pulse"></div>
                         </div>
-                        <p className="text-[10px] font-black tracking-widest uppercase text-success">Cobertura Óptima</p>
-                        <p className="text-[9px] text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
+                        <p className="text-caption font-black tracking-widest uppercase text-success">Cobertura Óptima</p>
+                        <p className="text-micro text-content-3 mt-0.5 text-center font-medium leading-snug">La sucursal está lista para operar.</p>
                     </div>
                 ) : (
                     groupedAlerts.map((group) => {
@@ -104,7 +104,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                                             <Icon size={10} strokeWidth={2.5} />
                                         </div>
                                         <div className="flex flex-col min-w-0 pt-0.5">
-                                            <span className={`text-[9px] font-black uppercase tracking-widest truncate ${textColor}`}>{group.name}</span>
+                                            <span className={`text-micro font-black uppercase tracking-widest truncate ${textColor}`}>{group.name}</span>
                                             <p className="text-[8.5px] font-medium text-white/80 leading-snug mt-0.5">{group.alerts[0].msg}</p>
                                         </div>
                                     </div>
@@ -124,7 +124,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                                             <Icon size={10} strokeWidth={2.5} />
                                         </div>
                                         <div className="flex flex-col truncate text-left">
-                                            <span className={`text-[9px] font-black uppercase tracking-widest truncate ${textColor}`}>{group.name}</span>
+                                            <span className={`text-micro font-black uppercase tracking-widest truncate ${textColor}`}>{group.name}</span>
                                             <span className="text-[7.5px] font-medium text-white/50 uppercase tracking-widest leading-none mt-0.5">{group.alerts.length} Observaciones</span>
                                         </div>
                                     </div>

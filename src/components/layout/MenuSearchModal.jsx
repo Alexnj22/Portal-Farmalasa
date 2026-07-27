@@ -85,7 +85,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Buscar en el portal… (ej. venta de productos, fichas de empleados)"
-                        className="flex-1 bg-transparent outline-none text-[14px] font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
+                        className="flex-1 bg-transparent outline-none text-body-lg font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
                     />
                     <button
                         onClick={onClose}
@@ -99,8 +99,8 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 <div ref={listRef} className="relative z-10 max-h-[50vh] overflow-y-auto py-2">
                     {results.length === 0 ? (
                         <div className="px-5 py-10 text-center">
-                            <div className="text-[13px] font-semibold text-content-3">Sin resultados para “{query}”</div>
-                            <div className="text-[11px] text-content-3 mt-1">Probá con otra palabra, ej. el nombre de lo que buscás hacer.</div>
+                            <div className="text-body font-semibold text-content-3">Sin resultados para “{query}”</div>
+                            <div className="text-label text-content-3 mt-1">Probá con otra palabra, ej. el nombre de lo que buscás hacer.</div>
                         </div>
                     ) : (
                         results.map((item, idx) => {
@@ -123,10 +123,10 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                                         {Icon && <Icon size={16} strokeWidth={2.25} />}
                                     </span>
                                     <span className="flex-1 min-w-0">
-                                        <span className={`block text-[13px] font-semibold truncate ${isSelected ? 'text-content' : 'text-content-2'}`}>
+                                        <span className={`block text-body font-semibold truncate ${isSelected ? 'text-content' : 'text-content-2'}`}>
                                             {item.label}
                                         </span>
-                                        <span className="block text-[11px] text-content-3 truncate">{item.groupLabel}</span>
+                                        <span className="block text-label text-content-3 truncate">{item.groupLabel}</span>
                                     </span>
                                 </button>
                             );
@@ -135,7 +135,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 </div>
 
                 {/* Footer hint */}
-                <div className="relative z-10 hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-[10px] font-bold uppercase tracking-wide text-content-3">
+                <div className="relative z-10 hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-caption font-bold uppercase tracking-wide text-content-3">
                     <span className="flex items-center gap-1"><ArrowUp size={11} /><ArrowDown size={11} /> Navegar</span>
                     <span className="flex items-center gap-1"><CornerDownLeft size={11} /> Abrir</span>
                     <span className="ml-auto">Esc para cerrar</span>

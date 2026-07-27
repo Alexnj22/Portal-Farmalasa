@@ -33,7 +33,7 @@ const COLS = [
 ];
 
 function NetCell({ b }) {
-    if (!b) return <div className="text-content-3 text-[10px] text-center">—</div>;
+    if (!b) return <div className="text-content-3 text-caption text-center">—</div>;
     const dot   = ALERT_DOT[b.alr] ?? 'bg-content-3';
     const pedir = (b.alr === 'out_of_stock' || b.alr === 'below_min') && b.max > 0
         ? Math.max(0, b.max - b.stk) : null;
@@ -41,12 +41,12 @@ function NetCell({ b }) {
         <div className="flex flex-col items-center justify-center gap-0">
             <div className="flex items-center gap-0.5">
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
-                <span className={`text-[11px] font-bold tabular-nums ml-0.5 ${
+                <span className={`text-label font-bold tabular-nums ml-0.5 ${
                     b.stk === 0 ? 'text-danger' : b.alr === 'below_min' ? 'text-stock-below-min' : 'text-content-2'
                 }`}>{b.stk.toLocaleString()}</span>
             </div>
             {pedir !== null && (
-                <span className="text-[9px] font-semibold text-danger tabular-nums">P:{pedir.toLocaleString()}</span>
+                <span className="text-micro font-semibold text-danger tabular-nums">P:{pedir.toLocaleString()}</span>
             )}
         </div>
     );
@@ -158,22 +158,22 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 <div className="rounded-2xl border border-warning/30 bg-warning/10 backdrop-blur-sm p-4 flex flex-col gap-3"
                     style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>
-                        <span className="text-[9px] text-warning font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
+                        <span className="text-micro font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>
+                        <span className="text-micro text-warning font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
                     </div>
                     <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto">
                         {transferOps.map(item => (
-                            <div key={item.erp_product_id} className="flex items-center gap-2 text-[11px] min-w-0">
+                            <div key={item.erp_product_id} className="flex items-center gap-2 text-label min-w-0">
                                 <span className="font-medium text-content-2 flex-1 truncate min-w-0 leading-tight">{item.product_name}</span>
                                 <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
                                     {item.suppliers.map(s => (
-                                        <span key={s.id} className="px-1.5 py-0.5 bg-chart-1/10 text-chart-1-text rounded text-[9px] font-black tabular-nums">
+                                        <span key={s.id} className="px-1.5 py-0.5 bg-chart-1/10 text-chart-1-text rounded text-micro font-black tabular-nums">
                                             {ERP_SHORT[s.id]} +{s.excess}
                                         </span>
                                     ))}
                                     <ArrowRight size={10} className="text-content-3 shrink-0" />
                                     {item.needers.map(n => (
-                                        <span key={n.id} className="px-1.5 py-0.5 bg-danger/10 text-danger-text rounded text-[9px] font-black tabular-nums">
+                                        <span key={n.id} className="px-1.5 py-0.5 bg-danger/10 text-danger-text rounded text-micro font-black tabular-nums">
                                             {ERP_SHORT[n.id]} -{n.pedir}
                                         </span>
                                     ))}
@@ -193,7 +193,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (
                             <button key={cls} onClick={() => { setFilterAbc(cls); setPage(1); }}
-                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
+                                className={`px-2.5 py-1 rounded-[10px] text-label font-black transition-all duration-150 ${filterAbc === cls ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                 {cls === 'all' ? 'ABC' : cls}
                             </button>
                         ))}
@@ -208,7 +208,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             if (cnt === 0) return null;
                             return (
                                 <button key={key} onClick={() => { setFilterAlert(key); setPage(1); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-label font-black transition-all ${filterAlert === key ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
                                     {key !== 'all' && <span className={`w-1.5 h-1.5 rounded-full ${ALERT_DOT[key]}`} />}
                                     {key === 'all' ? 'Todos' : ALERT_LABELS[key]}
                                     {cnt !== null && <span className="tabular-nums">{cnt}</span>}
@@ -231,14 +231,14 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 <div className="flex-1" />
 
                 {!loading && (
-                    <span className="text-[11px] text-content-3">
+                    <span className="text-label text-content-3">
                         <strong className="text-content-2">{sorted.length.toLocaleString()}</strong>
                         {!showAll && <span> de {data.length.toLocaleString()}</span>} productos
                     </span>
                 )}
 
                 <button onClick={() => { setShowAll(s => !s); setPage(1); }}
-                    className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all ${
+                    className={`text-label font-bold px-3 py-1.5 rounded-xl border transition-all ${
                         showAll ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card border-divider text-content-3 hover:border-divider'
                     }`}>
                     {showAll ? 'Solo alertas' : 'Ver todos'}
@@ -246,7 +246,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             </div>
 
             {error && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger font-semibold">
                     <AlertTriangle size={14} /> {error}
                 </div>
             )}
@@ -274,14 +274,14 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             <DataCell align="left" className="!py-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     {row.abc_class && (
-                                        <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md border ${
+                                        <span className={`shrink-0 text-micro font-black px-1.5 py-0.5 rounded-md border ${
                                             row.abc_class === 'A' ? 'bg-success/10 text-success-text border-success/30' :
                                             row.abc_class === 'B' ? 'bg-chart-1/10 text-chart-1-text border-chart-1/30' :
                                             row.abc_class === 'C' ? 'bg-warning/10 text-warning-text border-warning/30' :
                                                                     'bg-surface-card-hover text-content-3 border-divider'
                                         }`}>{row.abc_class}</span>
                                     )}
-                                    <span className="text-[12px] font-medium text-content truncate">{row.product_name}</span>
+                                    <span className="text-body-sm font-medium text-content truncate">{row.product_name}</span>
                                 </div>
                             </DataCell>
                             {ERP_ORDER.map(id => (

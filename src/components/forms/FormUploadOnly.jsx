@@ -20,7 +20,7 @@ const FormUploadOnly = ({ formData, setFormData }) => (
                     <div className="text-content-3">
                         <Upload size={48} className="mx-auto mb-2 opacity-20" />
                         <p className="text-sm font-bold text-content-2">Haz clic para subir soporte</p>
-                        <p className="text-[10px] mt-1 italic">Vincular a acción seleccionada</p>
+                        <p className="text-caption mt-1 italic">Vincular a acción seleccionada</p>
                     </div>
                 )}
             </label>

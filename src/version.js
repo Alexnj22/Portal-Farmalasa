@@ -5,8 +5,65 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.62.4';
+export const APP_VERSION = '2.63.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.63.0 — AUDITORÍA DE DISEÑO: fases D0, D0-bis, D1 y D2.1 ejecutadas.
+// Documento y plan completos en AUDITORIA-DISENO-2026-07-26.md.
+//
+// D0 · El gate pasó de 6 a 13 categorías y ahora ve 6,333 hallazgos que antes
+// eran invisibles: typography 4,490 · white 1,094 · z-index 552 · shadow-literal
+// 417 · inline-color 118 · hex 32 · motion 30. Las 6 previas siguen en 0.
+// Causa raíz: GRAY_RE exigía shade numérico, así que bg-white/text-white nunca
+// se detectaron — tercera repetición del mismo hueco (ring-*/via-* en T7,
+// border-slate-* en v2.55.0). HEX_RE además solo veía hex con className= en la
+// MISMA línea, por eso #EEF4FF sobrevivió meses dentro de una const de JS.
+// D0-bis tapó las dos últimas ciegas: el gate lee CLASES y no veía nada dentro
+// de `style={{ }}` — ahí vivía la última superficie blanca de D1.
+// Funciona por RATCHET, no por cero absoluto: baseline versionado por categoría
+// en scripts/design-gate-baseline.json, falla si SUBE. Un gate permanentemente
+// rojo no lo mira nadie, que es exactamente cómo se acumuló esta deuda.
+//
+// D1 · Lo que rompía hoy. Criterio de cierre cumplido exacto, medido con
+// Playwright autenticado sobre 29 rutas: 52 → 0 superficies blancas y
+// 166 → 0 nodos de texto bajo el mínimo AA.
+//   · --brand-text con variante oscura (#60A5FA = el --chart-1-text que esos
+//     temas ya usaban). Medía 2.85:1 sobre la tarjeta oscura, ahora 7.35:1.
+//     503 usos en 106 archivos.
+//   · 543 bg-white migrados, CLASIFICADOS POR ROL — 108 hover, 299 con borde,
+//     114 sueltos, 14 pills activas. 18 perillas de switch sin tocar: una
+//     perilla redonda absolutamente posicionada es blanca sobre su riel en los
+//     4 temas, igual que en iOS.
+//   · 270 usos de tipografía bajo el piso legible subidos a 9px.
+//   · RouteLoadingFallback tokenizado (se ve en cada cambio de ruta) y
+//     bootstrap de tema inline en index.html — el preloader pre-React estaba
+//     clavado en lavanda claro: flash a pantalla completa en cada arranque.
+//   · N2, hallazgo nuevo mayor que la propia fase: el texto blanco sobre los
+//     RELLENOS SÓLIDOS de color fallaba AA en 11 de 13 tokens (warning 2.35:1,
+//     success 2.62, danger 3.76). 232 usos, y como esos colores no cambian por
+//     tema fallaba también en claro — nunca fue un bug de modo oscuro. 12
+//     tokens -solid nuevos, gemelos de los --chart-N-text de T7, con valores
+//     del shade 600/700 de la MISMA familia Tailwind. 268 usos migrados.
+//
+// D2.1 · Escala tipográfica. No existía: 4,490 text-[Npx] literales en 181
+// archivos con 22 valores distintos, y DESIGN.md §7 la documentaba COMO
+// STRINGS LITERALES. 13 tokens que NO cambian ningún tamaño — salen de la
+// distribución real medida, 1:1 para todo lo que tiene ≥14 usos, y solo 12
+// one-off consolidados (17→18, 19→18, 21→22, 24→26, 28→26, 36→32). El 84% de
+// los usos vive en micro/caption/label/body-sm/body. Verificado en vivo: los
+// font-size renderizados caen exactamente en la escala, sin valores fuera.
+// typography queda en 0 y BLOQUEANTE.
+//
+// Corrección al propio método: el escáner de contraste daba falsos positivos
+// sobre backgroundImage. El banner de construcción aparecía con 1.1:1 en las
+// 29 rutas — sus franjas son un repeating-linear-gradient sin backgroundColor,
+// así que el walk de ancestros lo atravesaba y medía contra el fondo de la
+// página. Mide 8.28:1 real. El escáner ya devuelve indeterminado en ese caso.
+//
+// Pendiente del plan: D2.2 z-index (552) · D2.3 densidad con piso táctil de
+// 44px · D2.4 useMotionConfig() · D2.5 N1 · fase D2.5 nueva (inventario visual
+// por familia: 12 radios y 9 alturas distintas de botón) · D3 · D4.
+
 
 // v2.62.4 — fix(theme): BARRIDO COMPLETO del sheen/blanco hardcodeado. v2.62.2
 // (GlassViewLayout) y v2.62.3 (DashboardView) arreglaron dos instancias

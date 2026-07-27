@@ -7,7 +7,7 @@ export default function CoverageBar({ current, velocity, cycleDays }) {
     const label = days >= 999 ? '>999d' : `${Math.round(days)}d`;
     return (
         <div className="flex flex-col gap-0.5 items-end">
-            <span className="text-[11px] font-black tabular-nums" style={{ color: fill }}>{label}</span>
+            <span className="text-label font-black tabular-nums" style={{ color: fill }}>{label}</span>
             <div className="w-14 h-[3px] rounded-full bg-surface-card-hover overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: fill }} />
             </div>

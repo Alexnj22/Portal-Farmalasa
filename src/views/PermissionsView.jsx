@@ -320,12 +320,12 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-content' : 'text-content-3'}`}>
+                            <p className={`text-body-sm font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-content' : 'text-content-3'}`}>
                                 {module.label}
                             </p>
                             {saving && <Loader2 size={10} className="text-content-3 animate-spin flex-shrink-0" />}
                         </div>
-                        <p className="text-[10px] text-content-3 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
+                        <p className="text-caption text-content-3 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
                     </div>
                 </div>
 
@@ -357,7 +357,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     }`}>
                                         <PtIcon size={9} className="text-white" strokeWidth={3} />
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-content-2' : 'text-content-2'}`}>
+                                    <span className={`text-caption font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-content-2' : 'text-content-2'}`}>
                                         {pt.label}
                                     </span>
                                 </div>
@@ -377,7 +377,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     <div className="mt-3 pt-3 border-t border-border-card">
                         <div className="flex items-center gap-1.5 mb-2">
                             <Globe2 size={9} className="text-content-3" strokeWidth={2.5} />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Alcance</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Alcance</p>
                         </div>
                         <div className="flex gap-1.5">
                             {SCOPE_OPTIONS.map(opt => (
@@ -386,7 +386,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     type="button"
                                     disabled={locked}
                                     onClick={() => !locked && onChange(module.key, 'scope', opt.value)}
-                                    className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border ${
+                                    className={`flex-1 py-1.5 px-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all duration-200 border ${
                                         currentScope === opt.value
                                             ? `${opt.color} border-transparent shadow-[var(--shadow-elevation-lg)] scale-[1.02]`
                                             : 'bg-surface-card backdrop-blur-sm border-border-card text-content-3 hover:bg-surface-card hover:text-content-2'
@@ -404,7 +404,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     <div className="mt-3 pt-3 border-t border-border-card">
                         <div className="flex items-center gap-1.5 mb-2">
                             <Layers size={9} className="text-content-3" strokeWidth={2.5} />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Pestañas</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-2">Pestañas</p>
                         </div>
                         <div className="space-y-1.5">
                             {tabs.map(tab => {
@@ -415,7 +415,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                             ? 'bg-chart-1/10 border-chart-1/30'
                                             : 'bg-surface-card border-border-card'
                                     }`}>
-                                        <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
+                                        <span className={`text-caption font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
@@ -697,7 +697,7 @@ const PermissionsView = () => {
             <div className="bg-gradient-to-tr from-brand to-brand-purple rounded-xl md:rounded-2xl shadow-[var(--shadow-glow-brand)] p-2 md:p-2.5 flex items-center justify-center shrink-0">
                 <Lock className="text-white" size={20} strokeWidth={1.5} />
             </div>
-            <h2 className="font-semibold text-[18px] md:text-[22px] text-content tracking-tight">
+            <h2 className="font-semibold text-title-sm md:text-title-lg text-content tracking-tight">
                 Permisos de Acceso
             </h2>
             {selectedOrgRole && (
@@ -707,7 +707,7 @@ const PermissionsView = () => {
                         <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${roleStyle.color} flex items-center justify-center flex-shrink-0`}>
                             <ShieldCheck size={11} className="text-white" strokeWidth={2} />
                         </div>
-                        <span className={`text-[13px] font-black ${roleStyle.textColor} leading-tight`}>
+                        <span className={`text-body font-black ${roleStyle.textColor} leading-tight`}>
                             {selectedOrgRole.name}
                         </span>
                     </div>
@@ -724,7 +724,7 @@ const PermissionsView = () => {
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}
@@ -743,7 +743,7 @@ const PermissionsView = () => {
                 {selectedRoleId && canEdit && (
                     <>
                         <button onClick={() => setConfirmActivate(true)} disabled={activatingAll || copyingFrom}
-                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-warning border-warning/30 hover:bg-warning/10 hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
+                            className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest border transition-all duration-300 transform-gpu whitespace-nowrap shrink-0 bg-transparent text-warning border-warning/30 hover:bg-warning/10 hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50">
                             {activatingAll ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} strokeWidth={2.5} />}
                             Activar todo
                         </button>
@@ -819,12 +819,12 @@ const PermissionsView = () => {
 
                     {/* ── Columna izquierda: selector de cargos ── */}
                     <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] xl:pt-[200px] [&::-webkit-scrollbar]:hidden">
-                        <p className="text-[10px] font-black text-content-2 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
+                        <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
                             <ShieldCheck size={10} /> Cargos
                         </p>
                         <div className="space-y-2">
                         {isPermRoleFuzzy && searchQuery && (
-                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-warning-text font-semibold">
+                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-caption text-warning-text font-semibold">
                                 <Search size={11} strokeWidth={2.5} className="shrink-0" />
                                 Similares a &ldquo;{searchQuery}&rdquo;
                             </div>
@@ -857,10 +857,10 @@ const PermissionsView = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-warning-text' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
-                                                {isSURol && <span className="text-[9px] font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
+                                                <p className={`text-body-sm font-black leading-tight truncate ${isActive ? (isSURol ? 'text-warning-text' : cs.textColor) : 'text-content-2'}`}>{r.name}</p>
+                                                {isSURol && <span className="text-micro font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
                                             </div>
-                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
+                                            <p className={`text-caption font-medium mt-0.5 ${isActive ? (isSURol ? 'text-warning-text/60' : cs.textColor + ' opacity-70') : 'text-content-3'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
@@ -875,7 +875,7 @@ const PermissionsView = () => {
                         <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-surface-card-hover/80 border border-border-card">
                             <div className="flex items-start gap-2">
                                 <Info size={11} className="text-content-3 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                                <p className="text-[10px] text-content-3 font-medium leading-snug">
+                                <p className="text-caption text-content-3 font-medium leading-snug">
                                     Los cambios se aplican inmediatamente a todos los empleados con este cargo.
                                 </p>
                             </div>
@@ -890,8 +890,8 @@ const PermissionsView = () => {
                                 <div className="w-16 h-16 rounded-[1.5rem] bg-surface-card border border-border-card shadow-sm flex items-center justify-center mb-4">
                                     <MousePointerClick size={28} className="text-content-3" strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[15px] font-black text-content-3">Selecciona un cargo</p>
-                                <p className="text-[12px] text-content-3 font-medium mt-1">para modificar sus permisos de acceso</p>
+                                <p className="text-subtitle font-black text-content-3">Selecciona un cargo</p>
+                                <p className="text-body-sm text-content-3 font-medium mt-1">para modificar sus permisos de acceso</p>
                             </div>
                         ) : (
                         /* Grid de módulos */
@@ -935,14 +935,14 @@ const PermissionsView = () => {
                                         {/* Label */}
                                         <div>
                                             <div className="flex items-center gap-1.5">
-                                                <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-warning-text' : 'text-content-2'}`}>
+                                                <p className={`text-body-sm font-black leading-tight transition-colors duration-300 ${isRoleSU ? 'text-warning-text' : 'text-content-2'}`}>
                                                     Super Usuario
                                                 </p>
                                                 {isRoleSU && (
-                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
+                                                    <span className="text-micro font-black uppercase tracking-widest bg-warning-solid text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>
+                                            <p className={`text-micro font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-warning-text/70' : 'text-content-3'}`}>
                                                 {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
                                             </p>
                                         </div>
@@ -950,7 +950,7 @@ const PermissionsView = () => {
                                         {isRoleSU && (
                                             <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40 animate-in fade-in slide-in-from-bottom-1 duration-300">
                                                 <Zap size={8} className="text-warning flex-shrink-0" strokeWidth={2.5} />
-                                                <p className="text-[9px] font-black text-warning-text uppercase tracking-wide">Permisos ignorados</p>
+                                                <p className="text-micro font-black text-warning-text uppercase tracking-wide">Permisos ignorados</p>
                                             </div>
                                         )}
                                     </div>
@@ -980,8 +980,8 @@ const PermissionsView = () => {
                                             <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[13px] font-black text-content leading-tight">Nivel de Precio Máximo</p>
-                                            <p className="text-[10px] text-content-3 font-medium mt-0.5">
+                                            <p className="text-body font-black text-content leading-tight">Nivel de Precio Máximo</p>
+                                            <p className="text-caption text-content-3 font-medium mt-0.5">
                                                 Activo: <span className="font-black text-content-2">{activeOpt.label}</span>
                                                 {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
                                             </p>
@@ -994,7 +994,7 @@ const PermissionsView = () => {
                                             return (
                                                 <button key={opt.value ?? '_null'} type="button" disabled={!canEdit}
                                                     onClick={() => canEdit && handlePriceLevelChange(opt.value)}
-                                                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
+                                                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-caption font-black uppercase tracking-widest transition-all duration-200 border ${
                                                         isActive
                                                             ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[var(--shadow-elevation-xl)]`
                                                             : 'bg-surface-card border-border-card text-content-3 hover:border-content-3 hover:text-content-2'
@@ -1022,7 +1022,7 @@ const PermissionsView = () => {
                                     <div className="flex items-center gap-2.5 mb-3">
                                         <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
                                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-border-card shadow-sm ${g.color}`}>
-                                            <p className="text-[9px] font-black uppercase tracking-widest">{g.group}</p>
+                                            <p className="text-micro font-black uppercase tracking-widest">{g.group}</p>
                                             {groupPartial && !groupActive && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 flex-shrink-0" />}
                                             {groupActive && <Check size={9} strokeWidth={3} className="flex-shrink-0" />}
                                         </div>

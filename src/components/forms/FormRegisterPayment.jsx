@@ -124,11 +124,11 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     <div>
                         <h3 className="text-xl font-black text-success-text tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
                         <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 bg-surface-card rounded-md text-[9px] font-black text-success-text uppercase tracking-widest border border-success/30">
+                            <span className="px-2.5 py-1 bg-surface-card rounded-md text-micro font-black text-success-text uppercase tracking-widest border border-success/30">
                                 Sede: {formData.name}
                             </span>
                             {currentPaidThrough && (
-                                <span className="text-[10px] font-bold text-success/80 uppercase tracking-widest">
+                                <span className="text-caption font-bold text-success/80 uppercase tracking-widest">
                                     Último: {currentPaidThrough}
                                 </span>
                             )}
@@ -143,7 +143,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* MONTO EXACTO */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                             <DollarSign size={12} className="text-brand-text" /> Monto Pagado Exacto
                         </label>
                         <div className="relative group">
@@ -165,7 +165,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                     {/* MES QUE CUBRE (LIQUID DATE PICKER) */}
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                             <Calendar size={12} className={isConflict ? "text-danger" : "text-brand-text"} /> Mes que Cubre
                         </label>
                         <div className={isConflict ? "ring-2 ring-danger/50 rounded-2xl transition-all" : ""}>
@@ -184,7 +184,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 {isConflict && (
                     <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2">
                         <AlertCircle size={18} className="shrink-0 text-danger" strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-widest leading-tight">
+                        <span className="text-label font-black uppercase tracking-widest leading-tight">
                             Ya existe un pago registrado para {currentPaidThrough} o posterior.
                         </span>
                     </div>
@@ -192,12 +192,12 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* NOTAS / OBSERVACIONES */}
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                         <FileText size={12} className="text-content-3" /> Notas / Observaciones (Opcional)
                     </label>
                     <input
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-[16px] shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-input shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}
@@ -206,7 +206,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
 
                 {/* UPLOAD FILE (ÁREA DE ARRASTRE MEJORADA) */}
                 <div className="pt-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex items-center gap-1.5">
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex items-center gap-1.5">
                         <UploadCloud size={12} className="text-brand-text" /> Comprobante / Recibo (Foto o PDF)
                     </label>
 
@@ -226,10 +226,10 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 <div className="w-12 h-12 bg-surface-card rounded-2xl flex items-center justify-center shadow-sm text-success mb-1 border border-success/30">
                                     <CheckCircle size={24} strokeWidth={2} />
                                 </div>
-                                <p className="text-[13px] font-black text-success-text tracking-tight max-w-[200px] truncate">
+                                <p className="text-body font-black text-success-text tracking-tight max-w-[200px] truncate">
                                     {paymentData.receiptFile.name}
                                 </p>
-                                <p className="text-[10px] font-bold text-success/70 uppercase tracking-widest">
+                                <p className="text-caption font-bold text-success/70 uppercase tracking-widest">
                                     Archivo adjuntado correctamente
                                 </p>
                             </div>
@@ -238,10 +238,10 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 <div className="w-12 h-12 bg-surface-card rounded-2xl flex items-center justify-center shadow-sm text-brand-text mb-1 group-hover:shadow-md transition-all">
                                     <UploadCloud size={24} strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[13px] font-black text-content-2 tracking-tight">
+                                <p className="text-body font-black text-content-2 tracking-tight">
                                     Toca para subir o arrastra aquí
                                 </p>
-                                <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest">
+                                <p className="text-caption font-bold text-content-2 uppercase tracking-widest">
                                     Si no lo subes hoy, quedará como PENDIENTE
                                 </p>
                             </div>

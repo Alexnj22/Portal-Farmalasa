@@ -74,7 +74,7 @@ export default function ConteoInventarioView() {
                     ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
                     type="text"
                     placeholder="Buscar por sucursal..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -88,7 +88,7 @@ export default function ConteoInventarioView() {
                         <button
                             type="button"
                             onClick={() => setShowModal(true)}
-                            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap border border-brand/50"
+                            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-brand to-brand-hover text-white font-black text-micro md:text-caption uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap border border-brand/50"
                         >
                             <Plus size={14} strokeWidth={3} />
                             <span className="hidden sm:inline">Nuevo Conteo</span>
@@ -113,7 +113,7 @@ export default function ConteoInventarioView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
             {isSearchFuzzy && search && (
-                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -124,24 +124,24 @@ export default function ConteoInventarioView() {
                     const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);
                     return (
                         <DataRow key={c.id} index={i} onClick={() => navigate(`/conteo-inventario/${c.id}`)}>
-                            <DataCell><span className="text-[12px] font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>
-                            <DataCell><span className="text-[12px] font-bold text-content">{c.branches?.name || '—'}</span></DataCell>
-                            <DataCell hideBelow="md"><span className="text-[11px] text-content-3">{SCOPE_LABEL[c.scope_type] || c.scope_type}</span></DataCell>
-                            <DataCell align="center" hideBelow="md"><span className="text-[11px] tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span></DataCell>
+                            <DataCell><span className="text-body-sm font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>
+                            <DataCell><span className="text-body-sm font-bold text-content">{c.branches?.name || '—'}</span></DataCell>
+                            <DataCell hideBelow="md"><span className="text-label text-content-3">{SCOPE_LABEL[c.scope_type] || c.scope_type}</span></DataCell>
+                            <DataCell align="center" hideBelow="md"><span className="text-label tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span></DataCell>
                             <DataCell align="center">
                                 {c.total_diferencias > 0 ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
+                                    <span className="inline-flex items-center gap-1 text-caption font-bold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
                                         <AlertTriangle size={10} /> {c.total_diferencias}
                                     </span>
                                 ) : c.total_diferencias === 0 ? (
-                                    <span className="text-[10px] font-bold text-success">Sin diferencias</span>
+                                    <span className="text-caption font-bold text-success">Sin diferencias</span>
                                 ) : <span className="text-content-3">—</span>}
                             </DataCell>
                             <DataCell align="right" hideBelow="lg">
-                                <span className={`text-[11px] font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
+                                <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${es.bg} ${es.text} ${es.border}`}>
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-bold border ${es.bg} ${es.text} ${es.border}`}>
                                     <es.icon size={12} strokeWidth={2.5} /> {es.label}
                                 </span>
                             </DataCell>

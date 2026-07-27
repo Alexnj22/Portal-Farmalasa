@@ -91,7 +91,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                 {onPrev
                     ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
-                <p className="text-[10px] font-black uppercase tracking-widest text-content-2">
+                <p className="text-caption font-black uppercase tracking-widest text-content-2">
                     {MONTHS_SH[month]} {year}
                 </p>
                 {onNext
@@ -130,7 +130,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                         }
                     }
 
-                    let btnCls = 'w-7 h-7 mx-auto flex items-center justify-center rounded-full text-[11px] font-bold transition-all z-10 relative ';
+                    let btnCls = 'w-7 h-7 mx-auto flex items-center justify-center rounded-full text-label font-bold transition-all z-10 relative ';
                     if (isStart || isEnd) {
                         btnCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110 cursor-pointer';
                     } else if (inRange) {
@@ -315,10 +315,10 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                 <CalendarDays size={15} className="text-brand-text" strokeWidth={2.5} />
                             </div>
                             <div>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-content-2 leading-tight">
+                                <p className="text-label font-black uppercase tracking-widest text-content-2 leading-tight">
                                     Seleccionar período
                                 </p>
-                                <p className={`text-[10px] font-bold leading-tight mt-0.5 transition-colors ${
+                                <p className={`text-caption font-bold leading-tight mt-0.5 transition-colors ${
                                     dayPhase === 'picking-end' ? 'text-brand-text animate-pulse' : 'text-content-3'
                                 }`}>
                                     {subtitle()}
@@ -380,7 +380,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand-text transition-all shadow-sm">
                                     <ChevronLeft size={13} strokeWidth={3} />
                                 </button>
-                                <span className="text-[12px] font-black text-content-2 tracking-wide">{viewYear}</span>
+                                <span className="text-body-sm font-black text-content-2 tracking-wide">{viewYear}</span>
                                 <button type="button" onClick={() => setViewYear(y => y + 1)}
                                     disabled={viewYear >= curY + 1}
                                     className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand-text transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
@@ -393,7 +393,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     const isCurrent = viewYear === curY && mi === curM;
                                     const isFuture  = mKey(viewYear, mi) > mKey(curY, curM);
 
-                                    let cellCls = 'relative h-10 flex items-center justify-center rounded-2xl text-[11px] font-bold transition-all select-none ';
+                                    let cellCls = 'relative h-10 flex items-center justify-center rounded-2xl text-label font-bold transition-all select-none ';
                                     if (isStart || isEnd) {
                                         cellCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-105 z-10 ';
                                     } else if (inRange) {
@@ -451,7 +451,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                             </div>
                             {dayPhase === 'picking-end' && (
                                 <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-[10px] font-bold text-brand-text animate-pulse">
+                                    <p className="text-caption font-bold text-brand-text animate-pulse">
                                         Selecciona la fecha de fin
                                     </p>
                                     <button type="button" onClick={() => { setDayPhase('idle'); setDayDraftStart(null); setDayHover(null); }}
@@ -476,7 +476,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                 <CalendarDays size={13}
                     className={fini ? 'text-brand-text' : 'text-content-3 group-hover:text-brand-text transition-colors'}
                     strokeWidth={2.5} />
-                <span className={`text-[12px] font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-content-2' : 'text-content-3'}`}>
+                <span className={`text-body-sm font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-content-2' : 'text-content-3'}`}>
                     {fini && ffin ? (rangeLabel || `${formatDisplay(fini)} → ${formatDisplay(ffin)}`) : placeholder}
                 </span>
             </div>

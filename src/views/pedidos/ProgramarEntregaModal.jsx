@@ -50,10 +50,10 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                             <CalendarClock size={16} className="text-chart-3-text" />
                         </div>
                         <div>
-                            <p className="text-[13px] font-bold text-content">
+                            <p className="text-body font-bold text-content">
                                 {isEditing ? 'Reprogramar entrega' : 'Programar entrega'}
                             </p>
-                            <p className="text-[11px] text-content-3">Pedido #{numero}</p>
+                            <p className="text-label text-content-3">Pedido #{numero}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-surface-card-hover text-content-3">
@@ -64,7 +64,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
                 <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold text-content-3 uppercase tracking-wide">
+                    <label className="text-label font-semibold text-content-3 uppercase tracking-wide">
                         Fecha y hora estimada de llegada
                     </label>
                     <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                     <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
                             <History size={11} className="text-content-3" />
-                            <span className="text-[10px] font-semibold text-content-2 uppercase tracking-wide">Historial</span>
+                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide">Historial</span>
                         </div>
                         <div className="space-y-1.5">
                             {[...historial].reverse().map((h, i) => {
@@ -90,10 +90,10 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                                 return (
                                     <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover/80 border border-divider">
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-semibold text-content-2 truncate">
+                                            <p className="text-label font-semibold text-content-2 truncate">
                                                 {fmtDisplay(h.programada_at) ?? '—'}
                                             </p>
-                                            <p className="text-[10px] text-content-3">
+                                            <p className="text-caption text-content-3">
                                                 {nombre} · {h.registrado_at ? new Date(h.registrado_at).toLocaleString('es-SV', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}
                                             </p>
                                         </div>
@@ -107,13 +107,13 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
             <LiquidModal.Footer>
                 <div className="flex gap-2">
-                    <button onClick={onClose} className="flex-1 text-[12px] font-semibold px-4 py-2.5 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all">
+                    <button onClick={onClose} className="flex-1 text-body-sm font-semibold px-4 py-2.5 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover active:scale-[0.97] transition-all">
                         Cancelar
                     </button>
                     <button
                         onClick={() => value && onConfirm(new Date(value).toISOString())}
                         disabled={!value || saving}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-body-sm font-bold px-4 py-2.5 rounded-xl bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                         <Check size={13} />
                         {saving ? 'Guardando…' : isEditing ? 'Actualizar' : 'Confirmar'}

@@ -116,7 +116,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                         className="p-1.5 hover:bg-surface-card-hover rounded-full text-content-3 transition-all active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={3} />
                     </button>
-                    <span className="text-[12px] font-black text-content-2 uppercase tracking-widest">
+                    <span className="text-body-sm font-black text-content-2 uppercase tracking-widest">
                         {MONTHS_SHORT[month]} {year}
                     </span>
                     <button type="button"
@@ -129,7 +129,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                 {/* ── Cabeceras días ── */}
                 <div className="grid grid-cols-7 mb-1">
                     {DAY_HEADERS.map(d => (
-                        <div key={d} className="text-center text-[9px] font-black text-content-2 uppercase tracking-wider py-1">
+                        <div key={d} className="text-center text-micro font-black text-content-2 uppercase tracking-wider py-1">
                             {d}
                         </div>
                     ))}
@@ -162,7 +162,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                                         <div key={ci} className="flex items-center justify-center h-8 relative">
                                             {cell && (
                                                 <>
-                                                    <span className={`text-[12px] font-bold leading-none ${
+                                                    <span className={`text-body-sm font-bold leading-none ${
                                                         isSel   ? 'text-white font-black' :
                                                         isToday ? 'text-content font-black' :
                                                         isHov   ? 'text-content-2' :
@@ -186,7 +186,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                 {/* ── Botón semana actual ── */}
                 <button type="button"
                     onClick={() => selectWeek(new Date())}
-                    className="mt-3 w-full text-[10px] font-black uppercase tracking-widest text-content-2 hover:text-content hover:bg-surface-card-hover py-2 rounded-xl transition-all">
+                    className="mt-3 w-full text-caption font-black uppercase tracking-widest text-content-2 hover:text-content hover:bg-surface-card-hover py-2 rounded-xl transition-all">
                     Semana actual
                 </button>
             </div>

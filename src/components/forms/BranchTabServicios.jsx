@@ -35,7 +35,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                         <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-[0.8rem] border border-white shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]`}>
                             <srv.icon size={18} strokeWidth={2.5} />
                         </div>
-                        <h4 className="text-[12px] font-black uppercase tracking-widest text-content">
+                        <h4 className="text-body-sm font-black uppercase tracking-widest text-content">
                             {srv.label}
                         </h4>
                     </div>
@@ -43,36 +43,36 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                     {/* CAMPOS: Apilados verticalmente */}
                     <div className="flex flex-col gap-5 flex-1">
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Proveedor</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Proveedor</label>
                             <LazyInput 
                                 placeholder={srv.placeholder} 
                                 value={services[srv.id]?.provider || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'provider', val)} 
-                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`} 
+                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`} 
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{srv.accountLabel}</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{srv.accountLabel}</label>
                             <LazyInput 
                                 value={services[srv.id]?.account || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'account', val)} 
-                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] font-mono border-divider ${inputHoverClass}`} 
+                                className={`!bg-surface-card shadow-sm h-[42px] text-body font-mono border-divider ${inputHoverClass}`} 
                             />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Pago (1-31)</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Pago (1-31)</label>
                             <LazyInput 
                                 type="number" 
                                 placeholder="Ej: 15" 
                                 value={services[srv.id]?.dueDay || ""} 
                                 onChange={(val) => updateServiceField(srv.id, 'dueDay', clampInt(val, 1, 31))} 
-                                className={`!bg-surface-card shadow-sm h-[42px] text-[13px] border-divider ${inputHoverClass}`} 
+                                className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`} 
                             />
                         </div>
                         
                         {/* 🚨 FIX: LiquidDatePicker con mode="month" */}
                         <div className="relative focus-within:z-50">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
+                            <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
                             </label>
                             <div className="bg-success/10 rounded-[1rem] border border-success/30 shadow-sm flex items-center h-[42px] px-1 relative transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-success focus-within:ring-4 focus-within:ring-success/20">

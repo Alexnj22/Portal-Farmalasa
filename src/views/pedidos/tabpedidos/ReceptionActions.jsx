@@ -13,7 +13,7 @@ const LLEGADA_TIPO_LABEL = {
 
 export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
     const empChip = (emp) => emp ? (
-        <span className="flex items-center gap-1 text-[10px] text-content-3">
+        <span className="flex items-center gap-1 text-caption text-content-3">
             {emp.photo_url
                 ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
                 : <UserCircle2 size={12} className="text-content-3" />}
@@ -32,7 +32,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     ) : null;
 
     const apoyoBtn = (
-        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all shrink-0">
+        <button onClick={onApoyo} className="flex items-center gap-0.5 text-caption font-semibold px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-divider active:scale-[0.97] transition-all shrink-0">
             <UserPlus size={10} />Apoyo
         </button>
     );
@@ -54,14 +54,14 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
     return (
         <div className="border-t border-divider px-4 py-3 space-y-2">
-            <div className="text-[10px] font-semibold text-content-3 uppercase tracking-wide mb-2">Recepción</div>
+            <div className="text-caption font-semibold text-content-3 uppercase tracking-wide mb-2">Recepción</div>
 
             {/* Paso 1: Llegada — solo visible cuando aún no confirmada */}
             {!llegadaOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-brand/10 border-brand/20 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-brand/10 border-brand/20 text-label">
                     <PackageCheck size={13} className="text-brand-text" />
                     <span className="text-brand-text">Paso 1 — Confirmar llegada de cajas</span>
-                    <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-brand text-white hover:bg-brand-hover active:scale-[0.97] transition-all disabled:opacity-50">
+                    <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-caption font-semibold px-2.5 py-1 rounded-lg bg-brand text-white hover:bg-brand-hover active:scale-[0.97] transition-all disabled:opacity-50">
                         {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
                     </button>
                 </div>
@@ -69,7 +69,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Confirmado: llegada de cajas (7A.5) */}
             {llegadaOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/10 border-success/30 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/10 border-success/30 text-label">
                     <PackageCheck size={13} className="text-success" />
                     <span className="text-success-text">
                         Llegada confirmada{llegadaTipo && LLEGADA_TIPO_LABEL[llegadaTipo] ? ` — ${LLEGADA_TIPO_LABEL[llegadaTipo]}` : ''}
@@ -84,12 +84,12 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {llegadaOk && (hasDanadaPendiente || (hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos)) && (
                 <div className="flex flex-wrap gap-1.5">
                     {hasDanadaPendiente && cajasDanadas.map(n => (
-                        <span key={`d${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/30 text-[10px] font-semibold text-warning-text">
+                        <span key={`d${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/30 text-caption font-semibold text-warning-text">
                             <AlertTriangle size={9} />#{n} dañada
                         </span>
                     ))}
                     {hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos && faltaCajas.map(n => (
-                        <span key={`f${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger/10 border border-danger/30 text-[10px] font-semibold text-danger-text">
+                        <span key={`f${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger/10 border border-danger/30 text-caption font-semibold text-danger-text">
                             <PackageX size={9} />#{n} no llegó
                         </span>
                     ))}
@@ -98,7 +98,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Banner: reenvío en camino — mostrar por cada ciclo activo */}
             {llegadaOk && cicloEnCamino && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/30 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/30 text-label">
                     <Truck size={12} className="text-chart-3-text shrink-0" />
                     <span className="text-chart-3-text flex-1">
                         {reenviosHistorial.length > 1 ? `Reenvío ${cicloEnCamino.ciclo} en camino` : 'Reenvío en camino'}
@@ -107,7 +107,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
                     </span>
                     <button onClick={onSegundaLlegada} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shrink-0">
+                        className="ml-auto text-caption font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3/80 active:scale-[0.97] transition-all disabled:opacity-50 shrink-0">
                         {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
                     </button>
                 </div>
@@ -115,11 +115,11 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Revisar items del reenvío (después de confirmar la segunda llegada) */}
             {llegadaOk && todosReenviosResueltos && !hasFaltaPendiente && hasFaltaItems && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-label">
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">Revisar caja del reenvío en Sistema de Ventas</span>
                     <button onClick={onOpenReenvioModal} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
+                        className="ml-auto text-caption font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
                         Revisar
                     </button>
                 </div>
@@ -127,7 +127,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Paso 2: Confirmar en Sistema de Ventas */}
             {llegadaOk && !erpOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-chart-3/10 border-chart-3/20 text-label">
                     <Database size={13} className="text-chart-3-text" />
                     <span className="text-chart-3-text">
                         Paso 2 — Confirmar en Sistema de Ventas {pendientesCount > 0 ? `(${pendientesCount})` : ''}
@@ -136,7 +136,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                         {apoyoChips}
                         {apoyoBtn}
                         <button onClick={onOpenRecibir} disabled={!!busy}
-                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
+                            className="text-caption font-semibold px-2.5 py-1 rounded-lg bg-chart-3-solid text-white hover:bg-chart-3-solid active:scale-[0.97] transition-all disabled:opacity-50">
                             Confirmar
                         </button>
                     </div>
@@ -145,7 +145,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
 
             {/* Completado en ERP */}
             {erpOk && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/10 border-success/30 text-[11px]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-success/10 border-success/30 text-label">
                     <Database size={13} className="text-success" />
                     <span className="text-success-text">Confirmado en Sistema de Ventas</span>
                     <div className="ml-auto flex items-center gap-1.5">

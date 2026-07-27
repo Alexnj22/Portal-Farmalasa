@@ -91,7 +91,7 @@ function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disa
             className={`flex flex-col items-center justify-center gap-0.5 w-14 h-12 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${ACTION_COLORS[color]}`}
         >
             <Icon size={15} strokeWidth={2.25} />
-            <span className="text-[9px] font-bold uppercase tracking-wide leading-none text-center">{label}</span>
+            <span className="text-micro font-bold uppercase tracking-wide leading-none text-center">{label}</span>
         </button>
     );
 }
@@ -141,15 +141,15 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
     if (row.proveedor_id) {
         return (
             <div className="min-w-0">
-                <span className="text-content font-medium text-[12px] block truncate">{row.proveedor_nombre}</span>
+                <span className="text-content font-medium text-body-sm block truncate">{row.proveedor_nombre}</span>
                 {row.supplier_id && row.supplier_nombre !== row.proveedor_nombre && (
-                    <span className="text-[10px] text-content-3 truncate block">ERP: {row.supplier_nombre}</span>
+                    <span className="text-caption text-content-3 truncate block">ERP: {row.supplier_nombre}</span>
                 )}
                 {/* Fase 4 §5: cuando el match viene del contenido del ítem
                     (ej. "claro" no aparece en proveedor/número pero sí en
                     items_text), mostrar por qué apareció esta fila. */}
                 {matchSnippet && (
-                    <span className="text-[10px] text-chart-1-text truncate block" title={matchSnippet}>…{matchSnippet}…</span>
+                    <span className="text-caption text-chart-1-text truncate block" title={matchSnippet}>…{matchSnippet}…</span>
                 )}
             </div>
         );
@@ -162,16 +162,16 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
         return (
             <div className="flex items-center gap-1.5">
                 <AlertTriangle size={12} className="text-warning shrink-0" title="Sin proveedor emparejado en el maestro" />
-                <span className="text-content-2 text-[12px]">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
+                <span className="text-content-2 text-body-sm">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
                 {canEdit && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
-                        className="text-[10px] font-bold text-brand-text underline shrink-0"
+                        className="text-caption font-bold text-brand-text underline shrink-0"
                     >
                         Emparejar
                     </button>
                 )}
-                {error && <span className="text-[10px] text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger">{error}</span>}
             </div>
         );
     }
@@ -279,18 +279,18 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         // chico subrayado, no la caja ícono+subtítulo (esa es para la
         // columna de acciones dedicada de Revisión).
         if (state === 'idle') {
-            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] font-black text-content-3 hover:text-brand-text underline whitespace-nowrap">Detectar código</button>;
+            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-micro font-black text-content-3 hover:text-brand-text underline whitespace-nowrap">Detectar código</button>;
         }
-        if (state === 'loading') return <span className="text-[9px] text-content-3 whitespace-nowrap">Analizando…</span>;
-        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] text-content-3 hover:text-brand-text underline whitespace-nowrap">Sin código, reintentar</button>;
-        if (state === 'error') return <span className="text-[9px] text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
-        if (state === 'not_found') return <span className="text-[9px] text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
+        if (state === 'loading') return <span className="text-micro text-content-3 whitespace-nowrap">Analizando…</span>;
+        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-micro text-content-3 hover:text-brand-text underline whitespace-nowrap">Sin código, reintentar</button>;
+        if (state === 'error') return <span className="text-micro text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
+        if (state === 'not_found') return <span className="text-micro text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
             <button
                 onClick={(e) => { e.stopPropagation(); apply(); }}
                 disabled={applying}
                 title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
-                className="text-[9px] font-black text-success hover:text-success-text underline whitespace-nowrap disabled:opacity-50"
+                className="text-micro font-black text-success hover:text-success-text underline whitespace-nowrap disabled:opacity-50"
             >
                 {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
             </button>
@@ -311,7 +311,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         return (
             <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3">
                 <ScanSearch size={15} className="animate-pulse" />
-                <span className="text-[9px] font-bold uppercase tracking-wide leading-none mt-0.5">Analizando</span>
+                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Analizando</span>
             </div>
         );
     }
@@ -329,7 +329,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         return (
             <div className="flex flex-col items-center justify-center w-14 h-12 text-danger" title={result.error}>
                 <AlertTriangle size={15} />
-                <span className="text-[9px] font-bold uppercase tracking-wide leading-none mt-0.5">Error</span>
+                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Error</span>
             </div>
         );
     }
@@ -337,7 +337,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         return (
             <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" title={`Código completo: ${result.code} — sin sincronizar aún`}>
                 <ScanSearch size={15} />
-                <span className="text-[9px] font-bold uppercase tracking-wide leading-none mt-0.5">Sin match</span>
+                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Sin match</span>
             </div>
         );
     }
@@ -369,7 +369,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                     color="blue"
                     onClick={() => { onOpen(); setError(''); }}
                 />
-                {error && <span className="text-[10px] text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger">{error}</span>}
             </div>
         );
     }
@@ -439,7 +439,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     color="slate"
                     onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
                 />
-                {error && <span className="text-[10px] text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger">{error}</span>}
             </div>
         );
     }
@@ -485,7 +485,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     clearable={false}
                 />
             </div>
-            {error && <span className="text-[10px] text-danger shrink-0">{error}</span>}
+            {error && <span className="text-caption text-danger shrink-0">{error}</span>}
             <button
                 onClick={confirm}
                 disabled={saving || !documentId}
@@ -539,11 +539,11 @@ function AttachJsonAction({ row, candidates, onMerged }) {
             <div className="flex items-center gap-1.5">
                 <button
                     onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}
-                    className="text-[9px] font-black text-brand-text hover:text-brand-hover underline whitespace-nowrap"
+                    className="text-micro font-black text-brand-text hover:text-brand-hover underline whitespace-nowrap"
                 >
                     Adjuntar JSON
                 </button>
-                {error && <span className="text-[10px] text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger">{error}</span>}
             </div>
         );
     }
@@ -843,7 +843,7 @@ function TabDocumentos({
                                 <button onClick={downloadBulk}
                                     disabled={bulkDownloading}
                                     title="Descargar todos los filtrados en un ZIP"
-                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-divider hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
+                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-black uppercase tracking-widest border border-transparent text-content-3 hover:bg-surface-card-hover hover:border-divider hover:text-content-2 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
                                     <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
                                     {bulkProgress?.total > 0
                                         ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
@@ -859,7 +859,7 @@ function TabDocumentos({
                             <div className="h-5 w-px bg-divider shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={runSyncNow} disabled={syncing}
-                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
+                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-caption font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                                         syncing
                                             ? 'bg-chart-1/10 border-chart-1/30 text-chart-1-text'
                                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
@@ -874,7 +874,7 @@ function TabDocumentos({
             </div>
             </div>
 
-            {bulkError && <div className="text-[10px] text-danger px-1">{bulkError}</div>}
+            {bulkError && <div className="text-caption text-danger px-1">{bulkError}</div>}
 
             <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
                 {pageRows.map((row, i) => (
@@ -897,13 +897,13 @@ function TabDocumentos({
                         </DataCell>
                         <DataCell>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-bold text-content-2 bg-content-3/10 border border-content-3/25 px-2.5 py-0.5 rounded-full">
+                                <span className="text-caption font-bold text-content-2 bg-content-3/10 border border-content-3/25 px-2.5 py-0.5 rounded-full">
                                     {dteTypeLabel(row.tipo_dte)}
                                 </span>
                                 {row.invalidado && (
                                     <span
                                         title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                        className="flex items-center gap-1 text-micro font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full whitespace-nowrap"
                                     >
                                         <XCircle size={10} /> Invalidado
                                     </span>
@@ -916,7 +916,7 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}
                                         title="Ver el PDF que justificó la anulación"
-                                        className="flex items-center gap-1 text-[9px] font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full hover:bg-danger/20 transition-colors whitespace-nowrap"
+                                        className="flex items-center gap-1 text-micro font-black text-danger-text bg-danger/10 border border-danger/25 px-2 py-0.5 rounded-full hover:bg-danger/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> Ver documento
                                     </button>
@@ -925,7 +925,7 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}
                                         title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-warning-text bg-warning/10 border border-warning/25 px-2 py-0.5 rounded-full hover:bg-warning/20 transition-colors whitespace-nowrap"
+                                        className="flex items-center gap-1 text-micro font-black text-warning-text bg-warning/10 border border-warning/25 px-2 py-0.5 rounded-full hover:bg-warning/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}
                                     </button>
@@ -936,7 +936,7 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}
                                         title={`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2 py-0.5 rounded-full hover:bg-chart-1/20 transition-colors whitespace-nowrap"
+                                        className="flex items-center gap-1 text-micro font-black text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2 py-0.5 rounded-full hover:bg-chart-1/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> Ver original
                                     </button>
@@ -947,7 +947,7 @@ function TabDocumentos({
                                     <>
                                         <span
                                             title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)"
-                                            className="text-[9px] font-black text-content-3 bg-content-3/10 border border-content-3/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                            className="text-micro font-black text-content-3 bg-content-3/10 border border-content-3/25 px-2 py-0.5 rounded-full whitespace-nowrap"
                                         >
                                             Sin JSON
                                         </span>
@@ -970,7 +970,7 @@ function TabDocumentos({
                             </div>
                         </DataCell>
                         <DataCell hideBelow="lg">
-                            <span className="font-mono text-[10px] text-content-3">{row.numero_control || '—'}</span>
+                            <span className="font-mono text-caption text-content-3">{row.numero_control || '—'}</span>
                         </DataCell>
                         <DataCell align="right">
                             <span className="tabular-nums font-bold text-content">{fmt$(row.monto_total)}</span>
@@ -1125,41 +1125,41 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            <div className="text-[11px] text-content-3 font-medium px-1">
+            <div className="text-label text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
-            {rowError && <div className="text-[10px] text-danger px-1">{rowError}</div>}
+            {rowError && <div className="text-caption text-danger px-1">{rowError}</div>}
 
             <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Nada pendiente de revisión.' }}>
                 {filtered.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => openFile(row)}>
                         <DataCell>
-                            <span className="font-semibold text-content-2 tabular-nums text-[11px]">{fmtDateTime(row.received_at)}</span>
+                            <span className="font-semibold text-content-2 tabular-nums text-label">{fmtDateTime(row.received_at)}</span>
                         </DataCell>
                         <DataCell>
                             {row.kind === 'orphan_pdf' ? (
-                                <span className="text-[10px] font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
+                                <span className="text-caption font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
                             ) : row.kind === 'invalidacion_pendiente' ? (
-                                <span className="text-[10px] font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-caption font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     Invalidación pendiente
                                 </span>
                             ) : row.kind === 'orphan_zip' ? (
-                                <span className="text-[10px] font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-caption font-bold text-chart-3-text bg-chart-3/10 border border-chart-3/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     ZIP sin abrir
                                 </span>
                             ) : (
-                                <span className="text-[10px] font-bold text-warning-text bg-warning/10 border border-warning/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-caption font-bold text-warning-text bg-warning/10 border border-warning/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     JSON inválido
                                 </span>
                             )}
                         </DataCell>
                         <DataCell hideBelow="md">
-                            <span className="text-content-2 text-[11px]">{row.from_email || '—'}</span>
+                            <span className="text-content-2 text-label">{row.from_email || '—'}</span>
                         </DataCell>
                         <DataCell>
                             <button
                                 onClick={() => openFile(row)}
-                                className="text-[11px] font-medium text-brand-text hover:underline truncate max-w-[220px] text-left"
+                                className="text-label font-medium text-brand-text hover:underline truncate max-w-[220px] text-left"
                                 title={row.filename}
                             >
                                 {row.filename}

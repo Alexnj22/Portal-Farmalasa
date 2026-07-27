@@ -32,8 +32,8 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
-    const inputClass = "w-full bg-surface-card border border-divider rounded-[1rem] px-4 py-2.5 text-[16px] font-semibold text-content-2 outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/10 resize-none";
-    const labelClass = "text-[10px] font-black uppercase tracking-widest text-content-3 mb-1.5 block";
+    const inputClass = "w-full bg-surface-card border border-divider rounded-[1rem] px-4 py-2.5 text-input font-semibold text-content-2 outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/10 resize-none";
+    const labelClass = "text-caption font-black uppercase tracking-widest text-content-3 mb-1.5 block";
 
     return (
         <div className="space-y-4">
@@ -41,8 +41,8 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             <div className="bg-warning/10 border border-warning/30 rounded-2xl p-4 flex gap-3">
                 <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div>
-                    <p className="text-[11px] font-black uppercase tracking-widest text-warning-text">Ingreso durante Vacaciones</p>
-                    <p className="text-[11px] text-warning-text/80 mt-0.5 leading-snug">
+                    <p className="text-label font-black uppercase tracking-widest text-warning-text">Ingreso durante Vacaciones</p>
+                    <p className="text-label text-warning-text/80 mt-0.5 leading-snug">
                         Este empleado está de vacaciones. Al autorizar su ingreso, las horas trabajadas quedarán registradas como <b>horas debidas</b> a su favor.
                     </p>
                 </div>
@@ -55,10 +55,10 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                         <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-full h-full" />
                     </div>
                     <div>
-                        <p className="text-[13px] font-black text-content">{emp.name}</p>
+                        <p className="text-body font-black text-content">{emp.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Palmtree size={10} className="text-success" strokeWidth={2.5} />
-                            <span className="text-[10px] text-success font-bold">
+                            <span className="text-caption text-success font-bold">
                                 Vacaciones: {vacStart ? formatDate(vacStart) : '—'} → {vacEnd ? formatDate(vacEnd) : '—'}
                             </span>
                         </div>
@@ -77,7 +77,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                 />
                 {vacStart && vacEnd && formData?.recall_date &&
                     (formData.recall_date < vacStart || formData.recall_date > vacEnd) && (
-                    <p className="text-[10px] text-danger font-bold mt-1 ml-1">
+                    <p className="text-caption text-danger font-bold mt-1 ml-1">
                         ⚠ La fecha debe estar dentro del período de vacaciones ({formatDate(vacStart)} – {formatDate(vacEnd)})
                     </p>
                 )}
@@ -111,7 +111,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             {/* Nota informativa */}
             <div className="bg-chart-1/10 border border-chart-1/30 rounded-xl p-3 flex gap-2">
                 <FileText size={13} className="text-chart-1-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                <p className="text-[10px] text-chart-1-text leading-snug">
+                <p className="text-caption text-chart-1-text leading-snug">
                     Las horas trabajadas se calcularán automáticamente según el turno seleccionado y se acumularán en el saldo de horas debidas del empleado.
                 </p>
             </div>

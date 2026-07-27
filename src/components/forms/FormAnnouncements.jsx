@@ -15,7 +15,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
         <ChevronLeft size={16} strokeWidth={2.5} />
       </button>
       <div className="px-3 py-1 bg-surface-card border border-border-card rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
-          <span className="text-[10px] font-black text-content-3 uppercase tracking-widest">
+          <span className="text-caption font-black text-content-3 uppercase tracking-widest">
           Pág {currentPage} de {totalPages}
           </span>
       </div>
@@ -38,7 +38,7 @@ const EmployeeAvatar = ({ photoUrl, name, fallbackColor = 'bg-success' }) => {
       {photoUrl ? (
         <img src={photoUrl} alt={name} className="w-full h-full object-cover" />
       ) : (
-        <span className="text-white font-black text-[12px] uppercase">
+        <span className="text-white font-black text-body-sm uppercase">
           {name?.charAt(0) || '?'}
         </span>
       )}
@@ -85,7 +85,7 @@ const FormAnnouncements = ({ data }) => {
             <h3 className="text-xl md:text-2xl font-black text-content tracking-tight leading-none truncate mb-1 drop-shadow-sm">
                 {readersModal.title || 'Sin Título'}
             </h3>
-            <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">
+            <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">
                 Reporte de Lecturas
             </p>
         </div>
@@ -97,7 +97,7 @@ const FormAnnouncements = ({ data }) => {
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand/40"></div>
             <div className="p-4 md:px-5 md:py-4">
                 {/* 🚨 SCROLL OCULTO EN EL TEXTO DEL MENSAJE */}
-                <p className="text-[11px] md:text-[12px] text-content-2 font-medium leading-relaxed max-h-[4.5rem] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">
+                <p className="text-label md:text-body-sm text-content-2 font-medium leading-relaxed max-h-[4.5rem] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pr-2">
                     {readersModal.content || readersModal.message || readersModal.body}
                 </p>
             </div>
@@ -115,7 +115,7 @@ const FormAnnouncements = ({ data }) => {
           <button 
             type="button"
             onClick={() => setIsConfirmedOpen(!isConfirmedOpen)}
-            className="w-full flex items-center justify-between text-[10px] md:text-[11px] font-black text-success uppercase tracking-widest mb-4 border-b border-success/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
+            className="w-full flex items-center justify-between text-caption md:text-label font-black text-success uppercase tracking-widest mb-4 border-b border-success/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} strokeWidth={2.5}/> 
@@ -139,10 +139,10 @@ const FormAnnouncements = ({ data }) => {
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-black text-content truncate">
+                            <p className="text-body-sm font-black text-content truncate">
                               {emp.name}
                             </p>
-                            <p className="text-[9px] text-content-3 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
+                            <p className="text-micro text-content-3 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
                           </div>
                         </div>
                       ))}
@@ -151,7 +151,7 @@ const FormAnnouncements = ({ data }) => {
                 </div>
               ) : (
                 <div className="p-5 bg-surface-card rounded-[1.25rem] border border-border-card text-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
-                  <p className="text-[12px] text-content-3 font-bold flex items-center justify-center gap-2">
+                  <p className="text-body-sm text-content-3 font-bold flex items-center justify-center gap-2">
                     Nadie ha abierto este aviso todavía <span className="text-lg">🫣</span>
                   </p>
                 </div>
@@ -168,7 +168,7 @@ const FormAnnouncements = ({ data }) => {
           <button 
             type="button"
             onClick={() => setIsPendingOpen(!isPendingOpen)}
-            className="w-full flex items-center justify-between text-[10px] md:text-[11px] font-black text-warning uppercase tracking-widest mb-4 border-b border-warning/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
+            className="w-full flex items-center justify-between text-caption md:text-label font-black text-warning uppercase tracking-widest mb-4 border-b border-warning/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
           >
             <div className="flex items-center gap-2">
               <AlertCircle size={16} strokeWidth={2.5}/> 
@@ -192,10 +192,10 @@ const FormAnnouncements = ({ data }) => {
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <p className="text-[12px] font-bold text-content-2 truncate transition-colors group-hover:text-content">
+                            <p className="text-body-sm font-bold text-content-2 truncate transition-colors group-hover:text-content">
                               {emp.name}
                             </p>
-                            <p className="text-[9px] text-content-2 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
+                            <p className="text-micro text-content-2 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
                           </div>
                         </div>
                       ))}
@@ -205,7 +205,7 @@ const FormAnnouncements = ({ data }) => {
               ) : (
                 <div className="p-5 bg-success-solid text-white rounded-[1.25rem] shadow-[var(--shadow-glow-success)] text-center flex items-center justify-center gap-3">
                    <PartyPopper size={20} className="animate-[bounce_2s_infinite]" />
-                  <p className="text-[12px] font-black uppercase tracking-wider drop-shadow-md">
+                  <p className="text-body-sm font-black uppercase tracking-wider drop-shadow-md">
                     ¡Todos han leído el aviso!
                   </p>
                 </div>

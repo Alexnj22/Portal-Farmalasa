@@ -46,10 +46,10 @@ export default class ErrorBoundary extends React.Component {
                     </div>
 
                     <div className="relative z-10 flex flex-col gap-2">
-                        <h2 className="text-[20px] font-black uppercase tracking-tight text-content leading-none">
+                        <h2 className="text-title font-black uppercase tracking-tight text-content leading-none">
                             Algo salió mal
                         </h2>
-                        <p className="text-[13px] font-medium text-content-3 leading-relaxed">
+                        <p className="text-body font-medium text-content-3 leading-relaxed">
                             Ocurrió un error inesperado en esta vista. Puedes recargar la app para continuar.
                         </p>
                     </div>
@@ -60,7 +60,7 @@ export default class ErrorBoundary extends React.Component {
                             px-7 py-3.5 rounded-[1.5rem]
                             bg-gradient-to-b from-brand/72 to-brand-hover/78
                             backdrop-blur-xl border border-border-card hover:border-border-card
-                            text-white font-black text-[11px] uppercase tracking-widest
+                            text-white font-black text-label uppercase tracking-widest
                             shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
                             hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
                             transition-all duration-200 active:scale-[0.97]">

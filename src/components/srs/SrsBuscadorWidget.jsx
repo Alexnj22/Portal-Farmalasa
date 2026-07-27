@@ -75,7 +75,7 @@ export default function SrsBuscadorWidget({
                     value={query}
                     onChange={e => handleInput(e.target.value)}
                     placeholder="Buscar en Registro SRS..."
-                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all"
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"
@@ -90,7 +90,7 @@ export default function SrsBuscadorWidget({
 
             {/* Error */}
             {error && (
-                <div className="px-4 py-3 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] text-danger font-medium">
+                <div className="px-4 py-3 rounded-2xl bg-danger/10 border border-danger/30 text-label text-danger font-medium">
                     {error}
                 </div>
             )}
@@ -99,12 +99,12 @@ export default function SrsBuscadorWidget({
             {results !== null && (
                 <>
                     {results.length === 0 ? (
-                        <div className="py-8 text-center text-[12px] text-content-3 font-medium">
+                        <div className="py-8 text-center text-body-sm text-content-3 font-medium">
                             Sin resultados para "{query}"
                         </div>
                     ) : (
                         <>
-                            <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest px-1">
+                            <p className="text-caption font-bold text-content-2 uppercase tracking-widest px-1">
                                 {total} resultado{total !== 1 ? 's' : ''} en SRS
                             </p>
 
@@ -124,17 +124,17 @@ export default function SrsBuscadorWidget({
                                     <button
                                         disabled={page <= 1}
                                         onClick={() => goPage(page - 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                     >
                                         <ChevronLeft size={11} strokeWidth={2.5} /> Ant.
                                     </button>
-                                    <span className="text-[11px] text-content-3 font-medium">
+                                    <span className="text-label text-content-3 font-medium">
                                         Pág. {page} / {lastPage}
                                     </span>
                                     <button
                                         disabled={page >= lastPage}
                                         onClick={() => goPage(page + 1)}
-                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-bold text-content-3 border border-divider hover:border-divider disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                     >
                                         Sig. <ChevronRight size={11} strokeWidth={2.5} />
                                     </button>
@@ -194,10 +194,10 @@ function SrsResultCard({ product: p, onSelect }) {
         >
             {/* Header row */}
             <div className="flex items-start justify-between gap-2">
-                <p className="text-[12px] font-black text-content leading-tight flex-1">
+                <p className="text-body-sm font-black text-content leading-tight flex-1">
                     {nombre || <span className="text-content-3 font-normal italic">Sin nombre</span>}
                 </p>
-                <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full ${
+                <span className={`shrink-0 text-micro font-black px-2 py-0.5 rounded-full ${
                     activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
                 }`}>
                     {activo ? 'ACTIVO' : 'INACTIVO'}
@@ -208,13 +208,13 @@ function SrsResultCard({ product: p, onSelect }) {
             {(lab || forma) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                     {lab && (
-                        <span className="flex items-center gap-1 text-[11px] text-content-3">
+                        <span className="flex items-center gap-1 text-label text-content-3">
                             <Building2 size={10} className="text-content-3 shrink-0" />
                             {lab}
                         </span>
                     )}
                     {forma && (
-                        <span className="flex items-center gap-1 text-[11px] text-content-3">
+                        <span className="flex items-center gap-1 text-label text-content-3">
                             <Pill size={10} className="text-content-3 shrink-0" />
                             {forma}
                         </span>
@@ -226,7 +226,7 @@ function SrsResultCard({ product: p, onSelect }) {
             {principio && (
                 <div className="flex items-start gap-1.5 bg-chart-3/10 rounded-xl px-3 py-2">
                     <FlaskConical size={11} className="text-chart-3-text shrink-0 mt-0.5" />
-                    <div className="text-[11px] text-chart-3-text font-medium leading-snug">
+                    <div className="text-label text-chart-3-text font-medium leading-snug">
                         <span>{principio}</span>
                         {conc && <span className="ml-1.5 text-chart-3-text font-bold">{conc}</span>}
                     </div>
@@ -237,10 +237,10 @@ function SrsResultCard({ product: p, onSelect }) {
             {(noregistro || fechaStr) && (
                 <div className="flex items-center gap-3 pt-0.5">
                     {noregistro && (
-                        <span className="text-[10px] text-content-3 font-mono">{noregistro}</span>
+                        <span className="text-caption text-content-3 font-mono">{noregistro}</span>
                     )}
                     {fechaStr && (
-                        <span className="text-[10px] text-content-3">{fechaStr}</span>
+                        <span className="text-caption text-content-3">{fechaStr}</span>
                     )}
                 </div>
             )}

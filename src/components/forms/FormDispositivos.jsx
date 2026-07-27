@@ -58,7 +58,7 @@ const FormDispositivos = ({ formData }) => {
 
             {/* BANNER DE ERROR DINÁMICO */}
             <div className={`transition-all duration-300 overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-[1rem] text-[11px] font-bold flex items-center gap-2 shadow-sm text-danger">
+                <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-[1rem] text-label font-bold flex items-center gap-2 shadow-sm text-danger">
                     <AlertCircle size={16} strokeWidth={2.5} />
                     <span>{errorMsg}</span>
                 </div>
@@ -66,12 +66,12 @@ const FormDispositivos = ({ formData }) => {
 
             {/* 🎛️ ENCABEZADO MINIMALISTA */}
             <div className="flex items-center justify-between px-1">
-                <h4 className="text-[12px] font-black uppercase tracking-widest text-content flex items-center gap-2">
+                <h4 className="text-body-sm font-black uppercase tracking-widest text-content flex items-center gap-2">
                     <Activity size={16} className="text-brand-text"/> Dispositivos aprobados
                 </h4>
                 <div className="bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1.5 shadow-sm">
                     <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-                    <span className="text-[9px] font-black tracking-widest uppercase">
+                    <span className="text-micro font-black tracking-widest uppercase">
                         {activeKiosks.length} / 3
                     </span>
                 </div>
@@ -82,7 +82,7 @@ const FormDispositivos = ({ formData }) => {
                 {loading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-content-3">
                         <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-brand-text" />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando...</p>
+                        <p className="text-caption font-black uppercase tracking-widest">Sincronizando...</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -100,10 +100,10 @@ const FormDispositivos = ({ formData }) => {
                                                     <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className={`text-[13px] font-black leading-tight truncate ${isConfirming ? 'text-danger' : 'text-content'}`}>
+                                                    <p className={`text-body font-black leading-tight truncate ${isConfirming ? 'text-danger' : 'text-content'}`}>
                                                         {kiosk.device_name}
                                                     </p>
-                                                    <p className="text-[9px] font-bold tracking-widest uppercase text-content-3 mt-0.5 truncate">
+                                                    <p className="text-micro font-bold tracking-widest uppercase text-content-3 mt-0.5 truncate">
                                                         {isConfirming ? 'Confirmar desconexión' : `Vinculado: ${new Date(kiosk.created_at).toLocaleDateString()}`}
                                                     </p>
                                                 </div>
@@ -124,7 +124,7 @@ const FormDispositivos = ({ formData }) => {
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => setConfirmingId(null)} 
-                                                    className="w-full py-2.5 bg-surface-card-hover hover:bg-surface-card-hover text-content-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-surface-card-hover hover:bg-surface-card-hover text-content-3 rounded-xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97] disabled:opacity-50"
                                                 >
                                                     Cancelar
                                                 </button>
@@ -132,7 +132,7 @@ const FormDispositivos = ({ formData }) => {
                                                     type="button" 
                                                     disabled={isRevoking} 
                                                     onClick={() => executeRevoke(kiosk.id, kiosk.device_name)} 
-                                                    className="w-full py-2.5 bg-danger-solid hover:bg-danger-hover text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                                    className="w-full py-2.5 bg-danger-solid hover:bg-danger-hover text-white rounded-xl text-caption font-black uppercase tracking-widest shadow-sm transition-all active:scale-[0.97] flex items-center justify-center gap-1.5 disabled:opacity-50"
                                                 >
                                                     {isRevoking ? <Loader2 size={14} className="animate-spin" /> : <><Unplug size={14} strokeWidth={2.5} /> Revocar</>}
                                                 </button>
@@ -146,8 +146,8 @@ const FormDispositivos = ({ formData }) => {
                                 <div className="w-12 h-12 bg-surface-card-hover border border-divider rounded-xl flex items-center justify-center mx-auto mb-3 text-content-3">
                                     <Laptop size={20} strokeWidth={2} />
                                 </div>
-                                <p className="text-[11px] text-content-3 font-black uppercase tracking-widest">Ningún equipo conectado</p>
-                                <p className="text-[10px] text-content-3 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
+                                <p className="text-label text-content-3 font-black uppercase tracking-widest">Ningún equipo conectado</p>
+                                <p className="text-caption text-content-3 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
                             </div>
                         )}
                     </div>

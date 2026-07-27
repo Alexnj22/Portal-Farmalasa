@@ -23,8 +23,8 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-[12px] bg-surface-card border border-border-card rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-chart-1/20 transition-all placeholder:text-content-3 text-content-2';
-const lbl = 'text-[10px] font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
+const inp = 'w-full text-body-sm bg-surface-card border border-border-card rounded-xl px-3 py-2.5 focus:outline-none focus:border-chart-1 focus:ring-2 focus:ring-chart-1/20 transition-all placeholder:text-content-3 text-content-2';
+const lbl = 'text-caption font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
 
@@ -76,7 +76,7 @@ function StepInfo({ form, set, branches }) {
                         type="button"
                         onClick={() => set('branch_ids', form.branch_ids.length === branches.length
                             ? [] : branches.map(b => b.id))}
-                        className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
+                        className={`px-3 py-1.5 text-label font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
                                 ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white shadow-sm shadow-brand/20'
                                 : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
@@ -93,7 +93,7 @@ function StepInfo({ form, set, branches }) {
                                 onClick={() => set('branch_ids', active
                                     ? form.branch_ids.filter(id => id !== b.id)
                                     : [...form.branch_ids, b.id])}
-                                className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
+                                className={`px-3 py-1.5 text-label rounded-full border transition-all ${
                                     active
                                         ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
                                         : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
@@ -130,34 +130,34 @@ function ProductRow({ pp, onRemove }) {
                     : <Package size={13} className="text-content-3" />}
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-content-2 leading-tight truncate">{pp.nombre}</p>
+                <p className="text-body-sm font-semibold text-content-2 leading-tight truncate">{pp.nombre}</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    {pp.laboratorio && <span className="text-[10px] text-content-3">{pp.laboratorio}</span>}
+                    {pp.laboratorio && <span className="text-caption text-content-3">{pp.laboratorio}</span>}
                     {pp.presentacion_tipo && (
-                        <span className="text-[10px] font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
+                        <span className="text-caption font-semibold bg-surface-card-hover text-content-2 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
                     )}
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                     {pp.factor_descripcion && (
-                        <span className="text-[10px] text-chart-3-text font-medium">Factor: {pp.factor_descripcion}</span>
+                        <span className="text-caption text-chart-3-text font-medium">Factor: {pp.factor_descripcion}</span>
                     )}
                     {pp.stock_inicial && (
-                        <span className="text-[10px] text-content-3">Stock: {pp.stock_inicial} und</span>
+                        <span className="text-caption text-content-3">Stock: {pp.stock_inicial} und</span>
                     )}
                     {pp.precio_promo && (
-                        <span className="text-[10px] text-content-3">Precio promo: ${parseFloat(pp.precio_promo).toFixed(2)}</span>
+                        <span className="text-caption text-content-3">Precio promo: ${parseFloat(pp.precio_promo).toFixed(2)}</span>
                     )}
                 </div>
                 {/* Bonos */}
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                     {parseFloat(pp.bono_vendedor) > 0 && (
-                        <span className="text-[10px] text-success">Vendedor: ${parseFloat(pp.bono_vendedor).toFixed(2)}/trigger</span>
+                        <span className="text-caption text-success">Vendedor: ${parseFloat(pp.bono_vendedor).toFixed(2)}/trigger</span>
                     )}
                     {parseFloat(pp.bono_admin_pool) > 0 && (
-                        <span className="text-[10px] text-chart-1-text">Admin pool: ${parseFloat(pp.bono_admin_pool).toFixed(2)}/trigger</span>
+                        <span className="text-caption text-chart-1-text">Admin pool: ${parseFloat(pp.bono_admin_pool).toFixed(2)}/trigger</span>
                     )}
                     {parseFloat(pp.bono_bodega_pool) > 0 && (
-                        <span className="text-[10px] text-warning">Bodega pool: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}/trigger</span>
+                        <span className="text-caption text-warning">Bodega pool: ${parseFloat(pp.bono_bodega_pool).toFixed(2)}/trigger</span>
                     )}
                 </div>
             </div>
@@ -235,7 +235,7 @@ function AddProductInline({ onAdd }) {
             <button
                 type="button"
                 onClick={() => setShow(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-chart-1/30 rounded-2xl text-[11px] font-semibold text-chart-1-text hover:border-chart-1 hover:text-chart-1-text hover:bg-chart-1/10 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-chart-1/30 rounded-2xl text-label font-semibold text-chart-1-text hover:border-chart-1 hover:text-chart-1-text hover:bg-chart-1/10 transition-all"
             >
                 <Plus size={12} /> Agregar producto a la promoción
             </button>
@@ -294,7 +294,7 @@ function AddProductInline({ onAdd }) {
                 <div>
                     <label className={lbl}>Presentación *</label>
                     {loadingPresent ? (
-                        <div className="flex items-center gap-2 text-[11px] text-content-3 py-2">
+                        <div className="flex items-center gap-2 text-label text-content-3 py-2">
                             <Loader2 size={12} className="animate-spin" /> Cargando presentaciones...
                         </div>
                     ) : (
@@ -304,7 +304,7 @@ function AddProductInline({ onAdd }) {
                                     key={opt.value}
                                     type="button"
                                     onClick={() => setPresentacionId(opt.value)}
-                                    className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
+                                    className={`px-3 py-1.5 text-label rounded-full border transition-all ${
                                         presentacionId === opt.value
                                             ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
                                             : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
@@ -340,24 +340,24 @@ function AddProductInline({ onAdd }) {
                     </div>
 
                     <div className="bg-gradient-to-br from-success/10 to-chart-9/5 border border-success/30 rounded-xl p-3 space-y-2.5">
-                        <p className="text-[10px] font-bold text-success-text uppercase tracking-wider flex items-center gap-1.5">
+                        <p className="text-caption font-bold text-success-text uppercase tracking-wider flex items-center gap-1.5">
                             <Gift size={10} /> Bonificaciones por trigger
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                             <div>
-                                <label className="text-[10px] font-bold text-success uppercase tracking-widest mb-1.5 block">Vendedor ($)</label>
+                                <label className="text-caption font-bold text-success uppercase tracking-widest mb-1.5 block">Vendedor ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_vendedor')} onChange={e => s('bono_vendedor', e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-chart-1-text uppercase tracking-widest mb-1.5 block">Admin pool ($)</label>
+                                <label className="text-caption font-bold text-chart-1-text uppercase tracking-widest mb-1.5 block">Admin pool ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_admin_pool')} onChange={e => s('bono_admin_pool', e.target.value)} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-warning uppercase tracking-widest mb-1.5 block">Bodega pool ($)</label>
+                                <label className="text-caption font-bold text-warning uppercase tracking-widest mb-1.5 block">Bodega pool ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_bodega_pool')} onChange={e => s('bono_bodega_pool', e.target.value)} />
                             </div>
                         </div>
-                        <p className="text-[9px] text-success/60 font-medium">
+                        <p className="text-micro text-success/60 font-medium">
                             Pool = repartido entre todos del área. Vendedor = quien hizo la venta.
                         </p>
                     </div>
@@ -365,12 +365,12 @@ function AddProductInline({ onAdd }) {
             )}
 
             <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-[11px] text-content-3 hover:text-content-2">Cancelar</button>
+                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-label text-content-3 hover:text-content-2">Cancelar</button>
                 <button
                     type="button"
                     onClick={handleAdd}
                     disabled={!pid}
-                    className="px-4 py-1.5 text-[11px] font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand disabled:opacity-40 transition-all shadow-sm shadow-brand/20 flex items-center gap-1.5"
+                    className="px-4 py-1.5 text-label font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand disabled:opacity-40 transition-all shadow-sm shadow-brand/20 flex items-center gap-1.5"
                 >
                     <Plus size={10} /> Agregar
                 </button>
@@ -383,7 +383,7 @@ function StepProducts({ products, onAdd, onRemove }) {
     return (
         <div className="space-y-3">
             {products.length === 0 && (
-                <p className="text-[11px] text-content-3 italic text-center py-2">Aún no hay productos. Agrega al menos uno.</p>
+                <p className="text-label text-content-3 italic text-center py-2">Aún no hay productos. Agrega al menos uno.</p>
             )}
             {products.map((pp, idx) => (
                 <ProductRow key={idx} pp={pp} onRemove={() => onRemove(idx)} />
@@ -507,10 +507,10 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                 <Tag size={20} strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h3 className="font-black text-white text-[19px] tracking-tight leading-none mb-0.5">
+                                <h3 className="font-black text-white text-title-sm tracking-tight leading-none mb-0.5">
                                     Nueva Promoción
                                 </h3>
-                                <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">
+                                <p className="text-caption font-semibold text-white/70 uppercase tracking-[0.18em]">
                                     {step === 0 ? 'Datos generales' : 'Productos y bonificaciones'}
                                 </p>
                             </div>
@@ -547,7 +547,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                         }`}>
                                             {isDone ? <Check size={13} /> : <StepIcon size={12} />}
                                         </div>
-                                        <span className={`text-[11px] font-bold transition-colors ${isActive ? 'text-white' : isDone ? 'text-white/70' : 'text-white/40'}`}>
+                                        <span className={`text-label font-bold transition-colors ${isActive ? 'text-white' : isDone ? 'text-white/70' : 'text-white/40'}`}>
                                             {s.label}
                                         </span>
                                     </button>
@@ -576,7 +576,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                     <button
                         type="button"
                         onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium text-content-3 hover:text-content-2 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 text-label font-medium text-content-3 hover:text-content-2 transition-colors"
                     >
                         {step > 0 && <ChevronLeft size={13} />}
                         {step === 0 ? 'Cancelar' : 'Atrás'}
@@ -586,7 +586,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                         <button
                             type="button"
                             onClick={() => setStep(1)}
-                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand transition-all shadow-sm shadow-brand/20"
+                            className="flex items-center gap-1.5 px-5 py-2 text-body-sm font-bold bg-gradient-to-r from-brand to-chart-1 text-white rounded-xl hover:from-chart-1 hover:to-brand transition-all shadow-sm shadow-brand/20"
                         >
                             Siguiente <ChevronRight size={13} />
                         </button>
@@ -595,7 +595,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                             type="button"
                             onClick={handleCreate}
                             disabled={saving || products.length === 0}
-                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-success to-chart-9 text-white rounded-xl hover:from-chart-9 hover:to-success disabled:opacity-40 transition-all shadow-sm shadow-success/20"
+                            className="flex items-center gap-1.5 px-5 py-2 text-body-sm font-bold bg-gradient-to-r from-success to-chart-9 text-white rounded-xl hover:from-chart-9 hover:to-success disabled:opacity-40 transition-all shadow-sm shadow-success/20"
                         >
                             {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                             Crear Promoción

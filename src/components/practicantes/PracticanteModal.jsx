@@ -43,11 +43,11 @@ const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,
 const IslandHeader = ({ icon: Icon, title }) => (
     <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-chart-3-solid text-white rounded-[0.8rem] shadow-[var(--shadow-glow-chart-3)]"><Icon size={16} strokeWidth={2.5} /></div>
-        <h4 className="text-[12px] font-black uppercase tracking-widest text-chart-3-text">{title}</h4>
+        <h4 className="text-body-sm font-black uppercase tracking-widest text-chart-3-text">{title}</h4>
     </div>
 );
 
-const fieldLabel = "text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
+const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
 const reqBadge = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>;
 
 const emptyForm = {
@@ -194,7 +194,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                         <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
                             {isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}
                         </h3>
-                        <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
+                        <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">Horas Sociales / Pasantía</p>
                     </div>
                 </div>
                 <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
@@ -231,7 +231,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                             {isMinor && (
                                 <div className="md:col-span-2 bg-warning/10 border border-warning/30 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
                                     <ShieldAlert size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
-                                    <p className="text-[11px] text-warning-text font-medium leading-tight">
+                                    <p className="text-label text-warning-text font-medium leading-tight">
                                         <span className="font-black">Menor de edad.</span> En El Salvador el DUI no se tramita hasta los 18 años (Art. 23.2 Código de Trabajo) — por eso se solicita un documento alterno (partida de nacimiento, carné de minoridad).
                                     </p>
                                 </div>
@@ -318,18 +318,18 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 {convenioMissing && reqBadge}
                             </label>
                             <div className={`relative flex items-center gap-3 bg-surface-card rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                <label className="flex items-center gap-1.5 text-[13px] font-bold text-brand-text cursor-pointer">
+                                <label className="flex items-center gap-1.5 text-body font-bold text-brand-text cursor-pointer">
                                     <Upload size={14} strokeWidth={2.5} />
                                     {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
                                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => setConvenioFile(e.target.files?.[0] || null)} />
                                 </label>
                                 {practicante?.convenio_url && !convenioFile && (
-                                    <button type="button" onClick={() => openStoredFile(practicante.convenio_url)} className="ml-auto flex items-center gap-1 text-[10px] font-bold text-success hover:text-success-text shrink-0">
+                                    <button type="button" onClick={() => openStoredFile(practicante.convenio_url)} className="ml-auto flex items-center gap-1 text-caption font-bold text-success hover:text-success-text shrink-0">
                                         <FileCheck size={12} /> Ver actual
                                     </button>
                                 )}
                             </div>
-                            <p className="text-[9px] text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
+                            <p className="text-micro text-content-3 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
                         </div>
 
                         <div className="mt-4">
@@ -338,7 +338,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 value={form.notas}
                                 onChange={(e) => set('notas', e.target.value)}
                                 placeholder="Contexto adicional..."
-                                className={`w-full h-20 resize-none bg-surface-card rounded-[1rem] border border-divider shadow-sm px-4 py-2.5 text-[16px] font-bold text-content-2 outline-none ${inputHoverClass}`}
+                                className={`w-full h-20 resize-none bg-surface-card rounded-[1rem] border border-divider shadow-sm px-4 py-2.5 text-input font-bold text-content-2 outline-none ${inputHoverClass}`}
                             />
                         </div>
                     </div>
@@ -347,14 +347,14 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
             </div>
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-10 shrink-0">
-                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
+                <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>
                 <button
                     type="button"
                     onClick={handleSave}
                     disabled={saving || !isValid}
-                    className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                 >
                     {saving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Check size={16} strokeWidth={3} /> {isEditMode ? 'Guardar Cambios' : 'Registrar Practicante'}</>}
                 </button>

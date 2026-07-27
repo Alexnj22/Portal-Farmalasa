@@ -43,14 +43,14 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
-                <h3 className="text-[16px] font-black text-danger-text mb-2 tracking-tight">Ningún Profesional Disponible</h3>
-                <p className="text-[12px] font-bold text-danger-text/80 max-w-[300px] mb-6 leading-relaxed">
+                <h3 className="text-input font-black text-danger-text mb-2 tracking-tight">Ningún Profesional Disponible</h3>
+                <p className="text-body-sm font-bold text-danger-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Regente Farmacéutico en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="px-8 py-3.5 bg-surface-card text-danger font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="px-8 py-3.5 bg-surface-card text-danger font-black text-label uppercase tracking-widest rounded-2xl hover:bg-danger-solid hover:text-white border border-danger/30 hover:border-danger transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 active:scale-[0.97]"
                 >
                     Entendido, Cerrar
                 </button>
@@ -73,10 +73,10 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <Award size={20} strokeWidth={2.5}/>
                     </div>
                     <div>
-                        <h4 className="text-[13px] font-black uppercase tracking-widest text-content leading-none mb-1">
+                        <h4 className="text-body font-black uppercase tracking-widest text-content leading-none mb-1">
                             Regencia Farmacéutica
                         </h4>
-                        <p className="text-[10px] font-bold text-content-3 uppercase tracking-widest">
+                        <p className="text-caption font-bold text-content-3 uppercase tracking-widest">
                             Asignación y Credenciales JVQF
                         </p>
                     </div>
@@ -84,7 +84,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
 
                 {/* FILA 1: SELECT (AHORA OCUPA TODO EL ANCHO PARA NO CORTAR NOMBRES) */}
                 <div className="group/select">
-                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
+                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
                         Regente Asignado
                     </label>
                     <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
@@ -103,7 +103,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     
                     {/* FECHA VENCIMIENTO CREDENCIAL */}
                     <div className="group/date flex flex-col justify-end">
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
+                        <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
                             Vencimiento Credencial JVQF
                         </label>
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-surface-card focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
@@ -119,7 +119,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
 
                     {/* UPLOAD CREDENCIAL (CAJA COMPACTA H-[50px]) */}
                     <div className="flex flex-col justify-end">
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block">
+                        <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block">
                             Credencial JVQF (PDF/IMG)
                         </label>
                         <div className={`relative group border border-dashed rounded-2xl h-[50px] px-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer overflow-hidden ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-surface-card-hover hover:border-brand/50'}`}>
@@ -135,7 +135,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                                <p className={`text-[11px] font-black tracking-tight truncate ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'text-brand-text' : 'text-content-2'}`}>
+                                <p className={`text-label font-black tracking-tight truncate ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'text-brand-text' : 'text-content-2'}`}>
                                     {legalData.regentCredentialFile ? legalData.regentCredentialFile.name : legalData.regentCredentialUrl ? "Credencial guardada" : "Subir documento..."}
                                 </p>
                             </div>
@@ -145,7 +145,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
 
                 {/* FILA 3: UPLOAD INSCRIPCIÓN (OCUPA TODO EL ANCHO PARA DESTACAR) */}
                 <div className="pt-4 border-t border-divider mt-4">
-                    <label className="text-[10px] font-black text-chart-3-text/80 uppercase tracking-widest ml-1 mb-2 block">
+                    <label className="text-caption font-black text-chart-3-text/80 uppercase tracking-widest ml-1 mb-2 block">
                         Inscripción de Regencia (PDF)
                     </label>
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
@@ -161,10 +161,10 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                            <p className={`text-[12px] font-black tracking-tight truncate ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'text-chart-3-text' : 'text-content-2'}`}>
+                            <p className={`text-body-sm font-black tracking-tight truncate ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'text-chart-3-text' : 'text-content-2'}`}>
                                 {legalData.regentInscriptionFile ? legalData.regentInscriptionFile.name : legalData.regentInscriptionUrl ? "Inscripción guardada" : "Toca para subir documento"}
                             </p>
-                            <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5">
+                            <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
                                 {legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'Reemplazar archivo' : 'Solo formato PDF'}
                             </p>
                         </div>

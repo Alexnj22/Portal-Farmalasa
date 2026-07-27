@@ -4,20 +4,20 @@ import GlassViewLayout from '../components/GlassViewLayout';
 
 const Card = ({ title, children, accent }) => (
     <div className={`rounded-[1.25rem] border bg-surface-card backdrop-blur-sm p-4 shadow-sm ${accent || 'border-border-card'}`}>
-        <p className="text-[11px] font-black uppercase tracking-widest text-content-2 mb-2">{title}</p>
+        <p className="text-label font-black uppercase tracking-widest text-content-2 mb-2">{title}</p>
         {children}
     </div>
 );
 
 const Row = ({ label, value, ok }) => (
     <div className="flex items-center justify-between py-1.5 border-b border-divider last:border-0">
-        <span className="text-[13px] text-content-2">{label}</span>
+        <span className="text-body text-content-2">{label}</span>
         <div className="flex items-center gap-1.5">
             {ok != null && (ok
                 ? <CheckCircle2 size={13} className="text-success" />
                 : <AlertCircle size={13} className="text-warning" />
             )}
-            <span className="text-[13px] font-semibold text-content">{value}</span>
+            <span className="text-body font-semibold text-content">{value}</span>
         </div>
     </div>
 );
@@ -37,8 +37,8 @@ const IOSTestView = () => {
                         <Smartphone size={20} className="text-white" />
                     </div>
                     <div>
-                        <h2 className="text-[17px] font-black text-content leading-tight">Prueba de Layout iOS</h2>
-                        <p className="text-[12px] text-content-3">Verificación de safe areas y scroll</p>
+                        <h2 className="text-title-sm font-black text-content leading-tight">Prueba de Layout iOS</h2>
+                        <p className="text-body-sm text-content-3">Verificación de safe areas y scroll</p>
                     </div>
                 </div>
 
@@ -62,7 +62,7 @@ const IOSTestView = () => {
                         ].map((item, i) => (
                             <div key={i} className="flex items-start gap-2.5">
                                 <div className="w-5 h-5 rounded-full border-2 border-divider flex-shrink-0 mt-0.5" />
-                                <p className="text-[13px] text-content-2 leading-snug">{item}</p>
+                                <p className="text-body text-content-2 leading-snug">{item}</p>
                             </div>
                         ))}
                     </div>
@@ -75,9 +75,9 @@ const IOSTestView = () => {
                             <div key={i} className="flex items-center justify-between rounded-xl bg-gradient-to-r from-brand/8 to-brand-purple/8 px-3 py-3 border border-brand/10">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-brand to-brand-purple flex items-center justify-center flex-shrink-0">
-                                        <span className="text-white text-[10px] font-black">{i + 1}</span>
+                                        <span className="text-white text-caption font-black">{i + 1}</span>
                                     </div>
-                                    <span className="text-[13px] font-semibold text-content-2">Fila de prueba {i + 1}</span>
+                                    <span className="text-body font-semibold text-content-2">Fila de prueba {i + 1}</span>
                                 </div>
                                 <Move size={14} className="text-content-3" />
                             </div>
@@ -87,13 +87,13 @@ const IOSTestView = () => {
 
                 {/* Info */}
                 <Card title="Acerca de esta vista" accent="border-warning/30">
-                    <p className="text-[12px] text-content-3 leading-relaxed">
+                    <p className="text-body-sm text-content-3 leading-relaxed">
                         Esta vista es solo para verificar el comportamiento del layout en iOS. Puede eliminarse
                         una vez confirmado que las safe areas, el glass blur y el scroll funcionan correctamente.
                     </p>
                     <div className="flex items-center gap-1.5 mt-2">
                         <Layers size={12} className="text-warning" />
-                        <span className="text-[11px] font-bold text-warning uppercase tracking-wider">Solo visible para SUPERADMIN y ADMIN</span>
+                        <span className="text-label font-bold text-warning uppercase tracking-wider">Solo visible para SUPERADMIN y ADMIN</span>
                     </div>
                 </Card>
 

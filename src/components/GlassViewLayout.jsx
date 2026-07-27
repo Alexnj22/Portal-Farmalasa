@@ -87,7 +87,7 @@ const GlassViewLayout = ({
                                                 )}
                                             </div>
                                         )}
-                                        <h2 className="font-bold text-[16px] xl:text-[17px] tracking-tight text-content">
+                                        <h2 className="font-bold text-input xl:text-title-sm tracking-tight text-content">
                                             {title}
                                         </h2>
                                     </div>
@@ -119,7 +119,7 @@ const GlassViewLayout = ({
                                         )}
                                     </div>
                                 )}
-                                <h2 className="font-bold text-[16px] tracking-tight truncate text-content">
+                                <h2 className="font-bold text-input tracking-tight truncate text-content">
                                     {title}
                                 </h2>
                             </>

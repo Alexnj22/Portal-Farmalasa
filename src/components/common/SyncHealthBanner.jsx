@@ -63,7 +63,7 @@ export default function SyncHealthBanner() {
           ? <AlertTriangle size={13} className="text-danger shrink-0" />
           : <CheckCircle2  size={13} className="text-success shrink-0" />
         }
-        <span className={`text-[11px] font-black flex-1 ${
+        <span className={`text-label font-black flex-1 ${
           hasErrors || anyStale ? 'text-danger' : allGood ? 'text-success' : 'text-content-3'
         }`}>
           {hasErrors
@@ -73,7 +73,7 @@ export default function SyncHealthBanner() {
             : 'Verificando...'}
         </span>
         {minsAgoLatest !== null && (
-          <span className="text-[10px] text-content-3 shrink-0">
+          <span className="text-caption text-content-3 shrink-0">
             hace {minsAgoLatest === 0 ? '<1' : minsAgoLatest} min
           </span>
         )}
@@ -99,16 +99,16 @@ export default function SyncHealthBanner() {
                     isErr ? 'bg-danger/10' : mRound > STALE_MINS ? 'bg-warning/10' : ''
                   }`}>
                   <div className={`w-2 h-2 rounded-full shrink-0 ${dotColor(m, isErr)}`} />
-                  <span className="text-[11px] font-black text-content w-10 shrink-0">
+                  <span className="text-label font-black text-content w-10 shrink-0">
                     Suc. {b.erp_sucursal_id}
                   </span>
                   {isErr
-                    ? <span className="flex-1 text-[10px] text-danger font-medium truncate">{b.error_msg || 'Error'}</span>
-                    : <span className="flex-1 text-[10px] text-content-3">
+                    ? <span className="flex-1 text-caption text-danger font-medium truncate">{b.error_msg || 'Error'}</span>
+                    : <span className="flex-1 text-caption text-content-3">
                         {b.items_count?.toLocaleString('es')} items
                       </span>
                   }
-                  <span className="text-[10px] text-content-3 shrink-0 tabular-nums">
+                  <span className="text-caption text-content-3 shrink-0 tabular-nums">
                     {mRound === 0 ? '<1' : mRound}m
                   </span>
                 </div>
@@ -121,7 +121,7 @@ export default function SyncHealthBanner() {
       {notifPerm !== 'granted' && notifPerm !== 'denied' && notifPerm !== 'unsupported' && (
         <button
           onClick={requestNotif}
-          className="flex items-center justify-center gap-1.5 py-2 border-t border-divider text-[10px] font-bold text-content-3 hover:text-brand-text transition-colors shrink-0"
+          className="flex items-center justify-center gap-1.5 py-2 border-t border-divider text-caption font-bold text-content-3 hover:text-brand-text transition-colors shrink-0"
         >
           <Bell size={11} />
           Activar alertas de escritorio
@@ -130,7 +130,7 @@ export default function SyncHealthBanner() {
       {notifPerm === 'granted' && (
         <div className="flex items-center justify-center gap-1.5 py-1.5 border-t border-divider shrink-0">
           <Bell size={10} className="text-success" />
-          <span className="text-[10px] text-success font-semibold">Alertas activas</span>
+          <span className="text-caption text-success font-semibold">Alertas activas</span>
         </div>
       )}
     </div>

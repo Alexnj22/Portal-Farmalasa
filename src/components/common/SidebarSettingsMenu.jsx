@@ -24,10 +24,10 @@ function CodeCard({ label, value, copied, onCopy }) {
       className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
         border border-white/[0.09] bg-white/[0.06] hover:bg-white/[0.11] hover:border-white/[0.14] transition-all active:scale-[0.97]">
       <div className="flex items-center gap-1 mb-0.5">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-white/45">{label}</span>
+        <span className="text-micro font-bold uppercase tracking-wider text-white/45">{label}</span>
       </div>
       <div className="relative h-4 flex items-center justify-center w-full">
-        <span className={`absolute text-[12px] font-black tracking-widest font-mono text-white transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
+        <span className={`absolute text-body-sm font-black tracking-widest font-mono text-white transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
         <Copy size={12} className={`absolute text-white/50 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 group-hover/code:scale-100'}`} />
         <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
       </div>
@@ -184,7 +184,7 @@ export default function SidebarSettingsMenu({
         <div className="w-7 h-7 rounded-[0.7rem] flex items-center justify-center shrink-0 bg-white/10">
           <Settings size={14} strokeWidth={2} className="text-white/70" />
         </div>
-        <span className="flex-1 text-[11px] font-bold text-white/80">Ajustes</span>
+        <span className="flex-1 text-label font-bold text-white/80">Ajustes</span>
         <ChevronDown size={13} strokeWidth={2.5}
           className={`text-white/35 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>

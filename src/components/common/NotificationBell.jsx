@@ -295,7 +295,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const undoButton = (key, label = 'Deshacer') => (
         <button
             onClick={() => undoDelete(key)}
-            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-colors ${cx.undoBtn}`}
+            className={`flex items-center gap-1.5 text-caption font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-colors ${cx.undoBtn}`}
         >
             <Undo2 size={12} strokeWidth={2.5} />
             {label}
@@ -337,7 +337,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 )}
                 {totalBadge > 0 && (
                     <>
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-[9px] font-black rounded-full flex items-center justify-center z-20 shadow-[var(--shadow-glow-danger)]">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-20 shadow-[var(--shadow-glow-danger)]">
                             {totalBadge > 9 ? '9+' : totalBadge}
                         </span>
                         <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-danger" />
@@ -366,9 +366,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                             {/* ── Header ── */}
                             <div className={`flex items-center justify-between pl-5 pr-3 pt-4 pb-3 border-b ${cx.headerBorder}`}>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-[14px] font-black tracking-tight ${cx.title}`}>Notificaciones</span>
+                                    <span className={`text-body-lg font-black tracking-tight ${cx.title}`}>Notificaciones</span>
                                     {unreadNotifs.length > 0 && (
-                                        <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                                        <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
                                             {unreadNotifs.length > 99 ? '99+' : unreadNotifs.length}
                                         </span>
                                     )}
@@ -378,7 +378,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             title="Marcar todas como leídas"
-                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
+                                            className={`flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
                                         >
                                             <CheckCheck size={13} strokeWidth={2.5} />
                                             Leídas
@@ -388,7 +388,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         confirmClear ? (
                                             <button
                                                 onClick={handleClearAll}
-                                                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover transition-colors animate-in fade-in zoom-in-95 duration-150"
+                                                className="flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl bg-danger-solid text-white hover:bg-danger-hover transition-colors animate-in fade-in zoom-in-95 duration-150"
                                             >
                                                 <Trash2 size={12} strokeWidth={2.5} />
                                                 ¿Borrar todo?
@@ -409,7 +409,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                             {/* ── Franja Deshacer (borrado masivo) ── */}
                             {pendingAll && (
                                 <div className={`relative flex items-center justify-between pl-5 pr-3 py-2.5 border-b ${cx.headerBorder} ${cx.undoStrip}`}>
-                                    <span className={`text-[12px] font-semibold ${cx.undoText}`}>
+                                    <span className={`text-body-sm font-semibold ${cx.undoText}`}>
                                         Borrando {pendingAll.ids.length} notificación{pendingAll.ids.length > 1 ? 'es' : ''}…
                                     </span>
                                     {undoButton(pendingAll.key)}
@@ -433,10 +433,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <Megaphone size={16} strokeWidth={2} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-[13px] font-bold leading-tight ${hasUrgentAnn ? (isDark ? 'text-danger-text' : 'text-danger') : cx.rowTitle}`}>
+                                        <p className={`text-body font-bold leading-tight ${hasUrgentAnn ? (isDark ? 'text-danger-text' : 'text-danger') : cx.rowTitle}`}>
                                             {annUnread} aviso{annUnread > 1 ? 's' : ''} sin leer{hasUrgentAnn ? ' · URGENTE' : ''}
                                         </p>
-                                        <p className={`text-[11px] font-medium mt-0.5 ${cx.rowBody}`}>Comunicados de la empresa</p>
+                                        <p className={`text-label font-medium mt-0.5 ${cx.rowBody}`}>Comunicados de la empresa</p>
                                     </div>
                                     <ChevronRight size={16} className={`flex-shrink-0 transition-transform group-hover/ann:translate-x-0.5 ${isDark ? 'text-white/40' : 'text-content-3'}`} />
                                 </button>
@@ -450,8 +450,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <div className={`relative w-14 h-14 rounded-[1.25rem] border shadow-[0_8px_24px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.6)] flex items-center justify-center mb-4 ${cx.emptyIconBox}`}>
                                             <Bell size={22} strokeWidth={1.5} />
                                         </div>
-                                        <p className={`relative text-[14px] font-bold ${cx.emptyTitle}`}>Todo al día</p>
-                                        <p className={`relative text-[12px] font-medium mt-1 ${cx.emptySub}`}>Cuando algo requiera tu atención, aparecerá aquí.</p>
+                                        <p className={`relative text-body-lg font-bold ${cx.emptyTitle}`}>Todo al día</p>
+                                        <p className={`relative text-body-sm font-medium mt-1 ${cx.emptySub}`}>Cuando algo requiera tu atención, aparecerá aquí.</p>
                                     </div>
                                 ) : (
                                     <div className="py-1.5">
@@ -473,7 +473,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                             exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
                                                             className={`relative flex items-center justify-between pl-5 pr-3 py-3 ${cx.undoStrip}`}
                                                         >
-                                                            <span className={`text-[12px] font-semibold truncate pr-3 ${cx.undoText}`}>
+                                                            <span className={`text-body-sm font-semibold truncate pr-3 ${cx.undoText}`}>
                                                                 Notificación borrada
                                                             </span>
                                                             {undoButton(pendingOne.key)}
@@ -503,16 +503,16 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                 <Icon size={16} strokeWidth={2} />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className={`text-[13px] leading-snug ${unread ? `font-bold ${cx.rowTitle}` : `font-semibold ${cx.rowTitleRead}`}`}>
+                                                                <p className={`text-body leading-snug ${unread ? `font-bold ${cx.rowTitle}` : `font-semibold ${cx.rowTitleRead}`}`}>
                                                                     {n.title}
                                                                 </p>
                                                                 {n.body && (
-                                                                    <p className={`text-[12px] font-medium leading-snug mt-0.5 line-clamp-2 ${cx.rowBody}`}>{n.body}</p>
+                                                                    <p className={`text-body-sm font-medium leading-snug mt-0.5 line-clamp-2 ${cx.rowBody}`}>{n.body}</p>
                                                                 )}
                                                                 <div className="flex items-center gap-2 mt-1.5">
-                                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
+                                                                    <span className={`text-caption font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
                                                                     {actionLabel && (
-                                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
+                                                                        <span className={`inline-flex items-center gap-1 text-caption font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
                                                                             ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}>
                                                                             {actionLabel}
                                                                             <ArrowRight size={10} strokeWidth={3} />

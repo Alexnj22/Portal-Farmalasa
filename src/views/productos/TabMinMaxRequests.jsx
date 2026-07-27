@@ -31,7 +31,7 @@ function Avatar({ emp, name }) {
   const initial = (name || '?').trim().charAt(0).toUpperCase();
   if (photo) return <img src={photo} alt="" className="w-9 h-9 rounded-full object-cover border border-border-card shadow-sm shrink-0" />;
   return (
-    <div className="w-9 h-9 rounded-full bg-surface-card-hover text-content-2 flex items-center justify-center text-[13px] font-black shrink-0 border border-border-card">
+    <div className="w-9 h-9 rounded-full bg-surface-card-hover text-content-2 flex items-center justify-center text-body font-black shrink-0 border border-border-card">
       {initial}
     </div>
   );
@@ -52,21 +52,21 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       <div className="flex items-center gap-2.5">
         <Avatar emp={emp} name={name} />
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-content truncate">{name}</p>
-          <p className="text-[10px] text-content-3">{relTime(r.requested_at)}</p>
+          <p className="text-body-sm font-black text-content truncate">{name}</p>
+          <p className="text-caption text-content-3">{relTime(r.requested_at)}</p>
         </div>
-        <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
+        <span className={`shrink-0 text-micro font-black px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
       </div>
 
       {/* Producto + sucursal */}
       <div className="min-w-0">
-        <p className="text-[13px] font-bold text-content leading-tight truncate">{r.product_name || `Producto ${r.erp_product_id}`}</p>
+        <p className="text-body font-bold text-content leading-tight truncate">{r.product_name || `Producto ${r.erp_product_id}`}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-content-3 bg-surface-card-hover/70 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-caption font-bold text-content-3 bg-surface-card-hover/70 px-2 py-0.5 rounded-full">
             <Building2 size={10} /> {ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}
           </span>
           {r.current_sales_6m != null && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-caption font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
               <TrendingUp size={10} /> {Number(r.current_sales_6m).toLocaleString()} und · 6m
             </span>
           )}
@@ -75,26 +75,26 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
 
       {/* Valores: actual → propuesto */}
       <div className="flex items-center justify-center gap-3 rounded-xl bg-surface-card-hover/70 border border-divider py-2">
-        <div className="text-right text-[12px] font-bold tabular-nums text-content-3">
+        <div className="text-right text-body-sm font-bold tabular-nums text-content-3">
           <div>MIN {r.current_min ?? '—'}</div>
           <div>MAX {r.current_max ?? '—'}</div>
         </div>
         <ArrowRight size={15} className="text-content-3" />
-        <div className="text-left text-[12px] font-black tabular-nums">
+        <div className="text-left text-body-sm font-black tabular-nums">
           <div className="text-chart-4-text">MIN {r.requested_min}</div>
           <div className="text-chart-1-text">MAX {r.requested_max}</div>
         </div>
       </div>
 
       {/* Motivo del solicitante */}
-      {r.reason && <p className="text-[11px] text-content-3 italic leading-snug">“{r.reason}”</p>}
+      {r.reason && <p className="text-label text-content-3 italic leading-snug">“{r.reason}”</p>}
 
       {/* Nota de decisión (historial) */}
       {!isPending && r.decision_note && (
-        <p className="text-[10px] text-content-3">Nota: {r.decision_note}</p>
+        <p className="text-caption text-content-3">Nota: {r.decision_note}</p>
       )}
       {!isPending && (
-        <p className="text-[10px] text-content-3 flex items-center gap-1">
+        <p className="text-caption text-content-3 flex items-center gap-1">
           <Clock size={10} /> {r.decided_by || '—'} · {relTime(r.decided_at)}
         </p>
       )}
@@ -103,11 +103,11 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       {isPending && !rejecting && (
         <div className="flex items-center gap-2 mt-auto">
           <button onClick={() => onApprove(r)} disabled={busy}
-            className="flex-1 h-9 rounded-xl text-[12px] font-bold text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+            className="flex-1 h-9 rounded-xl text-body-sm font-bold text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={14} />} Aprobar
           </button>
           <button onClick={() => setRejecting(true)} disabled={busy}
-            className="h-9 px-3 rounded-xl text-[12px] font-bold text-danger bg-danger/10 hover:bg-danger-solid hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
+            className="h-9 px-3 rounded-xl text-body-sm font-bold text-danger bg-danger/10 hover:bg-danger-solid hover:text-white disabled:opacity-50 flex items-center gap-1.5 transition-colors">
             <X size={14} /> Rechazar
           </button>
         </div>
@@ -118,14 +118,14 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <div className="flex flex-col gap-2 mt-auto">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
             placeholder="Motivo del rechazo (opcional)…"
-            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-[16px] text-content-2 placeholder-content-3 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
+            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-input text-content-2 placeholder-content-3 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
-              className="flex-1 h-8 rounded-xl text-[11px] font-bold text-white bg-danger-solid hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
+              className="flex-1 h-8 rounded-xl text-label font-bold text-white bg-danger-solid hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">
               {busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo
             </button>
             <button onClick={() => { setRejecting(false); setNote(''); }} disabled={busy}
-              className="h-8 px-3 rounded-xl text-[11px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
+              className="h-8 px-3 rounded-xl text-label font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
               Cancelar
             </button>
           </div>
@@ -328,7 +328,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         <div className="flex items-center gap-1.5">
           {[['pending', `Pendientes${pendingCount ? ` · ${pendingCount}` : ''}`], ['history', 'Historial']].map(([k, label]) => (
             <button key={k} onClick={() => { setTab(k); setSucFilter('all'); }}
-              className={`px-4 py-2 rounded-full text-[12px] font-bold transition-colors ${
+              className={`px-4 py-2 rounded-full text-body-sm font-bold transition-colors ${
                 tab === k ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/40'
               }`}>
               {label}
@@ -353,7 +353,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
             <>
               <div className="h-5 w-px bg-divider shrink-0" />
               <button onClick={approveAll} disabled={bulkBusy}
-                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[11px] font-black text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
+                className="mx-1.5 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-label font-black text-white bg-success-solid hover:bg-success-hover disabled:opacity-50 transition-colors shrink-0">
                 {bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
                 Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
               </button>
@@ -363,7 +363,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-danger/10 border border-danger/30 px-3.5 py-2 text-[12px] font-semibold text-danger flex items-center justify-between">
+        <div className="rounded-xl bg-danger/10 border border-danger/30 px-3.5 py-2 text-body-sm font-semibold text-danger flex items-center justify-between">
           {error}
           <button onClick={() => setError(null)}><X size={13} /></button>
         </div>
@@ -375,7 +375,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-2 text-content-3">
           <Inbox size={34} strokeWidth={1.5} />
-          <p className="text-[13px] font-semibold text-content-3">
+          <p className="text-body font-semibold text-content-3">
             {tab === 'pending' ? 'No hay solicitudes pendientes' : 'Sin historial de solicitudes'}
           </p>
         </div>

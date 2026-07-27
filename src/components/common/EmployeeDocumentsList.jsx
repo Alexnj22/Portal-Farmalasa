@@ -24,16 +24,16 @@ const DocumentRow = ({ doc }) => {
                 <Icon size={15} className="text-content-3" strokeWidth={1.8} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold text-content truncate">{doc.title || doc.category}</p>
+                <p className="text-body-sm font-bold text-content truncate">{doc.title || doc.category}</p>
                 {doc.expiry_date && (
-                    <p className="text-[10px] text-content-3 font-medium mt-0.5">
+                    <p className="text-caption text-content-3 font-medium mt-0.5">
                         Vence {new Date(doc.expiry_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
                 {badge && (
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badge.className}`}>{badge.label}</span>
+                    <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badge.className}`}>{badge.label}</span>
                 )}
                 {hasFile ? (
                     <button
@@ -45,7 +45,7 @@ const DocumentRow = ({ doc }) => {
                         <Eye size={13} strokeWidth={2.2} />
                     </button>
                 ) : (
-                    <span className="text-[9px] font-black uppercase tracking-widest text-warning bg-warning/10 px-2 py-0.5 rounded-md border border-warning/30 whitespace-nowrap">Pendiente</span>
+                    <span className="text-micro font-black uppercase tracking-widest text-warning bg-warning/10 px-2 py-0.5 rounded-md border border-warning/30 whitespace-nowrap">Pendiente</span>
                 )}
             </div>
         </div>
@@ -71,7 +71,7 @@ const EmployeeDocumentsList = ({ documents, emptyLabel = 'Sin documentos registr
                     <div data-surface="dropdown" className="relative z-10 w-12 h-12 flex items-center justify-center mb-3 text-content-3">
                         <FolderOpen size={22} strokeWidth={1.5} />
                     </div>
-                    <h3 className="font-bold text-[14px] text-content tracking-tight">{emptyLabel}</h3>
+                    <h3 className="font-bold text-body-lg text-content tracking-tight">{emptyLabel}</h3>
                 </div>
             </div>
         );

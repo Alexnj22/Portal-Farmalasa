@@ -40,10 +40,10 @@ const LiquidToast = () => {
             </div>
 
             <div className="flex flex-col justify-center py-1">
-                <p className="font-black text-[12px] md:text-[13px] uppercase tracking-widest leading-none mb-1.5 text-content">
+                <p className="font-black text-body-sm md:text-body uppercase tracking-widest leading-none mb-1.5 text-content">
                     {title}
                 </p>
-                <p className="text-[11px] md:text-[12px] font-medium leading-tight text-content-3">
+                <p className="text-label md:text-body-sm font-medium leading-tight text-content-3">
                     {message}
                 </p>
             </div>

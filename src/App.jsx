@@ -162,7 +162,7 @@ const RouteLoadingFallback = () => (
             `bg-white/NN` a secas — el mismo punto ciego del gate que cerró D0. */}
         <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-[2rem] px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
             <Loader2 className="text-brand-text animate-spin" size={28} strokeWidth={2.5} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-3">Cargando…</span>
+            <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3">Cargando…</span>
         </div>
     </div>
 );
@@ -493,8 +493,8 @@ function MainApp() {
 
                         {/* Brand text */}
                         <div className="flex flex-col items-center gap-1.5">
-                            <span className="text-[21px] font-black text-content tracking-tight leading-none">Portal Farmalasa</span>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-text/60">Sistema de Gestión</span>
+                            <span className="text-title-lg font-black text-content tracking-tight leading-none">Portal Farmalasa</span>
+                            <span className="text-caption font-bold uppercase tracking-[0.22em] text-brand-text/60">Sistema de Gestión</span>
                         </div>
 
                         {/* Animated dots */}
@@ -508,7 +508,7 @@ function MainApp() {
                         </div>
 
                         {/* Status */}
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-3 -mt-2">
+                        <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3 -mt-2">
                             Verificando sesión...
                         </span>
 

@@ -188,7 +188,7 @@ const FormTurnos = ({ branches }) => {
                 <div className="p-4 md:p-5">
                     <div className="flex items-center justify-between mb-3 gap-2">
                         <div className="flex-1 min-w-0">
-                            <h5 className="text-[13px] md:text-[14px] font-black text-content leading-tight mb-1 truncate">{shift.name}</h5>
+                            <h5 className="text-body md:text-body-lg font-black text-content leading-tight mb-1 truncate">{shift.name}</h5>
                             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-card-hover border border-divider text-[8.5px] font-black uppercase tracking-widest text-content-3">
                                 <Building2 size={10}/> {bName}
                             </span>
@@ -216,13 +216,13 @@ const FormTurnos = ({ branches }) => {
 
                     <div className="bg-surface-card-hover rounded-xl p-3 flex items-center gap-4 border border-divider">
                         <div className="flex-1">
-                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
-                            <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
+                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Entrada</label>
+                            <p className="text-body-sm md:text-body font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
                         </div>
                         <div className="w-px h-8 bg-divider"></div>
                         <div className="flex-1">
-                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1 block">Salida</label>
-                            <p className="text-[12px] md:text-[13px] font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
+                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Salida</label>
+                            <p className="text-body-sm md:text-body font-bold text-content-2 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
                         </div>
                     </div>
                 </div>
@@ -242,10 +242,10 @@ const FormTurnos = ({ branches }) => {
                         {editingShiftId ? <Pencil size={20} strokeWidth={2.5} /> : <BookOpen size={20} strokeWidth={2.5} />}
                     </div>
                     <div>
-                        <h4 className="text-[13px] md:text-[14px] font-black text-content uppercase tracking-tightleading-none mb-1">
+                        <h4 className="text-body md:text-body-lg font-black text-content uppercase tracking-tightleading-none mb-1">
                             {editingShiftId ? 'Editor de Turno' : 'Creador de Turno'}
                         </h4>
-                        <p className="text-[10px] md:text-[11px] font-bold text-content-2 uppercase tracking-widest">Configuración del Catálogo</p>
+                        <p className="text-caption md:text-label font-bold text-content-2 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
                         <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-surface-card-hover text-content-3 hover:bg-surface-card-hover flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
@@ -254,7 +254,7 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="flex-1 space-y-6">
                     <div>
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest">Sucursal Asignada</label>
+                        <label className="text-caption font-black text-content-3 uppercase tracking-widest">Sucursal Asignada</label>
                         <div className="mt-2">
                             <LiquidSelect
                                 value={currentForm.branchId}
@@ -267,12 +267,12 @@ const FormTurnos = ({ branches }) => {
                     </div>
                     
                     <div>
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest">Nombre Identificador del Turno</label>
+                        <label className="text-caption font-black text-content-3 uppercase tracking-widest">Nombre Identificador del Turno</label>
                         <input 
                             required 
                             type="text"
                             placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-divider outline-none focus:border-brand shadow-sm text-[16px] md:text-[16px] font-bold text-content-2 placeholder:text-content-3" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-divider outline-none focus:border-brand shadow-sm text-input md:text-input font-bold text-content-2 placeholder:text-content-3" 
                             value={currentForm.name} 
                             onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
                         />
@@ -280,11 +280,11 @@ const FormTurnos = ({ branches }) => {
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Entrada</label>
+                            <label className="text-caption font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Entrada</label>
                             <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm({ ...currentForm, start: v })} />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Salida</label>
+                            <label className="text-caption font-black text-content-3 uppercase tracking-widest mb-2 block">Hora de Salida</label>
                             <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm({ ...currentForm, end: v })} />
                         </div>
                     </div>
@@ -292,13 +292,13 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="mt-auto pt-6 border-t border-divider flex justify-end gap-3 shrink-0">
                     {editingShiftId && (
-                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-full text-[10px] font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
+                         <button type="button" onClick={cancelEditing} disabled={isLoading} className="px-5 h-10 rounded-full text-caption font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover disabled:opacity-50">Cancelar</button>
                     )}
                     <button 
                         type="button" 
                         onClick={handleSaveShift} 
                         disabled={isLoading}
-                        className={`h-10 px-6 rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-warning-solid text-white border-warning hover:bg-warning-hover hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`h-10 px-6 rounded-full font-black text-caption uppercase tracking-widest transition-all shadow-md flex items-center gap-2 ${editingShiftId ? 'bg-warning-solid text-white border-warning hover:bg-warning-hover hover:shadow-lg' : 'bg-brand text-white border-brand-hover hover:bg-brand-hover hover:shadow-lg hover:-translate-y-0.5'} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                         {isLoading ? (
                             <><Loader2 size={14} className="animate-spin"/> Guardando</>
@@ -314,7 +314,7 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             <div className="flex flex-col h-full bg-surface-card-hover rounded-[2rem] border border-divider p-6 overflow-hidden">
                 <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-divider">
-                    <h4 className="text-[12px] font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                    <h4 className="text-body-sm font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <ListTodo size={16} className="text-brand-text"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
                     </h4>
                     
@@ -346,7 +346,7 @@ const FormTurnos = ({ branches }) => {
                     {allShifts === null ? (
                          <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
                              <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-brand-text" />
-                             <p className="text-[10px] font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
+                             <p className="text-caption font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
                          </div>
                     ) : visibleShifts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -355,7 +355,7 @@ const FormTurnos = ({ branches }) => {
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
                             {statusFilter === 'ARCHIVED' ? <Package size={32} /> : <BookOpen size={32} strokeWidth={1.5} />}
-                            <p className="text-[10px] font-black uppercase tracking-widest text-center">No hay turnos registrados en esta vista</p>
+                            <p className="text-caption font-black uppercase tracking-widest text-center">No hay turnos registrados en esta vista</p>
                         </div>
                     )}
                 </div>

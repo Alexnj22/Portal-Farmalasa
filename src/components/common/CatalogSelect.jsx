@@ -32,6 +32,6 @@ export const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, 
         value={value === OTRA_ESPECIALIDAD ? '' : (value || '')}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
         placeholder={placeholder}
-        className={`w-full h-[40px] px-4 text-[16px] font-bold text-content outline-none ${inputHoverClass} ${hasError ? 'outline outline-2 outline-danger/50' : ''}`}
+        className={`w-full h-[40px] px-4 text-input font-bold text-content outline-none ${inputHoverClass} ${hasError ? 'outline outline-2 outline-danger/50' : ''}`}
     />
 );

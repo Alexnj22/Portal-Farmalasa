@@ -9,8 +9,8 @@ export default function AbcXyzBadge({ abc, xyz }) {
     const xyzColor = xyzKey === 'Z' ? 'text-danger-text' : 'text-content-3';
     return (
         <span className="font-black tracking-tight shrink-0" title={`${ABC_CFG[abc]?.title ?? ''} · ${XYZ_CFG[xyzKey]?.desc ?? ''}`}>
-            <span className={`text-[11px] ${abcColor}`}>{abc || '—'}</span>
-            <span className={`text-[10px] ${xyzColor}`}>{xyzKey || 'X'}</span>
+            <span className={`text-label ${abcColor}`}>{abc || '—'}</span>
+            <span className={`text-caption ${xyzColor}`}>{xyzKey || 'X'}</span>
         </span>
     );
 }

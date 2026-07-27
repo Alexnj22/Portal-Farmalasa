@@ -41,14 +41,14 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
-                <h3 className="text-[16px] font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
-                <p className="text-[12px] font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
+                <h3 className="text-input font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
+                <p className="text-body-sm font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Referente de Farmacovigilancia en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>
                 <button 
                     type="button" 
                     onClick={onClose} 
-                    className="px-8 py-3.5 bg-surface-card text-warning font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-warning-solid hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="px-8 py-3.5 bg-surface-card text-warning font-black text-label uppercase tracking-widest rounded-2xl hover:bg-warning-solid hover:text-white border border-warning/30 hover:border-warning transition-all duration-300 shadow-sm hover:shadow-[var(--shadow-glow-warning)] hover:-translate-y-0.5 active:scale-[0.97]"
                 >
                     Entendido, Cerrar
                 </button>
@@ -71,10 +71,10 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                         <ShieldCheck size={20} strokeWidth={2.5}/>
                     </div>
                     <div>
-                        <h4 className="text-[13px] font-black uppercase tracking-widest text-content leading-none mb-1">
+                        <h4 className="text-body font-black uppercase tracking-widest text-content leading-none mb-1">
                             Control de Farmacovigilancia
                         </h4>
-                        <p className="text-[10px] font-bold text-content-3 uppercase tracking-widest">
+                        <p className="text-caption font-bold text-content-3 uppercase tracking-widest">
                             Asignación y Autorización SRS
                         </p>
                     </div>
@@ -82,7 +82,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
 
                 {/* SELECT DEL REFERENTE */}
                 <div className="group/select">
-                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-chart-3-text transition-colors">
+                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-chart-3-text transition-colors">
                         Referente Técnico Asignado
                     </label>
                     <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
@@ -98,7 +98,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     {/* NOTA INFORMATIVA */}
                     <div className="mt-3 flex items-start gap-2.5 bg-chart-3/10 p-3.5 rounded-2xl border border-chart-3/20 shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)]">
                          <FileText size={14} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5}/>
-                         <p className="text-[10px] text-chart-3-text font-bold leading-relaxed">
+                         <p className="text-caption text-chart-3-text font-bold leading-relaxed">
                             El referente elabora y envía los reportes semestrales a la Dirección General de Medicamentos.
                          </p>
                     </div>
@@ -106,7 +106,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
 
                 {/* UPLOAD FILE ESTILO LIQUID GLASS */}
                 <div>
-                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
+                    <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-2 block">
                         Autorización de la SRS (PDF/IMG)
                     </label>
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-chart-3/10 border-chart-3/50 hover:bg-chart-3/10' : 'bg-surface-card-hover/50 border-divider hover:bg-chart-3/10 hover:border-chart-3/40'}`}>
@@ -130,10 +130,10 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                            <p className={`text-[12px] font-black tracking-tight truncate ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'text-chart-3-text' : 'text-content-2'}`}>
+                            <p className={`text-body-sm font-black tracking-tight truncate ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'text-chart-3-text' : 'text-content-2'}`}>
                                 {legalData.farmacovigilanciaAuthFile ? legalData.farmacovigilanciaAuthFile.name : legalData.farmacovigilanciaAuthUrl ? "Autorización guardada" : "Toca para subir documento"}
                             </p>
-                            <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5">
+                            <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
                                 {legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'Reemplazar archivo' : 'PDF, JPG o PNG (Máx 5MB)'}
                             </p>
                         </div>

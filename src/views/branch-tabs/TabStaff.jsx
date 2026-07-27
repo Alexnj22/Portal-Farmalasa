@@ -70,10 +70,10 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
-                <p className="text-[14px] font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
-                <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
+                <p className="text-body-lg font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
+                <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
-                    <Edit3 size={10} strokeWidth={2.5} /> <span className="text-[9px] font-black uppercase tracking-widest">Asignar</span>
+                    <Edit3 size={10} strokeWidth={2.5} /> <span className="text-micro font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
         );
@@ -102,10 +102,10 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             </div>
 
             <div className="text-center relative z-10 mb-3">
-                <p className="text-[14px] font-black text-content leading-tight group-hover:text-brand-text transition-colors truncate px-2">{employee.name}</p>
+                <p className="text-body-lg font-black text-content leading-tight group-hover:text-brand-text transition-colors truncate px-2">{employee.name}</p>
                 <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-surface-card border border-white rounded-full shadow-sm">
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.badge}`}></div>
-                    <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
+                    <p className={`text-micro font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
                 </div>
             </div>
 
@@ -113,8 +113,8 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <div className="mx-2 mb-3 mt-1 p-2 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-1.5 backdrop-blur-sm shadow-inner">
                     <FileX size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
                     <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-danger uppercase tracking-widest leading-tight">Faltan Archivos</span>
-                        <span className="text-[9px] font-bold text-danger leading-tight">{missingDocs.join(', ')}</span>
+                        <span className="text-micro font-black text-danger uppercase tracking-widest leading-tight">Faltan Archivos</span>
+                        <span className="text-micro font-bold text-danger leading-tight">{missingDocs.join(', ')}</span>
                     </div>
                 </div>
             )}
@@ -124,8 +124,8 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     <div className="flex items-center gap-2 overflow-hidden">
                         <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none">Teléfono</span>
-                            <span className="text-[10px] font-bold text-content-2 truncate">{employee.phone || 'N/A'}</span>
+                            <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none">Teléfono</span>
+                            <span className="text-caption font-bold text-content-2 truncate">{employee.phone || 'N/A'}</span>
                         </div>
                     </div>
                     {employee.phone && (
@@ -142,10 +142,10 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     <div className="flex items-center gap-2 overflow-hidden pr-8">
                         <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col flex-1 overflow-hidden">
-                            <span className="text-[10px] font-black text-content-2 uppercase tracking-widest leading-none flex items-center gap-1.5">
+                            <span className="text-caption font-black text-content-2 uppercase tracking-widest leading-none flex items-center gap-1.5">
                                 Ingreso {hireDate && <span className="text-brand-text bg-chart-1/10 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
                             </span>
-                            <span className="text-[10px] font-bold text-content-2 mt-0.5 truncate">{formatDate(hireDate)}</span>
+                            <span className="text-caption font-bold text-content-2 mt-0.5 truncate">{formatDate(hireDate)}</span>
                         </div>
                     </div>
                 </div>
@@ -248,15 +248,15 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         <div className="mt-8 p-5 bg-slate-900 rounded-[1.5rem] border border-slate-700 shadow-xl flex flex-col gap-4 no-print">
             <div className="flex justify-between items-center">
                 <div>
-                    <h4 className="text-white font-black uppercase tracking-widest text-[12px] flex items-center gap-2">
+                    <h4 className="text-white font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
                         <Zap size={14} className="text-warning" /> Motor de Sincronización WFM
                     </h4>
-                    <p className="text-content-3 font-bold text-[10px] mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
+                    <p className="text-content-3 font-bold text-caption mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
                 </div>
                 <button
                     onClick={startHistoricalSync}
                     disabled={isSyncing}
-                    className="px-5 py-2.5 bg-brand hover:bg-chart-1-solid disabled:bg-slate-700 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97]"
+                    className="px-5 py-2.5 bg-brand hover:bg-chart-1-solid disabled:bg-slate-700 text-white text-label font-black uppercase tracking-widest rounded-xl transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97]"
                 >
                     {isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}
                 </button>
@@ -270,7 +270,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 
             {log && (
                 <div className="bg-black/50 rounded-lg p-3 border border-border-card">
-                    <p className="text-[10px] font-mono text-success tracking-wide leading-relaxed">{log}</p>
+                    <p className="text-caption font-mono text-success tracking-wide leading-relaxed">{log}</p>
                 </div>
             )}
         </div>
@@ -445,7 +445,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 <div>
                     <h3 className="font-black text-content uppercase tracking-tight text-xl">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
+                        <p className="text-label font-bold text-content-3 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
                     </div>
                 </div>
 
@@ -457,8 +457,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             <Calculator size={14} className="text-warning shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
                                 <div className="flex justify-between items-center w-full">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-warning leading-none">Déficit Staff</span>
-                                    <span className="text-[9px] font-black leading-none text-danger">-{minStaff - coverageStaffCount}</span>
+                                    <span className="text-micro font-black uppercase tracking-widest text-warning leading-none">Déficit Staff</span>
+                                    <span className="text-micro font-black leading-none text-danger">-{minStaff - coverageStaffCount}</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-warning/20 rounded-full overflow-hidden">
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
@@ -467,35 +467,35 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-3 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
-                                        <p className="text-[10px] font-bold text-content-3 mb-1.5 flex justify-between items-center">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
+                                        <p className="text-caption font-bold text-content-3 mb-1.5 flex justify-between items-center">
                                             <span>Seguridad (Mín. {MIN_CONCURRENT_STAFF} por turno):</span> <span className="text-white font-black">{baseStaffHours} hrs</span>
                                         </p>
-                                        <p className="text-[10px] font-bold text-blue-300 mb-1.5 flex justify-between items-center">
+                                        <p className="text-caption font-bold text-blue-300 mb-1.5 flex justify-between items-center">
                                             <span className="flex items-center gap-1"><TrendingUp size={12} /> Picos de facturación:</span>
                                             <span className="text-blue-200 font-black">+{extraVolumeHours} hrs</span>
                                         </p>
-                                        <p className="text-[10px] font-bold text-purple-300 mb-2 flex justify-between items-center bg-purple-900/30 -mx-2 px-2 py-1 rounded">
+                                        <p className="text-caption font-bold text-purple-300 mb-2 flex justify-between items-center bg-purple-900/30 -mx-2 px-2 py-1 rounded">
                                             <span className="flex items-center gap-1"><Briefcase size={12} /> Margen ausentismo (15%):</span>
                                             <span className="text-purple-200 font-black">+{shrinkageHours} hrs</span>
                                         </p>
                                         <div className="border-t border-slate-700/50 pt-2 mt-1">
-                                            <p className="text-[10px] font-bold text-amber-300 leading-tight">
+                                            <p className="text-caption font-bold text-amber-300 leading-tight">
                                                 La sucursal exige un presupuesto de <span className="text-white font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Al dividir entre 44h legales, requieres <span className="font-black text-warning">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
                                             </p>
                                         </div>
                                     </>
                                 ) : isNewBranch ? (
                                     <>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
-                                        <p className="text-[10px] font-bold text-content-3 leading-tight mb-2">
+                                        <p className="text-caption font-black uppercase tracking-widest text-indigo-300 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
+                                        <p className="text-caption font-bold text-content-3 leading-tight mb-2">
                                             Esta sucursal tiene menos de 3 meses. El cálculo actual <span className="text-white font-black">({minStaff} operativos)</span> está basado únicamente en la cobertura mínima de seguridad ({MIN_CONCURRENT_STAFF} por turno).
                                         </p>
                                     </>
                                 ) : (
                                     <>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Calculator size={12} /> Cálculo Tradicional</p>
-                                        <p className="text-[10px] font-bold text-content-3 leading-tight">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Calculator size={12} /> Cálculo Tradicional</p>
+                                        <p className="text-caption font-bold text-content-3 leading-tight">
                                             Basado en los horarios de apertura configurados, necesitas al menos <span className="text-warning font-black">{minStaff} operativos</span> para cubrir los turnos legales.
                                         </p>
                                     </>
@@ -509,26 +509,26 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <ShieldAlert size={14} className={complianceScore === 100 ? 'text-success' : 'text-content-3'} />
                         <div className="flex flex-col gap-1 w-24">
                             <div className="flex justify-between items-center w-full">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-content-3 leading-none">Salud Legal</span>
-                                <span className={`text-[9px] font-black leading-none ${textTheme}`}>{complianceScore}%</span>
+                                <span className="text-micro font-black uppercase tracking-widest text-content-3 leading-none">Salud Legal</span>
+                                <span className={`text-micro font-black leading-none ${textTheme}`}>{complianceScore}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
                                 <div className={`h-full transition-all duration-1000 ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
                             </div>
                         </div>
                         <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1">Auditoría Regulatoria</p>
+                            <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1">Auditoría Regulatoria</p>
                             {complianceIssues.length > 0 ? (
                                 <ul className="space-y-2">
                                     {complianceIssues.map((issue, i) => (
-                                        <li key={i} className="flex items-start gap-1.5 text-[10px] font-bold text-red-300 leading-tight">
+                                        <li key={i} className="flex items-start gap-1.5 text-caption font-bold text-red-300 leading-tight">
                                             {issue.isDoc ? <FileX size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} /> : <AlertTriangle size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />}
                                             <span>{issue.text}</span>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-[10px] font-bold text-emerald-300 flex items-center gap-1.5">
+                                <p className="text-caption font-bold text-emerald-300 flex items-center gap-1.5">
                                     <Check size={12} strokeWidth={3} /> Cumplimiento 100% (Roles y Docs)
                                 </p>
                             )}
@@ -595,7 +595,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <div className="absolute inset-1 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin [animation-duration:1.5s]"></div>
                                                 <div className="absolute inset-3 border-l-2 border-r-2 border-cyan-400 rounded-full animate-spin [animation-duration:2.5s] direction-reverse"></div>
                                             </div>
-                                            <p className="text-[10px] font-black text-chart-3-text uppercase tracking-widest animate-pulse">Analizando Organización...</p>
+                                            <p className="text-caption font-black text-chart-3-text uppercase tracking-widest animate-pulse">Analizando Organización...</p>
                                         </div>
                                         <div className="space-y-4">
                                             <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
@@ -612,7 +612,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         {aiSummaryData?.split('\n').map((paragraph, index) => (
                                             <div key={index} className="relative mb-6 last:mb-0 group/p">
                                                 <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
-                                                <p className="text-[13px] md:text-[15px] font-medium text-content-2 leading-relaxed text-justify pl-5">
+                                                <p className="text-body md:text-subtitle font-medium text-content-2 leading-relaxed text-justify pl-5">
                                                     {paragraph.split('**').map((text, i) => (
                                                         i % 2 === 1 ? <strong key={i} className="font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">{text}</strong> : text
                                                     ))}
@@ -671,37 +671,37 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             <BarChart3 size={20} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text leading-none">Inteligencia WFM Activa</h4>
-                                            <p className="text-[10px] font-bold text-content-3 mt-1 uppercase tracking-widest">Algoritmo predictivo leyendo Supabase</p>
+                                            <h4 className="text-body font-black uppercase tracking-widest text-brand-text leading-none">Inteligencia WFM Activa</h4>
+                                            <p className="text-caption font-bold text-content-3 mt-1 uppercase tracking-widest">Algoritmo predictivo leyendo Supabase</p>
                                         </div>
                                     </div>
 
                                     {wfmApplied ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div className="bg-surface-card backdrop-blur-md rounded-xl p-3 border border-white shadow-[var(--shadow-elevation-xs)]">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Registros Históricos</p>
-                                                <p className="text-[18px] font-black text-content mt-1">{historicalSales.length}</p>
-                                                <p className="text-[9px] font-bold text-content-3">Horas de venta analizadas</p>
+                                                <p className="text-micro font-black uppercase tracking-widest text-content-2">Registros Históricos</p>
+                                                <p className="text-title-sm font-black text-content mt-1">{historicalSales.length}</p>
+                                                <p className="text-micro font-bold text-content-3">Horas de venta analizadas</p>
                                             </div>
                                             <div className="bg-chart-1/10 backdrop-blur-md rounded-xl p-3 border border-chart-1/30 shadow-[var(--shadow-glow-brand)]">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-chart-1-text">Pico Máximo Detectado</p>
-                                                <p className="text-[15px] font-black text-chart-1-text mt-1 flex items-center gap-1.5">
+                                                <p className="text-micro font-black uppercase tracking-widest text-chart-1-text">Pico Máximo Detectado</p>
+                                                <p className="text-subtitle font-black text-chart-1-text mt-1 flex items-center gap-1.5">
                                                     {peakHour?.dayName} a las {peakHour?.hour}:00 <TrendingUp size={14} className="text-chart-1-text" />
                                                 </p>
-                                                <p className="text-[9px] font-bold text-chart-1-text">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
+                                                <p className="text-micro font-bold text-chart-1-text">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
                                             <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[var(--shadow-glow-warning)]">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-warning">Impacto en Plantilla</p>
-                                                <p className="text-[18px] font-black text-warning-text mt-1">+{extraVolumeHours} Hrs</p>
-                                                <p className="text-[9px] font-bold text-warning">Añadidas al presupuesto semanal</p>
+                                                <p className="text-micro font-black uppercase tracking-widest text-warning">Impacto en Plantilla</p>
+                                                <p className="text-title-sm font-black text-warning-text mt-1">+{extraVolumeHours} Hrs</p>
+                                                <p className="text-micro font-bold text-warning">Añadidas al presupuesto semanal</p>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="bg-chart-3/10 backdrop-blur-md rounded-xl p-4 border border-chart-3/30 text-left flex items-start gap-4">
                                             <Hourglass size={28} className="text-chart-3-text shrink-0 mt-1" strokeWidth={2} />
                                             <div>
-                                                <p className="text-[12px] font-black uppercase tracking-widest text-chart-3-text mb-1">Fase de Incubación (Recolección de Datos)</p>
-                                                <p className="text-[10px] font-bold text-chart-3-text/80 leading-relaxed">
+                                                <p className="text-body-sm font-black uppercase tracking-widest text-chart-3-text mb-1">Fase de Incubación (Recolección de Datos)</p>
+                                                <p className="text-caption font-bold text-chart-3-text/80 leading-relaxed">
                                                     La sucursal tiene menos de 3 meses. El algoritmo está recopilando silenciosamente los patrones de venta sin afectar el cálculo base. Cuando el historial madure, se activarán las sugerencias automáticas de refuerzo de plantilla.
                                                 </p>
                                             </div>
@@ -712,7 +712,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                             {/* SECCIÓN 1: LIDERAZGO */}
                             <div className="space-y-3">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                                <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                                     <Star size={12} className="text-warning" strokeWidth={3} /> {isAdmin ? 'Dirección Administrativa' : 'Dirección de Sucursal'}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -729,7 +729,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                             {/* SECCIÓN 2: ÁREA OPERATIVA */}
                             <div className="space-y-3 pt-2 mt-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                                <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                                     <User size={12} className="text-brand-text" strokeWidth={3} /> Área Clínica y Operativa
                                 </h4>
 
@@ -758,8 +758,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>
-                                            <p className="text-[12px] font-black text-warning-text">Plaza Sugerida</p>
-                                            <p className="text-[9px] font-bold text-warning uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
+                                            <p className="text-body-sm font-black text-warning-text">Plaza Sugerida</p>
+                                            <p className="text-micro font-bold text-warning uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
                                         </div>
                                     ))}
                                 </div>
@@ -767,7 +767,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                             {/* SECCIÓN 3: CUMPLIMIENTO REGULATORIO — solo farmacias */}
                             {isFarmacia && <div className="space-y-3 pt-2 border-t border-border-card mt-6 pt-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                                <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                                     <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Cumplimiento SRS (DNM/CSSP)
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

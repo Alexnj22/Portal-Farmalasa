@@ -61,7 +61,7 @@ const GlassButton = ({ type = 'submit', onClick, disabled, children, height = 'h
             bg-gradient-to-b from-brand/72 to-brand-hover/78
             backdrop-blur-xl
             border border-border-card hover:border-border-card
-            text-white rounded-[1.5rem] font-black text-[13px] uppercase tracking-widest
+            text-white rounded-[1.5rem] font-black text-body uppercase tracking-widest
             shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
             hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
             flex items-center justify-center gap-2 transition-all duration-200
@@ -98,7 +98,7 @@ const CameraScanner = ({ videoRef }) => (
                 <div className="w-2 h-2 rounded-full bg-brand" />
                 <div className="absolute inset-0 rounded-full bg-brand/40 animate-ping" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-content-2">Apunta la cámara al código de barras</p>
+            <p className="text-caption font-black uppercase tracking-widest text-content-2">Apunta la cámara al código de barras</p>
         </div>
     </div>
 );
@@ -406,23 +406,23 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="flex-1 min-w-0 text-left">
                         {scanFeedback ? (
                             <>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-content-3 truncate">Código: {scanFeedback.code}</p>
-                                <p className={`text-[12px] font-bold truncate ${st==='error'?'text-danger':st==='success'?'text-success':'text-brand-text'}`}>{scanFeedback.message}</p>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3 truncate">Código: {scanFeedback.code}</p>
+                                <p className={`text-body-sm font-bold truncate ${st==='error'?'text-danger':st==='success'?'text-success':'text-brand-text'}`}>{scanFeedback.message}</p>
                             </>
                         ) : cameraActive ? (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Cámara activa</p>
-                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">Escaneando con la cámara</p>
+                                <p className="text-label font-black uppercase tracking-widest text-content-2">Cámara activa</p>
+                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Escaneando con la cámara</p>
                             </>
                         ) : paused ? (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Lector en pausa</p>
-                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
+                                <p className="text-label font-black uppercase tracking-widest text-content-2">Lector en pausa</p>
+                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
                             </>
                         ) : (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-brand-text">Lector activo</p>
-                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">
+                                <p className="text-label font-black uppercase tracking-widest text-brand-text">Lector activo</p>
+                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">
                                     {scanHold ? `Escanea tu carné · usuario en ${scanHoldLeft}s` : 'Escanea tu carné para entrar'}
                                 </p>
                             </>
@@ -459,7 +459,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
             <div className="relative flex items-center gap-3 px-1">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/60 to-white/60" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-content-3 shrink-0">o con tu usuario</span>
+                <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">o con tu usuario</span>
                 <div className="flex-1 h-px bg-gradient-to-l from-transparent via-white/60 to-white/60" />
             </div>
 
@@ -473,13 +473,13 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
-                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[16px]':'pl-12 pr-5 py-4 text-[16px]'} rounded-[1.5rem]`} />
+                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-input':'pl-12 pr-5 py-4 text-input'} rounded-[1.5rem]`} />
                     </div>
                 ))}
                 {error && (
                     <div className="animate-in fade-in slide-in-from-top-1 duration-200 px-4 py-3 bg-danger/10 backdrop-blur-md border border-danger/30 rounded-[1.25rem] flex items-center gap-3">
                         <AlertCircle size={15} className="text-danger shrink-0" strokeWidth={2.5} />
-                        <p className="text-danger text-[10px] font-black uppercase tracking-widest">{error}</p>
+                        <p className="text-danger text-caption font-black uppercase tracking-widest">{error}</p>
                     </div>
                 )}
                 <GlassButton height={compact ? 'h-[46px]' : 'h-[54px]'} disabled={isLoading}>
@@ -507,17 +507,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             <div className="w-14 h-14 rounded-[1.25rem] bg-warning/10 border border-warning/40 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
-                            <h3 className="text-[22px] font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
-                            <p className="text-[10px] font-bold text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
+                            <h3 className="text-title-lg font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
+                            <p className="text-caption font-bold text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
                         </div>
                         <form id="cpf" onSubmit={e=>{e.preventDefault();handleChangePassword();}} className="relative flex flex-col gap-3">
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
                                     <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-10" />
-                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[16px] rounded-[1.25rem]`} />
+                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-input rounded-[1.25rem]`} />
                                 </div>
                             ))}
-                            {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-[12px] font-bold leading-relaxed">{changePassError}</span></div>}
+                            {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-body-sm font-bold leading-relaxed">{changePassError}</span></div>}
                             <GlassButton type="submit" disabled={changePassLoading||!newPassword||!confirmPassword} height="h-[52px]">
                                 {changePassLoading?<Loader2 size={18} className="animate-spin"/>:'Guardar contraseña'}
                             </GlassButton>
@@ -542,8 +542,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     </div>
                 </div>
                 <div className="text-center mt-1">
-                    <p className="font-black text-[20px] text-content tracking-tight leading-none">Portal Farmalasa</p>
-                    <p className="text-[9px] font-black text-brand-text/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
+                    <p className="font-black text-title text-content tracking-tight leading-none">Portal Farmalasa</p>
+                    <p className="text-micro font-black text-brand-text/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
                 </div>
             </div>
 
@@ -561,8 +561,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2.2} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-caption font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
+                                        <p className="text-micro font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
                                 <div className="w-7 h-7 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200">
@@ -582,7 +582,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                         className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-[1.25rem] transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-200 group-hover:scale-110" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
+                        <span className="text-caption font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
                 ))}
             </div>
@@ -607,8 +607,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             </div>
                         </div>
                         <div className="text-center">
-                            <h1 className="text-[32px] font-black text-content tracking-tight leading-none">Portal</h1>
-                            <p className="text-[10px] font-black text-brand-text/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
+                            <h1 className="text-display-lg font-black text-content tracking-tight leading-none">Portal</h1>
+                            <p className="text-caption font-black text-brand-text/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
                         </div>
                     </div>
 
@@ -628,8 +628,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <Clock size={19} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[12px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-body-sm font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
+                                        <p className="text-micro font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-200 group-hover:shadow-[var(--shadow-glow-brand)]">
@@ -647,7 +647,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     <div className="absolute inset-0 bg-gradient-to-b from-white/18 to-transparent pointer-events-none rounded-[2rem]" />
                     <div className="relative flex items-center gap-2 px-1 mb-1">
                         <Sparkles size={11} className="text-chart-3-text" strokeWidth={2} />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Accesos rápidos</p>
                     </div>
                     {[
                         {href:'https://clientesdte.oss.com.sv/farma_salud/dashboard.php',Icon:ShoppingCart,label:'Sistema de Ventas',sub:'DTE · OSS',color:'#0052CC',glow:'rgba(0,82,204,0.22)'},
@@ -665,8 +665,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <Icon size={16} strokeWidth={2} style={{color}} />
                             </div>
                             <div className="relative min-w-0">
-                                <p className="text-[11px] font-black text-content-2 group-hover:text-content transition-colors truncate">{label}</p>
-                                <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide">{sub}</p>
+                                <p className="text-label font-black text-content-2 group-hover:text-content transition-colors truncate">{label}</p>
+                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide">{sub}</p>
                             </div>
                             <ChevronRight size={11} className="relative text-content-3 group-hover:text-content-3 ml-auto shrink-0 transition-all duration-200 group-hover:translate-x-0.5" strokeWidth={2.5} />
                         </a>

@@ -140,8 +140,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">
-                    <p className="text-[11px] font-medium text-content-2 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-[14px] font-bold text-content leading-tight">¿Cómo llegó cada caja?</h3>
+                    <p className="text-label font-medium text-content-2 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
+                    <h3 className="text-body-lg font-bold text-content leading-tight">¿Cómo llegó cada caja?</h3>
                 </div>
                 <button onClick={handleClose} disabled={submitting} className="text-content-3 hover:text-content-2 transition-colors">
                     <X size={15} />
@@ -152,8 +152,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             {hasDraft && (
                 <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-3/10 border border-chart-3/30">
                     <RotateCcw size={12} className="text-chart-3-text shrink-0" />
-                    <span className="text-[11px] text-chart-3-text flex-1">Tenés un borrador guardado</span>
-                    <button onClick={handleRestoreDraft} className="text-[11px] font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
+                    <span className="text-label text-chart-3-text flex-1">Tenés un borrador guardado</span>
+                    <button onClick={handleRestoreDraft} className="text-label font-bold text-chart-3-text hover:text-chart-3-text underline underline-offset-2">
                         Restaurar
                     </button>
                     <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-chart-3-text hover:text-chart-3-text">
@@ -164,7 +164,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">
-                <p className="text-[10px] text-content-2 uppercase tracking-wide font-semibold">
+                <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>
 
@@ -179,12 +179,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                     :                     'bg-danger shadow-[var(--shadow-glow-danger)]';
                         return (
                             <div key={c.num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-body-lg tabular-nums text-white transition-all ${numBg}`}>
                                     {c.num}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[12px] font-bold text-content-2 leading-tight">{c.label}</p>
-                                    <p className="text-[10px] font-medium text-content-3 mt-0.5">{c.hint}</p>
+                                    <p className="text-body-sm font-bold text-content-2 leading-tight">{c.label}</p>
+                                    <p className="text-caption font-medium text-content-3 mt-0.5">{c.hint}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                     {(['ok', 'danada', 'faltante']).map(e => {
@@ -193,7 +193,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                             <button key={e} onClick={() => setEst(c.num, e)}
                                                 className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${est === e ? active : idle}`}>
                                                 <Icon size={14} />
-                                                <span className="text-[9px] font-bold leading-none">{label}</span>
+                                                <span className="text-micro font-bold leading-none">{label}</span>
                                             </button>
                                         );
                                     })}
@@ -205,11 +205,11 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {hayProblemas && (
                     <div>
-                        <label className="text-[10px] font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
+                        <label className="text-caption font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
-                            className="mt-1 w-full text-[16px] rounded-xl border border-divider px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-1/30"
+                            className="mt-1 w-full text-input rounded-xl border border-divider px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-chart-1/30"
                         />
                     </div>
                 )}
@@ -219,17 +219,17 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     <div className="p-3 rounded-2xl border border-warning/30 bg-warning/10 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-warning shrink-0" />
-                            <span className="text-[11px] font-semibold text-warning-text flex-1">
+                            <span className="text-label font-semibold text-warning-text flex-1">
                                 ¿Cuántas cajas de Electrolit no llegaron?
                             </span>
-                            <span className="text-[9px] font-bold text-warning uppercase tracking-wide">
+                            <span className="text-micro font-bold text-warning uppercase tracking-wide">
                                 de {cajasElectrolit}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setElectrolitFaltantes(0)}
-                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitFaltantes === 0
+                                className={`flex-1 text-caption font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitFaltantes === 0
                                     ? 'bg-success-solid text-white border-success shadow-sm'
                                     : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                 ✓ Todas llegaron
@@ -238,10 +238,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 <button
                                     onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}
                                     disabled={(electrolitFaltantes ?? 0) <= 0}
-                                    className="w-7 h-7 rounded-lg bg-surface-card border border-divider text-content-2 font-black text-[14px] flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
+                                    className="w-7 h-7 rounded-lg bg-surface-card border border-divider text-content-2 font-black text-body-lg flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
                                     −
                                 </button>
-                                <span className={`w-8 text-center text-[15px] font-black tabular-nums ${
+                                <span className={`w-8 text-center text-subtitle font-black tabular-nums ${
                                     electrolitFaltantes === null ? 'text-content-3'
                                     : electrolitFaltantes === 0  ? 'text-success'
                                     :                              'text-danger-text'}`}>
@@ -250,13 +250,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 <button
                                     onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}
                                     disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit}
-                                    className="w-7 h-7 rounded-lg bg-surface-card border border-divider text-content-2 font-black text-[14px] flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
+                                    className="w-7 h-7 rounded-lg bg-surface-card border border-divider text-content-2 font-black text-body-lg flex items-center justify-center hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-30">
                                     +
                                 </button>
                             </div>
                         </div>
                         {(electrolitFaltantes ?? 0) > 0 && (
-                            <p className="text-[10px] text-danger-text px-0.5">
+                            <p className="text-caption text-danger-text px-0.5">
                                 ⚠ Se notificará a bodega sobre las {electrolitFaltantes} caja{electrolitFaltantes > 1 ? 's' : ''} faltantes.
                             </p>
                         )}
@@ -268,8 +268,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     <div className="p-3 rounded-2xl border border-chart-3/30 bg-chart-3/10 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <Package size={13} className="text-chart-3-text shrink-0" />
-                            <span className="text-[11px] font-semibold text-chart-3-text flex-1">Cajas especiales</span>
-                            <span className="text-[9px] font-bold text-chart-3-text uppercase tracking-wide">
+                            <span className="text-label font-semibold text-chart-3-text flex-1">Cajas especiales</span>
+                            <span className="text-micro font-bold text-chart-3-text uppercase tracking-wide">
                                 {cajasEspeciales.length} caja{cajasEspeciales.length !== 1 ? 's' : ''}
                             </span>
                         </div>
@@ -278,15 +278,15 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 const est = espEstados[e.label] ?? 'ok';
                                 return (
                                     <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'}`}>
-                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{e.label}</span>
-                                        <span className="flex-1 text-[10px] text-content-2 leading-tight">{e.product_name}</span>
+                                        <span className={`text-label font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{e.label}</span>
+                                        <span className="flex-1 text-caption text-content-2 leading-tight">{e.product_name}</span>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
+                                                className={`text-micro font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
+                                                className={`text-micro font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -295,7 +295,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             })}
                         </div>
                         {espFaltantes.length > 0 && (
-                            <p className="text-[10px] text-danger-text px-0.5">⚠ Faltante{espFaltantes.length > 1 ? 's' : ''}: {espFaltantes.join(', ')}</p>
+                            <p className="text-caption text-danger-text px-0.5">⚠ Faltante{espFaltantes.length > 1 ? 's' : ''}: {espFaltantes.join(', ')}</p>
                         )}
                     </div>
                 )}
@@ -304,13 +304,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 <div>
                     <div className="flex items-center gap-2 p-2.5 rounded-xl border border-warning/30 bg-warning/10">
                         <HelpCircle size={13} className="text-warning shrink-0" />
-                        <span className="text-[11px] text-content-2 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
+                        <span className="text-label text-content-2 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
-                                className="w-6 h-6 rounded-lg bg-surface-card border border-warning/30 text-content-2 font-black text-[13px] flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
-                            <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-warning' : 'text-content-3'}`}>{cajasExtra}</span>
+                                className="w-6 h-6 rounded-lg bg-surface-card border border-warning/30 text-content-2 font-black text-body flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
+                            <span className={`w-6 text-center text-body font-black tabular-nums ${cajasExtra > 0 ? 'text-warning' : 'text-content-3'}`}>{cajasExtra}</span>
                             <button onClick={() => setCajasExtra(n => n + 1)}
-                                className="w-6 h-6 rounded-lg bg-surface-card border border-warning/30 text-content-2 font-black text-[13px] flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all">+</button>
+                                className="w-6 h-6 rounded-lg bg-surface-card border border-warning/30 text-content-2 font-black text-body flex items-center justify-center hover:bg-warning/10 active:scale-[0.97] transition-all">+</button>
                         </div>
                     </div>
                     {cajasExtra > 0 && (
@@ -320,7 +320,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 return (
                                     <div key={i} className="p-3 rounded-xl border border-warning/30 bg-surface-card space-y-2">
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="text-[10px] font-bold text-warning-text">Caja extra {i + 1}</span>
+                                            <span className="text-caption font-bold text-warning-text">Caja extra {i + 1}</span>
                                             <label className="flex items-center gap-1.5 cursor-pointer select-none">
                                                 <input
                                                     type="checkbox"
@@ -328,7 +328,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
                                                     className="w-3.5 h-3.5 rounded accent-warning"
                                                 />
-                                                <span className="text-[10px] text-content-3">Sin rotulación</span>
+                                                <span className="text-caption text-content-3">Sin rotulación</span>
                                             </label>
                                         </div>
                                         {!d.sinRotulacion && (
@@ -347,12 +347,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     value={d.cajaNum ?? ''}
                                                     onChange={e => { setExtraField(i, 'cajaNum', e.target.value); setExtraError(null); }}
                                                     placeholder="# de caja"
-                                                    className={`w-32 text-[16px] rounded-lg border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-warning/40 bg-surface-card ${extraError && !d.cajaNum?.trim() ? 'border-danger' : 'border-divider'}`}
+                                                    className={`w-32 text-input rounded-lg border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-warning/40 bg-surface-card ${extraError && !d.cajaNum?.trim() ? 'border-danger' : 'border-divider'}`}
                                                 />
                                             </div>
                                         )}
                                         {d.sinRotulacion && (
-                                            <p className="text-[10px] text-warning italic">Se reportará a bodega como caja sin identificar.</p>
+                                            <p className="text-caption text-warning italic">Se reportará a bodega como caja sin identificar.</p>
                                         )}
                                     </div>
                                 );
@@ -367,39 +367,39 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 {(hayProblemas || cajasExtra > 0) && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
                                 ⚠ Dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')}
                             </span>
                         )}
                         {cajasFaltantes.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">
                                 ✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}
                             </span>
                         )}
                         {cajasExtra > 0 && (
-                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-chart-7/10 text-chart-7-text border border-chart-7/20">
+                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-chart-7/10 text-chart-7-text border border-chart-7/20">
                                 + {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}
                             </span>
                         )}
                     </div>
                 )}
                 {extraError && (
-                    <p className="text-[10px] text-danger font-medium flex items-center gap-1">
+                    <p className="text-caption text-danger font-medium flex items-center gap-1">
                         <span>⚠</span> {extraError}
                     </p>
                 )}
                 {Object.keys(estados).length === 0 && cajas.length > 0 && (
-                    <p className="text-[10px] text-content-3 text-center pb-1">
+                    <p className="text-caption text-content-3 text-center pb-1">
                         Las cajas sin marcar se registran como <strong>OK</strong>
                     </p>
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <button onClick={handleClose} disabled={submitting}
-                        className="text-[11px] font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
+                        className="text-label font-semibold px-4 py-2 rounded-xl text-content-3 hover:bg-surface-card-hover transition-all">
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
+                        className="text-label font-bold px-5 py-2 rounded-xl bg-brand text-white hover:bg-brand-hover disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
                         {Object.keys(estados).length === 0 && cajas.length > 0
                             ? '✓ Todas llegaron OK'

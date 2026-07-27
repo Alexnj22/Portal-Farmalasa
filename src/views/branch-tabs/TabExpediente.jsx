@@ -123,12 +123,12 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                                 <Sparkles size={10} strokeWidth={2.5} className="text-chart-3-text" />
                                             </div>
                                         </div>
-                                        <h5 className="text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Análisis de Documento</h5>
+                                        <h5 className="text-caption font-black uppercase tracking-widest bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Análisis de Documento</h5>
                                     </div>
 
                                     {/* Contenido */}
                                     <div className="relative z-10 max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
-                                        <p className="text-[11px] font-semibold text-content-2 leading-relaxed text-justify pl-3">
+                                        <p className="text-label font-semibold text-content-2 leading-relaxed text-justify pl-3">
                                             {doc.aiSummary}
                                         </p>
                                     </div>
@@ -139,34 +139,34 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 </div>
 
                 {/* Píldora de Estado */}
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-20`}>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-20`}>
                     <StatusIcon size={12} strokeWidth={2.5} /> {status.label}
                 </div>
             </div>
 
             <div className="flex-1 relative z-10">
-                <h4 className={`text-[13px] font-black leading-tight mb-1 pr-2 ${isMissing ? 'text-content-2' : 'text-content'}`}>
+                <h4 className={`text-body font-black leading-tight mb-1 pr-2 ${isMissing ? 'text-content-2' : 'text-content'}`}>
                     {doc.title}
                 </h4>
 
                 <div className="flex flex-col gap-1.5 mt-2">
                     {effectiveIssueDate && (
-                        <p className="text-[9px] font-bold text-content-3 flex items-center gap-1">
-                            <span className="text-content-2 uppercase tracking-widest text-[9px]">Emisión:</span> {formatDate(effectiveIssueDate)}
+                        <p className="text-micro font-bold text-content-3 flex items-center gap-1">
+                            <span className="text-content-2 uppercase tracking-widest text-micro">Emisión:</span> {formatDate(effectiveIssueDate)}
                         </p>
                     )}
                     {effectiveExpDate && (
-                        <p className={`text-[10px] font-bold flex items-center gap-1.5 ${status.type === 'EXPIRED' ? 'text-danger' : 'text-content-2'}`}>
+                        <p className={`text-caption font-bold flex items-center gap-1.5 ${status.type === 'EXPIRED' ? 'text-danger' : 'text-content-2'}`}>
                             <Calendar size={12} strokeWidth={2.5} className={status.type === 'EXPIRED' ? 'text-danger' : 'text-content-3'} />
                             {formatDate(effectiveExpDate)}
                         </p>
                     )}
 
                     {isMissing && doc.hasIssueDate && !effectiveIssueDate && (
-                        <p className="text-[9px] font-bold text-content-3 mt-0.5 flex items-center gap-1"><AlertCircle size={10} /> Requiere Emisión</p>
+                        <p className="text-micro font-bold text-content-3 mt-0.5 flex items-center gap-1"><AlertCircle size={10} /> Requiere Emisión</p>
                     )}
                     {isMissing && (doc.hasExpiration || doc.expDate !== undefined) && !effectiveExpDate && (
-                        <p className="text-[9px] font-bold text-content-3 mt-0.5 flex items-center gap-1"><Clock size={10} /> Requiere Vencimiento</p>
+                        <p className="text-micro font-bold text-content-3 mt-0.5 flex items-center gap-1"><Clock size={10} /> Requiere Vencimiento</p>
                     )}
                 </div>
             </div>
@@ -175,7 +175,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="mt-4 relative z-10">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                        className="w-full h-10 rounded-xl bg-chart-1/10 text-brand-text font-black text-[10px] uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
+                        className="w-full h-10 rounded-xl bg-chart-1/10 text-brand-text font-black text-caption uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
                     >
                         <UploadCloud size={16} strokeWidth={2.5} /> Subir Archivo
                     </button>
@@ -367,7 +367,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <div className="min-w-0">
                         <h3 className="font-black text-content uppercase tracking-tight text-xl">Expediente Digital</h3>
-                        <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
+                        <p className="text-label font-bold text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
                     </div>
 
                     <div className="hidden sm:block w-px h-8 bg-content-3/60 shrink-0"></div>
@@ -376,8 +376,8 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand-text'} />
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center w-20">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-content-3 leading-none">Subidos</span>
-                                <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand-text'}`}>{progress}%</span>
+                                <span className="text-micro font-black uppercase tracking-widest text-content-3 leading-none">Subidos</span>
+                                <span className={`text-micro font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand-text'}`}>{progress}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
                                 <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-success' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
@@ -392,7 +392,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={() => setShowAllDocs(!showAllDocs)}
-                            className={`h-10 px-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border flex items-center gap-1.5 transform hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ${showAllDocs
+                            className={`h-10 px-4 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-300 border flex items-center gap-1.5 transform hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ${showAllDocs
                                 ? 'bg-surface-card backdrop-blur-xl text-content border-border-card'
                                 : 'bg-surface-card backdrop-blur-xl text-content-3 border-border-card'
                                 }`}
@@ -402,7 +402,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={() => openModal('addCustomDocument', liveBranch)}
-                            className="h-10 px-4 rounded-full bg-surface-card backdrop-blur-xl text-content-2 font-black text-[10px] uppercase tracking-widest border border-border-card flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-brand-text active:scale-[0.97] shrink-0"
+                            className="h-10 px-4 rounded-full bg-surface-card backdrop-blur-xl text-content-2 font-black text-caption uppercase tracking-widest border border-border-card flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-brand-text active:scale-[0.97] shrink-0"
                         >
                             <Plus size={16} strokeWidth={3} /> Nuevo
                         </button>
@@ -429,7 +429,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Buscar documento..."
-                                className="w-full h-10 pl-11 pr-10 bg-transparent text-[16px] font-bold text-content-2 placeholder:text-content-3 focus:outline-none focus:ring-0 transition-all"
+                                className="w-full h-10 pl-11 pr-10 bg-transparent text-input font-bold text-content-2 placeholder:text-content-3 focus:outline-none focus:ring-0 transition-all"
                             />
                             <button
                                 onClick={handleSearchClose}
@@ -449,14 +449,14 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <>
                             <Search size={40} className="text-content-3 mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-content-2">No se encontraron documentos</p>
-                            <p className="text-[11px] font-bold text-content-3 mt-1">Ningún documento coincide con "{searchTerm}"</p>
+                            <p className="text-label font-bold text-content-3 mt-1">Ningún documento coincide con "{searchTerm}"</p>
                         </>
                     ) : (
                         <>
                             <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-success">Expediente impecable</p>
-                            <p className="text-[11px] font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand-text bg-surface-card border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+                            <p className="text-label font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-caption font-black uppercase tracking-widest text-brand-text bg-surface-card border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>
@@ -467,7 +467,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 1: LICENCIAS Y PERMISOS */}
             {(permisosDocs.length > 0 || customDocsByCategory['Permisos y Licencias']?.length > 0) && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Licencias y Permisos
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -480,7 +480,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 2: CREDENCIALES DE PERSONAL */}
             {(personalDocs.length > 0 || customDocsByCategory['Recursos Humanos']?.length > 0) && (
                 <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Users size={12} className="text-chart-3-text" strokeWidth={3} /> Credenciales de Personal
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -493,7 +493,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 3: INFRAESTRUCTURA Y OPERATIVOS */}
             {(infraDocs.length > 0 || customDocsByCategory['Operativo y Logística']?.length > 0) && (
                 <div className="space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                         <Building2 size={12} className="text-warning" strokeWidth={3} /> Infraestructura y Locales
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -510,7 +510,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                 return (
                     <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
+                        <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
                             <Tags size={12} className="text-brand-text" strokeWidth={3} /> {category}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

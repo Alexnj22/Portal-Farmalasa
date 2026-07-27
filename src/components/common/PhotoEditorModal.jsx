@@ -342,10 +342,10 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                 {/* ── Header ── */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-divider shrink-0">
                     <div>
-                        <p className="text-[14px] font-black text-content">
+                        <p className="text-body-lg font-black text-content">
                             {brushMode ? 'Retocar fondo' : 'Editar foto'}
                         </p>
-                        <p className="text-[11px] text-content-3 mt-0.5">
+                        <p className="text-label text-content-3 mt-0.5">
                             {brushMode
                                 ? 'Pinta para borrar o restaurar áreas · usa zoom para precisión'
                                 : 'Ajusta el encuadre y aplica ediciones'}
@@ -437,14 +437,14 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 <div className="flex rounded-2xl border border-divider p-0.5 gap-0.5">
                                     <button
                                         onClick={() => setBrushType('erase')}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold transition-all ${
                                             brushType === 'erase' ? 'bg-chart-8-solid text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <Eraser size={11} strokeWidth={2} /> Borrar
                                     </button>
                                     <button
                                         onClick={() => setBrushType('restore')}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold transition-all ${
                                             brushType === 'restore' ? 'bg-brand text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <Paintbrush size={11} strokeWidth={2} /> Restaurar
@@ -452,7 +452,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 </div>
                                 <button
                                     onClick={exitBrushMode}
-                                    className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-success/10 text-success border border-success/30 text-[11px] font-bold hover:bg-success/20 transition-colors">
+                                    className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-success/10 text-success border border-success/30 text-label font-bold hover:bg-success/20 transition-colors">
                                     <Check size={11} strokeWidth={2.5} /> Listo
                                 </button>
                             </div>
@@ -461,7 +461,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             <div className="flex items-center gap-3">
 
                                 {/* Shape selector */}
-                                <span className="text-[10px] font-bold text-content-3 shrink-0">Forma</span>
+                                <span className="text-caption font-bold text-content-3 shrink-0">Forma</span>
                                 <div className="flex rounded-xl border border-divider p-0.5 gap-0.5">
                                     {/* Round */}
                                     <button
@@ -503,14 +503,14 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
                                 {/* Zoom */}
                                 <div className="ml-auto flex items-center gap-1">
-                                    <span className="text-[10px] font-bold text-content-3 shrink-0 mr-1">Zoom</span>
+                                    <span className="text-caption font-bold text-content-3 shrink-0 mr-1">Zoom</span>
                                     <button
                                         onClick={handleZoomOut}
                                         disabled={brushZoom === ZOOM_LEVELS[0]}
                                         className="w-6 h-6 flex items-center justify-center rounded-lg border border-divider text-content-3 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
                                         <Minus size={10} strokeWidth={2.5} />
                                     </button>
-                                    <span className="text-[11px] font-black text-content-2 w-8 text-center tabular-nums">
+                                    <span className="text-label font-black text-content-2 w-8 text-center tabular-nums">
                                         {brushZoom}×
                                     </span>
                                     <button
@@ -553,17 +553,17 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
                             {/* Rotation */}
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-content-3 shrink-0">Rotar</span>
+                                <span className="text-caption font-bold text-content-3 shrink-0">Rotar</span>
                                 <button onClick={rotateLeft}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-[11px] font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-label font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
                                     <RotateCcw size={11} strokeWidth={2.5} /> 90° izq
                                 </button>
                                 <button onClick={rotateRight}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-[11px] font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-label font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
                                     <RotateCw size={11} strokeWidth={2.5} /> 90° der
                                 </button>
                                 {rotation !== 0 && (
-                                    <span className="ml-auto text-[10px] font-bold text-brand-text">{rotation}°</span>
+                                    <span className="ml-auto text-caption font-bold text-brand-text">{rotation}°</span>
                                 )}
                             </div>
 
@@ -572,7 +572,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 <button
                                     onClick={handleRemoveBg}
                                     disabled={bgRemoving || bgRemoved}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[12px] font-bold transition-all border ${
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-body-sm font-bold transition-all border ${
                                         bgRemoved
                                             ? 'bg-success/10 text-success border-success/30 cursor-default'
                                             : bgRemoving
@@ -594,7 +594,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     <button
                                         onClick={() => setBrushMode(true)}
                                         title="Retocar bordes del fondo con pincel"
-                                        className="flex items-center gap-1.5 px-3 rounded-2xl border border-chart-3/30 text-chart-3-text hover:bg-chart-3/10 text-[11px] font-bold transition-all whitespace-nowrap">
+                                        className="flex items-center gap-1.5 px-3 rounded-2xl border border-chart-3/30 text-chart-3-text hover:bg-chart-3/10 text-label font-bold transition-all whitespace-nowrap">
                                         <Paintbrush size={12} /> Retocar
                                     </button>
                                 )}
@@ -610,7 +610,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             </div>
 
                             {bgRemoving && (
-                                <p className="text-[10px] text-content-3 text-center -mt-1">
+                                <p className="text-caption text-content-3 text-center -mt-1">
                                     La primera vez descarga el modelo — puede tardar unos segundos.
                                 </p>
                             )}
@@ -622,13 +622,13 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                 {!brushMode && (
                     <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-divider shrink-0">
                         <button onClick={onCancel}
-                            className="px-4 py-2 rounded-full text-[12px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
+                            className="px-4 py-2 rounded-full text-body-sm font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
                             Cancelar
                         </button>
                         <button
                             onClick={handleConfirm}
                             disabled={confirming || !cropPx}
-                            className="px-5 py-2 rounded-full text-[12px] font-bold text-white bg-brand hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
+                            className="px-5 py-2 rounded-full text-body-sm font-bold text-white bg-brand hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
                             {confirming
                                 ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>
                                 : 'Guardar foto'}

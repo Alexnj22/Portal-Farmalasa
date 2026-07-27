@@ -45,7 +45,7 @@ export default function OfflineBanner() {
             {isWarning
                 ? <WifiOff size={14} strokeWidth={2.5} className="shrink-0" />
                 : <Wifi    size={14} strokeWidth={2.5} className="shrink-0" />}
-            <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap">
+            <span className="text-label font-black uppercase tracking-widest whitespace-nowrap">
                 {isWarning ? 'Sin conexión' : 'Conexión restaurada'}
             </span>
         </div>

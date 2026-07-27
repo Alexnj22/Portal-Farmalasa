@@ -30,20 +30,20 @@ const FormEditContact = ({ formData, onClose }) => {
         <div className="flex flex-col gap-4 p-1">
             {FIELDS.map(({ key, label, placeholder }) => (
                 <div key={key}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
+                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
                     <div className="relative flex items-center">
                         <Phone size={14} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
                         <input
                             value={form[key]}
                             onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                             placeholder={placeholder}
-                            className="w-full pl-10 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-[16px] font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full pl-10 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-input font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                 </div>
             ))}
             <button type="button" onClick={save} disabled={loading}
-                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
             </button>
         </div>

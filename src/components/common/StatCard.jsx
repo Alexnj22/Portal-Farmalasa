@@ -87,7 +87,7 @@ export default function StatCard({
                 {/* Label -- arriba del numero */}
                 {loading
                     ? <div className="skeleton h-[9px] w-14 mb-1.5 rounded" />
-                    : <span className="text-[10px] font-bold uppercase tracking-wider text-content-3 leading-none mb-1 truncate">
+                    : <span className="text-caption font-bold uppercase tracking-wider text-content-3 leading-none mb-1 truncate">
                         {label}
                       </span>
                 }
@@ -95,7 +95,7 @@ export default function StatCard({
                 {/* Valor / numero principal */}
                 {loading
                     ? <div className="skeleton h-[22px] w-12 rounded" />
-                    : <span className={`text-[18px] font-black tabular-nums leading-none truncate ${valueCls}`}>
+                    : <span className={`text-title-sm font-black tabular-nums leading-none truncate ${valueCls}`}>
                         {value ?? 0}
                       </span>
                 }
@@ -106,7 +106,7 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                <span className="block text-[9px] text-content-3 font-medium leading-none mt-0.5 min-h-[13px] truncate">
+                <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] truncate">
                     {!loading ? sub : ''}
                 </span>
             </div>

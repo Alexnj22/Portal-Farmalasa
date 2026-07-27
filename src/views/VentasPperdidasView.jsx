@@ -116,11 +116,11 @@ export default function VentasPperdidasView() {
                 {/* Tab explanation */}
                 <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
                     <ShoppingCart size={13} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2} />
-                    <p className="text-[11px] text-content-2 font-medium leading-snug flex-1">{TAB_HELP[activeTab]}</p>
+                    <p className="text-label text-content-2 font-medium leading-snug flex-1">{TAB_HELP[activeTab]}</p>
                     {rows.length > 0 && (
                         <button
                             onClick={handleExportCsv}
-                            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-card-hover border border-divider text-content-2 text-[10px] font-black transition-colors"
+                            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-card hover:bg-surface-card-hover border border-divider text-content-2 text-caption font-black transition-colors"
                         >
                             <Download size={11} strokeWidth={2.5} />
                             CSV
@@ -131,7 +131,7 @@ export default function VentasPperdidasView() {
                 {/* Top requested summary (pending only) */}
                 {summary.length > 0 && (
                     <div className="flex flex-col gap-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-content-3 px-1">
+                        <p className="text-caption font-black uppercase tracking-widest text-content-3 px-1">
                             Más solicitados
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -141,9 +141,9 @@ export default function VentasPperdidasView() {
                                     className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-danger/10 border border-danger/30"
                                 >
                                     <TrendingDown size={11} className="text-danger-text" strokeWidth={2.5} />
-                                    <span className="text-[11px] font-black text-danger-text max-w-[180px] truncate">{s.nombre}</span>
-                                    <span className="text-[10px] font-bold text-danger-text tabular-nums">{s.total} uds</span>
-                                    <span className="text-[9px] font-semibold text-danger-text">({s.veces}×)</span>
+                                    <span className="text-label font-black text-danger-text max-w-[180px] truncate">{s.nombre}</span>
+                                    <span className="text-caption font-bold text-danger-text tabular-nums">{s.total} uds</span>
+                                    <span className="text-micro font-semibold text-danger-text">({s.veces}×)</span>
                                 </div>
                             ))}
                         </div>
@@ -160,7 +160,7 @@ export default function VentasPperdidasView() {
                         <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border border-divider flex items-center justify-center">
                             <CheckCircle2 size={22} strokeWidth={1.5} className="text-content-3" />
                         </div>
-                        <p className="text-[12px] text-content-3 font-semibold">
+                        <p className="text-body-sm text-content-3 font-semibold">
                             {activeTab === 'pendiente'
                                 ? 'Sin ventas perdidas pendientes'
                                 : 'Sin registros procesados'}
@@ -191,24 +191,24 @@ export default function VentasPperdidasView() {
                                     <div className="flex items-start gap-3 px-4 py-3">
                                         {/* Quantity bubble */}
                                         <div className="shrink-0 w-10 h-10 rounded-xl bg-surface-card-hover border border-divider flex flex-col items-center justify-center">
-                                            <span className="text-[14px] font-black text-content leading-none tabular-nums">{r.cantidad}</span>
-                                            <span className="text-[9px] font-bold text-content-3 leading-none mt-0.5">uds</span>
+                                            <span className="text-body-lg font-black text-content leading-none tabular-nums">{r.cantidad}</span>
+                                            <span className="text-micro font-bold text-content-3 leading-none mt-0.5">uds</span>
                                         </div>
 
                                         <div className="flex-1 min-w-0">
                                             {/* Product name */}
-                                            <p className="text-[12px] font-black text-content leading-tight">{nombre}</p>
+                                            <p className="text-body-sm font-black text-content leading-tight">{nombre}</p>
 
                                             {/* Searched term if different */}
                                             {searched && (
-                                                <p className="text-[9px] text-content-3 mt-0.5">buscado: "{searched}"</p>
+                                                <p className="text-micro text-content-3 mt-0.5">buscado: "{searched}"</p>
                                             )}
 
                                             {/* Principio activo */}
                                             {r.principio_activo && (
                                                 <div className="flex items-center gap-1 mt-1.5">
                                                     <FlaskConical size={9} className="text-chart-3-text shrink-0" strokeWidth={2} />
-                                                    <span className="text-[10px] font-semibold text-chart-3-text">{r.principio_activo}</span>
+                                                    <span className="text-caption font-semibold text-chart-3-text">{r.principio_activo}</span>
                                                 </div>
                                             )}
 
@@ -216,31 +216,31 @@ export default function VentasPperdidasView() {
                                             {r.laboratorio && (
                                                 <div className="flex items-center gap-1 mt-0.5">
                                                     <Building2 size={9} className="text-content-3 shrink-0" strokeWidth={2} />
-                                                    <span className="text-[10px] text-content-3 font-medium">{r.laboratorio}</span>
+                                                    <span className="text-caption text-content-3 font-medium">{r.laboratorio}</span>
                                                 </div>
                                             )}
 
                                             {/* Meta row */}
                                             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-2">
                                                 {branch && (
-                                                    <span className="flex items-center gap-1 text-[9px] text-content-3 font-semibold">
+                                                    <span className="flex items-center gap-1 text-micro text-content-3 font-semibold">
                                                         <Building2 size={8} strokeWidth={2} className="text-content-3" />
                                                         {branch}
                                                     </span>
                                                 )}
                                                 {reporter && (
-                                                    <span className="flex items-center gap-1 text-[9px] text-content-3">
+                                                    <span className="flex items-center gap-1 text-micro text-content-3">
                                                         {reporterPic ? (
                                                             <img src={reporterPic} alt={reporter} className="w-3.5 h-3.5 rounded-full object-cover border border-divider shrink-0" />
                                                         ) : (
                                                             <span className="w-3.5 h-3.5 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
-                                                                <span className="text-[9px] font-black text-content-3 leading-none">{reporter[0]}</span>
+                                                                <span className="text-micro font-black text-content-3 leading-none">{reporter[0]}</span>
                                                             </span>
                                                         )}
                                                         {reporter}
                                                     </span>
                                                 )}
-                                                <span className="flex items-center gap-1 text-[9px] text-content-3">
+                                                <span className="flex items-center gap-1 text-micro text-content-3">
                                                     <Clock size={8} strokeWidth={2} />
                                                     {fecha}
                                                 </span>
@@ -252,14 +252,14 @@ export default function VentasPperdidasView() {
                                             <button
                                                 onClick={() => markProcessed(r.id)}
                                                 disabled={processing === r.id}
-                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 hover:bg-success/10 border border-success/30 text-success-text text-[10px] font-black transition-colors disabled:opacity-40 self-start mt-0.5"
+                                                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 hover:bg-success/10 border border-success/30 text-success-text text-caption font-black transition-colors disabled:opacity-40 self-start mt-0.5"
                                             >
                                                 <CheckCircle2 size={11} strokeWidth={2.5} />
                                                 {processing === r.id ? '...' : 'Listo'}
                                             </button>
                                         )}
                                         {activeTab === 'procesado' && (
-                                            <span className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-success/10 border border-success/30 text-success text-[9px] font-black self-start mt-0.5">
+                                            <span className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-success/10 border border-success/30 text-success text-micro font-black self-start mt-0.5">
                                                 <CheckCircle2 size={9} strokeWidth={2.5} />
                                                 Listo
                                             </span>

@@ -68,11 +68,11 @@ function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, 
                 {loading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Icon size={15} className={iconCls} />}
             </div>
             <div className="text-left min-w-0">
-                <div className={`text-[22px] font-black leading-none tabular-nums ${countCls}`}>
+                <div className={`text-title-lg font-black leading-none tabular-nums ${countCls}`}>
                     {loading ? <span className="text-content-3">–</span> : (value ?? 0).toLocaleString()}
                 </div>
-                <div className="text-[10px] font-bold leading-tight text-content-2">{label}</div>
-                {sub && <div className="text-[9px] text-content-3">{sub}</div>}
+                <div className="text-caption font-bold leading-tight text-content-2">{label}</div>
+                {sub && <div className="text-micro text-content-3">{sub}</div>}
             </div>
             {active && onClick && <X size={11} className="text-content-3 ml-auto shrink-0" />}
         </Tag>
@@ -164,24 +164,24 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <p className="font-semibold text-content text-[14px] leading-tight">{product.nombre}</p>
+                    <p className="font-semibold text-content text-body-lg leading-tight">{product.nombre}</p>
                     {product.laboratorio_nombre && (
-                        <p className="text-[11px] text-content-3 mt-0.5">{product.laboratorio_nombre}</p>
+                        <p className="text-label text-content-3 mt-0.5">{product.laboratorio_nombre}</p>
                     )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {saving && (
-                        <span className="flex items-center gap-1 text-[11px] text-content-3">
+                        <span className="flex items-center gap-1 text-label text-content-3">
                             <Loader2 size={11} className="animate-spin" /> Guardando…
                         </span>
                     )}
                     {!saving && justSaved && (
-                        <span className="flex items-center gap-1 text-[11px] text-success font-semibold">
+                        <span className="flex items-center gap-1 text-label text-success font-semibold">
                             <Check size={11} /> Guardado
                         </span>
                     )}
                     {!saving && !justSaved && saveError && (
-                        <span className="text-[11px] text-danger flex items-center gap-1 max-w-[260px]">
+                        <span className="text-label text-danger flex items-center gap-1 max-w-[260px]">
                             <AlertTriangle size={10} className="shrink-0" /> {saveError}
                         </span>
                     )}
@@ -194,16 +194,16 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Presentaciones del producto */}
             <div>
-                <p className="text-[9px] text-content-2 uppercase tracking-widest mb-2 font-bold">
+                <p className="text-micro text-content-2 uppercase tracking-widest mb-2 font-bold">
                     Presentación de despacho
                     <span className="normal-case tracking-normal font-medium text-content-3"> · se aplica automáticamente</span>
                 </p>
                 {loadingPres ? (
-                    <div className="flex items-center gap-2 text-[11px] text-content-3">
+                    <div className="flex items-center gap-2 text-label text-content-3">
                         <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
                     </div>
                 ) : dedupedPres.length === 0 ? (
-                    <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text">
+                    <div className="px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
                     </div>
                 ) : (
@@ -224,8 +224,8 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 >
                                     <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
                                     <div>
-                                        <p className="text-[12px] font-semibold leading-tight">{tipo}</p>
-                                        <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-content-3'}`}>
+                                        <p className="text-body-sm font-semibold leading-tight">{tipo}</p>
+                                        <p className={`text-micro leading-tight ${isActive ? 'text-white/70' : 'text-content-3'}`}>
                                             {pres.factor > 1 ? `×${pres.factor} unidades` : 'unidad base'}
                                         </p>
                                     </div>
@@ -247,18 +247,18 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     >
                         {/* Etiqueta en PDF — pills preset, junto a la presentación */}
                         <div>
-                            <p className="text-[9px] text-content-2 uppercase tracking-widest mb-1 font-bold">
+                            <p className="text-micro text-content-2 uppercase tracking-widest mb-1 font-bold">
                                 Mostrar en PDF como
                                 <span className="normal-case tracking-normal font-medium text-content-3"> · opcional</span>
                             </p>
-                            <p className="text-[10px] text-content-3 mb-2 leading-snug">
+                            <p className="text-caption text-content-3 mb-2 leading-snug">
                                 Activa solo para productos en <strong className="text-content-3">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
                             </p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {['CAJA', 'ESTUCHE', 'BOLSA'].map(label => (
                                     <button key={label} type="button"
                                         onClick={() => selectLabel(label)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-body-sm font-semibold border-2 transition-all ${
                                             vals.dispatch_label === label
                                                 ? 'bg-chart-8-solid border-chart-8 text-white shadow-md'
                                                 : 'bg-surface-card border-divider text-content-3 hover:border-chart-8/50 hover:text-content-2'
@@ -270,7 +270,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 ))}
                                 {vals.dispatch_label && (
                                     <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-divider text-content-3 hover:text-danger-text hover:border-danger/30 transition-all bg-surface-card">
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-label border border-divider text-content-3 hover:text-danger-text hover:border-danger/30 transition-all bg-surface-card">
                                         <X size={10} /> quitar
                                     </button>
                                 )}
@@ -279,12 +279,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
                         {/* Por lote */}
                         <div className="space-y-2">
-                            <p className="text-[9px] text-content-3 uppercase tracking-widest font-bold">Por lote</p>
+                            <p className="text-micro text-content-3 uppercase tracking-widest font-bold">Por lote</p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {MULTIPLO_PILLS.map(n => (
                                     <button key={n} type="button"
                                         onClick={() => selectMultiplo(n)}
-                                        className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
+                                        className={`px-3 py-1.5 rounded-xl text-body-sm font-semibold border-2 transition-all ${
                                             multiplo === n
                                                 ? 'bg-chart-1-solid border-chart-1 text-white shadow-md'
                                                 : 'bg-surface-card border-border-card text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
@@ -297,12 +297,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         const n = parseInt(e.target.value);
                                         if (n > 0) selectMultiplo(n);
                                     }}
-                                    className="w-20 border border-divider rounded-xl px-2 py-1.5 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card"
+                                    className="w-20 border border-divider rounded-xl px-2 py-1.5 text-input focus:outline-none focus:border-chart-1 bg-surface-card"
                                 />
                             </div>
 
                             {/* Ejemplo de redondeo — corregido según etiqueta */}
-                            <div className="px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-[11px] text-chart-1-text">
+                            <div className="px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-label text-chart-1-text">
                                 <span className="font-medium">Ejemplo:</span> necesidad de 7 und.
                                 {' → '}despacha{' '}
                                 {vals.dispatch_label && multiplo > 1 ? (
@@ -319,7 +319,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             {/* Caja especial — aplica siempre que haya presentación */}
             {vals.dispatch_id_presentacion && (
                 <div>
-                    <p className="text-[9px] text-content-2 uppercase tracking-widest mb-2 font-bold">
+                    <p className="text-micro text-content-2 uppercase tracking-widest mb-2 font-bold">
                         Caja especial
                         <span className="normal-case tracking-normal font-medium text-content-3"> · producto va fuera de cajas normales</span>
                     </p>
@@ -328,7 +328,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             const next = { ...vals, caja_especial: !vals.caja_especial };
                             setVals(next); onApply(next);
                         }}
-                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-[12px] font-semibold ${
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-body-sm font-semibold ${
                             vals.caja_especial
                                 ? 'bg-chart-6-solid border-chart-6 text-white shadow-md'
                                 : 'bg-surface-card border-border-card text-content-3 hover:border-chart-6/40 hover:text-chart-6-text'
@@ -337,7 +337,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         {vals.caja_especial ? 'Caja especial activa — E1, E2…' : 'Activar caja especial'}
                     </button>
                     {vals.caja_especial && (
-                        <p className="text-[10px] text-chart-6-text mt-1.5 px-0.5">
+                        <p className="text-caption text-chart-6-text mt-1.5 px-0.5">
                             Cada unidad en el pedido recibe una etiqueta E1, E2… independiente.
                         </p>
                     )}
@@ -347,14 +347,14 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             {/* Botón quitar regla — rojo por defecto */}
             {vals.dispatch_id_presentacion && (
                 <button onClick={clearRule} disabled={saving}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-danger/10 border-danger/30 text-danger-text hover:border-danger hover:bg-danger/10 hover:text-danger-text transition-all text-[12px]">
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-danger/10 border-danger/30 text-danger-text hover:border-danger hover:bg-danger/10 hover:text-danger-text transition-all text-body-sm">
                     <Ban size={13} /> Quitar regla de despacho
                 </button>
             )}
 
             {/* Notas */}
             <div>
-                <p className="text-[9px] text-content-3 uppercase tracking-widest mb-1.5 font-bold">
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-1.5 font-bold">
                     Notas internas
                     <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir del campo</span>
                 </p>
@@ -365,7 +365,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
                     onBlur={commitNotes}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                    className="w-full border border-divider rounded-xl px-3 py-2 text-[16px] focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-divider rounded-xl px-3 py-2 text-input focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
             </div>
         </div>
@@ -602,10 +602,10 @@ export default function TabReglas({ searchTerm = '' }) {
                             {statsLoading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Package size={15} className="text-brand-text" />}
                         </div>
                         <div>
-                            <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
+                            <div className="text-title-lg font-black leading-none tabular-nums text-content-2">
                                 {statsLoading ? <span className="text-content-3">–</span> : allCount.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold leading-tight text-content-2">Productos activos</div>
+                            <div className="text-caption font-bold leading-tight text-content-2">Productos activos</div>
                         </div>
                     </div>
 
@@ -643,7 +643,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 {/* Botón limpiar filtro regla */}
                 {filterRule && (
                     <button onClick={() => setFilterRule('')}
-                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-sm text-[11px] text-content-3 hover:text-danger hover:border-danger/30 transition-colors whitespace-nowrap">
+                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-sm text-label text-content-3 hover:text-danger hover:border-danger/30 transition-colors whitespace-nowrap">
                         <X size={11} /> Limpiar filtro
                     </button>
                 )}
@@ -677,20 +677,20 @@ export default function TabReglas({ searchTerm = '' }) {
                             <DataRow index={i} onClick={() => toggleEdit(prod.id)}
                                 className={isEditing ? 'bg-chart-1/10' : ''}>
 
-                                <DataCell className="text-content-3 text-[12px]">
+                                <DataCell className="text-content-3 text-body-sm">
                                     <span className="block">{prod.laboratorio_nombre ?? '—'}</span>
                                 </DataCell>
 
                                 <DataCell>
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="font-medium text-content-2 text-[13px]">{prod.nombre}</span>
+                                        <span className="font-medium text-content-2 text-body">{prod.nombre}</span>
                                         {isNew && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-bold uppercase tracking-wide flex-shrink-0">
+                                            <span className="inline-flex items-center gap-0.5 text-micro px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-bold uppercase tracking-wide flex-shrink-0">
                                                 <Sparkles size={8} /> Nuevo
                                             </span>
                                         )}
                                         {prod.es_antibiotico && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-chart-6/10 text-chart-6-text border border-chart-6/30 font-bold uppercase tracking-wide flex-shrink-0">
+                                            <span className="inline-flex items-center gap-0.5 text-micro px-1.5 py-0.5 rounded-full bg-chart-6/10 text-chart-6-text border border-chart-6/30 font-bold uppercase tracking-wide flex-shrink-0">
                                                 <FlaskConical size={8} /> Bajo receta
                                             </span>
                                         )}
@@ -699,11 +699,11 @@ export default function TabReglas({ searchTerm = '' }) {
 
                                 <DataCell align="center">
                                     {hasRule ? (
-                                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-medium">
+                                        <span className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30 font-medium">
                                             <Check size={9} /> Con regla
                                         </span>
                                     ) : (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-card-hover text-content-3 border border-divider font-medium">
+                                        <span className="text-caption px-2 py-0.5 rounded-full bg-surface-card-hover text-content-3 border border-divider font-medium">
                                             Sin regla
                                         </span>
                                     )}
@@ -711,12 +711,12 @@ export default function TabReglas({ searchTerm = '' }) {
 
                                 <DataCell align="center">
                                     {typeTag
-                                        ? <span className={`inline-block text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${typeTag.bg} ${typeTag.txt}`}>{typeTag.text}</span>
-                                        : <span className="text-content-3 text-[13px]">—</span>
+                                        ? <span className={`inline-block text-caption px-2.5 py-0.5 rounded-full font-semibold ${typeTag.bg} ${typeTag.txt}`}>{typeTag.text}</span>
+                                        : <span className="text-content-3 text-body">—</span>
                                     }
                                 </DataCell>
 
-                                <DataCell className="text-content-3 italic text-[12px] max-w-[140px]">
+                                <DataCell className="text-content-3 italic text-body-sm max-w-[140px]">
                                     {hasRule
                                         ? <span className="block truncate">{rule.notes || <span className="not-italic text-content-3">—</span>}</span>
                                         : <span className="text-content-3">—</span>

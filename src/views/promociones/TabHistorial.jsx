@@ -63,7 +63,7 @@ export default function TabHistorial({ searchTerm }) {
                 <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 max-w-full">
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <History size={12} className="text-content-3" />
-                        <span className="text-[11px] text-content-3">
+                        <span className="text-label text-content-3">
                             {filtered.length} {filtered.length === 1 ? 'promoción cerrada' : 'promociones cerradas'}
                         </span>
                     </div>
@@ -95,14 +95,14 @@ export default function TabHistorial({ searchTerm }) {
                                 </DataCell>
 
                                 <DataCell align="left">
-                                    <span className="text-[12px] font-semibold text-content-2">{promo.nombre}</span>
+                                    <span className="text-body-sm font-semibold text-content-2">{promo.nombre}</span>
                                     {promo.laboratorios?.nombre && (
-                                        <span className="ml-1.5 text-[10px] text-content-3">{promo.laboratorios.nombre}</span>
+                                        <span className="ml-1.5 text-caption text-content-3">{promo.laboratorios.nombre}</span>
                                     )}
                                 </DataCell>
 
                                 <DataCell align="center" hideBelow="md">
-                                    <span className="text-[11px] text-content-3">
+                                    <span className="text-label text-content-3">
                                         {fmtDate(promo.fecha_inicio)}
                                         {promo.fecha_fin && ` → ${fmtDate(promo.fecha_fin)}`}
                                         {!promo.fecha_inicio && '—'}
@@ -110,7 +110,7 @@ export default function TabHistorial({ searchTerm }) {
                                 </DataCell>
 
                                 <DataCell align="center">
-                                    <span className="text-[12px] font-medium text-content-2">
+                                    <span className="text-body-sm font-medium text-content-2">
                                         {(promo.promotion_products || []).length}
                                     </span>
                                 </DataCell>
@@ -121,10 +121,10 @@ export default function TabHistorial({ searchTerm }) {
                                             <div className="w-16 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div className={`h-full rounded-full ${pct >= 100 ? 'bg-success' : 'bg-content-3'}`} style={{ width: `${pct}%` }} />
                                             </div>
-                                            <span className="text-[10px] text-content-3">{pct}%</span>
+                                            <span className="text-caption text-content-3">{pct}%</span>
                                         </div>
                                     ) : (
-                                        <span className="text-[11px] text-content-3">{totalSold > 0 ? `${totalSold} und` : '—'}</span>
+                                        <span className="text-label text-content-3">{totalSold > 0 ? `${totalSold} und` : '—'}</span>
                                     )}
                                 </DataCell>
                             </DataRow>
@@ -134,13 +134,13 @@ export default function TabHistorial({ searchTerm }) {
                                     <td colSpan={COLS.length} className="p-0 bg-surface-card-hover/50">
                                         <div className="px-4 pb-3 pt-1">
                                             {(promo.promotion_branches || []).length > 0 && (
-                                                <div className="flex items-center gap-1 text-[10px] text-content-3 mb-2">
+                                                <div className="flex items-center gap-1 text-caption text-content-3 mb-2">
                                                     <Building2 size={9} />
                                                     {(promo.promotion_branches || []).map(pb => pb.branches?.name).filter(Boolean).join(', ')}
                                                 </div>
                                             )}
                                             {promo.notas && (
-                                                <p className="text-[10px] text-content-3 italic mb-2">"{promo.notas}"</p>
+                                                <p className="text-caption text-content-3 italic mb-2">"{promo.notas}"</p>
                                             )}
                                             {(promo.promotion_products || []).map(pp => {
                                                 const sold = (pp.promotion_sales_cache || []).reduce((a, r) => a + (r.units_sold || 0), 0);
@@ -155,20 +155,20 @@ export default function TabHistorial({ searchTerm }) {
                                                                 : <Package size={10} className="text-content-3" />}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <span className="text-[11px] font-medium text-content-2 truncate">{pp.products?.nombre}</span>
+                                                            <span className="text-label font-medium text-content-2 truncate">{pp.products?.nombre}</span>
                                                             {pp.factor_descripcion && (
-                                                                <span className="ml-1.5 text-[10px] text-chart-3-text">{pp.factor_descripcion}</span>
+                                                                <span className="ml-1.5 text-caption text-chart-3-text">{pp.factor_descripcion}</span>
                                                             )}
                                                         </div>
                                                         {pp.stock_inicial != null && (
-                                                            <span className="text-[10px] text-content-3">{sold}/{pp.stock_inicial} und</span>
+                                                            <span className="text-caption text-content-3">{sold}/{pp.stock_inicial} und</span>
                                                         )}
                                                         {ppPct !== null && (
                                                             <div className="flex items-center gap-1">
                                                                 <div className="w-12 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
                                                                     <div className={`h-full rounded-full ${ppPct >= 100 ? 'bg-success' : 'bg-content-3'}`} style={{ width: `${ppPct}%` }} />
                                                                 </div>
-                                                                <span className="text-[9px] text-content-3">{ppPct}%</span>
+                                                                <span className="text-micro text-content-3">{ppPct}%</span>
                                                             </div>
                                                         )}
                                                     </div>

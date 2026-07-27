@@ -72,25 +72,25 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         {isPendingReceipt ? <AlertCircle size={20} strokeWidth={2}/> : <Icon size={20} strokeWidth={2} />}
                     </div>
                     <div className="min-w-0 pr-2">
-                        <p className="text-[11px] font-black text-content uppercase tracking-widest truncate">{title}</p>
-                        <p className="text-[9px] font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
+                        <p className="text-label font-black text-content uppercase tracking-widest truncate">{title}</p>
+                        <p className="text-micro font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'bg-surface-card border-border-card group-hover:bg-surface-card-hover'}`}>
+                <div className={`px-2.5 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'bg-surface-card border-border-card group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>
 
             <div className="flex-1 flex items-end justify-between mt-2 relative z-10">
                 <div>
-                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
+                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
                     <p className="text-lg font-black text-content">${amount ? Number(amount).toFixed(2) : '0.00'}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5">
+                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">
                         {isPendingReceipt ? 'Mes Pagado' : 'Día de Pago'}
                     </p>
-                    <p className="text-[12px] font-bold text-content-2">
+                    <p className="text-body-sm font-bold text-content-2">
                         {isPendingReceipt ? paidThrough : (dueDay ? `Día ${dueDay}` : '-')}
                     </p>
                 </div>
@@ -99,14 +99,14 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             {isPendingReceipt ? (
                 <button
                     onClick={onUploadReceipt}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6-solid border border-chart-6 text-white font-black text-[10px] uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6-solid border border-chart-6 text-white font-black text-caption uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
                 >
                     <UploadCloud size={14} strokeWidth={2.5} /> Subir Comprobante
                 </button>
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-surface-card-hover transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-caption uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-surface-card-hover transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>
@@ -122,7 +122,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-surface-card backdrop-blur-xl border border-border-card p-4 rounded-2xl shadow-[var(--shadow-elevation-lg)]">
-                <p className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
+                <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-base font-black text-content flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>
                     ${payload[0].value.toFixed(2)}
@@ -262,13 +262,13 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-border-card">
                 <div>
                     <h3 className="font-black text-content uppercase tracking-tight text-lg">Finanzas y Gastos Operativos</h3>
-                    <p className="text-[11px] font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
+                    <p className="text-label font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="px-4 py-2 bg-success/10 text-success rounded-[1.25rem] border border-success/30 shadow-sm flex items-center gap-2 backdrop-blur-md">
                         <DollarSign size={16} strokeWidth={2.5} />
-                        <span className="text-[11px] font-black uppercase tracking-widest">Total Operativo Actual</span>
-                        <span className="text-[14px] font-black">${totalMonthlyEst.toFixed(2)}</span>
+                        <span className="text-label font-black uppercase tracking-widest">Total Operativo Actual</span>
+                        <span className="text-body-lg font-black">${totalMonthlyEst.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
@@ -327,8 +327,8 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>
-                                    <h4 className="text-[14px] font-black text-content uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
-                                    <p className="text-[10px] font-bold text-content-3 uppercase tracking-widest">Últimos 6 meses operacionales</p>
+                                    <h4 className="text-body-lg font-black text-content uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
+                                    <p className="text-caption font-bold text-content-3 uppercase tracking-widest">Últimos 6 meses operacionales</p>
                                 </div>
                             </div>
                         </div>
@@ -381,13 +381,13 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-10">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
-                                <h5 className="text-[10px] font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>
+                                <h5 className="text-caption font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>
                             </div>
                             <div className="flex items-end gap-3 relative z-10">
                                 <span className="text-3xl font-black text-content tracking-tight">
                                     {Math.abs(stats.variation).toFixed(1)}%
                                 </span>
-                                <div className={`flex items-center gap-1 mb-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border ${stats.isUp ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
+                                <div className={`flex items-center gap-1 mb-1.5 px-2.5 py-1 rounded-lg text-caption font-black uppercase tracking-widest shadow-sm border ${stats.isUp ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
                                     {stats.isUp ? <TrendingUp size={12} strokeWidth={3}/> : <TrendingDown size={12} strokeWidth={3}/>}
                                     {stats.isUp ? 'Aumento' : 'Ahorro'}
                                 </div>
@@ -401,9 +401,9 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">
                                     <Zap size={16} className="text-warning" strokeWidth={2.5}/>
                                 </div>
-                                <h5 className="text-[10px] font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>
+                                <h5 className="text-caption font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>
                             </div>
-                            <p className="text-[17px] font-black text-warning-text leading-tight relative z-10 tracking-tight mt-1">
+                            <p className="text-title-sm font-black text-warning-text leading-tight relative z-10 tracking-tight mt-1">
                                 {stats.highestService}
                             </p>
                         </div>

@@ -353,7 +353,7 @@ const RolesView = ({ openModal }) => {
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
-                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-10`}>
+                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-micro font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-10`}>
                         Staff
                     </div>
                 )}
@@ -369,7 +369,7 @@ const RolesView = ({ openModal }) => {
                     <Award size={18} strokeWidth={2} />
                 </div>
 
-                <h5 className={`node-title font-black text-[11px] uppercase text-center leading-tight mb-3 break-words tracking-tight ${isExternal ? 'text-content-2' : 'text-content'}`}>
+                <h5 className={`node-title font-black text-label uppercase text-center leading-tight mb-3 break-words tracking-tight ${isExternal ? 'text-content-2' : 'text-content'}`}>
                     {role.name}
                 </h5>
 
@@ -382,14 +382,14 @@ const RolesView = ({ openModal }) => {
                             e.stopPropagation();
                             if (openModal) openModal('viewRoleEmployees', { role });
                         }}
-                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-divider hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand-text border border-brand/20 hover:bg-brand hover:text-white'}`}
+                        className={`w-full py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-divider hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand-text border border-brand/20 hover:bg-brand hover:text-white'}`}
                     >
                         <Users size={12} strokeWidth={2.5} /> {roleEmps.length} Personas
                     </button>
                 )}
 
                 {isExporting && (
-                    <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest bg-surface-card px-2 py-1 rounded-md">
+                    <span className="text-micro font-bold text-content-2 uppercase tracking-widest bg-surface-card px-2 py-1 rounded-md">
                         {roleEmps.length} Empleados
                     </span>
                 )}
@@ -447,7 +447,7 @@ const RolesView = ({ openModal }) => {
                         ref={searchInputRef}
                         type="text"
                         placeholder="Buscar cargo..."
-                        className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+                        className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -473,7 +473,7 @@ const RolesView = ({ openModal }) => {
                         <div className="flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] gap-2 md:gap-3 pr-2 md:pr-3">
                             <button
                                 onClick={() => setActiveTab('list')}
-                                className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'list'
+                                className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'list'
                                         ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
                                         : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
@@ -483,7 +483,7 @@ const RolesView = ({ openModal }) => {
                             </button>
                             <button
                                 onClick={() => { setActiveTab('chart'); resetZoomAndPan(); }}
-                                className={`px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'chart'
+                                className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'chart'
                                         ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
                                         : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
@@ -573,7 +573,7 @@ const RolesView = ({ openModal }) => {
                                 }`}>
 
                                 <div className="flex justify-between items-center mb-6">
-                                    <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
+                                    <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-warning-solid' : 'bg-brand'}`}>
                                             {editingRoleId ? <Edit3 size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                                         </div>
@@ -582,7 +582,7 @@ const RolesView = ({ openModal }) => {
                                     {editingRoleId && (
                                         <button
                                             onClick={handleCancelEdit}
-                                            className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
+                                            className="flex items-center gap-1.5 text-caption md:text-label font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                         >
                                             <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                         </button>
@@ -590,7 +590,7 @@ const RolesView = ({ openModal }) => {
                                 </div>
 
                                 {error && (
-                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                         <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                         <span className="leading-tight">{error}</span>
                                     </div>
@@ -598,7 +598,7 @@ const RolesView = ({ openModal }) => {
 
                                 <form className="space-y-4">
                                     <div>
-                                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Nombre del Cargo
                                         </label>
                                         <div className="relative group">
@@ -608,7 +608,7 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
@@ -618,7 +618,7 @@ const RolesView = ({ openModal }) => {
                                     {/* 🚨 CONTROLES DE HEADCOUNT */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="relative z-[70]">
-                                            <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                                 Alcance
                                             </label>
                                             <div className="h-[44px]">
@@ -633,7 +633,7 @@ const RolesView = ({ openModal }) => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                                 Límite de Plazas
                                             </label>
                                             <div className="relative group">
@@ -644,7 +644,7 @@ const RolesView = ({ openModal }) => {
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-input outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />
@@ -653,7 +653,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
 
                                     <div className="relative z-[60]">
-                                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Dependencia (Reporta a)
                                         </label>
                                         <div className="h-[44px]">
@@ -670,7 +670,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
 
                                     <div className="relative z-[50]">
-                                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Reporte Matricial
                                         </label>
                                         <div className="h-[44px]">
@@ -690,7 +690,7 @@ const RolesView = ({ openModal }) => {
                                         type="button"
                                         onClick={handleSubmit}
                                         disabled={!canEdit}
-                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
+                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
                                     >
                                         {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
                                     </button>
@@ -702,7 +702,7 @@ const RolesView = ({ openModal }) => {
                         <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {isRoleSearchFuzzy && searchQuery && (
-                                    <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                                    <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                         Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
                                     </div>
@@ -726,7 +726,7 @@ const RolesView = ({ openModal }) => {
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
                                             {role.max_limit < 99 && (
-                                                <div className={`absolute -top-3 right-4 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                                                <div className={`absolute -top-3 right-4 text-micro font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
                                                     {isGlobal ? <Globe size={10} strokeWidth={2.5}/> : <Building2 size={10} strokeWidth={2.5}/>}
                                                     <span>{isGlobal ? 'GLOBAL' : 'LOCAL'} MAX: {role.max_limit}</span>
                                                 </div>
@@ -740,16 +740,16 @@ const RolesView = ({ openModal }) => {
 
                                                     <div className="min-w-0 flex-1 pt-1">
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                            <h4 className={`font-black text-[14px] leading-tight transition-colors ${isExternal ? 'text-content-2' : 'text-content'}`} title={role.name}>
+                                                            <h4 className={`font-black text-body-lg leading-tight transition-colors ${isExternal ? 'text-content-2' : 'text-content'}`} title={role.name}>
                                                                 {role.name}
                                                             </h4>
                                                             {isRoot && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-[9px] font-black uppercase tracking-widest bg-brand/10 text-brand-text flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-micro font-black uppercase tracking-widest bg-brand/10 text-brand-text flex-shrink-0">
                                                                     Raíz
                                                                 </span>
                                                             )}
                                                             {isExternal && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-divider text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-divider text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">
                                                                     Staff
                                                                 </span>
                                                             )}
@@ -757,13 +757,13 @@ const RolesView = ({ openModal }) => {
 
                                                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                                             {!isRoot && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
                                                                     <CornerDownRight size={10} className="shrink-0 mt-[1px]" /> Rep: {getSuperiorName(role.parent_role_id)}
                                                                 </div>
                                                             )}
 
                                                             {hasDualReporting && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
                                                                     <GitMerge size={10} className="shrink-0 mt-[1px]" /> Mat: {getSuperiorName(role.secondary_parent_role_id)}
                                                                 </div>
                                                             )}
@@ -804,8 +804,8 @@ const RolesView = ({ openModal }) => {
                                                         <Users size={14} strokeWidth={2.5} />
                                                     </div>
                                                     <div>
-                                                        <p className="text-[9px] text-content-2 font-black uppercase tracking-widest leading-none mb-0.5">Fuerza Laboral</p>
-                                                        <p className="text-[16px] font-black tracking-tight text-content leading-none">
+                                                        <p className="text-micro text-content-2 font-black uppercase tracking-widest leading-none mb-0.5">Fuerza Laboral</p>
+                                                        <p className="text-input font-black tracking-tight text-content leading-none">
                                                             {roleEmps.length > 0 ? String(roleEmps.length).padStart(2, '0') : '-'}
                                                         </p>
                                                     </div>
@@ -828,8 +828,8 @@ const RolesView = ({ openModal }) => {
                                 {filteredAndSortedRoles.length === 0 && (
                                     <div className="col-span-full py-16 flex flex-col items-center justify-center text-content-3 opacity-60">
                                         <Search size={48} className="mb-4 text-content-3" strokeWidth={1.5} />
-                                        <p className="text-[16px] font-bold text-content-2">No se encontraron cargos</p>
-                                        <p className="text-[14px] mt-1 font-medium">No hay coincidencias para "{searchQuery}".</p>
+                                        <p className="text-input font-bold text-content-2">No se encontraron cargos</p>
+                                        <p className="text-body-lg mt-1 font-medium">No hay coincidencias para "{searchQuery}".</p>
                                     </div>
                                 )}
                             </div>
@@ -852,14 +852,14 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-surface-card border-border-card text-content-2 hover:text-brand-text hover:border-white'}`}
+                                    className={`px-4 py-2 border rounded-xl shadow-sm text-caption font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-surface-card border-border-card text-content-2 hover:text-brand-text hover:border-white'}`}
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>
                                 <button
                                     onClick={toggleFullScreen}
                                     disabled={isExporting}
-                                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl shadow-[var(--shadow-glow-brand)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
+                                    className="px-4 py-2 bg-brand hover:bg-brand-hover text-white rounded-xl shadow-[var(--shadow-glow-brand)] text-caption font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
                                 >
                                     {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                                     <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span>
@@ -867,7 +867,7 @@ const RolesView = ({ openModal }) => {
 
                                 <div className="ml-auto flex items-center gap-2 bg-surface-card backdrop-blur-sm border border-border-card rounded-xl px-2 py-1 shadow-sm">
                                     <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="p-1 hover:bg-surface-card-hover rounded text-content-3 transition-colors">-</button>
-                                    <span className="text-[10px] font-bold text-content-2 w-8 text-center">{Math.round(zoom * 100)}%</span>
+                                    <span className="text-caption font-bold text-content-2 w-8 text-center">{Math.round(zoom * 100)}%</span>
                                     <button onClick={() => setZoom(z => Math.min(3, z + 0.1))} className="p-1 hover:bg-surface-card-hover rounded text-content-3 transition-colors">+</button>
                                 </div>
                             </div>
@@ -889,8 +889,8 @@ const RolesView = ({ openModal }) => {
                                             {roles.filter(r => !r.parent_role_id).length === 0 && (
                                                 <div className="text-center py-20 px-10 opacity-60">
                                                     <Network className="mx-auto text-content-3 mb-4" size={48} strokeWidth={1.5} />
-                                                    <h3 className="text-[16px] font-bold text-content-2">Sin Estructura Definida</h3>
-                                                    <p className="text-content-3 text-[14px] mt-1 font-medium">Crea un cargo "Nivel Raíz" para comenzar el árbol.</p>
+                                                    <h3 className="text-input font-bold text-content-2">Sin Estructura Definida</h3>
+                                                    <p className="text-content-3 text-body-lg mt-1 font-medium">Crea un cargo "Nivel Raíz" para comenzar el árbol.</p>
                                                 </div>
                                             )}
                                         </div>

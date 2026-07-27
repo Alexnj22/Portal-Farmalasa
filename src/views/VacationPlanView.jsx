@@ -39,17 +39,17 @@ const HEADER_STATUS_META = {
 const StatusBadge = ({ status }) => {
     const m = STATUS_META[status] || STATUS_META.PLANNED;
     return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${m.bg} ${m.text} ${m.border}`}>
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-micro font-black uppercase tracking-widest border ${m.bg} ${m.text} ${m.border}`}>
             {m.label}
         </span>
     );
 };
 
 const InputLabel = ({ children }) => (
-    <p className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
+    <p className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -93,33 +93,33 @@ const EligibilityBanner = ({ info }) => {
 
     return (
         <div className={`rounded-2xl p-4 border space-y-1.5 ${cfg.bg}`}>
-            <p className={`font-black uppercase tracking-widest text-[9px] flex items-center gap-1.5 ${cfg.labelColor}`}>
+            <p className={`font-black uppercase tracking-widest text-micro flex items-center gap-1.5 ${cfg.labelColor}`}>
                 {cfg.icon} {cfg.label}
             </p>
             {isEligible ? (
                 <>
-                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                    <p className={`text-label font-medium ${cfg.bodyColor}`}>
                         Antigüedad: <strong>{yearsWorked} años</strong>
                     </p>
-                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                    <p className={`text-label font-medium ${cfg.bodyColor}`}>
                         Último aniversario: <strong>{fmtDate(lastAnniversary?.toISOString().split('T')[0])}</strong>
                     </p>
-                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                    <p className={`text-label font-medium ${cfg.bodyColor}`}>
                         Ventana válida hasta: <strong>{fmtDate(windowEnd?.toISOString().split('T')[0])}</strong>
                     </p>
                 </>
             ) : (
                 <>
-                    <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                    <p className={`text-label font-medium ${cfg.bodyColor}`}>
                         Antigüedad actual: <strong>{monthsWorked} meses</strong>
                     </p>
                     {nextAnniversary && (
-                        <p className={`text-[11px] font-medium ${cfg.bodyColor}`}>
+                        <p className={`text-label font-medium ${cfg.bodyColor}`}>
                             Próximo aniversario: <strong>{fmtDate(nextAnniversary.toISOString().split('T')[0])}</strong>
                         </p>
                     )}
                     {isNearEligible && (
-                        <p className={`text-[10px] font-medium ${cfg.bodyColor} opacity-80`}>
+                        <p className={`text-caption font-medium ${cfg.bodyColor} opacity-80`}>
                             Se puede asignar con advertencia de anticipación.
                         </p>
                     )}
@@ -182,7 +182,7 @@ const GanttChart = ({ plans, year }) => {
     if (rows.length === 0) return (
         <div className="flex flex-col items-center py-10 gap-3 text-content-3">
             <Palmtree size={36} strokeWidth={1} />
-            <p className="text-[13px] font-bold text-content-3">Sin planes para este año</p>
+            <p className="text-body font-bold text-content-3">Sin planes para este año</p>
         </div>
     );
 
@@ -194,7 +194,7 @@ const GanttChart = ({ plans, year }) => {
                     {months.map(m => (
                         <div
                             key={m.idx}
-                            className="text-[9px] font-black text-content-2 uppercase tracking-widest text-center border-l border-divider first:border-l-0 py-1"
+                            className="text-micro font-black text-content-2 uppercase tracking-widest text-center border-l border-divider first:border-l-0 py-1"
                             style={{ flex: `${m.days} 0 0%` }}
                         >
                             {m.label}
@@ -211,7 +211,7 @@ const GanttChart = ({ plans, year }) => {
                             <React.Fragment key={emp?.id || bars[0]?.employee_id}>
                                 {showHeader && branchName && (
                                     <div className="flex items-center gap-2 mt-3 mb-1 ml-0 pr-0">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-content-3 w-[160px] text-right pr-3 shrink-0">
+                                        <span className="text-micro font-black uppercase tracking-[0.2em] text-content-3 w-[160px] text-right pr-3 shrink-0">
                                             {branchName}
                                         </span>
                                         <div className="flex-1 h-px bg-divider" />
@@ -219,13 +219,13 @@ const GanttChart = ({ plans, year }) => {
                                 )}
                                 <div className="flex items-center gap-2 group/row">
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
-                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
+                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                             {(emp?.photo || emp?.photo_url)
                                                 ? <img src={emp?.photo || emp?.photo_url} alt={emp?.name} className="w-full h-full object-cover" />
                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                             }
                                         </div>
-                                        <span className="text-[11px] font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors">{emp?.name || 'Empleado'}</span>
+                                        <span className="text-label font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors">{emp?.name || 'Empleado'}</span>
                                     </div>
                                     <div className="flex-1 h-7 bg-surface-card border border-divider rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
@@ -246,8 +246,8 @@ const GanttChart = ({ plans, year }) => {
                                                     style={{ left: `${pct(p.start_date)}%`, width: `${widthPct(p.start_date, p.end_date)}%` }}
                                                 >
                                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-50 pointer-events-none">
-                                                        <div className="bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
-                                                            <span className="block font-black text-[9px] uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
+                                                        <div className="bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
+                                                            <span className="block font-black text-micro uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
                                                             <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
                                                             <span className="ml-2 text-content-3">· {p.days}d</span>
                                                         </div>
@@ -268,7 +268,7 @@ const GanttChart = ({ plans, year }) => {
                     {Object.entries(STATUS_META).filter(([k]) => k !== 'CANCELLED').map(([k, m]) => (
                         <div key={k} className="flex items-center gap-1.5">
                             <div className={`w-3 h-3 rounded-sm ${m.bar}`} />
-                            <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest">{m.label}</span>
+                            <span className="text-micro font-bold text-content-2 uppercase tracking-widest">{m.label}</span>
                         </div>
                     ))}
                 </div>
@@ -658,7 +658,7 @@ const VacationPlanView = () => {
                         placeholder="Buscar empleado o sucursal…"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[16px] font-semibold text-content-2 placeholder-content-3 w-full"
+                        className="bg-transparent outline-none text-input font-semibold text-content-2 placeholder-content-3 w-full"
                     />
                     {searchTerm && (
                         <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors">
@@ -668,7 +668,7 @@ const VacationPlanView = () => {
                 </div>
                 <button
                     onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
-                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
+                    className="px-4 h-11 rounded-full bg-surface-card backdrop-blur-md text-content-3 hover:text-content hover:bg-surface-card-hover text-caption font-black uppercase tracking-widest whitespace-nowrap transition-all border border-border-card hover:shadow-sm active:scale-[0.97]">
                     Cancelar
                 </button>
             </div>
@@ -681,7 +681,7 @@ const VacationPlanView = () => {
                     <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
-                    <span className="text-[12px] font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
+                    <span className="text-body-sm font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
                     <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
@@ -760,14 +760,14 @@ const VacationPlanView = () => {
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
                                         }
                                     </div>
-                                    <h3 className="font-black text-content text-[15px] uppercase tracking-tight">
+                                    <h3 className="font-black text-content text-subtitle uppercase tracking-tight">
                                         {editingPlan ? 'Editar Asignación' : 'Nueva Asignación'}
                                     </h3>
                                 </div>
                                 {editingPlan && (
                                     <button
                                         onClick={handleCancelEdit}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
+                                        className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group"
                                     >
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
@@ -798,9 +798,9 @@ const VacationPlanView = () => {
                                     const used = usedDaysByEmpId.get(String(selectedEmployee.id)) || 0;
                                     const remaining = 15 - used;
                                     return (
-                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand-text' : 'bg-danger/10 border-danger/30 text-danger-text'}`}>
-                                            <span className="font-black uppercase tracking-widest text-[9px]">Saldo vacacional {year}</span>
-                                            <span className="font-black text-[14px]">{Math.max(0, remaining)}<span className="text-[9px] font-bold ml-0.5">/ 15 días</span></span>
+                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-label font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand-text' : 'bg-danger/10 border-danger/30 text-danger-text'}`}>
+                                            <span className="font-black uppercase tracking-widest text-micro">Saldo vacacional {year}</span>
+                                            <span className="font-black text-body-lg">{Math.max(0, remaining)}<span className="text-micro font-bold ml-0.5">/ 15 días</span></span>
                                         </div>
                                     );
                                 })()}
@@ -822,7 +822,7 @@ const VacationPlanView = () => {
                                 {computedDays > 0 && (
                                     <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-warning/10 border-warning/20' : 'bg-brand/8 border-brand/15'}`}>
                                         <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand-text'} strokeWidth={2.5} />
-                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-warning-text' : 'text-brand-text'}`}>{computedDays} días calendario</span>
+                                        <span className={`text-body-sm font-black ${editingPlan ? 'text-warning-text' : 'text-brand-text'}`}>{computedDays} días calendario</span>
                                     </div>
                                 )}
 
@@ -842,15 +842,15 @@ const VacationPlanView = () => {
                                 {confirmingEdit && (
                                     <div className="flex items-center gap-3 px-4 py-3 bg-warning/10 border border-warning/30 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
                                         <AlertCircle size={14} className="text-warning shrink-0" strokeWidth={2.5} />
-                                        <span className="text-[11px] font-black text-warning-text flex-1">¿Confirmar cambios?</span>
-                                        <button type="button" onClick={() => setConfirmingEdit(false)} className="text-[10px] font-black text-content-3 hover:text-content-2 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-surface-card transition-all">No</button>
+                                        <span className="text-label font-black text-warning-text flex-1">¿Confirmar cambios?</span>
+                                        <button type="button" onClick={() => setConfirmingEdit(false)} className="text-caption font-black text-content-3 hover:text-content-2 uppercase tracking-widest px-2 py-1 rounded-lg hover:bg-surface-card transition-all">No</button>
                                     </div>
                                 )}
 
                                 <button
                                     type="submit"
                                     disabled={!canEdit || isSubmitting || !empId || !startDate || !endDate}
-                                    className={`w-full h-[48px] disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
+                                    className={`w-full h-[48px] disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-label uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
                                         confirmingEdit
                                             ? 'bg-success hover:bg-success-hover shadow-[0_4px_12px_rgba(34,197,94,0.3)]'
                                             : editingPlan
@@ -882,14 +882,14 @@ const VacationPlanView = () => {
                                         <Palmtree size={16} className="text-white" strokeWidth={2} />
                                     </div>
                                     <div>
-                                        <p className="text-[13px] font-black text-content">Plan de Vacaciones {year}</p>
+                                        <p className="text-body font-black text-content">Plan de Vacaciones {year}</p>
                                         {activeHeader ? (
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${HEADER_STATUS_META[activeHeader.status]?.bg || 'bg-surface-card-hover'} ${HEADER_STATUS_META[activeHeader.status]?.color || 'text-content-3'}`}>
+                                            <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${HEADER_STATUS_META[activeHeader.status]?.bg || 'bg-surface-card-hover'} ${HEADER_STATUS_META[activeHeader.status]?.color || 'text-content-3'}`}>
                                                 {HEADER_STATUS_META[activeHeader.status]?.label || activeHeader.status}
                                                 {activeHeader.ai_generated && ' · IA'}
                                             </span>
                                         ) : (
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-content-2">Sin plan generado</span>
+                                            <span className="text-micro font-black uppercase tracking-widest text-content-2">Sin plan generado</span>
                                         )}
                                     </div>
                                 </div>
@@ -900,7 +900,7 @@ const VacationPlanView = () => {
                                             <button
                                                 onClick={handleGenerateAI}
                                                 disabled={isGeneratingPlan}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand text-white text-[10px] font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-brand-purple to-brand text-white text-caption font-black uppercase tracking-widest shadow-[0_3px_10px_rgba(105,41,196,0.3)] hover:shadow-[0_6px_16px_rgba(105,41,196,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
                                             >
                                                 {isGeneratingPlan
                                                     ? <><Loader2 size={12} className="animate-spin" /> Generando…</>
@@ -912,13 +912,13 @@ const VacationPlanView = () => {
                                         {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
                                             <button
                                                 onClick={handlePreApprove}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1-solid hover:bg-chart-1/80 text-white text-[10px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-1)] hover:-translate-y-0.5 transition-all"
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1-solid hover:bg-chart-1/80 text-white text-caption font-black uppercase tracking-widest shadow-[var(--shadow-glow-chart-1)] hover:-translate-y-0.5 transition-all"
                                             >
                                                 <ShieldCheck size={12} strokeWidth={2.5} /> Pre-aprobar plan
                                             </button>
                                         )}
                                         {activeHeader?.status === 'PRE_APPROVED' && (
-                                            <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-chart-1-text text-[10px] font-black uppercase tracking-widest">
+                                            <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-chart-1-text text-caption font-black uppercase tracking-widest">
                                                 <CheckCircle2 size={12} strokeWidth={2.5} /> Visible para empleados
                                             </span>
                                         )}
@@ -930,7 +930,7 @@ const VacationPlanView = () => {
                         {/* Gantt */}
                         <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
                             <div className="flex items-center justify-between mb-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
+                                <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
                                 </p>
                                 {isLoadingVacationPlans && <Loader2 size={14} className="animate-spin text-content-3" />}
@@ -940,17 +940,17 @@ const VacationPlanView = () => {
 
                         {/* Tabla */}
                         <div className="bg-surface-card backdrop-blur-[30px] border border-border-card rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-500">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>
 
                             {isLoadingVacationPlans ? (
                                 <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[600px] text-[12px]">
+                                    <table className="w-full min-w-[600px] text-body-sm">
                                         <thead>
                                             <tr className="border-b border-divider">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left text-micro font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -977,22 +977,22 @@ const VacationPlanView = () => {
                             ) : filtered.length === 0 ? (
                                 <div className="flex flex-col items-center py-12 gap-3 text-content-3">
                                     <Palmtree size={36} strokeWidth={1} />
-                                    <p className="text-[13px] font-bold text-content-3">Sin asignaciones en este período</p>
+                                    <p className="text-body font-bold text-content-3">Sin asignaciones en este período</p>
                                 </div>
                             ) : (
                                 <>
                                 {isVacSearchFuzzy && searchTerm && (
-                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                                         <Search size={12} strokeWidth={2.5} className="shrink-0" />
                                         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                                     </div>
                                 )}
                                 <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[600px] text-[12px]">
+                                    <table className="w-full min-w-[600px] text-body-sm">
                                         <thead>
                                             <tr className="border-b border-divider">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left text-micro font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -1006,7 +1006,7 @@ const VacationPlanView = () => {
                                                         <tr className={`group/row hover:bg-surface-card transition-colors ${isEditing ? 'bg-warning/10' : ''}`}>
                                                             <td className="py-3 pr-4">
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
-                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
+                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                                         {p.employee?.photo
                                                                             ? <img src={p.employee.photo} alt={p.employee.name} className="w-full h-full object-cover" />
                                                                             : (p.employee?.name || '?').charAt(0).toUpperCase()
@@ -1014,12 +1014,12 @@ const VacationPlanView = () => {
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
-                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
+                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-micro font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
-                                                                            <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
-                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[9px] mb-0.5">Fecha original</span>
+                                                                            <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-micro mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
-                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-[9px] mt-1 mb-0.5">Fecha actual</span>
+                                                                                <span className="text-content-2 font-black uppercase tracking-widest text-micro mt-1 mb-0.5">Fecha actual</span>
                                                                                 <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
                                                                             </span>
                                                                         </span>
@@ -1030,14 +1030,14 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
                                                             <td className="py-3 pr-4 font-black text-content-2">{p.days}</td>
                                                             <td className="py-3 pr-4">
-                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand-text bg-brand/5 border-brand/15' : 'text-danger-text bg-danger/10 border-danger/30'}`}>
+                                                                <span className={`text-caption font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand-text bg-brand/5 border-brand/15' : 'text-danger-text bg-danger/10 border-danger/30'}`}>
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
                                                                 </span>
                                                             </td>
                                                             <td className="py-3 pr-4 max-w-[160px]">
                                                                 {p.notes
-                                                                    ? <p className="text-[11px] text-content-3 font-medium leading-snug line-clamp-2">{p.notes}</p>
-                                                                    : <span className="text-[10px] text-content-3">—</span>
+                                                                    ? <p className="text-label text-content-3 font-medium leading-snug line-clamp-2">{p.notes}</p>
+                                                                    : <span className="text-caption text-content-3">—</span>
                                                                 }
                                                             </td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
@@ -1090,7 +1090,7 @@ const VacationPlanView = () => {
                         {/* Solicitudes de cambio */}
                         {vacationChangeRequests.length > 0 && (
                             <div className="bg-surface-card backdrop-blur-[30px] border border-warning/30 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-warning flex items-center gap-1.5 mb-4">
+                                <p className="text-caption font-black uppercase tracking-widest text-warning flex items-center gap-1.5 mb-4">
                                     <MessageSquare size={10} /> Solicitudes de cambio ({vacationChangeRequests.length})
                                 </p>
                                 <div className="space-y-3">
@@ -1102,26 +1102,26 @@ const VacationPlanView = () => {
                                             <div key={req.id} className="bg-warning/10 border border-warning/30 rounded-2xl p-4">
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
-                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-[11px]">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
                                                             {emp?.photo_url
                                                                 ? <img src={emp.photo || emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
                                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                                             }
                                                         </div>
                                                         <div>
-                                                            <p className="text-[12px] font-black text-content">{emp?.name || 'Empleado'}</p>
-                                                            <p className="text-[10px] text-content-3 font-medium">
+                                                            <p className="text-body-sm font-black text-content">{emp?.name || 'Empleado'}</p>
+                                                            <p className="text-caption text-content-3 font-medium">
                                                                 Solicita: <strong>{fmtShort(meta.requested_start)}</strong>
                                                                 <ArrowRight size={10} className="inline mx-1" strokeWidth={2.5} />
                                                                 <strong>{fmtShort(meta.requested_end)}</strong>
                                                             </p>
                                                             {meta.original_start && (
-                                                                <p className="text-[9px] text-content-3 mt-0.5">
+                                                                <p className="text-micro text-content-3 mt-0.5">
                                                                     Original: {fmtShort(meta.original_start)} → {fmtShort(meta.original_end)}
                                                                 </p>
                                                             )}
                                                             {req.note && (
-                                                                <p className="text-[10px] text-warning-text mt-1 italic">"{req.note}"</p>
+                                                                <p className="text-caption text-warning-text mt-1 italic">"{req.note}"</p>
                                                             )}
                                                         </div>
                                                     </div>
@@ -1130,7 +1130,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'APPROVED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-success-solid hover:bg-success-hover text-white text-caption font-black transition-all disabled:opacity-50"
                                                             >
                                                                 {isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
                                                                 Aprobar
@@ -1138,7 +1138,7 @@ const VacationPlanView = () => {
                                                             <button
                                                                 onClick={() => handleProcessRequest(req, 'REJECTED')}
                                                                 disabled={isProcessing}
-                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-danger-solid hover:text-white text-[10px] font-black transition-all disabled:opacity-50"
+                                                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/30 text-danger hover:bg-danger-solid hover:text-white text-caption font-black transition-all disabled:opacity-50"
                                                             >
                                                                 <X size={11} strokeWidth={3} /> Rechazar
                                                             </button>

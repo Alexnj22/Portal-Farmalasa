@@ -76,14 +76,14 @@ const HolidaysPanel = ({
                 <div className="flex items-center gap-1 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-1 shadow-sm">
                     {[currentYear - 1, currentYear, currentYear + 1].map(y => (
                         <button key={y} onClick={() => setHolidayYear(y)}
-                            className={`px-4 py-1.5 rounded-[1.2rem] text-[11px] font-black transition-all ${holidayYear === y ? 'bg-surface-card text-warning shadow-sm' : 'text-content-3 hover:text-warning hover:bg-surface-card'}`}>
+                            className={`px-4 py-1.5 rounded-[1.2rem] text-label font-black transition-all ${holidayYear === y ? 'bg-surface-card text-warning shadow-sm' : 'text-content-3 hover:text-warning hover:bg-surface-card'}`}>
                             {y}
                         </button>
                     ))}
                 </div>
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-[11px] font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning-solid hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
+                        className={`flex items-center gap-2 px-4 py-2 rounded-[1.2rem] text-label font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning-solid hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
                         {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
                     </button>
@@ -93,40 +93,40 @@ const HolidaysPanel = ({
             {/* Add form */}
             {showForm && canEdit && (
                 <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.5rem] p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
-                    <p className="text-[10px] font-black text-warning uppercase tracking-widest">Nuevo Feriado</p>
+                    <p className="text-caption font-black text-warning uppercase tracking-widest">Nuevo Feriado</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
+                            <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-surface-card border border-divider rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+                                className="w-full bg-surface-card border border-divider rounded-[0.85rem] px-3 py-2.5 text-input font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
+                            <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
                             <LiquidDatePicker value={hDate} onChange={setHDate} />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-1.5 bg-surface-card-hover rounded-full p-1 border border-divider">
                             <button onClick={() => setHType('NATIONAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'NATIONAL' ? 'bg-surface-tab-active text-warning shadow-sm' : 'text-content-3 hover:text-warning'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black transition-all ${hType === 'NATIONAL' ? 'bg-surface-tab-active text-warning shadow-sm' : 'text-content-3 hover:text-warning'}`}>
                                 <Globe size={11} strokeWidth={2} /> Nacional
                             </button>
                             <button onClick={() => setHType('MUNICIPAL')}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-surface-tab-active text-chart-1-text shadow-sm' : 'text-content-3 hover:text-chart-1-text'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black transition-all ${hType === 'MUNICIPAL' ? 'bg-surface-tab-active text-chart-1-text shadow-sm' : 'text-content-3 hover:text-chart-1-text'}`}>
                                 <MapPin size={11} strokeWidth={2} /> Municipal
                             </button>
                         </div>
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
-                                className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-[16px] font-bold text-content outline-none focus:border-chart-1 transition-all" />
+                                className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-input font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-surface-card border-divider text-content-3 hover:border-success/40 hover:text-success'}`}>
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-caption font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-surface-card border-divider text-content-3 hover:border-success/40 hover:text-success'}`}>
                             <RefreshCw size={11} strokeWidth={2} /> Recurrente
                         </button>
                     </div>
                     <button onClick={onSave} disabled={hSaving || !hDate || !hName.trim()}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning-solid hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-black uppercase tracking-widest rounded-[1rem] shadow-[var(--shadow-glow-chart-7)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-warning-solid hover:bg-warning-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-label font-black uppercase tracking-widest rounded-[1rem] shadow-[var(--shadow-glow-chart-7)] transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                         {hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
                         {hSaving ? 'Guardando...' : 'Guardar feriado'}
                     </button>
@@ -139,7 +139,7 @@ const HolidaysPanel = ({
                     <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
                         <Star size={32} className="text-warning/40" strokeWidth={1.5} />
                     </div>
-                    <p className="text-[13px] font-bold text-content-3">
+                    <p className="text-body font-bold text-content-3">
                         {searchTerm ? `Sin resultados para "${searchTerm}"` : `No hay feriados registrados para ${holidayYear}`}
                     </p>
                 </div>
@@ -150,10 +150,10 @@ const HolidaysPanel = ({
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-2 h-7 bg-gradient-to-b from-warning to-chart-4 rounded-full shrink-0" />
-                                    <span className="text-[16px] font-black text-content-2 tracking-tight">{month}</span>
+                                    <span className="text-input font-black text-content-2 tracking-tight">{month}</span>
                                 </div>
                                 <div className="h-px flex-1 bg-gradient-to-r from-warning/20 to-transparent" />
-                                <span className="text-[9px] font-black text-warning bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-full shrink-0">
+                                <span className="text-micro font-black text-warning bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-full shrink-0">
                                     {items.length} {items.length === 1 ? 'feriado' : 'feriados'}
                                 </span>
                             </div>
@@ -175,24 +175,24 @@ const HolidaysPanel = ({
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
                                                 <div className={`w-11 h-11 rounded-[0.85rem] flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-chart-1-text'}`}>{dayName}</span>
-                                                    <span className={`text-[17px] font-black leading-tight ${isNat ? 'text-warning-text' : 'text-chart-1-text'}`}>{dayNum}</span>
+                                                    <span className={`text-micro font-black uppercase tracking-widest leading-none ${isNat ? 'text-warning' : 'text-chart-1-text'}`}>{dayName}</span>
+                                                    <span className={`text-title-sm font-black leading-tight ${isNat ? 'text-warning-text' : 'text-chart-1-text'}`}>{dayNum}</span>
                                                 </div>
                                                 {/* Info */}
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[13px] font-black text-content truncate">{h.name}</p>
+                                                    <p className="text-body font-black text-content truncate">{h.name}</p>
                                                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                                         {isNat ? (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-warning-text bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-micro font-black text-warning-text bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">
                                                                 <Globe size={8} strokeWidth={2} /> Nacional
                                                             </span>
                                                         ) : (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-chart-1-text bg-chart-1/10 border border-chart-1/30 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-micro font-black text-chart-1-text bg-chart-1/10 border border-chart-1/30 px-1.5 py-0.5 rounded-full">
                                                                 <MapPin size={8} strokeWidth={2} /> Municipal{h.municipality ? ` · ${h.municipality}` : ''}
                                                             </span>
                                                         )}
                                                         {h.is_recurring && (
-                                                            <span className="flex items-center gap-1 text-[9px] font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-1 text-micro font-black text-success-text bg-success/10 border border-success/30 px-1.5 py-0.5 rounded-full">
                                                                 <RefreshCw size={8} strokeWidth={2} /> Recurrente
                                                             </span>
                                                         )}
@@ -738,10 +738,10 @@ const SchedulesView = ({ openModal, setView }) => {
                     </button>
                 </div>
                 <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
-                    <span className={`text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
+                    <span className={`text-micro font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
                         {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
                     </span>
-                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-warning' : 'text-content'}`}>
+                    <span className={`text-label md:text-body-sm font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-warning' : 'text-content'}`}>
                         {formatWeekRange(startDate)}
                     </span>
                 </div>
@@ -771,7 +771,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     <button
                         onClick={weekIsPublished ? undefined : triggerPublishAudit}
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
+                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
                             ${weekIsPublished
                                 ? 'bg-success/20 border-success/50 text-success-text cursor-default'
                                 : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97]'}
@@ -871,11 +871,11 @@ const SchedulesView = ({ openModal, setView }) => {
                                 <CalendarDays size={36} className="text-brand-text/30" strokeWidth={1.5} />
                             </div>
                             <div className="text-center">
-                                <p className="text-[16px] font-black text-content-2 mb-1">Sin empleados</p>
-                                <p className="text-[13px] font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
+                                <p className="text-input font-black text-content-2 mb-1">Sin empleados</p>
+                                <p className="text-body font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-full text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                                 Ir al módulo de Personal <ArrowRight size={14} />
                             </button>
                         </div>
@@ -945,7 +945,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 onClose={() => setPublishState(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={executePublish}
                 title={publishState.title}
-                message={<span className="whitespace-pre-line text-[13px]">{publishState.message}</span>}
+                message={<span className="whitespace-pre-line text-body">{publishState.message}</span>}
                 confirmText={publishState.confirmText}
                 cancelText="Cancelar"
                 isDestructive={publishState.isDestructive}

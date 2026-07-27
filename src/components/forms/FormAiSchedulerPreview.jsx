@@ -206,7 +206,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 </div>
                 <h3 className="text-xl md:text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent uppercase tracking-tight mb-2">Gemini Pensando</h3>
                 <div className="h-6 flex items-center justify-center overflow-hidden mb-6">
-                    <p key={phraseIndex} className="text-[11px] font-bold text-content-3 uppercase tracking-widest animate-in slide-in-from-bottom-4 fade-in duration-300 ease-out">{AI_LOADING_PHRASES[phraseIndex]}</p>
+                    <p key={phraseIndex} className="text-label font-bold text-content-3 uppercase tracking-widest animate-in slide-in-from-bottom-4 fade-in duration-300 ease-out">{AI_LOADING_PHRASES[phraseIndex]}</p>
                 </div>
             </div>
         );
@@ -234,23 +234,23 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                         <AlertTriangle size={32} strokeWidth={2.5} />
                     </div>
                     <h3 className="text-xl font-black text-danger-text mb-2 uppercase tracking-tight">Horario Inviable</h3>
-                    <p className="text-[13px] font-bold text-danger/80 mb-6 max-w-md">
+                    <p className="text-body font-bold text-danger/80 mb-6 max-w-md">
                         Es matemáticamente imposible cubrir la apertura y cierre de la sucursal respetando las 44 horas semanales con el catálogo y personal actual.
                     </p>
                    
                     <div className="w-full bg-surface-card rounded-xl p-5 text-left border border-danger/30 mb-4 shadow-sm">
-                        <h4 className="text-[11px] font-black text-danger-text uppercase tracking-widest mb-3">Problemas Detectados por Gemini:</h4>
-                        <ul className="list-disc pl-5 text-[13px] font-bold text-content-2 space-y-1.5 leading-relaxed">
+                        <h4 className="text-label font-black text-danger-text uppercase tracking-widest mb-3">Problemas Detectados por Gemini:</h4>
+                        <ul className="list-disc pl-5 text-body font-bold text-content-2 space-y-1.5 leading-relaxed">
                             {aiResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
                         </ul>
                     </div>
 
                     {aiResult?.suggestions?.length > 0 && (
                         <div className="w-full bg-warning/10 rounded-xl p-5 text-left border border-warning/30 shadow-sm">
-                            <h4 className="text-[11px] font-black text-warning-text uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <h4 className="text-label font-black text-warning-text uppercase tracking-widest mb-3 flex items-center gap-2">
                                 <Users size={16}/> Sugerencias para resolverlo:
                             </h4>
-                            <ul className="list-disc pl-5 text-[13px] font-bold text-warning-text space-y-1.5 leading-relaxed">
+                            <ul className="list-disc pl-5 text-body font-bold text-warning-text space-y-1.5 leading-relaxed">
                                 {aiResult.suggestions.map((s, i) => <li key={i}>{s}</li>)}
                             </ul>
                         </div>
@@ -258,7 +258,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <button onClick={onClose} className="px-8 h-12 rounded-full bg-surface-card-hover text-content-2 font-black text-[11px] uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors shadow-sm active:scale-[0.97]">
+                    <button onClick={onClose} className="px-8 h-12 rounded-full bg-surface-card-hover text-content-2 font-black text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors shadow-sm active:scale-[0.97]">
                         Ajustar Recursos y Volver a intentar
                     </button>
                 </div>
@@ -274,8 +274,8 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             {/* RAZONAMIENTO */}
             <div className="bg-chart-3/10 border border-chart-3/20 rounded-xl p-4 relative overflow-hidden shadow-sm">
                 <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-chart-3/30 opacity-50 -rotate-12 pointer-events-none" strokeWidth={1} />
-                <h4 className="text-[10px] font-black text-chart-3-text uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><Sparkles size={12}/> Resumen de Gemini</h4>
-                <p className="text-[12px] font-bold text-content-2 leading-relaxed relative z-10 italic">"{aiResult?.ai_reasoning || 'Horario generado óptimamente.'}"</p>
+                <h4 className="text-caption font-black text-chart-3-text uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><Sparkles size={12}/> Resumen de Gemini</h4>
+                <p className="text-body-sm font-bold text-content-2 leading-relaxed relative z-10 italic">"{aiResult?.ai_reasoning || 'Horario generado óptimamente.'}"</p>
             </div>
 
             {/* TABLA DETALLADA */}
@@ -283,10 +283,10 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <table className="w-full text-left border-collapse bg-surface-card-hover/50 min-w-[1000px]">
                     <thead className="sticky top-0 bg-surface-card shadow-[var(--shadow-elevation-sm)] z-20">
                         <tr>
-                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest w-[180px] bg-surface-card">Empleado</th>
-                            <th className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center border-r border-divider bg-surface-card w-[60px]">Hrs</th>
+                            <th className="p-3 text-caption font-black text-content-3 uppercase tracking-widest w-[180px] bg-surface-card">Empleado</th>
+                            <th className="p-3 text-caption font-black text-content-3 uppercase tracking-widest text-center border-r border-divider bg-surface-card w-[60px]">Hrs</th>
                             {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, i) => (
-                                <th key={i} className="p-3 text-[10px] font-black text-content-3 uppercase tracking-widest text-center min-w-[120px] bg-surface-card">{day}</th>
+                                <th key={i} className="p-3 text-caption font-black text-content-3 uppercase tracking-widest text-center min-w-[120px] bg-surface-card">{day}</th>
                             ))}
                         </tr>
                     </thead>
@@ -300,11 +300,11 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                             return (
                                 <tr key={emp.id} className="hover:bg-surface-card-hover transition-colors group/row">
                                     <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                                        <p className="text-[12px] font-black text-content truncate">{emp.name}</p>
-                                        <p className="text-[9px] font-bold text-content-3 uppercase truncate">{emp.role}</p>
+                                        <p className="text-body-sm font-black text-content truncate">{emp.name}</p>
+                                        <p className="text-micro font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>
                                     <td className="p-2 text-center align-middle border-r border-divider">
-                                        <span className={`px-2 py-1 rounded-md text-[10px] font-black tracking-widest ${isOver ? 'bg-danger/10 text-danger' : isUnder ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                                        <span className={`px-2 py-1 rounded-md text-caption font-black tracking-widest ${isOver ? 'bg-danger/10 text-danger' : isUnder ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
                                             {weeklyHrs}H
                                         </span>
                                     </td>
@@ -374,7 +374,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                         
                                                         {/* BADGE DE HORAS */}
                                                         <div className={`mt-auto flex justify-center ${dayData.lunchTime || dayData.lactationTime ? 'pb-2' : 'py-3'}`}>
-                                                            <span className="bg-surface-card-hover text-content-2 px-2.5 py-0.5 rounded text-[9px] font-black tracking-widest border border-divider">
+                                                            <span className="bg-surface-card-hover text-content-2 px-2.5 py-0.5 rounded text-micro font-black tracking-widest border border-divider">
                                                                 {dailyHrs}H
                                                             </span>
                                                         </div>
@@ -415,10 +415,10 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
             {/* BOTONES INFERIORES */}
             <div className="flex items-center justify-end gap-3 pt-2">
-                <button onClick={onClose} disabled={isSaving} className="px-5 h-10 md:h-11 rounded-full text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover transition-colors flex items-center gap-2">
+                <button onClick={onClose} disabled={isSaving} className="px-5 h-10 md:h-11 rounded-full text-caption md:text-label font-bold text-content-3 uppercase tracking-widest hover:bg-surface-card-hover transition-colors flex items-center gap-2">
                     <X size={14}/> Descartar
                 </button>
-                <button onClick={handleSaveDraft} disabled={isSaving} className="px-6 md:px-8 h-10 md:h-11 rounded-full bg-brand text-white text-[10px] md:text-[11px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center gap-2">
+                <button onClick={handleSaveDraft} disabled={isSaving} className="px-6 md:px-8 h-10 md:h-11 rounded-full bg-brand text-white text-caption md:text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center gap-2">
                     {isSaving ? <Loader2 size={16} className="animate-spin"/> : <Save size={16} strokeWidth={2.5}/>} 
                     {isSaving ? 'Guardando...' : 'Aplicar Horario'}
                 </button>

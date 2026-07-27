@@ -120,8 +120,8 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             <Users size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-content text-[15px]">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
-                            <p className="text-[12px] text-content-2 mt-0.5">Escanea el carnet del empleado</p>
+                            <h3 className="font-bold text-content text-subtitle">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
+                            <p className="text-body-sm text-content-2 mt-0.5">Escanea el carnet del empleado</p>
                         </div>
                     </div>
                 </PedidoModal.Header>
@@ -153,11 +153,11 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                             transition={{ type: 'spring', stiffness: 600, delay: i * 0.02 }}
                                         />
                                     ))}
-                                    {displayDots > 10 && <span className="text-[10px] text-chart-1-text">+{displayDots - 10}</span>}
+                                    {displayDots > 10 && <span className="text-caption text-chart-1-text">+{displayDots - 10}</span>}
                                 </div>
                             )}
 
-                            <p className="text-[12px] text-content-2 text-center">
+                            <p className="text-body-sm text-content-2 text-center">
                                 Apunta el escáner al código de barras<br />del carnet del empleado
                             </p>
                         </div>
@@ -173,20 +173,20 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>
-                                <p className="font-bold text-success-text text-[14px]">{employee.name}</p>
-                                <p className="text-[11px] text-success mt-0.5">Confirma para registrar como apoyo</p>
+                                <p className="font-bold text-success-text text-body-lg">{employee.name}</p>
+                                <p className="text-label text-success mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
                         </motion.div>
                     )}
 
                     {manualWarn && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger-text">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text">
                             <ShieldAlert size={14} className="shrink-0 text-danger" />
                             Solo se acepta escaneo. No se permite ingreso manual del teclado.
                         </div>
                     )}
                     {error && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-[12px] text-danger-text">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text">
                             <AlertTriangle size={14} className="shrink-0 text-danger" />
                             {error}
                         </div>
@@ -196,16 +196,16 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                 <PedidoModal.Footer>
                     <div className="flex justify-between gap-2">
                         <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
-                            className="px-3 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[12px] transition-colors">
+                            className="px-3 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body-sm transition-colors">
                             Limpiar
                         </button>
                         <div className="flex gap-2">
-                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
+                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body font-medium transition-colors">
                                 Cancelar
                             </button>
                             {employee && (
                                 <button onClick={confirmApoyo} disabled={loading}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1-solid text-white font-semibold hover:bg-brand text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-chart-1-solid text-white font-semibold hover:bg-brand text-body transition-colors disabled:opacity-50 shadow-sm"
                                 >
                                     {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
                                     Confirmar

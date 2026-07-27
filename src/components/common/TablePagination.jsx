@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 export const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
 const navCls = (disabled) =>
-    `w-8 h-8 flex items-center justify-center text-[11px] font-bold text-content-3 transition-colors duration-150 ${
+    `w-8 h-8 flex items-center justify-center text-label font-bold text-content-3 transition-colors duration-150 ${
         disabled
             ? 'opacity-45 cursor-not-allowed'
             : 'hover:text-brand-text hover:bg-surface-card-hover'
@@ -69,7 +69,7 @@ function SmartPagination({ page, total, onChange }) {
                         ? <div key={`e${i}`}
                             className="w-7 h-8 flex items-center justify-center select-none"
                           >
-                            <span className="text-[13px] font-black text-content-3 leading-none tracking-[2px]">
+                            <span className="text-body font-black text-content-3 leading-none tracking-[2px]">
                                 ···
                             </span>
                           </div>
@@ -89,7 +89,7 @@ function SmartPagination({ page, total, onChange }) {
                                     transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                                 />
                             )}
-                            <span className={`relative z-10 text-[12px] font-black transition-colors duration-150 ${
+                            <span className={`relative z-10 text-body-sm font-black transition-colors duration-150 ${
                                 p === page ? 'text-white' : 'text-content-3'
                             }`}>
                                 {p}
@@ -101,7 +101,7 @@ function SmartPagination({ page, total, onChange }) {
             {/* Always-visible Go-to input when many pages */}
             {total > 7 && (
                 <div className="flex items-center gap-1.5 ml-1 pl-2 border-l border-divider">
-                    <span className="text-[9px] text-content-3 font-black uppercase tracking-wider whitespace-nowrap">Ir a</span>
+                    <span className="text-micro text-content-3 font-black uppercase tracking-wider whitespace-nowrap">Ir a</span>
                     <input
                         ref={inputRef}
                         type="number"
@@ -116,9 +116,9 @@ function SmartPagination({ page, total, onChange }) {
                         onBlur={commit}
                         placeholder="—"
                         data-surface="input"
-                        className="w-11 h-7 text-center text-[16px] font-bold text-content focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-shadow"
+                        className="w-11 h-7 text-center text-input font-bold text-content focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand transition-shadow"
                     />
-                    <span className="text-[9px] text-content-3 tabular-nums">/ {total}</span>
+                    <span className="text-micro text-content-3 tabular-nums">/ {total}</span>
                 </div>
             )}
 
@@ -167,7 +167,7 @@ export default function TablePagination({
                         whileHover={pageSize !== size ? { scale: 1.05 } : {}}
                         whileTap={pageSize !== size ? { scale: 0.95 } : {}}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className={`px-3 h-7 rounded-xl text-[10px] font-bold transition-[background-color,color,box-shadow] duration-200 ${
+                        className={`px-3 h-7 rounded-xl text-caption font-bold transition-[background-color,color,box-shadow] duration-200 ${
                             pageSize === size
                                 ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-[1.04]'
                                 : 'text-content-3 hover:text-content hover:bg-surface-card-hover'
@@ -186,15 +186,15 @@ export default function TablePagination({
             <div data-surface="input" className="flex items-center gap-1 px-3 h-8 min-w-[90px] justify-end">
                 {isFiltered ? (
                     <>
-                        <span className="text-[11px] font-black text-brand-text tabular-nums">{(filteredTotal ?? 0).toLocaleString()}</span>
-                        <span className="text-[9px] text-content-3 mx-0.5">/</span>
-                        <span className="text-[10px] font-semibold text-content-3 tabular-nums">{total.toLocaleString()}</span>
-                        <span className="text-[9px] text-content-3 ml-0.5">{unit}</span>
+                        <span className="text-label font-black text-brand-text tabular-nums">{(filteredTotal ?? 0).toLocaleString()}</span>
+                        <span className="text-micro text-content-3 mx-0.5">/</span>
+                        <span className="text-caption font-semibold text-content-3 tabular-nums">{total.toLocaleString()}</span>
+                        <span className="text-micro text-content-3 ml-0.5">{unit}</span>
                     </>
                 ) : (
                     <>
-                        <span className="text-[11px] font-bold text-content tabular-nums">{total.toLocaleString()}</span>
-                        <span className="text-[9px] text-content-3 ml-0.5">{unit}</span>
+                        <span className="text-label font-bold text-content tabular-nums">{total.toLocaleString()}</span>
+                        <span className="text-micro text-content-3 ml-0.5">{unit}</span>
                     </>
                 )}
             </div>

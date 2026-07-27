@@ -66,26 +66,26 @@ function PayModal({ bonif, onClose, onPaid }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
             <div className="bg-surface-card border border-divider rounded-2xl shadow-xl p-5 w-80 max-w-full">
-                <p className="text-[13px] font-bold text-content-2 mb-1">Registrar pago</p>
-                <p className="text-[11px] text-content-3 mb-4">
+                <p className="text-body font-bold text-content-2 mb-1">Registrar pago</p>
+                <p className="text-label text-content-3 mb-4">
                     {bonif.employees?.name || 'Empleado'} · {ROLE_STYLE[bonif.role]?.label} ·{' '}
                     Pendiente: <strong>{fmt$(pending)}</strong>
                 </p>
 
                 <div className="space-y-2.5">
                     <div>
-                        <label className="text-[10px] font-medium text-content-3 mb-0.5 block">Monto ($)</label>
+                        <label className="text-caption font-medium text-content-3 mb-0.5 block">Monto ($)</label>
                         <input
                             type="number" step="0.01" min="0.01" max={pending}
-                            className="w-full text-[16px] bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1"
+                            className="w-full text-input bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-medium text-content-3 mb-0.5 block">Notas (opcional)</label>
+                        <label className="text-caption font-medium text-content-3 mb-0.5 block">Notas (opcional)</label>
                         <textarea
-                            className="w-full text-[16px] bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1 h-16 resize-none"
+                            className="w-full text-input bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:outline-none focus:border-chart-1 h-16 resize-none"
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             placeholder="Ej: Pago quincenal, efectivo..."
@@ -94,11 +94,11 @@ function PayModal({ bonif, onClose, onPaid }) {
                 </div>
 
                 <div className="flex gap-2 justify-end mt-4">
-                    <button onClick={onClose} className="px-3 py-1.5 text-[11px] text-content-3 hover:text-content-2">Cancelar</button>
+                    <button onClick={onClose} className="px-3 py-1.5 text-label text-content-3 hover:text-content-2">Cancelar</button>
                     <button
                         onClick={handlePay}
                         disabled={saving}
-                        className="px-4 py-1.5 text-[11px] font-semibold bg-success-solid text-white rounded-lg hover:bg-success/90 disabled:opacity-50 flex items-center gap-1.5"
+                        className="px-4 py-1.5 text-label font-semibold bg-success-solid text-white rounded-lg hover:bg-success/90 disabled:opacity-50 flex items-center gap-1.5"
                     >
                         {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
                         Confirmar pago
@@ -146,13 +146,13 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                 <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5 shrink-0 max-w-full">
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <Gift size={12} className="text-content-3" />
-                        <span className="text-[11px] text-content-3">Total ganado:</span>
-                        <span className="text-[11px] font-semibold text-content-2">{fmt$(totalEarned)}</span>
+                        <span className="text-label text-content-3">Total ganado:</span>
+                        <span className="text-label font-semibold text-content-2">{fmt$(totalEarned)}</span>
                     </div>
                     <div className="h-5 w-px bg-divider shrink-0" />
                     <div className="flex items-center gap-1.5 px-3 py-2">
-                        <span className="text-[11px] text-content-3">Pendiente:</span>
-                        <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-warning' : 'text-content-3'}`}>
+                        <span className="text-label text-content-3">Pendiente:</span>
+                        <span className={`text-label font-semibold ${totalPending > 0 ? 'text-warning' : 'text-content-3'}`}>
                             {fmt$(totalPending)}
                         </span>
                     </div>
@@ -162,8 +162,8 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
             {bonifs.length === 0 && !loading && (
                 <div className="text-center py-12 text-content-3">
                     <Gift size={32} className="mx-auto mb-2 opacity-40" />
-                    <p className="text-[12px]">Sin bonificaciones registradas</p>
-                    <p className="text-[11px] mt-1 text-content-3">
+                    <p className="text-body-sm">Sin bonificaciones registradas</p>
+                    <p className="text-label mt-1 text-content-3">
                         Las bonificaciones se acumulan automáticamente conforme se procesan las ventas de las promociones activas.
                     </p>
                 </div>
@@ -194,36 +194,36 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                                 ? <img src={b.employees.photo_url} className="w-full h-full object-cover" alt="" />
                                                 : <User size={10} className="text-content-3" />}
                                         </div>
-                                        <span className="text-[12px] font-medium text-content-2">{empName}</span>
+                                        <span className="text-body-sm font-medium text-content-2">{empName}</span>
                                     </div>
                                 </DataCell>
 
                                 {/* rol */}
                                 <DataCell align="center">
-                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${rs.bg}`}>
+                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-caption font-semibold border ${rs.bg}`}>
                                         {rs.label}
                                     </span>
                                 </DataCell>
 
                                 {/* promo */}
                                 <DataCell align="left" hideBelow="md">
-                                    <span className="text-[11px] text-content-2 font-medium">{promoName}</span>
-                                    <span className="ml-1.5 text-[10px] text-content-3">{prodName}</span>
+                                    <span className="text-label text-content-2 font-medium">{promoName}</span>
+                                    <span className="ml-1.5 text-caption text-content-3">{prodName}</span>
                                 </DataCell>
 
                                 {/* ganado */}
                                 <DataCell align="right">
-                                    <span className="text-[12px] font-semibold text-content-2">{fmt$(b.amount_earned)}</span>
+                                    <span className="text-body-sm font-semibold text-content-2">{fmt$(b.amount_earned)}</span>
                                 </DataCell>
 
                                 {/* pagado */}
                                 <DataCell align="right">
-                                    <span className="text-[11px] text-content-3">{fmt$(b.amount_paid)}</span>
+                                    <span className="text-label text-content-3">{fmt$(b.amount_paid)}</span>
                                 </DataCell>
 
                                 {/* pendiente */}
                                 <DataCell align="right">
-                                    <span className={`text-[12px] font-semibold ${pending > 0 ? 'text-warning' : 'text-content-3'}`}>
+                                    <span className={`text-body-sm font-semibold ${pending > 0 ? 'text-warning' : 'text-content-3'}`}>
                                         {fmt$(pending)}
                                     </span>
                                 </DataCell>
@@ -233,7 +233,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                     {canEdit && pending > 0 && (
                                         <button
                                             onClick={() => setPayModal(b)}
-                                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold bg-success-solid text-white rounded-lg hover:bg-success/90 transition-colors"
+                                            className="flex items-center gap-1 px-2.5 py-1 text-caption font-semibold bg-success-solid text-white rounded-lg hover:bg-success/90 transition-colors"
                                         >
                                             <Wallet size={9} /> Pagar
                                         </button>

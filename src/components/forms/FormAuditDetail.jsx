@@ -40,10 +40,10 @@ const FormAuditDetail = ({ data }) => {
                         {sevStyles.icon}
                     </div>
                     <div>
-                        <h3 className="text-[18px] font-black text-content uppercase tracking-tight leading-none mb-1 drop-shadow-sm">
+                        <h3 className="text-title-sm font-black text-content uppercase tracking-tight leading-none mb-1 drop-shadow-sm">
                             {data.severity}
                         </h3>
-                        <p className="text-[10px] font-bold text-content-3 uppercase tracking-[0.25em]">
+                        <p className="text-caption font-bold text-content-3 uppercase tracking-[0.25em]">
                             Nivel de Auditoría
                         </p>
                     </div>
@@ -57,8 +57,8 @@ const FormAuditDetail = ({ data }) => {
                             <User size={16} className="text-content-2" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none mb-1.5">Usuario Ejecutor</p>
-                            <p className="text-[14px] font-bold text-content truncate">{data.user_name || 'Sistema / Anónimo'}</p>
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-1.5">Usuario Ejecutor</p>
+                            <p className="text-body-lg font-bold text-content truncate">{data.user_name || 'Sistema / Anónimo'}</p>
                         </div>
                     </div>
 
@@ -67,8 +67,8 @@ const FormAuditDetail = ({ data }) => {
                             <Activity size={16} className="text-brand-text" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
-                            <span className="text-[11px] font-black text-content bg-surface-card backdrop-blur-sm border border-white px-3 py-1.5 rounded-xl shadow-sm">
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
+                            <span className="text-label font-black text-content bg-surface-card backdrop-blur-sm border border-white px-3 py-1.5 rounded-xl shadow-sm">
                                 {data.action}
                             </span>
                         </div>
@@ -79,8 +79,8 @@ const FormAuditDetail = ({ data }) => {
                             <CalendarClock size={16} className="text-content-2" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none mb-1.5">Registro Temporal</p>
-                            <p className="text-[14px] font-bold text-content-2">{logDate.toLocaleString()}</p>
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-1.5">Registro Temporal</p>
+                            <p className="text-body-lg font-bold text-content-2">{logDate.toLocaleString()}</p>
                         </div>
                     </div>
 
@@ -89,12 +89,12 @@ const FormAuditDetail = ({ data }) => {
                             <MonitorSmartphone size={16} className="text-content-2" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-brand-text bg-surface-card border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
+                                <span className="text-caption font-black text-brand-text bg-surface-card border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
                                     {data.source}
                                 </span>
-                                {data.device_name && <span className="text-[13px] font-bold text-content-2 truncate">{data.device_name}</span>}
+                                {data.device_name && <span className="text-body font-bold text-content-2 truncate">{data.device_name}</span>}
                             </div>
                         </div>
                     </div>
@@ -115,13 +115,13 @@ const FormAuditDetail = ({ data }) => {
                     </div>
                     <div className="flex items-center gap-2.5 text-white/40">
                         <Code2 size={16} />
-                        <span className="text-[11px] font-black uppercase tracking-[0.25em]">Payload.json</span>
+                        <span className="text-label font-black uppercase tracking-[0.25em]">Payload.json</span>
                     </div>
                 </div>
 
                 <div className="relative flex-1">
                     <div className="absolute inset-0 p-8 md:p-10 overflow-y-auto scrollbar-hide">
-                        <pre className="text-success font-mono text-[13px] leading-relaxed whitespace-pre-wrap selection:bg-success/30 selection:text-white">
+                        <pre className="text-success font-mono text-body leading-relaxed whitespace-pre-wrap selection:bg-success/30 selection:text-white">
                             {(!data.details || Object.keys(data.details).length === 0) 
                                 ? "// No hay metadatos adicionales registrados." 
                                 : JSON.stringify(data.details, null, 4)}

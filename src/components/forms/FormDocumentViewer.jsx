@@ -29,7 +29,7 @@ const FormDocumentViewer = ({ formData }) => {
                     </div>
                     <div className="min-w-0">
                         <h3 className="text-lg font-black text-content truncate">{title || 'Documento Adjunto'}</h3>
-                        <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
+                        <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
                     </div>
                 </div>
                 <a 
@@ -37,7 +37,7 @@ const FormDocumentViewer = ({ formData }) => {
                     download 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex items-center gap-2 px-5 py-3 bg-brand hover:bg-brand-hover text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97] shrink-0"
+                    className="flex items-center gap-2 px-5 py-3 bg-brand hover:bg-brand-hover text-white rounded-[1rem] font-black text-label uppercase tracking-[0.15em] transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97] shrink-0"
                 >
                     <Download size={16} strokeWidth={2} /> Descargar
                 </a>
@@ -46,7 +46,7 @@ const FormDocumentViewer = ({ formData }) => {
                 {resolving ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-[1.5rem] border border-divider shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
-                        <p className="font-bold text-[11px] uppercase tracking-widest">Generando acceso seguro...</p>
+                        <p className="font-bold text-label uppercase tracking-widest">Generando acceso seguro...</p>
                     </div>
                 ) : url ? (
                     <div className="flex-1 min-h-0 w-full rounded-[1.5rem] border border-divider bg-surface-card shadow-sm overflow-hidden flex flex-col">

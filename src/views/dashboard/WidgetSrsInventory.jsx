@@ -75,7 +75,7 @@ export default function WidgetSrsInventory() {
       </div>
 
       {error && (
-        <div className="px-3 py-2 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] text-danger-text font-medium shrink-0">{error}</div>
+        <div className="px-3 py-2 rounded-2xl bg-danger/10 border border-danger/30 text-label text-danger-text font-medium shrink-0">{error}</div>
       )}
 
       {/* Results */}
@@ -83,12 +83,12 @@ export default function WidgetSrsInventory() {
         {results === null && !loading && (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
             <FlaskConical size={32} strokeWidth={1.5} />
-            <p className="text-[12px] font-semibold text-content-3">Busca un medicamento en el registro SRS</p>
+            <p className="text-body-sm font-semibold text-content-3">Busca un medicamento en el registro SRS</p>
           </div>
         )}
 
         {results !== null && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-content-3 font-medium">Sin resultados para "{query}"</div>
+          <div className="py-8 text-center text-body-sm text-content-3 font-medium">Sin resultados para "{query}"</div>
         )}
 
         {(results || []).map((p) => {
@@ -110,16 +110,16 @@ export default function WidgetSrsInventory() {
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-2">
-                <p className="text-[12px] font-black text-content leading-tight flex-1">
+                <p className="text-body-sm font-black text-content leading-tight flex-1">
                   {nombre || <span className="text-content-3 font-normal italic">Sin nombre</span>}
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasStock && (
-                    <span className="flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-success/10 text-success-text">
+                    <span className="flex items-center gap-1 text-micro font-black px-2 py-0.5 rounded-full bg-success/10 text-success-text">
                       <CheckCircle2 size={9} strokeWidth={3} /> En stock
                     </span>
                   )}
-                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                  <span className={`text-micro font-black px-2 py-0.5 rounded-full ${
                     activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
                   }`}>
                     {activo ? 'ACTIVO' : 'INACTIVO'}
@@ -129,22 +129,22 @@ export default function WidgetSrsInventory() {
 
               {(lab || forma) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {lab && <span className="flex items-center gap-1 text-[11px] text-content-3"><Building2 size={10} className="text-content-3 shrink-0" />{lab}</span>}
-                  {forma && <span className="flex items-center gap-1 text-[11px] text-content-3"><Pill size={10} className="text-content-3 shrink-0" />{forma}</span>}
+                  {lab && <span className="flex items-center gap-1 text-label text-content-3"><Building2 size={10} className="text-content-3 shrink-0" />{lab}</span>}
+                  {forma && <span className="flex items-center gap-1 text-label text-content-3"><Pill size={10} className="text-content-3 shrink-0" />{forma}</span>}
                 </div>
               )}
 
               {principio && (
                 <div className="flex items-start gap-1.5 bg-chart-3/10 rounded-xl px-3 py-2">
                   <FlaskConical size={11} className="text-chart-3-text shrink-0 mt-0.5" />
-                  <div className="text-[11px] text-chart-3-text font-medium leading-snug">
+                  <div className="text-label text-chart-3-text font-medium leading-snug">
                     {principio}{conc && <span className="ml-1.5 text-chart-3-text font-bold">{conc}</span>}
                   </div>
                 </div>
               )}
 
               {noregistro && (
-                <span className="text-[10px] text-content-3 font-mono">{noregistro}</span>
+                <span className="text-caption text-content-3 font-mono">{noregistro}</span>
               )}
             </div>
           );

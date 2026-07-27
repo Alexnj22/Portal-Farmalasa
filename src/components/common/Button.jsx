@@ -24,7 +24,7 @@ const VARIANT_CLASSES = {
 
 const SIZE_CLASSES = {
     sm: 'h-[34px] px-3.5 text-[12.5px] gap-1.5',
-    md: 'h-[42px] px-[18px] text-[13px] gap-1.5',
+    md: 'h-[42px] px-[18px] text-body gap-1.5',
 };
 
 const ICON_ONLY_SIZE = { sm: 'w-[34px] px-0', md: 'w-[42px] px-0' };

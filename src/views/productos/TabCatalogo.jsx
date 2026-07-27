@@ -96,9 +96,9 @@ function marginLabel(m) {
 // ── MarginPct ─────────────────────────────────────────────────────────────────
 
 function MarginPct({ pct }) {
-    if (pct === null) return <span className="text-[9px] text-content-3">—</span>;
+    if (pct === null) return <span className="text-micro text-content-3">—</span>;
     const cls = pct < 0 ? 'text-danger' : pct < 15 ? 'text-warning' : 'text-success';
-    return <span className={`text-[9px] font-bold tabular-nums ${cls}`}>{pct.toFixed(1)}%</span>;
+    return <span className={`text-micro font-bold tabular-nums ${cls}`}>{pct.toFixed(1)}%</span>;
 }
 
 // ── MarginStatCards ───────────────────────────────────────────────────────────
@@ -168,12 +168,12 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <Package size={15} className={'text-brand-text'} />
                 </div>
                 <div className="text-left min-w-0">
-                    <div className={`text-[22px] font-black leading-none tabular-nums ${statText}`}>
+                    <div className={`text-title-lg font-black leading-none tabular-nums ${statText}`}>
                         {productStatsLoading ? <span className={'text-content-3'}>–</span> : (productStats?.activos ?? 0).toLocaleString()}
                     </div>
-                    <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Productos activos</div>
+                    <div className={`text-caption font-bold leading-tight ${statLabel}`}>Productos activos</div>
                     {!productStatsLoading && (productStats?.inactivos ?? 0) > 0 && (
-                        <div className={`text-[9px] tabular-nums ${statSub}`}>
+                        <div className={`text-micro tabular-nums ${statSub}`}>
                             {(productStats.inactivos).toLocaleString()} inactivos
                         </div>
                     )}
@@ -189,11 +189,11 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <Sparkles size={15} className={'text-success'} />
                 </div>
                 <div className="text-left min-w-0">
-                    <div className={`text-[22px] font-black leading-none tabular-nums ${'text-success'}`}>
+                    <div className={`text-title-lg font-black leading-none tabular-nums ${'text-success'}`}>
                         {productStatsLoading ? <span className={'text-content-3'}>–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
                     </div>
-                    <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Nuevos este mes</div>
-                    <div className={`text-[9px] ${statSub}`}>agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
+                    <div className={`text-caption font-bold leading-tight ${statLabel}`}>Nuevos este mes</div>
+                    <div className={`text-micro ${statSub}`}>agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
                 </div>
                 {filterNuevos && <X size={11} className={`${'text-content-3'} ml-auto shrink-0`} />}
             </button>
@@ -215,15 +215,15 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <History size={15} className={'text-warning'} />
                 </div>
                 <div className="text-left min-w-0">
-                    <div className={`text-[22px] font-black leading-none tabular-nums ${
+                    <div className={`text-title-lg font-black leading-none tabular-nums ${
                         (modificadosStats?.count ?? 0) > 0
                             ? 'text-warning'
                             : 'text-content-3'
                     }`}>
                         {modificadosLoading ? <span className={'text-content-3'}>–</span> : (modificadosStats?.count ?? 0).toLocaleString()}
                     </div>
-                    <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>Modificados este mes</div>
-                    <div className={`text-[9px] ${statSub}`}>precios o datos cambiados</div>
+                    <div className={`text-caption font-bold leading-tight ${statLabel}`}>Modificados este mes</div>
+                    <div className={`text-micro ${statSub}`}>precios o datos cambiados</div>
                 </div>
                 {filterModificados && <X size={11} className={`${'text-content-3'} ml-auto shrink-0`} />}
             </button>
@@ -245,11 +245,11 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0">
-                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.countColor}`}>
+                            <div className={`text-title-lg font-black leading-none tabular-nums ${c.countColor}`}>
                                 {loading ? <span className={'text-content-3'}>–</span> : c.count.toLocaleString()}
                             </div>
-                            <div className={`text-[10px] font-bold leading-tight ${statLabel}`}>{c.label}</div>
-                            <div className={`text-[9px] ${statSub}`}>{c.sub}</div>
+                            <div className={`text-caption font-bold leading-tight ${statLabel}`}>{c.label}</div>
+                            <div className={`text-micro ${statSub}`}>{c.sub}</div>
                         </div>
                         {active && <X size={11} className={`${'text-content-3'} ml-auto shrink-0`} />}
                     </button>
@@ -357,7 +357,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
     const addCls = 'text-content-3 hover:text-brand-text';
 
-    const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
+    const presetChipBase = 'px-2.5 py-0.5 rounded-full text-caption font-bold border transition-all';
     const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
     const presetChipOff = 'bg-surface-card text-content-3 border-divider hover:border-chart-8/50 hover:text-content-2';
 
@@ -378,18 +378,18 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                 <>
                     {items.map((item, idx) => (
                         <div key={item._key} className="flex items-center gap-1.5">
-                            <span className={`text-[9px] font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
+                            <span className={`text-micro font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
                             <input
                                 value={item.nombre}
                                 onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                                 placeholder="Nombre del principio"
-                                className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-[16px] focus:outline-none focus:ring-2 transition-colors ${inp}`}
+                                className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-input focus:outline-none focus:ring-2 transition-colors ${inp}`}
                             />
                             <input
                                 value={item.concentracion || ''}
                                 onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                                 placeholder="Cant."
-                                className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-[16px] focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
+                                className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-input focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
                             />
                             <button onClick={() => removeItem(item._key)}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
@@ -399,11 +399,11 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                     ))}
                     <div className="flex items-center gap-2 pt-1">
                         <button onClick={addItem}
-                            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${addCls}`}>
+                            className={`flex items-center gap-1 text-caption font-bold transition-colors ${addCls}`}>
                             <Plus size={10} /> Agregar principio
                         </button>
                         {savingPA && (
-                            <span className="flex items-center gap-1 text-[9px] font-semibold text-content-3">
+                            <span className="flex items-center gap-1 text-micro font-semibold text-content-3">
                                 <Loader2 size={9} className="animate-spin" /> Guardando…
                             </span>
                         )}
@@ -470,7 +470,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
                 onCreateOption={handleCreate}
             />
             {savingCat && (
-                <span className="flex items-center gap-1 text-[9px] font-semibold text-content-3 mt-1.5">
+                <span className="flex items-center gap-1 text-micro font-semibold text-content-3 mt-1.5">
                     <Loader2 size={9} className="animate-spin" /> Guardando…
                 </span>
             )}
@@ -540,7 +540,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
 
     if (!locs.length) return (
-        <p className={`text-[11px] italic ${'text-content-3'}`}>Sin sucursales.</p>
+        <p className={`text-label italic ${'text-content-3'}`}>Sin sucursales.</p>
     );
 
     const labelCls = 'text-content-3';
@@ -569,22 +569,22 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                         {/* Header: branch name + view toggle */}
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <span className={`text-[11px] font-black ${'text-content-2'}`}>{loc.branch_name}</span>
-                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
+                                <span className={`text-label font-black ${'text-content-2'}`}>{loc.branch_name}</span>
+                                <span className={`text-micro font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
                                     loc.branch_type === 'BODEGA'
                                         ? 'bg-warning/10 text-warning-text'
                                         : 'bg-chart-1/10 text-chart-1-text'
                                 }`}>{loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}</span>
-                                {hasSala && !hasBodega && <span className={`text-[9px] ${'text-chart-1-text'}`}>Sala</span>}
-                                {hasBodega && !hasSala && <span className={`text-[9px] ${'text-warning'}`}>Bodega int.</span>}
-                                {hasSala && hasBodega && <span className={`text-[9px] ${'text-success'}`}>Sala + Bodega</span>}
+                                {hasSala && !hasBodega && <span className={`text-micro ${'text-chart-1-text'}`}>Sala</span>}
+                                {hasBodega && !hasSala && <span className={`text-micro ${'text-warning'}`}>Bodega int.</span>}
+                                {hasSala && hasBodega && <span className={`text-micro ${'text-success'}`}>Sala + Bodega</span>}
                             </div>
                             {!isMainBodega && (
                                 <div className={`flex rounded-lg p-0.5 gap-0.5 ${'bg-surface-card-hover'}`}>
                                     <button onClick={() => setField(i, 'view', 'sala')}
-                                        className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
+                                        className={`px-2.5 py-1 rounded-md text-micro font-bold uppercase tracking-wide transition-all ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
                                     <button onClick={() => setField(i, 'view', 'bodega')}
-                                        className={`px-2.5 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide transition-all ${!isSala ? bodegaActiveBtn : inactivBtn}`}>Bodega int.</button>
+                                        className={`px-2.5 py-1 rounded-md text-micro font-bold uppercase tracking-wide transition-all ${!isSala ? bodegaActiveBtn : inactivBtn}`}>Bodega int.</button>
                                 </div>
                             )}
                         </div>
@@ -595,37 +595,37 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 <div className={`flex rounded-lg p-0.5 gap-0.5 self-start mt-0.5 ${'bg-surface-card-hover'}`}>
                                     {['vitrina', 'estante'].map(t => (
                                         <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                            className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
+                                            className={`px-2 py-1 rounded-md text-micro font-bold uppercase transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
                                             {t === 'vitrina' ? 'Vit.' : 'Est.'}
                                         </button>
                                     ))}
                                 </div>
                             )}
                             {!isSala && !isMainBodega && (
-                                <span className={`text-[9px] font-bold self-center ${'text-warning'}`}>Bodega interna</span>
+                                <span className={`text-micro font-bold self-center ${'text-warning'}`}>Bodega interna</span>
                             )}
                             {isMainBodega && (
-                                <span className={`text-[9px] font-bold self-center ${'text-warning'}`}>Bodega principal</span>
+                                <span className={`text-micro font-bold self-center ${'text-warning'}`}>Bodega principal</span>
                             )}
                             <div className="flex gap-2 flex-1">
                                 <div className="flex-1">
-                                    <p className={`text-[9px] font-semibold mb-1 ${labelCls}`}>N°</p>
+                                    <p className={`text-micro font-semibold mb-1 ${labelCls}`}>N°</p>
                                     <input
                                         value={isSala ? loc.numero : loc.bodega_numero}
                                         onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
                                         maxLength={4}
                                         placeholder="—"
-                                        className={`w-full px-2 py-1.5 border rounded-lg text-[16px] text-center font-bold transition-colors ${inp(isSala)}`}
+                                        className={`w-full px-2 py-1.5 border rounded-lg text-input text-center font-bold transition-colors ${inp(isSala)}`}
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <p className={`text-[9px] font-semibold mb-1 ${labelCls}`}>Peldaño</p>
+                                    <p className={`text-micro font-semibold mb-1 ${labelCls}`}>Peldaño</p>
                                     <input
                                         value={isSala ? loc.peldano : loc.bodega_peldano}
                                         onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
                                         maxLength={4}
                                         placeholder="—"
-                                        className={`w-full px-2 py-1.5 border rounded-lg text-[16px] text-center font-bold transition-colors ${inp(isSala)}`}
+                                        className={`w-full px-2 py-1.5 border rounded-lg text-input text-center font-bold transition-colors ${inp(isSala)}`}
                                     />
                                 </div>
                             </div>
@@ -654,10 +654,10 @@ function PhotoContextMenu({ pos, onPaste, onClose }) {
             onMouseDown={e => e.stopPropagation()}>
             <button
                 onClick={onPaste}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[12px] font-semibold text-content-2 hover:bg-surface-card-hover transition-colors text-left">
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 text-body-sm font-semibold text-content-2 hover:bg-surface-card-hover transition-colors text-left">
                 <Clipboard size={13} className="shrink-0 text-content-3" />
                 Pegar imagen
-                <span className="ml-auto text-[10px] text-content-3">Ctrl+V</span>
+                <span className="ml-auto text-caption text-content-3">Ctrl+V</span>
             </button>
         </div>,
         document.body
@@ -778,10 +778,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
     const [showAll, setShowAll] = useState(false);
 
     if (!canSeeCosts)
-        return <p className="text-[11px] text-content-3 italic">Sin permiso para ver costos de compra.</p>;
+        return <p className="text-label text-content-3 italic">Sin permiso para ver costos de compra.</p>;
 
     if (!purchases || purchases.length === 0)
-        return <p className="text-[11px] text-content-3 italic">Sin historial de compras registrado.</p>;
+        return <p className="text-label text-content-3 italic">Sin historial de compras registrado.</p>;
 
     const clasificacion = classifyFromPurchases(purchases);
     const cs = clasificacion ? CLASIF_STYLE[clasificacion] : null;
@@ -803,19 +803,19 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             {/* Classification badge + summary */}
             <div className="flex items-center gap-3 flex-wrap">
                 {cs && (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${cs.bg}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label font-bold border ${cs.bg}`}>
                         <cs.Icon size={10} /> {clasificacion}
                     </span>
                 )}
-                <span className="text-[10px] text-content-3">
+                <span className="text-caption text-content-3">
                     Primera compra: <span className="font-semibold text-content-2">{fmtDate(firstDate)}</span>
                 </span>
-                <span className="text-[9px] text-content-3">·</span>
-                <span className="text-[10px] text-content-3">
+                <span className="text-micro text-content-3">·</span>
+                <span className="text-caption text-content-3">
                     Última: <span className="font-semibold text-content-2">{fmtDate(lastDate)}</span>
                 </span>
-                <span className="text-[9px] text-content-3">·</span>
-                <span className="text-[10px] text-content-3">
+                <span className="text-micro text-content-3">·</span>
+                <span className="text-caption text-content-3">
                     <span className="font-semibold text-content-2">{rows.length}</span> compra{rows.length !== 1 ? 's' : ''}
                 </span>
             </div>
@@ -825,25 +825,25 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-surface-card-hover/80 border-b border-divider">
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Proveedor</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-center text-content-2">Cant.</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-content-2">Costo unit.</th>
+                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
+                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Proveedor</th>
+                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-center text-content-2">Cant.</th>
+                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-right text-content-2">Costo unit.</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-divider">
                         {visible.map((row, i) => (
                             <tr key={i} className="hover:bg-surface-card-hover/40 transition-colors">
-                                <td className="px-3 py-2 text-[11px] text-content-2 whitespace-nowrap">
+                                <td className="px-3 py-2 text-label text-content-2 whitespace-nowrap">
                                     {fmtDate(row.purchase_receipts?.fecha)}
                                 </td>
-                                <td className="px-3 py-2 text-[11px] text-content-2 max-w-[180px] truncate">
+                                <td className="px-3 py-2 text-label text-content-2 max-w-[180px] truncate">
                                     {row.purchase_receipts?.proveedor || '—'}
                                 </td>
-                                <td className="px-3 py-2 text-[11px] text-content-2 text-center tabular-nums">
+                                <td className="px-3 py-2 text-label text-content-2 text-center tabular-nums">
                                     {parseFloat(row.cantidad || 0).toLocaleString()}
                                 </td>
-                                <td className="px-3 py-2 text-[12px] font-semibold text-content-2 text-right tabular-nums">
+                                <td className="px-3 py-2 text-body-sm font-semibold text-content-2 text-right tabular-nums">
                                     {fmtCost(row.precio_unitario)}
                                 </td>
                             </tr>
@@ -855,7 +855,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             {rows.length > 8 && (
                 <button
                     onClick={() => setShowAll(v => !v)}
-                    className="text-[10px] font-bold text-content-3 hover:text-content-2 transition-colors">
+                    className="text-caption font-bold text-content-3 hover:text-content-2 transition-colors">
                     {showAll ? 'Ver menos' : `Ver ${rows.length - 8} compra${rows.length - 8 !== 1 ? 's' : ''} anterior${rows.length - 8 !== 1 ? 'es' : ''}`}
                 </button>
             )}
@@ -883,7 +883,7 @@ function PriceHistorySection({ history, allowedPriceFields }) {
     }, [history]);
 
     if (deduped.length === 0)
-        return <p className="text-[11px] text-content-3 italic">Sin historial de precios registrado.</p>;
+        return <p className="text-label text-content-3 italic">Sin historial de precios registrado.</p>;
 
     const fmtDate = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     const visible = showAll ? deduped : deduped.slice(0, 8);
@@ -894,20 +894,20 @@ function PriceHistorySection({ history, allowedPriceFields }) {
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-surface-card-hover/80 border-b border-divider">
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-content-2">Presentación</th>
+                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
+                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Presentación</th>
                             {allowedPriceFields.map(f => (
-                                <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-content-2">{f.label}</th>
+                                <th key={f.key} className="px-3 py-2 text-micro font-black uppercase tracking-wider text-right text-content-2">{f.label}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-divider">
                         {visible.map((row, i) => (
                             <tr key={row.id_presentacion + '-' + row.valid_from + '-' + i} className="hover:bg-surface-card-hover/40 transition-colors">
-                                <td className="px-3 py-2 text-[11px] text-content-2 whitespace-nowrap">{fmtDate(row.valid_from)}</td>
-                                <td className="px-3 py-2 text-[11px] text-content-2">{row.presentaciones?.tipo || '—'}</td>
+                                <td className="px-3 py-2 text-label text-content-2 whitespace-nowrap">{fmtDate(row.valid_from)}</td>
+                                <td className="px-3 py-2 text-label text-content-2">{row.presentaciones?.tipo || '—'}</td>
                                 {allowedPriceFields.map(f => (
-                                    <td key={f.key} className="px-3 py-2 text-[12px] font-semibold text-content-2 text-right tabular-nums">{fmtP(row[f.key])}</td>
+                                    <td key={f.key} className="px-3 py-2 text-body-sm font-semibold text-content-2 text-right tabular-nums">{fmtP(row[f.key])}</td>
                                 ))}
                             </tr>
                         ))}
@@ -917,7 +917,7 @@ function PriceHistorySection({ history, allowedPriceFields }) {
             {deduped.length > 8 && (
                 <button
                     onClick={() => setShowAll(v => !v)}
-                    className="text-[10px] font-bold text-content-3 hover:text-content-2 transition-colors">
+                    className="text-caption font-bold text-content-3 hover:text-content-2 transition-colors">
                     {showAll ? 'Ver menos' : `Ver ${deduped.length - 8} cambio${deduped.length - 8 !== 1 ? 's' : ''} anterior${deduped.length - 8 !== 1 ? 'es' : ''}`}
                 </button>
             )}
@@ -941,7 +941,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         loadingText: 'text-content-3',
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',
-        sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-content-2',
+        sectionLabel: 'text-caption font-black uppercase tracking-widest text-content-2',
         photoBtn: 'border-divider hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10',
         photoSubText: 'text-content-3',
         photoUploadIcon: 'text-content-3 group-hover:text-brand-text',
@@ -1061,7 +1061,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         return (
             <tr className={xk.loadingRow}>
                 <td colSpan={5} className="px-5 py-4">
-                    <div className={`flex items-center gap-2 text-[11px] ${xk.loadingText}`}>
+                    <div className={`flex items-center gap-2 text-label ${xk.loadingText}`}>
                         <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando detalle…
                     </div>
                 </td>
@@ -1112,7 +1112,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
                     {/* ── Alert banner ── */}
                     {worstOverall !== null && worstOverall < 15 && (
-                        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium ${
+                        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-label font-medium ${
                             worstOverall < 0 ? xk.alertDanger : xk.alertWarning
                         }`}>
                             {worstOverall < 0
@@ -1124,7 +1124,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         </div>
                     )}
                     {specialLossSet.size > 0 && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-medium bg-chart-4/10 border-chart-4/30 text-chart-4-text">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border text-label font-medium bg-chart-4/10 border-chart-4/30 text-chart-4-text">
                             <TrendingDown size={13} className="shrink-0 text-chart-4-text" />
                             <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
                         </div>
@@ -1137,7 +1137,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     <button
                         onClick={toggleDevolutivo}
                         disabled={savingDevolutivo}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold border transition-colors disabled:opacity-50 ${
                             !devolutivo
                                 ? 'bg-warning/10 text-warning-text border-warning/30 hover:bg-warning/10'
                                 : 'bg-surface-card-hover text-content-3 border-divider hover:border-divider'
@@ -1177,7 +1177,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                 ? <Loader2 size={22} className="text-white animate-spin" />
                                                 : <>
                                                     <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    <span className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Ver foto</span>
+                                                    <span className="text-caption font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">Ver foto</span>
                                                 </>}
                                         </div>
                                     </>
@@ -1187,14 +1187,14 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                             ? <Loader2 size={24} className="text-brand-text animate-spin" />
                                             : <>
                                                 <Camera size={24} className={`transition-colors ${xk.photoUploadIcon}`} />
-                                                <span className={`text-[10px] font-semibold transition-colors ${xk.photoUploadLabel}`}>Subir foto</span>
-                                                <span className={`text-[9px] ${xk.photoSubText}`}>JPG, PNG o WebP</span>
+                                                <span className={`text-caption font-semibold transition-colors ${xk.photoUploadLabel}`}>Subir foto</span>
+                                                <span className={`text-micro ${xk.photoSubText}`}>JPG, PNG o WebP</span>
                                             </>}
                                     </div>
                                 )}
                             </button>
                             {localFoto && (
-                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-[9px] font-semibold transition-colors ${'text-content-3 hover:text-content-2'}`}>Cambiar foto</button>
+                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-micro font-semibold transition-colors ${'text-content-3 hover:text-content-2'}`}>Cambiar foto</button>
                             )}
                         </div>
 
@@ -1203,14 +1203,14 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-2`}>
                                 Presentaciones y precios
                                 {hasChanges && (
-                                    <span className={`inline-flex items-center gap-1 text-[9px] font-bold border px-1.5 py-0.5 rounded-full ${xk.changesBadge}`}>
+                                    <span className={`inline-flex items-center gap-1 text-micro font-bold border px-1.5 py-0.5 rounded-full ${xk.changesBadge}`}>
                                         <AlertTriangle size={8} /> cambios
                                     </span>
                                 )}
                             </p>
 
                             {precios.length === 0 ? (
-                                <div className={`flex items-center gap-2 text-[11px] py-3 px-3 rounded-xl border ${xk.emptyPresentaciones}`}>
+                                <div className={`flex items-center gap-2 text-label py-3 px-3 rounded-xl border ${xk.emptyPresentaciones}`}>
                                     <Info size={12} className="shrink-0 opacity-60" />
                                     Sin presentaciones en el ERP.
                                 </div>
@@ -1219,13 +1219,13 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     <table className="min-w-full text-sm">
                                         <thead>
                                             <tr className={xk.pricingThead}>
-                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-left whitespace-nowrap ${xk.pricingThText}`}>Presentación</th>
-                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Factor</th>
-                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-right ${xk.pricingThText}`}>Costo</th>
+                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-left whitespace-nowrap ${xk.pricingThText}`}>Presentación</th>
+                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Factor</th>
+                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-right ${xk.pricingThText}`}>Costo</th>
                                                 {allowedPriceFields.map(f => (
-                                                    <th key={f.key} className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-right whitespace-nowrap ${xk.pricingThText}`}>{f.label}</th>
+                                                    <th key={f.key} className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-right whitespace-nowrap ${xk.pricingThText}`}>{f.label}</th>
                                                 ))}
-                                                <th className={`px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Estado</th>
+                                                <th className={`px-3 py-2.5 text-micro font-black uppercase tracking-wider text-center ${xk.pricingThText}`}>Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody className={xk.pricingDivide}>
@@ -1240,28 +1240,28 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                         xk.pricingRowNormal
                                                     }>
                                                         <td className="px-3 py-2.5 whitespace-nowrap">
-                                                            <span className={`text-[12px] font-semibold ${xk.pricingValueNormal}`}>{pp.presentaciones?.tipo || '—'}</span>
+                                                            <span className={`text-body-sm font-semibold ${xk.pricingValueNormal}`}>{pp.presentaciones?.tipo || '—'}</span>
                                                             {pp.descripcion && (
-                                                                <span className={`text-[9px] ml-1 ${xk.pricingFactor}`}>{pp.descripcion}</span>
+                                                                <span className={`text-micro ml-1 ${xk.pricingFactor}`}>{pp.descripcion}</span>
                                                             )}
                                                         </td>
-                                                        <td className={`px-3 py-2.5 text-center text-[11px] ${xk.pricingFactor}`}>{pp.factor ?? '—'}</td>
-                                                        <td className={`px-3 py-2.5 text-right text-[11px] font-medium ${xk.pricingCosto}`}>{fmtP(pp.costo)}</td>
+                                                        <td className={`px-3 py-2.5 text-center text-label ${xk.pricingFactor}`}>{pp.factor ?? '—'}</td>
+                                                        <td className={`px-3 py-2.5 text-right text-label font-medium ${xk.pricingCosto}`}>{fmtP(pp.costo)}</td>
                                                         {allowedPriceFields.map(f => {
                                                             const ch = pCh[f.key];
                                                             const m  = calcMargin(pp[f.key], pp.costo);
                                                             return (
                                                                 <td key={f.key} className={`px-3 py-2.5 text-right ${ch ? xk.pricingCellChanged : ''}`}>
                                                                     <div className="flex flex-col items-end gap-0.5">
-                                                                        <span className={`text-[12px] font-semibold ${ch ? xk.pricingValueChanged : xk.pricingValueNormal}`}>
+                                                                        <span className={`text-body-sm font-semibold ${ch ? xk.pricingValueChanged : xk.pricingValueNormal}`}>
                                                                             {fmtP(pp[f.key])}
                                                                         </span>
                                                                         {ch && (
                                                                             <div className="flex flex-col items-end gap-0.5">
-                                                                                <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
+                                                                                <span className={`text-micro line-through whitespace-nowrap ${xk.pricingOldValue}`}>
                                                                                     {fmtP(ch.anterior)}
                                                                                 </span>
-                                                                                <span className={`text-[9px] ${'text-content-3'}`}>
+                                                                                <span className={`text-micro ${'text-content-3'}`}>
                                                                                     {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
                                                                                 </span>
                                                                             </div>
@@ -1272,7 +1272,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                             );
                                                         })}
                                                         <td className="px-3 py-2.5 text-center">
-                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${pp.activo !== false ? xk.statusActive : xk.statusInactive}`}>
+                                                            <span className={`text-micro font-bold px-2 py-0.5 rounded-full border ${pp.activo !== false ? xk.statusActive : xk.statusInactive}`}>
                                                                 {pp.activo !== false ? 'Activa' : 'Inactiva'}
                                                             </span>
                                                         </td>
@@ -1286,7 +1286,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             {inactiveCount > 0 && (
                                 <button
                                     onClick={() => setShowInactive(v => !v)}
-                                    className={`mt-2 flex items-center gap-1.5 text-[10px] font-bold transition-colors ${
+                                    className={`mt-2 flex items-center gap-1.5 text-caption font-bold transition-colors ${
                                         'text-content-3 hover:text-content-2'
                                     }`}>
                                     <Eye size={11} />
@@ -1319,23 +1319,23 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 <History size={9} /> Cambios en el producto
                             </p>
                             {prodLog.length === 0 ? (
-                                <p className={`text-[11px] ${xk.sinCambios}`}>Sin cambios registrados.</p>
+                                <p className={`text-label ${xk.sinCambios}`}>Sin cambios registrados.</p>
                             ) : (
                                 <div className={`rounded-xl px-3.5 py-3 space-y-1.5 ${xk.changelog}`}>
                                     {displayLog1.map((c, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-[11px] flex-wrap">
-                                            <span className={`font-mono text-[10px] shrink-0 px-1.5 py-0.5 rounded border ${xk.changelogDate}`}>
+                                        <div key={i} className="flex items-center gap-2 text-label flex-wrap">
+                                            <span className={`font-mono text-caption shrink-0 px-1.5 py-0.5 rounded border ${xk.changelogDate}`}>
                                                 {new Date(c.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
                                             </span>
                                             <span className={`font-semibold ${xk.changelogField}`}>{c.campo}</span>
-                                            <span className={`line-through text-[10px] ${xk.changelogOld}`}>{c.valor_anterior || '—'}</span>
-                                            <span className={`text-[9px] font-bold ${xk.changelogArrow}`}>→</span>
+                                            <span className={`line-through text-caption ${xk.changelogOld}`}>{c.valor_anterior || '—'}</span>
+                                            <span className={`text-micro font-bold ${xk.changelogArrow}`}>→</span>
                                             <span className={`font-medium ${xk.changelogNew}`}>{c.valor_nuevo || '—'}</span>
                                         </div>
                                     ))}
                                     {olderLog1.length > 0 && (
                                         <button onClick={() => setShowAllLog(v => !v)}
-                                            className={`mt-1.5 text-[10px] font-bold transition-colors ${'text-content-3 hover:text-content-2'}`}>
+                                            className={`mt-1.5 text-caption font-bold transition-colors ${'text-content-3 hover:text-content-2'}`}>
                                             {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog1.length} cambio${olderLog1.length !== 1 ? 's' : ''} anterior${olderLog1.length !== 1 ? 'es' : ''}`}
                                         </button>
                                     )}
@@ -1352,7 +1352,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 {!PA_PRESETS.includes(product.principio_activo) && (
                                     <button
                                         onClick={() => setShowSrs(v => !v)}
-                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
+                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-bold transition-all border ${
                                             showSrs ? xk.srsBtnActive : xk.srsBtnInactive
                                         }`}
                                     >
@@ -1392,7 +1392,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}
                     <div className={`border-t ${xk.divider} pt-4 flex items-center justify-end gap-2`}>
                         <button onClick={onClose}
-                            className={`px-4 h-9 rounded-full text-[11px] font-bold border transition-all ${xk.btnCancel}`}>
+                            className={`px-4 h-9 rounded-full text-label font-bold border transition-all ${xk.btnCancel}`}>
                             Cerrar
                         </button>
                     </div>
@@ -1775,7 +1775,7 @@ export default function TabCatalogo({
                         <div className="flex items-center gap-0.5 px-2.5 py-2">
                             {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
                                 <button key={v} onClick={() => setFilterActivo?.(v)}
-                                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all ${
+                                    className={`px-3 py-1.5 rounded-full text-label font-bold transition-all ${
                                         filterActivo === v
                                             ? 'bg-success/10 text-success-text shadow-sm'
                                             : tk.filterBtn
@@ -1827,7 +1827,7 @@ export default function TabCatalogo({
 
                     {/* Enriquecer SRS — below filter pill */}
                     <button onClick={() => setShowEnriquecer(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-chart-3-text border border-chart-3/30 bg-chart-3/10 hover:bg-chart-3/10 transition-all self-end">
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-caption font-bold text-chart-3-text border border-chart-3/30 bg-chart-3/10 hover:bg-chart-3/10 transition-all self-end">
                         <FlaskConical size={11} strokeWidth={2.5} /> Enriquecer SRS
                     </button>
                 </div>
@@ -1838,9 +1838,9 @@ export default function TabCatalogo({
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar productos</p>
-                    <p className="text-[11px] text-danger mb-4">{loadError}</p>
+                    <p className="text-label text-danger mb-4">{loadError}</p>
                     <button onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}
-                        className="px-5 py-2 text-[12px] font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
+                        className="px-5 py-2 text-body-sm font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
                         Reintentar
                     </button>
                 </div>
@@ -1887,30 +1887,30 @@ export default function TabCatalogo({
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                     <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
-                                                    {mInfo && <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
+                                                    {mInfo && <span className={`inline-flex items-center gap-0.5 text-micro font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
                                                     {specLoss && [...specLoss].map(k => (
-                                                        <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-chart-4/10 text-chart-4-text border border-chart-4/30 px-1.5 py-0.5 rounded-full shrink-0">
+                                                        <span key={k} className="inline-flex items-center gap-0.5 text-micro font-bold bg-chart-4/10 text-chart-4-text border border-chart-4/30 px-1.5 py-0.5 rounded-full shrink-0">
                                                             <TrendingDown size={7} /> Pérd. {specialLossLabel(k)}
                                                         </span>
                                                     ))}
-                                                    {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
-                                                    {!p.devolutivo && <span title="No devolutivo — no se puede devolver al proveedor" className="inline-flex items-center gap-0.5 text-[9px] font-black bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><Ban size={7} /> ND</span>}
+                                                    {hasChanges && <span className="inline-flex items-center gap-0.5 text-micro font-bold bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
+                                                    {!p.devolutivo && <span title="No devolutivo — no se puede devolver al proveedor" className="inline-flex items-center gap-0.5 text-micro font-black bg-warning/10 text-warning-text border border-warning/30 px-1.5 py-0.5 rounded-full shrink-0"><Ban size={7} /> ND</span>}
                                                 </div>
-                                                {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-chart-3-text/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
+                                                {p.principio_activo && <p className="text-caption flex items-center gap-1 mt-0.5 text-chart-3-text/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>
                                         </div>
                                     </DataCell>
-                                    <DataCell hideBelow="md"><span className={`text-[11px] ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></DataCell>
+                                    <DataCell hideBelow="md"><span className={`text-label ${tk.textMid}`}>{p.laboratorios?.nombre || '—'}</span></DataCell>
                                     <DataCell hideBelow="lg">
                                         <div className="flex flex-wrap gap-1">
-                                            {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-chart-1/10 text-chart-1-text border-chart-1/30">{p.tipo_medicamento}</span>}
-                                            {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger-text border-danger/25">Bajo Receta</span>}
-                                            {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30">Receta</span>}
-                                            {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-content-3">—</span>}
+                                            {p.tipo_medicamento && <span className="text-micro font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-chart-1/10 text-chart-1-text border-chart-1/30">{p.tipo_medicamento}</span>}
+                                            {p.es_antibiotico   && <span className="text-micro font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger-text border-danger/25">Bajo Receta</span>}
+                                            {p.requiere_receta  && <span className="text-micro font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30">Receta</span>}
+                                            {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-label text-content-3">—</span>}
                                         </div>
                                     </DataCell>
                                     <DataCell hideBelow="sm">
-                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card-hover text-content-2 border-divider'}`}>
+                                        <span className={`text-micro font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card-hover text-content-2 border-divider'}`}>
                                             {p.activo ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </DataCell>

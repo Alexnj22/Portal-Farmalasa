@@ -476,10 +476,10 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
               <MapPin size={15} className="text-chart-3-text" />
             </div>
             <div>
-              <p className="text-[10px] font-semibold text-chart-3-text uppercase tracking-wider">
+              <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">
                 {isConductor ? 'Tu ruta activa' : 'Rastreo en vivo'}
               </p>
-              <h3 className="text-[15px] font-black text-content leading-tight">
+              <h3 className="text-subtitle font-black text-content leading-tight">
                 Ruta #{ruta.numero} · {ruta.conductor_nombre}
               </h3>
             </div>
@@ -488,7 +488,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           <div className="flex items-center gap-2">
             {/* Indicador rastreo — admin */}
             {!isConductor && (
-              <span className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg border ${
+              <span className={`flex items-center gap-1 text-micro font-bold px-2 py-1 rounded-lg border ${
                 driverOnline ? 'bg-success/10 border-success/30 text-success-text' : driverPos ? 'bg-warning/10 border-warning/30 text-warning-text' : 'bg-surface-card-hover border-border-card text-content-3'
               }`}>
                 <Radio size={8} className={driverOnline ? 'animate-pulse' : ''} />
@@ -497,7 +497,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             )}
             {/* Recálculos conductor */}
             {isConductor && recalcCount > 0 && (
-              <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg bg-chart-3/10 border border-chart-3/30 text-chart-3-text">
+              <span className="flex items-center gap-1 text-micro font-bold px-2 py-1 rounded-lg bg-chart-3/10 border border-chart-3/30 text-chart-3-text">
                 <RefreshCw size={8} /> {recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}
               </span>
             )}
@@ -518,7 +518,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             onClick={conductorBtnClick}
             disabled={conductorBtnDisabled}
             title={conductorBtnLabel}
-            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-surface-card shadow-md border border-divider rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-surface-card shadow-md border border-divider rounded-xl px-2.5 py-1.5 text-caption font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {isConductor
               ? <Crosshair size={11} className={gpsIconColor} />
@@ -528,7 +528,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           </button>
 
           {/* Badge mapa */}
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-content-2 shadow-sm border border-border-card">
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card backdrop-blur-sm rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">
             {mapsMode
               ? <><span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />Google Maps</>
               : <><span className="w-1.5 h-1.5 rounded-full bg-warning inline-block" />OpenStreetMap</>
@@ -537,7 +537,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
 
           {/* Info recálculo automático — conductor */}
           {isConductor && gpsStatus === 'ok' && (
-            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-brand/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-white shadow-sm">
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-brand/90 backdrop-blur-sm rounded-lg px-2 py-1 text-micro font-semibold text-white shadow-sm">
               <RefreshCw size={8} /> Recalcula c/2 min
             </div>
           )}
@@ -545,7 +545,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
 
         {/* Lista de paradas */}
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">
+          <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">
             Paradas · {entregadas}/{paradas.length} entregadas
           </p>
           <div className="space-y-1.5">
@@ -553,13 +553,13 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
               <div key={stop.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${
                 stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
               }`}>
-                <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${
+                <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                   stop.entregado_at ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                 }`}>{i + 1}</span>
-                <p className="text-[12px] font-semibold text-content-2 flex-1 truncate">{stop.suc_name}</p>
+                <p className="text-body-sm font-semibold text-content-2 flex-1 truncate">{stop.suc_name}</p>
                 {stop.entregado_at
-                  ? <span className="text-[10px] text-success font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
-                  : <span className="text-[10px] text-content-3 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
+                  ? <span className="text-caption text-success font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
+                  : <span className="text-caption text-content-3 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
                 }
               </div>
             ))}

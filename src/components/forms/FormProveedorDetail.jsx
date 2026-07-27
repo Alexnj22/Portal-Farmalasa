@@ -9,7 +9,7 @@ import LiquidSelect from '../common/LiquidSelect';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
-        <h4 className="text-[11px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2 pt-5 border-t border-divider">
+        <h4 className="text-label font-black uppercase tracking-widest text-brand-text flex items-center gap-2 pt-5 border-t border-divider">
             <Icon size={13} strokeWidth={2.5} /> {children}
         </h4>
     );
@@ -60,8 +60,8 @@ function FiscalRow({ icon: Icon, label, value }) {
         <div className="flex items-start gap-2">
             <Icon size={13} className="text-content-3 mt-0.5 shrink-0" strokeWidth={2} />
             <div className="min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-widest text-content-3">{label}</p>
-                <p className="text-[12px] font-medium text-content-2 break-words">{value}</p>
+                <p className="text-micro font-black uppercase tracking-widest text-content-3">{label}</p>
+                <p className="text-body-sm font-medium text-content-2 break-words">{value}</p>
             </div>
         </div>
     );
@@ -164,14 +164,14 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <FiscalRow icon={Phone} label="Teléfono" value={formData?.telefono} />
                 <FiscalRow icon={Mail} label="Correo" value={formData?.correo} />
 
-                <div className="col-span-full flex flex-wrap items-center gap-3 pt-2 border-t border-divider text-[10px] text-content-3">
+                <div className="col-span-full flex flex-wrap items-center gap-3 pt-2 border-t border-divider text-caption text-content-3">
                     <span>{formData?.docs_count || 0} documento{formData?.docs_count === 1 ? '' : 's'}</span>
                     <span>·</span>
                     <span>Primera vez: {fmtDate(formData?.primera_vez_visto)}</span>
                     <span>·</span>
                     <span>Última: {fmtDate(formData?.ultima_vez_visto)}</span>
                     <button type="button" onClick={verDocumentos}
-                        className="ml-auto flex items-center gap-1 text-[10px] font-bold text-brand-text hover:underline">
+                        className="ml-auto flex items-center gap-1 text-caption font-bold text-brand-text hover:underline">
                         Ver documentos <ExternalLink size={11} />
                     </button>
                 </div>
@@ -185,11 +185,11 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <SectionHeader icon={Tag}>Clasificación</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
                             Tipo de Proveedor
                         </label>
                         <div className="h-[44px] flex items-center">
-                            <span className={`text-[12px] font-bold px-3 py-1.5 rounded-full border ${
+                            <span className={`text-body-sm font-bold px-3 py-1.5 rounded-full border ${
                                 formData?.regimen_fiscal === 'sujeto_excluido' ? 'text-warning-text bg-warning/10 border-warning/25' : 'text-success-text bg-success/10 border-success/25'
                             }`}>
                                 {formData?.regimen_fiscal ? REGIMEN_LABELS[formData.regimen_fiscal] : 'Sin determinar'}
@@ -197,17 +197,17 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
                             Categoría Contable
                         </label>
                         <div className="h-[44px] flex items-center">
-                            <span className="text-[12px] font-bold text-content-2 bg-content-3/10 border border-content-3/20 px-3 py-1.5 rounded-full">
+                            <span className="text-body-sm font-bold text-content-2 bg-content-3/10 border border-content-3/20 px-3 py-1.5 rounded-full">
                                 {claseActual ? CLASE_LABELS[claseActual] || claseActual : 'Sin categoría asignada'}
                             </span>
                         </div>
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Categoría</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Categoría</label>
                         <LiquidSelect
                             icon={Tag}
                             value={categoriaId}
@@ -218,7 +218,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Match ERP</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Match ERP</label>
                         <LiquidSelect
                             icon={Building2}
                             value={supplierId}
@@ -228,7 +228,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             clearable
                         />
                     </div>
-                    {clasifError && <div className="sm:col-span-2 text-[11px] text-danger px-1">{clasifError}</div>}
+                    {clasifError && <div className="sm:col-span-2 text-label text-danger px-1">{clasifError}</div>}
                 </div>
             </div>
 
@@ -237,39 +237,39 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <SectionHeader icon={Phone}>Contacto y Pago</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Contacto</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Contacto</label>
                         <input
                             value={form.contacto_nombre}
                             onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
                             placeholder="Nombre del contacto"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Teléfono 2</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Teléfono 2</label>
                         <input
                             value={form.telefono2}
                             onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
                             placeholder="Teléfono adicional"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)">Alias</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)">Alias</label>
                         <input
                             value={form.alias}
                             onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
                             placeholder="Nombre alterno de búsqueda"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nombre para Cheques</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nombre para Cheques</label>
                         <input
                             value={form.nombre_cheques}
                             onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
                             placeholder="Si difiere de la razón social"
-                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                            className="w-full px-3.5 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                         />
                     </div>
                 </div>
@@ -280,7 +280,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <SectionHeader icon={CheckCircle2}>Estado y Notas</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Activo</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Activo</label>
                         <LiquidSelect
                             value={form.activo ? 'si' : 'no'}
                             onChange={(v) => setForm(p => ({ ...p, activo: v === 'si' }))}
@@ -289,7 +289,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Art. 163 CT — se enciende solo al observarlo en un DTE, pero se puede corregir a mano">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Art. 163 CT — se enciende solo al observarlo en un DTE, pero se puede corregir a mano">
                             Percibe 1%
                         </label>
                         <LiquidSelect
@@ -300,13 +300,13 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         />
                     </div>
                     <div className="sm:col-span-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Notas</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Notas</label>
                         <textarea
                             value={form.notas}
                             onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
                             rows={3}
                             placeholder="Notas internas"
-                            className="w-full px-3.5 py-2.5 bg-surface-card border border-divider rounded-[1rem] text-[13px] font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 resize-none"
+                            className="w-full px-3.5 py-2.5 bg-surface-card border border-divider rounded-[1rem] text-body font-medium text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 resize-none"
                         />
                     </div>
                 </div>
@@ -320,9 +320,9 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 fuera del contenedor scrolleable (pedido del usuario: que se comporte
                 como el footer fijo de Nuevo Empleado). */}
             <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider">
-                {error && <div className="text-[11px] text-danger px-1 mb-2">{error}</div>}
+                {error && <div className="text-label text-danger px-1 mb-2">{error}</div>}
                 <button type="button" onClick={save} disabled={loading}
-                    className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                    className="w-full h-[48px] bg-brand hover:bg-brand-hover disabled:bg-content-3 text-white rounded-[1.25rem] font-black text-body-sm uppercase tracking-widest shadow-[var(--shadow-glow-brand)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
                     {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
                 </button>
             </div>

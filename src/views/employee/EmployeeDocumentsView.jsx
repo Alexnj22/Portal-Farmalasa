@@ -113,15 +113,15 @@ const DocCard = ({ doc }) => {
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 flex-wrap mb-1.5">
                         <div>
-                            <p className={`text-[13px] font-black ${cfg.text} leading-tight`}>{title}</p>
+                            <p className={`text-body font-black ${cfg.text} leading-tight`}>{title}</p>
                             {period && (
-                                <p className="text-[10px] text-content-3 font-medium mt-0.5 flex items-center gap-1">
+                                <p className="text-caption text-content-3 font-medium mt-0.5 flex items-center gap-1">
                                     <Calendar size={9} />
                                     {period}
                                 </p>
                             )}
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex-shrink-0 ${status.cls}`}>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest border flex-shrink-0 ${status.cls}`}>
                             <StatusIcon size={9} strokeWidth={2.5} />
                             {status.label}
                         </span>
@@ -129,31 +129,31 @@ const DocCard = ({ doc }) => {
 
                     {/* Nota */}
                     {doc.note && (
-                        <p className="text-[11px] text-content-3 font-medium leading-relaxed mb-2 line-clamp-2">{doc.note}</p>
+                        <p className="text-label text-content-3 font-medium leading-relaxed mb-2 line-clamp-2">{doc.note}</p>
                     )}
 
                     {/* Footer: fecha + archivo */}
                     <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-divider">
-                        <p className="text-[10px] text-content-3 font-medium">
+                        <p className="text-caption text-content-3 font-medium">
                             Solicitado el {new Date(doc.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
 
                         {doc.meta?.docUrl ? (
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-content-3 font-medium truncate max-w-[120px]">
+                                <span className="text-caption text-content-3 font-medium truncate max-w-[120px]">
                                     {doc.meta.docName || 'Documento adjunto'}
                                 </span>
                                 <button
                                     type="button"
                                     onClick={() => openStoredFile(doc.meta.docUrl)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${cfg.bg} ${cfg.border} ${cfg.text}`}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-micro font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${cfg.bg} ${cfg.border} ${cfg.text}`}
                                 >
                                     <Eye size={10} strokeWidth={2.5} />
                                     Ver
                                 </button>
                             </div>
                         ) : (
-                            <span className="text-[10px] text-content-3 font-medium italic">Sin archivo adjunto</span>
+                            <span className="text-caption text-content-3 font-medium italic">Sin archivo adjunto</span>
                         )}
                     </div>
 
@@ -161,12 +161,12 @@ const DocCard = ({ doc }) => {
                     {doc.meta?.permissionDates?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                             {doc.meta.permissionDates.slice(0, 5).map((d, i) => (
-                                <span key={i} className={`px-2 py-0.5 rounded-lg text-[9px] font-black border ${cfg.bg} ${cfg.border} ${cfg.text}`}>
+                                <span key={i} className={`px-2 py-0.5 rounded-lg text-micro font-black border ${cfg.bg} ${cfg.border} ${cfg.text}`}>
                                     {fmtDate(d)}
                                 </span>
                             ))}
                             {doc.meta.permissionDates.length > 5 && (
-                                <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-surface-card-hover text-content-3 border border-divider">
+                                <span className="px-2 py-0.5 rounded-lg text-micro font-black bg-surface-card-hover text-content-3 border border-divider">
                                     +{doc.meta.permissionDates.length - 5} más
                                 </span>
                             )}
@@ -254,7 +254,7 @@ const EmployeeDocumentsView = () => {
                     ref={(input) => { searchInputRef.current = input; if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
                     type="text"
                     placeholder="Buscar documento..."
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />
@@ -273,14 +273,14 @@ const EmployeeDocumentsView = () => {
                     const isActive = tab === t.key;
                     return (
                         <button key={t.key} onClick={() => setTab(t.key)}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                             {t.label}{counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}
                         </button>
                     );
                 })}
                 <div className="w-px h-5 bg-divider mx-1 shrink-0" />
                 <button onClick={() => setFilterOpen(v => !v)}
-                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                     <Filter size={10} strokeWidth={2.5} />
                     Filtrar
                     {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
@@ -310,11 +310,11 @@ const EmployeeDocumentsView = () => {
                 {filterOpen && (
                     <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] p-5 shadow-[var(--shadow-elevation-xs)] animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
                         <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-black text-content-3 uppercase tracking-widest flex items-center gap-1.5">
+                            <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1.5">
                                 <Filter size={10} /> Filtros avanzados
                             </p>
                             {hasFilters && (
-                                <button onClick={clearFilters} className="flex items-center gap-1 text-[10px] font-black text-danger hover:text-danger-text transition-colors">
+                                <button onClick={clearFilters} className="flex items-center gap-1 text-caption font-black text-danger hover:text-danger-text transition-colors">
                                     <X size={10} strokeWidth={2.5} /> Limpiar
                                 </button>
                             )}
@@ -322,12 +322,12 @@ const EmployeeDocumentsView = () => {
 
                         {/* Rango de fechas */}
                         <div>
-                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-2">Período de solicitud</p>
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-2">Período de solicitud</p>
                             <div className="flex items-center gap-2">
                                 <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                 </div>
-                                <span className="text-content-3 text-[12px] font-bold shrink-0">→</span>
+                                <span className="text-content-3 text-body-sm font-bold shrink-0">→</span>
                                 <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                 </div>
@@ -336,13 +336,13 @@ const EmployeeDocumentsView = () => {
 
                         {/* Estado */}
                         <div>
-                            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-2">Estado</p>
+                            <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-2">Estado</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {[{ key: '', label: 'Todos' }, ...Object.entries(STATUS_CFG).map(([k, v]) => ({ key: k, label: v.label }))].map(s => (
                                     <button
                                         key={s.key}
                                         onClick={() => setFilterStatus(s.key)}
-                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                        className={`px-3 py-1.5 rounded-full text-micro font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                     >
                                         {s.label}
                                     </button>
@@ -363,8 +363,8 @@ const EmployeeDocumentsView = () => {
                         ].map(s => (
                             <div key={s.label} className={`${s.bg} backdrop-blur-sm border border-border-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[var(--shadow-elevation-xs)]`}>
                                 <div className="flex-1 min-w-0">
-                                    <p className={`text-[22px] font-black leading-none ${s.color}`}>{s.value}</p>
-                                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mt-0.5">{s.label}</p>
+                                    <p className={`text-title-lg font-black leading-none ${s.color}`}>{s.value}</p>
+                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{s.label}</p>
                                 </div>
                             </div>
                         ))}
@@ -383,10 +383,10 @@ const EmployeeDocumentsView = () => {
                         <div className="w-20 h-20 rounded-[2rem] bg-surface-card border border-border-card flex items-center justify-center mb-4 shadow-sm">
                             <FolderOpen size={32} className="text-content-3" strokeWidth={1.5} />
                         </div>
-                        <p className="text-[15px] font-black text-content-3 mb-1">
+                        <p className="text-subtitle font-black text-content-3 mb-1">
                             {search || hasFilters ? 'Sin resultados' : 'Sin documentos aún'}
                         </p>
-                        <p className="text-[11px] text-content-3 font-medium text-center max-w-xs">
+                        <p className="text-label text-content-3 font-medium text-center max-w-xs">
                             {search || hasFilters
                                 ? 'Intenta con otros filtros o términos de búsqueda.'
                                 : 'Aquí aparecerán tus constancias, boletas de incapacidad y otros documentos adjuntos a tus solicitudes.'}
@@ -394,7 +394,7 @@ const EmployeeDocumentsView = () => {
                         {(search || hasFilters) && (
                             <button
                                 onClick={() => { setSearch(''); clearFilters(); setTab('ALL'); }}
-                                className="mt-4 px-4 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-black text-content-2 hover:bg-surface-card-hover transition-all hover:-translate-y-0.5 active:scale-[0.97]"
+                                className="mt-4 px-4 py-2 rounded-2xl bg-surface-card border border-border-card text-label font-black text-content-2 hover:bg-surface-card-hover transition-all hover:-translate-y-0.5 active:scale-[0.97]"
                             >
                                 Limpiar filtros
                             </button>

@@ -47,18 +47,18 @@ function ExpiryCell({ fecha }) {
     const info = expiryInfo(fecha);
     if (!info) return null;
     if (info.expired) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-caption font-bold text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <AlertTriangle size={9} /> {fecha}
         </span>
     );
     if (info.days <= 30) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-caption font-semibold text-warning-text bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <Calendar size={9} /> {fecha} <span className="opacity-70">{info.days}d</span>
         </span>
     );
     if (info.days <= 90)  return <span className="text-xs font-semibold text-warning whitespace-nowrap">{fecha}</span>;
     if (info.days <= 180) return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-2 py-0.5 rounded-full whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 text-caption font-semibold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-2 py-0.5 rounded-full whitespace-nowrap">
             <Calendar size={9} /> {fecha}
         </span>
     );
@@ -240,11 +240,11 @@ export default function TabInventario({ searchTerm = '' }) {
                             <Package size={15} className="text-brand-text" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
+                            <div className="text-title-lg font-black leading-none tabular-nums text-content-2">
                                 {loading ? <span className="text-content-3">–</span> : total.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-content-2">Productos</div>
-                            <div className="text-[9px] text-content-3">
+                            <div className="text-caption font-bold text-content-2">Productos</div>
+                            <div className="text-micro text-content-3">
                                 {selectedErp !== null ? ERP_NAMES[selectedErp] : 'todas las sucursales'}
                             </div>
                         </div>
@@ -261,11 +261,11 @@ export default function TabInventario({ searchTerm = '' }) {
                             <AlertTriangle size={15} className="text-danger" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-danger">
+                            <div className="text-title-lg font-black leading-none tabular-nums text-danger">
                                 {loading ? <span className="text-content-3">–</span> : expiredTotal.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-content-2">Vencidos</div>
-                            <div className="text-[9px] text-content-3">por fecha</div>
+                            <div className="text-caption font-bold text-content-2">Vencidos</div>
+                            <div className="text-micro text-content-3">por fecha</div>
                         </div>
                         {filterVencidos && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                     </button>
@@ -281,11 +281,11 @@ export default function TabInventario({ searchTerm = '' }) {
                             <CalendarClock size={15} className="text-chart-4-text" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-chart-4-text">
+                            <div className="text-title-lg font-black leading-none tabular-nums text-chart-4-text">
                                 {loading ? <span className="text-content-3">–</span> : sixMonthsTotal.toLocaleString()}
                             </div>
-                            <div className="text-[10px] font-bold text-content-2">Próx. a vencer</div>
-                            <div className="text-[9px] text-content-3">en 6 meses</div>
+                            <div className="text-caption font-bold text-content-2">Próx. a vencer</div>
+                            <div className="text-micro text-content-3">en 6 meses</div>
                         </div>
                         {filterSixMonths && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                     </button>
@@ -302,11 +302,11 @@ export default function TabInventario({ searchTerm = '' }) {
                                 <PackageX size={15} className="text-danger-text" />
                             </div>
                             <div className="text-left">
-                                <div className="text-[22px] font-black leading-none tabular-nums text-danger-text">
+                                <div className="text-title-lg font-black leading-none tabular-nums text-danger-text">
                                     {loading ? <span className="text-content-3">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
                                 </div>
-                                <div className="text-[10px] font-bold text-content-2">Área vencidos</div>
-                                <div className="text-[9px] text-content-3">ubicación bodega</div>
+                                <div className="text-caption font-bold text-content-2">Área vencidos</div>
+                                <div className="text-micro text-content-3">ubicación bodega</div>
                             </div>
                             {filterAreaVenc && <X size={11} className="text-content-3 ml-auto shrink-0" />}
                         </button>
@@ -317,14 +317,14 @@ export default function TabInventario({ searchTerm = '' }) {
                             <DollarSign size={15} className="text-success" />
                         </div>
                         <div className="text-left">
-                            <div className="text-[22px] font-black leading-none tabular-nums text-success-text">
+                            <div className="text-title-lg font-black leading-none tabular-nums text-success-text">
                                 {loading
                                     ? <span className="text-content-3">–</span>
                                     : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 }
                             </div>
-                            <div className="text-[10px] font-bold text-content-2">Inversión</div>
-                            <div className="text-[9px] text-content-3">costo sin IVA</div>
+                            <div className="text-caption font-bold text-content-2">Inversión</div>
+                            <div className="text-micro text-content-3">costo sin IVA</div>
                         </div>
                     </div>
 
@@ -421,9 +421,9 @@ export default function TabInventario({ searchTerm = '' }) {
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
                     <p className="text-sm font-semibold text-danger mb-1">Error al cargar inventario</p>
-                    <p className="text-[11px] text-danger mb-4">{loadError}</p>
+                    <p className="text-label text-danger mb-4">{loadError}</p>
                     <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
-                        className="px-5 py-2 text-[12px] font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
+                        className="px-5 py-2 text-body-sm font-bold text-white bg-danger-solid hover:bg-danger-hover rounded-full transition-colors">
                         Reintentar
                     </button>
                 </div>
@@ -467,14 +467,14 @@ export default function TabInventario({ searchTerm = '' }) {
                                 >
                                     {selectedErp === null && (
                                         <DataCell className="whitespace-nowrap">
-                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-content-2 bg-surface-card-hover border-divider'}`}>
+                                            <span className={`text-label font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-content-2 bg-surface-card-hover border-divider'}`}>
                                                 {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
                                             </span>
                                         </DataCell>
                                     )}
 
                                     <DataCell hideBelow="lg">
-                                        <span className="text-[11px] text-content-3">
+                                        <span className="text-label text-content-3">
                                             {lab || <span className="text-content-3">—</span>}
                                         </span>
                                     </DataCell>
@@ -484,11 +484,11 @@ export default function TabInventario({ searchTerm = '' }) {
                                             <ChevronDown size={12} strokeWidth={2.5}
                                                 className={`text-content-3 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand-text' : ''}`} />
                                             <div className="min-w-0">
-                                                <span className="text-[13px] font-medium text-content line-clamp-2 leading-tight">
+                                                <span className="text-body font-medium text-content line-clamp-2 leading-tight">
                                                     {group.descripcion || '—'}
                                                 </span>
                                                 {group.es_antibiotico && (
-                                                    <span className="mt-0.5 inline-flex text-[9px] font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">
+                                                    <span className="mt-0.5 inline-flex text-micro font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">
                                                         Bajo Receta
                                                     </span>
                                                 )}
@@ -500,7 +500,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                         {pres.length > 0 ? (
                                             <div className="flex flex-wrap gap-1">
                                                 {pres.map(p => (
-                                                    <span key={p} className="text-[10px] font-bold text-content-3 bg-surface-card-hover/80 border border-divider px-2 py-0.5 rounded-full">
+                                                    <span key={p} className="text-caption font-bold text-content-3 bg-surface-card-hover/80 border border-divider px-2 py-0.5 rounded-full">
                                                         {p}
                                                     </span>
                                                 ))}
@@ -509,7 +509,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </DataCell>
 
                                     <DataCell hideBelow="lg">
-                                        <span className="text-[11px] font-mono text-content-3">
+                                        <span className="text-label font-mono text-content-3">
                                             {loteDisplay}
                                         </span>
                                     </DataCell>
@@ -521,12 +521,12 @@ export default function TabInventario({ searchTerm = '' }) {
                                         }`}>
                                             {units.toLocaleString()}
                                         </span>
-                                        <span className="text-[9px] text-content-3 ml-0.5">und</span>
+                                        <span className="text-micro text-content-3 ml-0.5">und</span>
                                         {(() => {
                                             const vUnits = vencidosMap[`${group.erp_sucursal_id}_${group.erp_product_id}`] || 0;
                                             if (!vUnits) return null;
                                             return (
-                                                <span className="ml-1.5 text-[10px] font-bold text-danger-text tabular-nums">
+                                                <span className="ml-1.5 text-caption font-bold text-danger-text tabular-nums">
                                                     / {vUnits.toLocaleString()} V
                                                 </span>
                                             );
@@ -554,12 +554,12 @@ export default function TabInventario({ searchTerm = '' }) {
                                                         {/* Regular inventory */}
                                                         {(expandedData[key] || []).length > 0 && (
                                                             <table className="w-full">
-                                                                {(expandedVencidos[key] || []).length > 0 && <caption className="text-left text-[9px] font-black uppercase tracking-widest text-chart-1-text pb-1.5">Inventario regular</caption>}
+                                                                {(expandedVencidos[key] || []).length > 0 && <caption className="text-left text-micro font-black uppercase tracking-widest text-chart-1-text pb-1.5">Inventario regular</caption>}
                                                                 <thead>
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
                                                                             <th key={h}
-                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-content-3 pr-6 last:pr-0 ${
+                                                                                className={`pb-2 text-micro font-black uppercase tracking-widest text-content-3 pr-6 last:pr-0 ${
                                                                                     h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
                                                                                 }`}>
                                                                                 {h}
@@ -574,29 +574,29 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         return (
                                                                             <tr key={j} className="border-t border-divider">
                                                                                 <td className="py-1.5 pr-6">
-                                                                                    <span className="text-[12px] font-semibold text-content-2">
+                                                                                    <span className="text-body-sm font-semibold text-content-2">
                                                                                         {row.presentacion || '—'}
                                                                                     </span>
                                                                                     {row.detalle && (
-                                                                                        <span className="text-[10px] text-content-3 font-mono ml-1.5">
+                                                                                        <span className="text-caption text-content-3 font-mono ml-1.5">
                                                                                             {row.detalle}
                                                                                         </span>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-content-3">
+                                                                                <td className="py-1.5 pr-6 text-label font-mono text-content-3">
                                                                                     {row.lote || '—'}
                                                                                 </td>
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <ExpiryCell fecha={row.fecha_vencimiento} />
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-content-2 tabular-nums">
+                                                                                <td className="py-1.5 pr-6 text-right text-body-sm font-semibold text-content-2 tabular-nums">
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-content-2'}`}>
+                                                                                    <span className={`text-body-sm font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-content-2'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
-                                                                                    <span className="text-[9px] text-content-3 ml-0.5">und</span>
+                                                                                    <span className="text-micro text-content-3 ml-0.5">und</span>
                                                                                 </td>
                                                                             </tr>
                                                                         );
@@ -608,14 +608,14 @@ export default function TabInventario({ searchTerm = '' }) {
                                                         {/* Vencidos section */}
                                                         {(expandedVencidos[key] || []).length > 0 && (
                                                             <table className="w-full mt-3">
-                                                                <caption className="text-left text-[9px] font-black uppercase tracking-widest text-danger-text pb-1.5">
+                                                                <caption className="text-left text-micro font-black uppercase tracking-widest text-danger-text pb-1.5">
                                                                     Ubicación vencidos
                                                                 </caption>
                                                                 <thead>
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
                                                                             <th key={h}
-                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-danger-text pr-6 last:pr-0 ${
+                                                                                className={`pb-2 text-micro font-black uppercase tracking-widest text-danger-text pr-6 last:pr-0 ${
                                                                                     h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
                                                                                 }`}>
                                                                                 {h}
@@ -630,29 +630,29 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         return (
                                                                             <tr key={j} className="border-t border-danger/20">
                                                                                 <td className="py-1.5 pr-6">
-                                                                                    <span className="text-[12px] font-semibold text-danger-text">
+                                                                                    <span className="text-body-sm font-semibold text-danger-text">
                                                                                         {row.presentacion || '—'}
                                                                                     </span>
                                                                                     {row.detalle && (
-                                                                                        <span className="text-[10px] text-danger-text font-mono ml-1.5">
+                                                                                        <span className="text-caption text-danger-text font-mono ml-1.5">
                                                                                             {row.detalle}
                                                                                         </span>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-danger-text">
+                                                                                <td className="py-1.5 pr-6 text-label font-mono text-danger-text">
                                                                                     {row.lote || '—'}
                                                                                 </td>
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <ExpiryCell fecha={row.fecha_vencimiento} />
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-danger-text tabular-nums">
+                                                                                <td className="py-1.5 pr-6 text-right text-body-sm font-semibold text-danger-text tabular-nums">
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-danger-text'}`}>
+                                                                                    <span className={`text-body-sm font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : 'text-danger-text'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
-                                                                                    <span className="text-[9px] text-danger-text ml-0.5">und</span>
+                                                                                    <span className="text-micro text-danger-text ml-0.5">und</span>
                                                                                 </td>
                                                                             </tr>
                                                                         );

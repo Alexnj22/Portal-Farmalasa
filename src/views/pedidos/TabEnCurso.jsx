@@ -100,7 +100,7 @@ function BranchStagePill({ row, pedidoStatus }) {
     }
 
     return (
-        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
+        <span className={`inline-flex items-center gap-1 text-caption font-semibold px-2 py-1 rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
             <Icon size={10} />
             {cfg.label}
             {detail && <span className="opacity-70 font-normal">· {detail}</span>}
@@ -167,7 +167,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
         return (
             <div className="flex items-center justify-center py-16 gap-2 text-content-3">
                 <Loader2 size={20} className="animate-spin" />
-                <span className="text-[14px]">Cargando pedidos activos…</span>
+                <span className="text-body-lg">Cargando pedidos activos…</span>
             </div>
         );
     }
@@ -179,9 +179,9 @@ export default function TabEnCurso({ searchTerm = '' }) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Activity size={14} className="text-chart-1-text" />
-                    <span className="text-[12px] font-semibold text-content-2">Pedidos en curso</span>
+                    <span className="text-body-sm font-semibold text-content-2">Pedidos en curso</span>
                     {lastSync && (
-                        <span className="text-[10px] text-content-3">
+                        <span className="text-caption text-content-3">
                             · actualizado {fmtRelative(lastSync.toISOString())}
                         </span>
                     )}
@@ -189,7 +189,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                 <button
                     onClick={load}
                     disabled={refreshing}
-                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 text-label text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
                     Refrescar
@@ -202,7 +202,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                     const colors = COLOR_CLASSES[cfg.color];
                     const Icon   = cfg.icon;
                     return (
-                        <span key={key} className={`inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
+                        <span key={key} className={`inline-flex items-center gap-1 text-micro font-medium px-1.5 py-0.5 rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}>
                             <Icon size={9} />
                             {cfg.label}
                         </span>
@@ -214,7 +214,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
             {filtered.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 gap-2 text-content-3">
                     <CheckCircle2 size={32} className="opacity-50" />
-                    <p className="text-[13px] text-content-3">No hay pedidos activos en este momento.</p>
+                    <p className="text-body text-content-3">No hay pedidos activos en este momento.</p>
                 </div>
             )}
 
@@ -231,32 +231,32 @@ export default function TabEnCurso({ searchTerm = '' }) {
                     <div key={pedido.pedido_id} className={`${GLASS} ${anyPaused ? 'ring-1 ring-warning/50' : ''}`}>
                         {/* Header del pedido */}
                         <div className="flex items-center gap-3 px-4 py-3">
-                            <span className="text-[13px] font-bold text-content-2 tabular-nums">
+                            <span className="text-body font-bold text-content-2 tabular-nums">
                                 #{pedido.numero}
                             </span>
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${PEDIDO_STATUS_PILL[pedido.status] ?? 'bg-surface-card-hover text-content-3 border-divider'}`}>
+                            <span className={`text-caption font-semibold px-2 py-0.5 rounded-full border ${PEDIDO_STATUS_PILL[pedido.status] ?? 'bg-surface-card-hover text-content-3 border-divider'}`}>
                                 {PEDIDO_STATUS_LABEL[pedido.status] ?? pedido.status}
                             </span>
                             {anyPaused && (
-                                <span className="flex items-center gap-1 text-[10px] font-semibold text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
+                                <span className="flex items-center gap-1 text-caption font-semibold text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-full">
                                     <Pause size={10} />
                                     Pausado
                                 </span>
                             )}
                             {allReady && pedido.status === 'confirmado' && (
-                                <span className="flex items-center gap-1 text-[10px] font-semibold text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full">
+                                <span className="flex items-center gap-1 text-caption font-semibold text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-2 py-0.5 rounded-full">
                                     <Play size={10} />
                                     Listo para enviar
                                 </span>
                             )}
-                            <span className="ml-auto text-[10px] text-content-3">
+                            <span className="ml-auto text-caption text-content-3">
                                 {fmtRelative(pedido.enviado_at ?? pedido.created_at)}
                             </span>
                         </div>
 
                         {/* Notas del pedido */}
                         {pedido.notes && (
-                            <p className="px-4 pb-1 text-[11px] text-content-3 italic">{pedido.notes}</p>
+                            <p className="px-4 pb-1 text-label text-content-3 italic">{pedido.notes}</p>
                         )}
 
                         {/* Sucursales */}
@@ -273,12 +273,12 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                             isPaused ? 'bg-warning/10 border border-warning/30' : 'bg-surface-card-hover/60 border border-divider'
                                         }`}>
                                             <Building2 size={11} className="text-content-3 shrink-0" />
-                                            <span className="text-[11px] font-semibold text-content-2 w-20 shrink-0">
+                                            <span className="text-label font-semibold text-content-2 w-20 shrink-0">
                                                 {ERP_NAMES[suc.erp_sucursal_id] ?? `Suc. ${suc.erp_sucursal_id}`}
                                             </span>
                                             <BranchStagePill row={suc} pedidoStatus={pedido.status} />
                                             {hasPausas && (
-                                                <span className="ml-auto text-[9px] text-warning font-medium flex items-center gap-0.5 shrink-0">
+                                                <span className="ml-auto text-micro text-warning font-medium flex items-center gap-0.5 shrink-0">
                                                     <Pause size={9} />
                                                     {pauseCount} {pauseCount === 1 ? 'pausa' : 'pausas'}
                                                     {suc.min_pausado_total > 0 && ` · ${fmtMin(suc.min_pausado_total)}`}
@@ -301,10 +301,10 @@ export default function TabEnCurso({ searchTerm = '' }) {
                             return (
                                 <div className="border-t border-divider px-4 py-2.5">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[9px] text-content-3 font-medium">
+                                        <span className="text-micro text-content-3 font-medium">
                                             Progreso de recepción
                                         </span>
-                                        <span className="text-[9px] text-content-3 font-semibold">
+                                        <span className="text-micro text-content-3 font-semibold">
                                             {done}/{total} ingresados al ERP
                                             {sent > done && ` · ${sent - done} contando`}
                                             {finished > sent && ` · ${finished - sent} en tránsito`}

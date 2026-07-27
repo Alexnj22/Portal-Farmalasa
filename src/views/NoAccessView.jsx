@@ -53,10 +53,10 @@ const NoAccessView = () => {
 
                 {/* Text */}
                 <div className="animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '150ms' }}>
-                    <h1 className="text-[36px] font-black text-content tracking-tight leading-none mb-3">
+                    <h1 className="text-display-lg font-black text-content tracking-tight leading-none mb-3">
                         Sin acceso
                     </h1>
-                    <p className="text-[15px] text-content-3 font-medium leading-relaxed mb-8">
+                    <p className="text-subtitle text-content-3 font-medium leading-relaxed mb-8">
                         Tu cuenta no tiene módulos habilitados.
                     </p>
                 </div>
@@ -66,7 +66,7 @@ const NoAccessView = () => {
                     {/* WhatsApp support */}
                     <button
                         onClick={handleWhatsApp}
-                        className="w-full inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#25D366] text-white text-[13px] font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[0_8px_24px_rgba(37,211,102,0.3)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.4)]"
+                        className="w-full inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[0_8px_24px_rgba(37,211,102,0.3)] hover:shadow-[0_12px_32px_rgba(37,211,102,0.4)]"
                     >
                         <MessageCircle size={15} strokeWidth={2.5} />
                         Contacta con soporte
@@ -76,7 +76,7 @@ const NoAccessView = () => {
                     <button
                         onClick={handleLogout}
                         disabled={loggingOut}
-                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-surface-card border border-divider text-content-2 text-[13px] font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
+                        className="w-full inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-surface-card border border-divider text-content-2 text-body font-black hover:bg-surface-card-hover active:scale-[0.97] transition-all disabled:opacity-60"
                     >
                         {loggingOut
                             ? <Loader2 size={14} className="animate-spin" />

@@ -129,7 +129,7 @@ export function DataTable({
                       onClick={sortable ? () => onSort(col.key) : undefined}
                       className={[
                         'px-4 md:px-6 py-3',
-                        'text-[9px] md:text-[10px] font-black uppercase tracking-widest',
+                        'text-micro md:text-caption font-black uppercase tracking-widest',
                         'select-none whitespace-nowrap',
                         tk.thText, alignCls, hideCls,
                         sortable ? `cursor-pointer transition-colors duration-150 ${tk.thHover}` : '',
@@ -183,11 +183,11 @@ export function DataTable({
                       {empty.icon && (
                         <empty.icon size={36} strokeWidth={1.5} className={tk.emptyIcon} />
                       )}
-                      <p className={`text-[13px] font-bold ${tk.emptyText}`}>
+                      <p className={`text-body font-bold ${tk.emptyText}`}>
                         {empty.message}
                       </p>
                       {empty.subtext && (
-                        <p className={`text-[11px] ${tk.emptyText} opacity-70`}>
+                        <p className={`text-label ${tk.emptyText} opacity-70`}>
                           {empty.subtext}
                         </p>
                       )}
@@ -253,7 +253,7 @@ export function DataCell({ children, align = 'left', hideBelow, className = '', 
     <td
       {...props}
       className={[
-        'px-4 md:px-6 py-3.5 text-[13px]',
+        'px-4 md:px-6 py-3.5 text-body',
         tk.cellText || '',
         alignCls, hideCls, className,
       ].join(' ')}

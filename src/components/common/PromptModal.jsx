@@ -59,12 +59,12 @@ const PromptModal = ({
                         <MessageSquarePlus size={28} strokeWidth={2.5} />
                     </div>
 
-                    <h3 className="text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-3 leading-tight text-content">
+                    <h3 className="text-title-sm sm:text-title font-black uppercase tracking-tight mb-3 leading-tight text-content">
                         {title}
                     </h3>
 
                     {message && (
-                        <p className="text-[13px] font-medium leading-relaxed w-full mb-4 text-content-3">
+                        <p className="text-body font-medium leading-relaxed w-full mb-4 text-content-3">
                             {message}
                         </p>
                     )}
@@ -76,7 +76,7 @@ const PromptModal = ({
                         placeholder={placeholder}
                         disabled={isProcessing}
                         rows={3}
-                        className="w-full text-[14px] font-medium text-content bg-surface-card border border-border-input rounded-2xl px-4 py-3 outline-none focus:border-brand/50 focus:ring-4 focus:ring-brand/10 transition-all resize-none placeholder-content-3"
+                        className="w-full text-body-lg font-medium text-content bg-surface-card border border-border-input rounded-2xl px-4 py-3 outline-none focus:border-brand/50 focus:ring-4 focus:ring-brand/10 transition-all resize-none placeholder-content-3"
                     />
                 </div>
 
@@ -84,7 +84,7 @@ const PromptModal = ({
                     <button
                         onClick={onClose}
                         disabled={isProcessing}
-                        className="py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border border-border-card transition-all duration-300 flex-1 flex items-center justify-center text-content-2 bg-surface-card hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm"
+                        className="py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest border border-border-card transition-all duration-300 flex-1 flex items-center justify-center text-content-2 bg-surface-card hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm"
                     >
                         {cancelText}
                     </button>
@@ -92,7 +92,7 @@ const PromptModal = ({
                     <button
                         onClick={() => onConfirm(text.trim())}
                         disabled={!canConfirm}
-                        className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 flex-1 flex items-center justify-center gap-2 border-transparent shadow-sm ${
+                        className={`py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest text-white transition-all duration-300 flex-1 flex items-center justify-center gap-2 border-transparent shadow-sm ${
                             !canConfirm ? 'cursor-not-allowed opacity-60 bg-brand' : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-brand hover:bg-brand-hover'
                         }`}
                     >

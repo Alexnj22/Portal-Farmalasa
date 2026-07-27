@@ -66,7 +66,7 @@ function DocBadge({ tipo }) {
   if (!tipo) return null;
   const isCCF = tipo === 'CCF';
   return (
-    <span className={`shrink-0 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${
+    <span className={`shrink-0 text-micro font-black uppercase px-1.5 py-0.5 rounded-md ${
       isCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'
     }`}>{tipo}</span>
   );
@@ -74,7 +74,7 @@ function DocBadge({ tipo }) {
 function PayBadge({ tipo }) {
   if (!tipo) return null;
   return (
-    <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success-text uppercase">
+    <span className="shrink-0 text-micro font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success-text uppercase">
       {tipo}
     </span>
   );
@@ -89,7 +89,7 @@ function VendorAvatar({ employee, size = 6 }) {
     return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
     <div className={`${base} bg-surface-card-hover`}>
-      <span className="text-content-2 font-black text-[10px] leading-none">{employee.name?.charAt(0)}</span>
+      <span className="text-content-2 font-black text-caption leading-none">{employee.name?.charAt(0)}</span>
     </div>
   );
 }
@@ -104,21 +104,21 @@ function InvoiceHeader({ inv, onBack, vendor }) {
           <ArrowLeft size={12} strokeWidth={2.5} />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-content truncate leading-tight">{inv.cliente || 'Sin nombre'}</p>
-          <p className="text-[9px] text-content-3 font-mono leading-tight">{inv.correlativo}</p>
+          <p className="text-body-sm font-black text-content truncate leading-tight">{inv.cliente || 'Sin nombre'}</p>
+          <p className="text-micro text-content-3 font-mono leading-tight">{inv.correlativo}</p>
         </div>
-        <p className="text-[13px] font-black text-content shrink-0">{fmtCurrency(inv.total)}</p>
+        <p className="text-body font-black text-content shrink-0">{fmtCurrency(inv.total)}</p>
       </div>
       <div className="flex items-center gap-1.5 pl-8 flex-wrap">
-        <span className="text-[9px] text-content-3 font-mono">ID #{inv.id}</span>
+        <span className="text-micro text-content-3 font-mono">ID #{inv.id}</span>
         <span className="text-content-3">·</span>
-        <span className="text-[9px] font-semibold text-content-3">{fmtDate(inv.fecha)}</span>
+        <span className="text-micro font-semibold text-content-3">{fmtDate(inv.fecha)}</span>
         {vendor && (
           <>
             <span className="text-content-3">·</span>
             <span className="inline-flex items-center gap-1">
               <VendorAvatar employee={vendor} size={5} />
-              <span className="text-[9px] text-content-3 font-semibold">{vendor.name?.split(' ')[0]}</span>
+              <span className="text-micro text-content-3 font-semibold">{vendor.name?.split(' ')[0]}</span>
             </span>
           </>
         )}
@@ -132,7 +132,7 @@ function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   return (
     <div className="shrink-0 pt-2">
       <button onClick={onClick} disabled={disabled || isLoading}
-        className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
+        className="w-full py-2.5 rounded-2xl bg-brand text-white text-body-sm font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2">
         {isLoading && <Loader2 size={14} className="animate-spin" />}
         {isLoading ? 'Enviando...' : label}
       </button>
@@ -186,28 +186,28 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
                 <div key={i} className={`px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
-                  <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">{label}</p>
-                  <p className={`text-[11px] font-bold text-content-2 ${mono ? 'font-mono' : ''}`}>{value}</p>
+                  <p className="text-micro font-black text-content-2 uppercase tracking-wider">{label}</p>
+                  <p className={`text-label font-bold text-content-2 ${mono ? 'font-mono' : ''}`}>{value}</p>
                 </div>
               ))}
             </div>
             <div>
               <div className="px-3 py-1.5 border-b border-divider">
-                <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">Vendedor</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-wider">Vendedor</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <VendorAvatar employee={vendor} size={5} />
-                  <p className="text-[11px] font-bold text-content-2 truncate">
+                  <p className="text-label font-bold text-content-2 truncate">
                     {vendor ? vendor.name.split(' ').slice(0, 2).join(' ') : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '—')}
                   </p>
                 </div>
               </div>
               <div className="px-3 py-1.5 border-b border-divider">
-                <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">Fecha</p>
-                <p className="text-[12px] font-black text-content">{fmtDate(inv.fecha)}</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-wider">Fecha</p>
+                <p className="text-body-sm font-black text-content">{fmtDate(inv.fecha)}</p>
               </div>
               <div className="px-3 py-1.5">
-                <p className="text-[9px] font-black text-content-2 uppercase tracking-wider">Total</p>
-                <p className="text-[13px] font-black text-content">{fmtCurrency(inv.total)}</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-wider">Total</p>
+                <p className="text-body font-black text-content">{fmtCurrency(inv.total)}</p>
               </div>
             </div>
           </div>
@@ -215,24 +215,24 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
         {/* Productos */}
         <div className="shrink-0">
-          <p className="text-[9px] font-black text-content-2 uppercase tracking-widest px-1 mb-1">
+          <p className="text-micro font-black text-content-2 uppercase tracking-widest px-1 mb-1">
             Productos ({items.length})
           </p>
           {loading ? (
             <div className="flex justify-center py-3"><Loader2 size={15} className="animate-spin text-content-3" /></div>
           ) : items.length === 0 ? (
-            <p className="text-[11px] text-content-3 text-center py-2">Sin detalle</p>
+            <p className="text-label text-content-3 text-center py-2">Sin detalle</p>
           ) : (
             <div className="rounded-2xl border border-divider bg-surface-card overflow-hidden">
               {items.map((it, i) => (
                 <div key={i} className={`flex items-start gap-2 px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold text-content-2 leading-tight truncate">{it.descripcion}</p>
-                    {it.presentacion && <p className="text-[9px] text-content-3">{it.presentacion}</p>}
+                    <p className="text-label font-bold text-content-2 leading-tight truncate">{it.descripcion}</p>
+                    {it.presentacion && <p className="text-micro text-content-3">{it.presentacion}</p>}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[11px] font-black text-content-2">{fmtCurrency(it.total_linea)}</p>
-                    <p className="text-[9px] text-content-3">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
+                    <p className="text-label font-black text-content-2">{fmtCurrency(it.total_linea)}</p>
+                    <p className="text-micro text-content-3">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
                   </div>
                 </div>
               ))}
@@ -245,7 +245,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
           withinGrace ? 'bg-warning/10 border border-warning/30' : 'bg-danger/10 border border-danger/30'
         }`}>
           <Clock size={12} className={withinGrace ? 'text-warning' : 'text-danger'} strokeWidth={2.5} />
-          <p className={`text-[11px] font-bold ${withinGrace ? 'text-warning-text' : 'text-danger'}`}>
+          <p className={`text-label font-bold ${withinGrace ? 'text-warning-text' : 'text-danger'}`}>
             {withinGrace
               ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} para solicitar anulación`
               : `Anulación fuera de plazo — ${age} días desde la venta`}
@@ -289,7 +289,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
-      <p className="text-[10px] font-black text-content-2 uppercase tracking-widest px-1">Tipo de solicitud</p>
+      <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">Tipo de solicitud</p>
       <div className="flex flex-col gap-2 flex-1">
         {types.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
           <button key={key} onClick={() => onSelect(key)}
@@ -298,8 +298,8 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
               <Icon size={15} strokeWidth={2} className={color} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-[12px] font-black ${color}`}>{label}</p>
-              <p className="text-[10px] text-content-3 mt-0.5">{desc}</p>
+              <p className={`text-body-sm font-black ${color}`}>{label}</p>
+              <p className="text-caption text-content-3 mt-0.5">{desc}</p>
             </div>
             <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
           </button>
@@ -372,7 +372,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         {isCreditPay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-chart-3/10 border border-chart-3/30">
             <Info size={12} className="text-chart-3-text mt-0.5 shrink-0" strokeWidth={2.5} />
-            <p className="text-[11px] font-bold text-chart-3-text leading-snug">
+            <p className="text-label font-bold text-chart-3-text leading-snug">
               Venta a <strong>crédito</strong> — la anulación tomará más tiempo y se confirmará al realizarse.
             </p>
           </div>
@@ -380,7 +380,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         {ccfSameDay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-warning/10 border border-warning/30">
             <ShieldAlert size={12} className="text-warning mt-0.5 shrink-0" strokeWidth={2.5} />
-            <p className="text-[11px] font-bold text-warning-text leading-snug">
+            <p className="text-label font-bold text-warning-text leading-snug">
               <strong>CCF:</strong> Asegúrate de que se emitirá la nota de crédito correspondiente.
             </p>
           </div>
@@ -389,32 +389,32 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <div className="rounded-2xl px-3 py-2 flex flex-col gap-2 bg-danger/10 border border-danger/40">
             <div className="flex items-start gap-2">
               <ShieldAlert size={13} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
-              <p className="text-[11px] font-bold text-danger-text leading-snug">
+              <p className="text-label font-bold text-danger-text leading-snug">
                 <strong>CCF de fecha anterior.</strong> Solo se anulan el mismo día y requieren nota de crédito.
               </p>
             </div>
             <label className="flex items-start gap-2 cursor-pointer">
               <input type="checkbox" checked={ccfAck} onChange={e => setCcfAck(e.target.checked)}
                 className="mt-0.5 w-4 h-4 rounded accent-danger shrink-0" />
-              <span className="text-[11px] font-black text-danger-text">Entiendo y confirmo que tengo autorización para solicitarlo</span>
+              <span className="text-label font-black text-danger-text">Entiendo y confirmo que tengo autorización para solicitarlo</span>
             </label>
           </div>
         )}
         {!withinGrace && !ccfNotSameDay && (
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-danger/10 border border-danger/30">
             <AlertTriangle size={12} className="text-danger mt-0.5 shrink-0" strokeWidth={2.5} />
-            <p className="text-[11px] font-bold text-danger-text leading-snug">
+            <p className="text-label font-bold text-danger-text leading-snug">
               Factura fuera del plazo ({age} días). Requiere motivo detallado y aprobación del supervisor.
             </p>
           </div>
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
           <div className="grid grid-cols-2 gap-1.5">
             {REASONS.map(r => (
               <button key={r} onClick={() => setReason(r)}
-                className={`text-left px-3 py-2 rounded-2xl border text-[11px] font-bold transition-all ${
+                className={`text-left px-3 py-2 rounded-2xl border text-label font-bold transition-all ${
                   reason === r ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-2 border-divider hover:border-brand/40'
                 }`}>{r}</button>
             ))}
@@ -422,17 +422,17 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">
             Comentarios {commentRequired && <span className="text-danger-text">*</span>}
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
-            className={`w-full px-3.5 py-2 rounded-2xl border bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
+            className={`w-full px-3.5 py-2 rounded-2xl border bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
               commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-danger/20' : 'border-divider focus:border-brand focus:ring-brand/10'
             }`}
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de anulación" onClick={handleSubmit} disabled={!canSubmit} loading={submitting} />
@@ -495,17 +495,17 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         <div className="rounded-2xl px-3 py-2 flex items-center gap-2 bg-surface-card-hover border border-divider">
           <CreditCard size={13} className="text-content-3 shrink-0" strokeWidth={2.5} />
           <div>
-            <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Forma de pago actual</p>
-            <p className="text-[12px] font-black text-content-2">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
+            <p className="text-micro font-black text-content-2 uppercase tracking-widest">Forma de pago actual</p>
+            <p className="text-body-sm font-black text-content-2">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Cambiar a *</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Cambiar a *</label>
           <div className="grid grid-cols-2 gap-1.5">
             {available.map(m => (
               <button key={m} onClick={() => setNewPayment(m)}
-                className={`text-left px-3 py-2 rounded-2xl border text-[11px] font-bold transition-all ${
+                className={`text-left px-3 py-2 rounded-2xl border text-label font-bold transition-all ${
                   newPayment === m ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-2 border-divider hover:border-brand/40'
                 }`}>{PAYMENT_LABELS[m] || m}</button>
             ))}
@@ -513,13 +513,13 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica el motivo del cambio..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newPayment} loading={submitting} />
@@ -591,10 +591,10 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Vendedor actual */}
         <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
-          <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5">Vendedor actual</p>
+          <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Vendedor actual</p>
           <div className="flex items-center gap-2.5">
             <VendorAvatar employee={currentVendor} size={8} />
-            <p className="text-[13px] font-black text-content-2">
+            <p className="text-body font-black text-content-2">
               {currentVendor?.name ?? `Vendedor #${inv.cod_vendedor || '—'}`}
             </p>
           </div>
@@ -602,9 +602,9 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
         {/* Lista — solo foto + nombre */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Asignar a *</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Asignar a *</label>
           {vendorList.length === 0 ? (
-            <p className="text-[11px] text-content-3 text-center py-3">No hay otros vendedores en esta sucursal</p>
+            <p className="text-label text-content-3 text-center py-3">No hay otros vendedores en esta sucursal</p>
           ) : (
             <div className="space-y-1">
               {vendorList.map(emp => {
@@ -615,7 +615,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                       isSelected ? 'bg-brand/5 border-brand/40' : 'bg-surface-card border-divider hover:border-divider'
                     }`}>
                     <VendorAvatar employee={emp} size={8} />
-                    <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`}>{emp.name}</p>
+                    <p className={`text-body-sm font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`}>{emp.name}</p>
                     {isSelected && (
                       <div className="w-4 h-4 rounded-full bg-brand flex items-center justify-center shrink-0">
                         <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -629,13 +629,13 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe reasignar esta venta..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newVendorId} loading={submitting} />
@@ -724,18 +724,18 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Cliente actual */}
         <div className="rounded-2xl px-3 py-2 bg-surface-card-hover border border-divider">
-          <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
+          <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
-              <span className="text-content-2 font-black text-[11px] leading-none">{(inv.cliente || '?').charAt(0)}</span>
+              <span className="text-content-2 font-black text-label leading-none">{(inv.cliente || '?').charAt(0)}</span>
             </div>
-            <p className="text-[13px] font-black text-content-2 truncate">{inv.cliente || 'Sin nombre'}</p>
+            <p className="text-body font-black text-content-2 truncate">{inv.cliente || 'Sin nombre'}</p>
           </div>
         </div>
 
         {/* Buscador de cliente nuevo */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Cliente nuevo *</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Cliente nuevo *</label>
           <SearchInput
             size="sm"
             value={query}
@@ -748,12 +748,12 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           {newClient && (
             <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border bg-brand/5 border-brand/40">
               <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
-                <span className="text-brand-text font-black text-[10px] leading-none">{newClient.name?.charAt(0)}</span>
+                <span className="text-brand-text font-black text-caption leading-none">{newClient.name?.charAt(0)}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-black text-brand-text truncate">{newClient.name}</p>
+                <p className="text-body-sm font-black text-brand-text truncate">{newClient.name}</p>
                 {(newClient.nit || newClient.dui) && (
-                  <p className="text-[9px] text-content-3 font-mono truncate">{newClient.nit || newClient.dui}</p>
+                  <p className="text-micro text-content-3 font-mono truncate">{newClient.nit || newClient.dui}</p>
                 )}
               </div>
               <div className="w-4 h-4 rounded-full bg-brand flex items-center justify-center shrink-0">
@@ -764,7 +764,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
           {/* Resultados */}
           {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (
-            <p className="text-[11px] text-content-3 text-center py-2">Sin coincidencias en el listado de clientes</p>
+            <p className="text-label text-content-3 text-center py-2">Sin coincidencias en el listado de clientes</p>
           )}
           {!newClient && results.length > 0 && (
             <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -772,11 +772,11 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                 <button key={c.id} onClick={() => setNewClient(c)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-surface-card border-divider hover:border-brand/40">
                   <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
-                    <span className="text-content-3 font-black text-[10px] leading-none">{c.name?.charAt(0)}</span>
+                    <span className="text-content-3 font-black text-caption leading-none">{c.name?.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-bold text-content-2 truncate leading-tight">{c.name}</p>
-                    <p className="text-[9px] text-content-3 font-mono truncate">
+                    <p className="text-body-sm font-bold text-content-2 truncate leading-tight">{c.name}</p>
+                    <p className="text-micro text-content-3 font-mono truncate">
                       {[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`, c.phone].filter(Boolean).join(' · ') || `#${c.erp_id || c.id}`}
                     </p>
                   </div>
@@ -787,13 +787,13 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe cambiar el cliente..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
-        {submitError && <p className="text-[11px] text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newClient} loading={submitting} />
@@ -872,7 +872,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2">
         <AlertTriangle size={28} strokeWidth={1.5} className="text-content-3" />
-        <p className="text-[12px] font-semibold text-content-3">Tu sucursal no está configurada</p>
+        <p className="text-body-sm font-semibold text-content-3">Tu sucursal no está configurada</p>
       </div>
     );
   }
@@ -890,9 +890,9 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       <div className="flex flex-col items-center justify-center h-full gap-3">
         <CheckCircle2 size={40} className="text-success" strokeWidth={1.5} />
         <div className="text-center">
-          <p className="text-[14px] font-black text-content">{lbl.title}</p>
-          <p className="text-[12px] text-content-3 mt-1 max-w-[200px] leading-relaxed">{lbl.sub}</p>
-          {successInfo.supervisor && <p className="text-[11px] text-brand-text font-bold mt-1">Supervisor: {successInfo.supervisor}</p>}
+          <p className="text-body-lg font-black text-content">{lbl.title}</p>
+          <p className="text-body-sm text-content-3 mt-1 max-w-[200px] leading-relaxed">{lbl.sub}</p>
+          {successInfo.supervisor && <p className="text-label text-brand-text font-bold mt-1">Supervisor: {successInfo.supervisor}</p>}
         </div>
       </div>
     );
@@ -913,10 +913,10 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   return (
     <div className="flex flex-col gap-2.5 h-full">
       <div className="flex items-center justify-between shrink-0">
-        <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">
+        <p className="text-caption font-black text-content-2 uppercase tracking-widest">
           Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
         </p>
-        <span className="text-[10px] font-bold text-content-3">
+        <span className="text-caption font-bold text-content-3">
           {filtered.length !== invoices.length ? `${filtered.length} / ${invoices.length}` : `${invoices.length} facturas`}
         </span>
       </div>
@@ -936,13 +936,13 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-content-3" /></div>}
 
         {!loading && filtered.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-content-3 font-medium">
+          <div className="py-8 text-center text-body-sm text-content-3 font-medium">
             {search || dateFilter ? 'Sin resultados con estos filtros' : 'No hay facturas este mes'}
           </div>
         )}
 
         {!loading && isFuzzy && search && (
-          <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-[10px] text-warning-text font-semibold">
+          <div className="mb-1.5 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 border border-warning/30 text-caption text-warning-text font-semibold">
             <Search size={10} strokeWidth={2.5} className="shrink-0" />
             Similares a &ldquo;{search}&rdquo;
           </div>
@@ -956,17 +956,17 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
             <div key={inv.id}
               className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-divider bg-surface-card hover:border-divider transition-all">
               <div className="flex-1 min-w-0">
-                <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-content' : 'text-content-3'}`}>
+                <p className={`text-body-sm font-black truncate leading-tight ${ok ? 'text-content' : 'text-content-3'}`}>
                   {inv.cliente || 'Sin nombre'}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                  <span className="text-[9px] text-content-3 font-mono">{inv.correlativo}</span>
+                  <span className="text-micro text-content-3 font-mono">{inv.correlativo}</span>
                   <DocBadge tipo={inv.tipo_documento} />
                   {inv.tipo_pago && <PayBadge tipo={inv.tipo_pago} />}
                   {/* Vendedor avatar + nombre aquí, no al inicio de la fila */}
                   <span className="inline-flex items-center gap-1">
                     <VendorAvatar employee={vendor} size={5} />
-                    <span className="text-[9px] text-content-3 font-medium">
+                    <span className="text-micro text-content-3 font-medium">
                       {vendor ? vendor.name.split(' ')[0] : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '')}
                     </span>
                   </span>
@@ -974,10 +974,10 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
               </div>
 
               <div className="text-right shrink-0">
-                <p className={`text-[11px] font-black ${ok ? 'text-content-2' : 'text-content-3'}`}>
+                <p className={`text-label font-black ${ok ? 'text-content-2' : 'text-content-3'}`}>
                   {fmtCurrency(inv.total)}
                 </p>
-                <p className="text-[9px] text-content-3">{fmtDate(inv.fecha)}</p>
+                <p className="text-micro text-content-3">{fmtDate(inv.fecha)}</p>
               </div>
 
               <div className="flex items-center gap-1 shrink-0">

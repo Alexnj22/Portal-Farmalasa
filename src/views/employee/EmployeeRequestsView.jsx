@@ -71,30 +71,30 @@ const MinMaxStatusCard = memo(({ req }) => {
                         <BarChart2 size={16} strokeWidth={2} className="text-chart-1-text" />
                     </div>
                     <div>
-                        <p className="text-[13px] font-black text-content leading-tight">Ajuste Min/Max</p>
-                        <p className="text-[10px] text-content-3 font-medium">{MM_ERP_NAMES[req.erp_sucursal_id] || req.erp_sucursal_id}</p>
+                        <p className="text-body font-black text-content leading-tight">Ajuste Min/Max</p>
+                        <p className="text-caption text-content-3 font-medium">{MM_ERP_NAMES[req.erp_sucursal_id] || req.erp_sucursal_id}</p>
                     </div>
                 </div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                <span className={`text-caption font-bold px-2.5 py-1 rounded-full border whitespace-nowrap flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
             </div>
 
-            <p className="text-[13px] font-bold text-content leading-tight">{req.product_name || `Producto ${req.erp_product_id}`}</p>
+            <p className="text-body font-bold text-content leading-tight">{req.product_name || `Producto ${req.erp_product_id}`}</p>
 
             <div className="flex items-center justify-center gap-3 rounded-2xl bg-surface-card border border-divider py-2">
-                <div className="text-right text-[12px] font-bold tabular-nums text-content-3">
+                <div className="text-right text-body-sm font-bold tabular-nums text-content-3">
                     <div>MIN {req.current_min ?? '—'}</div>
                     <div>MAX {req.current_max ?? '—'}</div>
                 </div>
                 <ArrowRight size={15} className="text-content-3" />
-                <div className="text-left text-[12px] font-black tabular-nums">
+                <div className="text-left text-body-sm font-black tabular-nums">
                     <div className="text-chart-4-text">MIN {req.requested_min}</div>
                     <div className="text-chart-1-text">MAX {req.requested_max}</div>
                 </div>
             </div>
 
-            {req.reason && <p className="text-[11px] text-content-3 italic leading-snug">“{req.reason}”</p>}
+            {req.reason && <p className="text-label text-content-3 italic leading-snug">“{req.reason}”</p>}
             {req.status !== 'pending' && req.decision_note && (
-                <p className="text-[11px] text-content-2 font-medium bg-surface-card-hover/70 border border-divider rounded-xl px-3 py-1.5">
+                <p className="text-label text-content-2 font-medium bg-surface-card-hover/70 border border-divider rounded-xl px-3 py-1.5">
                     Respuesta del supervisor: {req.decision_note}
                 </p>
             )}
@@ -124,14 +124,14 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                         <RefreshCw size={16} strokeWidth={2} className="text-chart-5-text" />
                     </div>
                     <div>
-                        <p className="text-[13px] font-black text-content leading-tight">
+                        <p className="text-body font-black text-content leading-tight">
                             {req.employee?.name || 'Compañero'}
                         </p>
-                        <p className="text-[10px] text-content-3 font-medium">quiere cambiar turno contigo</p>
+                        <p className="text-caption text-content-3 font-medium">quiere cambiar turno contigo</p>
                     </div>
                 </div>
                 {dateStr && (
-                    <span className="text-[10px] font-bold text-chart-5-text bg-chart-5/10 border border-chart-5/30 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                    <span className="text-caption font-bold text-chart-5-text bg-chart-5/10 border border-chart-5/30 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
                         {dateStr}
                     </span>
                 )}
@@ -140,40 +140,40 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
             {/* Shift comparison grid */}
             <div className="grid grid-cols-2 gap-2">
                 <div className="bg-surface-card border border-divider rounded-2xl p-3">
-                    <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
-                    <p className="text-[12px] font-black text-content-2">
+                    <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
+                    <p className="text-body-sm font-black text-content-2">
                         {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
                     </p>
                     {(!meta.targetShift || meta.targetShift === 'No especificado') && (
-                        <p className="text-[9px] text-content-3 mt-0.5">Lo que darías</p>
+                        <p className="text-micro text-content-3 mt-0.5">Lo que darías</p>
                     )}
                 </div>
                 <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
-                    <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno que tomarías</p>
-                    <p className="text-[12px] font-black text-chart-5-text">
+                    <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">Turno que tomarías</p>
+                    <p className="text-body-sm font-black text-chart-5-text">
                         {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                     </p>
                     {(!meta.myShift || meta.myShift === 'No especificado') && (
-                        <p className="text-[9px] text-chart-5 mt-0.5">Lo que recibirías</p>
+                        <p className="text-micro text-chart-5 mt-0.5">Lo que recibirías</p>
                     )}
                 </div>
             </div>
 
             {req.note && (
-                <p className="text-[12px] text-content-3 italic leading-relaxed">"{req.note}"</p>
+                <p className="text-body-sm text-content-3 italic leading-relaxed">"{req.note}"</p>
             )}
 
             {/* Full-width action buttons */}
             <div className="grid grid-cols-2 gap-2">
                 <button
                     onClick={() => onReject(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-danger/30 bg-danger/10 text-danger text-[11px] font-bold uppercase tracking-widest hover:bg-danger/10 transition-all active:scale-[0.97]"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-danger/30 bg-danger/10 text-danger text-label font-bold uppercase tracking-widest hover:bg-danger/10 transition-all active:scale-[0.97]"
                 >
                     <X size={12} strokeWidth={2.5} /> Rechazar
                 </button>
                 <button
                     onClick={() => onAccept(req.id)}
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success-solid text-white text-[11px] font-bold uppercase tracking-widest shadow-[var(--shadow-glow-success)] hover:bg-success-hover transition-all active:scale-[0.97]"
+                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl bg-success-solid text-white text-label font-bold uppercase tracking-widest shadow-[var(--shadow-glow-success)] hover:bg-success-hover transition-all active:scale-[0.97]"
                 >
                     <Check size={12} strokeWidth={2.5} /> Aceptar
                 </button>
@@ -210,29 +210,29 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${typeConf.color.split(' ')[1]}`}>
+                        <span className={`text-caption font-black uppercase tracking-widest ${typeConf.color.split(' ')[1]}`}>
                             {typeConf.label}
                         </span>
                         <span className="text-content-3">·</span>
-                        <span className={`flex items-center gap-1 text-[10px] font-bold ${statConf.color.split(' ')[1]}`}>
+                        <span className={`flex items-center gap-1 text-caption font-bold ${statConf.color.split(' ')[1]}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
                         </span>
                         {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
-                            <span className="text-[9px] font-bold text-brand-text">· Niv. {req.current_level}/{maxLevels}</span>
+                            <span className="text-micro font-bold text-brand-text">· Niv. {req.current_level}/{maxLevels}</span>
                         )}
                         {req.type === 'DISABILITY' && req.status === 'PENDING' && (
-                            <span className="text-[9px] font-black text-danger uppercase tracking-widest">· Urgente</span>
+                            <span className="text-micro font-black text-danger uppercase tracking-widest">· Urgente</span>
                         )}
                     </div>
-                    <p className="text-[10px] font-bold text-content-2 uppercase tracking-widest">
+                    <p className="text-caption font-bold text-content-2 uppercase tracking-widest">
                         {new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 </div>
                 {req.status === 'PENDING' && (
                     <button
                         onClick={() => onCancel(req.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-bold text-danger hover:text-danger hover:bg-danger/10 rounded-full border border-transparent hover:border-danger/30 transition-all flex-shrink-0"
+                        className="flex items-center gap-1 px-3 py-1.5 text-caption font-bold text-danger hover:text-danger hover:bg-danger/10 rounded-full border border-transparent hover:border-danger/30 transition-all flex-shrink-0"
                     >
                         <X size={11} strokeWidth={2.5} /> Cancelar
                     </button>
@@ -242,7 +242,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
             {/* ── Contenido ── */}
             <div className="px-5 pb-5 flex flex-col gap-3 border-t border-divider pt-4">
                 {req.note && (
-                    <p className="text-content-2 text-[14px] leading-relaxed font-medium whitespace-pre-wrap">
+                    <p className="text-content-2 text-body-lg leading-relaxed font-medium whitespace-pre-wrap">
                         {req.note}
                     </p>
                 )}
@@ -254,10 +254,10 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                 <RefreshCw size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                                     {meta.targetEmployeeName && (
-                                        <span className="text-[12px] font-black text-chart-5-text">↔ {meta.targetEmployeeName}</span>
+                                        <span className="text-body-sm font-black text-chart-5-text">↔ {meta.targetEmployeeName}</span>
                                     )}
                                     {meta.date && (
-                                        <span className="text-[11px] font-bold text-chart-5-text">
+                                        <span className="text-label font-bold text-chart-5-text">
                                             {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}
                                         </span>
                                     )}
@@ -266,14 +266,14 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                         <div className="grid grid-cols-2 gap-2">
                             <div className="bg-surface-card border border-divider rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
-                                <p className="text-[12px] font-black text-content-2">
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
+                                <p className="text-body-sm font-black text-content-2">
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                                 </p>
                             </div>
                             <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
-                                <p className="text-[12px] font-black text-content-2">
+                                <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                <p className="text-body-sm font-black text-content-2">
                                     {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
                                 </p>
                             </div>
@@ -286,7 +286,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         {meta.startDate && (
                             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 border border-danger/30">
                                 <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
-                                <span className="text-[12px] font-bold text-danger-text">
+                                <span className="text-body-sm font-bold text-danger-text">
                                     {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                                     {meta.endDate && meta.endDate !== meta.startDate && (
                                         <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}</>
@@ -297,7 +297,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                         {meta.docUrl && (
                             <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[11px] font-bold text-content-2 hover:text-brand-text hover:border-brand/30 transition-all">
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-label font-bold text-content-2 hover:text-brand-text hover:border-brand/30 transition-all">
                                 <FileImage size={13} strokeWidth={2} />
                                 {meta.docName || 'Ver certificado adjunto'}
                             </a>
@@ -308,7 +308,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                     ? <Loader2 size={13} className="text-warning animate-spin flex-shrink-0" />
                                     : <Upload size={13} className="text-warning flex-shrink-0" strokeWidth={2} />
                                 }
-                                <span className="text-[11px] font-bold text-warning-text">
+                                <span className="text-label font-bold text-warning-text">
                                     {uploadingDoc ? 'Subiendo...' : meta.docUrl ? 'Reemplazar documento' : 'Adjuntar certificado / boleta ISSS'}
                                 </span>
                                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" disabled={uploadingDoc}
@@ -333,7 +333,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                 )}
 
                 {req.approver_note && (
-                    <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-[12px] font-bold border ${
+                    <div className={`flex items-start gap-2 px-3 py-2 rounded-xl text-body-sm font-bold border ${
                         req.status === 'APPROVED' ? 'bg-success/10 border-success/30 text-success-text' :
                         req.status === 'REJECTED' ? 'bg-danger/10 border-danger/30 text-danger' :
                         'bg-surface-card-hover border-divider text-content-2'
@@ -715,7 +715,7 @@ const EmployeeRequestsView = () => {
                 <div className="space-y-3">
                     {/* Antigüedad */}
                     {vacationInfo && (
-                        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-[11px] font-bold ${
+                        <div className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-label font-bold ${
                             !vacationInfo.eligible
                                 ? 'bg-warning/10 border-warning/30 text-warning-text'
                                 : 'bg-success/10 border-success/30 text-success-text'
@@ -732,7 +732,7 @@ const EmployeeRequestsView = () => {
                     {existingVacation.approved && (() => {
                         const m = typeof existingVacation.approved.metadata === 'object' ? existingVacation.approved.metadata : {};
                         return (
-                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-[11px] font-bold text-warning-text">
+                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-label font-bold text-warning-text">
                                 <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span>Ya tienes vacaciones aprobadas{m.startDate ? ` del ${fmt(m.startDate)} al ${fmt(m.endDate)}` : ''}. No puedes solicitar otra.</span>
                             </div>
@@ -743,7 +743,7 @@ const EmployeeRequestsView = () => {
                     {!existingVacation.approved && existingVacation.pending && (() => {
                         const m = typeof existingVacation.pending.metadata === 'object' ? existingVacation.pending.metadata : {};
                         return (
-                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-brand/8 border border-brand/20 text-[11px] font-bold text-brand-text">
+                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-brand/8 border border-brand/20 text-label font-bold text-brand-text">
                                 <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span>Tienes vacaciones programadas en revisión{m.startDate ? ` — ${fmt(m.startDate)} al ${fmt(m.endDate)}` : ''}.</span>
                             </div>
@@ -755,12 +755,12 @@ const EmployeeRequestsView = () => {
                         <>
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] ml-1">
+                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] ml-1">
                                         Período de Vacaciones
                                     </label>
                                     {hasRange && (
                                         <button type="button" onClick={() => setPayload(prev => ({ ...prev, startDate: '', endDate: '' }))}
-                                            className="flex items-center gap-1 text-[9px] font-black text-danger hover:text-danger uppercase tracking-widest transition-colors">
+                                            className="flex items-center gap-1 text-micro font-black text-danger hover:text-danger uppercase tracking-widest transition-colors">
                                             <X size={11} strokeWidth={2.5} /> Limpiar
                                         </button>
                                     )}
@@ -772,13 +772,13 @@ const EmployeeRequestsView = () => {
                                 />
                             </div>
                             {vacationInfo.inWindow && (
-                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-bold text-content-3">
+                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-caption font-bold text-content-3">
                                     <CalendarDays size={11} strokeWidth={2} />
                                     Ventana disponible: {fmt(vacationInfo.windowStart)} — {fmt(vacationInfo.windowEnd)}
                                 </div>
                             )}
                             {!vacationInfo.inWindow && (
-                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-bold text-content-3">
+                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-caption font-bold text-content-3">
                                     <CalendarDays size={11} strokeWidth={2} />
                                     Próximo período disponible desde {fmt(vacationInfo.nextAnniv)}
                                 </div>
@@ -797,15 +797,15 @@ const EmployeeRequestsView = () => {
                         <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
                             <AlertTriangle size={13} className="text-warning flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
-                                <p className="text-[10px] font-black text-warning-text uppercase tracking-wide">Incapacidad activa</p>
-                                <p className="text-[11px] font-medium text-warning-text leading-snug">
+                                <p className="text-caption font-black text-warning-text uppercase tracking-wide">Incapacidad activa</p>
+                                <p className="text-label font-medium text-warning-text leading-snug">
                                     {activeDisabilities.map(d => fmtDisabilityPeriod(d)).join(', ')} — los días cubiertos no están disponibles.
                                 </p>
                             </div>
                         </div>
                     )}
                     <div>
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
+                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
                             <CalendarDays size={11} strokeWidth={2.5} className="text-chart-3-text" />
                             Días de Permiso
                         </label>
@@ -822,7 +822,7 @@ const EmployeeRequestsView = () => {
                     {permDates.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {permDates.map(d => (
-                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-[11px] font-bold">
+                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-label font-bold">
                                     {new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                                     <button type="button" onClick={() => handleRemovePermDate(d)} className="text-chart-3-text hover:text-chart-3-text transition-colors">
                                         <XCircle size={13} strokeWidth={2} />
@@ -840,7 +840,7 @@ const EmployeeRequestsView = () => {
             return (
                 <div className="space-y-3">
                     <div>
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                             Compañero de intercambio
                         </label>
                         <LiquidSelect
@@ -851,7 +851,7 @@ const EmployeeRequestsView = () => {
                         />
                     </div>
                     <div>
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
+                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
                             <CalendarDays size={11} strokeWidth={2.5} className="text-chart-5" />
                             Fecha del cambio
                         </label>
@@ -867,14 +867,14 @@ const EmployeeRequestsView = () => {
 
                     {/* Bloqueo: propia incapacidad */}
                     {payload.date && disabilityConflict(payload.date) && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] font-bold text-danger-text">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-label font-bold text-danger-text">
                             <AlertTriangle size={13} className="flex-shrink-0" strokeWidth={2.5} />
                             Estás incapacitado ese día ({fmtDisabilityPeriod(disabilityConflict(payload.date))}) — no puedes solicitar cambio de turno
                         </div>
                     )}
                     {/* Bloqueo: incapacidad / permiso / vacación del compañero */}
                     {targetEmpStatus?.blocked && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-[11px] font-bold text-danger-text">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-danger/10 border border-danger/30 text-label font-bold text-danger-text">
                             <AlertTriangle size={13} className="flex-shrink-0" strokeWidth={2.5} />
                             {targetEmp?.name?.split(' ')[0] || 'El compañero'} está {targetEmpStatus.reason} ese día — no puede hacer el cambio
                         </div>
@@ -884,20 +884,20 @@ const EmployeeRequestsView = () => {
                     {showShifts && !targetEmpStatus?.blocked && (
                         <div className="grid grid-cols-2 gap-2">
                             <div className="bg-surface-card border border-divider rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">Mi turno ese día</p>
-                                <p className="text-[12px] font-black text-content-2">
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Mi turno ese día</p>
+                                <p className="text-body-sm font-black text-content-2">
                                     {myShiftOnDate ? `${myShiftOnDate.start} – ${myShiftOnDate.end}` : '—'}
                                 </p>
-                                {!myShiftOnDate && <p className="text-[9px] text-content-3 mt-0.5">Sin turno asignado</p>}
+                                {!myShiftOnDate && <p className="text-micro text-content-3 mt-0.5">Sin turno asignado</p>}
                             </div>
                             <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-chart-5-text uppercase tracking-widest mb-1">
+                                <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">
                                     Turno de {targetEmp?.name?.split(' ')[0] || 'compañero'}
                                 </p>
-                                <p className="text-[12px] font-black text-chart-5-text">
+                                <p className="text-body-sm font-black text-chart-5-text">
                                     {targetEmpShift ? `${targetEmpShift.start} – ${targetEmpShift.end}` : '—'}
                                 </p>
-                                {!targetEmpShift && <p className="text-[9px] text-chart-5 mt-0.5">Sin turno asignado</p>}
+                                {!targetEmpShift && <p className="text-micro text-chart-5 mt-0.5">Sin turno asignado</p>}
                             </div>
                         </div>
                     )}
@@ -908,11 +908,11 @@ const EmployeeRequestsView = () => {
         if (formType === 'ADVANCE') {
             return (
                 <div>
-                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                         Monto solicitado
                     </label>
                     <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 font-black text-[14px]">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 font-black text-body-lg">$</span>
                         <input
                             type="number"
                             min="1"
@@ -920,7 +920,7 @@ const EmployeeRequestsView = () => {
                             value={payload.amount || ''}
                             onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
                             placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 transition-all duration-300 placeholder-content-3"
+                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-medium text-content-2 transition-all duration-300 placeholder-content-3"
                         />
                     </div>
                 </div>
@@ -930,7 +930,7 @@ const EmployeeRequestsView = () => {
         if (formType === 'CERTIFICATE') {
             return (
                 <div>
-                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">
+                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">
                         Tipo de Constancia
                     </label>
                     <LiquidSelect
@@ -940,7 +940,7 @@ const EmployeeRequestsView = () => {
                         options={CERT_TYPES.map(c => ({ value: c.key, label: c.label }))}
                     />
                     {payload.certificateType && (
-                        <p className="text-[11px] text-content-3 mt-1.5 ml-1">
+                        <p className="text-label text-content-3 mt-1.5 ml-1">
                             {CERT_TYPES.find(c => c.key === payload.certificateType)?.desc}
                         </p>
                     )}
@@ -961,7 +961,7 @@ const EmployeeRequestsView = () => {
                     <div className="grid grid-cols-2 gap-3">
                         {/* Fecha de inicio */}
                         <div>
-                            <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                 Primer día
                             </label>
                             <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
@@ -975,7 +975,7 @@ const EmployeeRequestsView = () => {
 
                         {/* Cantidad de días */}
                         <div>
-                            <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                 Cantidad de días
                             </label>
                             <input
@@ -983,14 +983,14 @@ const EmployeeRequestsView = () => {
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-surface-card border border-divider focus:bg-surface-card focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-[16px] font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
+                                className="w-full py-2.5 px-4 bg-surface-card border border-divider focus:bg-surface-card focus:border-danger/40 focus:shadow-[0_0_0_4px_rgba(239,68,68,0.1)] rounded-xl text-input font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
                             />
                         </div>
                     </div>
 
                     {/* Fecha fin calculada — chip compacto */}
                     {endDate && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border bg-danger/10 border-danger/30 text-danger-text w-fit text-[10px] font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border bg-danger/10 border-danger/30 text-danger-text w-fit text-caption font-black uppercase tracking-widest">
                             <Stethoscope size={11} className="text-danger flex-shrink-0" strokeWidth={2.5} />
                             <span>Hasta {endDate.toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
                         </div>
@@ -998,7 +998,7 @@ const EmployeeRequestsView = () => {
 
                     {/* Upload documento */}
                     <div>
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                             {needsISSS
                                 ? <span>Boleta ISSS <span className="text-danger">*</span><span className="text-content-3 ml-1 normal-case font-medium">(obligatoria para cobertura ISSS)</span></span>
                                 : <span>Certificado Médico <span className="text-content-3 ml-1 normal-case font-medium">(opcional)</span></span>
@@ -1010,10 +1010,10 @@ const EmployeeRequestsView = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 {disabilityFile
-                                    ? <><p className="text-[12px] font-bold text-content-2 truncate">{disabilityFile.name}</p>
-                                       <p className="text-[10px] text-content-3">{(disabilityFile.size / 1024).toFixed(0)} KB</p></>
-                                    : <><p className="text-[12px] font-medium text-content-3">Adjuntar boleta o certificado</p>
-                                       <p className="text-[10px] text-content-3">PDF, JPG, PNG — también puedes adjuntarlo después</p></>
+                                    ? <><p className="text-body-sm font-bold text-content-2 truncate">{disabilityFile.name}</p>
+                                       <p className="text-caption text-content-3">{(disabilityFile.size / 1024).toFixed(0)} KB</p></>
+                                    : <><p className="text-body-sm font-medium text-content-3">Adjuntar boleta o certificado</p>
+                                       <p className="text-caption text-content-3">PDF, JPG, PNG — también puedes adjuntarlo después</p></>
                                 }
                             </div>
                             {disabilityFile && (
@@ -1028,7 +1028,7 @@ const EmployeeRequestsView = () => {
                     </div>
 
                     <div className="px-4 py-2.5 rounded-2xl bg-danger/10 border border-danger/30">
-                        <p className="text-[11px] font-bold text-danger-text leading-relaxed">
+                        <p className="text-label font-bold text-danger-text leading-relaxed">
                             Talento Humano recibirá tu solicitud como urgente. Los días se marcarán automáticamente en tu horario al ser aprobada.
                         </p>
                     </div>
@@ -1050,7 +1050,7 @@ const EmployeeRequestsView = () => {
                         <button
                             key={tab.key}
                             onClick={() => setStatusFilter(tab.key)}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                                 isActive
                                     ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
                                     : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
@@ -1082,7 +1082,7 @@ const EmployeeRequestsView = () => {
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand text-white shadow-sm">
                                 <Plus size={16} strokeWidth={2.5} />
                             </div>
-                            <h3 className="font-black text-content text-[15px] uppercase tracking-tight ml-1 flex-1">Nueva Solicitud</h3>
+                            <h3 className="font-black text-content text-subtitle uppercase tracking-tight ml-1 flex-1">Nueva Solicitud</h3>
                             {/* Alertas de incapacidad — aparecen como íconos a la derecha */}
                             <div className="flex items-center gap-1.5">
                                 {disabilityHeaderAlerts.overlap && (
@@ -1091,7 +1091,7 @@ const EmployeeRequestsView = () => {
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-64 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
-                                            <div className="bg-danger-solid text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
+                                            <div className="bg-danger-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Ya tienes asignada una incapacidad del {fmtDisabilityPeriod(disabilityHeaderAlerts.overlap)} — las fechas seleccionadas se solapan con ese período.
                                             </div>
                                         </div>
@@ -1103,7 +1103,7 @@ const EmployeeRequestsView = () => {
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
                                         <div className="absolute right-0 top-full mt-1.5 w-72 z-50 pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
-                                            <div className="bg-warning-solid text-white text-[10px] font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
+                                            <div className="bg-warning-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Desde el día 4, aplica cobertura del ISSS. El ISSS cubre el 75% de tu salario a partir del día 4. Es obligatorio presentar la boleta oficial de incapacidad del ISSS dentro de 3 días hábiles para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.
                                             </div>
                                         </div>
@@ -1113,7 +1113,7 @@ const EmployeeRequestsView = () => {
                         </div>
 
                         {error && (
-                            <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-[11px] font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="mb-5 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-4 py-3 rounded-2xl text-label font-bold shadow-[inset_0_1px_4px_rgba(255,255,255,0.5)] flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
                                 <AlertCircle size={16} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span className="leading-tight">{error}</span>
                             </div>
@@ -1123,7 +1123,7 @@ const EmployeeRequestsView = () => {
 
                             {/* Selector de tipo */}
                             <div>
-                                <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Tipo de Solicitud</label>
+                                <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Tipo de Solicitud</label>
                                 {!typePickerOpen ? (
                                     /* Tipo seleccionado — compacto */
                                     (() => {
@@ -1137,8 +1137,8 @@ const EmployeeRequestsView = () => {
                                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${conf?.color} ${conf?.border} bg-surface-card`}
                                             >
                                                 <Icon size={16} strokeWidth={2} />
-                                                <span className="flex-1 text-left text-[11px] font-black uppercase tracking-widest">{sel?.label}</span>
-                                                <span className="text-[9px] font-bold text-content-2 uppercase tracking-widest border border-divider rounded-full px-2 py-0.5 bg-surface-card">Cambiar</span>
+                                                <span className="flex-1 text-left text-label font-black uppercase tracking-widest">{sel?.label}</span>
+                                                <span className="text-micro font-bold text-content-2 uppercase tracking-widest border border-divider rounded-full px-2 py-0.5 bg-surface-card">Cambiar</span>
                                             </button>
                                         );
                                     })()
@@ -1153,7 +1153,7 @@ const EmployeeRequestsView = () => {
                                                     key={key}
                                                     type="button"
                                                     onClick={() => { setFormType(key); setPayload({}); setError(''); setPermPickerKey(0); setDisabilityFile(null); setTypePickerOpen(false); }}
-                                                    className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                                                    className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border text-caption font-black uppercase tracking-widest transition-all duration-300 ${
                                                         isActive
                                                             ? `bg-surface-card ${conf.color} ${conf.border} shadow-sm scale-[1.02]`
                                                             : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-sm'
@@ -1173,7 +1173,7 @@ const EmployeeRequestsView = () => {
 
                             {/* Motivo */}
                             <div>
-                                <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                     Motivo / Descripción <span className="text-danger">*</span>
                                 </label>
                                 <textarea
@@ -1181,7 +1181,7 @@ const EmployeeRequestsView = () => {
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
+                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>
@@ -1189,7 +1189,7 @@ const EmployeeRequestsView = () => {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || formDisabilityBlocked}
-                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
+                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 size={16} className="animate-spin" /> Enviando...</>
@@ -1207,7 +1207,7 @@ const EmployeeRequestsView = () => {
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}
                         {peerRequests.length > 0 && (
                             <div className="col-span-full">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-chart-5-text mb-3 flex items-center gap-1.5">
+                                <p className="text-caption font-black uppercase tracking-widest text-chart-5-text mb-3 flex items-center gap-1.5">
                                     <RefreshCw size={10} /> Requieren tu aprobación
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1225,12 +1225,12 @@ const EmployeeRequestsView = () => {
                         )}
 
                         <div className="col-span-full flex items-center justify-between">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                 <ClipboardList size={10} /> Mis Solicitudes
                             </p>
                             <button
                                 onClick={() => setShowOldApproved(v => !v)}
-                                className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-200 ${
+                                className={`text-caption font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-200 ${
                                     showOldApproved
                                         ? 'bg-success/10 border-success/30 text-success-text'
                                         : 'bg-surface-card border-border-card text-content-3 hover:text-content-2 hover:bg-surface-card'
@@ -1274,10 +1274,10 @@ const EmployeeRequestsView = () => {
                                             : <ClipboardList size={40} strokeWidth={2} />
                                         }
                                     </div>
-                                    <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">
+                                    <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
                                         {statusFilter === 'PENDING' ? 'Todo al día' : 'Sin resultados'}
                                     </h3>
-                                    <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
+                                    <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
                                         {statusFilter === 'PENDING' ? 'No tienes solicitudes pendientes de respuesta.' : 'Sin solicitudes en esta categoría.'}
                                     </p>
                                 </div>

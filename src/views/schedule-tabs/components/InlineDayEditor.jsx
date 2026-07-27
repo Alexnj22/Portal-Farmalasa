@@ -319,8 +319,8 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                 : <CircleUserRound size={18} className="text-content-3" strokeWidth={1.5} />}
                         </div>
                         <div className="min-w-0">
-                            <p className="text-[13px] font-black text-content truncate leading-tight">{employee?.name || '—'}</p>
-                            <p className="text-[10px] font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
+                            <p className="text-body font-black text-content truncate leading-tight">{employee?.name || '—'}</p>
+                            <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
                                 {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}{' '}
                                 <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
                             </p>
@@ -332,7 +332,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 {coverageMeta && (
                     <div className="mx-4 mt-3 px-3 py-2 bg-chart-3/10 border border-chart-3/30 rounded-2xl flex gap-2 items-start shrink-0">
                         <Building2 size={13} className="text-chart-3-text shrink-0 mt-0.5" strokeWidth={2.5} />
-                        <p className="text-[10px] font-bold text-chart-3-text leading-snug">
+                        <p className="text-caption font-bold text-chart-3-text leading-snug">
                             Este turno sobreescribirá el horario de <strong>{coverageMeta.homeBranchName}</strong> para este día.
                         </p>
                     </div>
@@ -357,17 +357,17 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-300">
                             <Bot size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
-                                <h4 className="text-[10px] font-black text-danger-text uppercase tracking-widest mb-1">Auditoría Saly</h4>
+                                <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-1">Auditoría Saly</h4>
                                 {branchLimits.isClosedToday ? (
-                                    <p className="text-[11px] font-medium text-danger-text/80 leading-snug">
+                                    <p className="text-label font-medium text-danger-text/80 leading-snug">
                                         La sucursal está configurada como <strong>cerrada</strong> este día. Selecciona "Libre" o ajusta el horario en Configuración.
                                     </p>
                                 ) : !branchLimits.hasValidHours ? (
-                                    <p className="text-[11px] font-medium text-danger-text/80 leading-snug">
+                                    <p className="text-label font-medium text-danger-text/80 leading-snug">
                                         Faltan los horarios operativos de {branchLimits.branchName}.
                                     </p>
                                 ) : (
-                                    <p className="text-[11px] font-medium text-danger-text/80 leading-snug">
+                                    <p className="text-label font-medium text-danger-text/80 leading-snug">
                                         El horario de hoy es de {formatHourAMPM(Math.floor(branchLimits.minOpen/60))} a {formatHourAMPM(Math.floor(branchLimits.maxClose/60))}. Ningún turno del catálogo encaja aquí.
                                     </p>
                                 )}
@@ -379,11 +379,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
                             
                             <div className="flex items-center justify-between border-b border-divider pb-2">
-                                <span className="text-[9px] font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
+                                <span className="text-micro font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                                     <Clock size={10} /> Cálculo de Horas
                                 </span>
                                 {netHours !== null && timeAuditErrors.length === 0 && (
-                                    <div className={`px-2 py-[2px] rounded border text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-300 ${Number(netHours) > 8 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
+                                    <div className={`px-2 py-[2px] rounded border text-micro font-black uppercase tracking-widest flex items-center gap-1 shadow-sm transition-all duration-300 ${Number(netHours) > 8 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-success/10 text-success border-success/30'}`}>
                                         {Number(netHours) > 8 && <Flame size={10} className="animate-pulse" />}
                                         {netHours}H TOTALES
                                     </div>
@@ -392,11 +392,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Entrada</label>
+                                    <label className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Entrada</label>
                                     <TimePicker12 value={customStart} onChange={setCustomStart} />
                                 </div>
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Salida</label>
+                                    <label className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Salida</label>
                                     <TimePicker12 value={customEnd} onChange={setCustomEnd} />
                                 </div>
                             </div>
@@ -417,7 +417,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                         readOnly 
                                         className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 focus:ring-chart-4/50 transition-transform group-hover/row:scale-110"
                                     />
-                                    <span className="text-[12px] font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
+                                    <span className="text-body-sm font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
                                 {hasLunch && (
                                     <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" onClick={(e) => e.stopPropagation()}>
@@ -437,7 +437,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                         readOnly 
                                         className="w-4 h-4 rounded text-chart-6 border-chart-6/30 focus:ring-chart-6/50 transition-transform group-hover/row:scale-110" 
                                     />
-                                    <span className="text-[12px] font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
+                                    <span className="text-body-sm font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
                                 </div>
                                 {hasLactation && (
                                     <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" onClick={(e) => e.stopPropagation()}>
@@ -453,9 +453,9 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in slide-in-from-bottom-2 duration-300 shadow-sm mt-2">
                             <AlertTriangle size={16} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div className="flex flex-col gap-1.5">
-                                <h4 className="text-[10px] font-black text-danger-text uppercase tracking-widest mb-0.5">Error de Lógica</h4>
+                                <h4 className="text-caption font-black text-danger-text uppercase tracking-widest mb-0.5">Error de Lógica</h4>
                                 {timeAuditErrors.map((err, i) => (
-                                    <p key={i} className="text-[11px] font-medium text-danger-text/90 leading-snug">
+                                    <p key={i} className="text-label font-medium text-danger-text/90 leading-snug">
                                         {err}
                                     </p>
                                 ))}
@@ -468,7 +468,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     <button 
                         onClick={handleSave} 
                         disabled={isSaveDisabled}
-                        className={`w-full py-3.5 text-[12px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
+                        className={`w-full py-3.5 text-body-sm font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
                             ? 'bg-surface-card-hover text-content-3 border border-divider shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
                             : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}

@@ -48,9 +48,9 @@ function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
                 <Icon size={16} />
             </span>
             <div>
-                <p className="text-[11px] text-content-3">{label}</p>
-                <p className="text-[18px] font-bold text-content-2 leading-tight">{value}</p>
-                {sub && <p className="text-[10px] text-content-3">{sub}</p>}
+                <p className="text-label text-content-3">{label}</p>
+                <p className="text-title-sm font-bold text-content-2 leading-tight">{value}</p>
+                {sub && <p className="text-caption text-content-3">{sub}</p>}
             </div>
         </div>
     );
@@ -132,7 +132,7 @@ export default function TabMetricas({ searchTerm = '' }) {
         return (
             <div className="flex items-center justify-center py-16 gap-2 text-content-3">
                 <Loader2 size={20} className="animate-spin" />
-                <span className="text-[14px]">Calculando métricas…</span>
+                <span className="text-body-lg">Calculando métricas…</span>
             </div>
         );
     }
@@ -144,12 +144,12 @@ export default function TabMetricas({ searchTerm = '' }) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <BarChart2 size={14} className="text-chart-1-text" />
-                    <span className="text-[12px] font-semibold text-content-2">Métricas de eficiencia</span>
+                    <span className="text-body-sm font-semibold text-content-2">Métricas de eficiencia</span>
                 </div>
                 <button
                     onClick={() => load(RANGES.find(r => r.key === range)?.days ?? 30)}
                     disabled={refreshing}
-                    className="flex items-center gap-1 text-[11px] text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 text-label text-content-3 hover:text-chart-1-text transition-colors disabled:opacity-50"
                 >
                     <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
                     Refrescar
@@ -162,7 +162,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                     <button
                         key={r.key}
                         onClick={() => setRange(r.key)}
-                        className={`text-[11px] px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                        className={`text-label px-3 py-1.5 rounded-full border font-medium transition-colors ${
                             range === r.key
                                 ? 'bg-chart-1-solid text-white border-chart-1'
                                 : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'
@@ -176,8 +176,8 @@ export default function TabMetricas({ searchTerm = '' }) {
             {kpis.length === 0 ? (
                 <div className={`${GLASS} flex flex-col items-center justify-center py-12 gap-2 text-content-3`}>
                     <BarChart2 size={32} className="opacity-40" />
-                    <p className="text-[13px]">Sin datos para el período seleccionado.</p>
-                    <p className="text-[11px] text-content-3">Los tiempos se registran al despachar y recibir pedidos.</p>
+                    <p className="text-body">Sin datos para el período seleccionado.</p>
+                    <p className="text-label text-content-3">Los tiempos se registran al despachar y recibir pedidos.</p>
                 </div>
             ) : (
                 <>
@@ -193,13 +193,13 @@ export default function TabMetricas({ searchTerm = '' }) {
                     {/* Tabla por sucursal */}
                     <div className={GLASS}>
                         <div className="px-4 py-3 border-b border-divider">
-                            <p className="text-[12px] font-semibold text-content-2 flex items-center gap-2">
+                            <p className="text-body-sm font-semibold text-content-2 flex items-center gap-2">
                                 <Building2 size={13} className="text-content-3" />
                                 Por sucursal
                             </p>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-[11px]">
+                            <table className="w-full text-label">
                                 <thead>
                                     <tr className="border-b border-divider">
                                         <th className="text-left px-4 py-2.5 font-semibold text-content-3">Sucursal</th>
@@ -241,7 +241,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                     {razones.length > 0 && (
                         <div className={GLASS}>
                             <div className="px-4 py-3 border-b border-divider">
-                                <p className="text-[12px] font-semibold text-content-2 flex items-center gap-2">
+                                <p className="text-body-sm font-semibold text-content-2 flex items-center gap-2">
                                     <Pause size={13} className="text-warning" />
                                     Razones de pausa
                                 </p>
@@ -249,9 +249,9 @@ export default function TabMetricas({ searchTerm = '' }) {
                             <div className="px-4 py-3 space-y-2">
                                 {razones.map(r => (
                                     <div key={r.razon} className="flex items-center gap-3">
-                                        <span className="text-[12px] text-content-2 font-medium flex-1">{r.razon}</span>
+                                        <span className="text-body-sm text-content-2 font-medium flex-1">{r.razon}</span>
                                         <div className="flex items-center gap-2 shrink-0">
-                                            <span className="text-[11px] font-bold text-warning tabular-nums w-6 text-right">{r.conteo}</span>
+                                            <span className="text-label font-bold text-warning tabular-nums w-6 text-right">{r.conteo}</span>
                                             <div className="w-24 h-2 bg-surface-card-hover rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-warning rounded-full"
@@ -259,7 +259,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                                                 />
                                             </div>
                                             {r.min_promedio != null && (
-                                                <span className="text-[10px] text-content-3 w-14 text-right tabular-nums">
+                                                <span className="text-caption text-content-3 w-14 text-right tabular-nums">
                                                     ~{fmtMin(r.min_promedio)}
                                                 </span>
                                             )}

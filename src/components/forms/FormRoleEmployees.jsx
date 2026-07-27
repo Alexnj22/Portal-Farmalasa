@@ -21,10 +21,10 @@ const FormRoleEmployees = ({ formData }) => {
                         <ShieldCheck size={32} strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h3 className="text-[22px] md:text-[26px] font-black text-content uppercase tracking-tighter leading-none mb-1.5 pr-8">
+                        <h3 className="text-title-lg md:text-display font-black text-content uppercase tracking-tighter leading-none mb-1.5 pr-8">
                             {role.name}
                         </h3>
-                        <p className="text-[10px] md:text-[11px] font-black text-brand-text uppercase tracking-widest flex items-center gap-1.5">
+                        <p className="text-caption md:text-label font-black text-brand-text uppercase tracking-widest flex items-center gap-1.5">
                             Personal Asignado ({employeesInRole.length})
                         </p>
                     </div>
@@ -48,16 +48,16 @@ const FormRoleEmployees = ({ formData }) => {
                                     )}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-content text-[14px] md:text-[15px] leading-tight group-hover:text-brand-text transition-colors">
+                                    <p className="font-bold text-content text-body-lg md:text-subtitle leading-tight group-hover:text-brand-text transition-colors">
                                         {emp.name}
                                     </p>
-                                    <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest mt-0.5">
+                                    <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">
                                         {emp.code || 'SIN CÓDIGO'}
                                     </p>
                                 </div>
                             </div>
                             
-                            <div className="px-3 py-1.5 md:px-4 md:py-2 bg-surface-card-hover text-content-2 rounded-xl text-[9px] md:text-[9px] font-black uppercase tracking-widest border border-divider group-hover:bg-brand/5 group-hover:text-brand-text group-hover:border-brand/20 transition-all">
+                            <div className="px-3 py-1.5 md:px-4 md:py-2 bg-surface-card-hover text-content-2 rounded-xl text-micro md:text-micro font-black uppercase tracking-widest border border-divider group-hover:bg-brand/5 group-hover:text-brand-text group-hover:border-brand/20 transition-all">
                                 Activo
                             </div>
                         </div>
@@ -65,8 +65,8 @@ const FormRoleEmployees = ({ formData }) => {
                 ) : (
                     <div className="text-center py-12 bg-surface-card backdrop-blur-md rounded-[2rem] border-2 border-dashed border-divider">
                         <User className="mx-auto text-content-3 mb-4" size={40} strokeWidth={1.5} />
-                        <p className="text-content-3 font-bold text-[15px]">No hay empleados asignados.</p>
-                        <p className="text-[10px] text-content-2 mt-1.5 uppercase tracking-widest font-bold px-4">
+                        <p className="text-content-3 font-bold text-subtitle">No hay empleados asignados.</p>
+                        <p className="text-caption text-content-2 mt-1.5 uppercase tracking-widest font-bold px-4">
                             Puedes asignar este cargo desde la edición del perfil de empleado.
                         </p>
                     </div>

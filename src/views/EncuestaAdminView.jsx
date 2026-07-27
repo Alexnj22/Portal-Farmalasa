@@ -143,7 +143,7 @@ function SegmentControl({ options, value, onChange, compact = false }) {
         <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] ${compact ? 'p-1' : 'p-1.5'}`}>
             {options.map(opt => (
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
-                    className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[9px]' : 'h-8 text-[9px] md:text-[10px]'} ${
+                    className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-micro' : 'h-8 text-micro md:text-caption'} ${
                         value === opt.id
                             ? 'bg-surface-card text-brand-text border-white shadow-sm scale-[1.02]'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
@@ -475,7 +475,7 @@ export default function EncuestaAdminView() {
     const filtersContent = (
         <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
-                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                <button className="px-3 md:px-5 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Encuestas</span>
                 </button>
@@ -505,7 +505,7 @@ export default function EncuestaAdminView() {
                         }`}>
 
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-content flex items-center gap-2 text-[14px]">
+                                <h3 className="font-bold text-content flex items-center gap-2 text-body-lg">
                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-warning-solid' : 'bg-brand'}`}>
                                         {editingSurvey ? <Edit3 size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
@@ -515,14 +515,14 @@ export default function EncuestaAdminView() {
                                 </h3>
                                 {editingSurvey && (
                                     <button onClick={resetSurveyForm}
-                                        className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                                        className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-3 py-1.5 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                         <X size={12} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                     </button>
                                 )}
                             </div>
 
                             {sfError && (
-                                <div className="mb-3 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-3 py-2 rounded-2xl text-[11px] font-bold flex items-start gap-2">
+                                <div className="mb-3 bg-warning/10 backdrop-blur-sm border border-warning/30 text-warning-text px-3 py-2 rounded-2xl text-label font-bold flex items-start gap-2">
                                     <AlertCircle size={14} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                     <span className="leading-tight">{sfError}</span>
                                 </div>
@@ -531,54 +531,54 @@ export default function EncuestaAdminView() {
                             <div className="space-y-3">
                                 {/* Título */}
                                 <div>
-                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
+                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
                                 </div>
 
                                 {/* Año + Estado */}
                                 <div className="grid grid-cols-[100px_1fr] gap-3 items-end">
                                     <div>
-                                        <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
+                                        <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
                                         <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300" />
+                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300" />
                                     </div>
                                     <div>
-                                        <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
+                                        <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
                                         <SegmentControl options={ESTADO_TABS} value={sfEstado} onChange={setSfEstado} compact />
                                     </div>
                                 </div>
 
                                 {/* Tipo */}
                                 <div>
-                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
+                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
                                     <SegmentControl options={TIPO_TABS} value={sfTipo} onChange={setSfTipo} />
-                                    <p className="text-[10px] text-content-3 mt-1.5 ml-1 leading-snug">{TIPO_DESC[sfTipo]}</p>
+                                    <p className="text-caption text-content-3 mt-1.5 ml-1 leading-snug">{TIPO_DESC[sfTipo]}</p>
                                 </div>
 
                                 {/* Descripción */}
                                 <div>
-                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
+                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
                                         rows={2} placeholder="Objetivo específico de esta encuesta…"
-                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
+                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
                                 </div>
 
                                 {/* Fechas */}
                                 <div>
-                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
+                                            <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
                                             <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
                                         <div>
-                                            <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
+                                            <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
                                             <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
                                             </div>
@@ -588,12 +588,12 @@ export default function EncuestaAdminView() {
 
                                 {/* Privacidad */}
                                 <div>
-                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Lock size={10} strokeWidth={2.5} /> Privacidad
                                     </label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <button type="button" onClick={() => setSfAnonima(v => !v)}
-                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
+                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-label transition-all duration-300 ${
                                                 sfAnonima
                                                     ? 'bg-chart-3/10 border-chart-3/40 text-chart-3-text shadow-[var(--shadow-glow-chart-3)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
@@ -602,7 +602,7 @@ export default function EncuestaAdminView() {
                                             {sfAnonima ? 'Anónima' : 'No anónima'}
                                         </button>
                                         <button type="button" onClick={() => setSfCompartir(v => !v)}
-                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-[11px] transition-all duration-300 ${
+                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-label transition-all duration-300 ${
                                                 sfCompartir
                                                     ? 'bg-success/10 border-success/40 text-success-text shadow-[var(--shadow-glow-success)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
@@ -611,13 +611,13 @@ export default function EncuestaAdminView() {
                                             {sfCompartir ? 'Resultados públicos' : 'Privado'}
                                         </button>
                                     </div>
-                                    <p className={`text-[10px] mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-chart-3-text' : 'text-content-3'}`}>
+                                    <p className={`text-caption mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-chart-3-text' : 'text-content-3'}`}>
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfAnonima
                                             ? 'Internamente se guarda quién respondió, pero el empleado no verá su propia atribución.'
                                             : 'Cada respuesta es visible con el nombre del empleado.'}
                                     </p>
-                                    <p className={`text-[10px] mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-success' : 'text-content-3'}`}>
+                                    <p className={`text-caption mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-success' : 'text-content-3'}`}>
                                         <Globe size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfCompartir
                                             ? 'Los resultados generales serán visibles para los empleados.'
@@ -627,7 +627,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Audiencia */}
                                 <div>
-                                    <label className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
+                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Users size={10} strokeWidth={2.5} /> Dirigida a
                                     </label>
                                     <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
@@ -636,7 +636,7 @@ export default function EncuestaAdminView() {
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {storeBranches.map(b => (
                                                 <button key={b.id} type="button" onClick={() => toggleScopeId(b.id)}
-                                                    className={`flex items-center gap-1.5 px-3 h-7 rounded-xl border text-[11px] font-black transition-all ${
+                                                    className={`flex items-center gap-1.5 px-3 h-7 rounded-xl border text-label font-black transition-all ${
                                                         sfScopeIds.includes(b.id)
                                                             ? 'bg-brand border-brand text-white shadow-sm'
                                                             : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card-hover hover:border-brand/30'
@@ -663,7 +663,7 @@ export default function EncuestaAdminView() {
                                                         {selectedEmps.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
-                                                                <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1 rounded-lg text-[11px] font-bold border border-brand/20">
+                                                                <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1 rounded-lg text-label font-bold border border-brand/20">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
                                                                     <span>{fn}</span>
                                                                     <button type="button" onClick={() => toggleScopeId(e.id)} className="hover:text-danger transition-colors ml-0.5">
@@ -678,7 +678,7 @@ export default function EncuestaAdminView() {
                                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-3" size={13} strokeWidth={2.5} />
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
                                                         placeholder="Buscar por nombre…"
-                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
                                                     {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-3 hover:text-danger transition-colors"><X size={12} strokeWidth={2.5} /></button>}
                                                 </div>
                                                 {empResults.length > 0 && (
@@ -691,8 +691,8 @@ export default function EncuestaAdminView() {
                                                                     className="w-full px-4 py-2.5 hover:bg-brand/10 text-left flex items-center gap-3 transition-colors border-b border-divider last:border-0">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={24} />
                                                                     <div className="flex-1 min-w-0">
-                                                                        <p className="text-[12px] font-bold text-content-2">{fn}</p>
-                                                                        <p className="text-[10px] text-content-3">{e.branch?.name}</p>
+                                                                        <p className="text-body-sm font-bold text-content-2">{fn}</p>
+                                                                        <p className="text-caption text-content-3">{e.branch?.name}</p>
                                                                     </div>
                                                                     <Plus size={13} className="text-brand-text shrink-0" strokeWidth={2.5} />
                                                                 </button>
@@ -701,14 +701,14 @@ export default function EncuestaAdminView() {
                                                     </div>
                                                 )}
                                                 {q && empResults.length === 0 && (
-                                                    <p className="text-[11px] text-content-3 text-center py-2">Sin resultados para "{sfEmpSearch}"</p>
+                                                    <p className="text-label text-content-3 text-center py-2">Sin resultados para "{sfEmpSearch}"</p>
                                                 )}
                                             </div>
                                         );
                                     })()}
 
                                     {sfScope === 'roles' && (
-                                        <p className="text-[11px] text-content-3 mt-2 ml-1">
+                                        <p className="text-label text-content-3 mt-2 ml-1">
                                             Solo aplicará a jefes/as de sala registrados en el sistema.
                                         </p>
                                     )}
@@ -716,7 +716,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
-                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
                                             ? 'bg-warning hover:bg-warning-hover shadow-warning/30'
                                             : 'bg-brand hover:bg-brand-hover'
@@ -735,7 +735,7 @@ export default function EncuestaAdminView() {
                     {leftPanel === 'response-form' && canManage && (
                         <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-content flex items-center gap-2 text-[15px]">
+                                <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>
                                         {editingResponse ? <Edit3 size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
                                     </div>
@@ -744,7 +744,7 @@ export default function EncuestaAdminView() {
                                     </span>
                                 </h3>
                                 <button onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}
-                                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
+                                    className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-danger bg-danger/10 hover:bg-danger-solid hover:text-white px-4 py-2 rounded-xl transition-all duration-300 border border-danger/30 shadow-sm active:scale-[0.97] group">
                                     <X size={14} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" /> Cancelar
                                 </button>
                             </div>
@@ -752,7 +752,7 @@ export default function EncuestaAdminView() {
                             <div className="space-y-5">
                                 {/* Empleado */}
                                 <div>
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
+                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
                                     {editingResponse ? (
                                         <div className="flex items-center gap-2.5 py-3 px-4 bg-surface-card border border-border-card rounded-2xl">
                                             <PersonAvatar
@@ -760,10 +760,10 @@ export default function EncuestaAdminView() {
                                                 name={`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
                                                 size={24} />
                                             <div>
-                                                <div className="text-[13px] font-bold text-content-2">
+                                                <div className="text-body font-bold text-content-2">
                                                     {`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}
                                                 </div>
-                                                <div className="text-[10px] text-content-3">{editingResponse.employee?.branch?.name}</div>
+                                                <div className="text-caption text-content-3">{editingResponse.employee?.branch?.name}</div>
                                             </div>
                                         </div>
                                     ) : (
@@ -776,7 +776,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Rol */}
                                 <div>
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
+                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <button type="button" onClick={() => setRfIsJefe(false)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
@@ -804,7 +804,7 @@ export default function EncuestaAdminView() {
                                             <div className="h-full rounded-full bg-brand transition-all duration-300"
                                                 style={{ width: `${(rfAnsweredCount / formPreguntas.length) * 100}%` }} />
                                         </div>
-                                        <span className="text-[11px] font-black text-content-3 shrink-0 tabular-nums">
+                                        <span className="text-label font-black text-content-3 shrink-0 tabular-nums">
                                             {rfAnsweredCount}/{formPreguntas.length}
                                         </span>
                                     </div>
@@ -820,12 +820,12 @@ export default function EncuestaAdminView() {
                                         <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
                                             <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
                                                 onClick={() => setRfOpenBloques(p => ({ ...p, general: !p.general }))}>
-                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 bg-content-3">
+                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-label font-black text-white shrink-0 bg-content-3">
                                                     G
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="text-[12px] font-black text-content">Datos Generales</span>
-                                                    <span className="ml-2 text-[10px] text-content-3 font-semibold">{answered}/{gqs.length}</span>
+                                                    <span className="text-body-sm font-black text-content">Datos Generales</span>
+                                                    <span className="ml-2 text-caption text-content-3 font-semibold">{answered}/{gqs.length}</span>
                                                 </div>
                                                 {answered === gqs.length && <Check size={13} className="text-success shrink-0" strokeWidth={3} />}
                                                 {isOpen ? <ChevronUp size={13} className="text-content-3 shrink-0" /> : <ChevronDown size={13} className="text-content-3 shrink-0" />}
@@ -837,17 +837,17 @@ export default function EncuestaAdminView() {
                                                         return (
                                                             <div key={p.id}
                                                                 className={`flex items-start gap-3 px-4 py-3 ${qi < gqs.length - 1 ? 'border-b border-border-card' : ''}`}>
-                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-micro font-black text-content-3 mt-0.5">
                                                                     {p.numero}
                                                                 </span>
-                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
+                                                                <p className="flex-1 text-label text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
                                                                 <div className="shrink-0 flex items-center gap-1 mt-0.5">
                                                                     {['A','B','C','D'].map(opt => {
                                                                         const oc = OPT_COLORS[opt];
                                                                         return (
                                                                             <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
                                                                                 onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
-                                                                                className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
+                                                                                className={`w-7 h-7 rounded-full text-label font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
                                                                                 {opt}
                                                                             </button>
                                                                         );
@@ -873,12 +873,12 @@ export default function EncuestaAdminView() {
                                         <div key={bloque.id} className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
                                             <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
                                                 onClick={() => setRfOpenBloques(p => ({ ...p, [bloque.id]: !p[bloque.id] }))}>
-                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black text-white shrink-0 ${barCls}`}>
+                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-label font-black text-white shrink-0 ${barCls}`}>
                                                     B{bloque.numero}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="text-[12px] font-black text-content">{bloque.nombre}</span>
-                                                    <span className="ml-2 text-[10px] text-content-3 font-semibold">{answered}/{bqs.length}</span>
+                                                    <span className="text-body-sm font-black text-content">{bloque.nombre}</span>
+                                                    <span className="ml-2 text-caption text-content-3 font-semibold">{answered}/{bqs.length}</span>
                                                 </div>
                                                 {answered === bqs.length && <Check size={13} className="text-success shrink-0" strokeWidth={3} />}
                                                 {isOpen ? <ChevronUp size={13} className="text-content-3 shrink-0" /> : <ChevronDown size={13} className="text-content-3 shrink-0" />}
@@ -890,10 +890,10 @@ export default function EncuestaAdminView() {
                                                         return (
                                                             <div key={p.id}
                                                                 className={`flex items-start gap-3 px-4 py-3 ${qi < bqs.length - 1 ? 'border-b border-border-card' : ''}`}>
-                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">
+                                                                <span className="shrink-0 w-5 h-5 rounded-md bg-surface-card flex items-center justify-center text-micro font-black text-content-3 mt-0.5">
                                                                     {p.numero}
                                                                 </span>
-                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
+                                                                <p className="flex-1 text-label text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
                                                                 {p.tipo === 'numerica' ? (
                                                                     <div className="shrink-0 flex items-center gap-0.5 mt-0.5 flex-wrap justify-end">
                                                                         {[1,2,3,4,5,6,7,8,9,10].map(n => {
@@ -906,7 +906,7 @@ export default function EncuestaAdminView() {
                                                                             return (
                                                                                 <button key={n}
                                                                                     onClick={() => setRfAnswer(p.indice, exactMatch ? null : nStr)}
-                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black transition-all duration-150 ${isActive ? oc.on : oc.off}`}>
+                                                                                    className={`w-6 h-6 rounded-full text-caption font-black transition-all duration-150 ${isActive ? oc.on : oc.off}`}>
                                                                                     {n}
                                                                                 </button>
                                                                             );
@@ -919,7 +919,7 @@ export default function EncuestaAdminView() {
                                                                             return (
                                                                                 <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
                                                                                     onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
-                                                                                    className={`w-7 h-7 rounded-full text-[11px] font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
+                                                                                    className={`w-7 h-7 rounded-full text-label font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
                                                                                     {opt}
                                                                                 </button>
                                                                             );
@@ -937,16 +937,16 @@ export default function EncuestaAdminView() {
 
                                 {/* Comentario */}
                                 <div>
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
+                                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
                                     <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
                                         placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-[16px] outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
                                 </div>
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveResponse}
                                     disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
-                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingResponse ? 'bg-warning hover:bg-warning-hover shadow-warning/30' : 'bg-brand hover:bg-brand-hover'
                                     }`}>
                                     {savingResponse
@@ -967,7 +967,7 @@ export default function EncuestaAdminView() {
                         {loadingSurveys ? (
                             <div className="flex items-center justify-center h-40 gap-2 text-content-3">
                                 <Loader2 size={18} className="animate-spin" />
-                                <span className="text-[12px] font-semibold">Cargando…</span>
+                                <span className="text-body-sm font-semibold">Cargando…</span>
                             </div>
                         ) : surveys.length === 0 ? (
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
@@ -976,8 +976,8 @@ export default function EncuestaAdminView() {
                                     <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-700">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
-                                    <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">Sin encuestas aún</h3>
-                                    <p className="font-medium text-[14px] text-content-3 max-w-[280px] leading-relaxed">
+                                    <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Sin encuestas aún</h3>
+                                    <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
                                         Crea la primera encuesta usando el formulario de la izquierda.
                                     </p>
                                 </div>
@@ -1005,7 +1005,7 @@ export default function EncuestaAdminView() {
                                         <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                             {isExpanded && (
                                                 <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[9px] font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-surface-card-hover hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">
+                                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-micro font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-surface-card-hover hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">
                                                     <ChevronUp size={10} strokeWidth={2.5} /> Colapsar
                                                 </button>
                                             )}
@@ -1020,56 +1020,56 @@ export default function EncuestaAdminView() {
 
                                         {/* Badges */}
                                         <div className="flex flex-wrap items-center gap-2 pr-28">
-                                            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                            <span className={`text-caption font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
                                                 s.estado === 'activa'    ? 'text-success bg-success/10 border-success/30' :
                                                 s.estado === 'cerrada'   ? 'text-chart-1-text bg-chart-1/10 border-chart-1/30' :
                                                 s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-divider' :
                                                                            'text-content-3 bg-surface-card-hover border-divider'
                                             }`}>{s.estado}</span>
-                                            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
+                                            <span className={`text-caption font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
                                                 s.tipo === 'clima'        ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' :
                                                 s.tipo === 'satisfaccion' ? 'text-chart-9-text bg-chart-9/10 border-chart-9/30' :
                                                 s.tipo === 'desempeno'    ? 'text-chart-6-text bg-chart-6/10 border-chart-6/30' :
                                                                             'text-warning bg-warning/10 border-warning/30'
                                             }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
                                             {s.anonima && (
-                                                <span className="flex items-center gap-1 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border border-chart-3/30">
+                                                <span className="flex items-center gap-1 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-caption font-black uppercase tracking-widest border border-chart-3/30">
                                                     <EyeOff size={10} strokeWidth={2.5} /> Anónima
                                                 </span>
                                             )}
-                                            <span className="text-[10px] font-bold text-content-3 tracking-widest bg-surface-card border border-border-card px-2 py-1 rounded-md">
+                                            <span className="text-caption font-bold text-content-3 tracking-widest bg-surface-card border border-border-card px-2 py-1 rounded-md">
                                                 {s.año}
                                             </span>
                                         </div>
 
                                         {/* Title */}
                                         <div>
-                                            <h4 className="font-black text-content text-[18px] leading-tight mb-1 tracking-tight">{s.nombre}</h4>
-                                            {s.descripcion && <p className="text-content-3 text-[13px] leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
+                                            <h4 className="font-black text-content text-title-sm leading-tight mb-1 tracking-tight">{s.nombre}</h4>
+                                            {s.descripcion && <p className="text-content-3 text-body leading-relaxed font-medium line-clamp-2">{s.descripcion}</p>}
                                         </div>
 
                                         {/* Footer */}
                                         <div className="flex items-center justify-between pt-3 border-t border-border-card">
-                                            <div className="flex items-center gap-2 text-[11px] font-bold text-content-3">
+                                            <div className="flex items-center gap-2 text-label font-bold text-content-3">
                                                 <ClipboardList size={14} strokeWidth={2} />
                                                 {count} {count === 1 ? 'respuesta' : 'respuestas'}
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {(s.fecha_inicio || s.fecha_fin) && (
-                                                    <div className="flex items-center gap-1 text-[11px] text-content-2 font-bold uppercase tracking-widest">
+                                                    <div className="flex items-center gap-1 text-label text-content-2 font-bold uppercase tracking-widest">
                                                         <CalendarRange size={12} strokeWidth={2} />
                                                         {s.fecha_inicio}{s.fecha_fin ? ` → ${s.fecha_fin}` : ''}
                                                     </div>
                                                 )}
                                                 {s.tipo === 'clima' && (
                                                     <button onClick={e => { e.stopPropagation(); navigate('/encuesta'); }}
-                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-[10px] font-black uppercase tracking-widest bg-gradient-to-r from-chart-3 to-chart-6 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-[0.97]">
+                                                        className="flex items-center gap-1.5 px-3 h-7 rounded-full text-caption font-black uppercase tracking-widest bg-gradient-to-r from-chart-3 to-chart-6 text-white shadow-[0_2px_10px_rgba(99,102,241,0.45)] hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(99,102,241,0.55)] transition-all active:scale-[0.97]">
                                                         <TrendingUp size={10} strokeWidth={2.5} /> Ver análisis
                                                     </button>
                                                 )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand-text px-3 h-7 rounded-full bg-brand/10 hover:bg-brand/20 transition-colors border border-brand/20 active:scale-[0.97]">
+                                                        className="flex items-center gap-1 text-caption font-black uppercase tracking-widest text-brand-text px-3 h-7 rounded-full bg-brand/10 hover:bg-brand/20 transition-colors border border-brand/20 active:scale-[0.97]">
                                                         Ver detalle <ChevronDown size={10} strokeWidth={2.5} />
                                                     </button>
                                                 )}
@@ -1085,26 +1085,26 @@ export default function EncuestaAdminView() {
                                             <div className="flex items-center justify-between flex-wrap gap-3">
                                                 <div className="flex items-center gap-5">
                                                     <div className="text-center">
-                                                        <p className="text-[22px] font-black text-content leading-none">{respuestas.length}</p>
-                                                        <p className="text-[9px] text-content-2 font-black uppercase tracking-widest mt-0.5">Respuestas</p>
+                                                        <p className="text-title-lg font-black text-content leading-none">{respuestas.length}</p>
+                                                        <p className="text-micro text-content-2 font-black uppercase tracking-widest mt-0.5">Respuestas</p>
                                                     </div>
                                                     {pendingEmployees.length > 0 && (
                                                         <div className="text-center">
-                                                            <p className="text-[22px] font-black text-warning leading-none">{pendingEmployees.length}</p>
-                                                            <p className="text-[9px] text-content-2 font-black uppercase tracking-widest mt-0.5">Pendientes</p>
+                                                            <p className="text-title-lg font-black text-warning leading-none">{pendingEmployees.length}</p>
+                                                            <p className="text-micro text-content-2 font-black uppercase tracking-widest mt-0.5">Pendientes</p>
                                                         </div>
                                                     )}
                                                     {globalAvg != null && (
                                                         <div className="text-center">
-                                                            <p className={`text-[22px] font-black leading-none ${scoreColor(globalAvg)}`}>{globalAvg}%</p>
-                                                            <p className="text-[9px] text-content-2 font-black uppercase tracking-widest mt-0.5">Promedio</p>
+                                                            <p className={`text-title-lg font-black leading-none ${scoreColor(globalAvg)}`}>{globalAvg}%</p>
+                                                            <p className="text-micro text-content-2 font-black uppercase tracking-widest mt-0.5">Promedio</p>
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {canManage && (
                                                     <button onClick={() => openResponseForm()}
-                                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]">
+                                                        className="flex items-center gap-2 px-4 py-2.5 bg-brand hover:bg-brand-hover text-white rounded-2xl text-label font-black uppercase tracking-widest transition-all shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]">
                                                         <Plus size={14} strokeWidth={2.5} /> Agregar
                                                     </button>
                                                     )}
@@ -1114,7 +1114,7 @@ export default function EncuestaAdminView() {
                                             {/* Pending employees */}
                                             {pendingEmployees.length > 0 && (
                                                 <div className="p-4 rounded-[1.5rem] border border-warning/30 bg-warning/10 backdrop-blur-xl flex flex-col gap-2.5">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-warning flex items-center gap-1.5">
+                                                    <p className="text-caption font-black uppercase tracking-widest text-warning flex items-center gap-1.5">
                                                         <AlertCircle size={12} strokeWidth={2.5} />
                                                         Pendientes ({pendingEmployees.length})
                                                     </p>
@@ -1124,7 +1124,7 @@ export default function EncuestaAdminView() {
                                                             return (
                                                                 <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
-                                                                    <span className="text-[10px] font-black text-warning-text">{fn}</span>
+                                                                    <span className="text-caption font-black text-warning-text">{fn}</span>
                                                                 </div>
                                                             );
                                                         })}
@@ -1136,13 +1136,13 @@ export default function EncuestaAdminView() {
                                             {loadingDetail ? (
                                                 <div className="flex items-center justify-center h-32 gap-2 text-content-3">
                                                     <Loader2 size={16} className="animate-spin" />
-                                                    <span className="text-[12px] font-semibold">Cargando…</span>
+                                                    <span className="text-body-sm font-semibold">Cargando…</span>
                                                 </div>
                                             ) : respuestas.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center min-h-[180px] text-center">
                                                     <ClipboardList size={32} strokeWidth={1.5} className="text-content-3 mb-3" />
-                                                    <p className="text-[13px] font-bold text-content-3">Sin respuestas registradas</p>
-                                                    <p className="text-[11px] text-content-3 mt-1">Usa el botón "Agregar" para comenzar.</p>
+                                                    <p className="text-body font-bold text-content-3">Sin respuestas registradas</p>
+                                                    <p className="text-label text-content-3 mt-1">Usa el botón "Agregar" para comenzar.</p>
                                                 </div>
                                             ) : (
                                                 responsesByBranch.map(([branchName, group]) => {
@@ -1151,19 +1151,19 @@ export default function EncuestaAdminView() {
                                                         <div key={branchName} className="rounded-[1.75rem] border border-border-card bg-surface-card backdrop-blur-xl overflow-hidden">
                                                             <div className="flex items-center gap-2 px-5 py-3 border-b border-border-card bg-surface-card">
                                                                 <Building2 size={13} strokeWidth={2.5} className="text-content-3" />
-                                                                <span className="text-[12px] font-black text-content-2">{branchName}</span>
-                                                                <span className="text-[11px] text-content-3">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
+                                                                <span className="text-body-sm font-black text-content-2">{branchName}</span>
+                                                                <span className="text-label text-content-3">— {allRows.length} {allRows.length === 1 ? 'respuesta' : 'respuestas'}</span>
                                                             </div>
                                                             <div className="overflow-x-auto">
                                                                 <table className="w-full min-w-[520px]">
                                                                     <thead>
                                                                         <tr className="border-b border-border-card">
-                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-content-2">Empleado</th>
-                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2">Rol</th>
+                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-micro font-black uppercase tracking-wider text-content-2">Empleado</th>
+                                                                            <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2">Rol</th>
                                                                             {bloques.map(b => (
-                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2 cursor-help">B{b.numero}</th>
+                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2 cursor-help">B{b.numero}</th>
                                                                             ))}
-                                                                            <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-content-2">Global</th>
+                                                                            <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2">Global</th>
                                                                             <th className="py-2.5 w-20 pr-3" />
                                                                         </tr>
                                                                     </thead>
@@ -1182,14 +1182,14 @@ export default function EncuestaAdminView() {
                                                                                                 className="flex items-center gap-2 text-left w-full"
                                                                                                 onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}>
                                                                                                 <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
-                                                                                                <span className="text-[12px] font-black text-content">{nombre}</span>
+                                                                                                <span className="text-body-sm font-black text-content">{nombre}</span>
                                                                                                 {isRowExp
                                                                                                     ? <ChevronUp size={10} className="text-brand-text ml-1 shrink-0" strokeWidth={2.5} />
                                                                                                     : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" strokeWidth={2.5} />}
                                                                                             </button>
                                                                                         </td>
                                                                                         <td className="py-2.5 px-2 text-center">
-                                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-warning-text' : 'bg-surface-card-hover text-content-3'}`}>
+                                                                                            <span className={`text-micro font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-warning-text' : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                 {row.is_jefe ? 'Jefe/a' : 'Colab.'}
                                                                                             </span>
                                                                                         </td>
@@ -1198,13 +1198,13 @@ export default function EncuestaAdminView() {
                                                                                             return (
                                                                                                 <td key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="py-2.5 px-2 text-center cursor-help">
                                                                                                     {sc != null
-                                                                                                        ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(sc)}`}>{sc}</span>
-                                                                                                        : <span className="text-content-3 text-[10px]">—</span>}
+                                                                                                        ? <span className={`text-caption font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(sc)}`}>{sc}</span>
+                                                                                                        : <span className="text-content-3 text-caption">—</span>}
                                                                                                 </td>
                                                                                             );
                                                                                         })}
                                                                                         <td className="py-2.5 px-2 text-center">
-                                                                                            <span className={`text-[12px] font-black ${scoreColor(global)}`}>
+                                                                                            <span className={`text-body-sm font-black ${scoreColor(global)}`}>
                                                                                                 {global != null ? `${global}%` : '–'}
                                                                                             </span>
                                                                                         </td>
@@ -1247,8 +1247,8 @@ export default function EncuestaAdminView() {
                                                                                                         return (
                                                                                                             <div className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
                                                                                                                 <div className="flex items-center gap-2 px-4 py-2 border-b border-border-card bg-surface-card-hover/40">
-                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-black text-white shrink-0 bg-content-3">G</div>
-                                                                                                                    <span className="text-[11px] font-black text-content-2">Datos Generales</span>
+                                                                                                                    <div className="w-5 h-5 rounded flex items-center justify-center text-micro font-black text-white shrink-0 bg-content-3">G</div>
+                                                                                                                    <span className="text-label font-black text-content-2">Datos Generales</span>
                                                                                                                 </div>
                                                                                                                 <div className="divide-y divide-white/40">
                                                                                                                     {gqs.map(p => {
@@ -1258,11 +1258,11 @@ export default function EncuestaAdminView() {
                                                                                                                             : ans;
                                                                                                                         return (
                                                                                                                             <div key={p.id} className="flex items-center gap-3 px-4 py-2">
-                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3">{p.numero}</span>
-                                                                                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug min-w-0">{p.texto}</p>
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-micro font-black text-content-3">{p.numero}</span>
+                                                                                                                                <p className="flex-1 text-label text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {ans
-                                                                                                                                    ? <span className="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2">{optLabel || ans}</span>
-                                                                                                                                    : <span className="shrink-0 text-[10px] text-content-3">—</span>}
+                                                                                                                                    ? <span className="shrink-0 text-caption font-black px-2 py-0.5 rounded-lg bg-surface-card-hover text-content-2">{optLabel || ans}</span>
+                                                                                                                                    : <span className="shrink-0 text-caption text-content-3">—</span>}
                                                                                                                             </div>
                                                                                                                         );
                                                                                                                     })}
@@ -1279,13 +1279,13 @@ export default function EncuestaAdminView() {
                                                                                                             <div key={bloque.id} className="rounded-xl border border-border-card bg-surface-card overflow-hidden">
                                                                                                                 <div className={`flex items-center justify-between px-4 py-2 border-b border-border-card ${barCls} bg-opacity-10`}>
                                                                                                                     <div className="flex items-center gap-2">
-                                                                                                                        <div className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-black text-white shrink-0 ${barCls}`}>
+                                                                                                                        <div className={`w-5 h-5 rounded flex items-center justify-center text-micro font-black text-white shrink-0 ${barCls}`}>
                                                                                                                             B{bloque.numero}
                                                                                                                         </div>
-                                                                                                                        <span className="text-[11px] font-black text-content-2">{bloque.nombre}</span>
+                                                                                                                        <span className="text-label font-black text-content-2">{bloque.nombre}</span>
                                                                                                                     </div>
                                                                                                                     {bsc != null && (
-                                                                                                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg ${scoreBg(bsc)}`}>{bsc}%</span>
+                                                                                                                        <span className={`text-label font-black px-2 py-0.5 rounded-lg ${scoreBg(bsc)}`}>{bsc}%</span>
                                                                                                                     )}
                                                                                                                 </div>
                                                                                                                 <div className="divide-y divide-white/40">
@@ -1293,8 +1293,8 @@ export default function EncuestaAdminView() {
                                                                                                                         const ans = row.responses?.[p.indice];
                                                                                                                         return (
                                                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2">
-                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-[9px] font-black text-content-3 mt-0.5">{p.numero}</span>
-                                                                                                                                <p className="flex-1 text-[11px] text-content-2 leading-snug min-w-0">{p.texto}</p>
+                                                                                                                                <span className="shrink-0 w-4 h-4 rounded bg-surface-card flex items-center justify-center text-micro font-black text-content-3 mt-0.5">{p.numero}</span>
+                                                                                                                                <p className="flex-1 text-label text-content-2 leading-snug min-w-0">{p.texto}</p>
                                                                                                                                 {p.tipo === 'numerica' ? (
                                                                                                                                     <div className="shrink-0 flex items-center gap-0.5 flex-wrap justify-end">
                                                                                                                                         {[1,2,3,4,5,6,7,8,9,10].map(n => {
@@ -1306,7 +1306,7 @@ export default function EncuestaAdminView() {
                                                                                                                                             const oc = n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D;
                                                                                                                                             return (
                                                                                                                                                 <span key={n}
-                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${isActive ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
+                                                                                                                                                    className={`w-6 h-6 rounded-full text-caption font-black flex items-center justify-center transition-all ${isActive ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                                                                     {n}
                                                                                                                                                 </span>
                                                                                                                                             );
@@ -1319,7 +1319,7 @@ export default function EncuestaAdminView() {
                                                                                                                                             return (
                                                                                                                                                 <span key={opt}
                                                                                                                                                     title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                                                                                    className={`w-6 h-6 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
+                                                                                                                                                    className={`w-6 h-6 rounded-full text-caption font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
                                                                                                                                                     {opt}
                                                                                                                                                 </span>
                                                                                                                                             );
@@ -1335,8 +1335,8 @@ export default function EncuestaAdminView() {
                                                                                                     })}
                                                                                                     {row.comentario && (
                                                                                                         <div className="rounded-xl border border-border-card bg-surface-card px-4 py-3">
-                                                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-content-2 mb-1">Comentario</p>
-                                                                                                            <p className="text-[12px] text-content-2 leading-relaxed">{row.comentario}</p>
+                                                                                                            <p className="text-micro font-black uppercase tracking-wider text-content-2 mb-1">Comentario</p>
+                                                                                                            <p className="text-body-sm text-content-2 leading-relaxed">{row.comentario}</p>
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </div>

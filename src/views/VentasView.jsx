@@ -210,7 +210,7 @@ function FilterControls({
             {/* Toggle filters */}
             <div className="flex items-center gap-1 px-2">
                 <button onClick={() => setFilterAnuladas(v => !v)}
-                    className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
+                    className={`flex items-center gap-1 px-3 h-8 rounded-full text-caption font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                         filterAnuladas
                             ? 'bg-danger/10 border-danger/30 text-danger-text shadow-sm'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
@@ -221,7 +221,7 @@ function FilterControls({
 
                 {showAntibiotico && (
                     <button onClick={() => setFilterAntibiotico(v => !v)}
-                        className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
+                        className={`flex items-center gap-1 px-3 h-8 rounded-full text-caption font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                             filterAntibiotico
                                 ? 'bg-danger/10 border-danger/30 text-danger-text shadow-sm'
                                 : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
@@ -266,17 +266,17 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 <Icon size={11} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col min-w-0">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-content-2 leading-none mb-0.5">{label}</span>
+                <span className="text-micro font-bold uppercase tracking-wider text-content-2 leading-none mb-0.5">{label}</span>
                 <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
-                    <span className={`text-[15px] font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
+                    <span className={`text-subtitle font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
-                        <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <span className={`flex items-center gap-0.5 text-caption font-black ${pct >= 0 ? 'text-success' : 'text-danger'}`}>
                             {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
                             {Math.abs(pct).toFixed(1)}%
                         </span>
                     )}
                 </div>
-                {sub && <span className={`text-[9px] text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
+                {sub && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
             {isFilter && !active && <ChevronDown size={11} className="text-warning ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-warning ml-0.5 shrink-0" />}
@@ -286,8 +286,8 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     return (
         <LiquidTooltip content={
             <div className="whitespace-nowrap">
-                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
-                <p className="text-[13px] font-black text-content">{fmt(conIva)}</p>
+                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
+                <p className="text-body font-black text-content">{fmt(conIva)}</p>
             </div>
         }>
             {card}
@@ -301,7 +301,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
     return (
         <th className={`px-2 py-3 select-none ${className}`}>
             <button onClick={() => onSort(col)}
-                className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
+                className={`group flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
                         ? 'text-brand-text bg-brand/10'
                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover/70'
@@ -695,23 +695,23 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 className={isCancelled ? 'opacity-50 bg-danger/10' : isExpanded ? 'bg-chart-1/10' : ''}
                             >
                                 <DataCell>
-                                    <p className={`text-[12px] font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
-                                    {r.hora && <p className="text-[10px] text-content-3">{r.hora?.slice(0, 5)}</p>}
+                                    <p className={`text-body-sm font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
+                                    {r.hora && <p className="text-caption text-content-3">{r.hora?.slice(0, 5)}</p>}
                                     {isCancelled
-                                        ? <span className="text-[9px] font-black uppercase tracking-widest text-danger">ANULADA</span>
-                                        : r.recibido_mh === null && <span className="text-[9px] font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
+                                        ? <span className="text-micro font-black uppercase tracking-widest text-danger">ANULADA</span>
+                                        : r.recibido_mh === null && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
-                                    <p className="font-mono text-[10px] text-content-3">{r.correlativo}</p>
+                                    {r.erp_invoice_id && <p className={`font-mono text-label font-black text-content-3 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
+                                    <p className="font-mono text-caption text-content-3">{r.correlativo}</p>
                                 </DataCell>
                                 <DataCell hideBelow="sm">
                                     {r.tipo_documento
-                                        ? <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
+                                        ? <span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
                                         : <span className="text-content-3">—</span>}
                                 </DataCell>
                                 <DataCell hideBelow="lg">
-                                    <span className="text-[11px] text-content-2">{getBranch(r.branch_id)}</span>
+                                    <span className="text-label text-content-2">{getBranch(r.branch_id)}</span>
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     <div className="flex items-center gap-2">
@@ -722,27 +722,27 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 <Users size={11} className="text-content-3" />
                                             </div>
                                         )}
-                                        <span className="text-[11px] text-content-2 truncate max-w-[100px]">
+                                        <span className="text-label text-content-2 truncate max-w-[100px]">
                                             {emp ? emp.first_names : (r.cod_vendedor || '—')}
                                         </span>
                                     </div>
                                 </DataCell>
                                 <DataCell>
-                                    <p className="text-[12px] text-content-2 truncate max-w-[160px]">{r.cliente || '—'}</p>
+                                    <p className="text-body-sm text-content-2 truncate max-w-[160px]">{r.cliente || '—'}</p>
                                     {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
                                         <div className="flex gap-1 flex-wrap mt-0.5">
                                             {(r.has_puntos || filterPuntos) && (
-                                                <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-warning-text">Puntos</span>
+                                                <span className="text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-warning-text">Puntos</span>
                                             )}
                                             {abInvoicesSet.has(r.id) && (
-                                                <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>
+                                                <span className="text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>
                                             )}
                                         </div>
                                     )}
                                 </DataCell>
                                 <DataCell hideBelow="sm">
                                     {r.tipo_pago
-                                        ? <span className="text-[11px] text-content-2 font-medium">{r.tipo_pago}</span>
+                                        ? <span className="text-label text-content-2 font-medium">{r.tipo_pago}</span>
                                         : <span className="text-content-3">—</span>}
                                 </DataCell>
                                 <DataCell align="right">
@@ -750,23 +750,23 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         {relevantChanges.length > 0 && (
                                             <LiquidTooltip content={
                                                 <div className="space-y-0.5">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-warning mb-2">Cambios registrados</p>
+                                                    <p className="text-caption font-black uppercase tracking-widest text-warning mb-2">Cambios registrados</p>
                                                     {relevantChanges.map((c, ci) => (
                                                         <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-divider last:border-0">
-                                                            <span className="text-[11px] font-bold text-content-2 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                                            <span className="text-[11px] text-content-3 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
-                                                            <span className="text-[11px] font-semibold text-content-2">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
+                                                            <span className="text-label font-bold text-content-2 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
+                                                            <span className="text-label text-content-3 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
+                                                            <span className="text-label font-semibold text-content-2">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             } className="shrink-0">
                                                 <div onClick={e => e.stopPropagation()}
                                                     className="w-4 h-4 rounded-full bg-warning/10 hover:bg-warning/20 flex items-center justify-center cursor-default transition-colors">
-                                                    <span className="text-[9px] font-black text-warning leading-none">!</span>
+                                                    <span className="text-micro font-black text-warning leading-none">!</span>
                                                 </div>
                                             </LiquidTooltip>
                                         )}
-                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-content-3' : 'text-content'}`}>{fmt(r.total)}</p>
+                                        <p className={`text-body font-black ${isCancelled ? 'line-through text-content-3' : 'text-content'}`}>{fmt(r.total)}</p>
                                         <ChevronDown size={12}
                                             className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-chart-1-text' : noData ? 'text-content-3' : 'text-content-3'}`} />
                                     </div>
@@ -777,11 +777,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     <td colSpan={8}
                                         className="px-5 py-4 bg-gradient-to-br from-chart-1/10 via-surface-card to-surface-card-hover">
                                         {loadingItems && !cachedItems ? (
-                                            <div className="flex items-center gap-2 text-[11px] py-1 text-content-3">
+                                            <div className="flex items-center gap-2 text-label py-1 text-content-3">
                                                 <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando productos...
                                             </div>
                                         ) : noData ? (
-                                            <div className="flex items-center gap-2 text-[11px] py-1 text-content-3">
+                                            <div className="flex items-center gap-2 text-label py-1 text-content-3">
                                                 <Info size={12} className="shrink-0 text-content-3" />
                                                 Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
                                             </div>
@@ -809,11 +809,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                     <table className="w-full border-collapse">
                                                         <thead>
                                                             <tr className={`border-b ${dividerCls}`}>
-                                                                <th className={`text-left text-[9px] font-semibold uppercase tracking-wider pb-1.5 pl-2 pr-2 ${hdrTxt}`}>Producto</th>
-                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-12 ${hdrTxt}`}>Cant.</th>
-                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-20 hidden sm:table-cell ${hdrTxt}`}>P. Unit.</th>
-                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-16 ${hdrTxt}`}>Tipo</th>
-                                                                <th className={`text-right text-[9px] font-semibold uppercase tracking-wider pb-1.5 w-20 ${hdrTxt}`}>Total</th>
+                                                                <th className={`text-left text-micro font-semibold uppercase tracking-wider pb-1.5 pl-2 pr-2 ${hdrTxt}`}>Producto</th>
+                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-12 ${hdrTxt}`}>Cant.</th>
+                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-20 hidden sm:table-cell ${hdrTxt}`}>P. Unit.</th>
+                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-16 ${hdrTxt}`}>Tipo</th>
+                                                                <th className={`text-right text-micro font-semibold uppercase tracking-wider pb-1.5 w-20 ${hdrTxt}`}>Total</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -838,29 +838,29 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 return (
                                                                     <tr key={idx} className={`transition-colors ${rowHoverCls}`}>
                                                                         <td className="py-1 pl-2 pr-2">
-                                                                            <div className={`text-[11px] font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
+                                                                            <div className={`text-label font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
-                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
-                                                                                    {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text font-mono">L:{it.lote}</span>}
-                                                                                    {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
+                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
+                                                                                    {it.presentacion && <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
+                                                                                    {it.lote && <span className="text-micro font-bold px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text font-mono">L:{it.lote}</span>}
+                                                                                    {it.fecha_vencimiento && <span className="text-micro font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
                                                                             )}
                                                                         </td>
-                                                                        <td className={`py-1 text-right text-[10px] font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
-                                                                        <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-content-3">{fmt(it.precio_unitario)}</td>
+                                                                        <td className={`py-1 text-right text-caption font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
+                                                                        <td className="py-1 text-right text-caption whitespace-nowrap hidden sm:table-cell text-content-3">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
-                                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
+                                                                                <span className={`text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
                                                                                     {tier.label}
                                                                                     {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
                                                                                 </span>
                                                                             ) : noPrice ? (
-                                                                                <span className="text-[9px] text-content-3">—</span>
+                                                                                <span className="text-micro text-content-3">—</span>
                                                                             ) : null}
                                                                         </td>
-                                                                        <td className={`py-1 text-right text-[11px] font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
+                                                                        <td className={`py-1 text-right text-label font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
                                                                     </tr>
                                                                 );
                                                             })}
@@ -868,12 +868,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 <tr className="border-t border-warning/30">
                                                                     <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="text-[9px] font-black uppercase tracking-widest bg-warning/20 text-warning-text px-1.5 py-0.5 rounded-md">PUNTOS</span>
-                                                                            <span className="text-[11px] font-semibold text-warning-text">Descuento por puntos</span>
+                                                                            <span className="text-micro font-black uppercase tracking-widest bg-warning/20 text-warning-text px-1.5 py-0.5 rounded-md">PUNTOS</span>
+                                                                            <span className="text-label font-semibold text-warning-text">Descuento por puntos</span>
                                                                         </div>
                                                                     </td>
                                                                     <td />
-                                                                    <td className="pt-1.5 pb-1 text-right text-[11px] font-black text-warning">-{fmt(finalDiscount)}</td>
+                                                                    <td className="pt-1.5 pb-1 text-right text-label font-black text-warning">-{fmt(finalDiscount)}</td>
                                                                 </tr>
                                                             )}
                                                         </tbody>
@@ -884,15 +884,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         {(r.tipo_documento === 'CCF' || r.tipo_documento === 'COF') && r.subtotal != null && (
                                             <div className="mt-3 pt-3 border-t flex justify-end border-divider">
                                                 <div className="flex flex-col gap-0.5 min-w-[180px]">
-                                                    <div className="flex justify-between gap-6 text-[11px] text-content-3">
+                                                    <div className="flex justify-between gap-6 text-label text-content-3">
                                                         <span>Subtotal (sin IVA)</span>
                                                         <span className="font-semibold text-content-2">{fmt(r.subtotal)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[11px] text-content-3">
+                                                    <div className="flex justify-between gap-6 text-label text-content-3">
                                                         <span>IVA (13%)</span>
                                                         <span className="font-semibold text-content-2">{fmt(r.iva)}</span>
                                                     </div>
-                                                    <div className="flex justify-between gap-6 text-[12px] font-black border-t pt-1 mt-0.5 text-content border-divider">
+                                                    <div className="flex justify-between gap-6 text-body-sm font-black border-t pt-1 mt-0.5 text-content border-divider">
                                                         <span>Total</span>
                                                         <span>{fmt(r.total)}</span>
                                                     </div>
@@ -1068,12 +1068,12 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         const diff = prev - currentRank;
         if (diff === 0) return <Minus size={12} className="text-content-3" />;
         if (diff > 0) return (
-            <span className="flex items-center gap-0.5 text-success text-[10px] font-black">
+            <span className="flex items-center gap-0.5 text-success text-caption font-black">
                 <ArrowUp size={10} />{diff}
             </span>
         );
         return (
-            <span className="flex items-center gap-0.5 text-danger text-[10px] font-black">
+            <span className="flex items-center gap-0.5 text-danger text-caption font-black">
                 <ArrowDown size={10} />{Math.abs(diff)}
             </span>
         );
@@ -1102,7 +1102,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -1158,27 +1158,27 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                             </div>
                                         )}
                                         <div>
-                                            <p className="font-semibold text-[13px]">{displayName}</p>
-                                            <p className="text-[10px] text-content-3">Cód. {r.cod_vendedor}</p>
+                                            <p className="font-semibold text-body">{displayName}</p>
+                                            <p className="text-caption text-content-3">Cód. {r.cod_vendedor}</p>
                                         </div>
                                     </div>
                                 </DataCell>
-                                <DataCell hideBelow="md" className="text-[12px]">
+                                <DataCell hideBelow="md" className="text-body-sm">
                                     {getBranchName(baseBranchId)}
                                     {r.branchIds.filter(id => id !== baseBranchId).map(id => (
-                                        <span key={id} className="ml-1 text-[10px] text-warning-text font-semibold">+{getBranchName(id)}</span>
+                                        <span key={id} className="ml-1 text-caption text-warning-text font-semibold">+{getBranchName(id)}</span>
                                     ))}
                                 </DataCell>
-                                <DataCell align="right" className="font-semibold text-[12px]">{fmtNum(r.count)}</DataCell>
+                                <DataCell align="right" className="font-semibold text-body-sm">{fmtNum(r.count)}</DataCell>
                                 <DataCell align="right">
                                     <div className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
-                                        <p className="font-black text-[13px]">{privacyMode ? '••••••' : fmt(r.total)}</p>
+                                        <p className="font-black text-body">{privacyMode ? '••••••' : fmt(r.total)}</p>
                                         <div className="mt-1 h-1 rounded-full bg-surface-card-hover">
                                             <div className="h-1 rounded-full bg-chart-1 transition-all" style={{ width: privacyMode ? '0%' : `${pct}%` }} />
                                         </div>
                                     </div>
                                 </DataCell>
-                                <DataCell align="right" hideBelow="md" className="text-[12px]">{fmt(ticket)}</DataCell>
+                                <DataCell align="right" hideBelow="md" className="text-body-sm">{fmt(ticket)}</DataCell>
                                 <DataCell>
                                     <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                 </DataCell>
@@ -1191,7 +1191,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                             <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-content-3" /></div>
                                         ) : (
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-content-2">Ventas diarias</p>
+                                                <p className="text-caption font-black uppercase tracking-widest mb-2 text-content-2">Ventas diarias</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {expandedData.map(d => {
                                                         const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
@@ -1217,19 +1217,19 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 })}
                 {[...unknownByBranch.values()].map(u => (
                     <DataRow key={`u-${u.branch_id}`} className="bg-warning/10">
-                        <DataCell><span className="text-[10px] text-warning-text/60 font-bold">—</span></DataCell>
+                        <DataCell><span className="text-caption text-warning-text/60 font-bold">—</span></DataCell>
                         <DataCell>
                             <div className="flex items-center gap-2.5">
                                 <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
                                     <Users size={14} className="text-warning-text" />
                                 </div>
-                                <p className="font-semibold text-warning-text text-[13px]">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
+                                <p className="font-semibold text-warning-text text-body">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
                             </div>
                         </DataCell>
-                        <DataCell hideBelow="md" className="text-[12px]">—</DataCell>
-                        <DataCell align="right" className="text-[12px]">{fmtNum(u.count)}</DataCell>
-                        <DataCell align="right" className="font-bold text-[13px]"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{privacyMode ? '••••••' : fmt(u.total)}</span></DataCell>
-                        <DataCell align="right" hideBelow="md" className="text-[12px]">{u.count > 0 ? fmt(u.total / u.count) : '—'}</DataCell>
+                        <DataCell hideBelow="md" className="text-body-sm">—</DataCell>
+                        <DataCell align="right" className="text-body-sm">{fmtNum(u.count)}</DataCell>
+                        <DataCell align="right" className="font-bold text-body"><span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>{privacyMode ? '••••••' : fmt(u.total)}</span></DataCell>
+                        <DataCell align="right" hideBelow="md" className="text-body-sm">{u.count > 0 ? fmt(u.total / u.count) : '—'}</DataCell>
                         <DataCell />
                     </DataRow>
                 ))}
@@ -1313,7 +1313,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     const porSuc = row.ultima_venta_por_suc || [];
 
     if (!fecha) {
-        return <span className="text-[10px] text-content-3 italic">Sin ventas</span>;
+        return <span className="text-caption text-content-3 italic">Sin ventas</span>;
     }
 
     const days  = Math.floor((now - new Date(fecha + 'T12:00:00')) / 86_400_000);
@@ -1323,8 +1323,8 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     if (filterBranch) {
         return (
             <div>
-                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-content-3">hace {days}d</span>
+                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-micro text-content-3">hace {days}d</span>
             </div>
         );
     }
@@ -1337,23 +1337,23 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
             : '';
         return (
             <div>
-                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                {name && <span className="block text-[9px] text-content-3">{name}</span>}
+                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+                {name && <span className="block text-micro text-content-3">{name}</span>}
             </div>
         );
     }
 
     const tipContent = (
         <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
+            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
                 const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
                 return (
                     <div key={s.branch_id} className="flex items-center justify-between gap-6 whitespace-nowrap">
-                        <span className="text-[12px] font-semibold text-content-2">{name}</span>
-                        <span className={`text-[12px] font-black tabular-nums ${c}`}>{fmtDate(s.fecha)}</span>
+                        <span className="text-body-sm font-semibold text-content-2">{name}</span>
+                        <span className={`text-body-sm font-black tabular-nums ${c}`}>{fmtDate(s.fecha)}</span>
                     </div>
                 );
             })}
@@ -1362,8 +1362,8 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     return (
         <LiquidTooltip content={tipContent}>
             <div className="cursor-help">
-                <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-content-3">{byBranch.length} suc. ⓘ</span>
+                <span className={`text-label font-semibold tabular-nums ${color}`}>{label}</span>
+                <span className="block text-micro text-content-3">{byBranch.length} suc. ⓘ</span>
             </div>
         </LiquidTooltip>
     );
@@ -1823,11 +1823,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <div className="text-center py-16 text-danger">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
-                    <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-brand-text hover:underline">Reintentar</button>
+                    <button onClick={fetchProductos} className="mt-3 text-label font-bold text-brand-text hover:underline">Reintentar</button>
                 </div>
             )}
             {isProdFuzzy && searchTerm && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-[11px] text-warning-text font-semibold">
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
                     <Search size={12} strokeWidth={2.5} className="shrink-0" />
                     Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
@@ -1868,23 +1868,23 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     <React.Fragment key={rowKey}>
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-chart-1/10' : ''}>
-                                        <DataCell className="text-[11px] font-bold">
+                                        <DataCell className="text-label font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-chart-7 fill-chart-7" />
                                                 : <span className="text-content-3">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
                                             <div className="flex items-start gap-1.5">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`font-semibold text-[12px] leading-tight ${r.neto === 0 ? 'text-content-3' : ''}`}>{r.descripcion}</p>
+                                                    <p className={`font-semibold text-body-sm leading-tight ${r.neto === 0 ? 'text-content-3' : ''}`}>{r.descripcion}</p>
                                                     {r.presentaciones?.length > 0 && (
-                                                        <p className="text-[10px] text-content-3 mt-0.5">
+                                                        <p className="text-caption text-content-3 mt-0.5">
                                                             {r.presentaciones.length === 1
                                                                 ? r.presentaciones[0].presentacion || 'sin presentación'
                                                                 : `${r.presentaciones.length} presentaciones`}
                                                         </p>
                                                     )}
                                                     {r.neto === 0 && (
-                                                        <span className="text-[9px] font-semibold text-content-3 bg-surface-card-hover px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
+                                                        <span className="text-micro font-semibold text-content-3 bg-surface-card-hover px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
                                                     )}
                                                     {r.neto > 0 && (
                                                     <div className="mt-1.5 h-1 rounded-full bg-surface-card-hover">
@@ -1895,29 +1895,29 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-chart-1-text' : 'text-content-3'}`} />
                                             </div>
                                         </DataCell>
-                                        <DataCell hideBelow="md" className="text-[11px] text-content-3 font-semibold truncate max-w-[140px]">
+                                        <DataCell hideBelow="md" className="text-label text-content-3 font-semibold truncate max-w-[140px]">
                                             {r.laboratorio_nombre || <span className="opacity-30">—</span>}
                                         </DataCell>
-                                        <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">
+                                        <DataCell align="right" hideBelow="md" className="text-body-sm font-semibold">
                                             {(() => {
                                                 const pres = r.presentaciones || [];
                                                 if (pres.length === 0) return fmtNum(r.cantidad_base);
                                                 return (
                                                     <LiquidTooltip content={
                                                         <div className="space-y-1 whitespace-nowrap">
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Desglose por presentación</p>
+                                                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Desglose por presentación</p>
                                                             {pres.map((p, i) => {
                                                                 const f = p.factor || 1;
                                                                 const sub = p.cantidad * f;
                                                                 return (
-                                                                    <div key={`${p.presentacion}-${i}`} className="flex items-center justify-between gap-4 text-[11px]">
+                                                                    <div key={`${p.presentacion}-${i}`} className="flex items-center justify-between gap-4 text-label">
                                                                         <span className="font-semibold text-content-2">{fmtQty(p.cantidad)} {p.presentacion || 'u'}</span>
                                                                         <span className="text-content-3 tabular-nums">{f > 1 ? `× ${f} = ${fmtNum(sub)} u` : `= ${fmtNum(sub)} u`}</span>
                                                                     </div>
                                                                 );
                                                             })}
                                                             {pres.length > 1 && (
-                                                                <div className="flex items-center justify-between gap-4 text-[11px] font-black text-content border-t border-divider pt-1 mt-1.5">
+                                                                <div className="flex items-center justify-between gap-4 text-label font-black text-content border-t border-divider pt-1 mt-1.5">
                                                                     <span>Total</span>
                                                                     <span className="tabular-nums">{fmtNum(r.cantidad_base)} u</span>
                                                                 </div>
@@ -1929,26 +1929,26 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 );
                                             })()}
                                         </DataCell>
-                                        <DataCell align="right" className="font-black text-[13px]">
+                                        <DataCell align="right" className="font-black text-body">
                                             {privacyMode ? (
                                                 <span className="transition-all duration-300 blur-sm select-none">••••••</span>
                                             ) : (
                                                 <LiquidTooltip content={
                                                     <div className="whitespace-nowrap">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
-                                                        <p className="text-[13px] font-black text-content">{fmt(r.neto * 1.13)}</p>
+                                                        <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
+                                                        <p className="text-body font-black text-content">{fmt(r.neto * 1.13)}</p>
                                                     </div>
                                                 }>
                                                     <span className="cursor-help">{fmt(r.neto)}</span>
                                                 </LiquidTooltip>
                                             )}
                                         </DataCell>
-                                        <DataCell align="right" hideBelow="lg" className="text-[12px]">
+                                        <DataCell align="right" hideBelow="lg" className="text-body-sm">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : r.costo_total != null ? fmt(r.costo_total) : <span className="opacity-30">—</span>}
                                             </span>
                                         </DataCell>
-                                        <DataCell align="right" hideBelow="sm" className="text-[12px] font-bold">
+                                        <DataCell align="right" hideBelow="sm" className="text-body-sm font-bold">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : r.utilidad != null
                                                     ? <span className={r.utilidad >= 0 ? 'text-success' : 'text-danger'}>{fmt(r.utilidad)}</span>
@@ -1957,8 +1957,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                         <DataCell align="right">
                                             {margin != null
-                                                ? <span className={`text-[12px] font-black ${marginColor}`}>{fmtPct(margin)}</span>
-                                                : <span className="opacity-30 text-[12px]">—</span>}
+                                                ? <span className={`text-body-sm font-black ${marginColor}`}>{fmtPct(margin)}</span>
+                                                : <span className="opacity-30 text-body-sm">—</span>}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="lg">
                                             <UltimaVentaCell row={r} filterBranch={filterBranch} branches={branches} />
@@ -1967,8 +1967,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <LiquidTooltip content={
                                                 showHidden
                                                     ? <div className="whitespace-nowrap">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-1">Mostrar de nuevo</p>
-                                                        <p className="text-[11px] text-content-2">
+                                                        <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Mostrar de nuevo</p>
+                                                        <p className="text-label text-content-2">
                                                             Oculto por <span className="font-bold text-content">{shortEmployeeName(r.oculto_por)}</span>
                                                             {r.oculto_at && ` el ${new Date(r.oculto_at).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                                                         </p>
@@ -1993,7 +1993,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
-                                                    <div className="flex items-center gap-2 text-[12px] text-content-3 py-3">
+                                                    <div className="flex items-center gap-2 text-body-sm text-content-3 py-3">
                                                         <Loader2 size={14} className="animate-spin" /> Cargando detalle...
                                                     </div>
                                                 ) : (
@@ -2001,16 +2001,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         {/* Presentaciones breakdown */}
                                                         {r.presentaciones?.length > 1 && (
                                                             <div>
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
+                                                                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Por presentación</p>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {r.presentaciones.map(p => (
                                                                         <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-card border border-divider shadow-sm">
-                                                                            <span className="text-[11px] font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
-                                                                            <span className="text-[11px] font-black text-content">{fmtQty(p.cantidad)} u</span>
+                                                                            <span className="text-label font-semibold text-content-2">{p.presentacion || '(sin pres.)'}</span>
+                                                                            <span className="text-label font-black text-content">{fmtQty(p.cantidad)} u</span>
                                                                             {p.factor > 1 && (
-                                                                                <span className="text-[10px] font-semibold text-chart-1-text">= {fmtQty(p.cantidad * p.factor)} base</span>
+                                                                                <span className="text-caption font-semibold text-chart-1-text">= {fmtQty(p.cantidad * p.factor)} base</span>
                                                                             )}
-                                                                            <span className="text-[10px] text-content-3">{fmt(p.neto)}</span>
+                                                                            <span className="text-caption text-content-3">{fmt(p.neto)}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -2046,7 +2046,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     {/* Branch rotation */}
                                                                     {showBranch && (
                                                                         <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-divider p-4 shadow-sm">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
+                                                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Ventas por sucursal</p>
                                                                             <div className="space-y-2.5">
                                                                                 {branchAgg.entries.map(([bid, neto], ci) => {
                                                                                     const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
@@ -2056,11 +2056,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     return (
                                                                                         <div key={bid}>
                                                                                             <div className="flex justify-between items-center mb-1">
-                                                                                                <span className="text-[10px] text-content-2 font-semibold truncate max-w-[150px]">{name}</span>
+                                                                                                <span className="text-caption text-content-2 font-semibold truncate max-w-[150px]">{name}</span>
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                                                    <span className="text-[9px] text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
-                                                                                                    <span className="text-[10px] font-black text-content-2">{fmt(neto)}</span>
-                                                                                                    <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-chart-3-solid">{pct.toFixed(0)}%</span>
+                                                                                                    <span className="text-micro text-content-3 font-semibold tabular-nums">{fmtQty(cant)} und</span>
+                                                                                                    <span className="text-caption font-black text-content-2">{fmt(neto)}</span>
+                                                                                                    <span className="text-micro font-black text-white px-1.5 py-0.5 rounded-full bg-chart-3-solid">{pct.toFixed(0)}%</span>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="h-2 rounded-full bg-surface-card-hover overflow-hidden">
@@ -2076,7 +2076,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     {/* Trend */}
                                                                     {showTrend && (
                                                                         <div className="rounded-2xl border border-divider bg-gradient-to-br from-white to-divider p-4 shadow-sm">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
+                                                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Tendencia mensual</p>
                                                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                                                 {drillMonthly.map((m, i) => {
                                                                                     const barPct = (m.neto / maxTrend) * 100;
@@ -2087,7 +2087,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const isUp = change !== null && change >= 0;
                                                                                     return (
                                                                                         <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full group/bar cursor-default">
-                                                                                            <div className="text-[9px] font-black h-3.5 flex items-center">
+                                                                                            <div className="text-micro font-black h-3.5 flex items-center">
                                                                                                 {change !== null
                                                                                                     ? <span className={isUp ? 'text-success' : 'text-danger'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
                                                                                                     : <span />}
@@ -2098,8 +2098,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                     style={{ height: `${Math.max(barPct, 5)}%` }}
                                                                                                 />
                                                                                             </div>
-                                                                                            <span className="text-[9px] text-content-3 capitalize leading-none mt-1">{monthLabel}</span>
-                                                                                            <span className="text-[9px] font-black text-content-2 leading-none">{fmt(m.neto)}</span>
+                                                                                            <span className="text-micro text-content-3 capitalize leading-none mt-1">{monthLabel}</span>
+                                                                                            <span className="text-micro font-black text-content-2 leading-none">{fmt(m.neto)}</span>
                                                                                         </div>
                                                                                     );
                                                                                 })}
@@ -2122,7 +2122,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillSortCol === col;
                                                                 return (
                                                                     <th onClick={() => handleDrillSort(col)}
-                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-chart-1-text' : 'text-content-2'} hover:text-content-2`}>
+                                                                        className={`px-3 py-2 font-black text-micro uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-chart-1-text' : 'text-content-2'} hover:text-content-2`}>
                                                                         <span className="inline-flex items-center gap-0.5">
                                                                             {label}
                                                                             {active
@@ -2136,7 +2136,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillFilters[field] === val;
                                                                 return (
                                                                     <button key={val} onClick={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}
-                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-3 border-border-card hover:border-chart-1/40 hover:text-chart-1-text'}`}>
+                                                                        className={`px-2 py-0.5 rounded-full text-micro font-black border transition-[background-color,border-color,color] ${active ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-3 border-border-card hover:border-chart-1/40 hover:text-chart-1-text'}`}>
                                                                         {label ?? val}
                                                                     </button>
                                                                 );
@@ -2154,14 +2154,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <>
                                                                                         {docOpts.length > 1 && <span className="text-content-3">|</span>}
                                                                                         <button onClick={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}
-                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-warning-solid text-white border-warning' : 'bg-surface-card text-warning border-warning/40 hover:border-warning'}`}>
+                                                                                            className={`px-2 py-0.5 rounded-full text-micro font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-warning-solid text-white border-warning' : 'bg-surface-card text-warning border-warning/40 hover:border-warning'}`}>
                                                                                             ⚠ precio cambió ({changedCount})
                                                                                         </button>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
                                                                                     <button onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}
-                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 transition-colors">
+                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-micro font-black bg-danger/10 text-danger hover:bg-danger-solid hover:text-white border border-danger/30 transition-colors">
                                                                                         ✕ limpiar
                                                                                     </button>
                                                                                 )}
@@ -2171,18 +2171,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                                     {/* Totals summary */}
                                                                     <div className="flex items-center gap-3 mb-2">
-                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-content-2">
+                                                                        <p className="text-caption font-black uppercase tracking-widest text-content-2">
                                                                             {filteredDrill.length} venta{filteredDrill.length !== 1 ? 's' : ''}{drillData.length >= 300 ? '+' : ''}
                                                                         </p>
                                                                         <span className="text-content-3">·</span>
-                                                                        <p className="text-[10px] font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
+                                                                        <p className="text-caption font-black text-content-2">{fmtQty(totCant)} <span className="font-medium text-content-3">unidades</span></p>
                                                                         <span className="text-content-3">·</span>
-                                                                        <p className="text-[11px] font-black text-success-text">{fmt(totNeto)} <span className="text-[9px] font-medium text-content-3">total</span></p>
+                                                                        <p className="text-label font-black text-success-text">{fmt(totNeto)} <span className="text-micro font-medium text-content-3">total</span></p>
                                                                     </div>
 
                                                                     {/* Table */}
                                                                     <div className="rounded-xl border border-divider overflow-hidden bg-surface-card shadow-sm overflow-x-auto">
-                                                                        <table className="min-w-full text-[11px]">
+                                                                        <table className="min-w-full text-label">
                                                                             <thead className="bg-surface-card-hover border-b border-divider">
                                                                                 <tr>
                                                                                     <DH col="fecha"          label="Fecha" />
@@ -2193,8 +2193,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <DH col="cliente"        label="Cliente" />
                                                                                     {!filterBranch && <DH col="branch_id" label="Suc." />}
                                                                                     <DH col="presentacion"     label="Presentación" />
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-content-2 text-left whitespace-nowrap">Lote</th>
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-content-2 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
+                                                                                    <th className="px-3 py-2 font-black text-micro uppercase tracking-wide text-content-2 text-left whitespace-nowrap">Lote</th>
+                                                                                    <th className="px-3 py-2 font-black text-micro uppercase tracking-wide text-content-2 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
                                                                                     <DH col="precio_display"   label="P. Unit." right />
                                                                                     <DH col="cantidad"         label="Cant." right />
                                                                                     <DH col="neto_display"     label="Total" right />
@@ -2213,22 +2213,22 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <td className="px-3 py-2 font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex flex-col leading-tight">
-                                                                                                    <span className="font-mono text-content-2 text-[11px]">{line.correlativo || '—'}</span>
+                                                                                                    <span className="font-mono text-content-2 text-label">{line.correlativo || '—'}</span>
                                                                                                     {line.erp_invoice_id && (
-                                                                                                        <span className="font-mono text-[9px] text-content-3">#{line.erp_invoice_id}</span>
+                                                                                                        <span className="font-mono text-micro text-content-3">#{line.erp_invoice_id}</span>
                                                                                                     )}
                                                                                                 </div>
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
-                                                                                                {line.tipo_documento && <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}
+                                                                                                {line.tipo_documento && <span className={`text-micro font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
-                                                                                                {line.tipo_pago && <span className={`text-[9px] font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
+                                                                                                {line.tipo_pago && <span className={`text-micro font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex items-center gap-1.5">
                                                                                                     <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
-                                                                                                    <span className="text-content-2 text-[11px]">{empShort}</span>
+                                                                                                    <span className="text-content-2 text-label">{empShort}</span>
                                                                                                 </div>
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-content-2 max-w-[160px] truncate">{line.cliente || '—'}</td>
@@ -2236,27 +2236,27 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <td className="px-3 py-2 text-content-3 max-w-[120px] truncate">{line.presentacion || '—'}</td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.lote
-                                                                                                    ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text">{line.lote}</span>
+                                                                                                    ? <span className="text-micro font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text">{line.lote}</span>
                                                                                                     : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
                                                                                                 {line.fecha_vencimiento
-                                                                                                    ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-9/10 text-chart-9-text">{line.fecha_vencimiento}</span>
+                                                                                                    ? <span className="text-micro font-bold font-mono px-1.5 py-0.5 rounded-md bg-chart-9/10 text-chart-9-text">{line.fecha_vencimiento}</span>
                                                                                                     : <span className="text-content-3">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right whitespace-nowrap">
                                                                                                 <div className="flex flex-col items-end gap-0.5">
-                                                                                                    <span className="text-[11px] font-semibold text-content-2">{fmt(line.precio_display)}</span>
+                                                                                                    <span className="text-label font-semibold text-content-2">{fmt(line.precio_display)}</span>
                                                                                                     {line.tier && (
                                                                                                         <div className="relative group/tier inline-flex items-center gap-1">
-                                                                                                            <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md inline-flex items-center gap-1 ${line.tier.color}`}>
+                                                                                                            <span className={`text-micro font-black px-1.5 py-[2px] rounded-md inline-flex items-center gap-1 ${line.tier.color}`}>
                                                                                                                 {line.tier.label}
                                                                                                                 {line.tier.num != null && <span className="opacity-50 font-bold">{line.tier.num}</span>}
                                                                                                             </span>
                                                                                                             {line.tierChanged && (
                                                                                                                 <>
-                                                                                                                    <span className="text-warning text-[11px] cursor-help leading-none">⚠</span>
-                                                                                                                    <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
+                                                                                                                    <span className="text-warning text-label cursor-help leading-none">⚠</span>
+                                                                                                                    <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-caption leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
                                                                                                                         <p className="font-black text-warning mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
                                                                                                                             <p className="text-content-3">
@@ -2280,7 +2280,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                             </tbody>
                                                                             <tfoot className="bg-surface-card-hover border-t-2 border-divider">
                                                                                 <tr>
-                                                                                    <td colSpan={!filterBranch ? 11 : 10} className="px-3 py-2 text-[10px] font-black text-content-3 uppercase tracking-wide">
+                                                                                    <td colSpan={!filterBranch ? 11 : 10} className="px-3 py-2 text-caption font-black text-content-3 uppercase tracking-wide">
                                                                                         Total {filteredDrill.length < drillData.length ? `(filtrado)` : ''}
                                                                                     </td>
                                                                                     <td className="px-3 py-2 text-right font-black text-content-2">{fmtQty(totCant)}</td>

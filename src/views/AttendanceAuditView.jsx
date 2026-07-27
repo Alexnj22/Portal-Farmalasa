@@ -70,7 +70,7 @@ function getRoleOrder(role) {
 const NocturnalLegalInfo = () => (
   <div className="relative group inline-flex items-center">
     <Info size={10} className="text-chart-3-text cursor-help" strokeWidth={2} />
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-caption leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
       <p className="font-black text-chart-3-text mb-1.5">Art. 168 — Código de Trabajo SV</p>
       <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
       <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-chart-3-text font-bold">+25% recargo</span> sobre tarifa diurna</p>
@@ -299,8 +299,8 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-0.5">Corrección de marcaje</p>
-            <p className="text-[16px] font-black text-content">{fmtDia}</p>
+            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Corrección de marcaje</p>
+            <p className="text-input font-black text-content">{fmtDia}</p>
           </div>
           <button onClick={onClose}
             className="p-2 rounded-xl hover:bg-black/[0.06] text-content-3 hover:text-content-2 transition-all active:scale-[0.94]">
@@ -315,12 +315,12 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             <div className="flex items-start gap-3 bg-brand/[0.07] border border-brand/15 rounded-2xl px-4 py-3.5">
               <Calendar size={15} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-brand-text mb-1">Horario planificado</p>
-                <p className="text-[14px] font-black text-content">
+                <p className="text-micro font-black uppercase tracking-widest text-brand-text mb-1">Horario planificado</p>
+                <p className="text-body-lg font-black text-content">
                   {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
                 </p>
                 {dayConfig?.lunchStart && (
-                  <p className="text-[11px] text-content-3 font-bold mt-0.5">
+                  <p className="text-label text-content-3 font-bold mt-0.5">
                     Almuerzo {formatTime12h(dayConfig.lunchStart)} – {(() => {
                       const [h, m] = dayConfig.lunchStart.split(':');
                       return formatTime12h(`${String(parseInt(h,10)+1).padStart(2,'0')}:${m}`);
@@ -331,32 +331,32 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             </div>
           ) : (
             <div className="bg-surface-card-hover/80 border border-divider rounded-2xl px-4 py-3">
-              <p className="text-[11px] font-bold text-content-3">Sin horario planificado para este día</p>
+              <p className="text-label font-bold text-content-3">Sin horario planificado para este día</p>
             </div>
           )}
 
           {/* Marcajes actuales */}
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-2 px-0.5">Marcajes del día</p>
+            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-2 px-0.5">Marcajes del día</p>
             {dayPunches.length === 0 ? (
-              <p className="text-[12px] text-content-3 font-bold">Sin marcajes registrados</p>
+              <p className="text-body-sm text-content-3 font-bold">Sin marcajes registrados</p>
             ) : (
               <div className="space-y-1.5">
                 {dayPunches.map(p => (
                   <div key={p.id} className="flex items-center gap-3 bg-surface-card border border-black/[0.06] rounded-2xl px-4 py-2.5">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-black text-content">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
-                      <p className="text-[11px] font-bold text-content-3">{fmtTimeCSTStr(p.timestamp)}</p>
+                      <p className="text-body-sm font-black text-content">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
+                      <p className="text-label font-bold text-content-3">{fmtTimeCSTStr(p.timestamp)}</p>
                       {(() => { const bid = p.details?.audit_info?.branchId ?? p.branch_id; return bid && branchNameById.get(String(bid)) && String(bid) !== String(emp.branchId) ? (
-                        <p className="text-[9px] font-black text-chart-1-text flex items-center gap-1 mt-0.5">
+                        <p className="text-micro font-black text-chart-1-text flex items-center gap-1 mt-0.5">
                           <ArrowRightLeft size={8} /> Apoyo {branchNameById.get(String(bid))}
                         </p>
                       ) : null; })()}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {isAutoPunch(p)    && <span className="text-[9px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full">Auto</span>}
-                      {isPendingPunch(p) && <span className="text-[9px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
-                      {isEditedPunch(p)  && <span className="text-[9px] font-black bg-success/10 text-success border border-success/30 px-1.5 py-0.5 rounded-full">Editado</span>}
+                      {isAutoPunch(p)    && <span className="text-micro font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full">Auto</span>}
+                      {isPendingPunch(p) && <span className="text-micro font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
+                      {isEditedPunch(p)  && <span className="text-micro font-black bg-success/10 text-success border border-success/30 px-1.5 py-0.5 rounded-full">Editado</span>}
                     </div>
                   </div>
                 ))}
@@ -366,7 +366,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
           {/* Agregar marcaje */}
           <div className="bg-surface-card-hover/70 border border-divider rounded-2xl p-4 space-y-3">
-            <p className="text-[9px] font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+            <p className="text-micro font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
               <Plus size={10} strokeWidth={3} /> Agregar marcaje
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -380,16 +380,16 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               value={reason} onChange={e => setReason(e.target.value)}
               placeholder="Razón de la corrección (opcional)"
               rows={2}
-              className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[16px] font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
+              className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-input font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
             />
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-bold text-content-3">
+              <p className="text-caption font-bold text-content-3">
                 Por: <span className="text-content-2">{user?.name || user?.email || '—'}</span>
               </p>
               <button
                 onClick={handleAdd}
                 disabled={saving || !newType || !newTime}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-hover transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand text-white rounded-2xl text-label font-black uppercase tracking-widest hover:bg-brand-hover transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
               >
                 {saving ? '...' : <><Check size={12} strokeWidth={3} /> Guardar</>}
               </button>
@@ -398,7 +398,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
           {isDemoMode && (
             <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
-              <p className="text-[10px] text-warning font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
+              <p className="text-caption text-warning font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
             </div>
           )}
         </div>
@@ -496,41 +496,41 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
       <div className="flex items-start gap-3">
         {/* Date pill */}
         <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-brand text-white' : isOff ? 'bg-surface-card-hover text-content-3' : 'bg-surface-card-hover text-content-2'}`}>
-          <span className="text-[9px] font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
-          <span className="text-[16px] font-black leading-tight">{dayD.getUTCDate()}</span>
+          <span className="text-micro font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
+          <span className="text-input font-black leading-tight">{dayD.getUTCDate()}</span>
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-            <span className="text-[12px] font-black text-content">{DAY_NAMES_FULL[dow]}</span>
-            {isToday && <span className="text-[9px] font-black uppercase tracking-widest bg-brand text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
+            <span className="text-body-sm font-black text-content">{DAY_NAMES_FULL[dow]}</span>
+            {isToday && <span className="text-micro font-black uppercase tracking-widest bg-brand text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
             {isOff && (
               isNoSchedule
-                ? <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-dashed border-divider px-2 py-0.5 rounded-full">Sin turno</span>
-                : <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-divider px-2 py-0.5 rounded-full">Libre</span>
+                ? <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-dashed border-divider px-2 py-0.5 rounded-full">Sin turno</span>
+                : <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 border border-divider px-2 py-0.5 rounded-full">Libre</span>
             )}
-            {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-content-2 px-1">Próximo</span>}
+            {isFuture && !isOff && <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">Próximo</span>}
             {!isOff && !isFuture && inconsistencies.length > 0 && !ts?.absence_type && (
-              <span className="text-[9px] font-black uppercase tracking-widest bg-danger/10 text-danger border border-danger/30 px-2 py-0.5 rounded-full">
+              <span className="text-micro font-black uppercase tracking-widest bg-danger/10 text-danger border border-danger/30 px-2 py-0.5 rounded-full">
                 {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
               </span>
             )}
-            {isAutoDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-2 py-0.5 rounded-full">Auto-marcado</span>}
-            {isPendDay  && <span className="text-[9px] font-black uppercase tracking-widest bg-warning/10 text-warning border border-warning/30 px-2 py-0.5 rounded-full">Pend. TH</span>}
-            {isEditedDay && <span className="text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} strokeWidth={3}/> Editado</span>}
+            {isAutoDay  && <span className="text-micro font-black uppercase tracking-widest bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-2 py-0.5 rounded-full">Auto-marcado</span>}
+            {isPendDay  && <span className="text-micro font-black uppercase tracking-widest bg-warning/10 text-warning border border-warning/30 px-2 py-0.5 rounded-full">Pend. TH</span>}
+            {isEditedDay && <span className="text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} strokeWidth={3}/> Editado</span>}
             {crossBranchName && (
-              <span className="text-[9px] font-black uppercase tracking-widest bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-micro font-black uppercase tracking-widest bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <ArrowRightLeft size={8} strokeWidth={2.5} /> Apoyo {crossBranchName}
               </span>
             )}
-            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-[9px] font-black uppercase tracking-widest bg-success/10 text-success-text border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
-            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-[9px] font-black uppercase tracking-widest bg-danger/10 text-danger-text border border-danger/30 px-2 py-0.5 rounded-full">Incapacidad</span>}
-            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-[9px] font-black uppercase tracking-widest bg-chart-2/10 text-chart-2-text border border-chart-2/30 px-2 py-0.5 rounded-full">Permiso</span>}
-            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-[9px] font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-divider px-2 py-0.5 rounded-full">Ausente</span>}
+            {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-micro font-black uppercase tracking-widest bg-success/10 text-success-text border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
+            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-micro font-black uppercase tracking-widest bg-danger/10 text-danger-text border border-danger/30 px-2 py-0.5 rounded-full">Incapacidad</span>}
+            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-micro font-black uppercase tracking-widest bg-chart-2/10 text-chart-2-text border border-chart-2/30 px-2 py-0.5 rounded-full">Permiso</span>}
+            {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-divider px-2 py-0.5 rounded-full">Ausente</span>}
           </div>
           {!isOff && shift && (
-            <p className="text-[10px] font-bold text-content-3">
+            <p className="text-caption font-bold text-content-3">
               {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
               {dayConfig?.lunchStart && <span> · Almuerzo {formatTime12h(dayConfig.lunchStart)}</span>}
             </p>
@@ -542,14 +542,14 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           <div className="flex flex-col gap-1.5 shrink-0">
             <button
               onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand-text hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand-text hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
             >
               <Edit3 size={11} strokeWidth={2.5} /> Corregir
             </button>
             {isPendDay && onMarkReviewed && (
               <button
                 onClick={() => onMarkReviewed(emp, dateStr, dayPunches.filter(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)))}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning-solid hover:text-white hover:border-warning rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94]"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-warning/10 border border-warning/30 text-warning-text hover:bg-warning-solid hover:text-white hover:border-warning rounded-[1rem] text-caption font-black uppercase tracking-widest transition-all active:scale-[0.94]"
               >
                 <ShieldCheck size={11} strokeWidth={2.5} /> Revisado
               </button>
@@ -567,15 +567,15 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             <div className="flex items-center gap-2">
               <LogIn size={13} className={entryPunch ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Entrada</p>
+                <p className="text-micro font-black uppercase tracking-widest text-content-2">Entrada</p>
                 {entryPunch ? (
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-black text-content">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
-                    {lateMin > 0 && <span className="text-[9px] font-black text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
-                    {isEditedPunch(entryPunch) && <span className="text-[9px] font-black text-success">✎</span>}
+                    <p className="text-body font-black text-content">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
+                    {lateMin > 0 && <span className="text-micro font-black text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
+                    {isEditedPunch(entryPunch) && <span className="text-micro font-black text-success">✎</span>}
                   </div>
                 ) : (
-                  <p className="text-[11px] font-black text-content-3">—</p>
+                  <p className="text-label font-black text-content-3">—</p>
                 )}
               </div>
             </div>
@@ -584,16 +584,16 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             <div className="flex items-center gap-2">
               <LogOut size={13} className={exitPunch ? 'text-content-3' : 'text-content-3'} strokeWidth={2.5} />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Salida</p>
+                <p className="text-micro font-black uppercase tracking-widest text-content-2">Salida</p>
                 {exitPunch ? (
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-black text-content">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
-                    {isAutoPunch(exitPunch)  && <span className="text-[9px] font-black text-chart-3-text">Auto</span>}
-                    {isPendingPunch(exitPunch) && <span className="text-[9px] font-black text-warning">Pend.</span>}
-                    {isEditedPunch(exitPunch) && <span className="text-[9px] font-black text-success">✎</span>}
+                    <p className="text-body font-black text-content">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
+                    {isAutoPunch(exitPunch)  && <span className="text-micro font-black text-chart-3-text">Auto</span>}
+                    {isPendingPunch(exitPunch) && <span className="text-micro font-black text-warning">Pend.</span>}
+                    {isEditedPunch(exitPunch) && <span className="text-micro font-black text-success">✎</span>}
                   </div>
                 ) : (
-                  <p className="text-[11px] font-black text-content-3">—</p>
+                  <p className="text-label font-black text-content-3">—</p>
                 )}
               </div>
             </div>
@@ -603,8 +603,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
               <div className="flex items-center gap-2">
                 <Coffee size={13} className="text-chart-4-text" strokeWidth={2.5} />
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Almuerzo</p>
-                  <p className="text-[12px] font-black text-content-2">
+                  <p className="text-micro font-black uppercase tracking-widest text-content-2">Almuerzo</p>
+                  <p className="text-body-sm font-black text-content-2">
                     {lunchOut ? fmtTimeCSTStr(lunchOut.timestamp) : '—'} → {lunchIn ? fmtTimeCSTStr(lunchIn.timestamp) : '—'}
                   </p>
                 </div>
@@ -616,17 +616,17 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
               <div className="flex items-center gap-2">
                 <Clock size={13} className="text-brand-text/50" strokeWidth={2.5} />
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Horas</p>
+                  <p className="text-micro font-black uppercase tracking-widest text-content-2">Horas</p>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <p className="text-[13px] font-black text-content">{(ts.regular_hours||0).toFixed(1)}h</p>
-                    {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-chart-3-text">+{ts.overtime_hours.toFixed(1)}h OT</span>}
+                    <p className="text-body font-black text-content">{(ts.regular_hours||0).toFixed(1)}h</p>
+                    {ts.overtime_hours > 0 && <span className="text-micro font-black text-chart-3-text">+{ts.overtime_hours.toFixed(1)}h OT</span>}
                     {(ts.nocturnal_hours > 0) && (
-                      <span className="text-[9px] font-black text-chart-3-text flex items-center gap-0.5">
+                      <span className="text-micro font-black text-chart-3-text flex items-center gap-0.5">
                         🌙 {ts.nocturnal_hours.toFixed(1)}h noct. <NocturnalLegalInfo />
                       </span>
                     )}
                     {(ts.nocturnal_overtime_hours > 0) && (
-                      <span className="text-[9px] font-black text-chart-3-text flex items-center gap-0.5">
+                      <span className="text-micro font-black text-chart-3-text flex items-center gap-0.5">
                         🌙 +{ts.nocturnal_overtime_hours.toFixed(1)}h OT noct.
                       </span>
                     )}
@@ -640,7 +640,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           {inconsistencies.length > 0 && (
             <div className="bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex flex-wrap gap-2">
               {inconsistencies.map(inc => (
-                <span key={inc.type} className="text-[10px] font-bold text-danger flex items-center gap-1">
+                <span key={inc.type} className="text-caption font-bold text-danger flex items-center gap-1">
                   ⚠ {inc.label} no registrada
                 </span>
               ))}
@@ -649,7 +649,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Edited by */}
           {isEditedDay && editedInfo?.details?.auditedByName && (
-            <p className="text-[9px] font-bold text-success flex items-center gap-1">
+            <p className="text-micro font-bold text-success flex items-center gap-1">
               <Check size={9} strokeWidth={3} />
               Editado por {editedInfo.details.auditedByName}
               {editedInfo.details.reason && ` — "${editedInfo.details.reason}"`}
@@ -658,7 +658,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Auto-punch note */}
           {isAutoDay && (
-            <p className="text-[9px] font-bold text-chart-3-text flex items-center gap-1">
+            <p className="text-micro font-bold text-chart-3-text flex items-center gap-1">
               <Bot size={10} strokeWidth={2.5} />
               Salida generada automáticamente — requiere verificación
             </p>
@@ -666,7 +666,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Pending review note */}
           {isPendDay && dayPunches.find(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id))?.details?.skipReason && (
-            <p className="text-[9px] font-bold text-warning flex items-center gap-1">
+            <p className="text-micro font-bold text-warning flex items-center gap-1">
               <ShieldAlert size={10} strokeWidth={2.5} />
               {dayPunches.find(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)).details.skipReason}
             </p>
@@ -678,7 +678,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
       {isOff && (
         <div className="mt-2 ml-14 flex items-center gap-2 text-content-3">
           <Palmtree size={14} strokeWidth={1.5} />
-          <span className="text-[11px] font-bold">Día libre</span>
+          <span className="text-label font-bold">Día libre</span>
         </div>
       )}
     </div>
@@ -749,13 +749,13 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
       >
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
-          <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-[14px] overflow-hidden">
+          <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
             {emp.photo
               ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
-              : <span className="text-[16px]">{emp.name?.charAt(0) || '?'}</span>}
+              : <span className="text-input">{emp.name?.charAt(0) || '?'}</span>}
           </div>
           {alertColor ? (
-            <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-[9px] font-black shadow-sm`}>
+            <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-micro font-black shadow-sm`}>
               {alerts.total}
             </div>
           ) : (
@@ -767,27 +767,27 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 
         {/* Name + role + alert chips */}
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-black text-content leading-none truncate">{emp.name}</p>
-          <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
+          <p className="text-body font-black text-content leading-none truncate">{emp.name}</p>
+          <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
-                <span className="flex items-center gap-0.5 text-[9px] font-black bg-danger/10 text-danger border border-danger/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-micro font-black bg-danger/10 text-danger border border-danger/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <AlertTriangle size={7} strokeWidth={3} /> {alerts.inconsistencies} faltante{alerts.inconsistencies > 1 ? 's' : ''}
                 </span>
               )}
               {alerts.autoPunched > 0 && (
-                <span className="flex items-center gap-0.5 text-[9px] font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-micro font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <Bot size={7} strokeWidth={2.5} /> {alerts.autoPunched} auto
                 </span>
               )}
               {alerts.pendingReview > 0 && (
-                <span className="flex items-center gap-0.5 text-[9px] font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-micro font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <ShieldAlert size={7} strokeWidth={2.5} /> {alerts.pendingReview} pend.
                 </span>
               )}
               {hasCrossBranch && (
-                <span className="flex items-center gap-0.5 text-[9px] font-black bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="flex items-center gap-0.5 text-micro font-black bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   <ArrowRightLeft size={7} strokeWidth={2.5} /> Apoyo
                 </span>
               )}
@@ -799,48 +799,48 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         <div className="hidden sm:flex items-center gap-3 shrink-0">
           {totalReg > 0 && (
             <div className="flex flex-col items-end min-w-[3.5rem]">
-              <span className="text-[15px] font-black text-content tabular-nums leading-none">
-                {totalReg.toFixed(1)}<span className="text-[10px] font-bold text-content-3 ml-0.5">h</span>
+              <span className="text-subtitle font-black text-content tabular-nums leading-none">
+                {totalReg.toFixed(1)}<span className="text-caption font-bold text-content-3 ml-0.5">h</span>
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-content-2 mt-0.5">regular</span>
+              <span className="text-micro font-black uppercase tracking-widest text-content-2 mt-0.5">regular</span>
             </div>
           )}
           {totalOT > 0 && (
             <div className="flex flex-col items-end min-w-[3rem]">
-              <span className="text-[15px] font-black text-warning tabular-nums leading-none">
-                {totalOT.toFixed(1)}<span className="text-[10px] font-bold text-warning ml-0.5">h</span>
+              <span className="text-subtitle font-black text-warning tabular-nums leading-none">
+                {totalOT.toFixed(1)}<span className="text-caption font-bold text-warning ml-0.5">h</span>
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-warning mt-0.5">extra</span>
+              <span className="text-micro font-black uppercase tracking-widest text-warning mt-0.5">extra</span>
             </div>
           )}
           {totalLate > 0 && (
             <div className="flex flex-col items-end min-w-[2.5rem]">
-              <span className="text-[15px] font-black text-chart-4-text tabular-nums leading-none">
-                {totalLate}<span className="text-[10px] font-bold text-chart-4-text/70 ml-0.5">m</span>
+              <span className="text-subtitle font-black text-chart-4-text tabular-nums leading-none">
+                {totalLate}<span className="text-caption font-bold text-chart-4-text/70 ml-0.5">m</span>
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-chart-4-text mt-0.5">tardanza</span>
+              <span className="text-micro font-black uppercase tracking-widest text-chart-4-text mt-0.5">tardanza</span>
             </div>
           )}
           {totalAbs > 0 && (
             <div className="flex flex-col items-end min-w-[2rem]">
-              <span className="text-[15px] font-black text-danger tabular-nums leading-none">{totalAbs}</span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-danger mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
+              <span className="text-subtitle font-black text-danger tabular-nums leading-none">{totalAbs}</span>
+              <span className="text-micro font-black uppercase tracking-widest text-danger mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
             </div>
           )}
           {(totalNocturnal + totalNoctOT) > 0 && (
             <div className="flex flex-col items-end min-w-[2.5rem]">
-              <span className="text-[13px] font-black text-chart-3-text tabular-nums leading-none flex items-center gap-0.5">
-                🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-[9px] font-bold text-chart-3-text/70 ml-0.5">h</span>
+              <span className="text-body font-black text-chart-3-text tabular-nums leading-none flex items-center gap-0.5">
+                🌙 {(totalNocturnal + totalNoctOT).toFixed(1)}<span className="text-micro font-bold text-chart-3-text/70 ml-0.5">h</span>
                 <NocturnalLegalInfo />
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-chart-3-text mt-0.5">noct.</span>
+              <span className="text-micro font-black uppercase tracking-widest text-chart-3-text mt-0.5">noct.</span>
             </div>
           )}
           {!allApproved && onApproveAll && (
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onApproveAll(); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.96] shrink-0"
             >
               <ShieldCheck size={9} strokeWidth={2.5} /> Aprobar todo
             </button>
@@ -849,14 +849,14 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           {allApproved ? (
             <div className="flex flex-col items-center min-w-[2.5rem]">
               <ShieldCheck size={16} className="text-success" strokeWidth={2} />
-              <span className="text-[9px] font-black uppercase tracking-widest text-success mt-0.5">OK</span>
+              <span className="text-micro font-black uppercase tracking-widest text-success mt-0.5">OK</span>
             </div>
           ) : (
             <div className="flex flex-col items-end min-w-[2.5rem]">
-              <span className="text-[13px] font-black text-content-3 tabular-nums leading-none">
+              <span className="text-body font-black text-content-3 tabular-nums leading-none">
                 {empTimesheets.filter(t => t.status === 'APPROVED').length}/{empTimesheets.length}
               </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-content-2 mt-0.5">aprob.</span>
+              <span className="text-micro font-black uppercase tracking-widest text-content-2 mt-0.5">aprob.</span>
             </div>
           )}
         </div>
@@ -878,7 +878,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 {isMonday && idx > 0 && (
                   <div className="flex items-center gap-2 pt-1">
                     <div className="h-px flex-1 bg-gradient-to-r from-divider to-transparent" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
+                    <span className="text-micro font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
                     <div className="h-px w-8 bg-divider" />
                   </div>
                 )}
@@ -1246,8 +1246,8 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         <div className={pillDivider} />
         <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
           className="flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all">
-          <span className={`text-[12px] font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
-          <span className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
+          <span className={`text-body-sm font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
+          <span className={`text-micro font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
             {isCurrentQuincena ? 'Actual' : '← Ir a hoy'}
           </span>
         </button>
@@ -1264,7 +1264,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         <button type="button" onClick={() => setBranchDropOpen(v => !v)}
           className={`${pillWrap} cursor-pointer`}>
           <Building2 size={13} className="opacity-60 shrink-0" />
-          <span className={`text-[10px] font-black tracking-widest uppercase whitespace-nowrap mx-1 ${pillLabelText}`}>
+          <span className={`text-caption font-black tracking-widest uppercase whitespace-nowrap mx-1 ${pillLabelText}`}>
             {currentBranchLabel}
           </span>
           <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} />
@@ -1274,7 +1274,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
             {sortedBranchOptions.map(opt => (
               <button key={opt.value} type="button"
                 onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-[11px] font-bold tracking-wide transition-colors hover:bg-brand/[0.07] ${filterBranch === opt.value ? 'text-brand-text bg-brand/[0.05]' : 'text-content-2'}`}>
+                className={`w-full text-left px-4 py-2 text-label font-bold tracking-wide transition-colors hover:bg-brand/[0.07] ${filterBranch === opt.value ? 'text-brand-text bg-brand/[0.05]' : 'text-content-2'}`}>
                 {opt.label}
               </button>
             ))}
@@ -1286,17 +1286,17 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       {!isDemoMode && isQuincenaPast && (
         quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-caption font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
             <button type="button" onClick={() => navigate('/payroll')}
-              className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+              className="flex items-center gap-1.5 text-caption font-black text-white bg-brand hover:bg-brand-hover px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
               Ver planilla →
             </button>
           </div>
         ) : quincenaTS.length > 0 ? (
           <button type="button" onClick={handleCloseQuincena} disabled={isClosingQuincena}
-            className="flex items-center gap-1.5 text-[10px] font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
+            className="flex items-center gap-1.5 text-caption font-black text-white bg-brand hover:bg-brand-hover disabled:opacity-60 px-3 py-1.5 rounded-full shrink-0 shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 transition-all active:scale-[0.97]">
             {isClosingQuincena
               ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
               : <LockKeyhole size={11} strokeWidth={2.5} />}
@@ -1331,10 +1331,10 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           <div className="bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 rounded-2xl overflow-hidden">
             <div className="px-5 py-3 border-b border-chart-3/30 flex items-center gap-2">
               <ShieldAlert size={14} className="text-chart-3-text" strokeWidth={2.5} />
-              <span className="text-[11px] font-black text-chart-3-text uppercase tracking-widest">
+              <span className="text-label font-black text-chart-3-text uppercase tracking-widest">
                 Turnos Extra Sin Autorizar — Revisión TH
               </span>
-              <span className="ml-auto bg-chart-3-solid text-white text-[9px] font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
+              <span className="ml-auto bg-chart-3-solid text-white text-micro font-black px-2 py-0.5 rounded-full">{shiftExceptions.length}</span>
             </div>
             <div className="divide-y divide-chart-3/20">
               {shiftExceptions.map(req => {
@@ -1348,15 +1348,15 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                 return (
                   <div key={req.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-black text-content">{meta.employeeName || emp?.name || `Empleado #${req.employee_id}`}</p>
-                      <p className="text-[10px] text-content-3 mt-0.5 capitalize">{fmtDate}</p>
+                      <p className="text-body-sm font-black text-content">{meta.employeeName || emp?.name || `Empleado #${req.employee_id}`}</p>
+                      <p className="text-caption text-content-3 mt-0.5 capitalize">{fmtDate}</p>
                       {meta.declaredStart && meta.declaredEnd ? (
-                        <p className="text-[11px] font-bold text-chart-3-text mt-1">
+                        <p className="text-label font-bold text-chart-3-text mt-1">
                           Declara: {meta.declaredStart} – {meta.declaredEnd}
-                          {meta.pinOmitido && <span className="ml-2 text-warning text-[9px] uppercase tracking-wider font-black">sin PIN</span>}
+                          {meta.pinOmitido && <span className="ml-2 text-warning text-micro uppercase tracking-wider font-black">sin PIN</span>}
                         </p>
                       ) : (
-                        <p className="text-[10px] text-content-3 mt-1 italic">No declaró horario — solo registró entrada</p>
+                        <p className="text-caption text-content-3 mt-1 italic">No declaró horario — solo registró entrada</p>
                       )}
                     </div>
                     {isEditing ? (
@@ -1367,11 +1367,11 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         <TimePicker12 value={editEnd} onChange={setEditEnd}
                           className="bg-surface-card border border-chart-3/40 rounded-xl" />
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
-                          className="bg-success-solid hover:bg-success-hover text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
+                          className="bg-success-solid hover:bg-success-hover text-white text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl disabled:opacity-50 transition-all">
                           {isBusy ? '…' : 'Aplicar'}
                         </button>
                         <button onClick={() => setEditingExId(null)}
-                          className="text-[9px] font-bold text-content-3 hover:text-content-2 px-2 py-1.5">
+                          className="text-micro font-bold text-content-3 hover:text-content-2 px-2 py-1.5">
                           Cancelar
                         </button>
                       </div>
@@ -1380,17 +1380,17 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         {meta.declaredStart && meta.declaredEnd && (
                           <>
                             <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', meta.declaredStart, meta.declaredEnd)}
-                              className="bg-success/10 hover:bg-success/20 text-success-text text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-success/30 disabled:opacity-50 transition-all">
+                              className="bg-success/10 hover:bg-success/20 text-success-text text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-success/30 disabled:opacity-50 transition-all">
                               {isBusy ? '…' : 'Confirmar'}
                             </button>
                             <button disabled={isBusy} onClick={() => { setEditingExId(req.id); setEditStart(meta.declaredStart); setEditEnd(meta.declaredEnd); }}
-                              className="bg-chart-3/10 hover:bg-chart-3/20 text-chart-3-text text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-chart-3/30 disabled:opacity-50 transition-all">
+                              className="bg-chart-3/10 hover:bg-chart-3/20 text-chart-3-text text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-chart-3/30 disabled:opacity-50 transition-all">
                               Editar
                             </button>
                           </>
                         )}
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'REJECT', null, null)}
-                          className="bg-danger/10 hover:bg-danger/10 text-danger text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-danger/30 disabled:opacity-50 transition-all">
+                          className="bg-danger/10 hover:bg-danger/10 text-danger text-micro font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-danger/30 disabled:opacity-50 transition-all">
                           {isBusy ? '…' : 'Rechazar'}
                         </button>
                       </div>
@@ -1425,10 +1425,10 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                       <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
                         <Icon size={13} className={c} strokeWidth={2.5} />
                       </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-content-3 leading-tight">{label}</span>
+                      <span className="text-micro font-black uppercase tracking-widest text-content-3 leading-tight">{label}</span>
                     </div>
                     <p className={`text-[1.85rem] font-black leading-none tabular-nums tracking-tight ${c}`}>
-                      {val}<span className="text-[14px] font-bold opacity-50 ml-0.5">{unit}</span>
+                      {val}<span className="text-body-lg font-bold opacity-50 ml-0.5">{unit}</span>
                     </p>
                   </div>
                 ))}
@@ -1453,14 +1453,14 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                           <Building2 size={13} className="text-brand-text" strokeWidth={2.5} />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[12px] font-black text-content-2 leading-none">{bName}</p>
-                          <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5">
+                          <p className="text-body-sm font-black text-content-2 leading-none">{bName}</p>
+                          <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
                             {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 'es' : ''}
                           </p>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-divider to-transparent" />
                         {bReg > 0 && (
-                          <span className="text-[11px] font-black text-content-3 tabular-nums shrink-0">{bReg.toFixed(1)}h regulares</span>
+                          <span className="text-label font-black text-content-3 tabular-nums shrink-0">{bReg.toFixed(1)}h regulares</span>
                         )}
                       </div>
                       {branchEmployees.map(emp => (
@@ -1487,7 +1487,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                   <div className="p-5 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
                     <CalendarRange size={32} className="text-content-3" strokeWidth={1.5} />
                   </div>
-                  <p className="text-[14px] font-bold text-content-3">Sin empleados para mostrar</p>
+                  <p className="text-body-lg font-bold text-content-3">Sin empleados para mostrar</p>
                 </div>
               )}
 
@@ -1495,7 +1495,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {quincenaSummary.length > 0 && (
                 <div className="flex justify-end pb-2">
                   <button type="button" onClick={handleExportCSVQuincena}
-                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-surface-card-hover hover:text-brand-text hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                    className="flex items-center gap-2 text-micro font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-surface-card-hover hover:text-brand-text hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                     <Download size={11} strokeWidth={2.5} /> Exportar CSV
                   </button>
                 </div>

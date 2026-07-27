@@ -50,7 +50,7 @@ const SectionCard = ({ children, className = '' }) => (
 );
 
 const SectionLabel = ({ icon: Icon, label, color = 'text-content-3' }) => (
-    <p className={`text-[10px] font-black uppercase tracking-widest ${color} flex items-center gap-1.5 mb-3`}>
+    <p className={`text-caption font-black uppercase tracking-widest ${color} flex items-center gap-1.5 mb-3`}>
         <Icon size={10} /> {label}
     </p>
 );
@@ -59,9 +59,9 @@ const Field = ({ label, value, icon: Icon }) => (
     <div className="p-3.5 rounded-2xl bg-surface-card backdrop-blur-sm border border-border-card hover:bg-surface-card hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default">
         <div className="flex items-center gap-1.5 mb-0.5">
             {Icon && <Icon size={9} className="text-content-3 flex-shrink-0" />}
-            <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em]">{label}</p>
+            <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em]">{label}</p>
         </div>
-        <p className="text-[13px] font-bold text-content-2 truncate">{value || 'No registrado'}</p>
+        <p className="text-body font-bold text-content-2 truncate">{value || 'No registrado'}</p>
     </div>
 );
 
@@ -230,9 +230,9 @@ const EmployeeProfileView = ({ openModal }) => {
                 <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-white shadow-sm" />
             </div>
             <div className="min-w-0">
-                <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">Mi Perfil</p>
-                <h2 className="font-black text-[20px] md:text-[24px] text-content tracking-tight leading-tight truncate">{emp.name}</h2>
-                <p className="text-[10px] font-bold text-content-3 truncate">
+                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Mi Perfil</p>
+                <h2 className="font-black text-title md:text-display text-content tracking-tight leading-tight truncate">{emp.name}</h2>
+                <p className="text-caption font-bold text-content-3 truncate">
                     {emp.role || 'Empleado'}{branch ? ` · ${branch.name}` : ''}
                 </p>
             </div>
@@ -245,20 +245,20 @@ const EmployeeProfileView = ({ openModal }) => {
             {emp.phone && (
                 <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
                     <Phone size={11} className="text-content-3 shrink-0" />
-                    <span className="text-[11px] font-bold text-content-2 whitespace-nowrap">{emp.phone}</span>
+                    <span className="text-label font-bold text-content-2 whitespace-nowrap">{emp.phone}</span>
                 </div>
             )}
             {emp.dui && (
                 <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
                     <CreditCard size={11} className="text-content-3 shrink-0" />
-                    <span className="text-[11px] font-bold text-content-2 whitespace-nowrap">{emp.dui}</span>
+                    <span className="text-label font-bold text-content-2 whitespace-nowrap">{emp.dui}</span>
                 </div>
             )}
             {(emp.phone || emp.dui) && <div className="hidden md:block w-px h-6 bg-divider mx-0.5 shrink-0" />}
             {/* Edit button */}
             <button
                 onClick={() => openModal('editContact', emp)}
-                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-brand text-white text-[11px] font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
+                className="flex items-center gap-2 px-3 md:px-4 h-10 rounded-full bg-brand text-white text-label font-black uppercase tracking-widest shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] whitespace-nowrap"
             >
                 <Edit3 size={13} strokeWidth={2.5} />
                 <span className="hidden sm:inline">Editar</span>
@@ -289,8 +289,8 @@ const EmployeeProfileView = ({ openModal }) => {
                         ].map(({ label, value, icon: Icon, color, bg }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
-                                <p className="text-[15px] font-black text-content-2 leading-tight">{value}</p>
-                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
+                                <p className="text-subtitle font-black text-content-2 leading-tight">{value}</p>
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
                             </div>
                         ))}
                     </div>
@@ -305,9 +305,9 @@ const EmployeeProfileView = ({ openModal }) => {
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
-                                <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
-                                <p className="text-[13px] font-black text-content-2 leading-tight">{value}</p>
-                                {extra && <p className="text-[10px] font-bold text-chart-6 mt-0.5">{extra}</p>}
+                                <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
+                                <p className="text-body font-black text-content-2 leading-tight">{value}</p>
+                                {extra && <p className="text-caption font-bold text-chart-6 mt-0.5">{extra}</p>}
                             </div>
                         ))}
                     </div>
@@ -317,8 +317,8 @@ const EmployeeProfileView = ({ openModal }) => {
                         <div className="flex items-center gap-2.5 bg-success/10 border border-success/30 rounded-2xl px-4 py-3">
                             <Palmtree size={14} className="text-success shrink-0" strokeWidth={1.8} />
                             <div className="min-w-0">
-                                <p className="text-[9px] font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
-                                <p className="text-[12px] font-black text-success-text truncate">
+                                <p className="text-micro font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
+                                <p className="text-body-sm font-black text-success-text truncate">
                                     {new Date(nextVacation.start_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     {nextVacation.status === 'CONFIRMED' && <span className="ml-1.5 text-success font-bold">· Confirmadas</span>}
                                 </p>
@@ -372,10 +372,10 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={1.8} />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[12px] font-black text-content-2 truncate">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
-                                                <p className="text-[10px] text-content-3 font-medium">{vp.days} días · {vp.year}</p>
+                                                <p className="text-body-sm font-black text-content-2 truncate">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
+                                                <p className="text-caption text-content-3 font-medium">{vp.days} días · {vp.year}</p>
                                             </div>
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md border flex-shrink-0 ${s.bg} ${s.text} ${s.border}`}>{s.label}</span>
+                                            <span className={`text-micro font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md border flex-shrink-0 ${s.bg} ${s.text} ${s.border}`}>{s.label}</span>
                                         </div>
                                     );
                                 })}
@@ -410,25 +410,25 @@ const EmployeeProfileView = ({ openModal }) => {
                                             : d.shift ? 'bg-surface-card border border-border-card'
                                                       : 'bg-surface-card-hover/80 border border-divider'
                                         }`}>
-                                            <p className={`text-[9px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.short}</p>
-                                            <p className={`text-[15px] font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.date?.getDate()}</p>
+                                            <p className={`text-micro font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.short}</p>
+                                            <p className={`text-subtitle font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-content-2'}`}>{d.date?.getDate()}</p>
                                             {evCfg ? (
                                                 <>
                                                     <evCfg.Icon size={10} className={evCfg.text} strokeWidth={2} />
-                                                    <p className={`text-[9px] font-black mt-1 text-center leading-tight ${evCfg.text}`}>{evCfg.label}</p>
+                                                    <p className={`text-micro font-black mt-1 text-center leading-tight ${evCfg.text}`}>{evCfg.label}</p>
                                                 </>
                                             ) : d.shift ? (
                                                 <>
                                                     <Coffee size={10} className={isToday ? 'text-chart-4-text' : 'text-chart-4-text'} strokeWidth={2} />
-                                                    <p className={`text-[9px] font-black mt-1 text-center leading-tight ${isToday ? 'text-white' : 'text-content-2'}`}>
+                                                    <p className={`text-micro font-black mt-1 text-center leading-tight ${isToday ? 'text-white' : 'text-content-2'}`}>
                                                         {formatTime12h(d.shift.start).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>
-                                                    <p className={`text-[9px] font-medium text-center leading-tight ${isToday ? 'text-white/50' : 'text-content-3'}`}>
+                                                    <p className={`text-micro font-medium text-center leading-tight ${isToday ? 'text-white/50' : 'text-content-3'}`}>
                                                         {formatTime12h(d.shift.end).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>
                                                 </>
                                             ) : (
-                                                <p className="text-[9px] font-bold text-content-3 mt-1">Libre</p>
+                                                <p className="text-micro font-bold text-content-3 mt-1">Libre</p>
                                             )}
                                         </div>
                                     );
@@ -443,7 +443,7 @@ const EmployeeProfileView = ({ openModal }) => {
                         <div className="flex items-center justify-between mb-3">
                             <SectionLabel icon={Clock} label="Historial de Eventos" />
                             <div className="flex items-center gap-2 -mt-3">
-                                <span className="text-[10px] font-black text-content-3 bg-surface-card-hover/80 border border-divider px-2.5 py-1 rounded-full">
+                                <span className="text-caption font-black text-content-3 bg-surface-card-hover/80 border border-divider px-2.5 py-1 rounded-full">
                                     {visibleTimeline.length}/{timeline.length}
                                 </span>
                                 {/* Buscador expandible — Tipo 2b (widget inline con filtro al lado), ver DESIGN.md §24 */}
@@ -455,7 +455,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 />
                                 <button
                                     onClick={() => setShowTimelineFilter(v => !v)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                 >
                                     <SlidersHorizontal size={10} strokeWidth={2.5} />
                                     Filtrar
@@ -472,7 +472,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                     </div>
-                                    <span className="text-content-3 text-[12px] font-bold shrink-0">→</span>
+                                    <span className="text-content-3 text-body-sm font-bold shrink-0">→</span>
                                     <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                     </div>
@@ -491,7 +491,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex flex-wrap gap-1.5">
                                         <button
                                             onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                            className={`px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                         >
                                             Todos
                                         </button>
@@ -502,7 +502,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 <button
                                                     key={type}
                                                     onClick={() => setFilterType(filterType === type ? '' : type)}
-                                                    className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-divider'}` : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
+                                                    className={`px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-divider'}` : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                                 >
                                                     {label}
                                                 </button>
@@ -525,7 +525,7 @@ const EmployeeProfileView = ({ openModal }) => {
                         ) : timeline.length === 0 ? (
                             <div className="flex flex-col items-center py-12 gap-3 text-content-3">
                                 <Clock size={36} strokeWidth={1} />
-                                <p className="text-[13px] font-bold text-content-3">Sin eventos registrados</p>
+                                <p className="text-body font-bold text-content-3">Sin eventos registrados</p>
                             </div>
                         ) : (
                             <>
@@ -541,31 +541,31 @@ const EmployeeProfileView = ({ openModal }) => {
                                             <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-300 z-10 ${theme.dot}`} />
                                             <div className={`bg-surface-card backdrop-blur-xl rounded-2xl p-4 border border-border-card transition-all duration-300 shadow-sm hover:-translate-y-0.5 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${theme.bg} ${theme.text} ${theme.border}`}>{label}</span>
-                                                    <span className="text-[10px] font-bold text-content-3">{formatDate(ev.date)}</span>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-micro font-black uppercase tracking-widest border ${theme.bg} ${theme.text} ${theme.border}`}>{label}</span>
+                                                    <span className="text-caption font-bold text-content-3">{formatDate(ev.date)}</span>
                                                 </div>
-                                                <p className="text-[12px] text-content-2 leading-relaxed font-medium">{ev.note || 'Evento registrado.'}</p>
+                                                <p className="text-body-sm text-content-2 leading-relaxed font-medium">{ev.note || 'Evento registrado.'}</p>
                                                 {meta.endDate && (
-                                                    <p className="text-[11px] text-content-3 font-medium mt-1.5 flex items-center gap-1">
+                                                    <p className="text-label text-content-3 font-medium mt-1.5 flex items-center gap-1">
                                                         <Calendar size={10} /> Hasta: {formatDate(meta.endDate)}
                                                     </p>
                                                 )}
                                                 {meta.permissionDates?.length > 0 && (
                                                     <div className="mt-2 flex flex-wrap gap-1.5">
                                                         {meta.permissionDates.map((d, i) => (
-                                                            <span key={i} className="px-2 py-0.5 bg-warning/10 text-warning border border-warning/30 rounded-lg text-[10px] font-black">{formatDate(d)}</span>
+                                                            <span key={i} className="px-2 py-0.5 bg-warning/10 text-warning border border-warning/30 rounded-lg text-caption font-black">{formatDate(d)}</span>
                                                         ))}
                                                     </div>
                                                 )}
                                                 {meta.old_value && meta.new_value && (
-                                                    <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card p-2 rounded-lg border border-divider flex gap-2 items-center">
+                                                    <p className="text-label font-medium text-content-3 mt-2 bg-surface-card p-2 rounded-lg border border-divider flex gap-2 items-center">
                                                         <span className="font-bold line-through opacity-70">{meta.old_value}</span>
                                                         <ArrowRightLeft size={10} />
                                                         <span className="font-bold text-brand-text">{meta.new_value}</span>
                                                     </p>
                                                 )}
                                                 {(isCancelled || isEdited) && (
-                                                    <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${isCancelled ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
+                                                    <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-micro font-black uppercase tracking-widest ${isCancelled ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                                         {isCancelled ? 'Cancelado' : 'Editado'}
                                                     </span>
                                                 )}
@@ -580,7 +580,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="mt-3 pt-3 border-t border-divider">
                                         <button
                                             onClick={() => setTimelineLimit(null)}
-                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
+                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-caption font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
                                         >
                                             Ver todo ({timeline.length})
                                         </button>
@@ -589,7 +589,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="mt-3 pt-3 border-t border-divider">
                                         <button
                                             onClick={() => { setTimelineLimit(8); setShowTimelineFilter(false); }}
-                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-[10px] font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
+                                            className="w-full py-2 rounded-xl bg-surface-card-hover border border-divider text-caption font-black text-content-3 uppercase tracking-widest hover:bg-surface-card-hover hover:-translate-y-0.5 transition-all active:scale-[0.97]"
                                         >
                                             Mostrar menos
                                         </button>

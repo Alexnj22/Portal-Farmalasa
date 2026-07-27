@@ -85,7 +85,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <input 
                             type="text" 
                             placeholder="Buscar candidato..." 
-                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] pl-10 pr-4 py-3 text-[16px] font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
+                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] pl-10 pr-4 py-3 text-input font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
                             value={formData.searchQuery || ''}
                             onChange={(e) => setFormData({...formData, searchQuery: e.target.value})}
                         />
@@ -113,13 +113,13 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         {emp.photo ? <img src={emp.photo} alt="" className="w-full h-full object-cover"/> : emp.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-[13px] font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`}>{emp.name}</p>
-                                        <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
+                                        <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`}>{emp.name}</p>
+                                        <p className="text-micro font-bold text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
                                     </div>
                                     {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                 </div>
                                 {isCurrentJefe && (
-                                    <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-[9px] font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
+                                    <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-micro font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
                                         Titular Actual
                                     </div>
                                 )}
@@ -136,8 +136,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                 {!selectedEmp ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40">
                         <User size={64} strokeWidth={1} className="text-content-3 mb-4"/>
-                        <p className="text-[16px] font-black text-content-2 uppercase tracking-widest">Esperando Candidato</p>
-                        <p className="text-[12px] font-bold text-content-3 mt-2 max-w-[250px]">Elige a un empleado de la lista lateral.</p>
+                        <p className="text-input font-black text-content-2 uppercase tracking-widest">Esperando Candidato</p>
+                        <p className="text-body-sm font-bold text-content-3 mt-2 max-w-[250px]">Elige a un empleado de la lista lateral.</p>
                     </div>
                 ) : (
                     <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-right-4 pb-10">
@@ -151,8 +151,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-content leading-tight">{selectedEmp.name}</h3>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="bg-chart-1/10 text-brand-text border border-chart-1/30 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
-                                        <span className="text-[10px] font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
+                                        <span className="bg-chart-1/10 text-brand-text border border-chart-1/30 px-2 py-0.5 rounded-full text-micro font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
+                                        <span className="text-caption font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -162,15 +162,15 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none">Antigüedad</span>
-                                        <span className="text-[11px] font-bold text-content-2 mt-0.5">{getTenure(selectedEmp.hireDate || selectedEmp.hire_date)}</span>
+                                        <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none">Antigüedad</span>
+                                        <span className="text-label font-bold text-content-2 mt-0.5">{getTenure(selectedEmp.hireDate || selectedEmp.hire_date)}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><Phone size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col overflow-hidden">
-                                        <span className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none">Contacto</span>
-                                        <span className="text-[11px] font-bold text-content-2 mt-0.5 truncate">{selectedEmp.phone || 'N/A'}</span>
+                                        <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none">Contacto</span>
+                                        <span className="text-label font-bold text-content-2 mt-0.5 truncate">{selectedEmp.phone || 'N/A'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -180,8 +180,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                         {isCurrentJefeSelected ? (
                             <div className="bg-warning/10 backdrop-blur-md border border-warning/30 rounded-[1.5rem] p-6 text-center shadow-sm">
                                 <ShieldCheck size={32} className="text-warning mx-auto mb-3" strokeWidth={2}/>
-                                <h4 className="text-[14px] font-black text-warning-text uppercase tracking-widest">Titular Actual</h4>
-                                <p className="text-[11px] font-bold text-warning-text/80 mt-2 max-w-sm mx-auto leading-relaxed">
+                                <h4 className="text-body-lg font-black text-warning-text uppercase tracking-widest">Titular Actual</h4>
+                                <p className="text-label font-bold text-warning-text/80 mt-2 max-w-sm mx-auto leading-relaxed">
                                     Este empleado ocupa actualmente el cargo de {formData.targetRole}. Para efectuar un relevo o cambio, selecciona a un candidato diferente en la lista.
                                 </p>
                             </div>
@@ -195,7 +195,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER_PROMOTION' && <Award size={20} className="text-chart-3-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'LATERAL' && <Briefcase size={20} className="text-content-3 shrink-0" strokeWidth={2.5}/>}
-                                        <p className="text-[11px] font-bold text-content-2 leading-tight">
+                                        <p className="text-label font-bold text-content-2 leading-tight">
                                             Asumirá como <strong className="text-brand-text">{formData.targetRole}</strong>. 
                                             {moveType === 'PROMOTION' && ' Ascenso interno.'}
                                             {moveType === 'TRANSFER' && ' Traslado operativo.'}
@@ -210,9 +210,9 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <div className="bg-danger/10 backdrop-blur-md border border-danger/30 rounded-[1.5rem] p-5 shadow-sm relative overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3 border-b border-danger/30 pb-3">
                                             <UserMinus size={16} className="text-danger" strokeWidth={2.5}/>
-                                            <span className="text-[11px] font-black uppercase tracking-widest text-danger">Relevo de Personal</span>
+                                            <span className="text-label font-black uppercase tracking-widest text-danger">Relevo de Personal</span>
                                         </div>
-                                        <p className="text-[11px] font-bold text-danger-text/80 leading-relaxed mb-4">
+                                        <p className="text-label font-bold text-danger-text/80 leading-relaxed mb-4">
                                             <strong className="text-danger-text font-black">{currentAssigneeObj.name}</strong> dejará la jefatura. ¿Qué deseas hacer con su perfil operativo?
                                         </p>
                                         
@@ -221,13 +221,13 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                 <div className="flex items-start gap-3">
                                                     <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-brand-text accent-brand" checked={formData.outgoingAction === 'REASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'REASSIGN'})} />
                                                     <div className="flex flex-col w-full">
-                                                        <span className="text-[11px] font-black text-content uppercase tracking-widest">Reasignar Cargo</span>
+                                                        <span className="text-label font-black text-content uppercase tracking-widest">Reasignar Cargo</span>
                                                         
                                                         {/* 🚨 INTEGRACIÓN DE LIQUIDSELECT PARA EL RELEVO */}
                                                         {formData.outgoingAction === 'REASSIGN' && (
                                                             <div className="mt-4 grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-top-2 w-full">
                                                                 <div className="space-y-1.5">
-                                                                    <label className="text-[9px] font-bold text-content-3 uppercase tracking-widest">A Sucursal</label>
+                                                                    <label className="text-micro font-bold text-content-3 uppercase tracking-widest">A Sucursal</label>
                                                                     <div className="rounded-2xl transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md border border-transparent">
                                                                         <LiquidSelect 
                                                                             options={branches.map(b => ({ value: b.id, label: b.name }))}
@@ -239,7 +239,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                                                     </div>
                                                                 </div>
                                                                 <div className="space-y-1.5">
-                                                                    <label className="text-[9px] font-bold text-content-3 uppercase tracking-widest">Nuevo Rol</label>
+                                                                    <label className="text-micro font-bold text-content-3 uppercase tracking-widest">Nuevo Rol</label>
                                                                     <div className="rounded-2xl transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md border border-transparent">
                                                                         <LiquidSelect 
                                                                             options={[
@@ -264,8 +264,8 @@ const FormLeadership = ({ formData, setFormData }) => {
                                             <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'UNASSIGN' ? 'bg-surface-card border-warning shadow-md ring-1 ring-warning/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
                                                 <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-warning accent-warning" checked={formData.outgoingAction === 'UNASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'UNASSIGN'})} />
                                                 <div className="flex flex-col">
-                                                    <span className="text-[11px] font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>
-                                                    <span className="text-[10px] font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente "Sin Asignar" a disposición de RRHH.</span>
+                                                    <span className="text-label font-black text-content uppercase tracking-widest leading-none">Quitar Asignación (Flotante)</span>
+                                                    <span className="text-caption font-bold text-content-3 mt-1.5 leading-tight">Quedará temporalmente "Sin Asignar" a disposición de RRHH.</span>
                                                 </div>
                                             </label>
                                         </div>
@@ -274,20 +274,20 @@ const FormLeadership = ({ formData, setFormData }) => {
 
                                 {/* 4. CONFIGURACIÓN DEL CARGO */}
                                 <div className="space-y-4">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
+                                    <h3 className="text-caption font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
                                     
                                     <div className="flex p-1.5 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-surface-card text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-label font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-surface-card text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <ShieldCheck size={14}/> Permanente
                                         </button>
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>
+                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-label font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>
                                             <Clock size={14}/> Interinato
                                         </button>
                                     </div>
 
                                     {formData.isPermanent === false && (
                                         <div className="bg-surface-card backdrop-blur-md border border-warning/30 rounded-[1.5rem] p-5 shadow-sm animate-in slide-in-from-top-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-warning-text mb-2 flex items-center gap-1.5 ml-1">
+                                            <label className="text-caption font-black uppercase tracking-widest text-warning-text mb-2 flex items-center gap-1.5 ml-1">
                                                 <AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato
                                             </label>
                                             <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">
@@ -301,12 +301,12 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     )}
 
                                     <div>
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-content-3 mb-2 flex items-center gap-1.5 ml-1">
+                                        <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 flex items-center gap-1.5 ml-1">
                                             <FileText size={12} strokeWidth={3}/> Observaciones / Motivo
                                         </label>
                                         <textarea 
                                             placeholder={formData.isPermanent === false ? "Ej. Cubre vacaciones de Mónica Castro..." : "Notas sobre la asignación (Opcional)..."}
-                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 text-[16px] font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
+                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 text-input font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
                                             value={formData.notes || ''}
                                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
                                         ></textarea>

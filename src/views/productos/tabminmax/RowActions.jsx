@@ -97,7 +97,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                     {...sp}
                     className={btn.cls}>
                     {btn.icon}
-                    <span className="text-[9px] font-bold leading-none">{btn.label}</span>
+                    <span className="text-micro font-bold leading-none">{btn.label}</span>
                 </motion.button>
             ))}
 
@@ -109,7 +109,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                         {...sp}
                         className={`${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover`}>
                         <MoreHorizontal size={13}/>
-                        <span className="text-[9px] font-bold leading-none">Más</span>
+                        <span className="text-micro font-bold leading-none">Más</span>
                     </motion.button>
                 </div>
             )}
@@ -148,7 +148,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                                 whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 1200, damping: 40 } }}
                                 disabled={item.disabled}
                                 onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
-                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.dropCls ?? item.cls}`}>
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-caption font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.dropCls ?? item.cls}`}>
                                 {item.icon}
                                 {item.label}
                             </motion.button>

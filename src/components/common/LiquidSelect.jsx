@@ -63,7 +63,7 @@ const LiquidSelect = ({
     const lastCoordsRef = useRef(null);
 
     // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO/NANO ---
-    const textStyle = nano ? 'text-[11px] font-black' : `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
+    const textStyle = nano ? 'text-label font-black' : `${compact ? 'text-body-sm' : 'text-body'} font-bold`;
     const paddingStyle = nano ? 'pl-2 pr-4 py-1' : compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
     const leftIconPos = compact ? 'left-1 w-6 h-6' : 'left-4 w-8 h-8';
     const rightIconPos = nano ? 'right-0.5 w-3.5 h-3.5' : compact ? 'right-1 w-5 h-5' : 'right-4 w-6 h-6';
@@ -277,18 +277,18 @@ const LiquidSelect = ({
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
-                        className="w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 text-content-3 hover:bg-surface-card-hover hover:text-content"
+                        className="w-full text-left px-4 py-3 text-body-sm font-bold rounded-[1.25rem] transition-colors duration-200 text-content-3 hover:bg-surface-card-hover hover:text-content"
                     >
                         {clearLabel}
                     </button>
                 )}
                 {isLoading ? (
-                    <div className="px-4 py-6 text-[12px] font-bold text-center flex items-center justify-center gap-2.5 text-content-3">
+                    <div className="px-4 py-6 text-body-sm font-bold text-center flex items-center justify-center gap-2.5 text-content-3">
                         <Loader2 size={15} strokeWidth={2.5} className="animate-spin" />
                         Buscando...
                     </div>
                 ) : isLargeList && !searchTerm ? (
-                    <div className="px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
+                    <div className="px-4 py-8 text-body-sm font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
                         <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-card-hover">
                             <Search size={20} strokeWidth={2} />
                         </div>
@@ -301,7 +301,7 @@ const LiquidSelect = ({
                         return opt.isSeparator ? (
                             <div
                                 key={opt.value}
-                                className="px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t border-divider first:border-t-0 first:pt-1 text-content-3"
+                                className="px-4 pt-3 pb-1 text-micro font-black uppercase tracking-[0.15em] mt-1 border-t border-divider first:border-t-0 first:pt-1 text-content-3"
                             >
                                 {opt.label}
                             </div>
@@ -325,7 +325,7 @@ const LiquidSelect = ({
                                 }`}
                             >
                                 {opt.avatar !== undefined && (
-                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-[9px] font-black text-content-3">
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-micro font-black text-content-3">
                                         {opt.avatar
                                             ? <img src={opt.avatar} alt={opt.label} className="w-full h-full object-cover" />
                                             : (opt.label || '?').charAt(0).toUpperCase()
@@ -335,7 +335,7 @@ const LiquidSelect = ({
                                 <span className="flex-1 min-w-0">
                                     <span className="block leading-tight">{opt.label}</span>
                                     {opt.sublabel && (
-                                        <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
+                                        <span className={`block text-caption font-medium leading-tight mt-0.5 ${
                                             String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-content-3'
                                         }`}>
                                             {opt.sublabel}
@@ -346,7 +346,7 @@ const LiquidSelect = ({
                         );
                     })
                 ) : (
-                    <div className="px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
+                    <div className="px-4 py-8 text-body-sm font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
                         <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-card-hover">
                             <Search size={20} strokeWidth={2} />
                         </div>
@@ -354,7 +354,7 @@ const LiquidSelect = ({
                     </div>
                 )}
                 {serverSearch && !searchTerm && !isLoading && (
-                    <div className="px-4 pt-1 pb-2 text-[10px] font-bold text-center text-content-3">
+                    <div className="px-4 pt-1 pb-2 text-caption font-bold text-center text-content-3">
                         Escribe para buscar
                     </div>
                 )}
@@ -367,7 +367,7 @@ const LiquidSelect = ({
                             setIsOpen(false);
                             setSearchTerm('');
                         }}
-                        className="w-full text-left px-3 py-2.5 text-[12px] font-bold rounded-[1.25rem] transition-colors flex items-center gap-2 mt-1 text-success hover:bg-success/10"
+                        className="w-full text-left px-3 py-2.5 text-body-sm font-bold rounded-[1.25rem] transition-colors flex items-center gap-2 mt-1 text-success hover:bg-success/10"
                     >
                         <Plus size={12} strokeWidth={3} className="shrink-0" />
                         Agregar: <span className="font-black ml-0.5">{searchTerm.trim()}</span>
@@ -426,7 +426,7 @@ const LiquidSelect = ({
                     {selectedOption ? (
                         <>
                             {selectedOption.avatar !== undefined && (
-                                <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-[9px] font-black text-content-3">
+                                <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-micro font-black text-content-3">
                                     {selectedOption.avatar
                                         ? <img src={selectedOption.avatar} alt={selectedOption.label} className="w-full h-full object-cover" />
                                         : (selectedOption.label || '?').charAt(0).toUpperCase()
@@ -436,7 +436,7 @@ const LiquidSelect = ({
                             <span className="flex-1 min-w-0">
                                 <span className="block leading-tight truncate" title={selectedOption.label}>{selectedOption.label}</span>
                                 {selectedOption.sublabel && (
-                                    <span className="block text-[10px] font-medium leading-tight mt-0.5 truncate text-content-3">
+                                    <span className="block text-caption font-medium leading-tight mt-0.5 truncate text-content-3">
                                         {selectedOption.sublabel}
                                     </span>
                                 )}

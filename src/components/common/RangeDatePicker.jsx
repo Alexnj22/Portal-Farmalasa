@@ -48,7 +48,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                         <ChevronLeft size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
-                <p className="text-[12px] font-black uppercase tracking-widest text-content-2">
+                <p className="text-body-sm font-black uppercase tracking-widest text-content-2">
                     {MONTHS[month]} {year}
                 </p>
                 {onNext ? (
@@ -60,7 +60,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
             </div>
             <div className="grid grid-cols-7 mb-2">
                 {DAYS_SHORT.map(d => (
-                    <div key={d} className="text-center text-[10px] font-black uppercase tracking-widest text-content-3 py-1">{d}</div>
+                    <div key={d} className="text-center text-caption font-black uppercase tracking-widest text-content-3 py-1">{d}</div>
                 ))}
             </div>
             <div className="grid grid-cols-7">
@@ -107,7 +107,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                         }
                     }
 
-                    let btnClass = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-[12px] font-bold transition-all relative z-10 select-none ';
+                    let btnClass = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-10 select-none ';
                     if (holiday) {
                         btnClass += 'text-danger bg-danger/10 cursor-not-allowed opacity-70';
                     } else if (isStart || isEnd) {
@@ -352,10 +352,10 @@ const RangeDatePicker = ({
                             <CalendarDays size={16} strokeWidth={2.5} />
                         </div>
                         <div>
-                            <p className="text-[12px] font-black uppercase tracking-widest text-content-2">
+                            <p className="text-body-sm font-black uppercase tracking-widest text-content-2">
                                 {multiRange ? 'Selecciona períodos de apoyo' : (selecting === 'start' ? 'Selecciona el primer día' : 'Ajusta la fecha de fin')}
                             </p>
-                            <p className="text-[10px] text-content-3 font-bold">
+                            <p className="text-caption text-content-3 font-bold">
                                 {multiRange
                                     ? (selectedRanges.length > 0 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}` : 'Arrastra para seleccionar períodos')
                                     : (draftStart && draftEnd ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)}` : 'Haz click en el calendario')}
@@ -396,7 +396,7 @@ const RangeDatePicker = ({
                 {/* Footer */}
                 <div className="mt-5 pt-4 border-t border-divider flex items-center justify-between gap-3">
                     {(() => {
-                        let cls = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black transition-all ';
+                        let cls = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black transition-all ';
                         let badgeText;
                         if (multiRange) {
                             if (selectedRanges.length === 0) {
@@ -428,7 +428,7 @@ const RangeDatePicker = ({
                         type="button"
                         onClick={handleConfirm}
                         disabled={!multiRange && (!draftStart || !draftEnd)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[var(--shadow-glow-brand)]">
+                        className="flex items-center gap-2 px-5 py-2.5 bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-black text-label uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.97] shadow-[var(--shadow-glow-brand)]">
                         <Check size={14} strokeWidth={3} /> {multiRange ? 'Listo' : 'Confirmar rango'}
                     </button>
                 </div>
@@ -443,7 +443,7 @@ const RangeDatePicker = ({
                 {multiRange ? (
                     <div data-surface="input" className={`flex items-center gap-2 h-[40px] px-3 transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />
-                        <p className={`text-[12px] font-bold ${selectedRanges.length > 0 ? 'text-content-2' : 'text-content-3'}`}>
+                        <p className={`text-body-sm font-bold ${selectedRanges.length > 0 ? 'text-content-2' : 'text-content-3'}`}>
                             {selectedRanges.length > 0
                                 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}`
                                 : placeholder}
@@ -452,7 +452,7 @@ const RangeDatePicker = ({
                 ) : (
                     <div data-surface="input" className={`flex items-center gap-3 h-[48px] px-4 transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={startDate ? 'text-brand-text' : 'text-content-3'} strokeWidth={2.5} />
-                        <span className={`flex-1 text-[13px] font-bold truncate ${startDate && endDate ? 'text-content-2' : 'text-content-3'}`}>
+                        <span className={`flex-1 text-body font-bold truncate ${startDate && endDate ? 'text-content-2' : 'text-content-3'}`}>
                             {startDate && endDate
                                 ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
                                 : startDate
@@ -460,7 +460,7 @@ const RangeDatePicker = ({
                                 : placeholder}
                         </span>
                         {startDate && endDate && (
-                            <span className="shrink-0 text-[10px] font-black text-brand-text bg-brand/10 px-2 py-0.5 rounded-full">
+                            <span className="shrink-0 text-caption font-black text-brand-text bg-brand/10 px-2 py-0.5 rounded-full">
                                 {Math.round((new Date(endDate + 'T12:00:00') - new Date(startDate + 'T12:00:00')) / 86400000) + 1}d
                             </span>
                         )}
@@ -470,7 +470,7 @@ const RangeDatePicker = ({
             {multiRange && selectedRanges.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                     {selectedRanges.map((range, i) => (
-                        <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-success/10 text-success border border-success/30 rounded-full text-[10px] font-bold">
+                        <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-success/10 text-success border border-success/30 rounded-full text-caption font-bold">
                             {range.start === range.end ? formatDisplay(range.start) : `${formatDisplay(range.start)} → ${formatDisplay(range.end)}`}
                             <button
                                 type="button"

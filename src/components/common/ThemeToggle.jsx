@@ -43,7 +43,7 @@ function SegmentedRow({ label, options, activeKey, onPick, dark }) {
             type="button"
             onClick={() => onPick(key)}
             className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2 rounded-full
-              text-[10px] font-black uppercase tracking-wider transition-all duration-200 border border-transparent
+              text-caption font-black uppercase tracking-wider transition-all duration-200 border border-transparent
               ${activeKey === key ? (dark ? activeTabClsDark : activeTabCls) : (dark ? inactiveTabClsDark : inactiveTabCls)}`}
           >
             <Icon size={12} strokeWidth={2.5} />
@@ -205,8 +205,8 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
           <StyleIcon size={14} strokeWidth={2} className="text-white/70" />
         </div>
         <div className="flex-1 overflow-hidden">
-          <p className="text-[11px] font-bold text-white/80 leading-none">{styleLabel}</p>
-          <p className="text-[9px] text-white/40 mt-0.5 leading-none">{modeLabel}</p>
+          <p className="text-label font-bold text-white/80 leading-none">{styleLabel}</p>
+          <p className="text-micro text-white/40 mt-0.5 leading-none">{modeLabel}</p>
         </div>
         <ChevronDown size={13} strokeWidth={2.5}
           className={`text-white/35 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />

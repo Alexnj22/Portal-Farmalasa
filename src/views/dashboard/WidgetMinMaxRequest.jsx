@@ -137,9 +137,9 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             : <Package size={16} className="text-content-3" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-content truncate">{product.nombre}</p>
-          {product.principio_activo && <p className="text-[10px] text-success-text font-semibold truncate">{product.principio_activo}</p>}
-          <p className="text-[10px] text-content-3 truncate">
+          <p className="text-body-sm font-black text-content truncate">{product.nombre}</p>
+          {product.principio_activo && <p className="text-caption text-success-text font-semibold truncate">{product.principio_activo}</p>}
+          <p className="text-caption text-content-3 truncate">
             {ERP_NAMES[Number(erp)] || 'Sucursal'}{product.laboratorio_nombre ? ` · ${product.laboratorio_nombre}` : ''}
           </p>
         </div>
@@ -150,14 +150,14 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         {erp && (
           <div className="rounded-2xl border border-divider bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-content-2 uppercase tracking-wider">En uso ahora</span>
+              <span className="text-caption font-black text-content-2 uppercase tracking-wider">En uso ahora</span>
               {loadingCur ? <Loader2 size={13} className="animate-spin text-content-3" /> : (
                 <div className="text-right">
-                  <span className="text-[11px] font-bold text-content-2">
+                  <span className="text-label font-bold text-content-2">
                     MIN <span className="text-chart-4-text">{current?.min ?? '—'}</span> · MAX <span className="text-chart-1-text">{current?.max ?? '—'}</span> <span className="text-content-3 font-medium">und</span>
                   </span>
                   {(fmtEquiv(current?.min, pres) || fmtEquiv(current?.max, pres)) && (
-                    <div className="text-[9px] text-content-3 font-semibold">
+                    <div className="text-micro text-content-3 font-semibold">
                       {fmtEquiv(current?.min, pres) || '—'} · {fmtEquiv(current?.max, pres) || '—'}
                     </div>
                   )}
@@ -166,10 +166,10 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             </div>
             {!loadingCur && (
               <div className="flex items-center justify-between border-t border-divider pt-1.5">
-                <span className="text-[10px] font-black text-content-2 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1">
                   <TrendingUp size={11} className="text-success" /> Ventas 6 meses
                 </span>
-                <span className="text-[11px] font-bold text-content-2 tabular-nums">
+                <span className="text-label font-bold text-content-2 tabular-nums">
                   {current?.sales6m != null ? `${Number(current.sales6m).toLocaleString()} und` : 'Sin ventas'}
                 </span>
               </div>
@@ -180,39 +180,39 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         {/* Aviso: valores en unidades + factor de presentación */}
         <div className="flex items-start gap-2 rounded-xl bg-chart-1/10 border border-chart-1/30 px-3 py-2">
           <Package size={13} className="text-chart-1-text mt-0.5 shrink-0" />
-          <div className="text-[10px] text-chart-1-text font-medium leading-snug">
+          <div className="text-caption text-chart-1-text font-medium leading-snug">
             MIN y MAX se ingresan en <b>unidades</b>.
             {domPres && <> <b>{domPres.factor} und = 1 {domPres.tipo?.trim() || 'caja'}</b>.</>}
-            {domPres?.descripcion && <div className="text-[9px] text-chart-1-text/80 mt-0.5">Factor calculado: {domPres.descripcion}</div>}
+            {domPres?.descripcion && <div className="text-micro text-chart-1-text/80 mt-0.5">Factor calculado: {domPres.descripcion}</div>}
           </div>
         </div>
 
         {/* Nuevos valores */}
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-chart-4-text uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
+            <label className="text-caption font-black text-chart-4-text uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
             <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
-              className="w-full text-right text-[16px] font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-chart-4/30" />
+              className="w-full text-right text-input font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-chart-4/30" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-chart-1-text uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
+            <label className="text-caption font-black text-chart-1-text uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
             <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
-              className="w-full text-right text-[16px] font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-chart-1/30" />
+              className="w-full text-right text-input font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-chart-1/30" />
           </div>
         </div>
 
         {/* Motivo */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
+          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
             placeholder="¿Por qué este ajuste? (opcional)"
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-surface-card text-[16px] font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
+            className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 resize-none" />
         </div>
 
-        {err && <p className="text-[11px] text-danger-text font-semibold px-1">{err}</p>}
+        {err && <p className="text-label text-danger-text font-semibold px-1">{err}</p>}
 
         <button onClick={submit} disabled={submitting}
-          className="w-full py-2.5 rounded-2xl bg-brand text-white text-[12px] font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
+          className="w-full py-2.5 rounded-2xl bg-brand text-white text-body-sm font-black uppercase tracking-widest hover:bg-brand-hover disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
           {submitting && <Loader2 size={14} className="animate-spin" />}
           {submitting ? 'Enviando…' : 'Enviar a aprobación'}
         </button>
@@ -275,8 +275,8 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
       <div className="flex flex-col items-center justify-center h-full gap-3">
         <CheckCircle2 size={40} className="text-success" strokeWidth={1.5} />
         <div className="text-center">
-          <p className="text-[14px] font-black text-content">Solicitud enviada</p>
-          <p className="text-[12px] text-content-3 mt-1">El supervisor fue notificado para aprobarla.</p>
+          <p className="text-body-lg font-black text-content">Solicitud enviada</p>
+          <p className="text-body-sm text-content-3 mt-1">El supervisor fue notificado para aprobarla.</p>
         </div>
       </div>
     );
@@ -302,13 +302,13 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-content-3" /></div>}
 
         {!loading && search.trim().length >= 2 && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-content-3 font-medium">Sin resultados para "{search}"</div>
+          <div className="py-8 text-center text-body-sm text-content-3 font-medium">Sin resultados para "{search}"</div>
         )}
 
         {!loading && search.trim().length < 2 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
             <TrendingUp size={28} strokeWidth={1.5} />
-            <p className="text-[12px] font-semibold text-content-3 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
+            <p className="text-body-sm font-semibold text-content-3 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
           </div>
         )}
 
@@ -321,9 +321,9 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
                 : <Package size={14} className="text-content-3" strokeWidth={2} />}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-bold text-content truncate leading-tight">{p.nombre}</p>
-              {p.principio_activo && <p className="text-[9px] text-success-text font-semibold truncate">{p.principio_activo}</p>}
-              {p.laboratorio_nombre && <p className="text-[9px] text-content-3 truncate">{p.laboratorio_nombre}</p>}
+              <p className="text-body-sm font-bold text-content truncate leading-tight">{p.nombre}</p>
+              {p.principio_activo && <p className="text-micro text-success-text font-semibold truncate">{p.principio_activo}</p>}
+              {p.laboratorio_nombre && <p className="text-micro text-content-3 truncate">{p.laboratorio_nombre}</p>}
             </div>
             <Building2 size={12} className="text-content-3 shrink-0" />
           </button>

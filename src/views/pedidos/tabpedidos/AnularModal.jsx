@@ -15,8 +15,8 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                         <Ban size={20} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-content text-[15px]">Anular pedido</h3>
-                        <p className="text-[12px] text-content-2 mt-0.5">#{modal?.numero}</p>
+                        <h3 className="font-bold text-content text-subtitle">Anular pedido</h3>
+                        <p className="text-body-sm text-content-2 mt-0.5">#{modal?.numero}</p>
                     </div>
                 </div>
             </PedidoModal.Header>
@@ -26,12 +26,12 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                     <>
                         <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
                             <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" />
-                            <p className="text-[12px] text-warning-text">
+                            <p className="text-body-sm text-warning-text">
                                 Este pedido ya fue iniciado. Se anulará la preparación en curso y todos los ítems pendientes.
                             </p>
                         </div>
                         <div>
-                            <label className="text-[11px] font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
+                            <label className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
                                 Motivo de anulación *
                             </label>
                             <textarea
@@ -39,17 +39,17 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                                 onChange={e => setMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-[16px] border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-danger bg-surface-card resize-none transition-colors text-content-2"
+                                className="w-full text-input border border-divider rounded-xl px-3 py-2 focus:outline-none focus:border-danger bg-surface-card resize-none transition-colors text-content-2"
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
-                                <p className="text-[10px] text-danger mt-1">Mínimo 5 caracteres.</p>
+                                <p className="text-caption text-danger mt-1">Mínimo 5 caracteres.</p>
                             )}
                         </div>
                     </>
                 ) : (
                     <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30">
                         <AlertTriangle size={14} className="text-danger shrink-0 mt-0.5" />
-                        <p className="text-[12px] text-danger-text">
+                        <p className="text-body-sm text-danger-text">
                             ¿Confirmas que deseas anular el pedido <strong>#{modal?.numero}</strong>?<br />
                             Esta acción no se puede deshacer.
                         </p>
@@ -59,13 +59,13 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
 
             <PedidoModal.Footer>
                 <div className="flex justify-end gap-2">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-[13px] font-medium transition-colors">
+                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-divider text-content-2 hover:bg-surface-card-hover text-body font-medium transition-colors">
                         Cancelar
                     </button>
                     <button
                         disabled={!canConfirm || busy}
                         onClick={() => onConfirm(modal?.requiresReason ? motivo.trim() : null)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-danger-solid text-white font-semibold hover:bg-danger-hover text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-danger-solid text-white font-semibold hover:bg-danger-hover text-body transition-colors disabled:opacity-50 shadow-sm"
                     >
                         {busy ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
                         Anular pedido

@@ -234,8 +234,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
 
-    const inputClasses = "w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 text-[16px] font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3";
-    const labelClasses = "text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
+    const inputClasses = "w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 text-input font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3";
+    const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
         <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10 w-full pb-8">
@@ -260,8 +260,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className="bg-danger/10 border border-danger/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <AlertTriangle className="text-danger shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-danger">Alerta de Desvinculación</p>
-                        <p className="text-[12px] text-danger-text/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del empleado a <b>INACTIVO</b> y le revocará accesos al sistema.</p>
+                        <p className="text-label font-black uppercase tracking-widest text-danger">Alerta de Desvinculación</p>
+                        <p className="text-body-sm text-danger-text/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del empleado a <b>INACTIVO</b> y le revocará accesos al sistema.</p>
                     </div>
                 </div>
             )}
@@ -270,8 +270,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className="bg-chart-1/10 border border-chart-1/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <MapPin className="text-brand-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-chart-1-text">Cambio de Sucursal</p>
-                        <p className="text-[12px] text-chart-1-text/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
+                        <p className="text-label font-black uppercase tracking-widest text-chart-1-text">Cambio de Sucursal</p>
+                        <p className="text-body-sm text-chart-1-text/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
                     </div>
                 </div>
             )}
@@ -280,8 +280,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className="bg-chart-4/10 border border-chart-4/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <Info className="text-chart-4-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-chart-4-text">Apoyo Temporal</p>
-                        <p className="text-[12px] text-chart-4-text/80 font-medium leading-tight mt-1">El empleado apoyará en otra sucursal temporalmente. Seguirá apareciendo en la planilla actual.</p>
+                        <p className="text-label font-black uppercase tracking-widest text-chart-4-text">Apoyo Temporal</p>
+                        <p className="text-body-sm text-chart-4-text/80 font-medium leading-tight mt-1">El empleado apoyará en otra sucursal temporalmente. Seguirá apareciendo en la planilla actual.</p>
                     </div>
                 </div>
             )}
@@ -291,11 +291,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className="bg-danger/10 border border-danger/40 p-4 rounded-[1.5rem] flex gap-3 items-start animate-in zoom-in-95 shadow-[var(--shadow-glow-danger)]">
                     <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/>
                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-danger-text">Límite de Organigrama Excedido</p>
-                        <p className="text-[12px] font-medium text-danger-text mt-1 leading-snug">
+                        <p className="text-label font-black uppercase tracking-widest text-danger-text">Límite de Organigrama Excedido</p>
+                        <p className="text-body-sm font-medium text-danger-text mt-1 leading-snug">
                             No puedes asignar este cargo. El puesto de <b>{headcountWarning.role}</b> tiene un límite estricto de {headcountWarning.limit} por {headcountWarning.scope === 'GLOBAL' ? 'empresa' : 'sucursal'}.
                         </p>
-                        <div className="mt-2 pt-2 border-t border-danger/30 text-[11px] text-danger-text font-bold">
+                        <div className="mt-2 pt-2 border-t border-danger/30 text-label text-danger-text font-bold">
                             Actualmente ocupado por: <span className="underline">{headcountWarning.occupants.map(o => o.name).join(', ')}</span>
                         </div>
                     </div>
@@ -308,8 +308,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className="bg-chart-3/10 border border-chart-3/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
                     <CalendarClock className="text-chart-3-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-chart-3-text">Acción Programada</p>
-                        <p className="text-[12px] text-chart-3-text/80 font-medium leading-tight mt-1">
+                        <p className="text-label font-black uppercase tracking-widest text-chart-3-text">Acción Programada</p>
+                        <p className="text-body-sm text-chart-3-text/80 font-medium leading-tight mt-1">
                             La fecha efectiva es futura: el evento se registra hoy pero el cambio se aplicará automáticamente el <b>{formatDate(formData.date)}</b> a las 5:00 a.m. Puedes cancelarlo antes desde el historial.
                         </p>
                     </div>
@@ -329,8 +329,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 <div className={`p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95 border transition-colors duration-300 ${getHolidayInfo ? 'bg-danger/10 border-danger/40 shadow-[var(--shadow-glow-danger)]' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4)]' : 'bg-success/10 border-success/30'}`}>
                     {getHolidayInfo ? <AlertTriangle className="text-danger shrink-0 mt-0.5 animate-pulse" size={18}/> : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? <AlertTriangle className="text-chart-4-text shrink-0 mt-0.5 animate-pulse" size={18}/> : <CheckCircle className="text-success shrink-0 mt-0.5" size={18}/>}
                     <div>
-                        <p className={`text-[11px] font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
-                        <p className={`text-[12px] font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-danger-text' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success-text'}`}>
+                        <p className={`text-label font-black uppercase tracking-widest ${getHolidayInfo ? 'text-danger' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success'}`}>Auditoría Legal</p>
+                        <p className={`text-body-sm font-medium leading-tight mt-1 ${getHolidayInfo ? 'text-danger-text' : (isVacation && periodDaysCount !== 15 && formData?.endDate) || (isDisability && periodDaysCount !== 112 && formData?.endDate) ? 'text-chart-4-text' : 'text-success-text'}`}>
                             {getHolidayInfo ? <b>¡Día Inhábile: {getHolidayInfo.name}!</b> : <b>Días calculados: {periodDaysCount}.</b>}
                             {getHolidayInfo ? " La ley prohíbe iniciar este tipo de licencia en asueto." : 
                              isVacation && periodDaysCount !== 15 && formData?.endDate ? " Precaución: El código de trabajo dicta 15 días continuos." : 
@@ -398,16 +398,16 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         </div>
                         
                         <div className="bg-surface-card-hover/50 rounded-2xl p-4 border border-divider min-h-[80px]">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
+                            <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
                             <div className="flex flex-wrap gap-2">
                                 {formData?.permissionDates?.map((date, idx) => (
-                                    <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-chart-1/10 text-chart-1-text border border-chart-1/30 rounded-lg text-[11px] font-black shadow-sm animate-in zoom-in-95">
+                                    <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-chart-1/10 text-chart-1-text border border-chart-1/30 rounded-lg text-label font-black shadow-sm animate-in zoom-in-95">
                                         {date} 
                                         <button type="button" onClick={() => handleRemovePermissionDate(date)} className="text-chart-1-text hover:text-danger transition-colors"><XCircle size={14} strokeWidth={2.5}/></button>
                                     </span>
                                 ))}
                                 {(!formData?.permissionDates || formData?.permissionDates.length === 0) && (
-                                    <span className="text-[11px] font-medium text-content-3 italic">No hay fechas agregadas.</span>
+                                    <span className="text-label font-medium text-content-3 italic">No hay fechas agregadas.</span>
                                 )}
                             </div>
                         </div>
@@ -474,15 +474,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                                 : '';
                                             setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
                                         }}
-                                        className="w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 pr-12 text-[16px] font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                                        className="w-full bg-surface-card border border-border-card rounded-[1rem] h-[40px] px-4 pr-12 text-input font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                                         placeholder="Ej: 3"
                                     />
-                                    <span className="absolute right-4 text-content-2 text-[11px] font-black uppercase tracking-widest">días</span>
+                                    <span className="absolute right-4 text-content-2 text-label font-black uppercase tracking-widest">días</span>
                                 </div>
                                 {formData?.endDate && formData?.disabilityDays > 0 && (() => {
                                     const retorno = new Date(formData.endDate + 'T12:00:00');
                                     retorno.setDate(retorno.getDate() + 1);
-                                    return <p className="text-[10px] text-content-3 font-bold px-1 mt-1">Regresa el {formatDate(retorno.toISOString().split('T')[0])}</p>;
+                                    return <p className="text-caption text-content-3 font-bold px-1 mt-1">Regresa el {formatDate(retorno.toISOString().split('T')[0])}</p>;
                                 })()}
                             </div>
                         )}
@@ -494,9 +494,9 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 {isPromotion && (
                     <div className="col-span-1 md:col-span-2 relative z-[30] animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-[1.5rem]">
                         <div className="flex items-center justify-between mb-3">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
+                            <label className="text-caption font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-content-3">¿Cambia de sucursal?</span>
+                                <span className="text-micro font-black uppercase tracking-widest text-content-3">¿Cambia de sucursal?</span>
                                 <input type="checkbox" className="accent-brand w-4 h-4 cursor-pointer" checked={formData?.isTransferAndPromotion || false} onChange={(e) => setFormData(prev => ({...prev, isTransferAndPromotion: e.target.checked}))} />
                             </label>
                         </div>
@@ -527,13 +527,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
                 {isTermination && (
                     <div className="col-span-1 md:col-span-2 relative z-[20] animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-[1.5rem]">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
+                        <label className="text-caption font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
                         <div className="h-[40px] mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
                         <label className="flex items-center gap-2 cursor-pointer mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-surface-card-hover">
                             <input type="checkbox" className="accent-danger w-4 h-4 cursor-pointer" checked={formData?.hasFiniquito || false} onChange={(e) => setFormData(prev => ({...prev, hasFiniquito: e.target.checked}))} />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>
+                            <span className="text-caption font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>
                         </label>
                     </div>
                 )}
@@ -543,7 +543,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
-                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-content-3 line-through decoration-content-3 opacity-60">
+                                <div className="h-[40px] bg-surface-card-hover/50 border border-divider rounded-[1rem] flex items-center justify-center px-4 text-body-lg font-black tracking-widest text-content-3 line-through decoration-content-3 opacity-60">
                                     {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                                 </div>
                             </div>
@@ -582,7 +582,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         {codeConflict && (
                             <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-danger/10 border border-danger/30 rounded-2xl">
                                 <AlertCircle size={14} className="text-danger shrink-0" />
-                                <p className="text-[11px] font-bold text-danger">
+                                <p className="text-label font-bold text-danger">
                                     El código ya está en uso por <b>{codeConflict.name}</b>. Elige otro código.
                                 </p>
                             </div>
@@ -615,7 +615,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);
                                 }}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-chart-8-solid hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.97]">
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-chart-8-solid hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97]">
                                 <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
                             </button>
                         )}
@@ -640,16 +640,16 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             {/* Contexto actual */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Salario Actual</p>
-                                    <p className="text-[15px] font-black text-content-2">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Salario Actual</p>
+                                    <p className="text-subtitle font-black text-content-2">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
                                 </div>
                                 <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Cargo</p>
-                                    <p className="text-[11px] font-black text-content-2 leading-tight">{currentRole}</p>
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Cargo</p>
+                                    <p className="text-label font-black text-content-2 leading-tight">{currentRole}</p>
                                 </div>
                                 <div className="bg-surface-card-hover/80 border border-divider rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-content-2 mb-1">Antigüedad</p>
-                                    <p className="text-[11px] font-black text-content-2 leading-tight">{tenure}</p>
+                                    <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Antigüedad</p>
+                                    <p className="text-label font-black text-content-2 leading-tight">{tenure}</p>
                                 </div>
                             </div>
                             {/* Nuevo salario */}
@@ -658,10 +658,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
                                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
-                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-[16px] font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
+                                        <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-[1rem] h-[44px] px-4 pl-10 text-input font-black text-success-text outline-none transition-all hover:shadow-md focus:ring-4 focus:ring-success/10 focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
                                     </div>
                                     {diff !== null && !isNaN(diff) && (
-                                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
+                                        <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                             {diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {diff > 0 ? '+' : ''}${diff.toFixed(2)}
                                         </div>
                                     )}
@@ -678,7 +678,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-content-3" size={14} strokeWidth={2.5}/>
-                            <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-[1.25rem] p-3 pl-9 text-[16px] font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+                            <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-[1.25rem] p-3 pl-9 text-input font-bold text-content-2 outline-none transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:ring-4 focus:ring-brand/10 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
                         </div>
                     </div>
 
@@ -688,14 +688,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             {formData?.file ? (
                                 <div className="flex flex-col items-center gap-1 text-success animate-in zoom-in-95">
                                     <div className="p-2 bg-success/10 rounded-full mb-1"><CheckCircle size={20} strokeWidth={2.5} /></div>
-                                    <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
+                                    <p className="text-label font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center gap-2 text-content-3 group-hover:text-brand-text transition-colors">
                                     <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
                                     <div className="text-center">
-                                        <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest opacity-60">PDF, JPG o PNG</p>
+                                        <p className="text-body-sm font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>
+                                        <p className="text-micro font-black uppercase tracking-widest opacity-60">PDF, JPG o PNG</p>
                                     </div>
                                 </div>
                             )}

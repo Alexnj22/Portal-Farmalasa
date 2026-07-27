@@ -32,7 +32,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
-    const inputClass = "w-full bg-surface-card border border-divider rounded-[1rem] px-4 py-2.5 text-input font-semibold text-content-2 outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/10 resize-none";
+    const inputClass = "w-full bg-surface-card border border-divider rounded-[1rem] px-4 py-2.5 text-body-xl font-semibold text-content-2 outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/10 resize-none";
     const labelClass = "text-caption font-black uppercase tracking-widest text-content-3 mb-1.5 block";
 
     return (

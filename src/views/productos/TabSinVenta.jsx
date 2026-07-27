@@ -297,7 +297,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
                         </div>
                         <div className="text-left min-w-0 flex-1">
                             <div className={`text-title-lg font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-content-3 text-input">–</span> : counts[c.id].toLocaleString()}
+                                {loading ? <span className="text-content-3 text-body-xl">–</span> : counts[c.id].toLocaleString()}
                             </div>
                             <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
                         </div>
@@ -349,7 +349,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
                         </div>
                         <div className="text-left min-w-0 flex-1">
                             <div className={`text-title-lg font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-content-3 text-input">–</span> : counts[c.id].toLocaleString()}
+                                {loading ? <span className="text-content-3 text-body-xl">–</span> : counts[c.id].toLocaleString()}
                             </div>
                             <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
                         </div>

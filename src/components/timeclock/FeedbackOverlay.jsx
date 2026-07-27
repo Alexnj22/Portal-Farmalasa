@@ -104,7 +104,7 @@ export default function FeedbackOverlay({
 
               {/* Mensaje Principal (ej: ENTRADA EXTRA AUTORIZADA) */}
               <div className="mb-4">
-                <p className="text-sm md:text-base font-bold uppercase tracking-[0.15em] text-center text-balance leading-relaxed text-white drop-shadow-md">
+                <p className="text-sm md:text-body-xl font-bold uppercase tracking-[0.15em] text-center text-balance leading-relaxed text-white drop-shadow-md">
                   {message}
                 </p>
               </div>
@@ -173,11 +173,11 @@ export default function FeedbackOverlay({
 
                 <div className="relative p-8 flex flex-col justify-between h-full min-h-[300px] bg-transparent">
                   <div className="flex-1 overflow-y-auto max-h-[200px] scrollbar-hide">
-                    <p className={`text-subtitle md:text-input font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
+                    <p className={`text-subtitle md:text-body-xl font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
                   <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 w-full py-4 rounded-full font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
-                    {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-base">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
+                    {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-200" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>
               </div>
@@ -216,7 +216,7 @@ export default function FeedbackOverlay({
             <div className={`backdrop-blur-2xl rounded-3xl px-8 py-4 border shadow-lg text-center transition-colors duration-500 max-w-[95%] w-fit mx-auto
               ${color === 'red' ? 'bg-danger/15 border-danger/30' : 'bg-white/5 border-white/10'}
             `}>
-              <p className={`text-sm md:text-base font-bold uppercase tracking-widest text-balance leading-relaxed
+              <p className={`text-sm md:text-body-xl font-bold uppercase tracking-widest text-balance leading-relaxed
                 ${color === 'red' ? 'text-danger' : 'text-white/70'}
               `}>
                 {subtext}

@@ -447,7 +447,7 @@ const RolesView = ({ openModal }) => {
                         ref={searchInputRef}
                         type="text"
                         placeholder="Buscar cargo..."
-                        className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+                        className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -608,7 +608,7 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
@@ -644,7 +644,7 @@ const RolesView = ({ openModal }) => {
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-input outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-body-xl outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />
@@ -805,7 +805,7 @@ const RolesView = ({ openModal }) => {
                                                     </div>
                                                     <div>
                                                         <p className="text-micro text-content-2 font-black uppercase tracking-widest leading-none mb-0.5">Fuerza Laboral</p>
-                                                        <p className="text-input font-black tracking-tight text-content leading-none">
+                                                        <p className="text-body-xl font-black tracking-tight text-content leading-none">
                                                             {roleEmps.length > 0 ? String(roleEmps.length).padStart(2, '0') : '-'}
                                                         </p>
                                                     </div>
@@ -828,7 +828,7 @@ const RolesView = ({ openModal }) => {
                                 {filteredAndSortedRoles.length === 0 && (
                                     <div className="col-span-full py-16 flex flex-col items-center justify-center text-content-3 opacity-60">
                                         <Search size={48} className="mb-4 text-content-3" strokeWidth={1.5} />
-                                        <p className="text-input font-bold text-content-2">No se encontraron cargos</p>
+                                        <p className="text-body-xl font-bold text-content-2">No se encontraron cargos</p>
                                         <p className="text-body-lg mt-1 font-medium">No hay coincidencias para "{searchQuery}".</p>
                                     </div>
                                 )}
@@ -889,7 +889,7 @@ const RolesView = ({ openModal }) => {
                                             {roles.filter(r => !r.parent_role_id).length === 0 && (
                                                 <div className="text-center py-20 px-10 opacity-60">
                                                     <Network className="mx-auto text-content-3 mb-4" size={48} strokeWidth={1.5} />
-                                                    <h3 className="text-input font-bold text-content-2">Sin Estructura Definida</h3>
+                                                    <h3 className="text-body-xl font-bold text-content-2">Sin Estructura Definida</h3>
                                                     <p className="text-content-3 text-body-lg mt-1 font-medium">Crea un cargo "Nivel Raíz" para comenzar el árbol.</p>
                                                 </div>
                                             )}

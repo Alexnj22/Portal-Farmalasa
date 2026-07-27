@@ -427,7 +427,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
-            className={`w-full px-3.5 py-2 rounded-2xl border bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
+            className={`w-full px-3.5 py-2 rounded-2xl border bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 outline-none focus:ring-2 transition-all resize-none ${
               commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger focus:ring-danger/20' : 'border-divider focus:border-brand focus:ring-brand/10'
             }`}
           />
@@ -516,7 +516,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica el motivo del cambio..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
@@ -632,7 +632,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe reasignar esta venta..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
@@ -790,7 +790,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe cambiar el cliente..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-input font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}

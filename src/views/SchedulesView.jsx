@@ -98,7 +98,7 @@ const HolidaysPanel = ({
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-surface-card border border-divider rounded-[0.85rem] px-3 py-2.5 text-input font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
+                                className="w-full bg-surface-card border border-divider rounded-[0.85rem] px-3 py-2.5 text-body-xl font-bold text-content outline-none focus:border-warning focus:ring-2 focus:ring-warning/20 transition-all" />
                         </div>
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Fecha</label>
@@ -118,7 +118,7 @@ const HolidaysPanel = ({
                         </div>
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
-                                className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-input font-bold text-content outline-none focus:border-chart-1 transition-all" />
+                                className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-body-xl font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-caption font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-surface-card border-divider text-content-3 hover:border-success/40 hover:text-success'}`}>
@@ -150,7 +150,7 @@ const HolidaysPanel = ({
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-2 h-7 bg-gradient-to-b from-warning to-chart-4 rounded-full shrink-0" />
-                                    <span className="text-input font-black text-content-2 tracking-tight">{month}</span>
+                                    <span className="text-body-xl font-black text-content-2 tracking-tight">{month}</span>
                                 </div>
                                 <div className="h-px flex-1 bg-gradient-to-r from-warning/20 to-transparent" />
                                 <span className="text-micro font-black text-warning bg-warning/10 border border-warning/30 px-2.5 py-1 rounded-full shrink-0">
@@ -871,7 +871,7 @@ const SchedulesView = ({ openModal, setView }) => {
                                 <CalendarDays size={36} className="text-brand-text/30" strokeWidth={1.5} />
                             </div>
                             <div className="text-center">
-                                <p className="text-input font-black text-content-2 mb-1">Sin empleados</p>
+                                <p className="text-body-xl font-black text-content-2 mb-1">Sin empleados</p>
                                 <p className="text-body font-medium text-content-3">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}

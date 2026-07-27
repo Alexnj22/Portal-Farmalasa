@@ -64,12 +64,12 @@ const SearchInput = forwardRef(function SearchInput({
         onClose: () => setIsOpen(false),
     });
 
-    // text-input obligatorio en TODO input de texto (§25 DESIGN.md) — por
+    // text-body-xl obligatorio en TODO input de texto (§25 DESIGN.md) — por
     // debajo de 16px, Safari/iOS hace zoom automático al enfocar. sm/md solo
     // difieren en padding/ícono, nunca en tamaño de fuente.
     const sizeMap = {
-        sm: { text: 'text-input', icon: 14, px: 'pl-8 pr-7 py-1.5', iconLeft: 'left-2.5', clearRight: 'right-2' },
-        md: { text: 'text-input', icon: 15, px: 'pl-9 pr-8 py-2',   iconLeft: 'left-3',   clearRight: 'right-2.5' },
+        sm: { text: 'text-body-xl', icon: 14, px: 'pl-8 pr-7 py-1.5', iconLeft: 'left-2.5', clearRight: 'right-2' },
+        md: { text: 'text-body-xl', icon: 15, px: 'pl-9 pr-8 py-2',   iconLeft: 'left-3',   clearRight: 'right-2.5' },
     };
     const s = sizeMap[size] ?? sizeMap.md;
 
@@ -104,7 +104,7 @@ const SearchInput = forwardRef(function SearchInput({
                     autoFocus={autoFocus}
                     disabled={disabled}
                     tabIndex={open ? 0 : -1}
-                    className={`min-w-0 flex-1 bg-transparent border-none outline-none text-input font-semibold text-content placeholder:text-content-3 transition-opacity duration-200 ${
+                    className={`min-w-0 flex-1 bg-transparent border-none outline-none text-body-xl font-semibold text-content placeholder:text-content-3 transition-opacity duration-200 ${
                         open ? 'opacity-100 pr-1' : 'opacity-0 w-0 pointer-events-none'
                     }`}
                 />

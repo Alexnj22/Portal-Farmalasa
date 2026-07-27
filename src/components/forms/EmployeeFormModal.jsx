@@ -1096,7 +1096,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <label htmlFor="photo-upload" className="absolute inset-0 cursor-pointer"></label>
                                 </div>
                                 <div className="text-center sm:text-left">
-                                    <h4 className="text-input font-black text-content tracking-tight">Fotografía Oficial</h4>
+                                    <h4 className="text-body-xl font-black text-content tracking-tight">Fotografía Oficial</h4>
                                     <p className="text-label font-medium text-content-3 max-w-[250px] leading-snug mt-1">Usa una imagen clara y profesional. Aparecerá en el portal web y el kiosko biométrico.</p>
                                 </div>
                             </div>
@@ -1177,7 +1177,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <input type="tel" name="phone" value={formData.phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
                                             placeholder="0000-0000"
-                                            className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                     </div>
                                 </div>
 
@@ -1193,7 +1193,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div className={`relative flex-1 bg-surface-card rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                                         <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
-                                                            className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                     </div>
                                                     <button type="button" onClick={() => removePhone(idx)} title="Quitar teléfono"
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
@@ -1288,7 +1288,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
                                                                 <div className="absolute left-3 text-content-3"><MapPin size={14} strokeWidth={2.5} /></div>
                                                                 <input type="text" value={addr.address || ''} onChange={(e) => updateAddress(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
-                                                                    className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                                                    className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1547,7 +1547,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Totales</label>
                                                         <input type="number" min="0" value={entry.hours || ''} onChange={(e) => updateSkill(idx, 'hours', e.target.value)} placeholder="Ej. 40"
-                                                            className={`w-full h-[40px] px-4 bg-surface-card border border-divider rounded-[1rem] text-input font-bold text-content-2 outline-none shadow-sm ${inputHoverClass}`} />
+                                                            className={`w-full h-[40px] px-4 bg-surface-card border border-divider rounded-[1rem] text-body-xl font-bold text-content-2 outline-none shadow-sm ${inputHoverClass}`} />
                                                     </div>
                                                     {isOtherInstitution && (
                                                         <div className="md:col-span-2">
@@ -1645,7 +1645,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
                                                             <div className="absolute left-3 text-content-3"><User size={14} strokeWidth={2.5} /></div>
                                                             <input type="text" value={dep.name || ''} onChange={(e) => updateDependent(idx, 'name', e.target.value)} placeholder="Nombre completo"
-                                                                className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                                                className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                         </div>
                                                     </div>
                                                     <div>
@@ -1662,7 +1662,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         {depAgeOnly ? (
                                                             <div className={`relative bg-surface-card rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                                                 <input type="number" min={MIN_DEPENDENT_AGE} max={MAX_DEPENDENT_AGE} step="1" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
-                                                                    className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-4 pr-4" />
+                                                                    className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-4 pr-4" />
                                                             </div>
                                                         ) : (
                                                             <div className={`bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
@@ -1701,7 +1701,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
                                                             <div className="absolute left-3 text-content-3"><MapPin size={14} strokeWidth={2.5} /></div>
                                                             <input type="text" value={dep.address || ''} onChange={(e) => updateDependent(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
-                                                                className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                                                className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1871,7 +1871,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <input type="tel" name="emergency_contact_phone" value={formData.emergency_contact_phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
                                             placeholder="0000-0000"
-                                            className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                     </div>
                                 </div>
 
@@ -1885,7 +1885,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div className={`relative flex-1 bg-surface-card rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                                         <div className="absolute left-3 text-content-3"><Phone size={14} strokeWidth={2.5} /></div>
                                                         <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
-                                                            className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                                            className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                                                     </div>
                                                     <button type="button" onClick={() => removeEmergencyPhone(idx)} title="Quitar teléfono"
                                                         className="w-8 h-8 flex items-center justify-center rounded-lg text-content-3 hover:text-danger hover:bg-danger/10 transition-colors shrink-0">
@@ -2124,7 +2124,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="relative">
                                         <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
                                             onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
-                                            className={`w-full bg-surface-card border border-divider rounded-[1rem] px-4 h-[40px] text-input font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-danger !bg-danger/10' : ''}`} />
+                                            className={`w-full bg-surface-card border border-divider rounded-[1rem] px-4 h-[40px] text-body-xl font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-danger !bg-danger/10' : ''}`} />
                                         <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-brand-text hover:bg-chart-1/10 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
                                     </div>
                                     <p className="text-micro font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
@@ -2236,7 +2236,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div key={doc.category} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
                                         <div className="flex items-center justify-between mb-2 gap-2">
                                             <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
-                                                className="flex-1 bg-transparent text-input font-bold text-content-2 outline-none border-b border-divider pb-1" />
+                                                className="flex-1 bg-transparent text-body-xl font-bold text-content-2 outline-none border-b border-divider pb-1" />
                                             <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-content-3 hover:text-danger shrink-0"><X size={14} /></button>
                                         </div>
                                         {renderDocUploadArea(doc.category)}

@@ -543,7 +543,7 @@ function GlassInput({ label, value, onChange, placeholder, accent }) {
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                className={`flex-1 text-input px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-content-3 transition-all font-medium`}
+                className={`flex-1 text-body-xl px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-content-3 transition-all font-medium`}
             />
         </div>
     );

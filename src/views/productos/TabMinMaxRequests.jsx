@@ -118,7 +118,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <div className="flex flex-col gap-2 mt-auto">
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
             placeholder="Motivo del rechazo (opcional)…"
-            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-input text-content-2 placeholder-content-3 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
+            className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-body-xl text-content-2 placeholder-content-3 outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/20 resize-none" />
           <div className="flex items-center gap-2">
             <button onClick={() => onReject(r, note.trim() || null)} disabled={busy}
               className="flex-1 h-8 rounded-xl text-label font-bold text-white bg-danger-solid hover:bg-danger-hover disabled:opacity-50 flex items-center justify-center gap-1.5 transition-colors">

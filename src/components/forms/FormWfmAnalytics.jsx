@@ -315,7 +315,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
                             <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-10 transition-colors duration-300" />
                         </div>
-                        <h3 className="text-input font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand-text transition-colors">
+                        <h3 className="text-body-xl font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand-text transition-colors">
                             {activeView === 'DAYS' ? 'Afluencia Histórica por Día' :
                                 activeView === 'GENERAL_HOURS' ? (timeRange === '0' ? 'Afluencia por Hora (Hoy)' : 'Afluencia General (Hr)') :
                                     `Afluencia por Hora - ${DAYS_MAP[activeView]}`}

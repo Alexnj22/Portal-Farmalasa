@@ -55,7 +55,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
             </button>
 
             <div className="relative z-10 flex-1">
-                <h4 className="font-black text-white text-input leading-tight tracking-tight mb-2">{insight.branch}</h4>
+                <h4 className="font-black text-white text-body-xl leading-tight tracking-tight mb-2">{insight.branch}</h4>
                 <p className={`text-body-sm font-medium leading-relaxed ${isError ? 'text-danger/80' : 'text-chart-5/70'}`}>{insight.text}</p>
             </div>
 
@@ -166,7 +166,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="pr-2 relative z-10">
-                <h4 className="font-black text-content text-input leading-tight tracking-tight line-clamp-2">{group.name}</h4>
+                <h4 className="font-black text-content text-body-xl leading-tight tracking-tight line-clamp-2">{group.name}</h4>
             </div>
 
             <div className="flex items-center gap-3 mt-auto border-t border-border-card pt-4 relative z-10">
@@ -475,7 +475,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                 value={currentForm.name}
                                 onChange={e => setCurrentForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder={`Nombre personalizado (ej: ${autoName})`}
-                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-input font-semibold text-content placeholder-content-3 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
+                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-body-xl font-semibold text-content placeholder-content-3 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
                             />
                         </div>
 

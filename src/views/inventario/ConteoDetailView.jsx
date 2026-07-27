@@ -194,7 +194,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onBlur={commit}
                     onKeyDown={handleFisicoKeyDown}
                     placeholder="—"
-                    className="w-16 text-center text-input font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover disabled:text-content-3"
+                    className="w-16 text-center text-body-xl font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover disabled:text-content-3"
                 />
             </DataCell>
             <DataCell align="center">
@@ -208,7 +208,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onChange={(e) => setNota(e.target.value)}
                     onBlur={commit}
                     placeholder="Nota..."
-                    className="w-full text-input bg-surface-card border border-border-card rounded-lg px-2 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover"
+                    className="w-full text-body-xl bg-surface-card border border-border-card rounded-lg px-2 py-1 outline-none focus:border-chart-9 focus:ring-2 focus:ring-chart-9/20 disabled:bg-surface-card-hover"
                 />
             </DataCell>
             <DataCell align="center">
@@ -346,7 +346,7 @@ function EditLoteModal({ item, onClose, onSave }) {
                 <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
-                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-input bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
                 </div>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
@@ -549,7 +549,7 @@ export default function ConteoDetailView() {
                     ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
                     type="text"
                     placeholder="Buscar producto, laboratorio o lote..."
-                    className="flex-1 bg-transparent border-none outline-none text-input font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -581,7 +581,7 @@ export default function ConteoDetailView() {
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <h2 className="text-input font-black text-content">{conteo.branches?.name}</h2>
+                                    <h2 className="text-body-xl font-black text-content">{conteo.branches?.name}</h2>
                                     <span className={`text-micro font-bold px-2 py-0.5 rounded-full ${es.bg} ${es.text}`}>{es.label}</span>
                                 </div>
                                 <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
@@ -611,11 +611,11 @@ export default function ConteoDetailView() {
                         {hasResults && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                                 <div className="bg-surface-card-hover rounded-xl px-3 py-2 text-center">
-                                    <p className="text-input font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
+                                    <p className="text-body-xl font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
                                     <p className="text-micro uppercase tracking-widest text-content-2 font-bold">Contados</p>
                                 </div>
                                 <div className="bg-warning/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-input font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
+                                    <p className="text-body-xl font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
                                     <p className="text-micro uppercase tracking-widest text-warning font-bold">Diferencias</p>
                                 </div>
                                 <div className="bg-danger/10 rounded-xl px-3 py-2 text-center">
@@ -835,7 +835,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                     clearable={false}
                 />
                 {lote === '__OTRO__' && (
-                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-input bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
                 )}
             </div>
             <div className="flex items-center gap-2">

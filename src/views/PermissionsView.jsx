@@ -724,7 +724,7 @@ const PermissionsView = () => {
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
-                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-content-3 focus:ring-0"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}

@@ -89,7 +89,7 @@ const AuthPromptPanel = ({
     /* 🚨 ESTABILIZACIÓN: Tamaño y espaciado fijo para el valor */
     text-2xl sm:text-4xl [@media(max-height:800px)]:!text-lg tracking-[0.5em] sm:tracking-[0.8em]
     /* 🚨 PLACEHOLDER: Estilo independiente para evitar saltos */
-    placeholder:text-input placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-chart-4-text/60
+    placeholder:text-body-xl placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-chart-4-text/60
     /* 🚨 CARET VIRTUAL: Oculta el cursor nativo y activa la animación del CSS */
     caret-transparent virtual-caret-orange focus:outline-none"
 />

@@ -42,7 +42,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
                     aria-describedby={isInvalid ? messageId : undefined}
-                    className={`w-full h-full bg-transparent text-input font-bold text-content outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    className={`w-full h-full bg-transparent text-body-xl font-bold text-content outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}
             </div>

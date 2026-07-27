@@ -75,7 +75,18 @@
   --text-body:      13px;   /*   249 usos — celda de tabla */
   --text-body-lg:   14px;   /*    93 usos */
   --text-subtitle:  15px;   /*    63 usos — subtítulo, escalón md: sobre 14 */
-  --text-input:     16px;   /*   205 usos — piso obligatorio de input (iOS) */
+  --text-body-xl:   16px;   /*   205 usos — tamaño base de la web.
+                               NO es el mínimo de la escala (ese es --text-micro, 9px).
+                               Es además el PISO OBLIGATORIO de todo campo de texto:
+                               iOS Safari hace zoom automático al enfocar un <input>
+                               con font-size < 16px (WebKit, no una regla de diseño).
+                               Esa regla la vigila el gate, categoría `small-input`;
+                               el token se llama por su rol en la escala, no por ese
+                               caso de uso — 47 de sus 205 usos son <h3>/<h4>, no inputs.
+                               NO se llama `--text-base`: ese nombre está reservado por
+                               Tailwind y arrastra su line-height 1.5 por defecto, cosa
+                               que `text-[16px]` no hacía — habría cambiado el
+                               interlineado de 205 elementos en silencio. */
   --text-title-sm:  18px;   /*    25 usos */
   --text-title:     20px;   /*    14 usos */
   --text-title-lg:  22px;   /*    45 usos — título de vista */
@@ -760,7 +771,7 @@
   --text-body: var(--text-body);
   --text-body-lg: var(--text-body-lg);
   --text-subtitle: var(--text-subtitle);
-  --text-input: var(--text-input);
+  --text-body-xl: var(--text-body-xl);
   --text-title-sm: var(--text-title-sm);
   --text-title: var(--text-title);
   --text-title-lg: var(--text-title-lg);

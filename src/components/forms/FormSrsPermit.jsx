@@ -23,7 +23,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                 <input 
                     type="text" 
                     placeholder="Ej: F025-2024"
-                    className="w-full px-4 py-3.5 rounded-[1rem] bg-surface-card border border-divider outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all font-mono text-input text-content font-semibold placeholder:text-content-3" 
+                    className="w-full px-4 py-3.5 rounded-[1rem] bg-surface-card border border-divider outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition-all font-mono text-body-xl text-content font-semibold placeholder:text-content-3" 
                     value={legalData.srsPermit || ""} 
                     onChange={(e) => updateLegalField('srsPermit', e.target.value)} 
                 />

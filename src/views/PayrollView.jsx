@@ -502,7 +502,7 @@ const PayrollView = ({ openModal }) => {
                     <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-input font-semibold text-content-2 placeholder-content-3 w-full" />
+                        className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full" />
                     {searchTerm && <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
                 </div>
                 <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
@@ -594,7 +594,7 @@ const PayrollView = ({ openModal }) => {
                                 <div className="backdrop-blur-[30px] rounded-[2.5rem] p-6 bg-surface-card border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
-                                            <h2 className="text-input font-black text-content tracking-tight">{activePeriod.name}</h2>
+                                            <h2 className="text-body-xl font-black text-content tracking-tight">{activePeriod.name}</h2>
                                             <p className="text-caption text-content-3 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
@@ -651,7 +651,7 @@ const PayrollView = ({ openModal }) => {
                                             ].map(t => (
                                                 <div key={t.label} className="text-center bg-surface-card rounded-2xl py-3 px-2 border border-border-card">
                                                     <p className="text-micro text-content-2 uppercase tracking-widest font-black">{t.label}</p>
-                                                    <p className={`text-input font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
+                                                    <p className={`text-body-xl font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
                                             ))}
                                         </div>

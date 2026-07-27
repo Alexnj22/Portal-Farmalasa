@@ -239,7 +239,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
               type="number" min="1"
               value={qty}
               onChange={e => setQty(e.target.value)}
-              className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-input font-black text-content-2 text-center outline-none focus:border-danger"
+              className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-body-xl font-black text-content-2 text-center outline-none focus:border-danger"
             />
             <button
               onClick={submit}

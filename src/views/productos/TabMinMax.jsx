@@ -1150,7 +1150,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-input font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-warning-text bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-warning-text bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`} />
                                                         {sep}
                                                         <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover border-border-card'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
@@ -1205,7 +1205,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-input font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-success-text bg-success/10 border-success'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-success-text bg-success/10 border-success'}`} />
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-micro font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-chart-1-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                 </div>

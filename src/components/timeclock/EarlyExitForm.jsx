@@ -48,7 +48,7 @@ function EarlyExitForm({
         <form onSubmit={onSubmit} className="relative z-20 w-full flex-1 flex flex-col justify-start min-h-0 shrink-0 gap-3 sm:gap-4 overflow-y-auto scrollbar-hide py-1">
           
           <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2.5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.02)] shrink-0">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/40 border border-chart-4/40 overflow-hidden flex items-center justify-center text-base sm:text-lg font-bold text-white shadow-[0_0_15px_rgba(249,115,22,0.15)] shrink-0">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/40 border border-chart-4/40 overflow-hidden flex items-center justify-center text-body-xl sm:text-lg font-bold text-white shadow-[0_0_15px_rgba(249,115,22,0.15)] shrink-0">
               {/* 🚨 Implementado el photoUrl correcto aquí */}
               {photoUrl ? (
                 <img src={photoUrl} alt={employee.name} className="w-full h-full object-cover" />
@@ -57,7 +57,7 @@ function EarlyExitForm({
               )}
             </div>
             <div className="text-left flex-1 overflow-hidden">
-              <h3 className="text-white font-semibold text-sm sm:text-base leading-tight truncate">{employee.name}</h3>
+              <h3 className="text-white font-semibold text-sm sm:text-body-xl leading-tight truncate">{employee.name}</h3>
               <p className="text-white/40 text-micro sm:text-micro uppercase tracking-widest mt-0.5 truncate">
                 Perfil a autorizar
               </p>
@@ -97,7 +97,7 @@ function EarlyExitForm({
               Justificación (Opcional)
             </label>
             <textarea
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-input resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
+              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-body-xl resize-none h-16 sm:h-20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] placeholder:text-white/20"
               placeholder="Detalle brevemente el motivo..."
               value={exitNotes}
               onChange={(e) => onChangeNotes?.(e.target.value)}

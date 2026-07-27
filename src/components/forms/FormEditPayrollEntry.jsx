@@ -10,7 +10,7 @@ const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-input outline-none font-bold text-content transition-all duration-300 placeholder-content-3 placeholder:font-normal";
+const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 focus:ring-4 focus:ring-brand/10 rounded-[1rem] text-body-xl outline-none font-bold text-content transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
 const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">
@@ -131,12 +131,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 <div>
                                     <p className="text-micro font-black text-warning mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-surface-card border border-warning/30 focus:border-warning rounded-lg text-input font-black text-warning-text outline-none" />
+                                        className="w-full h-8 px-2.5 bg-surface-card border border-warning/30 focus:border-warning rounded-lg text-body-xl font-black text-warning-text outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-micro font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dCompInput} onChange={e => setDCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-surface-card border border-chart-1/30 focus:border-chart-1 rounded-lg text-input font-black text-chart-1-text outline-none" />
+                                        className="w-full h-8 px-2.5 bg-surface-card border border-chart-1/30 focus:border-chart-1 rounded-lg text-body-xl font-black text-chart-1-text outline-none" />
                                 </div>
                             </div>
                             {dUsed > 0 && (
@@ -158,12 +158,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 <div>
                                     <p className="text-micro font-black text-chart-3-text mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nPayInput} onChange={e => setNPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-surface-card border border-chart-3/30 focus:border-chart-3 rounded-lg text-input font-black text-chart-3-text outline-none" />
+                                        className="w-full h-8 px-2.5 bg-surface-card border border-chart-3/30 focus:border-chart-3 rounded-lg text-body-xl font-black text-chart-3-text outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-micro font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nCompInput} onChange={e => setNCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-surface-card border border-chart-1/30 focus:border-chart-1 rounded-lg text-input font-black text-chart-1-text outline-none" />
+                                        className="w-full h-8 px-2.5 bg-surface-card border border-chart-1/30 focus:border-chart-1 rounded-lg text-body-xl font-black text-chart-1-text outline-none" />
                                 </div>
                             </div>
                             {nUsed > 0 && (
@@ -249,7 +249,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     </div>
                     <div>
                         <p className="text-micro text-content-3">Líquido</p>
-                        <p className="text-input font-black text-success-text">{fmt(preview.net_pay)}</p>
+                        <p className="text-body-xl font-black text-success-text">{fmt(preview.net_pay)}</p>
                     </div>
                 </div>
             </div>
@@ -262,7 +262,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     value={formData._reason || ''}
                     onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
                     placeholder="Ej: Corrección de días por permiso autorizado"
-                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40 hover:border-warning focus:border-warning focus:ring-4 focus:ring-warning/20 rounded-[1rem] text-input outline-none font-bold text-content transition-all duration-300"
+                    className="w-full h-10 px-3 bg-warning/10 border border-warning/40 hover:border-warning focus:border-warning focus:ring-4 focus:ring-warning/20 rounded-[1rem] text-body-xl outline-none font-bold text-content transition-all duration-300"
                 />
             </div>
         </div>

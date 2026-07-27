@@ -70,7 +70,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
             {/* Title + message */}
             <div>
-                <h4 className={`font-black text-input leading-tight mb-1.5 tracking-tight ${isRead ? 'text-content-2' : 'text-content'}`}>
+                <h4 className={`font-black text-body-xl leading-tight mb-1.5 tracking-tight ${isRead ? 'text-content-2' : 'text-content'}`}>
                     {ann.title}
                 </h4>
                 <p className={`text-body leading-relaxed font-medium whitespace-pre-wrap ${isRead ? 'text-content-3' : 'text-content-2'}`}>
@@ -704,7 +704,7 @@ const EmployeeAnnouncementsView = () => {
                     ref={searchInputRef}
                     type="text"
                     placeholder="Buscar avisos..."
-                    className="bg-transparent border-none outline-none text-input font-bold text-content-2 w-[200px] sm:w-[280px] placeholder:text-content-3"
+                    className="bg-transparent border-none outline-none text-body-xl font-bold text-content-2 w-[200px] sm:w-[280px] placeholder:text-content-3"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                 />

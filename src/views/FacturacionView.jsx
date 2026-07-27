@@ -120,7 +120,7 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
             <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
                     <textarea
-                        className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                        className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                         rows={2} autoFocus
                         placeholder={placeholder || 'Comentario (opcional)'}
                         value={comment} onChange={e => setComment(e.target.value)}
@@ -540,7 +540,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
-                                                                <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                                <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
@@ -1026,7 +1026,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <textarea
-                                                                    className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                                    className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)}
                                                                 />
@@ -1348,7 +1348,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-label font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -1454,7 +1454,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-label font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
+                                                            <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 focus:ring-success/50 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -1832,7 +1832,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <div className="flex items-start gap-3 max-w-3xl">
                                                                 <div className="flex-1 space-y-2">
                                                                     <textarea
-                                                                        className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                        className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                         rows={2} autoFocus
                                                                         placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                         value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
@@ -1941,7 +1941,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className="flex items-start gap-3 max-w-3xl">
                                                                         <div className="flex-1 space-y-2">
                                                                             <textarea
-                                                                                className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-input text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
+                                                                                className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 outline-none focus:ring-2 resize-none ${theme.input}`}
                                                                                 rows={2} autoFocus
                                                                                 placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
                                                                                 value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
@@ -2143,7 +2143,7 @@ export default function FacturacionView() {
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>

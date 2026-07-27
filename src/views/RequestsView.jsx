@@ -635,7 +635,7 @@ const RequestsView = () => {
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
-                    className="flex-1 bg-transparent border-none outline-none text-input md:text-input font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
@@ -781,7 +781,7 @@ const RequestsView = () => {
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-input text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
+                            className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
                                 className="flex-1 py-3 rounded-2xl border border-border-card bg-surface-card text-content-3 text-body font-medium hover:bg-surface-card transition-all disabled:opacity-50">
@@ -812,7 +812,7 @@ const RequestsView = () => {
                                 <ClipboardList size={20} className="text-brand-text" strokeWidth={2} />
                             </div>
                             <div>
-                                <h3 className="text-input font-bold text-content">Nueva Solicitud</h3>
+                                <h3 className="text-body-xl font-bold text-content">Nueva Solicitud</h3>
                                 <p className="text-label text-content-3">A nombre de un empleado</p>
                             </div>
                         </div>
@@ -887,7 +887,7 @@ const RequestsView = () => {
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-input text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 rounded-[1.5rem] border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 

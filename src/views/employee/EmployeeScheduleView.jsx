@@ -273,7 +273,7 @@ const EmployeeScheduleView = () => {
                                     d.isToday ? 'bg-brand text-white' : 'bg-surface-card-hover text-content-2'
                                 }`}>
                                     <span className="text-micro font-black uppercase tracking-widest leading-none opacity-70">{d.short}</span>
-                                    <span className="text-input font-black leading-tight">{d.date.getDate()}</span>
+                                    <span className="text-body-xl font-black leading-tight">{d.date.getDate()}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     {d.event ? (
@@ -414,7 +414,7 @@ const EmployeeScheduleView = () => {
                                 onChange={e => setReqNote(e.target.value)}
                                 placeholder="Explica el motivo del cambio…"
                                 rows={2}
-                                className="w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 rounded-2xl text-input outline-none font-bold text-content-2 transition-all placeholder-content-3 placeholder:font-normal resize-none"
+                                className="w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all placeholder-content-3 placeholder:font-normal resize-none"
                             />
                         </div>
 

@@ -534,7 +534,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
                                     <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
                                         placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
+                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
                                 </div>
 
                                 {/* Año + Estado */}
@@ -542,7 +542,7 @@ export default function EncuestaAdminView() {
                                     <div>
                                         <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
                                         <input type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300" />
+                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300" />
                                     </div>
                                     <div>
                                         <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
@@ -562,7 +562,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
                                     <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
                                         rows={2} placeholder="Objetivo específico de esta encuesta…"
-                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
+                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
                                 </div>
 
                                 {/* Fechas */}
@@ -678,7 +678,7 @@ export default function EncuestaAdminView() {
                                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-3" size={13} strokeWidth={2.5} />
                                                     <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
                                                         placeholder="Buscar por nombre…"
-                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
                                                     {sfEmpSearch && <button onClick={() => setSfEmpSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-content-3 hover:text-danger transition-colors"><X size={12} strokeWidth={2.5} /></button>}
                                                 </div>
                                                 {empResults.length > 0 && (
@@ -940,7 +940,7 @@ export default function EncuestaAdminView() {
                                     <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
                                     <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
                                         placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
                                 </div>
 
                                 {/* Submit */}

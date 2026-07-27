@@ -117,7 +117,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Buscar laboratorio…"
-                            className="flex-1 text-input text-content-2 placeholder-content-3 bg-transparent outline-none"
+                            className="flex-1 text-body-xl text-content-2 placeholder-content-3 bg-transparent outline-none"
                         />
                         {search && (
                             <button onClick={() => setSearch('')} className="text-content-3 hover:text-content-3 transition-colors shrink-0">

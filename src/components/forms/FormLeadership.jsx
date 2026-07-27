@@ -85,7 +85,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <input 
                             type="text" 
                             placeholder="Buscar candidato..." 
-                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] pl-10 pr-4 py-3 text-input font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
+                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-[1.2rem] pl-10 pr-4 py-3 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
                             value={formData.searchQuery || ''}
                             onChange={(e) => setFormData({...formData, searchQuery: e.target.value})}
                         />
@@ -136,7 +136,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                 {!selectedEmp ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40">
                         <User size={64} strokeWidth={1} className="text-content-3 mb-4"/>
-                        <p className="text-input font-black text-content-2 uppercase tracking-widest">Esperando Candidato</p>
+                        <p className="text-body-xl font-black text-content-2 uppercase tracking-widest">Esperando Candidato</p>
                         <p className="text-body-sm font-bold text-content-3 mt-2 max-w-[250px]">Elige a un empleado de la lista lateral.</p>
                     </div>
                 ) : (
@@ -306,7 +306,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         </label>
                                         <textarea 
                                             placeholder={formData.isPermanent === false ? "Ej. Cubre vacaciones de Mónica Castro..." : "Notas sobre la asignación (Opcional)..."}
-                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 text-input font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
+                                            className={`w-full h-20 bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
                                             value={formData.notes || ''}
                                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
                                         ></textarea>

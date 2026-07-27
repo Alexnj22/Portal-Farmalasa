@@ -43,7 +43,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
-                <h3 className="text-input font-black text-danger-text mb-2 tracking-tight">Ningún Profesional Disponible</h3>
+                <h3 className="text-body-xl font-black text-danger-text mb-2 tracking-tight">Ningún Profesional Disponible</h3>
                 <p className="text-body-sm font-bold text-danger-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Regente Farmacéutico en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>

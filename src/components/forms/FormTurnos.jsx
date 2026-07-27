@@ -272,7 +272,7 @@ const FormTurnos = ({ branches }) => {
                             required 
                             type="text"
                             placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-divider outline-none focus:border-brand shadow-sm text-input md:text-input font-bold text-content-2 placeholder:text-content-3" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-divider outline-none focus:border-brand shadow-sm text-body-xl md:text-body-xl font-bold text-content-2 placeholder:text-content-3" 
                             value={currentForm.name} 
                             onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
                         />

@@ -80,7 +80,7 @@ export default function ViewTabBar({
           type="text"
           placeholder={placeholder}
           className={`flex-1 bg-transparent border-none outline-none focus:ring-0
-            text-input font-bold
+            text-body-xl font-bold
             w-[180px] sm:w-[280px] md:w-[380px] ${inputCls}`}
           value={searchValue}
           onChange={e => onSearchChange?.(e.target.value)}

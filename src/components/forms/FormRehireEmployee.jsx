@@ -58,7 +58,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                 </div>
                 <div className="min-w-0">
                     <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>
-                    <p className="font-black text-content text-input leading-tight truncate">{formData.name}</p>
+                    <p className="font-black text-content text-body-xl leading-tight truncate">{formData.name}</p>
                     <p className="text-label text-content-3 font-medium mt-0.5">
                         Código <span className="font-black text-content-2">{formData.code}</span>
                         {' · '}Última salida: <span className="font-black text-content-2">{lastExit}</span>
@@ -126,7 +126,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3"><Clock size={14} strokeWidth={2.5} /></div>
                             <input type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
-                                className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-9 pr-4" />
+                                className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                         </div>
                     </div>
 
@@ -136,7 +136,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <div className={`relative bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3 font-black text-body">$</div>
                             <input type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
-                                placeholder="0.00" className="w-full h-full bg-transparent text-input font-bold text-content-2 outline-none pl-8 pr-4" />
+                                placeholder="0.00" className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-8 pr-4" />
                         </div>
                     </div>
 
@@ -146,7 +146,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <textarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
                             rows={2}
                             placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..."
-                            className={`w-full bg-surface-card rounded-[1rem] border border-divider shadow-sm text-input font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
+                            className={`w-full bg-surface-card rounded-[1rem] border border-divider shadow-sm text-body-xl font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
                     </div>
 
                 </div>

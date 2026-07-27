@@ -197,7 +197,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     </label>
                     <input
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-input shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-body-xl shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}

@@ -75,7 +75,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                         value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-input font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                     />
                 </div>
             </div>
@@ -92,7 +92,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Repite la contraseña"
                         value={confirm}
                         onChange={e => { setConfirm(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-input font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
+                        className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-[1rem] h-[44px] text-body-xl font-bold text-content-2 outline-none transition-all hover:border-brand/30 focus:ring-4 focus:ring-brand/10 focus:border-brand/50"
                     />
                 </div>
             </div>

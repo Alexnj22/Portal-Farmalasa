@@ -41,7 +41,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
                 </div>
-                <h3 className="text-input font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
+                <h3 className="text-body-xl font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
                 <p className="text-body-sm font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Referente de Farmacovigilancia en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>

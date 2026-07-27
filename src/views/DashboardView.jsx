@@ -1802,7 +1802,7 @@ const DashboardView = ({ openModal }) => {
                 <p className="text-caption font-semibold text-content-3 mt-1">documentos</p>
               </div>
               <div className="bg-success/10 rounded-2xl p-3">
-                <p className="text-input font-black text-success-text leading-none">{fmt(factStats.total)}</p>
+                <p className="text-body-xl font-black text-success-text leading-none">{fmt(factStats.total)}</p>
                 <p className="text-caption font-semibold text-success-text mt-1">total emitido</p>
               </div>
             </div>

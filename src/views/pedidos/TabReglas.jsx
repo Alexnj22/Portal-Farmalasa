@@ -297,7 +297,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         const n = parseInt(e.target.value);
                                         if (n > 0) selectMultiplo(n);
                                     }}
-                                    className="w-20 border border-divider rounded-xl px-2 py-1.5 text-input focus:outline-none focus:border-chart-1 bg-surface-card"
+                                    className="w-20 border border-divider rounded-xl px-2 py-1.5 text-body-xl focus:outline-none focus:border-chart-1 bg-surface-card"
                                 />
                             </div>
 
@@ -365,7 +365,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
                     onBlur={commitNotes}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                    className="w-full border border-divider rounded-xl px-3 py-2 text-input focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full border border-divider rounded-xl px-3 py-2 text-body-xl focus:outline-none focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
             </div>
         </div>

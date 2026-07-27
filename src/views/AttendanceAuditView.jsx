@@ -300,7 +300,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
         <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">
           <div>
             <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Corrección de marcaje</p>
-            <p className="text-input font-black text-content">{fmtDia}</p>
+            <p className="text-body-xl font-black text-content">{fmtDia}</p>
           </div>
           <button onClick={onClose}
             className="p-2 rounded-xl hover:bg-black/[0.06] text-content-3 hover:text-content-2 transition-all active:scale-[0.94]">
@@ -380,7 +380,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               value={reason} onChange={e => setReason(e.target.value)}
               placeholder="Razón de la corrección (opcional)"
               rows={2}
-              className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-input font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
+              className="w-full bg-surface-card border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-body-xl font-bold text-content placeholder:text-content-3 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all resize-none"
             />
             <div className="flex items-center justify-between gap-2">
               <p className="text-caption font-bold text-content-3">
@@ -497,7 +497,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
         {/* Date pill */}
         <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-brand text-white' : isOff ? 'bg-surface-card-hover text-content-3' : 'bg-surface-card-hover text-content-2'}`}>
           <span className="text-micro font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
-          <span className="text-input font-black leading-tight">{dayD.getUTCDate()}</span>
+          <span className="text-body-xl font-black leading-tight">{dayD.getUTCDate()}</span>
         </div>
 
         {/* Info */}
@@ -752,7 +752,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
             {emp.photo
               ? <img src={emp.photo} alt={emp.name} className="w-full h-full object-cover" />
-              : <span className="text-input">{emp.name?.charAt(0) || '?'}</span>}
+              : <span className="text-body-xl">{emp.name?.charAt(0) || '?'}</span>}
           </div>
           {alertColor ? (
             <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-micro font-black shadow-sm`}>

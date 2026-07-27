@@ -457,7 +457,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">
                 {step === 1 ? 'Paso 1 de 2' : 'Paso 2 de 2'}
               </p>
-              <h3 className="text-input font-black text-content leading-tight">
+              <h3 className="text-body-xl font-black text-content leading-tight">
                 {step === 1 ? 'Nueva Ruta de Entrega' : 'Confirmar ruta'}
               </h3>
             </div>

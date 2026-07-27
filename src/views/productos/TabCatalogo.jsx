@@ -383,13 +383,13 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                                 value={item.nombre}
                                 onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                                 placeholder="Nombre del principio"
-                                className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-input focus:outline-none focus:ring-2 transition-colors ${inp}`}
+                                className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-body-xl focus:outline-none focus:ring-2 transition-colors ${inp}`}
                             />
                             <input
                                 value={item.concentracion || ''}
                                 onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                                 placeholder="Cant."
-                                className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-input focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
+                                className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-body-xl focus:outline-none focus:ring-2 text-center transition-colors ${inp}`}
                             />
                             <button onClick={() => removeItem(item._key)}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center transition-all shrink-0 ${rmBtn}`}>
@@ -615,7 +615,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                         onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
                                         maxLength={4}
                                         placeholder="—"
-                                        className={`w-full px-2 py-1.5 border rounded-lg text-input text-center font-bold transition-colors ${inp(isSala)}`}
+                                        className={`w-full px-2 py-1.5 border rounded-lg text-body-xl text-center font-bold transition-colors ${inp(isSala)}`}
                                     />
                                 </div>
                                 <div className="flex-1">
@@ -625,7 +625,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                         onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
                                         maxLength={4}
                                         placeholder="—"
-                                        className={`w-full px-2 py-1.5 border rounded-lg text-input text-center font-bold transition-colors ${inp(isSala)}`}
+                                        className={`w-full px-2 py-1.5 border rounded-lg text-body-xl text-center font-bold transition-colors ${inp(isSala)}`}
                                     />
                                 </div>
                             </div>

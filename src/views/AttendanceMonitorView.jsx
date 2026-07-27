@@ -601,7 +601,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           ref={searchInputRef}
           type="text"
           placeholder="Buscar por nombre o código..."
-          className="flex-1 bg-transparent border-none outline-none text-input font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
+          className="flex-1 bg-transparent border-none outline-none text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />

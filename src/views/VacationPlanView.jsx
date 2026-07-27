@@ -49,7 +49,7 @@ const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-input outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -658,7 +658,7 @@ const VacationPlanView = () => {
                         placeholder="Buscar empleado o sucursal…"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-input font-semibold text-content-2 placeholder-content-3 w-full"
+                        className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full"
                     />
                     {searchTerm && (
                         <button onClick={() => setSearchTerm('')} className="text-content-3 hover:text-content-2 transition-colors">

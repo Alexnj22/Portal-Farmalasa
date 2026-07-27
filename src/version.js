@@ -5,7 +5,59 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.70.0';
+export const APP_VERSION = '2.82.0';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTA DE PROCESO (2026-07-27). Las entradas v2.70.1 → v2.82.0 se escriben acá
+// juntas porque los doce bumps intermedios FALLARON EN SILENCIO: cada script
+// hacía `s.replace("APP_VERSION = '2.X'", ...)` sin verificar que el reemplazo
+// ocurriera. El primero no encontró su ancla, y a partir de ahí cada uno buscó
+// una versión que nunca se había escrito. Los commits decían "(v2.7X)" en el
+// mensaje y el archivo seguía en 2.70.0.
+//
+// Es el mismo tipo de fallo que las 4 vistas sin import de hoy: una operación
+// que no hace nada, nadie la mira, y el build no tiene forma de saberlo. Por eso
+// ahora existe `npm run gate:version`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// v2.82.0 — fix URGENTE: 4 vistas pusheadas con <SegmentedControl> SIN IMPORT
+// (AnnouncementsView, FormWfmAnalytics, TabReglas, WidgetAnnulmentRequest).
+// Causa: guarda mal escrita en el migrador — comprobaba si la palabra estaba en
+// el archivo, y el comentario que él mismo acababa de insertar ya la contenía.
+// Lo grave: VITE COMPILA IGUAL, no resuelve identificadores de JSX en build.
+// El gate gana la categoría `import`, en 0 y bloqueante. De paso aparecieron 3
+// imports faltantes anteriores: BranchesView, TabPedidos, DataTable.
+// Además: SegmentedControl gana layout="block" y se creó ListRow.
+
+// v2.81.0 — 172 badges al canónico (244 → 72). Primera migración de la semana
+// donde medir dio "alcanza con lo que hay": Badge ya cubría todo. Error del
+// migrador: descartaba los atributos que no eran className y 11 badges de un
+// .map() perdieron su `key`.
+
+// v2.80.0 — D4: DESIGN.md deja de contradecir al código. Tenía SIETE canónicos
+// sin mencionar y 21 menciones de radios fijos + 10 de shadow-glow. `gate:doc`
+// pasa los ejemplos del documento por el mismo gate que el código: 35 → 0.
+
+// v2.79.0 — Notice, quinto canónico. De 316 "chips" medidos, 249 eran badges,
+// 58 avisos inline sin canónico y 9 contadores.
+
+// v2.78.0 — 6 grupos segmentados al canónico + tono por opción.
+// v2.77.0 — SegmentedControl: 123 botones con `X === valor ? activo : inactivo`.
+// v2.76.0 — 174 botones más + 3 errores del migrador corregidos.
+// v2.75.0 — `shape` era un error: la forma la decide el TEMA (--btn-radius es
+//           9999px en vidrio y 0.5rem en sólido).
+// v2.74.0 — 420 botones al canónico (940 → 518).
+// v2.73.0 — D3.2 cerrada + Checkbox canónico (16 casillas NATIVAS → 0).
+// v2.72.0 — Button gana `tone` (categoría, no jerarquía).
+// v2.71.1 — El 404 no volvía a ningún lado: `/` no tenía ruta. Header móvil
+//           siempre claro: fondo fijo por un bug de iOS que era del
+//           backdrop-filter, no de un color sólido.
+// v2.71.0 — Variante táctil propia de los selectores de fecha + hoja de filtros
+//           en móvil (en /auditview a 390px quedaban 10 controles fuera).
+// v2.70.2 — Render en cascada en TeclaFecha + auditoría móvil documentada.
+// v2.70.1 — TeclaFecha estaba definido DENTRO del componente: el foco se perdía
+//           en cada tecla.
+
 
 // v2.70.0 — refactor(design): D3.9 CERRADA. 13 de 13 barras al canonico.
 //

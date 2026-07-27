@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Checkbox from '../../components/common/Checkbox';
+import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
@@ -506,29 +508,32 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   {pedidosDisp.map(item => {
                     const isSel = selected.has(item.key);
                     return (
-                      <button key={item.key} onClick={() => toggleItem(item.key)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all ${
-                          isSel ? 'bg-chart-3/10 border-chart-3/30 shadow-sm' : 'bg-surface-card border-divider hover:border-chart-3/30 hover:bg-chart-3/10'
-                        }`}>
-                        <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isSel ? 'bg-chart-3 border-chart-3' : 'border-divider'
-                        }`}>
-                          {isSel && <CheckCircle2 size={10} className="text-white" strokeWidth={3} />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-body-sm font-bold text-content-2">#{item.numero}</span>
-                            <span className="text-label text-content-3 font-medium">— {item.suc_name}</span>
-                          </div>
-                          {item.total_cajas > 0 && (
-                            <span className="text-caption text-content-3">
-                              {item.total_cajas} caja{item.total_cajas !== 1 ? 's' : ''}
-                              {item.cajas_electrolit > 0 && ` · ${item.cajas_electrolit} Electrolit`}
+                      <ListRow
+                        key={item.key}
+                        onClick={() => toggleItem(item.key)}
+                        active={isSel}
+                        className={isSel ? 'border-chart-3/30 bg-chart-3/10' : 'border-divider bg-surface-card hover:border-chart-3/30'}
+                        trailing={<MapPin size={12} className={coordsMap[item.erp_sucursal_id] ? 'text-success' : 'text-content-3'} />}
+                      >
+                        {/* La casilla es INDICADOR, no control: la fila entera ya
+                            responde al click. Sin `onChange` el canónico la deja
+                            readOnly y fuera del orden de tabulación. */}
+                        <span className="flex items-center gap-3">
+                          <Checkbox checked={isSel} size="sm" />
+                          <span className="min-w-0">
+                            <span className="flex items-center gap-2">
+                              <span className="text-body-sm font-bold text-content-2">#{item.numero}</span>
+                              <span className="text-label text-content-3 font-medium">— {item.suc_name}</span>
                             </span>
-                          )}
-                        </div>
-                        <MapPin size={12} className={coordsMap[item.erp_sucursal_id] ? 'text-success' : 'text-content-3'} />
-                      </button>
+                            {item.total_cajas > 0 && (
+                              <span className="block text-caption text-content-3">
+                                {item.total_cajas} caja{item.total_cajas !== 1 ? 's' : ''}
+                                {item.cajas_electrolit > 0 && ` · ${item.cajas_electrolit} Electrolit`}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                      </ListRow>
                     );
                   })}
                 </div>

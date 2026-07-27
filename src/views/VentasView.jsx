@@ -1129,7 +1129,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pct          = totalVentas > 0 ? (r.total / totalVentas) * 100 : 0;
                     const baseBranchId = r.emp?.branch_id ?? r.branchIds[0];
                     const displayName  = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : r.cod_vendedor);
-                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-white/40 to-divider';
+                    const expandBg     = 'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider';
                     const expandBorder = 'border-chart-1/30';
                     const cardNormal   = 'bg-surface-card border-border-card';
                     const cardCross    = 'bg-warning/10 border-warning/30';

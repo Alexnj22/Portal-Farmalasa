@@ -5,8 +5,68 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.62.3';
+export const APP_VERSION = '2.62.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.62.4 — fix(theme): BARRIDO COMPLETO del sheen/blanco hardcodeado. v2.62.2
+// (GlassViewLayout) y v2.62.3 (DashboardView) arreglaron dos instancias
+// puntuales del mismo bug; esta pasada audita TODAS las ocurrencias de
+// `from-/via-/to-white/NN` del proyecto y cierra las que sí reaccionan al tema.
+//
+// 6 tokens nuevos en index.css, los 4 temas definidos (verificado en vivo con
+// getComputedStyle que cada uno resuelve distinto por tema):
+//   --btn-sheen              reflejo del botón glass de la campana
+//   --card-tint-base[-soft]  base de "tarjeta teñida por categoría"
+//   --row-expand-sheen       stop medio del fondo de fila expandida
+//   --shimmer-sweep[-strong] barrido de shimmer sobre superficie neutra
+//
+// 13 archivos migrados:
+//   · Sheen decorativo → --card-sheen-strong (mismo 0.40 que ya existía):
+//     ErrorBoundary, FormAuditDetail, TabExpenses.
+//   · NotificationBell: el sheen estaba detrás de `{!isDark && …}`, que cubría
+//     dark y solid-dark pero dejaba el reflejo puesto en `solid` (claro, pero
+//     sin glass). Ahora sin guarda, lo decide --btn-sheen. Confirmado en vivo:
+//     dark = rgba(255,255,255,0.06), solid = transparente.
+//   · Fila expandida (5 copias del mismo string, con via-white/40, /50 y /60
+//     según el archivo): DataTable, VentasView, TabReglas, TabCatalogo,
+//     TabInventario → --row-expand-sheen. Se normalizan al 0.50 canónico de
+//     DataTable. En TabCatalogo además había un `via-white` sin alpha y un hex
+//     crudo #EEF4FF — las dos únicas de la familia fuera del sistema de tokens.
+//   · Tarjeta teñida (el blanco era el FONDO real, no un reflejo — en dark
+//     quedaban tarjetas/pastillas blancas sobre la vista oscura): EncuestaView,
+//     EmployeeRequestsView, TabGenerar (4 variantes de urgencia).
+//   · Shimmer: LiquidAvatar (skeleton), SchedulesView (hairline de la pill de
+//     filtros), TabGenerar (hairline de pastilla, incl. el `via-white` pelado
+//     del estado seleccionado → --shimmer-sweep-strong).
+//   · App.jsx (splash de "Verificando sesión..."): fondo, tarjeta y pill del
+//     logo estaban hardcodeados en azul claro/blanco mientras el texto sí usaba
+//     text-content — un usuario en dark veía un flash claro a pantalla completa
+//     con el título casi invisible, en CADA recarga. Ahora --bg-page +
+//     bg-surface-card + border-border-card + --card-shadow.
+//
+// NO se tocaron (decisión explícita, documentada en index.css): las de
+// superficies bespoke siempre-oscuras (sidebar de AppLayout, TimeClockView), las
+// de vistas que fuerzan tema claro (LoginView), y los barridos especulares de
+// baja alpha (white/[0.08-0.25]) sobre botones brand — ahí el fondo es azul en
+// los 4 temas y el blanco es correcto.
+//
+// De paso, un bug del mismo tipo pero otra familia, visible en la captura de
+// verificación: el toggle "Distribución global de bodega" (TabGenerar) usaba
+// `bg-white` opaco con text-content-3 → pastilla blanca con texto invisible en
+// dark. Corregido a bg-surface-card. Ver nota de seguimiento abajo.
+//
+// PENDIENTE (no incluido, requiere decisión): quedan 559 usos de `bg-white`
+// OPACO en 107 archivos — misma clase de bug pero familia distinta y mucho más
+// grande que este barrido. Top: FacturacionView (32), EncuestaView (20),
+// EmployeeFormModal (20), EmployeeDetailView (19), TabCatalogo (17). También el
+// preloader inline de index.html pinta un degradado lavanda fijo antes de que
+// corra React (flash claro en dark en cada arranque) — se arregla con un script
+// inline de bootstrap de tema en <head>, cambio chico pero en el path de boot.
+//
+// Verificado: gate:design 0 hallazgos, build limpio, y en vivo con Playwright
+// (login real, tema dark) — pastilla de sucursal = rgba(13,20,48,0.55), toggle
+// global = rgba(13,20,48,0.58), fila expandida de Catálogo sin banda blanca,
+// sheen de campana 0.06 en dark / transparente en solid.
 
 // v2.62.3 — fix(theme): mismo bug del sheen blanco (v2.62.2), esta vez en
 // DashboardView.jsx — el usuario lo detectó en Inicio (KpiCard/WidgetCard:

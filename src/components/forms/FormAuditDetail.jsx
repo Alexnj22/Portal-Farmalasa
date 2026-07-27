@@ -32,7 +32,7 @@ const FormAuditDetail = ({ data }) => {
             <div className="w-full md:w-5/12 bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] rounded-[2.5rem] border border-border-card shadow-[0_20px_40px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] p-7 flex flex-col relative overflow-hidden shrink-0 transform-gpu backface-hidden transition-all duration-700 hover:shadow-[var(--shadow-elevation-lg)] hover:-translate-y-1 group/main">
                 
                 {/* Reflejos Dinámicos */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-white/40 to-transparent blur-3xl rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none opacity-50 transform-gpu transition-opacity duration-700 group-hover/main:opacity-80"></div>
+                <div className="absolute top-0 right-0 w-40 h-40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none opacity-50 transform-gpu transition-opacity duration-700 group-hover/main:opacity-80" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
 
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-10 relative z-10">

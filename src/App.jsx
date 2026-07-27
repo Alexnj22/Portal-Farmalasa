@@ -442,15 +442,21 @@ function MainApp() {
 
     if (loading || (isAuthenticated && permsLoading)) {
         return (
-            <div className="fixed inset-0 w-full h-[100dvh] bg-gradient-to-br from-[#ddeeff] via-[#f0f6ff] to-[#e8eeff] overflow-hidden flex items-center justify-center">
+            /* Splash de arranque. ThemeProvider ya puso [data-theme] en <html>
+               cuando esto pinta, pero el fondo, la tarjeta y el pill del logo
+               estaban hardcodeados en azul claro / blanco (mientras el texto sí
+               usaba text-content) — un usuario en dark veía un flash claro a
+               pantalla completa con el título casi invisible encima, en CADA
+               recarga. Tokenizado en v2.62.4 junto al resto del barrido. */
+            <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden flex items-center justify-center" style={{ background: 'var(--bg-page)' }}>
                 <GlobalBackground />
 
                 {/* Card */}
                 <div className="relative z-10 animate-in fade-in zoom-in-95 duration-700 ease-out">
-                    <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2.5rem] px-14 py-12 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-7 min-w-[280px]">
+                    <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-[2.5rem] px-14 py-12 shadow-[var(--card-shadow)] flex flex-col items-center gap-7 min-w-[280px]">
 
                         {/* Shimmer line top */}
-                        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-white to-transparent" />
+                        <div className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-[var(--shimmer-sweep-strong)] to-transparent" />
 
                         {/* Logo + animated rings */}
                         <div className="relative flex items-center justify-center w-28 h-28">
@@ -476,7 +482,7 @@ function MainApp() {
                                 <circle cx="50" cy="50" r="44" stroke="url(#rg2)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="80 200" />
                             </svg>
                             {/* Logo pill */}
-                            <div className="w-16 h-16 rounded-2xl bg-white/[0.60] backdrop-blur-xl border border-white/85 flex items-center justify-center shadow-[0_8px_28px_rgba(110,70,220,0.14),0_2px_8px_rgba(0,0,0,0.04),inset_0_2px_6px_rgba(255,255,255,1)]">
+                            <div className="w-16 h-16 rounded-2xl bg-surface-card-hover backdrop-blur-xl border border-border-card flex items-center justify-center shadow-[var(--shadow-elevation-md)]">
                                 <img src="/Logo192.png" alt="Farmalasa" className="w-10 h-10 object-contain" />
                             </div>
                         </div>

@@ -378,7 +378,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         
                         {/* Tarjeta de Variación Mensual */}
                         <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-10">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
                                 <h5 className="text-[10px] font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>

@@ -1390,7 +1390,7 @@ export default function EncuestaView() {
                             <div
                                 key={seg.key}
                                 onClick={() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] }))}
-                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-white/60 via-chart-3/10 to-chart-3/5 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[0_6px_28px_rgba(99,102,241,0.18)] hover:border-chart-3/50' : ''}`}
+                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[0_6px_28px_rgba(99,102,241,0.18)] hover:border-chart-3/50' : ''}`}
                             >
                                 {/* Segment header bar */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-chart-3/20 bg-gradient-to-r from-chart-3/10 to-chart-3/5">

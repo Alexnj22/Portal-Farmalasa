@@ -323,7 +323,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                ? 'bg-danger/10 border-danger/40 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
                                : 'bg-surface-card border-chart-1/30 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}`}
             >
-                {!isDark && <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />}
+                {/* Sheen del botón: ya no va detrás de `!isDark` (eso cubría dark y
+                    solid-dark, pero dejaba el reflejo puesto en `solid`, que es claro
+                    pero tampoco tiene glass). El token lo decide por tema. */}
+                <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[1.25rem] pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--btn-sheen), transparent)' }} />
                 {totalBadge > 0 ? (
                     <BellRing size={18} strokeWidth={2}
                         className={`relative z-10 transition-colors

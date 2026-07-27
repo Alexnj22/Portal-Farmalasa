@@ -48,7 +48,9 @@ function useTokens() {
     skeletonPulse:     'bg-brand/[0.07]',
     emptyText:         'text-content-3',
     emptyIcon:         'text-content-3',
-    expandBg:          'bg-gradient-to-br from-chart-1/10 via-white/50 to-divider',
+    // El stop medio era `via-white/50` fijo — el único de los tres que no
+    // reaccionaba al tema (v2.62.4).
+    expandBg:          'bg-gradient-to-br from-chart-1/10 via-[var(--row-expand-sheen)] to-divider',
     expandBorderColor: 'border-chart-1/30',
     expandText:        'text-content-3',
     expandTextStrong:  'text-content',

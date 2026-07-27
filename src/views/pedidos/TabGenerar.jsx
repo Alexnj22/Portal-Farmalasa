@@ -337,7 +337,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
                             globalMode
                                 ? 'bg-chart-3 border-chart-3 text-white shadow-sm'
-                                : 'bg-white border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text'
+                                // `bg-white` opaco + text-content-3: en dark quedaba una pastilla
+                                // blanca con el texto casi invisible encima (visto en la captura de
+                                // verificación de v2.62.4). No es del patrón sheen, pero es el mismo
+                                // bug y estaba en este archivo.
+                                : 'bg-surface-card border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text'
                         }`}
                     >
                         Distribución global de bodega
@@ -368,7 +372,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     key={id}
                                     className="relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center overflow-hidden bg-surface-card-hover/60 border-divider opacity-60 cursor-not-allowed"
                                 >
-                                    <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
+                                    <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent pointer-events-none" />
                                     <Building2 size={20} className="text-content-3 mt-1" />
                                     <span className="text-[12px] font-bold leading-tight text-content-3">{ERP_NAMES[id]}</span>
                                     {dashLoading ? (
@@ -383,13 +387,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                         }
 
                         // Base: always urgency-based, never changes on selection
+                        // El stop blanco de estas 4 variantes era el fondo real de la
+                        // tarjeta, no un reflejo: en dark quedaban 6 pastillas blancas
+                        // sobre la vista oscura. Ahora --card-tint-base[-soft] (v2.62.4).
                         const baseCls = urgLevel === 'high'
-                            ? 'bg-gradient-to-b from-danger/10 to-white/60 border-danger/30 backdrop-blur-sm'
+                            ? 'bg-gradient-to-b from-danger/10 to-[var(--card-tint-base-soft)] border-danger/30 backdrop-blur-sm'
                             : urgLevel === 'mid'
-                                ? 'bg-gradient-to-b from-warning/10 to-white/60 border-warning/30 backdrop-blur-sm'
+                                ? 'bg-gradient-to-b from-warning/10 to-[var(--card-tint-base-soft)] border-warning/30 backdrop-blur-sm'
                                 : urgLevel === 'low'
-                                    ? 'bg-gradient-to-b from-success/10 to-white/50 border-success/30 backdrop-blur-sm'
-                                    : 'bg-gradient-to-b from-white/80 to-white/50 border-divider backdrop-blur-sm';
+                                    ? 'bg-gradient-to-b from-success/10 to-[var(--card-tint-base-soft)] border-success/30 backdrop-blur-sm'
+                                    : 'bg-gradient-to-b from-[var(--card-tint-base)] to-[var(--card-tint-base-soft)] border-divider backdrop-blur-sm';
 
                         // Selection adds a glow ring; no-selection adds hover effects
                         const stateCls = isOn
@@ -414,7 +421,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${baseCls} ${stateCls}`}
                             >
                                 {/* Shimmer line — siempre visible, más brillante al seleccionar */}
-                                <span className={`absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white' : 'via-white/70'} to-transparent pointer-events-none`} />
+                                <span className={`absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-[var(--shimmer-sweep-strong)]' : 'via-[var(--shimmer-sweep)]'} to-transparent pointer-events-none`} />
 
                                 {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (

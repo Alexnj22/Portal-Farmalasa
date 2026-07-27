@@ -36,7 +36,7 @@ export default class ErrorBoundary extends React.Component {
                     shadow-[0_40px_100px_rgba(0,0,0,0.30),inset_0_2px_15px_rgba(255,255,255,0.80)]
                     rounded-[2.5rem] p-10 flex flex-col items-center gap-6">
 
-                    <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/40 to-transparent pointer-events-none rounded-t-[2.5rem]" />
+                    <div className="absolute inset-x-0 top-0 h-2/5 pointer-events-none rounded-t-[2.5rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen-strong), transparent)' }} />
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 blur-[60px] rounded-full pointer-events-none bg-danger/10" />
 
                     <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center

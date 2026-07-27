@@ -716,7 +716,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
             {/* Shimmer */}
             <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none z-10">
-                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/80 to-transparent animate-shimmer"
+                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent animate-shimmer"
                     style={{ animationDuration: '4s' }} />
             </div>
 

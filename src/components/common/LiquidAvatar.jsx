@@ -23,7 +23,7 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "" }) => {
             {/* 🚨 SKELETON PRELOADER: Brillo animado mientras carga */}
             {isLoading && (
                 <div className="absolute inset-0 z-0 bg-surface-card-hover">
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_1.5s_infinite]"></div>
+                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent animate-[shimmer_1.5s_infinite]"></div>
                 </div>
             )}
 

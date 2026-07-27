@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
@@ -411,10 +412,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="space-y-3">
                     {isAnuladasFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                        <Notice variant="warning" icon={Search}>
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
-                        </div>
+                        </Notice>
                     )}
                     <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
                         <Info size={13} className="text-brand-text shrink-0" />
@@ -855,10 +855,9 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="space-y-3">
                     {isPendienteFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                        <Notice variant="warning" icon={Search}>
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
-                        </div>
+                        </Notice>
                     )}
                     <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-label text-brand-text font-medium">
                         <Info size={13} className="text-brand-text shrink-0" />
@@ -1698,10 +1697,9 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             ) : (
                 <div className="p-4 md:p-6 space-y-5">
                     {isNoEfectivoFuzzy && searchTerm && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                        <Notice variant="warning" icon={Search}>
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
-                        </div>
+                        </Notice>
                     )}
                     {/* ── Pagos inmediatos ── */}
                     {IMMEDIATE_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {

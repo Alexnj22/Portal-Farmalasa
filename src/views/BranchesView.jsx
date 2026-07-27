@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import LiquidSelect from '../components/common/LiquidSelect';
 import TabBarAction from '../components/common/TabBarAction';
@@ -758,10 +759,9 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         return (
                             <div className="space-y-8 pt-4 px-2 pb-12">
                                 {isBranchSearchFuzzy && searchTerm && (
-                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                                        Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
-                                    </div>
+                                    <Notice variant="warning" icon={Search}>
+                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                        </Notice>
                                 )}
                                 {grouped.map(({ type, branches: groupBranches }) => (
                                     <div key={type}>

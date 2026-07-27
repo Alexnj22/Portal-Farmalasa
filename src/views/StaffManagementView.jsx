@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import TabBarAction from '../components/common/TabBarAction';
@@ -912,10 +913,9 @@ const StaffManagementView = ({
         </div>
 
         {isStaffSearchFuzzy && normalizedSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-            <Search size={12} strokeWidth={2.5} className="shrink-0" />
-            Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
-          </div>
+          <Notice variant="warning" icon={Search}>
+                            Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
+                        </Notice>
         )}
 
         <DataTable

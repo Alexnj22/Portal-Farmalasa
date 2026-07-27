@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Switch from '../components/common/Switch';
@@ -724,10 +725,9 @@ const AnnouncementsView = ({ openModal }) => {
               ) : (
                 <>
                 {isAnnFuzzy && debouncedSearchTerm && (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                    Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
-                  </div>
+                  <Notice variant="warning" icon={Search}>
+                            Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
+                        </Notice>
                 )}
                 {paginatedList.map((ann, i) => (
                   <div key={ann.id} className="animate-stagger-child" style={{ '--stagger-delay': `${Math.min(i, 7) * 45}ms` }}>

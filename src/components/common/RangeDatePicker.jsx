@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { CalendarDays, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
 
@@ -23,7 +24,7 @@ const getHolidayInfo = (day, month, year, holidays) => {
     return holidays.find(h => h.is_recurring ? h.holiday_date.endsWith(md) : h.holiday_date === ymd) || null;
 };
 
-const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouseUp, onDayHover, holidays, onPrev, onNext, selectedRanges = [] }) => {
+const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouseUp, onDayHover, holidays, onPrev, onNext, selectedRanges = [], esTactil = false }) => {
     const firstDay = new Date(year, month, 1).getDay();
     const offset = (firstDay + 6) % 7; // Monday-first
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -107,7 +108,8 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                         }
                     }
 
-                    let btnClass = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base select-none ';
+                    // 32px es cómodo con mouse; con el dedo el mínimo es 44 (WCAG 2.5.8).
+                    let btnClass = (esTactil ? 'w-11 h-11 ' : 'w-8 h-8 ') + 'mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base select-none ';
                     if (holiday) {
                         btnClass += 'text-danger bg-danger/10 cursor-not-allowed opacity-70';
                     } else if (isStart || isEnd) {
@@ -127,7 +129,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     return (
                         <div
                             key={day}
-                            className={`h-9 flex items-center justify-center relative ${wrapBg}`}
+                            className={`${esTactil ? 'h-12' : 'h-9'} flex items-center justify-center relative ${wrapBg}`}
                             onMouseEnter={() => !holiday && onDayHover(dayStr)}
                         >
                             <button
@@ -227,6 +229,7 @@ const RangeDatePicker = ({
     // que navegar el calendario hasta para "los últimos 7 días".
     shortcuts = null,
 }) => {
+    const esTactil = useCoarsePointer();
     const [isOpen, setIsOpen] = useState(false);
     const [selecting, setSelecting] = useState('start');
     const [rangeConfirmed, setRangeConfirmed] = useState(false);
@@ -299,6 +302,25 @@ const RangeDatePicker = ({
         setRangeConfirmed(false);
         setSelecting('end');
     }, []);
+
+    // D3.12 (2026-07-27): con el dedo, un toque dispara mousedown Y mouseup sobre
+    // el MISMO día, así que caía en `start === end` y auto-calculaba defaultDays
+    // (15 días) en vez de dejar elegir el fin. En táctil se selecciona con dos
+    // toques: el primero fija el inicio, el segundo el fin.
+    const handleDayTap = useCallback((dayStr) => {
+        setRangeConfirmed(false);
+        if (!draftStart || (draftStart && draftEnd)) {
+            setDraftStart(dayStr);
+            setDraftEnd(null);
+            setSelecting('end');
+            return;
+        }
+        const ini = draftStart <= dayStr ? draftStart : dayStr;
+        const fin = draftStart <= dayStr ? dayStr : draftStart;
+        setDraftStart(ini);
+        setDraftEnd(fin);
+        setSelecting('start');
+    }, [draftStart, draftEnd]);
 
     const handleDayMouseUp = useCallback((dayStr) => {
         if (!isDragging) return;
@@ -422,13 +444,22 @@ const RangeDatePicker = ({
     const popup = isOpen && createPortal(
         <>
             <div className="fixed inset-0 z-tooltip bg-scrim backdrop-blur-[2px]" onClick={handleClose} />
+            {/* D3.12 (2026-07-27): en táctil, hoja inferior a ancho completo en vez
+                de panel flotante. El panel medía 557px de alto en una ventana útil de
+                664px — entraba raspando, y con el teclado abierto no entraba. Mismo
+                calendario y mismos tokens: cambia la presentación, no el material. */}
             <div
                 ref={popupRef}
                 data-surface="dropdown"
-                className="fixed z-toast p-6 max-w-[calc(100vw-32px)]"
-                style={{ ...popupStyle, width: months === 1 ? '332px' : '596px', maxWidth: 'calc(100vw - 32px)' }}
+                className={esTactil
+                    ? `fixed z-toast left-0 right-0 bottom-0 w-full rounded-t-modal rounded-b-none
+                       px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]
+                       max-h-[88vh] overflow-y-auto animate-in slide-in-from-bottom duration-300`
+                    : 'fixed z-toast p-6 max-w-[calc(100vw-32px)]'}
+                style={esTactil ? undefined : { ...popupStyle, width: months === 1 ? '332px' : '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
+                {esTactil && <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />}
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
@@ -484,16 +515,17 @@ const RangeDatePicker = ({
                     <MonthGrid
                         year={viewYear} month={viewMonth}
                         startDate={draftStart} endDate={draftEnd}
-                        onDayMouseDown={handleDayMouseDown}
-                        onDayMouseUp={handleDayMouseUp}
+                        onDayMouseDown={esTactil ? () => {} : handleDayMouseDown}
+                        onDayMouseUp={esTactil ? handleDayTap : handleDayMouseUp}
                         onDayHover={handleDayHover}
                         holidays={holidays}
                         onPrev={handlePrev}
-                        onNext={months === 1 ? handleNext : undefined}
+                        onNext={(months === 1 || esTactil) ? handleNext : undefined}
                         selectedRanges={selectedRanges}
+                        esTactil={esTactil}
                     />
-                    {months !== 1 && <div className="w-px bg-divider self-stretch shrink-0" />}
-                    {months !== 1 && <MonthGrid
+                    {months !== 1 && !esTactil && <div className="w-px bg-divider self-stretch shrink-0" />}
+                    {months !== 1 && !esTactil && <MonthGrid
                         year={secondYear} month={secondMonth}
                         startDate={draftStart} endDate={draftEnd}
                         onDayMouseDown={handleDayMouseDown}

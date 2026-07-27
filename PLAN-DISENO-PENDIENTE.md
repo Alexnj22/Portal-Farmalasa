@@ -423,7 +423,33 @@ terminar, `gate:design` en verde y una pasada por las 25 rutas.
 - **El panel de rango no cabe de alto**: 557px en una ventana útil de 664px.
   Con el teclado abierto, no entra.
 
-### Decisión pendiente — nativo en móvil
+### Decisión tomada — TODO propio, con variante táctil (v2.71.0)
+
+**No se usa nada nativo.** El razonamiento del usuario: mezclar controles
+nativos con controles del tema se vería inconsistente. Y tiene razón — pero la
+solución no era resignar calidad en móvil, sino construir la **variante táctil
+propia** de cada control:
+
+| | escritorio | táctil |
+|---|---|---|
+| panel | popover anclado, 280px | **hoja inferior**, ancho completo, respeta `safe-area-inset` |
+| día | 32px | **44px** (WCAG 2.5.8) |
+| rango | arrastre | **dos toques** — el primero fija inicio, el segundo fin |
+| meses visibles | 1 o 2 | siempre 1 |
+| acciones de la barra | en línea | **botón + hoja de filtros** |
+
+Mismo calendario, mismos tokens, mismos 4 temas: cambia la **presentación**, no
+el material.
+
+Bugs que aparecieron al construirlo:
+- Con el dedo, un toque dispara `mousedown` Y `mouseup` sobre el mismo día, así
+  que el rango caía en `start === end` y **auto-calculaba 15 días** en vez de
+  dejar elegir el fin.
+- La hoja de filtros medía **108px de ancho en vez de 390**: la barra tiene
+  `transform-gpu`, y un ancestro transformado crea bloque contenedor para
+  `position: fixed`. Se resolvió con portal a `document.body`.
+
+### ~~Decisión pendiente — nativo en móvil~~ (descartado)
 Propuesta híbrida **por trabajo, no por plataforma**:
 
 | caso | escritorio | móvil |

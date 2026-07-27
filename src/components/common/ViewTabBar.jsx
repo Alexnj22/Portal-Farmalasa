@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
-import { Search, X, ChevronRight } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Search, X, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
 import LiquidSelect from './LiquidSelect';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
 
@@ -31,6 +33,8 @@ export default function ViewTabBar({
   trailingActions = null,
 }) {
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [hojaFiltros, setHojaFiltros] = useState(false);
+  const esTactil = useCoarsePointer();
   const inputRef = useRef(null);
 
   // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
@@ -155,7 +159,20 @@ export default function ViewTabBar({
 
         {tabs.length > 0 && (trailingActions || showSearch) && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
 
-        {trailingActions}
+        {/* D3.12 (2026-07-27): en táctil las acciones NO caben en línea. Medido en
+            /auditview a 390px: 10 controles quedaban FUERA del viewport —el segundo
+            campo de fecha y el botón de buscar eran inalcanzables—. La barra es
+            `w-max`, así que crecía más allá de la pantalla en vez de adaptarse.
+            Ahora se guardan tras un botón y se despliegan en una hoja inferior a
+            ancho completo, donde cada control tiene sitio de sobra. */}
+        {trailingActions && (esTactil ? (
+          <button type="button" onClick={() => setHojaFiltros(true)}
+            aria-label="Filtros y acciones"
+            className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0
+              transition-colors border ${closeBtnCls} border-transparent`}>
+            <SlidersHorizontal size={18} strokeWidth={2.5} />
+          </button>
+        ) : trailingActions)}
 
         {/* D3.10: el botón de buscar iba con `--shadow-glow-brand` y
             `rounded-btn`. El halo se dibuja igual sobre fondo claro que oscuro
@@ -174,6 +191,35 @@ export default function ViewTabBar({
           </button>
         )}
       </div>
+
+      {/* La hoja va por PORTAL a propósito: la barra tiene `transform-gpu`, y un
+          ancestro transformado crea un bloque contenedor para `position: fixed`.
+          Sin el portal la hoja se anclaba a la barra —medía 108px de ancho en vez
+          de los 390 de la pantalla— y sus controles quedaban fuera. */}
+      {esTactil && hojaFiltros && createPortal(
+        <div className="fixed inset-0 z-confirm flex items-end animate-in fade-in duration-200">
+          <button type="button" aria-label="Cerrar" onClick={() => setHojaFiltros(false)}
+            className="absolute inset-0 bg-scrim backdrop-blur-[2px]" />
+          <div data-surface="dropdown"
+            className="relative w-full rounded-t-modal rounded-b-none px-4 pt-3
+              pb-[max(1rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto
+              animate-in slide-in-from-bottom duration-300">
+            <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-body-sm font-black uppercase tracking-widest text-content-2">Filtros</p>
+              <button type="button" onClick={() => setHojaFiltros(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-content-3 hover:text-content">
+                <X size={16} strokeWidth={2.5} />
+              </button>
+            </div>
+            {/* Los mismos controles, en columna y a ancho completo. */}
+            <div className="flex flex-col gap-3 [&>*]:w-full [&_button]:w-full">
+              {trailingActions}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

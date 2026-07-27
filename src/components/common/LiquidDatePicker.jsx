@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -32,6 +33,7 @@ const LiquidDatePicker = ({
     // nacimiento o de vencimiento no tiene sentido, por eso no es automático.
     shortcuts = null,
 }) => {
+    const esTactil = useCoarsePointer();
     const [isOpen, setIsOpen] = useState(false);
     const [currentMode, setCurrentMode] = useState(mode === 'full' ? 'days' : mode === 'month' ? 'months' : 'years');
     const [viewDate, setViewDate] = useState(new Date()); 
@@ -296,13 +298,38 @@ const LiquidDatePicker = ({
         setIsOpen(false);
     };
 
-    const popoverContent = isOpen && (
+    // ── D3.12 (2026-07-27): variante táctil ───────────────────────────────
+    // En un teléfono un popover anclado no funciona: se sale de la pantalla, los
+    // días quedan de 32px cuando el dedo necesita 44, y con el teclado abierto
+    // no entra. Es el mismo calendario y los mismos tokens —el portal entero se
+    // ve igual, que era la condición— pero presentado como hoja inferior:
+    // ancho completo, arrastre para cerrar, y respeta el área segura del iPhone.
+    const envolver = (contenido) => esTactil ? (
+        <div className="fixed inset-0 z-confirm flex items-end animate-in fade-in duration-200">
+            <button type="button" aria-label="Cerrar" onClick={() => setIsOpen(false)}
+                className="absolute inset-0 bg-scrim backdrop-blur-[2px]" />
+            <div data-surface="dropdown"
+                className="relative w-full rounded-t-modal rounded-b-none px-4 pt-3 font-sans
+                    animate-in slide-in-from-bottom duration-300
+                    pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
+                {contenido}
+            </div>
+        </div>
+    ) : (
         <div
             ref={popoverRef}
             style={{ top: coords.top, left: coords.left, transform: coords.transform }}
             className={`absolute z-confirm animate-in fade-in zoom-in-95 duration-300 ${coords.origin}`}
         >
             <div data-surface="dropdown" className="p-4 md:p-5 w-[280px] font-sans">
+                {contenido}
+            </div>
+        </div>
+    );
+
+    const popoverContent = isOpen && envolver(
+        <>
 
                 {atajos && (
                     <div className="flex flex-wrap gap-1.5 mb-4 pb-4 border-b border-divider">
@@ -390,7 +417,7 @@ const LiquidDatePicker = ({
                                 }
 
                                 // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)
-                                let btnClass = "w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base ";
+                                let btnClass = (esTactil ? "w-11 h-11" : "w-8 h-8") + " mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base ";
                                 if (isSolidDot) {
                                     btnClass += "bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110";
                                 } else if (inBetween) {
@@ -407,7 +434,7 @@ const LiquidDatePicker = ({
                                 return (
                                     <div 
                                         key={day} 
-                                        className="w-full h-9 flex items-center justify-center relative cursor-pointer" 
+                                        className={`w-full ${esTactil ? "h-12" : "h-9"} flex items-center justify-center relative cursor-pointer`}
                                         style={wrapperStyle} 
                                         onMouseEnter={() => setHoverDate(cellDate)}
                                         title={holiday ? holiday.name : undefined} // Tooltip nativo para asuetos
@@ -452,8 +479,7 @@ const LiquidDatePicker = ({
                         })}
                     </div>
                 )}
-            </div>
-        </div>
+        </>
     );
 
     const IconToRender = CustomIcon || CalendarIcon;

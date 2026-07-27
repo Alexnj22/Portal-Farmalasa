@@ -465,6 +465,19 @@ del sistema. Gana en familiaridad y accesibilidad gratis. **Pero para un rango
 se cae**: el sistema no tiene el concepto, serían dos ruedas separadas, sin ver
 los extremos juntos, sin atajos, sin feriados.
 
+## Abiertos sin resolver
+
+- **`MenuSearchModal` no se adapta al tema — siempre claro** (reportado
+  2026-07-27). Lo llamativo es que el código ya parece correcto: usa
+  `data-surface="dropdown"`, tokens de texto en todo, y se portalea a
+  `document.body`, así que hereda el `data-theme` del `<html>`. Y
+  `--surface-dropdown` sí tiene los 4 valores por tema
+  (`rgba(240,248,255,.72)` claro · `rgba(10,15,38,.88)` oscuro · blanco sólido ·
+  `rgba(30,41,59,1)` sólido oscuro). **No alcancé a medirlo en vivo**, así que
+  la causa está sin identificar: hay algo que gana sobre el surface. Primer
+  sospechoso a descartar: `backdrop-filter: var(--backdrop-card)` sobre un fondo
+  translúcido puede estar lavando el color en oscuro.
+
 ## Observaciones sin confirmar (2026-07-27)
 
 No son hallazgos: son cosas que vi una vez y **no pude reproducir**. Se anotan

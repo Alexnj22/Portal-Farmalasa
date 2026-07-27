@@ -24,6 +24,11 @@ const THEME_COLOR_MAP = {
   'solid-dark':'#0f172a',
 };
 
+// OJO (D1.5, 2026-07-26): esta función está ESPEJADA en un script inline de
+// index.html, que estampa data-theme antes del primer pintado para que el
+// preloader pre-React no salga siempre claro. Si cambian el default, las
+// claves de localStorage o la lista de temas, hay que cambiarlo en los dos
+// lados — si divergen se ve un parpadeo al montar React.
 function resolveInitialTheme() {
   try {
     const saved = localStorage.getItem('portal-theme');

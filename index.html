@@ -73,11 +73,50 @@
 
     <title>Portal - FarmaSalud</title>
 
+    <script>
+      // D1.5 (2026-07-26) — BOOTSTRAP DE TEMA, antes del primer pintado.
+      //
+      // El preloader de abajo y el fondo de body/html se pintan ANTES de que
+      // corra React, así que estaban clavados en el lavanda claro: un usuario
+      // en tema oscuro veía un flash claro a pantalla completa en CADA
+      // arranque (S1.5 de AUDITORIA-DISENO-2026-07-26.md). Esto estampa
+      // data-theme en <html> sincrónicamente para que el CSS de abajo pueda
+      // reaccionar desde el primer frame.
+      //
+      // OJO: esta lógica DEBE espejar resolveInitialTheme() de
+      // src/context/ThemeContext.jsx. Si divergen, se ve un parpadeo al
+      // montar React (el provider corrige el atributo). Cualquier cambio en
+      // el default o en las claves va en los dos lados.
+      (function () {
+        var THEMES = ['liquid', 'dark', 'solid', 'solid-dark'];
+        var t;
+        try {
+          var saved = localStorage.getItem('portal-theme');
+          if (saved && THEMES.indexOf(saved) !== -1) t = saved;
+        } catch (e) { /* localStorage no disponible (privado/cuota) */ }
+        if (!t) {
+          try {
+            t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+              ? 'solid-dark' : 'solid';
+          } catch (e) { t = 'solid'; }
+        }
+        // liquid es el tema sin atributo, igual que en ThemeContext
+        if (t !== 'liquid') document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
+
     <style>
       /* body/html: persisten tras montar React. El color DEBE coincidir con el
-         bg del shell autenticado (#E6F0FF, App.jsx): es lo que Safari iOS deja
-         traslucir detrás de su barra inferior y lo que asoma en overscroll. */
-      body, html { background-color: #E6F0FF; margin: 0; padding: 0; }
+         --bg-page del tema activo — es lo que Safari iOS deja traslucir detrás
+         de su barra inferior y lo que asoma en overscroll. Los cuatro valores
+         están duplicados a mano acá a propósito: este CSS se evalúa antes de
+         que exista index.css, así que var(--bg-page) todavía no resuelve.
+         Si cambian allá, cambian acá (mismo trato que THEME_COLOR_MAP). */
+      html, body { margin: 0; padding: 0; }
+      html, body                       { background-color: #e4e0ff; }
+      html[data-theme="dark"], html[data-theme="dark"] body             { background-color: #0b1330; }
+      html[data-theme="solid"], html[data-theme="solid"] body           { background-color: #f4f6fb; }
+      html[data-theme="solid-dark"], html[data-theme="solid-dark"] body { background-color: #0f172a; }
 
       /* ─── Everything below is scoped to #app-loader which React removes on mount ─── */
 
@@ -86,9 +125,27 @@
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
         overflow: hidden;
-        background: radial-gradient(ellipse at 38% 28%, #e2daff 0%, #eae8ff 22%, #eef2ff 50%, #f3f4fb 100%);
+        background: radial-gradient(ellipse at 38% 28%, #ddd8ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%);
         font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
       }
+      html[data-theme="dark"] #app-loader {
+        background: radial-gradient(ellipse at 38% 28%, #10193b 0%, #0b1330 22%, #060b18 50%, #0a0f28 100%);
+      }
+      html[data-theme="solid"] #app-loader { background: #f4f6fb; }
+      html[data-theme="solid-dark"] #app-loader { background: #0f172a; }
+
+      /* El texto del preloader también estaba clavado en tonos oscuros
+         (.brand-name #1e293b, .status #94a3b8): sobre el fondo oscuro
+         quedaba invisible. Valores espejo de --text-primary/--text-tertiary
+         del tema dark. */
+      html[data-theme="dark"] #app-loader .brand-name,
+      html[data-theme="solid-dark"] #app-loader .brand-name { color: rgba(255,255,255,0.92); }
+      html[data-theme="dark"] #app-loader .brand-sub,
+      html[data-theme="solid-dark"] #app-loader .brand-sub { color: rgba(190,165,255,0.72); }
+      html[data-theme="dark"] #app-loader .status,
+      html[data-theme="solid-dark"] #app-loader .status { color: rgba(255,255,255,0.50); }
+      html[data-theme="dark"] #app-loader .logo-placeholder,
+      html[data-theme="solid-dark"] #app-loader .logo-placeholder { color: rgba(190,165,255,0.65); }
 
       /* ── Ambient orbs ── */
       #app-loader .orb { position: absolute; border-radius: 50%; pointer-events: none; }

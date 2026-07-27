@@ -156,7 +156,11 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // ============================================================================
 const RouteLoadingFallback = () => (
     <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-40">
-        <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2rem] px-10 py-8 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-3">
+        {/* D1.4 — seguía hardcodeado en claro (bg-white/35 border-white/70 +
+            sombra literal) y se ve en CADA cambio de ruta. Se escapó del
+            barrido de v2.62.4 porque aquel buscaba stops de gradiente, no
+            `bg-white/NN` a secas — el mismo punto ciego del gate que cerró D0. */}
+        <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-[2rem] px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
             <Loader2 className="text-brand-text animate-spin" size={28} strokeWidth={2.5} />
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-3">Cargando…</span>
         </div>

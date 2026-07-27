@@ -15,6 +15,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { smartFilter } from '../utils/searchUtils';
 import { useSearchToggle } from '../hooks/useSearchToggle';
+import Switch from '../components/common/Switch';
 import {
     fetchRolesForPermissions, fetchRolePermissions, upsertRolePermission, upsertRolePermissionsBulk,
     updateRoleMaxPriceLevel, updateRoleIsSU,
@@ -264,24 +265,14 @@ const PERM_DESC = {
     can_approve: 'Puede aprobar o rechazar solicitudes',
 };
 
-// ─── Toggle component ───────────────────────────────────────────────────────
-const Toggle = ({ value, onChange, color = 'bg-chart-1', disabled = false, size = 'md' }) => {
-    const w = size === 'lg' ? 'w-12 h-6' : 'w-9 h-5';
-    const knob = size === 'lg' ? 'w-4 h-4 top-1' : 'w-3.5 h-3.5 top-[3px]';
-    const on = size === 'lg' ? 'left-[28px]' : 'left-[18px]';
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={() => !disabled && onChange(!value)}
-            className={`relative ${w} rounded-full transition-all duration-300 flex-shrink-0 ${
-                disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-[0.97]'
-            } ${value ? color : 'bg-surface-card-hover/80'}`}
-        >
-            <span className={`absolute ${knob} rounded-full bg-white shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ${value ? on : 'left-[3px]'}`} />
-        </button>
-    );
-};
+// ─── Toggle — alias del canónico (A14, 2026-07-27) ─────────────────────────
+// Era el tercero de los tres switches locales que competían en el proyecto.
+// Se conserva el nombre y la firma (`value`/`color`) por los 3 call sites de
+// este archivo, que traen el color desde el config de PERM_TYPES.
+const Toggle = ({ value, onChange, color = 'chart-1', disabled = false, size = 'md' }) => (
+    <Switch checked={!!value} onChange={onChange} variant={color}
+        disabled={disabled} size={size === 'lg' ? 'md' : 'sm'} />
+);
 
 // ─── Módulo card ────────────────────────────────────────────────────────────
 const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabPerms, tabSaving, onTabChange }) => {
@@ -1022,18 +1013,21 @@ const PermissionsView = () => {
                                             {groupPartial && !groupActive && <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50 flex-shrink-0" />}
                                             {groupActive && <Check size={9} strokeWidth={3} className="flex-shrink-0" />}
                                         </div>
-                                        {/* Toggle de sección */}
-                                        <button
-                                            type="button"
+                                        {/* Toggle de sección. `groupPartial` (algunos módulos
+                                            de la sección activos, no todos) no es un estado que
+                                            el switch tenga: se muestra apagado y a media opacidad,
+                                            igual que antes, y el punto del chip de arriba es quien
+                                            comunica el "a medias". */}
+                                        <Switch
+                                            checked={groupActive}
+                                            onChange={() => canEdit && handleGroupToggle(allGroupModules, !groupActive)}
                                             disabled={!canEdit}
-                                            onClick={() => canEdit && handleGroupToggle(allGroupModules, !groupActive)}
+                                            size="sm"
+                                            variant={(g.color || '').replace('text-', '') || 'brand'}
+                                            label={groupActive ? 'Desactivar sección' : 'Activar sección'}
                                             title={groupActive ? 'Desactivar sección' : 'Activar sección'}
-                                            className={`relative w-8 h-4 rounded-full transition-all duration-300 flex-shrink-0 ${
-                                                !canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                                            } ${groupActive ? 'bg-current ' + g.color : groupPartial ? 'bg-current ' + g.color + ' opacity-40' : 'bg-surface-card-hover'}`}
-                                        >
-                                            <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300 ${groupActive ? 'left-[18px]' : 'left-0.5'}`} />
-                                        </button>
+                                            className={!groupActive && groupPartial ? 'opacity-40' : ''}
+                                        />
                                         <span className={`flex-1 border-t border-current opacity-[0.15] ${g.color}`} />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

@@ -1107,7 +1107,7 @@ export default function CotizacionesView() {
                                 <span className={`text-body font-black ${isAnulada ? 'line-through text-content-3' : 'text-content'}`}>{fmt(cot.total)}</span>
                             </DataCell>
                             <DataCell onClick={e => e.stopPropagation()}>
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
                                     {!isAnulada && canEdit && (
                                         <>
                                             <button title="Editar" onClick={() => startEdit(cot)}

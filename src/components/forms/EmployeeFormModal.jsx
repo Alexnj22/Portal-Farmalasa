@@ -1090,7 +1090,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <User size={36} className="text-content-3" strokeWidth={2} />
                                         )}
                                     </div>
-                                    <div className="absolute inset-0 bg-scrim backdrop-blur-sm rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div className="absolute inset-0 bg-scrim backdrop-blur-sm rounded-3xl flex items-center justify-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300">
                                         <Camera size={24} className="text-white" />
                                     </div>
                                     <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} id="photo-upload" />

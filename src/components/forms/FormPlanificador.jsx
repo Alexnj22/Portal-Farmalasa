@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, memo } from 'react';
+import CanonSwitch from '../common/Switch';
 import Badge from '../common/Badge';
 import { Clock, Palmtree, Utensils, Baby, HeartPulse, FileText, Building2, AlertTriangle, CheckCircle2, CalendarOff, ArrowRight, Check } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12'; 
@@ -39,18 +40,10 @@ const minsToTime = (mins) => {
 // --------------------------------------------------------
 // 🎨 COMPONENTES DE UI PERSONALIZADOS
 // --------------------------------------------------------
+// Alias del canónico (A14, 2026-07-27): era el tercero de los tres switches
+// locales que competían. Se conserva la firma `on`/`onToggle` del call site.
 const Switch = memo(({ on, onToggle, disabled }) => (
-    <button
-        type="button"
-        disabled={disabled}
-        onClick={onToggle}
-        className={`relative inline-flex items-center flex-shrink-0 w-10 h-5 md:w-11 md:h-6 rounded-btn border-2 transition-all duration-300 ease-in-out cursor-pointer ${
-            disabled ? "opacity-50 cursor-not-allowed bg-surface-card border-border-card" 
-            : on ? "bg-brand border-brand shadow-[var(--shadow-glow-brand)]" : "bg-surface-card-hover border-divider hover:bg-content-3 hover:border-divider"
-        }`}
-    >
-        <span className={`absolute top-[1px] left-[1px] w-3 h-3 md:w-4 md:h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${on ? "translate-x-5 md:translate-x-6" : "translate-x-0"}`} />
-    </button>
+    <CanonSwitch checked={!!on} onChange={onToggle} disabled={disabled} size="md" />
 ));
 
 const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {

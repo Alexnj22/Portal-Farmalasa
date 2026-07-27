@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef, memo } from 'react';
+import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import {
   Megaphone, Send, Trash2, Globe, Building2,
@@ -48,7 +49,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
                 : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
         }`}
     >
-      <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+      <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
         {canEdit && !ann.isCompleted && (
           <>
             {ann.readIds.length === 0 && (
@@ -560,14 +561,14 @@ const AnnouncementsView = ({ openModal }) => {
 
   const renderFiltersContent = () => (
     <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
-      <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
+      <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
  <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
         {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-content-3 hover:text-danger transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
         <button onClick={() => { setIsSearchMode(false); setAnnouncementSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
-      <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>
+      <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>
         <div className="flex items-center min-w-0 gap-1 md:gap-2">
           
           <button onClick={() => setListTab('ACTIVE')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ACTIVE' ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
@@ -710,16 +711,16 @@ const AnnouncementsView = ({ openModal }) => {
                       <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] flex items-center gap-1.5">
                         <CalendarClock size={14} /> ¿Cuándo se publica?
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => setPublishImmediately(!publishImmediately)}
-                        className={`relative w-10 h-5 rounded-full transition-colors duration-300 ease-in-out ${publishImmediately ? 'bg-success' : 'bg-content-3'}`}
-                      >
-                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-300 ease-in-out shadow-sm ${publishImmediately ? 'translate-x-5' : 'translate-x-0'}`}></span>
-                      </button>
+                      <Switch
+                        checked={publishImmediately}
+                        onChange={setPublishImmediately}
+                        variant="success"
+                        size="sm"
+                        label="Publicar de inmediato"
+                      />
                    </div>
                    
-                   <div className={`transition-all duration-300 overflow-hidden ${publishImmediately ? 'h-0 opacity-0' : 'h-[60px] opacity-100 mt-2'}`}>
+                   <div inert={publishImmediately ? true : undefined} className={`transition-all duration-300 overflow-hidden ${publishImmediately ? 'h-0 opacity-0' : 'h-[60px] opacity-100 mt-2'}`}>
                        <div className="bg-surface-card rounded-xl px-3 py-2 border border-border-card shadow-sm flex items-center">
                           <LiquidDatePicker 
                             value={scheduledDate} 

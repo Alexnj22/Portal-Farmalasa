@@ -288,7 +288,7 @@ const filtersContent = (
             {/* =========================================================
                 ESTADO 1: MODO BÚSQUEDA (Animación Reparada)
                 ========================================================= */}
-            <div
+            <div inert={!(isSearchMode) ? true : undefined}
                 className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
                 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
                 ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"
@@ -323,7 +323,7 @@ const filtersContent = (
             {/* =========================================================
                 ESTADO 2: MODO NORMAL (Píldoras y Fechas)
                 ========================================================= */}
-            <div
+            <div inert={isSearchMode ? true : undefined}
                 className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
                 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right
                 ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-3"
@@ -331,7 +331,7 @@ const filtersContent = (
             >
                 <div className="flex items-center min-w-0 flex-1">
                     {/* ESTADO COLAPSADO DE ACCIONES */}
-                    <div className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActionPickerOpen ? "max-w-0 opacity-0 pointer-events-none gap-0 pr-0" : "max-w-[400px] opacity-100 gap-2 md:gap-3 pr-2 md:pr-3"}`}>
+                    <div inert={isActionPickerOpen ? true : undefined} className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActionPickerOpen ? "max-w-0 opacity-0 pointer-events-none gap-0 pr-0" : "max-w-[400px] opacity-100 gap-2 md:gap-3 pr-2 md:pr-3"}`}>
                         <button
                             type="button"
                             onClick={() => setIsActionPickerOpen(true)}
@@ -352,7 +352,7 @@ const filtersContent = (
                     </div>
 
                     {/* ESTADO EXPANDIDO DE ACCIONES */}
-                    <div className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActionPickerOpen ? "max-w-[800px] opacity-100 ml-1 pr-1 gap-2" : "max-w-0 opacity-0 pointer-events-none m-0 p-0 gap-0"}`}>
+                    <div inert={!(isActionPickerOpen) ? true : undefined} className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isActionPickerOpen ? "max-w-[800px] opacity-100 ml-1 pr-1 gap-2" : "max-w-0 opacity-0 pointer-events-none m-0 p-0 gap-0"}`}>
                         {ACTION_OPTIONS.map((opt) => {
                             const isActive = actionFilter === opt.value;
                             return (
@@ -385,7 +385,7 @@ const filtersContent = (
                 </div>
 
                 {/* FILTROS DERECHA (Fechas, Basurero Global y Botón de Búsqueda) */}
-                <div
+                <div inert={isActionPickerOpen ? true : undefined}
                     className={`flex items-center shrink-0 border-l transform-gpu overflow-visible
                     transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-divider
                     ${isActionPickerOpen

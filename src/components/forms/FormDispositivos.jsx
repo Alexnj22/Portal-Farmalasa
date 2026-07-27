@@ -58,7 +58,7 @@ const FormDispositivos = ({ formData }) => {
         <div className="w-full flex flex-col space-y-5 animate-in fade-in duration-300">
 
             {/* BANNER DE ERROR DINÁMICO */}
-            <div className={`transition-all duration-300 overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div inert={!(errorMsg) ? true : undefined} className={`transition-all duration-300 overflow-hidden ${errorMsg ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="bg-danger/10 border border-danger/30 px-4 py-3 rounded-2xl text-label font-bold flex items-center gap-2 shadow-sm text-danger">
                     <AlertCircle size={16} strokeWidth={2.5} />
                     <span>{errorMsg}</span>

@@ -1000,7 +1000,7 @@ export default function EncuestaAdminView() {
                                         onClick={() => { if (!isExpanded) toggleExpand(s); }}>
 
                                         {/* Action buttons */}
-                                        <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                        <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-300 ${isEditing || isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
                                             {isExpanded && (
                                                 <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
                                                     className="flex items-center gap-1.5 px-3 h-8 rounded-full text-micro font-black uppercase tracking-widest bg-surface-card border border-border-card text-content-3 hover:bg-surface-card-hover hover:text-content-2 shadow-sm transition-all active:scale-[0.97]">

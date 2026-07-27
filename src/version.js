@@ -5,7 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.67.1';
+export const APP_VERSION = '2.67.2';
+
+// v2.67.2 — feat(design): Switch canonico adoptado + A17 ampliado + A18 nuevo.
+//
+// SWITCH (A14). Correccion de un conteo propio: de los "18 switches a mano" solo 9 son
+// switches. Los otros 10 eran badges de esquina, puntos de linea de tiempo y pildoras
+// deslizantes de pestana — comparten el bg-white redondo pero no son el mismo control.
+// Y el hallazgo real era otro: no habia 9 copias sueltas sino TRES componentes Switch
+// locales compitiendo (BranchHelpers.Switch con 5 usos en 3 archivos,
+// PermissionsView.Toggle con 3, FormPlanificador.Switch con 1), ninguno importable
+// desde afuera de su archivo, mas 5 copias inline. Tres canonicos parciales es peor que
+// ninguno: cada uno parecia "el estandar" dentro de su carpeta.
+// El canonico agrega la regla que faltaba: SIN onChange renderiza un <span>, no un
+// <button> — tres de los nueve viven dentro de una fila que ya es clickeable, donde un
+// <button> anidado es HTML invalido y una segunda parada de tabulacion para la misma
+// accion. Pendiente: los 3 toggles de PermissionsView no se pudieron ver en vivo, la
+// cuenta de QA no tiene acceso a /permissions.
+//
+// A17 AMPLIADO. No eran 26 regiones sino 49. El conteo crecio en dos tandas porque la
+// primera pasada solo miraba una forma del patron: se le escapaban las ramas de
+// ternario con COMILLAS DOBLES (+20) y los colapsos con h-0/w-0/max-*-0/scale-0 en vez
+// de pointer-events-none (+4). Las tres formas apararecieron una tras otra al verificar
+// en el navegador, no al leer el codigo. El gate ahora cubre las tres.
+//
+// A18 NUEVO — el reverso exacto de A17. 16 bloques en 12 archivos se revelan con
+// opacity-0 + group-hover:opacity-100 y contienen acciones REALES: llamar, WhatsApp,
+// editar, eliminar. Con teclado se llega pero no se ven (WCAG 2.4.7, y 2.1.1 en la
+// practica porque nadie activa lo que no ve). Aca inert seria el error opuesto —
+// quitaria un acceso legitimo. La correccion es focus-within:opacity-100.
+//
+// TRAMPA DE VERIFICACION, dos veces en la misma sesion: leer getComputedStyle justo
+// despues de mover el foco devuelve el valor A MEDIO TRANSICIONAR. Paso con el outline
+// (3px blanco en vez de 2px azul) y con estas opacidades (0 en vez de 1), y las dos
+// veces parecio un bug del fix. Toda sonda sobre algo con transition necesita esperar
+// mas que su duration antes de medir.
 
 // v2.67.1 — fix(a11y): se tabulaba dentro de lo invisible (A17). Salió de verificar
 // v2.67.0: la sonda del aro de foco aterrizaba una y otra vez en un input que no podía

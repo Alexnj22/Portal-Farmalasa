@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Switch from '../common/Switch';
 import { FilePlus, Tag, UploadCloud, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -168,9 +169,8 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <p className="text-body font-black text-content-2 group-hover:text-brand-text transition-colors">¿Tiene fecha de expedición?</p>
                             <p className="text-caption font-bold text-content-3 mt-0.5">Útil para documentos de renovación periódica.</p>
                         </div>
-                        <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-success' : 'bg-surface-card-hover'}`}>
-                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasIssueDate ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                        </div>
+                        {/* Indicador: la fila entera ya es clickeable. */}
+                        <Switch checked={data.hasIssueDate} size="md" variant="success" />
                     </div>
                     {data.hasIssueDate && (
                         <div className="animate-in slide-in-from-top-2 fade-in duration-300 mt-1">
@@ -193,9 +193,8 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <p className="text-body font-black text-content-2 group-hover:text-warning transition-colors">¿Tiene fecha de vencimiento?</p>
                             <p className="text-caption font-bold text-content-3 mt-0.5">El sistema te alertará antes de que caduque.</p>
                         </div>
-                        <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasExpiration ? 'bg-warning' : 'bg-surface-card-hover'}`}>
-                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasExpiration ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                        </div>
+                        {/* Indicador: la fila entera ya es clickeable. */}
+                        <Switch checked={data.hasExpiration} size="md" variant="warning" />
                     </div>
                     {data.hasExpiration && (
                         <div className="animate-in slide-in-from-top-2 fade-in duration-300 mt-1">

@@ -91,7 +91,7 @@ const SearchInput = forwardRef(function SearchInput({
                         ? <Loader2 size={14} className={`animate-spin ${accentColor ? '' : 'text-content-3'}`} />
                         : <Search size={14} strokeWidth={2.5} className={accentColor ? '' : 'text-content-3'} />}
                 </div>
-                <input
+                <input inert={!(open) ? true : undefined}
                     ref={inputRef}
                     type="text"
                     value={value}

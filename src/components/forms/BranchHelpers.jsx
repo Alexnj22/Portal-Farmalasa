@@ -1,3 +1,4 @@
+import CanonSwitch from '../common/Switch';
 import React, { useRef, useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, Eye, X } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
@@ -47,23 +48,14 @@ export const safeParse = (obj) => {
 };
 
 // ============================================================================
-// 🔘 SWITCH LIQUIDGLASS (Más "Apple-like")
+// 🔘 SWITCH — alias del canónico (A14, 2026-07-27)
 // ============================================================================
-export const Switch = ({ on, onToggle }) => (
-    <button
-        type="button"
-        onClick={onToggle}
- className={`relative inline-flex items-center flex-shrink-0 w-12 h-7 rounded-btn transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] shadow-[var(--shadow-shine)] active:scale-[0.97] transform-gpu ${
-            on ? "bg-brand border border-brand-hover" : "bg-surface-card-hover/80 border border-divider"
-        }`}
-        aria-pressed={on}
-    >
-        <span
-            className={`absolute top-[2px] left-[2px] w-[22px] h-[22px] rounded-full bg-white shadow-[var(--shadow-glass-1)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform-gpu ${
-                on ? "translate-x-5" : "translate-x-0"
-            }`}
-        />
-    </button>
+// Esto ERA un switch propio, y era uno de los tres que competían en el
+// proyecto (los otros: PermissionsView.Toggle y FormPlanificador.Switch).
+// Se conserva el nombre y la firma `on`/`onToggle` porque lo importan 5 call
+// sites en 3 archivos; el cuerpo ahora es el canónico.
+export const Switch = ({ on, onToggle, disabled, label }) => (
+    <CanonSwitch checked={!!on} onChange={onToggle} disabled={disabled} label={label} size="lg" />
 );
 
 // ============================================================================

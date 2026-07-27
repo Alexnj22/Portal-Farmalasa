@@ -363,8 +363,10 @@ const RING_ALPHA_RE = /(?<![:\w-])ring-1\s+ring-(?:brand|success|warning|danger|
 // (WCAG 2.4.3 y 2.4.7). Eran 26 regiones en 14 archivos —el "modo búsqueda"
 // copiado vista por vista, los paneles de IA, el modo edición de sucursal—.
 // Se excluyen los reveals de hover, que son decorativos y no contienen foco.
-const INERT_RE = /\$\{\s*[^?{}]+?\s*\?\s*'[^']*'\s*:\s*'[^']*'\s*\}/g;
-const HIDDEN_BRANCH = /'([^']*)'/g;
+// Acepta comillas simples Y dobles: la primera versión solo miraba simples y
+// se le escaparon 13 regiones (las barras de búsqueda copiadas usan dobles).
+const INERT_RE = /\$\{\s*[^?{}]+?\s*\?\s*(['"])[^'"]*\1\s*:\s*(['"])[^'"]*\2\s*\}/g;
+const HIDDEN_BRANCH = /(['"])([^'"]*)\1/g;
 
 const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
 
@@ -577,7 +579,11 @@ function scanFile(path) {
         // ya se reportará en su propia pasada (si no, salía duplicado)
         if (m.index >= line.length) continue;
         const branches = m[0].match(HIDDEN_BRANCH) || [];
-        const oculta = branches.filter(b => b.includes('opacity-0') && b.includes('pointer-events-none'));
+        // el colapso no siempre usa pointer-events-none: también h-0, w-0,
+        // max-w-0, max-h-0 y scale-0. Los tres idiomas aparecieron uno tras
+        // otro al verificar; el gate cubre los cinco.
+        const oculta = branches.filter(b => b.includes('opacity-0')
+          && /\b(pointer-events-none|h-0|w-0|max-w-0|max-h-0|scale-0)\b/.test(b));
         if (oculta.length !== 1) continue;
         // ¿la etiqueta que lo contiene ya declara inert?
         const back = lines.slice(Math.max(0, i - 4), i + 2).join('\n');

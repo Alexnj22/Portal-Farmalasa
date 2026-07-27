@@ -47,7 +47,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             }`}>
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}

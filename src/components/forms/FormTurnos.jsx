@@ -196,7 +196,7 @@ const FormTurnos = ({ branches }) => {
                         </div>
                         
                         {/* CONTROLES DE ACCIÓN (Glassmorphic) */}
-                        <div className={`flex items-center gap-1.5 shrink-0 bg-surface-card backdrop-blur-md border border-border-card p-1.5 rounded-full shadow-inner ${isArchived || isBeingDeleted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                        <div className={`flex items-center gap-1.5 shrink-0 bg-surface-card backdrop-blur-md border border-border-card p-1.5 rounded-full shadow-inner ${isArchived || isBeingDeleted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'} transition-opacity`}>
                             {isBusy ? (
                                 <Loader2 size={16} className="animate-spin text-content-3" />
                             ) : isBeingDeleted ? (

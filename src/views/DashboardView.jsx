@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
@@ -2052,9 +2053,11 @@ const DashboardView = ({ openModal }) => {
                       className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                       <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
-                      <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-brand' : 'bg-surface-card-hover'}`}>
-                        <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled && hasAccess ? 'translate-x-4' : 'translate-x-0.5'}`}/>
-                      </div>
+                      {/* Indicador, no control: la fila entera ya es el botón.
+                          Sin onChange el canónico renderiza un <span> — un
+                          <button> anidado sería HTML inválido y una segunda
+                          parada de tabulación para la misma acción. */}
+                      <Switch checked={enabled && hasAccess} size="sm" />
                     </button>
                   );
                 })}

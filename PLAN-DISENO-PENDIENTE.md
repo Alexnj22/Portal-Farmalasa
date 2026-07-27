@@ -259,11 +259,53 @@ una regla que ya existía — así que lo correcto no era agregar un canónico s
 **borrar los 171 que lo tapaban**. Verificar en el navegador no confirmó el
 trabajo: lo cambió.
 
-### A17 · Se tabula dentro de lo invisible (RESUELTO v2.67.1)
+### A18 · Acciones que solo existen en hover (RESUELTO v2.67.2)
+
+El reverso exacto de A17, encontrado al verificarlo. **16 bloques en 12
+archivos** se revelan con `opacity-0 group-hover:opacity-100` y contienen
+acciones reales — llamar por teléfono, abrir WhatsApp, editar, eliminar. Con
+teclado se llega a ellas pero **no se ven**: el foco entra en un elemento
+transparente (WCAG 2.4.7, y 2.1.1 en la práctica porque nadie activa lo que no
+ve). Acá `inert` sería el error opuesto: quitaría un acceso legítimo. La
+corrección es `focus-within:opacity-100` — si el teclado llega, se muestra.
+
+### A14 · Switches — no eran 18, eran 9 (RESUELTO v2.67.2)
+
+Corrección de un conteo mío. Al revisarlos uno por uno, de los "18" solo
+**9 son switches**; los otros 10 eran badges de esquina, puntos de línea de
+tiempo y píldoras deslizantes de pestaña — comparten el `bg-white` redondo pero
+no son el mismo control.
+
+Y el hallazgo real era otro: no había 9 copias sueltas sino **tres componentes
+Switch locales compitiendo** —`BranchHelpers.Switch` (5 usos en 3 archivos),
+`PermissionsView.Toggle` (3 usos) y `FormPlanificador.Switch`— ninguno
+importable desde afuera de su archivo, más 5 copias inline. Tres canónicos
+parciales es peor que ninguno: cada uno parecía "el estándar" dentro de su
+carpeta.
+
+El canónico agrega una regla que faltaba: **sin `onChange` renderiza un
+`<span>`, no un `<button>`**. Tres de los nueve viven dentro de una fila que ya
+es clickeable, donde un `<button>` anidado es HTML inválido y una segunda
+parada de tabulación para la misma acción.
+
+**Pendiente de verificación visual**: los 3 toggles de `PermissionsView` no se
+pudieron ver en vivo — la cuenta de QA no tiene acceso a `/permissions`.
+
+### A17 · Se tabula dentro de lo invisible (RESUELTO v2.67.1, ampliado v2.67.2)
 
 Encontrado mientras se verificaba A16: la sonda aterrizaba una y otra vez en un
 input que no podía mostrar. Era el buscador colapsado del header — y al medirlo
-no eran dos sitios sino **26 regiones en 14 archivos**.
+no eran dos sitios sino **49 regiones**. El conteo creció en dos tandas porque
+la primera pasada solo miraba una forma del patrón:
+
+| pasada | qué se le escapaba | encontradas |
+|---|---|---|
+| 1ª | — | 26 |
+| 2ª | ramas de ternario con **comillas dobles** | +20 |
+| 3ª | colapso con `h-0` / `w-0` / `max-*-0` / `scale-0` en vez de `pointer-events-none` | +4 |
+
+Las tres formas aparecieron una tras otra al verificar en el navegador, no al
+leer el código. El gate cubre las tres.
 
 `opacity-0 pointer-events-none` esconde del ojo y del mouse, pero **no del
 teclado**. Quien navega tabulando entraba en menús cerrados, buscadores

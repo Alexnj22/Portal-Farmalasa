@@ -1,5 +1,6 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState, useEffect, useRef } from 'react';
+import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { motion } from 'framer-motion';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
@@ -171,10 +172,9 @@ export default function LabsPanel({ onClose, onChanged }) {
                                     {saving === lab.id ? (
                                         <Loader2 size={12} className="animate-spin text-content-3" />
                                     ) : (
-                                        <div className={`w-8 h-4 rounded-full transition-all duration-300 relative ${hidden ? 'bg-danger' : 'bg-surface-card-hover'}`}
-                                            style={hidden ? { boxShadow: '0 0 8px rgba(248,113,113,0.35)' } : {}}>
-                                            <div className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-all duration-300 ${hidden ? 'left-[18px]' : 'left-0.5'}`} />
-                                        </div>
+                                        /* Indicador, no control: la fila ya es el botón (ver DashboardView). */
+                                        <Switch checked={!hidden} size="sm"
+                                            variant={hidden ? 'danger' : 'success'} />
                                     )}
                                 </div>
                             </button>

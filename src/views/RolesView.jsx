@@ -772,7 +772,7 @@ const RolesView = ({ openModal }) => {
                                                     </div>
                                                 </div>
 
-                                                <div className={`flex items-center gap-1 transition-opacity ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                                <div className={`flex items-center gap-1 transition-opacity ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();

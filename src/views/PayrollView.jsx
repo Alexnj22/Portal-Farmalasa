@@ -346,7 +346,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                         <DataCell align="right" className="font-bold text-danger">{fmt(e.total_deductions)}</DataCell>
                                         <DataCell align="right" className="font-black text-success-text whitespace-nowrap">{fmt(e.net_pay)}</DataCell>
                                         <DataCell>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                                                 <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
                                                     className="p-1.5 rounded-lg hover:bg-surface-card text-content-3 hover:text-content-2 transition-colors">
                                                     <Printer size={12} strokeWidth={2.5} />

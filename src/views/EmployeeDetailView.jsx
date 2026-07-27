@@ -478,7 +478,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                         </div>
                                         {canEdit && (
-                                            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                                            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
                                                 onClick={handleEditProfile}>
                                                 <Camera size={24} className="text-white"/>
                                             </div>
@@ -528,7 +528,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <p className="text-body-sm font-bold text-content-2">{emp.phone || 'No registrado'}</p>
                                             </div>
                                             {emp.phone && (
-                                                <a href={formatWhatsAppLink(emp.phone)} target="_blank" rel="noreferrer" className="absolute right-3 p-2 bg-success/10 text-success rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <a href={formatWhatsAppLink(emp.phone)} target="_blank" rel="noreferrer" className="absolute right-3 p-2 bg-success/10 text-success rounded-full opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                                                     <Phone size={14} strokeWidth={3}/>
                                                 </a>
                                             )}

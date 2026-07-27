@@ -351,7 +351,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 {emp.code || 'Sin código'}
               </p>
               {phoneDigits.length >= 8 && (
-                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-[-10px] group-hover:translate-x-0">
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300 translate-x-[-10px] group-hover:translate-x-0">
                   <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-success hover:text-success hover:scale-110 hover:-translate-y-0.5 transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
@@ -397,7 +397,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
             <button
               onClick={() => onRehireEmployee(emp)}
-              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-success/10 text-content-3 hover:text-success border border-border-card hover:border-success/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-success/10 text-content-3 hover:text-success border border-border-card hover:border-success/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
               title="Recontratar"
             >
               <RefreshCw size={14} strokeWidth={2.5} />
@@ -406,7 +406,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           <button
             onClick={() => onEditEmployee(emp)}
             disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Edición rápida"
           >
             <Edit3 size={14} strokeWidth={2.5} />
@@ -490,7 +490,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <button
             onClick={() => onEdit(p)}
             disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-warning/10 text-content-3 hover:text-warning border border-border-card hover:border-warning/30 shadow-sm opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Editar practicante"
           >
             <Edit3 size={14} strokeWidth={2.5} />
@@ -872,7 +872,7 @@ const StaffManagementView = ({
   const filtersContent = (
     <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
-      <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
+      <div inert={!(isSearchActive) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
         <input
           ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
@@ -886,7 +886,7 @@ const StaffManagementView = ({
         <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-surface-card-hover text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
-      <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
+      <div inert={isSearchActive ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
 
         <div className="flex items-center gap-2 md:gap-3 shrink-0 overflow-visible">
           <button

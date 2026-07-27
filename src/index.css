@@ -1402,6 +1402,16 @@ a:focus-visible,
     animation: rm-fade-in 120ms ease both !important;
   }
 
+  /* A9 (2026-07-26) — `animate-pulse` no estaba cubierto: 88 latidos de
+     énfasis (overlays de alerta, íconos de estado, textos que respiran)
+     seguían animando aunque el usuario pidiera menos movimiento. `.skeleton`
+     sí estaba desde antes. La información que transmiten no depende del
+     movimiento —color, ícono y texto siguen ahí—, así que detenerlos no
+     quita significado. */
+  .animate-pulse {
+    animation: none !important;
+  }
+
   /* — Detener el skeleton sweep (dejar color sólido) ————————— */
   .skeleton {
     animation: none !important;

@@ -84,9 +84,9 @@ export default function SyncHealthBanner() {
         {branches.length === 0
           ? [1,2,3,4,5,6,7].map(i => (
               <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl">
-                <div className="w-2 h-2 rounded-full bg-brand/[0.07] animate-pulse shrink-0" />
-                <div className="flex-1 h-2 bg-brand/[0.07] rounded animate-pulse" />
-                <div className="w-10 h-2 bg-brand/[0.07] rounded animate-pulse" />
+                <div className="w-2 h-2 rounded-full skeleton shrink-0" />
+                <div className="flex-1 h-2 rounded skeleton" />
+                <div className="w-10 h-2 rounded skeleton" />
               </div>
             ))
           : branches.map(b => {

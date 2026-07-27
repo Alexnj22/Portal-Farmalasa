@@ -804,10 +804,16 @@ principal · `lg` hero/full-width), todos derivados de `--control-h` con
 `max()` contra su propio piso táctil.
 
 **Estados (skeleton · vacío · carga)** — la familia sin ningún canónico.
-Convivían **dos idiomas de skeleton** sin criterio: la clase CSS `.skeleton`
-(129 usos, con shimmer real) y `animate-pulse` a mano (99 usos en 53 archivos,
-que solo parpadea opacidad); los 4 componentes skeleton existentes eran
-locales a su archivo. El `EmptyState` que `DESIGN.md` §18 declara **obligatorio
+**Corrección a la propia auditoría (2026-07-27).** La sección S2.4 decía "dos
+idiomas compitiendo: `.skeleton` 129 vs `animate-pulse` 99". **La cifra estaba
+inflada**: al clasificar los 99 uno por uno, **88 no son skeletons** sino
+animaciones de énfasis (un overlay de alerta que late, un ícono de reloj en
+rojo, texto que respira). Solo ~11 eran placeholders de carga usando el
+mecanismo equivocado. `.skeleton` era ya el idioma establecido y correcto, no
+un empate entre dos.
+
+Lo que sí quedaba: 4 componentes skeleton locales a su archivo y ningún
+canónico compartido. El `EmptyState` que `DESIGN.md` §18 declara **obligatorio
 en toda vista sin datos** era una función **local dentro de
 `FacturacionView.jsx`**, con 32 archivos copiando el patrón a mano. Y había
 **tres pantallas de carga con tres spinners distintos**.
@@ -856,6 +862,8 @@ cambia nada (`--btn-radius` sigue siendo `9999px`).
 | ~~**A5**~~ | ~~Rampa ABC/XYZ sin token~~ — **RESUELTO** con `--chart-8-muted`. Es la única rampa ORDINAL del sistema (A/X importante → B/Y intermedio → C/Z problema); los extremos ya tenían token y faltaba el medio. Se nombra el que falta en vez de colapsar B/Y sobre `--chart-8`, que fundiría dos categorías en un color. | `index.css`, `constants.js` | ✓ |
 | ~~**A6**~~ | ~~Degradado destructive a medias~~ — **RESUELTO** con `--danger-light`. Un degradado necesita dos paradas y solo el final era token. | `index.css`, `Button.jsx` | ✓ |
 | **A7** | `ctx.fillStyle` de canvas no resuelve `var()`. Único caso técnico real del barrido de color. | `TabCatalogo.jsx` | aceptado |
+| **A9** | `animate-pulse` no estaba en el bloque de `prefers-reduced-motion` (`.skeleton` sí): 88 latidos de énfasis seguían animando aunque el usuario pidiera menos movimiento. **RESUELTO** — la información que transmiten no depende del movimiento (color, ícono y texto siguen ahí), así que detenerlos no quita significado. | `index.css` | ✓ |
+| **A10** | `Skeleton`/`SkeletonText` quedaron creados con **0 adopciones**. Los 129 `.skeleton` existentes ya usan el mecanismo correcto (la clase CSS que el componente envuelve), así que no son deuda — pero envolverlos en el componente es lo que evita que `Skeleton` termine como `Button` con 1 import. | 129 usos | D3 |
 | **A8** | 417 sombras literales y 118 colores literales en `style` inline siguen en el baseline. | 100+ archivos | D3 |
 
 #### Trampas de verificación encontradas (para no repetirlas)

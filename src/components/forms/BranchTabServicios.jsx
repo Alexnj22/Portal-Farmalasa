@@ -15,7 +15,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
 
     // 🚨 ESTILOS LIQUID GLASS CONSISTENTES
     const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)]";
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-white";
+    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const servicesList = [
@@ -32,7 +32,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                     
                     {/* ENCABEZADO CON ÍCONO COLOREADO */}
                     <div className="flex items-center gap-3 mb-5">
-                        <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-xl border border-white shadow-[var(--shadow-shine)]`}>
+                        <div className={`p-2 ${srv.bgIcon} ${srv.color} rounded-xl border border-border-card shadow-[var(--shadow-shine)]`}>
                             <srv.icon size={18} strokeWidth={2.5} />
                         </div>
                         <h4 className="text-body-sm font-black uppercase tracking-widest text-content">

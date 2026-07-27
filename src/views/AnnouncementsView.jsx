@@ -62,7 +62,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             )}
             <button
               onClick={() => onArchive(ann.id)}
-              className="p-2.5 text-content-3 bg-surface-card border border-white shadow-sm hover:text-content hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
+              className="p-2.5 text-content-3 bg-surface-card border border-border-card shadow-sm hover:text-content hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
               title="Archivar aviso"
             >
               <Archive size={14} strokeWidth={2.5} />
@@ -139,7 +139,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
               ? 'text-success border-success/30'
               : isScheduled
                 ? 'text-chart-3-text border-chart-3/30'
-                : 'text-brand-text border-white'
+                : 'text-brand-text border-border-card'
             }`}
         >
           {isScheduled ? <CalendarClock size={16} strokeWidth={2.5} /> : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 ? (
@@ -570,20 +570,20 @@ const AnnouncementsView = ({ openModal }) => {
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>
         <div className="flex items-center min-w-0 gap-1 md:gap-2">
           
-          <button onClick={() => setListTab('ACTIVE')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ACTIVE' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+          <button onClick={() => setListTab('ACTIVE')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ACTIVE' ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
             Activos
           </button>
           
           <button onClick={() => setListTab('SCHEDULED')} className={`relative px-4 md:px-5 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'SCHEDULED' ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30 shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-chart-3/10 hover:text-chart-3-text hover:-translate-y-0.5 hover:shadow-md hover:border-chart-3/30'}`}>
             <span className="flex items-center gap-1.5"><CalendarClock size={14} /> Programados</span>
             {scheduledCount > 0 && (
-                <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center text-micro font-black text-white rounded-full shadow-sm border-2 border-white transition-all ${listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}>
+                <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center text-micro font-black text-white rounded-full shadow-sm border-2 border-border-card transition-all ${listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}>
                     {scheduledCount}
                 </span>
             )}
           </button>
           
-          <button onClick={() => setListTab('ARCHIVED')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ARCHIVED' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+          <button onClick={() => setListTab('ARCHIVED')} className={`px-4 md:px-6 h-9 md:h-10 rounded-full text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${listTab === 'ARCHIVED' ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
             Archivo
           </button>
 
@@ -651,11 +651,11 @@ const AnnouncementsView = ({ openModal }) => {
                   ) : (
                     <>
                       <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
-                      <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[var(--shadow-shine)] mb-4">
+                      <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-divider shadow-[var(--shadow-shine)] mb-4">
                         {targetTypes.map((type) => {
                           const isActive = targetType === type.id;
                           return (
-                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-surface-card text-brand-text border-white shadow-sm scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-sm hover:border-border-card'}`}>{type.label}</button>
+                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-surface-card text-brand-text border-border-card shadow-sm scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-sm hover:border-border-card'}`}>{type.label}</button>
                           );
                         })}
                       </div>

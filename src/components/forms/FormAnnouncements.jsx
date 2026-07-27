@@ -135,7 +135,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-2xl border border-white shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
+                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">

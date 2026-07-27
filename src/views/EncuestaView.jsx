@@ -110,7 +110,7 @@ function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
                 </div>
             )}
             {isJefe && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-warning border-[1.5px] border-white" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-warning border-[1.5px] border-border-card" />
             )}
         </div>
     );
@@ -192,7 +192,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                                 {namesByOption[k].length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1 border-t border-current/10 pt-1.5">
                                         {namesByOption[k].map(({ nombre, isJefe, sucursal, photo }) => (
-                                            <div key={nombre} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-surface-card border border-black/10">
+                                            <div key={nombre} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-surface-card border border-divider">
                                                 <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={24} />
                                                 <div className="flex flex-col leading-tight">
                                                     <span className="text-caption font-black leading-none text-content">
@@ -577,7 +577,7 @@ export default function EncuestaView() {
                     <button key={key} onClick={() => setTab(key)}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
                             tab === key
-                                ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
                                 : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         <Icon size={12} strokeWidth={2.5} />

@@ -313,8 +313,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand-text' : ''} />
                                             <span className="hidden xl:inline">{tab.label}</span>
 
-                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
-                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)] border ${isActive ? 'border-white' : 'border-transparent'}`}></span>}
+                                            {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
+                                            {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[0_0_8px_rgba(245,158,11,0.6)] border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
                                         </button>
                                     );
                                 })}
@@ -340,7 +340,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             onClick={() => setIsEditMode(!isEditMode)}
                             className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
                                     ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger-solid hover:text-white'
-                                    : 'bg-surface-card text-brand-text border border-white hover:border-brand/30'
+                                    : 'bg-surface-card text-brand-text border border-border-card hover:border-brand/30'
                                 }`}
                             title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}
                         >

@@ -996,7 +996,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     ? <img src={row.foto_url} alt="" className="w-full h-full object-contain rounded-md" />
                                                     : <Package size={13} className="text-content-3" />}
                                                 {row.alert_status && row.alert_status !== 'ok' && (
-                                                    <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white shadow-sm shrink-0 ${alert.dot}`} />
+                                                    <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border border-border-card shadow-sm shrink-0 ${alert.dot}`} />
                                                 )}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>

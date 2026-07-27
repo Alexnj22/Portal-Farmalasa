@@ -15,7 +15,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-caption text-content-3">
             {emp.photo_url
-                ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
+                ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-border-card shadow-sm" alt="" />
                 : <UserCircle2 size={12} className="text-content-3" />}
             {emp.name?.split(' ')[0]}
         </span>
@@ -25,8 +25,8 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
         <div className="flex items-center gap-0.5">
             {cardApoyo.slice(0, 4).map((a, i) => (
                 a.photo_url
-                    ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-white shadow-sm shrink-0" alt="" />
-                    : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-surface-card-hover border-2 border-white flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-content-3" /></span>
+                    ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-border-card shadow-sm shrink-0" alt="" />
+                    : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-surface-card-hover border-2 border-border-card flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-content-3" /></span>
             ))}
         </div>
     ) : null;

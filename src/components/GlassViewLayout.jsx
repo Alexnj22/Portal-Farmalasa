@@ -82,7 +82,7 @@ const GlassViewLayout = ({
                                                 {liveIndicator && (
                                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-danger border-2 border-white" />
+                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-danger border-2 border-border-card" />
                                                     </span>
                                                 )}
                                             </div>
@@ -121,7 +121,7 @@ const GlassViewLayout = ({
                                         {liveIndicator && (
                                             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger border-[1.5px] border-white" />
+                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger border-[1.5px] border-border-card" />
                                             </span>
                                         )}
                                     </div>

@@ -70,7 +70,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             </DataCell>
             <DataCell>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[var(--shadow-elevation-xs)] flex items-center justify-center text-content-2 font-black text-caption md:text-label uppercase border border-white shrink-0 group-hover:shadow-md transition-all overflow-visible">
+                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[var(--shadow-elevation-xs)] flex items-center justify-center text-content-2 font-black text-caption md:text-label uppercase border border-border-card shrink-0 group-hover:shadow-md transition-all overflow-visible">
                         {userPhoto ? (
                             <img src={userPhoto} alt={log.user_name} className="w-full h-full object-cover" />
                         ) : (
@@ -336,7 +336,7 @@ const filtersContent = (
                             type="button"
                             onClick={() => setIsActionPickerOpen(true)}
                             className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${actionFilter !== "ALL"
-                                ? "bg-surface-card text-content border-white shadow-md"
+                                ? "bg-surface-card text-content border-border-card shadow-md"
                                 : "bg-transparent text-content-2 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                 }`}
                             title="Cambiar tipo de acción"
@@ -364,7 +364,7 @@ const filtersContent = (
                                         setIsActionPickerOpen(false);
                                     }}
                                     className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive
-                                        ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
+                                        ? "bg-surface-card text-content border-border-card shadow-md scale-[1.02]"
                                         : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                         }`}
                                 >
@@ -394,7 +394,7 @@ const filtersContent = (
                         }`}
                 >
                     <div className={`flex items-center gap-1 shrink-0 px-2 py-1 rounded-2xl transition-all duration-300 group relative z-base border w-auto ${startDate || endDate || isDatePickerOpen
-                        ? 'bg-surface-card border-white shadow-md'
+                        ? 'bg-surface-card border-border-card shadow-md'
                         : 'bg-transparent border-transparent hover:shadow-md hover:bg-surface-card-hover hover:border-border-card hover:-translate-y-0.5'
                         }`}>
                         

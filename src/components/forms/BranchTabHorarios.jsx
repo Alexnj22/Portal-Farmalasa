@@ -15,7 +15,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         if (isInvalid) {
             cardClass += "bg-danger/10 border border-danger/30 shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:bg-danger/10";
         } else {
-            cardClass += "bg-surface-card border border-white shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:border-brand/30";
+            cardClass += "bg-surface-card border border-border-card shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:border-brand/30";
         }
     } else {
         cardClass += "bg-surface-card-hover/40 border border-border-card opacity-80 hover:opacity-100 hover:bg-surface-card hover:shadow-sm";

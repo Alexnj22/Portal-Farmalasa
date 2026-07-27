@@ -22,7 +22,7 @@ const BranchTabInmueble = ({
         willChange: 'transform'
     };
 
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-white";
+    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const extinguisherOptions = useMemo(() => [
@@ -51,7 +51,7 @@ const BranchTabInmueble = ({
                         <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
                     </h4>
 
-                    <div className="flex items-center gap-4 bg-surface-card backdrop-blur-md border border-white shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
+                    <div className="flex items-center gap-4 bg-surface-card backdrop-blur-md border border-border-card shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
                         <span className={`text-caption font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
                         <Switch on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";

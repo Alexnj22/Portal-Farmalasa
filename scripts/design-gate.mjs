@@ -238,8 +238,18 @@ const GRAY_RE = new RegExp(
 // que enumera. Categoría propia y no dentro de 'color' para que 'color'
 // conserve su significado (paletas Tailwind con shade) y siga en 0.
 // Cubre con y sin alpha: bg-white, bg-white/80, bg-white/[0.06], text-black.
+// `text-*` y `fill/stroke` quedan FUERA a propósito (afinado 2026-07-27).
+// Medido: de 740 `text-white`, 434 están sobre un relleno de color en la misma
+// línea —el contrato correcto que definió N2, ≥4.6:1— y de los otros 306 la
+// mayoría son íconos dentro de un padre coloreado que un chequeo por línea no
+// puede ver. Marcarlos producía ruido, no deuda.
+// La división real: **el gate verifica SUPERFICIES** (qué fondo y qué borde
+// se pinta, algo que sí se lee en la clase) y **el escáner en vivo verifica
+// CONTRASTE** (qué termina viéndose, que depende del árbol). Cada herramienta
+// para lo que puede comprobar de verdad.
+const WHITE_PREFIXES = ['bg', 'border', 'from', 'via', 'to', 'ring', 'divide', 'outline'];
 const WHITE_RE = new RegExp(
-  `\\b(${COLOR_PREFIXES.join('|')})-(white|black)(?![\\w-])(\\/(\\[[^\\]]+\\]|[\\d.]+))?`,
+  `\\b(${WHITE_PREFIXES.join('|')})-(white|black)(?![\\w-])(\\/(\\[[^\\]]+\\]|[\\d.]+))?`,
   'g'
 );
 

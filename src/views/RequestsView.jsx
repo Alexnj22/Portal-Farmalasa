@@ -651,7 +651,7 @@ const RequestsView = () => {
                     <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                             statusFilter === tab.key
-                                ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
                                 : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                         }`}>
                         {tab.label}
@@ -688,7 +688,7 @@ const RequestsView = () => {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div key={i} className="rounded-modal border border-black/[0.06] bg-surface-card p-4 flex items-center gap-3">
+                                        <div key={i} className="rounded-modal border border-divider bg-surface-card p-4 flex items-center gap-3">
                                             <div className="w-9 h-9 skeleton rounded-full shrink-0" />
                                             <div className="flex-1 space-y-2">
                                                 <div className="h-3 w-28 skeleton rounded-full" />

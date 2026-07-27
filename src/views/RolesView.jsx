@@ -476,7 +476,7 @@ const RolesView = ({ openModal }) => {
                             <button
                                 onClick={() => setActiveTab('list')}
                                 className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'list'
-                                        ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
+                                        ? "bg-surface-card text-content border-border-card shadow-md scale-[1.02]"
                                         : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
                             >
@@ -486,7 +486,7 @@ const RolesView = ({ openModal }) => {
                             <button
                                 onClick={() => { setActiveTab('chart'); resetZoomAndPan(); }}
                                 className={`px-4 md:px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${activeTab === 'chart'
-                                        ? "bg-surface-card text-content border-white shadow-md scale-[1.02]"
+                                        ? "bg-surface-card text-content border-border-card shadow-md scale-[1.02]"
                                         : "bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
                             >
@@ -736,7 +736,7 @@ const RolesView = ({ openModal }) => {
 
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex gap-3.5 items-start min-w-0 w-full pr-2 relative">
-                                                    <div className={`mt-0.5 h-10 w-10 rounded-2xl flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-surface-card text-brand-text border-white group-hover:bg-brand/10'}`}>
+                                                    <div className={`mt-0.5 h-10 w-10 rounded-2xl flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-surface-card text-brand-text border-border-card group-hover:bg-brand/10'}`}>
                                                         <Award size={18} strokeWidth={isRoot ? 2.5 : 2} />
                                                     </div>
 
@@ -757,13 +757,13 @@ const RolesView = ({ openModal }) => {
 
                                                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                                             {!isRoot && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-surface-card backdrop-blur-sm text-content-3 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-border-card shadow-sm truncate transition-colors" title={`Reporta a: ${getSuperiorName(role.parent_role_id)}`}>
                                                                     <CornerDownRight size={10} className="shrink-0 mt-[1px]" /> Rep: {getSuperiorName(role.parent_role_id)}
                                                                 </div>
                                                             )}
 
                                                             {hasDualReporting && (
-                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-white shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
+                                                                <div className="inline-flex items-center gap-1.5 bg-chart-3/10 backdrop-blur-sm text-chart-3-text px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border border-border-card shadow-sm truncate transition-colors" title={`Reporte Matricial: ${getSuperiorName(role.secondary_parent_role_id)}`}>
                                                                     <GitMerge size={10} className="shrink-0 mt-[1px]" /> Mat: {getSuperiorName(role.secondary_parent_role_id)}
                                                                 </div>
                                                             )}
@@ -798,9 +798,9 @@ const RolesView = ({ openModal }) => {
                                                 </div>
                                             </div>
 
-                                            <div className={`flex-1 rounded-2xl p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-white' : 'bg-surface-card border-white shadow-[var(--shadow-shine)] group-hover:bg-surface-card'}`}>
+                                            <div className={`flex-1 rounded-2xl p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-border-card' : 'bg-surface-card border-border-card shadow-[var(--shadow-shine)] group-hover:bg-surface-card'}`}>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm">
+                                                    <div className="w-8 h-8 rounded-xl bg-surface-card border border-border-card flex items-center justify-center text-content-3 shadow-sm">
                                                         <Users size={14} strokeWidth={2.5} />
                                                     </div>
                                                     <div>
@@ -851,7 +851,7 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-caption font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-surface-card border-border-card text-content-2 hover:text-brand-text hover:border-white'}`}
+                                    className={`px-4 py-2 border rounded-xl shadow-sm text-caption font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-border-card text-content-2 cursor-not-allowed' : 'bg-surface-card border-border-card text-content-2 hover:text-brand-text hover:border-border-card'}`}
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>

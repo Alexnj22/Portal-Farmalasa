@@ -284,7 +284,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         rowBody: 'text-content-3',
         rowTime: 'text-content-3',
         iconBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card',
-        emptyIconBox: 'bg-surface-card border-white text-brand-text/50',
+        emptyIconBox: 'bg-surface-card border-border-card text-brand-text/50',
         emptyTitle: 'text-content-2', emptySub: 'text-content-3',
         chipMuted: 'text-content-3',
         undoStrip: 'bg-surface-card-hover/80',

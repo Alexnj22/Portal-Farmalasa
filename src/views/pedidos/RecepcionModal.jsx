@@ -873,7 +873,7 @@ export default function RecepcionModal({
                                                     className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold focus:outline-none tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-chart-9-text focus:border-chart-9'}`}
                                                 />
                                                 {eDiff && delta !== 0 && (
-                                                    <span className={`absolute -top-1.5 -right-1.5 text-micro font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
+                                                    <span className={`absolute -top-1.5 -right-1.5 text-micro font-bold px-1 rounded-full border border-border-card ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
                                                         {delta > 0 ? '+' : ''}{delta}
                                                     </span>
                                                 )}
@@ -1165,7 +1165,7 @@ export default function RecepcionModal({
                                             className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-content-2 focus:border-chart-9'}`}
                                         />
                                         {hasDiff && (
-                                            <span className={`absolute -top-1.5 -right-1.5 text-micro font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
+                                            <span className={`absolute -top-1.5 -right-1.5 text-micro font-bold px-1 rounded-full border border-border-card ${delta < 0 ? 'bg-danger-solid text-white' : 'bg-success-solid text-white'}`}>
                                                 {delta > 0 ? '+' : ''}{delta}
                                             </span>
                                         )}

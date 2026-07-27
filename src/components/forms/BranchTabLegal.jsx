@@ -20,7 +20,7 @@ const BranchTabLegal = ({
 
     // 🚨 ESTILOS LIQUID GLASS
     const islandClass = "bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col h-full";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-white";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const regentOptions = useMemo(() =>
@@ -187,7 +187,7 @@ const BranchTabLegal = ({
                                 {availableNurses.length === 0 ? (
                                     <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-2xl border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
                                 ) : (
-                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-3xl border border-white max-h-[100px] overflow-y-auto custom-scrollbar shadow-[var(--shadow-shine-lg)]">
+                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-3xl border border-border-card max-h-[100px] overflow-y-auto custom-scrollbar shadow-[var(--shadow-shine-lg)]">
                                         {availableNurses.map(emp => {
                                             const isSelected = (legal.nurses || []).includes(emp.id);
                                             return (

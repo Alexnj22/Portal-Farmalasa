@@ -54,7 +54,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
             {/* TARJETA EMPLEADO */}
             <div className={`${island} flex items-center gap-4`}>
-                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white shadow-md shrink-0 bg-surface-card-hover flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-border-card shadow-md shrink-0 bg-surface-card-hover flex items-center justify-center">
                     <LiquidAvatar src={formData.photo || formData.photo_url} alt={formData.name} fallbackText={formData.name} className="w-full h-full" />
                 </div>
                 <div className="min-w-0">

@@ -168,7 +168,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30"
                         >
                             {employee.photo_url
-                                ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow" alt="" />
+                                ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-border-card shadow" alt="" />
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
                             }
                             <div>

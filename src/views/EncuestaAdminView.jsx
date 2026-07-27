@@ -141,12 +141,12 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
 // ─── Segment Control ──────────────────────────────────────────────────────────
 function SegmentControl({ options, value, onChange, compact = false }) {
     return (
-        <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-black/[0.05] shadow-[var(--shadow-shine)] ${compact ? 'p-1' : 'p-1.5'}`}>
+        <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-divider shadow-[var(--shadow-shine)] ${compact ? 'p-1' : 'p-1.5'}`}>
             {options.map(opt => (
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
                     className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-micro' : 'h-8 text-micro md:text-caption'} ${
                         value === opt.id
-                            ? 'bg-surface-card text-brand-text border-white shadow-sm scale-[1.02]'
+                            ? 'bg-surface-card text-brand-text border-border-card shadow-sm scale-[1.02]'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
                     }`}>
                     {opt.label}
@@ -476,7 +476,7 @@ export default function EncuestaAdminView() {
     const filtersContent = (
         <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
-                <button className="px-3 md:px-5 h-9 md:h-10 rounded-btn text-micro md:text-caption font-black uppercase tracking-widest bg-surface-card text-content border-white shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
+                <button className="px-3 md:px-5 h-9 md:h-10 rounded-btn text-micro md:text-caption font-black uppercase tracking-widest bg-surface-card text-content border-border-card shadow-md scale-[1.02] flex items-center gap-1.5 shrink-0">
                     <ClipboardList size={12} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Encuestas</span>
                 </button>
@@ -574,13 +574,13 @@ export default function EncuestaAdminView() {
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} placeholder="Seleccionar…" />
                                             </div>
                                         </div>
                                         <div>
                                             <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
-                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-white hover:shadow-sm transition-all duration-300">
+                                            <div className="h-[42px] bg-surface-card border border-border-card rounded-2xl focus-within:bg-surface-card focus-within:border-brand/30 focus-within:shadow-[var(--shadow-ring-brand)] hover:bg-surface-card hover:border-border-card hover:shadow-sm transition-all duration-300">
                                                 <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} placeholder="Seleccionar…" />
                                             </div>
                                         </div>

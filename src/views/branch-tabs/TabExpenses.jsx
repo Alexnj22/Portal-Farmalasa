@@ -323,7 +323,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         
                         <div className="flex justify-between items-start mb-6 relative z-base">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-2xl flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-2xl flex items-center justify-center border border-border-card shadow-sm transition-transform duration-500 group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>
@@ -398,7 +398,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-base">
-                                <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">
+                                <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-border-card">
                                     <Zap size={16} className="text-warning" strokeWidth={2.5}/>
                                 </div>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>

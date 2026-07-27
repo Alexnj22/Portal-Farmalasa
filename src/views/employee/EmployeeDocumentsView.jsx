@@ -273,14 +273,14 @@ const EmployeeDocumentsView = () => {
                     const isActive = tab === t.key;
                     return (
                         <button key={t.key} onClick={() => setTab(t.key)}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${isActive ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                             {t.label}{counts[t.key] > 0 && t.key !== 'ALL' ? ` · ${counts[t.key]}` : ''}
                         </button>
                     );
                 })}
                 <div className="w-px h-5 bg-divider mx-1 shrink-0" />
                 <button onClick={() => setFilterOpen(v => !v)}
-                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
+                    className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${filterOpen || hasFilters ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'}`}>
                     <Filter size={10} strokeWidth={2.5} />
                     Filtrar
                     {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}

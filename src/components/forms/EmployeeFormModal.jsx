@@ -1033,7 +1033,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <span className="text-label font-bold">Tienes un borrador sin guardar.</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-btn flex items-center justify-center bg-surface-card text-content-3 hover:text-danger transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
+                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-btn flex items-center justify-center bg-surface-card text-content-3 hover:text-danger transition-colors shadow-sm border border-border-card"><Trash2 size={14}/></button>
                         <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-brand text-white rounded-btn text-caption font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
                     </div>
                 </div>
@@ -1083,7 +1083,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             {/* ÁREA DE FOTO DE PERFIL */}
                             <div className="flex flex-col sm:flex-row items-center gap-6 mb-6 pb-6 border-b border-divider">
                                 <div className="relative group cursor-pointer shrink-0">
-                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-4 border-white shadow-[var(--shadow-elevation-md)] overflow-hidden bg-surface-card-hover flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+                                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl border-4 border-border-card shadow-[var(--shadow-elevation-md)] overflow-hidden bg-surface-card-hover flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
                                         {formData.photoPreview || formData.photo || formData.photo_url ? (
                                             <img src={formData.photoPreview || formData.photo || formData.photo_url} alt="Perfil" className="w-full h-full object-cover" />
                                         ) : (

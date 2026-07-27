@@ -1051,7 +1051,7 @@ const EmployeeRequestsView = () => {
                             onClick={() => setStatusFilter(tab.key)}
                             className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
                                 isActive
-                                    ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                    ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
                                     : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                             }`}
                         >

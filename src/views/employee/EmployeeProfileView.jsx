@@ -228,7 +228,7 @@ const EmployeeProfileView = ({ openModal }) => {
                           </div>
                     }
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-white shadow-sm" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success rounded-full border-2 border-border-card shadow-sm" />
             </div>
             <div className="min-w-0">
                 <p className="text-caption font-black text-content-2 uppercase tracking-widest">Mi Perfil</p>

@@ -33,7 +33,7 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                 {llegadaEmp && (
                     <span className="flex items-center gap-1 text-caption text-content-3">
                         {llegadaEmp.photo_url
-                            ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
+                            ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-border-card shadow-sm" alt="" />
                             : <UserCircle2 size={12} className="text-content-3" />}
                         {llegadaEmp.name?.split(' ')[0]}
                     </span>

@@ -109,7 +109,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'border-white text-content-3 bg-surface-card'}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'border-border-card text-content-3 bg-surface-card'}`}>
                                         {emp.photo ? <img src={emp.photo} alt="" className="w-full h-full object-cover"/> : emp.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -145,7 +145,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         {/* 1. MINI-RESUMEN DEL EMPLEADO (EXPANDIDO) */}
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-5 shadow-[var(--shadow-glass-2)] relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-base">
-                                <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md overflow-hidden bg-surface-card-hover shrink-0">
+                                <div className="w-16 h-16 rounded-full border-[3px] border-border-card shadow-md overflow-hidden bg-surface-card-hover shrink-0">
                                     {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
                                 </div>
                                 <div className="flex-1">
@@ -160,14 +160,14 @@ const FormLeadership = ({ formData, setFormData }) => {
                             {/* Fila de Datos Clave */}
                             <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border-card relative z-base">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
+                                    <div className="w-6 h-6 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col">
                                         <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none">Antigüedad</span>
                                         <span className="text-label font-bold text-content-2 mt-0.5">{getTenure(selectedEmp.hireDate || selectedEmp.hire_date)}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><Phone size={10} strokeWidth={2.5}/></div>
+                                    <div className="w-6 h-6 rounded-full bg-surface-card border border-border-card flex items-center justify-center text-content-3 shadow-sm shrink-0"><Phone size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col overflow-hidden">
                                         <span className="text-micro font-black text-content-2 uppercase tracking-widest leading-none">Contacto</span>
                                         <span className="text-label font-bold text-content-2 mt-0.5 truncate">{selectedEmp.phone || 'N/A'}</span>
@@ -189,7 +189,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         /* ESTADO B: SI EL SELECCIONADO ES NUEVO (Flujo de Cambio) */
                             <>
                                 {/* 2. ANÁLISIS DE MOVIMIENTO */}
-                                <div className="bg-surface-card border border-white rounded-3xl p-4 shadow-[var(--shadow-shine-lg)]">
+                                <div className="bg-surface-card border border-border-card rounded-3xl p-4 shadow-[var(--shadow-shine-lg)]">
                                     <div className="flex items-center gap-3">
                                         {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}

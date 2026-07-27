@@ -724,7 +724,7 @@ const EmployeeAnnouncementsView = () => {
                     return (
                         <button key={t.key} onClick={() => { setTab(t.key); setTypeFilter('ALL'); }}
                             className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border shrink-0 ${
-                                isActive ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
+                                isActive ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
                             }`}
                         >
                             {t.label}
@@ -751,7 +751,7 @@ const EmployeeAnnouncementsView = () => {
                                             ? 'bg-danger-solid text-white border-danger shadow-[var(--shadow-glow-danger)] scale-[1.02]'
                                             : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
                                         : isActive
-                                        ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]'
+                                        ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
                                         : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5'
                                 }`}
                             >

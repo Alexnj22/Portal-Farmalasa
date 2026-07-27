@@ -40,7 +40,7 @@ const FormRoleEmployees = ({ formData }) => {
                             className="flex items-center justify-between p-4 bg-surface-card rounded-3xl border border-divider shadow-sm group hover:border-brand/30 hover:shadow-md transition-all"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">
+                                <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border-2 border-border-card shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">
                                     {emp.photo ? (
                                         <img src={emp.photo} className="w-full h-full object-cover" alt="Perfil" />
                                     ) : (

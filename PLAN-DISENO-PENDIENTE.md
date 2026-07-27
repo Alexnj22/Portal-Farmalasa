@@ -540,6 +540,60 @@ los extremos juntos, sin atajos, sin feriados.
 
 
 
+
+## Cierre 2026-07-27 (segunda jornada)
+
+### Los siete canónicos
+`Switch` · `TabBarAction` · `Checkbox` · `SegmentedControl` · `Notice` ·
+**`ListRow`** — cinco salieron de *medir lo que un migrador no podía convertir*,
+no de una idea previa.
+
+`ListRow` tiene una ranura `leading` que acepta **ícono, letra o imagen**. Los
+tres aparecieron migrando (labs, encuestas, min/max) y los tres comparten caja,
+tamaño y alineación. Cerrarla a "solo íconos" habría dejado fuera dos de tres.
+
+`PortalInput` ganó `labelAction`, `compact` e `inputClassName`: sin eso, 37
+inputs que **son este componente reconstruido a mano** no podían entrar.
+
+### Números
+| | inicio | ahora |
+|---|---|---|
+| `<button>` a mano | 940 | **331** |
+| badges inline | 244 | **35** |
+| casillas nativas | 16 | **0** |
+| barras de búsqueda | 13 | **0** |
+| copias de estado vacío | 5 | **0** |
+| `DESIGN.md` vs gate | 35 | **0** |
+
+### Los cuatro fallos silenciosos del día
+Ninguno lo vio el build:
+
+| qué | lo detectó |
+|---|---|
+| `title={plantilla}` serializado como string | eslint (variable huérfana) |
+| atributos descartados → `key` perdido en 11 badges | eslint (índice sin usar) |
+| 4 vistas con `<SegmentedControl>` sin import | abrir la vista |
+| **12 bumps de `APP_VERSION` fallidos** | **una captura de pantalla** |
+
+Tres gates nuevos cubren justo eso: `import` (categoría del gate de diseño),
+`gate:doc` y `gate:version`.
+
+**La regla que salió**: un `replace` que no encuentra su ancla no falla —
+simplemente no hace nada. Toda operación automática se verifica, y las
+migraciones en lote se miran en el navegador **antes** de comitear.
+
+### Lo que queda, con su decisión pendiente
+- **~17 filas** candidatas a `ListRow` — mecánicas, mismo patrón.
+- **331 botones**: ~117 segmentados caso por caso, 30 botones de ícono con
+  capas (composición visual, **no van**), 9 tarjetas seleccionables (decidir
+  después de que `ListRow` se asiente), resto compuesto.
+- **45 inputs**: 18 son `file`, que tienen su propio patrón (`FileUploader` en
+  `BranchHelpers` — hay que ver si sirve como canónico); el resto son sueltos
+  sin forma compartida.
+- **35 badges** con hijos compuestos: varios llevan un tooltip adentro. Lo que
+  falta ahí **es un tooltip canónico**, no un `Badge` más flexible.
+- **`gate:design`**: `inline-color` 58 · `shadow-literal` 30 · `motion` 5.
+
 ## Cierre de la jornada 2026-07-27 — qué quedó y por qué
 
 ### Lo que se movió

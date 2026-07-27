@@ -539,6 +539,67 @@ se cae**: el sistema no tiene el concepto, serían dos ruedas separadas, sin ver
 los extremos juntos, sin atajos, sin feriados.
 
 
+
+## Cierre de la jornada 2026-07-27 — qué quedó y por qué
+
+### Lo que se movió
+
+| | antes | ahora |
+|---|---|---|
+| `<button>` a mano | 940 | **337** |
+| badges inline | 244 | **72** |
+| casillas nativas | 16 | **0** |
+| barras de búsqueda a mano | 13 | **0** |
+| copias del estado vacío | 5 | **0** |
+| `DESIGN.md` contra el gate | 35 | **0** |
+
+### Los seis canónicos que faltaban
+`Switch` · `TabBarAction` · `Checkbox` · `SegmentedControl` · `Notice` ·
+(`SegmentedControl` y `Notice` salieron de medir lo que los migradores no podían
+convertir, no de una idea previa).
+
+### Por qué lo que queda NO se migró
+
+Esto no es "faltó tiempo". Cada grupo tiene una razón medida:
+
+**D3.3 · 337 botones**
+- ~117 **segmentados**: varios no son el mismo control. Los de
+  `AnnouncementsView` son tarjetas de elección a ancho completo en dos columnas
+  — meterlas en un segmentado compacto las encogería.
+- 92 con `<div>` adentro, y al medirlos **solo 9 son tarjetas**. Los otros 53
+  son **filas de lista compuestas** (ícono + etiqueta + elemento final, con
+  contenido distinto en cada una) y 30 son botones de ícono con estructura
+  interna. Un canónico que los cubriera a todos sería un cajón de sastre.
+- El resto: composición real.
+
+**D3.4 · 49 inputs de texto/número**
+Al mirarlos: **37 son un `PortalInput` reconstruido a mano** —etiqueta con badge
+de error, contenedor con ícono, input desnudo adentro—. Migrables en principio,
+**pero cada uno trae extras que el canónico no tiene**: acciones dentro de la
+etiqueta (`+ Agregar` en teléfono), máscaras, campos que se multiplican.
+Los otros 12 son celdas numéricas densas (`h-8`, borde de color, dentro de una
+grilla), donde `PortalInput` no calza.
+
+Son formularios de RRHH y nómina. Migrarlos a ritmo de script es la forma más
+rápida de romper la carga de datos de la empresa. **Requisito previo**: decidir
+si `PortalInput` gana `labelAction` y una variante compacta, o si esos casos se
+quedan documentados como excepción.
+
+**D3.5 · 72 badges** con hijos compuestos (dos `<span>` con estilo propio, o un
+`<div>` adentro). Caso por caso.
+
+### Lo que aprendieron los migradores
+Tres errores, los tres **atrapados por eslint y no por el build**:
+
+| | qué pasaba |
+|---|---|
+| `title={\`plantilla\`}` | se serializaba como string **con backticks adentro**; se renderizaba el código crudo |
+| `className` con `${}` | se descartaba entero, incluso cuando interpolaba una constante |
+| atributos ≠ `className` | **se tiraban**: 11 badges de un `.map()` perdieron su `key` |
+
+La regla que salió de ahí: **un atributo que el migrador no entiende se copia,
+no se tira.**
+
 ## Estado de D3 al 2026-07-27 (medido, no estimado)
 
 ### Cerradas

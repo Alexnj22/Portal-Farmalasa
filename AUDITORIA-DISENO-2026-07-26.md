@@ -387,16 +387,92 @@ Con D1-D3 cerradas, el doc describe algo real.
 
 ---
 
-## 4. Preguntas abiertas para decidir
+## 4. Decisiones tomadas (2026-07-26)
 
-1. **Densidad** (`--row-h`/`--header-h`/`--space-card-padding`): ¿se conecta o se borra?
-   Se diseñó en T2 para 3 niveles (cómoda/compacta/ultra) y nunca se consumió.
-2. **`UnifiedModal`**: ¿se migra a `ModalShell` o se congela como legacy aceptado?
-3. **Página 404**: hoy el catch-all redirige en silencio. ¿Se crea la vista dedicada?
-4. **`framer-motion`**: la regla dice "no más usos" y pasó de 14 a 25 archivos.
-   ¿Se hace cumplir con gate, o se acepta y se documenta cuándo es válido?
-5. **Orden de ejecución**: el plan asume D0 → D1 → D2 → D3 → D4. D1 se puede adelantar
-   si la prioridad es que el modo oscuro deje de verse roto ya.
+Las cinco preguntas abiertas quedaron resueltas. Lo que sigue es la versión vigente
+del plan; las fases de arriba se leen con estos ajustes.
+
+### 4.1 · Densidad — **se conecta**, sin `--font-data`
+
+Los tokens ya están bien calibrados y se aplican **automáticamente por viewport**
+(ancho *o* alto), sin toggle de usuario:
+
+| Nivel | Disparo | `--row-h` | `--control-h` | `--space-card-padding` | `--header-h` |
+|---|---|---|---|---|---|
+| Cómoda | ≥1440 ancho y ≥820 alto | 44px | 40px | 24px | 72px |
+| Compacta | <1440 ancho **o** <820 alto | 38px | 36px | 16px | 56px |
+| Ultra | <1152 ancho **o** <700 alto | 32px | 32px | 12px | 44px |
+
+Se conecta porque el problema es real y ya mordió una vez: el kiosco chocó exactamente
+con esto a 1366×768 y lo resolvió por su cuenta con un `@media(max-height:800px)` local
+(v2.60.1). Sin tokens consumidos, cada pantalla reinventa su propia solución.
+
+El costo es bajo si la adopción va **solo por los canónicos**: `DataTable` es dueño de
+la altura de fila, `Button` de la altura de control, las primitivas `data-surface` del
+padding de tarjeta. Son ~4 puntos de consumo, no 199 archivos — y salen casi gratis
+como subproducto de la fase D3.
+
+**`--font-data` se elimina.** Es una preocupación tipográfica y colisionaría con la
+escala que define D2, creando dos fuentes de verdad para el tamaño de texto.
+
+**Queda explícito:** la densidad es responsiva, no una preferencia del usuario. Si en
+algún momento se quiere un selector cómoda/compacta/ultra en Ajustes, es trabajo aparte.
+
+### 4.2 · `UnifiedModal` — **se migra sobre `ModalShell`**
+
+Nada queda a mano y nada queda duplicado. Los 944 líneas pasan a construirse sobre el
+shell canónico; lo que `UnifiedModal` hoy resuelve y `ModalShell` no (el switchboard de
+~30 formularios, el scroll interno del visor de PDF) se extrae como capacidad del
+canónico, no como una segunda arquitectura.
+
+Regla general que aplica a toda la fase D3: **si falta una pieza, se diseña y se agrega
+al canónico** para que sirva al siguiente caso igual — nunca se resuelve inline.
+
+### 4.3 · Página 404 — **se crea**
+
+`NotFoundView` dedicada, sobre el `EmptyState` compartido que produce D3.5, con acción
+"Volver al inicio". Reemplaza el `<Navigate to={defaultRedirect} replace />` silencioso
+del catch-all.
+
+### 4.4 · `framer-motion` — la regla estaba mal escrita; se reemplaza por una acotada
+
+La prohibición actual ("no new framer-motion usage") banea la librería entera sin
+distinguir para qué se usa. Por eso se incumple: de los 25 archivos, **20 la usan para
+cosas que CSS no puede hacer**.
+
+| Uso | Cantidad | ¿CSS puede? |
+|---|---|---|
+| `AnimatePresence` — animación de salida al desmontar | 38 usos / 17 archivos | **No.** Cuando React quita el nodo no queda nada que animar. |
+| `layout` / `layoutId` — transición FLIP entre posiciones | 13 usos / 2 archivos | **No**, sin medir posiciones a mano en JS. |
+| `drag` | 5 usos | **No.** |
+| `motion.*` solo para fade/slide de entrada, hover o tap | 5 archivos | **Sí.** `@keyframes` + Tailwind. |
+
+Los 5 archivos que sí son violaciones reales: `LifecycleTimeline.jsx`,
+`ApoioScanModal.jsx`, `StageAnims.jsx`, `AbcXyzMatrix.jsx`, `LabsPanel.jsx`.
+
+**Regla nueva:** `AnimatePresence`, `layout`/`layoutId` y `drag` están permitidos.
+`motion.*` para entrada/hover/tap está prohibido — eso es CSS. El gate marca cualquier
+archivo que importe `motion` sin importar también alguna de las tres capacidades
+permitidas.
+
+#### Hallazgo nuevo que salió de analizar esto — S1.6 · reduced-motion solo cubre la mitad
+
+`DESIGN.md` §25 declara `prefers-reduced-motion` como **"Implemented"** y enumera 18
+clases CSS desactivadas o reducidas. Es cierto — **para las animaciones CSS**. Pero
+`useReducedMotion` tiene **0 usos** en el proyecto, y la media query de CSS no detiene
+animación manejada por JS: los 25 archivos con framer-motion (38 transiciones de
+`AnimatePresence`, springs, drag) siguen animando aunque el usuario haya pedido menos
+movimiento.
+
+Es severidad S1: el doc afirma que la preferencia de accesibilidad está respetada y solo
+lo está en uno de los dos sistemas de animación. **`useReducedMotion` pasa a ser
+obligatorio en todo archivo que use framer-motion**, y entra en el gate de D0.
+
+### 4.5 · Orden — **D1 se adelanta**
+
+Queda: **D0 → D1 → D2 → D3 → D4**. D0 sigue primero por costo/beneficio (medio día, y
+sin él no hay forma de medir si D1 realmente cerró ni de evitar que vuelva a driftar),
+pero el objetivo de la primera semana es que el modo oscuro deje de verse roto.
 
 ---
 

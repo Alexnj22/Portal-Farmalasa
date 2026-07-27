@@ -1110,10 +1110,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 ))}
                                             </div>
                                         ) : empRequests.length === 0 ? (
-                                            <div className="flex flex-col items-center py-12 gap-2 text-content-3">
-                                                <ClipboardList size={36} strokeWidth={1.2} />
-                                                <p className="text-body font-semibold">Sin solicitudes registradas</p>
-                                            </div>
+                                            <EmptyState compact icon={ClipboardList} title="Sin solicitudes registradas" />
                                         ) : (
                                             <div className="space-y-3">
                                                 {empRequests.map(req => {

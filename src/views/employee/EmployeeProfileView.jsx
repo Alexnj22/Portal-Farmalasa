@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { EmptyState } from '../../components/common/StateViews';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
@@ -523,10 +524,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 ))}
                             </div>
                         ) : timeline.length === 0 ? (
-                            <div className="flex flex-col items-center py-12 gap-3 text-content-3">
-                                <Clock size={36} strokeWidth={1} />
-                                <p className="text-body font-bold text-content-3">Sin eventos registrados</p>
-                            </div>
+                            <EmptyState compact icon={Clock} title="Sin eventos registrados" />
                         ) : (
                             <>
                             <div className="relative border-l-[2px] border-divider ml-3 space-y-3 pb-2">

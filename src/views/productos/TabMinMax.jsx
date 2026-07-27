@@ -1,5 +1,5 @@
 import React from 'react';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
@@ -1540,10 +1540,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <div className="flex justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                             )}
                             {!historyLoading && historyLogs.length === 0 && (
-                                <div className="flex flex-col items-center gap-2 py-10">
-                                    <History size={28} className="text-content-3" />
-                                    <p className="text-body-sm text-content-3">Sin cambios registrados aún</p>
-                                </div>
+                                <EmptyState compact icon={History} title="Sin cambios registrados aún" />
                             )}
                             {!historyLoading && historyLogs.map(log => {
                                 const d = log.details || {};

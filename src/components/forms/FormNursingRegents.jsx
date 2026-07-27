@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { EmptyState } from '../common/StateViews';
 import { Plus, Trash2, UploadCloud, ShieldCheck, Users, Award, Receipt, CheckCircle2 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -214,12 +215,9 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     ))}
                     
                     {nursingRegents.length === 0 && (
-                        <div className="py-10 text-center border-2 border-dashed border-divider rounded-modal bg-surface-card backdrop-blur-sm mt-4 transition-all duration-500 hover:bg-surface-card hover:-translate-y-1 hover:shadow-md cursor-pointer transform-gpu" onClick={addNurse}>
-                            <div className="w-12 h-12 bg-surface-tab-active rounded-full flex items-center justify-center text-brand-text mx-auto mb-3 shadow-[var(--shadow-glow-brand)] border border-chart-1/30">
-                                <Plus size={20} strokeWidth={2.5}/>
-                            </div>
-                            <p className="text-body-sm font-black uppercase tracking-widest text-content-2">Sin profesionales asignados</p>
-                            <p className="text-caption font-bold text-content-3 mt-1">Haz clic aquí o en "Añadir Profesional" para comenzar.</p>
+                        <div onClick={addNurse} className="cursor-pointer border-2 border-dashed border-divider rounded-modal transition-all duration-500 hover:-translate-y-1 hover:shadow-md mt-4">
+                            <EmptyState compact icon={Plus} title="Sin profesionales asignados"
+                                subtitle="Hacé clic aquí o en Añadir Profesional para comenzar." />
                         </div>
                     )}
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import {
@@ -1238,7 +1239,7 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : shiftStatusData.length===0?(
-              <div className="flex flex-col items-center justify-center py-10 text-content-3"><Users size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin empleados</p></div>
+              <EmptyState compact icon={Users} title="Sin empleados" />
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
@@ -1290,7 +1291,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
-                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-micro font-black text-brand-text/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
+                  if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
@@ -1410,7 +1411,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
-              :displayAbsences.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><UserCheck size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin ausencias activas</p></div>
+              :displayAbsences.length===0?<EmptyState compact icon={UserCheck} title="Sin ausencias activas" />
               :displayAbsences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
@@ -1451,7 +1452,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
-              :displayReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><ClipboardList size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin solicitudes pendientes</p></div>
+              :displayReqs.length===0?<EmptyState compact icon={ClipboardList} title="Sin solicitudes pendientes" />
               :displayReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
                   className={`w-full flex items-center gap-3 px-5 py-3 transition-colors text-left ${canManage('dash_requests')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
@@ -1580,7 +1581,7 @@ const DashboardView = ({ openModal }) => {
                   <Skel className="h-2.5 w-1/3" />
                 </div>
               </div>
-            )) : recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-content-3"><Megaphone size={32} strokeWidth={1}/><p className="text-body-sm font-medium mt-2">Sin avisos recientes</p></div>
+            )) : recentAnnouncements.length===0?<EmptyState compact icon={Megaphone} title="Sin avisos recientes" />
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
@@ -1744,7 +1745,7 @@ const DashboardView = ({ openModal }) => {
             </div>
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
               {cotizStats.recent.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-content-3"><Receipt size={28} strokeWidth={1}/><p className="text-label font-medium mt-2">Sin cotizaciones activas</p></div>
+                <EmptyState compact icon={Receipt} title="Sin cotizaciones activas" />
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="w-6 h-6 rounded-lg bg-chart-1/10 border border-chart-1/30 flex items-center justify-center shrink-0">
@@ -1853,7 +1854,7 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : topProductos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-content-3"><Package size={28} strokeWidth={1}/><p className="text-label font-medium mt-2">Sin datos este mes</p></div>
+              <EmptyState compact icon={Package} title="Sin datos este mes" />
             ) : topProductos.map((p, i) => {
               const pct = Math.max(Math.round((p.neto / maxNeto) * 100), 4);
               return (

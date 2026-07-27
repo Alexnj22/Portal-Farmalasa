@@ -973,10 +973,7 @@ const VacationPlanView = () => {
                                     </table>
                                 </div>
                             ) : filtered.length === 0 ? (
-                                <div className="flex flex-col items-center py-12 gap-3 text-content-3">
-                                    <Palmtree size={36} strokeWidth={1} />
-                                    <p className="text-body font-bold text-content-3">Sin asignaciones en este período</p>
-                                </div>
+                                <EmptyState compact icon={Palmtree} title="Sin asignaciones en este período" />
                             ) : (
                                 <>
                                 {isVacSearchFuzzy && searchTerm && (

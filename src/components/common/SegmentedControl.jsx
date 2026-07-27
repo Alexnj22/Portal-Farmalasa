@@ -17,6 +17,11 @@ import React, { memo } from 'react';
  *   · Si es navegación entre secciones de una vista → los `tabs` de `ViewTabBar`.
  *   · Si cada opción dispara una acción distinta → son botones sueltos.
  *
+ * Cada opción puede llevar su propio `tone`. No es adorno: en el selector de
+ * alcance de permisos, el color distingue "Todos" de "Mi Sucursal" y esa
+ * distinción es información, no decoración. El `tone` del grupo queda como
+ * valor por defecto.
+ *
  * La FORMA no es una prop, igual que en `Button`: `rounded-btn` ya rinde
  * píldora en liquid glass y rectángulo en sólido (`--btn-radius`). Los 54 que
  * estaban escritos con `rounded-full` fijo se veían redondos en el tema sólido,
@@ -35,6 +40,11 @@ const ACTIVO = {
     warning: 'bg-warning-solid text-white',
     danger:  'bg-danger-solid text-white',
     neutro:  'bg-surface-tab-active text-content',
+    'chart-1': 'bg-chart-1 text-white', 'chart-2': 'bg-chart-2 text-white',
+    'chart-3': 'bg-chart-3-solid text-white', 'chart-4': 'bg-chart-4 text-white',
+    'chart-5': 'bg-chart-5 text-white', 'chart-6': 'bg-chart-6 text-white',
+    'chart-7': 'bg-chart-7 text-white', 'chart-8': 'bg-chart-8-solid text-white',
+    'chart-9': 'bg-chart-9-solid text-white',
 };
 
 const SegmentedControl = memo(({
@@ -74,7 +84,7 @@ const SegmentedControl = memo(({
                             disabled:opacity-40 disabled:cursor-not-allowed
                             ${s.op}
                             ${activa
-                                ? (ACTIVO[tone] || ACTIVO.brand) + ' shadow-sm'
+                                ? (ACTIVO[op.tone || tone] || ACTIVO.brand) + ' shadow-sm'
                                 : 'text-content-3 hover:text-content-2'}`}>
                         {Icono && <Icono size={s.icono} strokeWidth={2.5} />}
                         {op.label}

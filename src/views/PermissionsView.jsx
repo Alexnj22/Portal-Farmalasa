@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import SegmentedControl from '../components/common/SegmentedControl';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { EmptyState } from '../components/common/StateViews';
@@ -254,9 +255,11 @@ const PERMISSION_TYPES = [
     { key: 'can_approve', label: 'Aprobar',                      icon: CheckCircle2, activeColor: 'bg-success' },
 ];
 
+// El tono por opción NO es adorno: distingue "Todos" de "Mi Sucursal" de un
+// vistazo en una pantalla llena de toggles.
 const SCOPE_OPTIONS = [
-    { value: 'ALL',    label: 'Todos',        color: 'bg-chart-3-solid text-white' },
-    { value: 'BRANCH', label: 'Mi Sucursal',  color: 'bg-chart-9-solid text-white' },
+    { value: 'ALL',    label: 'Todos',       tone: 'chart-3' },
+    { value: 'BRANCH', label: 'Mi Sucursal', tone: 'chart-9' },
 ];
 
 // Tooltip descriptivo por tipo de permiso
@@ -373,21 +376,15 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                             <p className="text-micro font-black uppercase tracking-widest text-content-2">Alcance</p>
                         </div>
                         <div className="flex gap-1.5">
-                            {SCOPE_OPTIONS.map(opt => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    disabled={locked}
-                                    onClick={() => !locked && onChange(module.key, 'scope', opt.value)}
-                                    className={`flex-1 py-1.5 px-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all duration-200 border ${
-                                        currentScope === opt.value
-                                            ? `${opt.color} border-transparent shadow-[var(--shadow-elevation-lg)] scale-[1.02]`
-                                            : 'bg-surface-card backdrop-blur-sm border-border-card text-content-3 hover:bg-surface-card hover:text-content-2'
-                                    } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
+                            <SegmentedControl
+                                size="sm"
+                                label="Alcance"
+                                value={currentScope}
+                                onChange={(v) => onChange(module.key, 'scope', v)}
+                                options={SCOPE_OPTIONS}
+                                disabled={locked}
+                                className="flex-1"
+                            />
                         </div>
                     </div>
                 )}

@@ -252,19 +252,14 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 Activa solo para productos en <strong className="text-content-3">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
                             </p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                                {['CAJA', 'ESTUCHE', 'BOLSA'].map(label => (
-                                    <button key={label} type="button"
-                                        onClick={() => selectLabel(label)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-body-sm font-semibold border-2 transition-all ${
-                                            vals.dispatch_label === label
-                                                ? 'bg-chart-8-solid border-chart-8 text-white shadow-md'
-                                                : 'bg-surface-card border-divider text-content-3 hover:border-chart-8/50 hover:text-content-2'
-                                        }`}
-                                    >
-                                        <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-content-3'} />
-                                        {label}
-                                    </button>
-                                ))}
+                                <SegmentedControl
+                                    size="sm"
+                                    tone="neutro"
+                                    label="Unidad de despacho"
+                                    value={vals.dispatch_label}
+                                    onChange={selectLabel}
+                                    options={['CAJA', 'ESTUCHE', 'BOLSA'].map(l => ({ value: l, label: l, icon: Box }))}
+                                />
                                 {vals.dispatch_label && (
                                     <Button variant="secondary" icon={X} onClick={() => selectLabel(vals.dispatch_label)}>quitar</Button>
                                 )}

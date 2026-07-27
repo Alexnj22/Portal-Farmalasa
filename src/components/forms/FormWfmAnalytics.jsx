@@ -286,22 +286,18 @@ const FormWfmAnalytics = ({ branches }) => {
 
                 {/* FILTROS DE RANGO (PILL TABS) */}
                 <div className="flex items-center bg-surface-card-hover rounded-full p-1 border border-divider shadow-inner w-full sm:w-auto h-[48px] justify-between">
-                    {[
-                        { value: '0', label: 'Hoy' },
-                        { value: '30', label: '30 Días' },
-                        { value: '90', label: '3 Meses' },
-                        { value: '180', label: '6 Meses' },
-                        { value: '365', label: '1 Año' }
-                    ].map(opt => (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={(e) => { e.preventDefault(); setTimeRange(opt.value); }}
-                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-caption md:text-label font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-surface-tab-active text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
+                    <SegmentedControl
+                        label="Rango de tiempo"
+                        value={timeRange}
+                        onChange={setTimeRange}
+                        options={[
+                            { value: '0',   label: 'Hoy' },
+                            { value: '30',  label: '30 Días' },
+                            { value: '90',  label: '3 Meses' },
+                            { value: '180', label: '6 Meses' },
+                            { value: '365', label: '1 Año' },
+                        ]}
+                    />
                 </div>
             </div>
 

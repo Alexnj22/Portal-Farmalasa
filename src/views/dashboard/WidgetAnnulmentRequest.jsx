@@ -408,12 +408,14 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         <div className="flex flex-col gap-1.5">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo *</label>
           <div className="grid grid-cols-2 gap-1.5">
-            {REASONS.map(r => (
-              <button key={r} onClick={() => setReason(r)}
-                className={`text-left px-3 py-2 rounded-2xl border text-label font-bold transition-all ${
-                  reason === r ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-2 border-divider hover:border-brand/40'
-                }`}>{r}</button>
-            ))}
+            <SegmentedControl
+              size="sm"
+              label="Motivo"
+              value={reason}
+              onChange={setReason}
+              options={REASONS.map(r => ({ value: r, label: r }))}
+              className="flex-wrap"
+            />
           </div>
         </div>
 

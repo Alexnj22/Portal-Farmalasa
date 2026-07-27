@@ -76,14 +76,14 @@ const HolidaysPanel = ({
         <div className="p-4 md:p-6 space-y-6 animate-view-enter">
             {/* Year toggle + Add button */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-1 bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-1 shadow-sm">
-                    {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                        <button key={y} onClick={() => setHolidayYear(y)}
-                            className={`px-4 py-1.5 rounded-2xl text-label font-black transition-all ${holidayYear === y ? 'bg-surface-card text-warning shadow-sm' : 'text-content-3 hover:text-warning hover:bg-surface-card'}`}>
-                            {y}
-                        </button>
-                    ))}
-                </div>
+                <SegmentedControl
+                    size="sm"
+                    tone="warning"
+                    label="Año"
+                    value={holidayYear}
+                    onChange={setHolidayYear}
+                    options={[currentYear - 1, currentYear, currentYear + 1].map(y => ({ value: y, label: String(y) }))}
+                />
                 {canEdit && (
                     <button onClick={() => setShowForm(v => !v)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-label font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning-solid hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>

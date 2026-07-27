@@ -34,18 +34,18 @@ export const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];
 // ABC — revenue contribution class (extracted from TabMinMax.jsx, Bloque 6.C)
 export const ABC_CFG = {
     A: { bg: 'bg-surface-card-hover text-content-2 border-border-card',       title: 'Clase A — top 70% ingresos', color: 'var(--chart-8)' },
-    B: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Clase B — siguiente 20%',    color: '#94a3b8' },
+    B: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Clase B — siguiente 20%',    color: 'var(--chart-8-muted)' },
     C: { bg: 'bg-warning/10 text-warning-text border-warning/30',       title: 'Clase C — restante 10%',     color: 'var(--warning)' },
-    D: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Sin ventas en período',      color: '#94a3b8' },
+    D: { bg: 'bg-surface-card-hover text-content-3 border-border-card',       title: 'Sin ventas en período',      color: 'var(--chart-8-muted)' },
 };
 
 // XYZ — demand variability (replaces stable/moderate/erratic)
 export const XYZ_CFG = {
     X: { label: 'X', desc: 'Estable',   cls: 'text-content-2 bg-surface-card-hover border-border-card', color: 'var(--chart-8)' },
-    Y: { label: 'Y', desc: 'Moderada',  cls: 'text-content-3 bg-surface-card-hover border-border-card', color: '#94a3b8' },
+    Y: { label: 'Y', desc: 'Moderada',  cls: 'text-content-3 bg-surface-card-hover border-border-card', color: 'var(--chart-8-muted)' },
     Z: { label: 'Z', desc: 'Errática',  cls: 'text-danger-text bg-danger/10 border-danger/30',    color: 'var(--danger)' },
     // Legacy support (old data before migration)
     stable:   { label: 'X', desc: 'Estable',  cls: 'text-content-2 bg-surface-card-hover border-border-card', color: 'var(--chart-8)' },
-    moderate: { label: 'Y', desc: 'Moderada', cls: 'text-content-3 bg-surface-card-hover border-border-card', color: '#94a3b8' },
+    moderate: { label: 'Y', desc: 'Moderada', cls: 'text-content-3 bg-surface-card-hover border-border-card', color: 'var(--chart-8-muted)' },
     erratic:  { label: 'Z', desc: 'Errática', cls: 'text-danger-text bg-danger/10 border-danger/30',    color: 'var(--danger)' },
 };

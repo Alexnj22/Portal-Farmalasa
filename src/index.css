@@ -41,6 +41,12 @@
   --success: #12B76A;
   --warning: #F79009;
   --danger:  #F04438;
+  /* A6 (2026-07-26) — arranque del degradado del botón destructive. Estaba
+     como #f65a4d suelto dentro de Button.jsx: un degradado necesita dos
+     paradas y solo el final (--danger) era token, así que la mitad del
+     gradiente quedaba fuera del sistema. Es el mismo tono un escalón más
+     claro, no un color nuevo. */
+  --danger-light: #f65a4d;
 
   /* Texto seguro para AA sobre el propio tinte de success/warning/danger
      (Badge.jsx) — mismos valores que ya traía Badge.jsx hardcodeados
@@ -246,7 +252,19 @@
   --chart-6: #ec4899; --chart-6-text: #be185d; /* rosa */
   --chart-7: #eab308; --chart-7-text: #854d0e; /* dorado, nuevo T7 */
   --chart-8: #64748b; --chart-8-text: #334155; /* pizarra, nuevo T7 */
-  --chart-9: #14b8a6; --chart-9-text: #0f766e; /* teal, agregado durante T7.1b — RequestsView.jsx necesitaba 9 categorías simultáneas reales, no 8 */
+  --chart-9: #14b8a6; --chart-9-text: #0f766e;
+
+  /* A5 (2026-07-26) — el sistema tiene paletas CATEGÓRICAS (un color por
+     categoría, sin orden) pero ninguna rampa ORDINAL. ABC/XYZ de MinMax sí
+     lo es: A/X "importante o estable" → B/Y "intermedio" → C/Z "problema".
+     Los extremos ya tenían token (--chart-8 y --warning/--danger); el
+     escalón del medio era un #94a3b8 crudo, el último resto de la migración
+     a medias que documentó N1.
+     Se nombra el que falta en vez de colapsar B/Y sobre --chart-8, que
+     fundiría dos categorías en un mismo color. Si aparece una segunda rampa
+     ordinal, ahí sí conviene una familia propia en vez de seguir colgando
+     escalones de --chart-8. */
+  --chart-8-muted: #94a3b8; /* teal, agregado durante T7.1b — RequestsView.jsx necesitaba 9 categorías simultáneas reales, no 8 */
 
   /* ── Rellenos SÓLIDOS seguros con texto blanco (N2, D1-bis 2026-07-26) ──
      El sistema ya tenía resuelto el caso TEÑIDO (`bg-success/10` +
@@ -876,6 +894,7 @@
   --color-success:      var(--success);
   --color-warning:      var(--warning);
   --color-danger:       var(--danger);
+  --color-danger-light: var(--danger-light);
   --color-success-text: var(--success-text);
   --color-warning-text: var(--warning-text);
   --color-danger-text:  var(--danger-text);
@@ -949,6 +968,7 @@
   --color-chart-6: var(--chart-6); --color-chart-6-text: var(--chart-6-text);
   --color-chart-7: var(--chart-7); --color-chart-7-text: var(--chart-7-text);
   --color-chart-8: var(--chart-8); --color-chart-8-text: var(--chart-8-text);
+  --color-chart-8-muted: var(--chart-8-muted);
   --color-chart-9: var(--chart-9); --color-chart-9-text: var(--chart-9-text);
 
   /* Semáforo de riesgo de stock (7 estados reales, ver tabminmax/constants.js) */

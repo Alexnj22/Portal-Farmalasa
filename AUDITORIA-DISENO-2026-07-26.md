@@ -833,11 +833,11 @@ cambia nada (`--btn-radius` sigue siendo `9999px`).
 | # | Hallazgo | Alcance | Dónde entra |
 |---|---|---|---|
 | **A1** | La densidad no comprime filas en escritorio: `h-[var(--row-h)]` en un `<td>` es mínimo, no máximo, y el contenido (avatar 36px + dos líneas) lo excede. La celda se queda en 45px aunque `--row-h` baje a 32. | `DataTable` + cada vista que le pasa contenido | D3 — al migrar vistas |
-| **A2** | El título de vista se trunca a *"Gestión de …"* en móvil: el header mete 3 botones al lado y no hay prioridad declarada. | anatomía del header de vista | D2.5 (familia header) |
-| **A3** | 88 elementos a 9px en una pantalla de teléfono. El móvil tira a pequeño, no a grande. La densidad táctil resolvió las alturas, no la tipografía. | escala tipográfica en `(pointer: coarse)` | D2.5 / decisión |
+| ~~**A2**~~ | ~~Título truncado en móvil~~ — **RESUELTO**. La prioridad estaba declarada al revés: el título llevaba `min-w-0` (encoge hasta desaparecer) y las acciones `flex-shrink-0` (nunca ceden), así que ganaba lo secundario. Con `flex-wrap` + `basis-[60%]` las acciones bajan a una segunda línea en vez de comerse el título. | `GlassViewLayout` | ✓ |
+| **A3** | 88 elementos a 9px en una pantalla de teléfono. El móvil tira a pequeño, no a grande: la densidad táctil resolvió las **alturas**, no la **tipografía**. Mockup preparado (subir un escalón toda la escala bajo `(pointer: coarse)`) en `docs/audits/diseno-2026-07-26/movil-a2-a3/`. | escala tipográfica en `(pointer: coarse)` | **esperando confirmación** |
 | **A4** | 20 `zIndex:` inline sobreviven: tooltips portaleados que ya necesitan `style` para su `top`/`left` computado. | 12 archivos | aceptado, o D3 |
-| **A5** | `#94a3b8` es el escalón medio de la rampa ABC/XYZ. No hay token: el sistema tiene paletas *categóricas*, no rampas *secuenciales*. | `tabminmax/constants.js` | D2.5 — decidir si se crea la rampa |
-| **A6** | El degradado `destructive` de `Button` tiene dos paradas y solo una es token (`#f65a4d` → `--danger`). | `Button.jsx` | D2.5 — `--danger-gradient` |
+| ~~**A5**~~ | ~~Rampa ABC/XYZ sin token~~ — **RESUELTO** con `--chart-8-muted`. Es la única rampa ORDINAL del sistema (A/X importante → B/Y intermedio → C/Z problema); los extremos ya tenían token y faltaba el medio. Se nombra el que falta en vez de colapsar B/Y sobre `--chart-8`, que fundiría dos categorías en un color. | `index.css`, `constants.js` | ✓ |
+| ~~**A6**~~ | ~~Degradado destructive a medias~~ — **RESUELTO** con `--danger-light`. Un degradado necesita dos paradas y solo el final era token. | `index.css`, `Button.jsx` | ✓ |
 | **A7** | `ctx.fillStyle` de canvas no resuelve `var()`. Único caso técnico real del barrido de color. | `TabCatalogo.jsx` | aceptado |
 | **A8** | 417 sombras literales y 118 colores literales en `style` inline siguen en el baseline. | 100+ archivos | D3 |
 

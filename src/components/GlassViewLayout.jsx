@@ -102,8 +102,15 @@ const GlassViewLayout = ({
                     </div>
 
                 {/* Mobile: title inline */}
-                <div className="lg:hidden pt-5 pb-4 px-2 flex items-center justify-between gap-3 min-h-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                {/* A2 (2026-07-26) — la prioridad estaba declarada al revés: el título
+                    llevaba `min-w-0` (puede encogerse hasta desaparecer) y las acciones
+                    `flex-shrink-0` (nunca ceden), así que en móvil ganaba lo secundario y
+                    "Gestión de Personal" se truncaba a "Gestión de …". El título es lo que
+                    te dice dónde estás; las acciones son lo que podés posponer.
+                    Con `flex-wrap` + `basis-[60%]`, cuando no entran juntos las acciones
+                    bajan a una segunda línea en vez de comerse el título. */}
+                <div className="lg:hidden pt-5 pb-4 px-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 min-h-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 basis-[60%]">
                         {headerLeft ? (
                             <div className="min-w-0">{headerLeft}</div>
                         ) : (

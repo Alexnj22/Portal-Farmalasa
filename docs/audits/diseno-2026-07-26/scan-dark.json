@@ -1,0 +1,1125 @@
+{
+  "report": {
+    "overview": {
+      "white": [
+        {
+          "cls": "bg-white border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hove",
+          "w": 123,
+          "h": 21,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "h-8 shrink-0 rounded-[0.65rem] border border-divider bg-white flex items-center focus-within:border-brand focu",
+          "w": 173,
+          "h": 32,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 10,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Ver todas",
+          "px": 11,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        },
+        {
+          "txt": "Ventas",
+          "px": 8,
+          "cr": 1,
+          "min": 4.5,
+          "color": "rgba(255, 255, 255, 0.62)"
+        },
+        {
+          "txt": "Clic para ver horas",
+          "px": 7,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        },
+        {
+          "txt": "Julio",
+          "px": 10,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 17
+    },
+    "ventas": {
+      "white": [
+        {
+          "cls": "flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-white",
+          "w": 186,
+          "h": 42,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 4,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "productos": {
+      "white": [
+        {
+          "cls": "flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:o",
+          "w": 165,
+          "h": 74,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[160px] bg-white b",
+          "w": 160,
+          "h": 74,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 4,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "29",
+          "px": 22,
+          "cr": 2.62,
+          "min": 3,
+          "color": "rgb(18, 183, 106)"
+        },
+        {
+          "txt": "Nuevos este mes",
+          "px": 10,
+          "cr": 1,
+          "min": 4.5,
+          "color": "rgba(255, 255, 255, 0.62)"
+        }
+      ],
+      "lowContrastTotal": 6
+    },
+    "pedidos": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "minmax": {
+      "white": [
+        {
+          "cls": "flex items-center shrink-0 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.92",
+          "w": 588,
+          "h": 58,
+          "bg": "rgba(255, 255, 255, 0.7)"
+        }
+      ],
+      "whiteTotal": 1,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "requests": {
+      "white": [
+        {
+          "cls": "px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transitio",
+          "w": 114,
+          "h": 41,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 1,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Pendientes",
+          "px": 10,
+          "cr": 1.08,
+          "min": 4.5,
+          "color": "rgba(245, 246, 247, 0.925)"
+        }
+      ],
+      "lowContrastTotal": 2
+    },
+    "staff": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Nuevo Practicante",
+          "px": 10,
+          "cr": 4.23,
+          "min": 4.5,
+          "color": "rgb(255, 255, 255)"
+        },
+        {
+          "txt": "Todas las Sucursales",
+          "px": 12,
+          "cr": 3.58,
+          "min": 4.5,
+          "color": "rgba(101, 106, 118, 0.97)"
+        },
+        {
+          "txt": "Katherine Salinas",
+          "px": 13,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 4
+    },
+    "schedules": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "22",
+          "px": 20,
+          "cr": 2.85,
+          "min": 3,
+          "color": "rgb(0, 82, 204)"
+        },
+        {
+          "txt": "10am",
+          "px": 7,
+          "cr": 3.76,
+          "min": 4.5,
+          "color": "rgb(255, 255, 255)"
+        }
+      ],
+      "lowContrastTotal": 5
+    },
+    "payroll": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Todas las sucursales",
+          "px": 12,
+          "cr": 3.03,
+          "min": 4.5,
+          "color": "rgba(89, 95, 108, 0.973)"
+        }
+      ],
+      "lowContrastTotal": 3
+    },
+    "branches": {
+      "white": [
+        {
+          "cls": "px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all du",
+          "w": 87,
+          "h": 37,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tra",
+          "w": 189,
+          "h": 44,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "w-14 h-14 rounded-[1.25rem] bg-white border border-border-card text-brand shadow-[0_8px_20px_rgba(0,0,0,0.04),",
+          "w": 56,
+          "h": 56,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 10,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Todas",
+          "px": 11,
+          "cr": 1.64,
+          "min": 4.5,
+          "color": "rgba(200, 202, 206, 0.937)"
+        }
+      ],
+      "lowContrastTotal": 2
+    },
+    "facturacion": {
+      "white": [
+        {
+          "cls": "px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transitio",
+          "w": 104,
+          "h": 41,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "rounded-2xl border border-black/[0.07] bg-white shadow-sm",
+          "w": 1182,
+          "h": 205,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "rounded-2xl border border-black/[0.06] overflow-hidden bg-white shadow-sm",
+          "w": 1182,
+          "h": 70,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 6,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Anuladas",
+          "px": 10,
+          "cr": 1.32,
+          "min": 4.5,
+          "color": "rgba(223, 224, 227, 0.93)"
+        },
+        {
+          "txt": "Al resolverse la anulación en sistema, e",
+          "px": 11,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        },
+        {
+          "txt": "La Popular",
+          "px": 13,
+          "cr": 1,
+          "min": 4.5,
+          "color": "rgba(255, 255, 255, 0.62)"
+        },
+        {
+          "txt": "CCF",
+          "px": 9,
+          "cr": 3.76,
+          "min": 4.5,
+          "color": "rgb(240, 68, 56)"
+        },
+        {
+          "txt": "2026-06-22",
+          "px": 11,
+          "cr": 2.77,
+          "min": 4.5,
+          "color": "rgb(248, 113, 113)"
+        }
+      ],
+      "lowContrastTotal": 37
+    },
+    "cotizaciones": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "COT-2026-00001",
+          "px": 12,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 2
+    },
+    "promociones": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Todas",
+          "px": 11,
+          "cr": 3.68,
+          "min": 4.5,
+          "color": "rgb(255, 255, 255)"
+        }
+      ],
+      "lowContrastTotal": 3
+    },
+    "proveedores": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "facturas-compra": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Emparejar",
+          "px": 10,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 2
+    },
+    "compras": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "audit": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "roles": {
+      "white": [
+        {
+          "cls": "px-4 md:px-5 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-wider transition-all du",
+          "w": 119,
+          "h": 37,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 1,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Raíz",
+          "px": 8,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 4
+    },
+    "permissions": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "announcements": {
+      "white": [
+        {
+          "cls": "px-4 md:px-6 h-9 md:h-10 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest transiti",
+          "w": 113,
+          "h": 41,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration",
+          "w": 91,
+          "h": 37,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 2,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Activos",
+          "px": 11,
+          "cr": 1.46,
+          "min": 4.5,
+          "color": "rgba(212, 214, 217, 0.933)"
+        },
+        {
+          "txt": "Normal",
+          "px": 12,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        },
+        {
+          "txt": "Ver Detalle (0/1)",
+          "px": 11,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 8
+    },
+    "encuesta": {
+      "white": [
+        {
+          "cls": "px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transitio",
+          "w": 114,
+          "h": 41,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "flex items-center gap-3 px-4 py-3 rounded-xl border border-divider bg-white shadow-sm",
+          "w": 287,
+          "h": 75,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "flex flex-col items-center justify-center bg-white rounded-2xl border border-divider shadow-sm p-6 gap-2",
+          "w": 383,
+          "h": 253,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "md:col-span-2 bg-white rounded-2xl border border-divider shadow-sm p-4",
+          "w": 783,
+          "h": 253,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "bg-white rounded-2xl border border-divider shadow-sm p-4",
+          "w": 583,
+          "h": 238,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "bg-white rounded-2xl border border-divider shadow-sm p-4 flex flex-col gap-3",
+          "w": 583,
+          "h": 238,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 10,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Resumen",
+          "px": 10,
+          "cr": 3.74,
+          "min": 4.5,
+          "color": "rgba(128, 132, 142, 0.96)"
+        },
+        {
+          "txt": "38",
+          "px": 22,
+          "cr": 1,
+          "min": 3,
+          "color": "rgba(255, 255, 255, 0.92)"
+        },
+        {
+          "txt": "Participantes",
+          "px": 9,
+          "cr": 1,
+          "min": 4.5,
+          "color": "rgba(255, 255, 255, 0.62)"
+        },
+        {
+          "txt": "Score Global",
+          "px": 10,
+          "cr": 1,
+          "min": 4.5,
+          "color": "rgba(255, 255, 255, 0.62)"
+        },
+        {
+          "txt": "78",
+          "px": 26,
+          "cr": 1,
+          "min": 3,
+          "color": "rgba(255, 255, 255, 0.92)"
+        }
+      ],
+      "lowContrastTotal": 48
+    },
+    "monitor": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "50",
+          "px": 28,
+          "cr": 2.85,
+          "min": 3,
+          "color": "rgb(0, 82, 204)"
+        },
+        {
+          "txt": "Ver más (1 restantes)",
+          "px": 10,
+          "cr": 2.85,
+          "min": 4.5,
+          "color": "rgb(0, 82, 204)"
+        }
+      ],
+      "lowContrastTotal": 4
+    },
+    "vacation-plan": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Todas las sucursales",
+          "px": 12,
+          "cr": 3.08,
+          "min": 4.5,
+          "color": "rgba(90, 96, 109, 0.973)"
+        }
+      ],
+      "lowContrastTotal": 3
+    },
+    "ventas-perdidas": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "conteo-inventario": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "my-requests": {
+      "white": [
+        {
+          "cls": "px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transitio",
+          "w": 114,
+          "h": 41,
+          "bg": "rgb(255, 255, 255)"
+        },
+        {
+          "cls": "flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border text-[10px] font-black uppercase tracking-wide",
+          "w": 120,
+          "h": 66,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 2,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Pendientes",
+          "px": 10,
+          "cr": 1.2,
+          "min": 4.5,
+          "color": "rgba(233, 234, 235, 0.93)"
+        },
+        {
+          "txt": "Vacaciones",
+          "px": 10,
+          "cr": 1.7,
+          "min": 4.5,
+          "color": "rgb(240, 193, 20)"
+        }
+      ],
+      "lowContrastTotal": 3
+    },
+    "my-documents": {
+      "white": [
+        {
+          "cls": "px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transitio",
+          "w": 78,
+          "h": 41,
+          "bg": "rgb(255, 255, 255)"
+        }
+      ],
+      "whiteTotal": 1,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        },
+        {
+          "txt": "Todos",
+          "px": 10,
+          "cr": 1.2,
+          "min": 4.5,
+          "color": "rgba(233, 234, 235, 0.93)"
+        }
+      ],
+      "lowContrastTotal": 2
+    },
+    "profile": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    },
+    "laboratorios": {
+      "white": [],
+      "whiteTotal": 0,
+      "lowContrast": [
+        {
+          "txt": "Portal en construcción visual — algunas ",
+          "px": 12,
+          "cr": 1.17,
+          "min": 4.5,
+          "color": "rgb(43, 28, 2)"
+        }
+      ],
+      "lowContrastTotal": 1
+    }
+  },
+  "consoleErrs": {
+    "": [
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "overview": [
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "ventas": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "productos": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "pedidos": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "minmax": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "staff": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "schedules": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "branches": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "cotizaciones": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "fetchAllRows error: TypeError: Failed to fetch",
+      "load: fetch sales_invoice_gaps failed: TypeError: Failed to fetch",
+      "load: fetch sales_invoice_nulls failed: TypeError: Failed to fetch",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "promociones": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "proveedores": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "facturas-compra": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "compras": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "audit": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "roles": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "announcements": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "monitor": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "vacation-plan": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep"
+    ],
+    "ventas-perdidas": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "conteo-inventario": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "my-requests": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "my-documents": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "profile": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ],
+    "laboratorios": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+    ]
+  }
+}

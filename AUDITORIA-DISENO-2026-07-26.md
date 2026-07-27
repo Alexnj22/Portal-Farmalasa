@@ -794,6 +794,27 @@ más usados.
 
 ### D2.5 — Inventario visual y canónico por familia · **en curso**
 
+#### La matriz de movimiento, verificada en vivo
+
+D2.4 estableció dos ejes independientes; medidos sobre `overview` contando
+animaciones CSS realmente corriendo:
+
+| | Liquid | Solid |
+|---|---|---|
+| movimiento normal | 75 | **45** |
+| `prefers-reduced-motion` | **4** | **4** |
+
+El eje del tema funciona (Solid corre ~40% menos) y **la accesibilidad gana
+siempre sobre la estética**: con `reduce` el resultado es el mismo en los
+cuatro temas. Una regla nueva de movimiento tiene que entrar en los dos
+gates — A9 fue justamente el caso de una que no entró en ninguno.
+
+El `skeleton` es la excepción dentro de la excepción: es **funcional** (dice
+"esto está cargando"), así que en Solid no se apaga, pero tampoco baja a los
+130ms del resto de lo funcional — si el barrido termina antes que la espera,
+el placeholder queda congelado y deja de leerse como carga. Se acorta a 900ms,
+la mitad del ritmo de Liquid.
+
 Botones y badges cerrados; el resto de las 18 familias pendiente.
 
 **Botones** — 291 con `className`: 12 radios, 9 alturas, 26 paddings. El dato
@@ -862,7 +883,7 @@ cambia nada (`--btn-radius` sigue siendo `9999px`).
 | ~~**A5**~~ | ~~Rampa ABC/XYZ sin token~~ — **RESUELTO** con `--chart-8-muted`. Es la única rampa ORDINAL del sistema (A/X importante → B/Y intermedio → C/Z problema); los extremos ya tenían token y faltaba el medio. Se nombra el que falta en vez de colapsar B/Y sobre `--chart-8`, que fundiría dos categorías en un color. | `index.css`, `constants.js` | ✓ |
 | ~~**A6**~~ | ~~Degradado destructive a medias~~ — **RESUELTO** con `--danger-light`. Un degradado necesita dos paradas y solo el final era token. | `index.css`, `Button.jsx` | ✓ |
 | **A7** | `ctx.fillStyle` de canvas no resuelve `var()`. Único caso técnico real del barrido de color. | `TabCatalogo.jsx` | aceptado |
-| **A9** | `animate-pulse` no estaba en el bloque de `prefers-reduced-motion` (`.skeleton` sí): 88 latidos de énfasis seguían animando aunque el usuario pidiera menos movimiento. **RESUELTO** — la información que transmiten no depende del movimiento (color, ícono y texto siguen ahí), así que detenerlos no quita significado. | `index.css` | ✓ |
+| **A9** | `animate-pulse` quedó fuera de **los dos** gates de movimiento: ni `prefers-reduced-motion` ni el eje de tema de D2.4. 88 latidos de énfasis seguían animando en Solid y con la preferencia puesta. **RESUELTO en ambos.** | `index.css` | ✓ |
 | **A10** | `Skeleton`/`SkeletonText` quedaron creados con **0 adopciones**. Los 129 `.skeleton` existentes ya usan el mecanismo correcto (la clase CSS que el componente envuelve), así que no son deuda — pero envolverlos en el componente es lo que evita que `Skeleton` termine como `Button` con 1 import. | 129 usos | D3 |
 | **A8** | 417 sombras literales y 118 colores literales en `style` inline siguen en el baseline. | 100+ archivos | D3 |
 

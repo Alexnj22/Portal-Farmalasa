@@ -779,6 +779,7 @@
 [data-theme="solid-dark"] .animate-ambient-drift-reverse {
   display: none;
 }
+[data-theme="solid"] .animate-pulse,
 [data-theme="solid"] .animate-shimmer,
 [data-theme="solid"] .animate-wiggle,
 [data-theme="solid"] .animate-stagger-child,
@@ -786,6 +787,7 @@
 [data-theme="solid"] .glow-danger,
 [data-theme="solid"] .glow-warning,
 [data-theme="solid"] .badge-pulse,
+[data-theme="solid-dark"] .animate-pulse,
 [data-theme="solid-dark"] .animate-shimmer,
 [data-theme="solid-dark"] .animate-wiggle,
 [data-theme="solid-dark"] .animate-stagger-child,
@@ -802,13 +804,23 @@
 [data-theme="solid"] .animate-kpi-enter,
 [data-theme="solid"] .animate-widget-enter,
 [data-theme="solid"] .animate-table-row-enter,
+[data-theme="solid"] .skeleton,
 [data-theme="solid-dark"] .animate-view-enter,
 [data-theme="solid-dark"] .animate-route-enter,
 [data-theme="solid-dark"] .animate-kpi-enter,
 [data-theme="solid-dark"] .animate-widget-enter,
-[data-theme="solid-dark"] .animate-table-row-enter {
+[data-theme="solid-dark"] .animate-table-row-enter,
+[data-theme="solid-dark"] .skeleton {
   animation-duration: 130ms;
   animation-timing-function: ease-out;
+}
+/* Excepción dentro de la excepción: el barrido del skeleton necesita durar lo
+   que dura la espera, no 130ms — si termina antes, el placeholder queda
+   congelado y deja de leerse como "cargando". Se acorta a la mitad del ritmo
+   de Liquid en vez de al mínimo funcional. */
+[data-theme="solid"] .skeleton,
+[data-theme="solid-dark"] .skeleton {
+  animation-duration: 900ms;
 }
 
 /* Fase T5: en liquid/dark los blobs quedan vivos en móvil (arriba solo se

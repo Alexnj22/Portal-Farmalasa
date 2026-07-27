@@ -357,6 +357,15 @@ const RING_FOCUS_RE = /(?:focus|focus-visible|group-focus-within):ring-[a-z0-9[]
 const RING_KILL_RE = /(?:focus|focus-visible):outline-none/g;
 const RING_ALPHA_RE = /(?<![:\w-])ring-1\s+ring-(?:brand|success|warning|danger|chart-\d)(?:-\w+)?(?:\/(?!30\b)[0-9.]+)?(?![\w/-])|(?<![:\w-])ring-2\s+ring-(?:brand|success|warning|danger|chart-\d)(?:-\w+)?(?:\/(?!45\b)[0-9.]+)?(?![\w/-])/g;
 
+// Región colapsada sin `inert` (A17, 2026-07-27). Esconder con
+// `opacity-0 pointer-events-none` saca la región del ojo y del mouse pero NO
+// del teclado: se tabula adentro y el foco desaparece de la pantalla
+// (WCAG 2.4.3 y 2.4.7). Eran 26 regiones en 14 archivos —el "modo búsqueda"
+// copiado vista por vista, los paneles de IA, el modo edición de sucursal—.
+// Se excluyen los reveals de hover, que son decorativos y no contienen foco.
+const INERT_RE = /\$\{\s*[^?{}]+?\s*\?\s*'[^']*'\s*:\s*'[^']*'\s*\}/g;
+const HIDDEN_BRANCH = /'([^']*)'/g;
+
 const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
 
 // ── Categoría 9: motion (D0.5, 2026-07-26) ──────────────────────────────
@@ -551,6 +560,29 @@ function scanFile(path) {
       let m;
       while ((m = RGB_LITERAL_RE.exec(stripped))) {
         findings.push({ line: i + 1, label: `color literal ${m[1]}() fuera de token`, category: 'inline-color', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'inert')) {
+    lines.forEach((line, i) => {
+      if (isComment[i] || /group-hover:opacity|hover:opacity-100/.test(line)) return;
+      // el ternario puede abrirse en esta línea y cerrarse más abajo: se mira
+      // la línea y su vecina para no perder los que están partidos
+      const chunk = line + '\n' + (lines[i + 1] || '');
+      INERT_RE.lastIndex = 0;
+      let m;
+      while ((m = INERT_RE.exec(chunk))) {
+        // el ternario debe EMPEZAR en esta línea; si arranca en la siguiente
+        // ya se reportará en su propia pasada (si no, salía duplicado)
+        if (m.index >= line.length) continue;
+        const branches = m[0].match(HIDDEN_BRANCH) || [];
+        const oculta = branches.filter(b => b.includes('opacity-0') && b.includes('pointer-events-none'));
+        if (oculta.length !== 1) continue;
+        // ¿la etiqueta que lo contiene ya declara inert?
+        const back = lines.slice(Math.max(0, i - 4), i + 2).join('\n');
+        if (/\binert=/.test(back)) continue;
+        findings.push({ line: i + 1, label: 'región colapsada sin `inert` — se tabula dentro de lo invisible (WCAG 2.4.3)', category: 'inert', text: line.trim().slice(0, 120) });
       }
     });
   }

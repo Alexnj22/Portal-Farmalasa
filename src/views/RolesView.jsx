@@ -496,7 +496,7 @@ const RolesView = ({ openModal }) => {
                         </div>
                     </div>
 
-                    <div className={`flex items-center transition-all duration-500 ease-in-out origin-right ${activeTab === 'list' ? 'max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-border-card' : 'max-w-0 opacity-0 scale-50 pointer-events-none m-0 p-0 border-transparent overflow-hidden'}`}>
+                    <div inert={!(activeTab === 'list') ? true : undefined} className={`flex items-center transition-all duration-500 ease-in-out origin-right ${activeTab === 'list' ? 'max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-border-card' : 'max-w-0 opacity-0 scale-50 pointer-events-none m-0 p-0 border-transparent overflow-hidden'}`}>
                         <button
                             onClick={() => { setIsSearchExpanded(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}
                             className="relative w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[var(--shadow-glow-brand)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"

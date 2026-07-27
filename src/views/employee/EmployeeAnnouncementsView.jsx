@@ -698,7 +698,7 @@ const EmployeeAnnouncementsView = () => {
     const filtersContent = (
         <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
+            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
                 <Search size={16} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input
                     ref={searchInputRef}
@@ -718,7 +718,7 @@ const EmployeeAnnouncementsView = () => {
                 </button>
             </div>
             {/* Tab mode */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0' : 'max-w-[700px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
+            <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0' : 'max-w-[700px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
                 {TABS.map(t => {
                     const isActive = tab === t.key;
                     return (
@@ -733,7 +733,7 @@ const EmployeeAnnouncementsView = () => {
                 })}
 
                 {/* Subfiltros READ — aparecen deslizándose cuando tab === 'READ' y hay opciones */}
-                <div className={`flex items-center gap-1 shrink-0 transform-gpu transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                <div inert={!(tab === 'READ' && readFilters.length > 1) ? true : undefined} className={`flex items-center gap-1 shrink-0 transform-gpu transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                     tab === 'READ' && readFilters.length > 1
                         ? 'max-w-[360px] opacity-100'
                         : 'max-w-0 opacity-0 pointer-events-none'

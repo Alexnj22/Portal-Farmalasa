@@ -498,7 +498,7 @@ const PayrollView = ({ openModal }) => {
     const filtersContent = (
         <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
             {/* Search mode */}
-            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-border-card shadow-sm">
                     <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
@@ -512,7 +512,7 @@ const PayrollView = ({ openModal }) => {
                 </button>
             </div>
             {/* Normal mode */}
-            <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
+            <div inert={isSearchMode ? true : undefined} className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
                 {getScope('payroll') !== 'BRANCH' && <><div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} bare />
                 </div>

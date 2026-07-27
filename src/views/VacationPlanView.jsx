@@ -647,7 +647,7 @@ const VacationPlanView = () => {
         <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
 
             {/* Search mode */}
-            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
+            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[260px] border border-border-card shadow-sm">
                     <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
                     <input
@@ -672,7 +672,7 @@ const VacationPlanView = () => {
             </div>
 
             {/* Normal mode */}
-            <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
+            <div inert={isSearchMode ? true : undefined} className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
 
                 {/* Year selector */}
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-2)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">

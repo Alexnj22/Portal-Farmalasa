@@ -388,7 +388,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                 <div className={`flex items-center justify-end relative h-10 transition-all duration-500 ease-in-out ${isSearchExpanded ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full md:w-auto'}`}>
 
-                    <div className={`flex flex-wrap md:flex-nowrap items-center gap-2 shrink-0 transition-all duration-300 ease-in-out absolute right-0 w-full md:w-auto justify-end ${isSearchExpanded ? 'opacity-0 scale-95 pointer-events-none translate-x-10' : 'opacity-100 scale-100 translate-x-0'}`}>
+                    <div inert={isSearchExpanded ? true : undefined} className={`flex flex-wrap md:flex-nowrap items-center gap-2 shrink-0 transition-all duration-300 ease-in-out absolute right-0 w-full md:w-auto justify-end ${isSearchExpanded ? 'opacity-0 scale-95 pointer-events-none translate-x-10' : 'opacity-100 scale-100 translate-x-0'}`}>
 
                         <button
                             onClick={() => setShowAllDocs(!showAllDocs)}
@@ -418,7 +418,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         </button>
                     </div>
 
-                    <div {...searchContainerRef} className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
+                    <div inert={!(isSearchExpanded) ? true : undefined} {...searchContainerRef} className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
                         <div className="relative w-full shadow-[var(--shadow-glow-brand)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-brand-text" />

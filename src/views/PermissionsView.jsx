@@ -720,7 +720,7 @@ const PermissionsView = () => {
     const filtersContent = (
         <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
@@ -740,7 +740,7 @@ const PermissionsView = () => {
                 </button>
             </div>
             {/* MODO NORMAL */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3'}`}>
+            <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3'}`}>
                 {selectedRoleId && canEdit && (
                     <>
                         <button onClick={() => setConfirmActivate(true)} disabled={activatingAll || copyingFrom}

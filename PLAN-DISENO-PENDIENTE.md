@@ -259,14 +259,25 @@ una regla que ya existía — así que lo correcto no era agregar un canónico s
 **borrar los 171 que lo tapaban**. Verificar en el navegador no confirmó el
 trabajo: lo cambió.
 
-### A17 · Buscador colapsado sigue en el orden de tabulación (ABIERTO)
+### A17 · Se tabula dentro de lo invisible (RESUELTO v2.67.1)
 
-Encontrado mientras se verificaba A16. El buscador del header de vistas, cuando
-está colapsado, vive en un contenedor con `opacity: 0` pero **el input sigue
-siendo enfocable**: tabulando se cae en un campo invisible y el foco desaparece
-de la pantalla (WCAG 2.4.3 / 2.4.7). Se detectó porque la sonda de verificación
-aterrizaba ahí una y otra vez. Falta `inert` (o `tabIndex={-1}`) mientras esté
-cerrado.
+Encontrado mientras se verificaba A16: la sonda aterrizaba una y otra vez en un
+input que no podía mostrar. Era el buscador colapsado del header — y al medirlo
+no eran dos sitios sino **26 regiones en 14 archivos**.
+
+`opacity-0 pointer-events-none` esconde del ojo y del mouse, pero **no del
+teclado**. Quien navega tabulando entraba en menús cerrados, buscadores
+colapsados y paneles de IA apagados, y el foco desaparecía de la pantalla
+(WCAG 2.4.3 y 2.4.7). Medido en `/proveedores`: 26 paradas invisibles en 60
+tabulaciones. Ahora 0, verificado también en `/solicitudes`, `/facturacion`
+y `/permisos`.
+
+Lo que el conteo dice de fondo: el "modo búsqueda" está **copiado vista por
+vista** en vez de salir de `ViewTabBar` — 8 de las 14 apariciones son la misma
+barra reescrita. Ese es el trabajo de D3, y este bug es una de sus
+consecuencias.
+
+Gate: categoría `inert` nueva, en 0 y bloqueante.
 
 ## Revisión de los "casos únicos" (2026-07-27)
 

@@ -2127,7 +2127,7 @@ export default function FacturacionView() {
         <div {...searchContainerRef} className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Search mode */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
+            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
  className="flex-1 bg-transparent border-none text-body-xl md:text-body-xl font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3"
@@ -2141,7 +2141,7 @@ export default function FacturacionView() {
             </div>
 
             {/* Normal mode */}
-            <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
+            <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0' : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
                 {allowedTabs.map(tab => (
                     <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}

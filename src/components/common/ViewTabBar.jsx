@@ -67,8 +67,17 @@ export default function ViewTabBar({
       h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
       shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]`}>
 
-      {/* Search mode */}
-      <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
+      {/* Search mode
+          `inert` cuando está cerrada (A17, 2026-07-27). Las dos mitades de esta
+          barra existen SIEMPRE en el DOM y se colapsan con max-w-0 + opacity-0:
+          eso las esconde a la vista pero NO las saca del orden de tabulación, así
+          que tabulando se caía en un input invisible y el foco desaparecía de la
+          pantalla (WCAG 2.4.3 y 2.4.7). Se descubrió al verificar A16: la sonda
+          aterrizaba una y otra vez en este campo sin poder mostrar el aro.
+          `inert` —no `tabIndex={-1}`— porque también hay que sacar los botones de
+          limpiar y cerrar, y de paso lo oculta a los lectores de pantalla. */}
+      <div inert={!isSearchMode ? true : undefined}
+        className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
         transition-all duration-700 ${spring} origin-left
         ${isSearchMode
           ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3'
@@ -98,8 +107,10 @@ export default function ViewTabBar({
         </button>
       </div>
 
-      {/* Normal mode */}
-      <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
+      {/* Normal mode — mismo caso al revés: con la búsqueda abierta, los tabs
+          colapsados seguían tabulables. */}
+      <div inert={isSearchMode ? true : undefined}
+        className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
         transition-all duration-700 ${spring} origin-right
         ${isSearchMode
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'

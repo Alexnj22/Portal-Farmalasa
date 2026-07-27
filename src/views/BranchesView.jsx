@@ -253,7 +253,7 @@ const BranchCard = memo(({
         <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[var(--shadow-glass-5)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
-            <div className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
+            <div inert={!(aiMode) ? true : undefined} className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
                 
                 {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">

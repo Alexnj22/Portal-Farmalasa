@@ -687,8 +687,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     )}
                 </button>
 
+                {/* `inert` con el grupo cerrado (A17, 2026-07-27). El submenú colapsa
+                    con grid-rows-[0fr] + opacity-0: se ve cerrado, pero sus botones
+                    seguían en el orden de tabulación. Con 26 módulos ocultos, quien
+                    navega con teclado tabulaba dentro de menús invisibles y el foco
+                    salía de la pantalla (WCAG 2.4.3 / 2.4.7). `pointer-events-none`
+                    solo tapa el mouse; el teclado necesita `inert`. */}
                 <div
                     id={`nav-group-${key}`}
+                    inert={!(isExpanded && isOpen) ? true : undefined}
                     className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
                         ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
                 >

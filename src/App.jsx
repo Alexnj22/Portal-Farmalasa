@@ -61,6 +61,7 @@ const EncuestaAdminView = lazy(() => import("./views/EncuestaAdminView"));
 const NoAccessView = lazy(() => import("./views/NoAccessView"));
 const AccessDeniedView = lazy(() => import("./views/AccessDeniedView"));
 const DashboardView = lazy(() => import("./views/DashboardView"));
+const NotFoundView = lazy(() => import("./views/NotFoundView"));
 
 // ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA
 const AuthSyncHelper = () => {
@@ -635,7 +636,10 @@ function MainApp() {
                                     {/* ── Fallbacks ── */}
                                     <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />
                                     <Route path="staff" element={<Navigate to="/dashboard" replace />} />
-                                    <Route path="*" element={<Navigate to={defaultRedirect} replace />} />
+                                    {/* D3.7 — antes esto era un <Navigate> silencioso al primer módulo con
+                                        permiso: el usuario aterrizaba en otra pantalla sin saber si el
+                                        enlace estaba roto o si le faltaba acceso. */}
+                                    <Route path="*" element={<NotFoundView />} />
                                 </Routes>
                                 </Suspense>
                                 </ErrorBoundary>

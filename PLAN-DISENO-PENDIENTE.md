@@ -153,10 +153,20 @@ Un canónico con 1 import es peor que ninguno: aparenta un estándar que no exis
 Decisión ya tomada. Lo que el canónico no cubra se le agrega, no se resuelve
 inline.
 
-### D3.7 — `NotFoundView`
+### D3.7 — `NotFoundView` · ✓ CERRADA (2026-07-27)
 
-Decisión ya tomada. Sobre el `EmptyState` compartido, con "Volver al inicio".
-Reemplaza el redirect silencioso del catch-all.
+Antes el catch-all hacía `<Navigate to={defaultRedirect} replace />`: un
+redirect **silencioso** al primer módulo con permiso. El usuario tecleaba una
+URL vieja y aterrizaba en otra pantalla sin saber si el enlace estaba roto o
+si le faltaba acceso.
+
+Construida sobre el `EmptyState` compartido en vez de inventar un layout
+propio — una ruta inexistente **es** un estado vacío, y el sistema ya resolvió
+cómo se ve eso. Muestra la ruta pedida, que es el dato que convierte "algo
+falló" en "este enlace está mal".
+
+Estrena `Button` en una vista: **primera adopción real del canónico**, que
+hasta ahora solo importaba `DataTable`.
 
 ### D3.8 — Cerrar el baseline del gate
 

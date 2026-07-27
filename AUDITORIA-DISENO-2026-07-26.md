@@ -741,6 +741,57 @@ oscurecidos a ojo: el badge sigue leyéndose verde/rojo/ámbar, solo más satura
 **268 usos migrados en 84 archivos**, solo donde `text-white` aparece en el mismo
 atributo `className` que el relleno.
 
+### D2 — Conectar las escalas muertas · **CERRADA** (2026-07-26)
+
+Gate: 6,333 → **1,256**. `typography` y `hex` quedan en **0 y bloqueantes**.
+
+| Sub-fase | Resultado |
+|---|---|
+| D2.1 tipografía | 4,488 usos → 13 tokens; ningún tamaño cambia |
+| D2.2 z-index | 552 → 20; se agregan `z-ribbon` y `z-popover` al hueco 500→9998 |
+| D2.3 densidad | conectada vía `Button`/`DataTable`, con piso táctil de 44px |
+| D2.4 motion | Liquid expresivo / Solid eficiente; **S1.6 cerrado** con `MotionProvider` |
+| D2.5/N1 hex | 25 de 32 a tokens; 7 excepciones técnicas documentadas |
+
+#### Hallazgo nuevo — **N3 · Solid Modern renderiza la geometría de Liquid**
+
+Encontrado al abrir D2.5a (los 627 radios). Los tokens de radio **sí son
+theme-aware** y siempre lo fueron: `--card-radius` vale 1.75rem (28px) en Liquid
+y 0.75rem (12px) en Solid; `--btn-radius` pasa de `9999px` a 0.5rem. La
+especificación §7.2 de Solid Modern está escrita y es correcta.
+
+**Pero no llega a la pantalla.** Medido en vivo sobre `staff`, contando el
+`border-radius` computado de todo elemento visible ≥40×24px:
+
+| | Liquid | Solid |
+|---|---|---|
+| `--card-radius` (token) | 1.75rem | 0.75rem |
+| `--btn-radius` (token) | 9999px | 0.5rem |
+| **radios realmente pintados** | 16px×102 · 12px×28 · 40px×5 · 28px×4 | 16px×102 · 12px×29 · 40px×4 · 8px×3 |
+
+Son prácticamente el mismo render. La diferencia se reduce a los ~4 elementos
+que usan `data-surface` — los únicos que consultan el token. Los otros ~160
+llevan el radio hardcodeado y se quedan con la geometría de Liquid.
+
+O sea: **el tema "Solid Modern" existe a medias.** Cambia color, superficie,
+sombra y backdrop, pero no la forma — que es justamente lo que separaba a los
+dos estilos en el plan T2.
+
+Alcance: 1,285 `rounded-full` · 599 `rounded-xl` · 467 `rounded-2xl` ·
+255 `rounded-lg` · 161 `rounded-md` y ~400 arbitrarios (`rounded-[1rem]` 144,
+`rounded-[1.5rem]` 117, `rounded-[2.5rem]` 84, `rounded-[2rem]` 83…).
+
+**No se aplicó: es un rediseño visible del tema Solid y necesita tu visto bueno**
+(regla del proyecto: mostrar antes de implementar). Evidencia lado a lado en
+`docs/audits/diseno-2026-07-26/radios/` — `ANTES-solid-*.png` contra
+`DESPUES-solid-*.png` sobre `staff` e `overview`.
+
+La propuesta no toca Liquid ni Dark: redefine la rampa `--radius-*` de Tailwind
+solo bajo `[data-theme="solid"]`/`[data-theme="solid-dark"]`, de modo que los
+~2,800 `rounded-xl`/`2xl`/`lg`/`md` ya escritos se vuelvan theme-aware **sin
+tocar un solo archivo de vista**, más un puñado de reglas para los arbitrarios
+más usados.
+
 ---
 
 ## Anexo — Evidencia

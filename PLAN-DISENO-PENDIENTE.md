@@ -1,0 +1,162 @@
+# Plan — lo que falta del sistema de diseño
+
+**Origen:** `AUDITORIA-DISENO-2026-07-26.md`. Fases D0, D0-bis, D1 y D2 cerradas.
+**Estado al 2026-07-27:** gate en 1,249 hallazgos (arrancó en 6,333).
+**Regla de trabajo:** una fase no se cierra sin su criterio verificable; un
+hallazgo nuevo se documenta siempre, se resuelva o no.
+
+---
+
+## Punto de partida, medido
+
+| Deuda | Cantidad |
+|---|---|
+| `white` (bg/text/border-white) | 692 |
+| `shadow-literal` (sombras a mano) | 412 |
+| `inline-color` (rgb/rgba en `style`) | 118 |
+| `z-index` inline en tooltips portaleados | 20 |
+| `motion` decorativo | 7 |
+| `<button>` crudos | **639** en 102 archivos |
+| `<input>` crudos | **112** en 39 archivos |
+| Spinner como estado de vista | **133** |
+| `EmptyState` copiado a mano | **32** archivos |
+
+**Adopción de los canónicos hoy:** `Button` 0 · `Badge` 1 · `Skeleton` 0 ·
+`EmptyState` 1 · `LoadingState` 3 · `PortalInput` 2.
+
+Ese es el problema de fondo: los canónicos existen y nadie los usa. El resto
+del plan es, casi entero, **adopción**.
+
+---
+
+## D2.5 — Cerrar el inventario por familia
+
+Hecho: botones · badges · estados (skeleton/vacío/carga) · radios · densidad.
+
+### D2.5b — Familias que faltan
+
+| Familia | Situación | Entregable |
+|---|---|---|
+| **Inputs** | 112 crudos vs `PortalInput` (2 usos) | Inventario de variantes reales → extender `PortalInput` (tamaños, con/sin ícono, error, ayuda) |
+| **Modales** | `ModalShell` y `UnifiedModal` (944 líneas) en paralelo | Decidir: extraer del `UnifiedModal` lo que le falta al canónico |
+| **Tabs / filter pills** | `ViewTabBar` con 14 usos; pills copiadas a mano | Contar variantes reales, unificar |
+| **Cards / KPI** | `StatCard` 1 uso real; KPI a mano en Inicio, Productos, Facturación | Definir anatomía y variantes |
+| **Tooltips / toasts / avatares** | `LiquidTooltip` 2 usos vs `title=` nativo | Decidir si el nativo es aceptable y dónde |
+| **Tamaños de icono** | sin escala declarada | Escala (12/14/16/20/24) atada a los tamaños de control |
+
+**Cierre:** cada familia con su set canónico decidido y documentado en
+`DESIGN.md`, y el gate verificando lo verificable.
+
+---
+
+## D3 — Adopción
+
+La fase más grande. **No es un barrido mecánico**: cada vista se migra entera
+y se verifica, porque tocar `<button>` en una vista también toca su sombra
+literal, su color inline y su estado de carga.
+
+### D3.1 — Estados de carga (133 spinners → skeleton)
+
+Regla ya decidida y escrita:
+
+> **Skeleton** donde el contenido tiene forma · **spinner solo** dentro del
+> botón que disparó la acción · **ningún texto** de "cargando" como señal única.
+
+El parpadeo ya está resuelto con `.skeleton-delayed` (250ms, activo por
+defecto), así que la migración es mecánica contra la regla.
+
+**Cierre:** 0 spinners como estado de sección; los 104 de botón intactos.
+
+### D3.2 — `EmptyState` en las 32 vistas que lo copian
+
+**Cierre:** 0 implementaciones locales del patrón; `DESIGN.md` §18 deja de ser
+una receta para copiar y pasa a ser un componente.
+
+### D3.3 — `<button>` → `Button` (639 en 102 archivos)
+
+Ya hay objetivo: 4 tamaños canónicos derivados de `--control-h` con piso
+táctil. Arrastra `white`, `shadow-literal` y `inline-color` de esas líneas.
+
+**Cierre:** `<button>` crudo solo dentro de los canónicos y en excepciones
+documentadas.
+
+### D3.4 — `<input>` → `PortalInput` (112 en 39 archivos)
+
+Depende de D2.5b (definir las variantes primero).
+
+### D3.5 — `Badge` y `StatCard`
+
+**Cierre:** o se adoptan, o se eliminan si el patrón real resultó ser otro.
+Un canónico con 1 import es peor que ninguno: aparenta un estándar que no existe.
+
+### D3.6 — `UnifiedModal` sobre `ModalShell`
+
+Decisión ya tomada. Lo que el canónico no cubra se le agrega, no se resuelve
+inline.
+
+### D3.7 — `NotFoundView`
+
+Decisión ya tomada. Sobre el `EmptyState` compartido, con "Volver al inicio".
+Reemplaza el redirect silencioso del catch-all.
+
+### D3.8 — Cerrar el baseline del gate
+
+Al migrar vistas caen solas: `white` 692 · `shadow-literal` 412 ·
+`inline-color` 118. Lo que quede al final se excepciona con motivo o se cierra.
+
+**Cierre de D3:** las 5 categorías del ratchet en 0 y bloqueantes, o con
+excepción documentada. Y re-correr el escáner de contraste: 0/0 como en D1.
+
+### Hallazgos que se resuelven dentro de D3
+
+- **A1** — la densidad no comprime filas: `h-[var(--row-h)]` en `<td>` es
+  mínimo, no máximo, y el contenido (avatar 36px + dos líneas) lo excede.
+  Se arregla al migrar la anatomía de fila.
+- **A10** — `Skeleton` con 0 adopciones.
+- **A11** — skeleton en 36 de 59 vistas con carga.
+
+---
+
+## D4 — Reescribir `DESIGN.md`
+
+Solo cuando D3 esté cerrada: antes, el doc describiría algo que aún cambia.
+
+1. Corregir las 36 prescripciones prohibidas y las 5 afirmaciones falsas.
+2. Documentar los 8 componentes que no aparecen, más los nuevos
+   (`StateViews`, `MotionProvider`).
+3. Agregar lo que falta para un sistema terminado: escala tipográfica,
+   contrato de estados por componente, plantilla de ficha, guía de densidad,
+   tokens de motion, y la regla de los **dos gates de movimiento**.
+4. Gobernanza: **toda sección que prescriba clases debe estar cubierta por el
+   gate**. Si no se puede verificar, es una convención, no un estándar.
+
+**Cierre:** un script extrae los bloques de código de `DESIGN.md` y los pasa
+por `gate:design`. Si el doc prescribe algo prohibido, falla.
+
+---
+
+## Aceptados, no se tocan
+
+| # | Motivo |
+|---|---|
+| **A4** | 20 `zIndex:` inline en tooltips portaleados que ya necesitan `style` para su `top`/`left` computado. |
+| **A7** | `ctx.fillStyle` de canvas no resuelve `var()`. Único límite técnico real del barrido de color. |
+| Perillas de switch | 18 `bg-white` en perillas redondas: blancas sobre su riel en los 4 temas, igual que iOS. |
+| Superficies bespoke | Sidebar y kiosco siempre-oscuros; `LoginView` fuerza claro. |
+
+---
+
+## Trampas de verificación (no repetirlas)
+
+- **Compilar no es verificar.** Cinco fallos silenciosos en una sesión que el
+  `✓ built` no detectó: un bucle de template literals que no emitió CSS, dos
+  ediciones de `@theme` que no generaron la clase, un import faltante que
+  habría reventado en runtime, y un hook mal insertado. Confirmar siempre en
+  el bundle o con eslint.
+- **Tailwind escanea strings LITERALES.** Nada de `` `bg-${x}-solid` ``.
+- **Lightning CSS quita las comillas del atributo.** Grepear
+  `[data-theme=solid]`, no `[data-theme="solid"]`.
+- **`backgroundImage` rompe el cálculo de contraste** — da falsos positivos.
+- **`rounded-full` es literal, no token.**
+- **El movimiento tiene DOS gates**: tema y accesibilidad. Una regla nueva
+  entra en los dos.

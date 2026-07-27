@@ -5,8 +5,57 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.64.1';
+export const APP_VERSION = '2.65.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.65.0 — D2 cerrada de verdad + D3.1, D3.2 y D3.7 de la auditoría de
+// diseño. Plan vivo en PLAN-DISENO-PENDIENTE.md.
+//
+// D2, LO QUE FALTABA. El criterio de cierre pedía "gate en 0 para typography y
+// z-index; rounded-[…] reducido a excepciones" y faltaban dos cosas:
+//   · D2.3 nunca se ejecutó. Lo hecho había sido N3 — resolver el síntoma
+//     visible (Solid con la geometría de Liquid) con overrides de CSS por
+//     valor, un parche que cada rounded-[Nrem] nuevo esquivaba. Ahora los 627
+//     están migrados: 455 exactos sin cambio visual en Liquid ([1rem]→2xl 144,
+//     [1.5rem]→3xl 117, [2.5rem]→header 84, [2rem]→modal 83, [1.75rem]→card
+//     26) y 158 consolidados con ±4px. Las reglas de override se borraron: el
+//     sistema se sostiene solo y cualquier rounded-2xl nuevo hereda el tema.
+//   · z-index había cerrado en 20, no en 0. Los 20 son tooltips PORTALEADOS
+//     que ya necesitan style para su top/left computado; excepcionados con
+//     motivo, la categoría queda en 0 y BLOQUEANTE.
+//
+// LOS TRES ESTADOS DE ESPERA, que el sistema nunca había nombrado. Antes:
+// dos idiomas de skeleton, un EmptyState que §18 declaraba obligatorio pero
+// vivía como función local dentro de FacturacionView, y tres pantallas de
+// carga con tres spinners distintos. Ahora StateViews.jsx:
+//   contenido con forma conocida  → Skeleton / SkeletonText
+//   acción disparada por un click → spinner dentro del botón (NO se toca)
+//   proceso largo e indeterminado → AiThinkingState
+// El tercero salió de revisar los "anillos de IA": una generación no tiene
+// forma predecible, así que un skeleton mentiría sobre lo que viene, y tarda
+// segundos —el usuario necesita ver que algo trabaja, no un placeholder
+// inmóvil. Estaba copiado a mano en 7 archivos con colores y duraciones
+// distintas.
+//
+// El parpadeo se resolvió ANTES de migrar: .skeleton-delayed (250ms) hace que
+// el placeholder exista desde el primer frame —el layout no salta— pero no se
+// vea si la respuesta llega antes. Sin eso, "skeleton en todo" habría
+// empeorado las pantallas rápidas.
+//
+// D3.1 — 25 estados de carga migrados. Los ~104 spinners DENTRO de botones se
+// quedan: un botón no cambia de forma, cambia de estado; un skeleton ahí lo
+// haría desaparecer y leería como "se rompió".
+// D3.2 — 21 estados vacíos migrados; DashboardView tenía 7, cada uno
+// ligeramente distinto.
+// D3.7 — NotFoundView reemplaza el <Navigate> silencioso del catch-all, que
+// mandaba al usuario a otra pantalla sin decirle si el enlace estaba roto o si
+// le faltaba permiso. Estrena Button en una vista: primera adopción real.
+//
+// A9 — animate-pulse quedaba fuera de LOS DOS gates de movimiento (tema y
+// accesibilidad): 88 latidos seguían corriendo en Solid y con
+// prefers-reduced-motion puesto. Matriz verificada: liquid 75 / solid 45 /
+// con reduce 4 en ambos — la accesibilidad gana siempre sobre la estética.
+
 
 // v2.64.1 — cierre de los hallazgos abiertos A2, A3, A5 y A6 de la auditoría
 // de diseño (AUDITORIA-DISENO-2026-07-26.md, sección de hallazgos abiertos).

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import { AiThinkingState } from '../../components/common/StateViews';
 import {
     ShieldCheck, Award, AlertTriangle, User, Edit3,
@@ -144,7 +145,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                         <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col flex-1 overflow-hidden">
                             <span className="text-caption font-black text-content-2 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                                Ingreso {hireDate && <span className="text-brand-text bg-chart-1/10 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
+                                Ingreso {hireDate && <Badge variant="chart-1" uppercase={false}>({getRelativeTime(hireDate)})</Badge>}
                             </span>
                             <span className="text-caption font-bold text-content-2 mt-0.5 truncate">{formatDate(hireDate)}</span>
                         </div>

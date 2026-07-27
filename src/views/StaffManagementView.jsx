@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from 'react';
+import Badge from '../components/common/Badge';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
@@ -455,7 +456,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <p className="font-black text-content text-body-sm md:text-body truncate tracking-tight" title={fullName}>{fullName}</p>
-              <span className="text-micro font-black uppercase tracking-widest text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
+              <Badge variant="chart-3" size="sm" className="shrink-0">Practicante</Badge>
             </div>
             <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
               {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
@@ -582,7 +583,7 @@ const StaffManagementView = ({
   useEffect(() => { fetchPracticantes(); }, [fetchPracticantes]);
 
   useEffect(() => {
-    setCurrentPage(1); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
+    setCurrentPage(1);  
   }, [normalizedSearch, selectedBranch, itemsPerPage, activeStatFilter]);
 
   const branchOptions = useMemo(() => {

@@ -2,6 +2,7 @@
 // tables inside an expanded pedido card (Enviados/Agotamiento/Sin stock/
 // Revisar regla) plus the inline MIN/MAX editor for "Revisar regla" rows.
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Badge from '../../../components/common/Badge';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronRight, Search, X, Loader2, Check, RotateCcw, ShieldAlert } from 'lucide-react';
@@ -25,7 +26,7 @@ function renderProd(row) {
     return (
         <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-content-2">{row.products?.nombre ?? `Prod. ${row.erp_product_id}`}</span>
-            {row.products?.es_antibiotico && <span className="text-micro px-1.5 rounded-full bg-danger/10 border border-danger/30 text-danger font-semibold shrink-0">Bajo Receta</span>}
+            {row.products?.es_antibiotico && <Badge variant="danger" size="sm" uppercase={false} className="shrink-0">Bajo Receta</Badge>}
         </div>
     );
 }

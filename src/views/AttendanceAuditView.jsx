@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -355,9 +356,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
                       ) : null; })()}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {isAutoPunch(p)    && <span className="text-micro font-black bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-1.5 py-0.5 rounded-full">Auto</span>}
-                      {isPendingPunch(p) && <span className="text-micro font-black bg-warning/10 text-warning border border-warning/30 px-1.5 py-0.5 rounded-full">Pend. TH</span>}
-                      {isEditedPunch(p)  && <span className="text-micro font-black bg-success/10 text-success border border-success/30 px-1.5 py-0.5 rounded-full">Editado</span>}
+                      {isAutoPunch(p)    && <Badge variant="chart-3" size="sm" uppercase={false}>Auto</Badge>}
+                      {isPendingPunch(p) && <Badge variant="warning" size="sm" uppercase={false}>Pend. TH</Badge>}
+                      {isEditedPunch(p)  && <Badge variant="success" size="sm" uppercase={false}>Editado</Badge>}
                     </div>
                   </div>
                 ))}
@@ -517,8 +518,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
               </span>
             )}
-            {isAutoDay  && <span className="text-micro font-black uppercase tracking-widest bg-chart-3/10 text-chart-3-text border border-chart-3/30 px-2 py-0.5 rounded-full">Auto-marcado</span>}
-            {isPendDay  && <span className="text-micro font-black uppercase tracking-widest bg-warning/10 text-warning border border-warning/30 px-2 py-0.5 rounded-full">Pend. TH</span>}
+            {isAutoDay  && <Badge variant="chart-3" size="sm">Auto-marcado</Badge>}
+            {isPendDay  && <Badge variant="warning" size="sm">Pend. TH</Badge>}
             {isEditedDay && <span className="text-micro font-black uppercase tracking-widest bg-success/10 text-success border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Check size={8} strokeWidth={3}/> Editado</span>}
             {crossBranchName && (
               <span className="text-micro font-black uppercase tracking-widest bg-chart-1/10 text-chart-1-text border border-chart-1/30 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -526,8 +527,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
               </span>
             )}
             {ts?.is_absent && ts?.absence_type === 'VACATION'   && <span className="text-micro font-black uppercase tracking-widest bg-success/10 text-success-text border border-success/30 px-2 py-0.5 rounded-full flex items-center gap-1"><Palmtree size={8} strokeWidth={2.5} /> Vacación</span>}
-            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <span className="text-micro font-black uppercase tracking-widest bg-danger/10 text-danger-text border border-danger/30 px-2 py-0.5 rounded-full">Incapacidad</span>}
-            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <span className="text-micro font-black uppercase tracking-widest bg-chart-2/10 text-chart-2-text border border-chart-2/30 px-2 py-0.5 rounded-full">Permiso</span>}
+            {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <Badge variant="danger" size="sm">Incapacidad</Badge>}
+            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <Badge variant="chart-2" size="sm">Permiso</Badge>}
             {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-3 border border-divider px-2 py-0.5 rounded-full">Ausente</span>}
           </div>
           {!isOff && shift && (
@@ -572,7 +573,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                 {entryPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-body font-black text-content">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
-                    {lateMin > 0 && <span className="text-micro font-black text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">+{lateMin} min</span>}
+                    {lateMin > 0 && <Badge variant="chart-4" size="sm" uppercase={false}>+{lateMin} min</Badge>}
                     {isEditedPunch(entryPunch) && <span className="text-micro font-black text-success">✎</span>}
                   </div>
                 ) : (

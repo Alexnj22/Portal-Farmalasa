@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Badge from '../common/Badge';
 import { GraduationCap, X, Check, Loader2, Upload, FileCheck, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
@@ -48,7 +49,7 @@ const IslandHeader = ({ icon: Icon, title }) => (
 );
 
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
-const reqBadge = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>;
+const reqBadge = <Badge variant="danger" uppercase={false}>Requerido</Badge>;
 
 const emptyForm = {
     first_names: '', last_names: '', birth_date: '', dui: '', alt_identity_document: '', phone: '',

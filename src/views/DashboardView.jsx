@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
@@ -1589,7 +1590,7 @@ const DashboardView = ({ openModal }) => {
                     {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-chart-1-text"/>}
                   </div>
                   <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{a.title}</p><p className="text-caption text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
-                  {a.priority==='URGENT'&&<span className="text-micro font-black text-danger-text bg-danger/10 border border-danger/30 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
+                  {a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false} className="mt-1 shrink-0">URGENTE</Badge>}
                 </button>
               ))}
           </div>
@@ -1683,9 +1684,9 @@ const DashboardView = ({ openModal }) => {
                       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                         <span className={`text-caption font-black ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content-2'}`}>{dayLabel}</span>
                         {e.isToday
-                          ?<span className="text-micro font-black px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text">Hoy</span>
+                          ?<Badge variant="info" size="sm" uppercase={false}>Hoy</Badge>
                           :e.isTomorrow
-                          ?<span className="text-micro font-black px-1.5 py-0.5 rounded-full bg-warning/10 text-warning-text">Mañana</span>
+                          ?<Badge variant="warning" size="sm" uppercase={false}>Mañana</Badge>
                           :<span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-surface-card-hover text-content-3':'bg-surface-card-hover text-content-3'}`}>{e.age} años</span>
                         }
                       </div>

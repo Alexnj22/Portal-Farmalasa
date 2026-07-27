@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -517,9 +518,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     {isExpanded && (
                         <>
                             <span className="text-body-sm xl:text-body font-medium flex-1 whitespace-nowrap text-white/45">{label}</span>
-                            <span className="text-micro font-black uppercase tracking-wider text-warning bg-warning/15 border border-warning/30 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                Próximamente
-                            </span>
+                            <Badge variant="warning" size="sm" className="whitespace-nowrap">Próximamente</Badge>
                         </>
                     )}
                 </div>
@@ -1135,9 +1134,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                         <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
                                                     </div>
                                                     <span className="text-body font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
-                                                    <span className="text-micro font-black uppercase tracking-wider text-warning/80 bg-warning/10 border border-warning/20 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                                        Próximamente
-                                                    </span>
+                                                    <Badge variant="warning" size="sm" className="whitespace-nowrap">Próximamente</Badge>
                                                 </div>
                                             );
                                             return (

@@ -1,4 +1,5 @@
 import React from 'react';
+import Badge from '../common/Badge';
 import { Building2, ShieldCheck, Briefcase, Clock, DollarSign } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -22,7 +23,7 @@ const portalProps = {
 
 const inputHover = 'transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50';
 const island    = 'bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]';
-const reqBadge  = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 text-micro">Requerido</span>;
+const reqBadge  = <Badge variant="danger" size="sm" uppercase={false}>Requerido</Badge>;
 
 const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));

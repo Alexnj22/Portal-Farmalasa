@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { useSearchParams } from 'react-router-dom';
 import LiquidTooltip from '../components/common/LiquidTooltip';
@@ -733,10 +734,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     {(r.has_puntos || filterPuntos || abInvoicesSet.has(r.id)) && (
                                         <div className="flex gap-1 flex-wrap mt-0.5">
                                             {(r.has_puntos || filterPuntos) && (
-                                                <span className="text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-warning/10 text-warning-text">Puntos</span>
+                                                <Badge variant="warning" size="sm">Puntos</Badge>
                                             )}
                                             {abInvoicesSet.has(r.id) && (
-                                                <span className="text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>
+                                                <Badge variant="danger" size="sm">Receta Médica</Badge>
                                             )}
                                         </div>
                                     )}
@@ -840,9 +841,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             <div className={`text-label font-semibold leading-snug ${nameTxt}`}>{it.descripcion}</div>
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                                    {antibioticIds.has(it.erp_product_id) && <span className="text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-danger/10 text-danger-text">Receta Médica</span>}
+                                                                                    {antibioticIds.has(it.erp_product_id) && <Badge variant="danger" size="sm">Receta Médica</Badge>}
                                                                                     {it.presentacion && <span className="text-micro font-medium px-1.5 py-0.5 rounded-md bg-surface-card-hover text-content-3">{it.presentacion}</span>}
-                                                                                    {it.lote && <span className="text-micro font-bold px-1.5 py-0.5 rounded-md bg-chart-3/10 text-chart-3-text font-mono">L:{it.lote}</span>}
+                                                                                    {it.lote && <Badge variant="chart-3" size="sm" uppercase={false}>L:{it.lote}</Badge>}
                                                                                     {it.fecha_vencimiento && <span className="text-micro font-medium px-1.5 py-0.5 rounded-md font-mono bg-surface-card-hover text-content-3">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
                                                                             )}
@@ -867,7 +868,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                 <tr className="border-t border-warning/30">
                                                                     <td className="pt-1.5 pb-1 pl-2 pr-2" colSpan={3}>
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="text-micro font-black uppercase tracking-widest bg-warning/20 text-warning-text px-1.5 py-0.5 rounded-md">PUNTOS</span>
+                                                                            <Badge variant="warning" size="sm">PUNTOS</Badge>
                                                                             <span className="text-label font-semibold text-warning-text">Descuento por puntos</span>
                                                                         </div>
                                                                     </td>

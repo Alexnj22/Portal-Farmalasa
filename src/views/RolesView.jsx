@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import {
     ShieldCheck, Plus, Trash2, Award, Users,
@@ -745,9 +746,7 @@ const RolesView = ({ openModal }) => {
                                                                 {role.name}
                                                             </h4>
                                                             {isRoot && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-micro font-black uppercase tracking-widest bg-brand/10 text-brand-text flex-shrink-0">
-                                                                    Raíz
-                                                                </span>
+                                                                <Badge variant="info" size="sm" className="flex-shrink-0">Raíz</Badge>
                                                             )}
                                                             {isExternal && (
                                                                 <span className="px-2 py-0.5 rounded-md border border-divider text-micro font-black uppercase tracking-widest bg-surface-card-hover text-content-2 flex-shrink-0">

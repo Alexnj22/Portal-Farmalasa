@@ -1,4 +1,5 @@
 import React from 'react';
+import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -656,7 +657,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     ? <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">
                                                         ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
                                                       </span>
-                                                    : dl && <span className="text-micro font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text border border-success/30">🟢 En vivo</span>
+                                                    : dl && <Badge variant="success" size="sm" uppercase={false}>🟢 En vivo</Badge>
                                                 }
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">

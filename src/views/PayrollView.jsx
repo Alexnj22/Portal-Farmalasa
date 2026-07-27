@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Badge from '../components/common/Badge';
 import {
     DollarSign, Plus, Printer, CheckCircle2, Banknote,
     Building2, Search, Edit2, RotateCcw, Download, X, ListFilter,
@@ -332,7 +333,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                                 <div>
                                                     <p className="font-black text-content text-label leading-tight">{emp.name || '—'}</p>
                                                     {emp.role && <p className="text-micro text-content-3 font-medium leading-tight">{emp.role}</p>}
-                                                    {edited && <span className="text-micro font-black text-warning bg-warning/10 px-1.5 py-0.5 rounded-full border border-warning/30 inline-block mt-0.5">editado</span>}
+                                                    {edited && <Badge variant="warning" size="sm" uppercase={false} className="mt-0.5">editado</Badge>}
                                                 </div>
                                             </div>
                                         </DataCell>

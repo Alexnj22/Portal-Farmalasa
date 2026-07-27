@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
@@ -378,9 +379,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     {dashLoading ? (
                                         <div className="h-6 w-14 rounded-lg bg-surface-card-hover animate-pulse mt-0.5" />
                                     ) : (
-                                        <span className="inline-flex items-center gap-0.5 text-micro font-semibold px-1.5 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30 mt-0.5 text-center leading-tight">
-                                            Pendiente MIN/MAX
-                                        </span>
+                                        <Badge variant="warning" size="sm" uppercase={false} className="mt-0.5">Pendiente MIN/MAX</Badge>
                                     )}
                                 </div>
                             );

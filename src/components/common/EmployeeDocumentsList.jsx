@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Badge from '../common/Badge';
 import { FileText, Receipt, Award, CreditCard, Eye, FolderOpen } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
 import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
@@ -45,7 +46,7 @@ const DocumentRow = ({ doc }) => {
                         <Eye size={13} strokeWidth={2.2} />
                     </button>
                 ) : (
-                    <span className="text-micro font-black uppercase tracking-widest text-warning bg-warning/10 px-2 py-0.5 rounded-md border border-warning/30 whitespace-nowrap">Pendiente</span>
+                    <Badge variant="warning" size="sm" className="whitespace-nowrap">Pendiente</Badge>
                 )}
             </div>
         </div>

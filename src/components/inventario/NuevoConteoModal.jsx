@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Badge from '../common/Badge';
 import { ClipboardCheck, X, Check, Loader2, Building2, FlaskConical, ShieldAlert, ListChecks, Search } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
@@ -18,7 +19,7 @@ const SCOPE_OPTIONS = [
 
 const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_10px_rgba(255,255,255,0.8)]";
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
-const reqBadge = <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>;
+const reqBadge = <Badge variant="danger" uppercase={false}>Requerido</Badge>;
 
 const AREA_TYPE_LABEL = { FARMACIA: 'Farmacias', BODEGA: 'Bodega', ADMINISTRATIVA: 'Administración', EXTERNA: 'Personal Externo' };
 const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];

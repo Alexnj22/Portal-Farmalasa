@@ -102,7 +102,7 @@ export default function ProveedoresView({ openModal }) {
         }
     }, []);
 
-    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { load(); }, [load]);  
 
     useEffect(() => {
         fetchProveedorCategorias().then(({ data, error }) => {
@@ -132,7 +132,7 @@ export default function ProveedoresView({ openModal }) {
         return filtered.filter(r => !r.supplier_id);
     }, [filtered, categoriaId]);
 
-    useEffect(() => { setPage(1); }, [search, categoriaId, claseFilter, activoFilter]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { setPage(1); }, [search, categoriaId, claseFilter, activoFilter]);  
 
     const sorted = useMemo(() => [...filteredSinMatch].sort((a, b) => a.nombre.localeCompare(b.nombre)), [filteredSinMatch]);
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));

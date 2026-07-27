@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import {
     AlertTriangle, Calendar, CalendarClock, Loader2, Package, PackageX,
@@ -488,9 +489,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     {group.descripcion || '—'}
                                                 </span>
                                                 {group.es_antibiotico && (
-                                                    <span className="mt-0.5 inline-flex text-micro font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 px-1.5 py-0.5 rounded-full">
-                                                        Bajo Receta
-                                                    </span>
+                                                    <Badge variant="chart-4" size="sm" uppercase={false} className="mt-0.5">Bajo Receta</Badge>
                                                 )}
                                             </div>
                                         </div>

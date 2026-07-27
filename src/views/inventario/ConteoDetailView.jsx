@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -79,8 +80,8 @@ function vencimientoStatus(fechaVencimiento) {
 }
 function VencimientoBadge({ status }) {
     if (!status) return null;
-    if (status === 'VENCIDO') return <span className="text-micro font-black uppercase text-danger-text bg-danger/10 border border-danger/40 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
-    return <span className="text-micro font-black uppercase text-warning-text bg-warning/10 border border-warning/40 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
+    if (status === 'VENCIDO') return <Badge variant="danger" size="sm" className="shrink-0">Vencido</Badge>;
+    return <Badge variant="warning" size="sm" className="shrink-0">Por vencer</Badge>;
 }
 
 // Indicador "en vivo" — animate-pulse de Tailwind usa un único keyframe
@@ -236,7 +237,7 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
                             <p className="font-bold text-content text-body-sm truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
-                            {product.es_antibiotico && <span className="text-micro font-black uppercase text-danger-text bg-danger/10 border border-danger/30 px-1 py-0.5 rounded shrink-0">Bajo Receta</span>}
+                            {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
                         </div>
                     </div>
                 </div>

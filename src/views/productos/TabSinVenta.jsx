@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import { fetchMinMaxIgnored, upsertMinMaxIgnored, deleteMinMaxIgnored } from '../../data/stockParams';
 import {
@@ -834,7 +835,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell hideBelow="md" className="text-body-sm text-content-3">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             {stock === 0 ? (
-                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30">Sin stock</span>
+                                                <Badge variant="chart-3" uppercase={false}>Sin stock</Badge>
                                             ) : (
                                                 <>
                                                     <span className="text-body font-bold text-content-2 tabular-nums">{stock.toLocaleString()}</span>

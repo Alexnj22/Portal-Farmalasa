@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Badge from '../common/Badge';
 import { Building2, MapPin, Phone, Smartphone, Map, Map as MapIcon, Navigation } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -42,7 +43,7 @@ const BranchTabGeneral = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-danger)] border border-danger/30">Requerido</span>}
+                            Nombre Comercial * {getTabStatus(1) === 'red' && !name.trim() && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                         </label>
                         <LazyInput
                             required
@@ -95,7 +96,7 @@ const BranchTabGeneral = ({
                     <div className="relative z-base">
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Distrito / Municipio
-                            {getTabStatus(1) === 'orange' && !location.municipality && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !location.municipality && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
                             <LiquidSelect
@@ -112,7 +113,7 @@ const BranchTabGeneral = ({
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Dirección Exacta
-                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !formData.address?.trim() && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LazyInput
                             placeholder="Barrio El Centro, 1ra Av. Norte..."
@@ -183,7 +184,7 @@ const BranchTabGeneral = ({
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Teléfono Fijo
-                            {getTabStatus(1) === 'orange' && !formData.phone && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !formData.phone && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LazyInput
                             icon={Phone}
@@ -197,7 +198,7 @@ const BranchTabGeneral = ({
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Celular / WhatsApp
-                            {getTabStatus(1) === 'orange' && !formData.cell && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}
+                            {getTabStatus(1) === 'orange' && !formData.cell && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
                         <LazyInput
                             icon={Smartphone}

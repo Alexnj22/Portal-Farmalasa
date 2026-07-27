@@ -1,4 +1,5 @@
 import React from 'react';
+import Badge from '../../components/common/Badge';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -1004,9 +1005,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-body font-medium text-content truncate leading-tight">{row.product_name || '—'}</span>
-                                                    {row.has_manual && <span className="shrink-0 text-micro font-black text-chart-3-text bg-chart-3/10 border border-chart-3/30 px-1.5 py-0.5 rounded-full">MANUAL</span>}
+                                                    {row.has_manual && <Badge variant="chart-3" size="sm" uppercase={false} className="shrink-0">MANUAL</Badge>}
                                                     {hasDraft && !isBodega && <span className="shrink-0 text-micro font-black text-content-3 bg-surface-card-hover border border-divider px-1.5 py-0.5 rounded-full">BORRADOR</span>}
-                                                    {hasDraft && isBodega && <span className="shrink-0 text-micro font-black text-warning bg-warning/10 border border-warning/30 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
+                                                    {hasDraft && isBodega && <Badge variant="warning" size="sm" uppercase={false} className="shrink-0">SUC. PEND.</Badge>}
                                                     {dispatchRisk && <span className="shrink-0 text-micro font-black text-danger-text bg-danger/10 border border-danger/30 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||

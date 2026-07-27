@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, memo } from 'react';
+import Badge from '../common/Badge';
 import { Clock, Palmtree, Utensils, Baby, HeartPulse, FileText, Building2, AlertTriangle, CheckCircle2, CalendarOff, ArrowRight, Check } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12'; 
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -258,9 +259,7 @@ const DayRow = memo(({
                                         {formatCompactTime(minsToTime(realEndMins))}
                                     </span>
                                     {config.lactationTime && (
-                                        <span className="text-[7.5px] font-bold text-chart-6-text bg-chart-6/10 px-1.5 py-0.5 rounded uppercase tracking-widest border border-chart-6/30 ml-1">
-                                            Salida extendida (+1h)
-                                        </span>
+                                        <Badge variant="chart-6" className="ml-1">Salida extendida (+1h)</Badge>
                                     )}
                                 </div>
                             </div>

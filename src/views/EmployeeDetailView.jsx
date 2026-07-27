@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -492,9 +493,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     </h2>
                                     
                                     <div className="flex flex-col items-center gap-2 mb-8">
-                                        <span className="px-4 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand-text font-black text-caption uppercase tracking-[0.15em] text-center shadow-sm">
-                                            {emp.role || 'Sin Cargo Asignado'}
-                                        </span>
+                                        <Badge variant="info"> {emp.role || 'Sin Cargo Asignado'}</Badge>
                                         <span className="text-caption font-black text-content-2 uppercase tracking-widest">
                                             CÓD: {emp.code || 'S/N'}
                                         </span>
@@ -677,9 +676,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             {!ev.isSystem && typeof openModal === 'function' && (
                                                                 <div className="pt-4 mt-3 border-t border-divider flex justify-between items-center">
                                                                     {ev.metadata?.status === 'CANCELLED' ? (
-                                                                        <span className="px-2 py-1 bg-danger/10 text-danger rounded-full text-micro font-black uppercase tracking-widest">
-                                                                            CANCELADO
-                                                                        </span>
+                                                                        <Badge variant="danger" size="sm">CANCELADO</Badge>
                                                                     ) : ev.metadata?.status === 'SUPERSEDED' ? (
                                                                         <span className="px-2 py-1 bg-surface-card-hover text-content-3 rounded-full text-micro font-black uppercase tracking-widest">
                                                                             EDITADO
@@ -956,9 +953,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         </span>
                                                                     )}
                                                                     {isInsuranceDays && (
-                                                                        <span className="text-micro font-black px-2 py-0.5 rounded-full bg-chart-3/10 text-chart-3-text border border-chart-3/30">
-                                                                            {daysNum - 3}d Seguro
-                                                                        </span>
+                                                                        <Badge variant="chart-3" size="sm" uppercase={false}> {daysNum - 3}d Seguro</Badge>
                                                                     )}
                                                                 </div>
                                                             </div>

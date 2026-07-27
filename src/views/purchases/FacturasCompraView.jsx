@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
 import {
     FileText, Tag, RefreshCw, Download, FileJson, ScanSearch,
@@ -247,7 +248,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
             }
         })();
         return () => { alive = false; };
-    }, [detectedCodigo]); // eslint-disable-line react-hooks/set-state-in-effect
+    }, [detectedCodigo]);  
 
     const detect = async () => {
         setState('loading');
@@ -625,7 +626,7 @@ function TabDocumentos({
         }
     }, [dateStart, dateEnd]);
 
-    useEffect(() => { load(); }, [load, refreshKey]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { load(); }, [load, refreshKey]);  
 
     // Cards contables — ver StatCard más abajo. Se calculan sobre TODO el
     // período (rows), no sobre `filtered`, para que no cambien solo porque
@@ -668,7 +669,7 @@ function TabDocumentos({
         });
     }, [rows, filterInvalidados, filterSinProveedor, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterInvalidados, filterSinProveedor, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterInvalidados, filterSinProveedor, searchTerm]);  
 
     // Fase 3.2: candidatos para "Adjuntar JSON" — documentos con JSON completo
     // dentro del mismo rango de fechas ya cargado (no dispara un fetch aparte).
@@ -1039,7 +1040,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     // Se resetea si cambia el rango de fechas para no ofrecer una lista vieja.
     const [documents, setDocuments] = useState([]);
     const [documentsLoaded, setDocumentsLoaded] = useState(false);
-    useEffect(() => { setDocumentsLoaded(false); }, [dateStart, dateEnd]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { setDocumentsLoaded(false); }, [dateStart, dateEnd]);  
 
     // Solo una acción expandida (Emparejar o Clasificar) a la vez por fila —
     // ambos formularios inline necesitan más ancho del que cabe junto al
@@ -1061,7 +1062,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
         }
     }, []);
 
-    useEffect(() => { load(); }, [load, refreshKey]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { load(); }, [load, refreshKey]);  
 
     const filtered = useMemo(() => {
         if (!searchTerm) return rows;
@@ -1138,7 +1139,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                         </DataCell>
                         <DataCell>
                             {row.kind === 'orphan_pdf' ? (
-                                <span className="text-caption font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
+                                <Badge variant="chart-1" uppercase={false}>PDF sin JSON</Badge>
                             ) : row.kind === 'invalidacion_pendiente' ? (
                                 <span className="text-caption font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     Invalidación pendiente

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Badge from '../common/Badge';
 import { Building2, Home, Trash2, User, Phone, DollarSign, CalendarDays, Landmark, FileText, AlertCircle, Flame, BugOff, Info } from 'lucide-react';
 import { LazyInput, Switch, FileUploader, clampInt, formatPhoneMask } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -72,7 +73,7 @@ const BranchTabInmueble = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-3xl border border-border-card shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]">
                         <div className="md:col-span-2">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
+                                Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -86,7 +87,7 @@ const BranchTabInmueble = ({
 
                         <div>
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Teléfono * {getTabStatus(3) === 'red' && !rent.landlordPhone && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
+                                Teléfono * {getTabStatus(3) === 'red' && !rent.landlordPhone && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -102,7 +103,7 @@ const BranchTabInmueble = ({
                         </div>
                         <div>
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Mensualidad ($) * {getTabStatus(3) === 'red' && !rent.amount && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
+                                Mensualidad ($) * {getTabStatus(3) === 'red' && !rent.amount && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required
@@ -117,7 +118,7 @@ const BranchTabInmueble = ({
 
                         <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
+                                Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <div className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[42px] px-1 relative ${inputHoverClass} ${getTabStatus(3) === 'red' && !rentContract.startDate ? '!border-danger bg-danger/10' : ''}`}>
                                 <LiquidDatePicker
@@ -130,7 +131,7 @@ const BranchTabInmueble = ({
 
                         <div>
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
-                                Vigencia (Meses) * {getTabStatus(3) === 'red' && !rentContract.termMonths && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
+                                Vigencia (Meses) * {getTabStatus(3) === 'red' && !rentContract.termMonths && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                             </label>
                             <LazyInput
                                 required

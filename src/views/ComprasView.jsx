@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { ShoppingCart, Package, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -167,7 +168,7 @@ function TabFacturas({
 
     const estadoBadge = (estado) => {
         if (!estado || estado === 'VIGENTE')
-            return <span className="text-caption font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">Vigente</span>;
+            return <Badge variant="success" uppercase={false}>Vigente</Badge>;
         return <span className="text-caption font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-full">{estado}</span>;
     };
 

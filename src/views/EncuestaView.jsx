@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -1498,7 +1499,7 @@ export default function EncuestaView() {
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-body-sm font-black text-content-2">{row.nombre}</span>
                                             {row.isJefe && (
-                                                <span className="text-micro font-black bg-warning/10 text-warning-text px-1.5 py-0.5 rounded-full">Jefe/a</span>
+                                                <Badge variant="warning" size="sm" uppercase={false}>Jefe/a</Badge>
                                             )}
                                         </div>
                                         <span className="text-micro text-content-3">{row.sucursal}</span>

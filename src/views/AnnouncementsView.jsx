@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef, memo } from 'react';
+import Badge from '../components/common/Badge';
 import {
   Megaphone, Send, Trash2, Globe, Building2,
   Users, User, Target, X, Search, Plus, CheckCircle2,
@@ -106,7 +107,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
       <div className="pr-20">
         <h4 className="font-black text-content text-title-sm leading-tight mb-2 tracking-tight flex items-center gap-2">
           {ann.title}
-          {ann.editedAt && <span className="text-micro text-warning bg-warning/10 border border-warning/30 px-2 py-0.5 rounded-md uppercase tracking-widest">Editado</span>}
+          {ann.editedAt && <Badge variant="warning" size="sm">Editado</Badge>}
         </h4>
         <p className="text-content-2 text-body-lg leading-relaxed font-medium whitespace-pre-wrap">
           {ann.message}

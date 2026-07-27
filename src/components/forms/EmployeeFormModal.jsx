@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Badge from '../common/Badge';
 import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText, Loader2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -1208,7 +1209,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Género</span>
-                                        {!formData.gender && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                        {!formData.gender && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.gender ? '!border-danger !bg-danger/10' : ''}`}>
                                         <LiquidSelect value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
@@ -1217,7 +1218,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Estado Civil</span>
-                                        {!formData.marital_status && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                        {!formData.marital_status && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.marital_status ? '!border-danger !bg-danger/10' : ''}`}>
                                         <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
@@ -1239,7 +1240,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-base">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Distrito</span>
-                                        {formData.department && !formData.municipality && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                        {formData.department && !formData.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
                                     <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${formData.department && !formData.municipality ? '!border-danger !bg-danger/10' : ''}`}>
                                         <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
@@ -1277,7 +1278,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <div>
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                                 <span>Distrito</span>
-                                                                {addr.department && !addr.municipality && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                                                {addr.department && !addr.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                             </label>
                                                             <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${addr.department && !addr.municipality ? '!border-danger !bg-danger/10' : ''}`}>
                                                                 <LiquidSelect value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
@@ -1320,7 +1321,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div className="relative z-content animate-in fade-in zoom-in-95 duration-200">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                             <span>Grado Finalizado</span>
-                                            {!formData.education_grade_completed && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                            {!formData.education_grade_completed && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                         </label>
                                         <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.education_grade_completed ? '!border-danger !bg-danger/10' : ''}`}>
                                             <LiquidSelect value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
@@ -1336,7 +1337,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div className="relative z-content animate-in fade-in zoom-in-95 duration-200">
                                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Especialidad</span>
-                                                    {!formData.education_specialty && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                                    {!formData.education_specialty && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <CatalogSelect
                                                     value={formData.education_specialty}
@@ -1352,7 +1353,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
                                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                         <span>Especifica la Especialidad</span>
-                                                        {formData.education_specialty === OTRA_ESPECIALIDAD && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                                        {formData.education_specialty === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
                                                     <CatalogOtherInput
                                                         value={formData.education_specialty}
@@ -1374,7 +1375,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div className="relative z-content animate-in fade-in zoom-in-95 duration-200">
                                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Profesión / Título</span>
-                                                    {!formData.profession && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                                    {!formData.profession && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <CatalogSelect
                                                     value={formData.profession}
@@ -1390,7 +1391,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
                                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                         <span>Especifica la Profesión / Título</span>
-                                                        {formData.profession === OTRA_ESPECIALIDAD && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                                        {formData.profession === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
                                                     <CatalogOtherInput
                                                         value={formData.profession}
@@ -1452,7 +1453,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div>
                                                         <label className="text-micro font-black uppercase tracking-widest text-chart-3-text ml-1 mb-1 flex items-center justify-between">
                                                             <span>Maestría / Postgrado</span>
-                                                            {!formData.maestria_title && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                                                            {!formData.maestria_title && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                         </label>
                                                         <CatalogSelect
                                                             value={formData.maestria_title}
@@ -1799,7 +1800,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div className="relative z-base animate-in fade-in zoom-in-95 duration-200">
                                                 <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Tipo de Discapacidad</span>
-                                                    {!formData.disability_type && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">Requerido</span>}
+                                                    {!formData.disability_type && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <CatalogSelect
                                                     value={formData.disability_type}
@@ -1814,7 +1815,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <div className="relative z-base animate-in fade-in zoom-in-95 duration-200">
                                                 <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Grado</span>
-                                                    {!formData.disability_grade && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">Requerido</span>}
+                                                    {!formData.disability_grade && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
                                                 <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.disability_grade ? '!border-danger !bg-danger/10' : ''}`}>
                                                     <LiquidSelect value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
@@ -1828,7 +1829,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-200">
                                                     <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                                         <span>Especifica el Tipo de Discapacidad</span>
-                                                        {formData.disability_type === OTRA_ESPECIALIDAD && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">Requerido</span>}
+                                                        {formData.disability_type === OTRA_ESPECIALIDAD && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                     </label>
                                                     <CatalogOtherInput
                                                         value={formData.disability_type}
@@ -1916,7 +1917,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 ) : (
                                     <>
                                         <div className={`relative z-tabs ${isExterna ? 'md:col-span-2' : ''}`}>
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span></label>
+                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
                                             <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-danger !bg-danger/10' : ''}`}>
                                                 <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                             </div>
@@ -1946,7 +1947,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             </div>
                                         </div>
                                         <div className="relative z-content">
-                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span></label>
+                                            <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
                                             <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.role_id ? '!border-danger !bg-danger/10' : ''}`}>
                                                 <LiquidSelect value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                             </div>
@@ -2007,8 +2008,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {contractHasEndDate && (
                                     <div className="relative z-tabs animate-in fade-in zoom-in-95">
                                         <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-1.5 flex items-center justify-between">
-                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">Debe ser posterior al inicio</span>}</span>
-                                            {!formData.contract_end_date && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30">Obligatorio</span>}
+                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <Badge variant="danger" uppercase={false} className="ml-1">Debe ser posterior al inicio</Badge>}</span>
+                                            {!formData.contract_end_date && <Badge variant="danger" uppercase={false}>Obligatorio</Badge>}
                                         </label>
                                         <div className={`bg-warning/10 rounded-2xl border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-danger !bg-danger/10' : 'border-warning/30'}`}>
                                             <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales/prácticas" />
@@ -2021,7 +2022,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="relative z-content">
                                             <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-1.5 flex items-center justify-between">
                                                 <span>Base Legal del Plazo (Art. 25)</span>
-                                                {temporalBasisMissing && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30">Requerido</span>}
+                                                {temporalBasisMissing && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                             </label>
                                             <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${temporalBasisMissing ? '!border-danger !bg-danger/10' : ''}`}>
                                                 <LiquidSelect value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
@@ -2120,7 +2121,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text">Seguridad Kiosko</h4>
                                 </div>
                                 <div>
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cod. Empleado <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30">Requerido</span></label>
+                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cod. Empleado <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
                                     <div className="relative">
                                         <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
                                             onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
@@ -2179,7 +2180,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="flex items-center justify-between mb-3">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 block">{isMinor ? altIdDocTypeLabel : 'DUI'}</label>
                                     {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
-                                        <span className="text-micro font-black uppercase tracking-widest text-warning bg-warning/10 px-2 py-0.5 rounded-md border border-warning/30 shrink-0">Pendiente</span>
+                                        <Badge variant="warning" size="sm" className="shrink-0">Pendiente</Badge>
                                     )}
                                 </div>
                                 {isMinor ? (

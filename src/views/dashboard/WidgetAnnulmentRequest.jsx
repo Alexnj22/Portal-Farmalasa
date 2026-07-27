@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import {
   Search, Loader2, AlertTriangle, CheckCircle2, Clock,
@@ -75,9 +76,7 @@ function DocBadge({ tipo }) {
 function PayBadge({ tipo }) {
   if (!tipo) return null;
   return (
-    <span className="shrink-0 text-micro font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success-text uppercase">
-      {tipo}
-    </span>
+    <Badge variant="success" size="sm" className="shrink-0"> {tipo}</Badge>
   );
 }
 

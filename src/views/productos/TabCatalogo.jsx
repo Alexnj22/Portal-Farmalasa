@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import { createPortal } from 'react-dom';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1904,8 +1905,8 @@ export default function TabCatalogo({
                                     <DataCell hideBelow="lg">
                                         <div className="flex flex-wrap gap-1">
                                             {p.tipo_medicamento && <span className="text-micro font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-chart-1/10 text-chart-1-text border-chart-1/30">{p.tipo_medicamento}</span>}
-                                            {p.es_antibiotico   && <span className="text-micro font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger-text border-danger/25">Bajo Receta</span>}
-                                            {p.requiere_receta  && <span className="text-micro font-bold px-1.5 py-0.5 rounded-full border bg-danger/10 text-danger border-danger/30">Receta</span>}
+                                            {p.es_antibiotico   && <Badge variant="danger" size="sm" uppercase={false}>Bajo Receta</Badge>}
+                                            {p.requiere_receta  && <Badge variant="danger" size="sm" uppercase={false}>Receta</Badge>}
                                             {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-label text-content-3">—</span>}
                                         </div>
                                     </DataCell>

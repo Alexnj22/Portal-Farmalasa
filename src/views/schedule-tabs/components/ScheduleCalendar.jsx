@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useEffect, useState } from 'react';
+import Badge from '../../../components/common/Badge';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon } from 'lucide-react';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../hooks/useSearchToggle';
@@ -359,9 +360,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                     )}
                                     {/* Todo Perfecto */}
                                     {isHoursPerfect && isDaysOffPerfect && (
-                                        <span className="text-micro 2xl:text-[7.5px] bg-success/10 text-success px-1.5 py-0.5 rounded font-black shadow-sm flex items-center gap-0.5 shrink-0">
-                                            ✓ ÓPTIMO
-                                        </span>
+                                        <Badge variant="success" size="sm" uppercase={false} className="shrink-0">✓ ÓPTIMO</Badge>
                                     )}
                                 </div>
                             </div>

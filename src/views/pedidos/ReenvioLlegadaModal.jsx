@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Badge from '../../components/common/Badge';
 import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 
@@ -221,9 +222,7 @@ export default function ReenvioLlegadaModal({
                             </span>
                         )}
                         {electrolitOk === false && (
-                            <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning-text border border-warning/30">
-                                ⚡ Electrolit aún pendiente
-                            </span>
+                            <Badge variant="warning" uppercase={false}>⚡ Electrolit aún pendiente</Badge>
                         )}
                         {espFaltantes.length > 0 && (
                             <span className="text-caption font-semibold px-2.5 py-1 rounded-full bg-danger/10 text-danger-text border border-danger/30">

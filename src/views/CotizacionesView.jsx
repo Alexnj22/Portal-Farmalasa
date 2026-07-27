@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Badge from '../components/common/Badge';
 import {
     FileText, Plus, Printer, Save, Trash2, X,
     ChevronLeft, User, CreditCard, Building2,
@@ -728,7 +729,7 @@ export default function CotizacionesView() {
                                     <p className="text-label font-black text-content-2 leading-none">Retención 1%</p>
                                     <p className="text-micro font-bold text-content-3 mt-0.5">Solo CCF — agente de retención</p>
                                 </div>
-                                {appliesRetention && <span className="ml-auto text-micro font-black text-warning bg-warning/10 px-2 py-0.5 rounded-full">ACTIVA</span>}
+                                {appliesRetention && <Badge variant="warning" size="sm" uppercase={false} className="ml-auto">ACTIVA</Badge>}
                             </div>
                             {suggestRetention && (
                                 <div onClick={() => setAppliesRetention(true)}

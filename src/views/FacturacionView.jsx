@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Badge from '../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
@@ -444,7 +445,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
                                         <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        {branchHasCCF && <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
+                                        {branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
@@ -901,7 +902,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                     <div className="flex items-center gap-2">
                                         <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
                                         <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        {branchHasCCF && <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
+                                        {branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
@@ -1279,7 +1280,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                         <div className="flex items-center gap-2">
                                             <Building2 size={13} className={hasCCF ? 'text-danger' : 'text-content-3'} />
                                             <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                            {hasCCF && <span className="text-micro font-black uppercase px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">CCF</span>}
+                                            {hasCCF && <Badge variant="danger" size="sm">CCF</Badge>}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-caption font-black text-content-3">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Badge from '../common/Badge';
 import { ShieldCheck, FileBadge, ShieldAlert, FileWarning, Syringe, AlertCircle } from 'lucide-react';
 import { LazyInput, Switch, FileUploader } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -88,7 +89,7 @@ const BranchTabLegal = ({
                         <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Regente Asignado
-                                {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
+                                {availableRegents.length === 0 && <Badge variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
                             </label>
                             <div className={`rounded-2xl h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect
@@ -134,7 +135,7 @@ const BranchTabLegal = ({
                         <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Referente Asignado
-                                {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
+                                {availablePharmacovigilance.length === 0 && <Badge variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
                             </label>
                             <div className={`rounded-2xl h-[42px] ${inputHoverClass}`}>
                                 <LiquidSelect

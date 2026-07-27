@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -646,9 +647,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               <div className="flex items-center gap-2">
                                 <p className="text-body-sm font-bold text-content truncate">{stop.suc_name}</p>
                                 {enc && (
-                                  <span className="shrink-0 text-micro font-bold px-1.5 py-0.5 rounded-md bg-warning/20 text-warning-text">
-                                    Encargo
-                                  </span>
+                                  <Badge variant="warning" size="sm" uppercase={false} className="shrink-0">Encargo</Badge>
                                 )}
                               </div>
                               {!enc && (
@@ -661,13 +660,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                               )}
                               {!enc && cajas > 0 && (
                                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                  <span className="text-caption font-bold px-1.5 py-0.5 rounded-lg bg-chart-3/10 text-chart-3-text">
-                                    📦 {cajas} caja{cajas !== 1 ? 's' : ''}
-                                  </span>
+                                  <Badge variant="chart-3" uppercase={false}>📦 {cajas} caja{cajas !== 1 ? 's' : ''}</Badge>
                                   {electrolit > 0 && (
-                                    <span className="text-caption font-bold px-1.5 py-0.5 rounded-lg bg-chart-5/10 text-chart-5-text">
-                                      💧 {electrolit} Electrolit
-                                    </span>
+                                    <Badge variant="chart-5" uppercase={false}>💧 {electrolit} Electrolit</Badge>
                                   )}
                                   {especiales > 0 && (
                                     <span className="text-caption font-bold px-1.5 py-0.5 rounded-lg bg-warning/10 text-warning-text">

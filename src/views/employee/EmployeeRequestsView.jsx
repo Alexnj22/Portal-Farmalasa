@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, memo, useMemo } from 'react';
+import Badge from '../../components/common/Badge';
 import {
     ClipboardList, Plus, Loader2, X, Palmtree, FileText, RefreshCw,
     DollarSign, FileCheck, CheckCircle2, Send, AlertCircle, XCircle, Check,
@@ -131,9 +132,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                     </div>
                 </div>
                 {dateStr && (
-                    <span className="text-caption font-bold text-chart-5-text bg-chart-5/10 border border-chart-5/30 px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                        {dateStr}
-                    </span>
+                    <Badge variant="chart-5" uppercase={false} className="flex-shrink-0 whitespace-nowrap"> {dateStr}</Badge>
                 )}
             </div>
 

@@ -229,6 +229,24 @@ const Z_ARBITRARY_RE = /\bz-\[(\d+)\]/g;
 const Z_NUMERIC_RE = /\bz-(\d+)\b/g;
 const Z_INLINE_RE = /\bzIndex\s*:/g;
 
+// ── Categoría 10: color literal fuera de clases (D0-bis, 2026-07-26) ────
+// Punto ciego encontrado al cerrar D1: un gate que lee CLASES no ve nada de
+// lo que pasa dentro de `style={{ }}`. La última superficie blanca del
+// barrido vivía justamente ahí — TabMinMax.jsx tenía
+// `background: 'rgba(255,255,255,0.70)'` inline, invisible para las 5
+// categorías de D0 y detectada solo por el escáner en vivo.
+// HEX_RE ya cubre los `#rrggbb`; esto cubre la otra mitad: rgb()/rgba()/hsl().
+const RGB_LITERAL_RE = /\b(rgba?|hsla?)\(\s*[\d.]/g;
+// Las sombras a mano se cuentan aparte (ver abajo): si no, cada
+// `shadow-[0_4px_16px_rgba(0,0,0,.06)]` sumaría a las dos categorías.
+const SHADOW_ARBITRARY_RE = /shadow-\[[^\]]*\]/g;
+
+// ── Categoría 11: sombra literal fuera de la escala (D0-bis) ────────────
+// T7.3 tokenizó 548 de 959 usos (57%) en --shadow-elevation-*/glass-*/glow-*.
+// Los 411 restantes siguen escritos a mano y nunca tuvieron gate. Una
+// `shadow-[var(--…)]` es correcta; una con el valor literal es la deuda.
+const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
+
 // ── Categoría 9: motion (D0.5, 2026-07-26) ──────────────────────────────
 // La regla vieja ("no new framer-motion usage") baneaba la librería entera
 // sin distinguir para qué se usa, y por eso se incumplía: 20 de los 25
@@ -401,6 +419,30 @@ function scanFile(path) {
       Z_INLINE_RE.lastIndex = 0;
       if (Z_INLINE_RE.test(line)) {
         findings.push({ line: i + 1, label: 'zIndex inline', category: 'z-index', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'color') && !hasException(path, 'inline-color')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      // Se quitan primero los shadow-[…] para no contar dos veces el mismo rgba
+      const stripped = line.replace(SHADOW_ARBITRARY_RE, '');
+      RGB_LITERAL_RE.lastIndex = 0;
+      let m;
+      while ((m = RGB_LITERAL_RE.exec(stripped))) {
+        findings.push({ line: i + 1, label: `color literal ${m[1]}() fuera de token`, category: 'inline-color', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'shadow-literal')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      SHADOW_LITERAL_RE.lastIndex = 0;
+      let m;
+      while ((m = SHADOW_LITERAL_RE.exec(line))) {
+        findings.push({ line: i + 1, label: 'sombra literal fuera de la escala --shadow-*', category: 'shadow-literal', text: line.trim().slice(0, 120) });
       }
     });
   }

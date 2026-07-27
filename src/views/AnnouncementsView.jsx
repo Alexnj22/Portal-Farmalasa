@@ -651,7 +651,7 @@ const AnnouncementsView = ({ openModal }) => {
                   ) : (
                     <>
                       <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
-                      <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-divider shadow-[var(--shadow-shine)] mb-4">
+                      <div className="flex items-center gap-1 bg-surface-card-hover/40 p-1.5 rounded-full border border-divider shadow-[var(--shadow-shine)] mb-4">
                         {targetTypes.map((type) => {
                           const isActive = targetType === type.id;
                           return (

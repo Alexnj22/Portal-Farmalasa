@@ -123,7 +123,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
             {/* Compact header — click to expand */}
             <button onClick={() => setExpanded(v => !v)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-black/[0.02] transition-colors duration-200">
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 transition-colors duration-200">
 
                 {/* Colored circle avatar */}
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${tc.circle} ${tc.ring} shadow-sm`}>

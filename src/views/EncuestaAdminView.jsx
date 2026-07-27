@@ -141,7 +141,7 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
 // ─── Segment Control ──────────────────────────────────────────────────────────
 function SegmentControl({ options, value, onChange, compact = false }) {
     return (
-        <div className={`flex items-center gap-1 bg-black/[0.03] rounded-full border border-divider shadow-[var(--shadow-shine)] ${compact ? 'p-1' : 'p-1.5'}`}>
+        <div className={`flex items-center gap-1 bg-surface-card-hover/40 rounded-full border border-divider shadow-[var(--shadow-shine)] ${compact ? 'p-1' : 'p-1.5'}`}>
             {options.map(opt => (
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
                     className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-micro' : 'h-8 text-micro md:text-caption'} ${
@@ -801,7 +801,7 @@ export default function EncuestaAdminView() {
                                 {/* Progress */}
                                 {formPreguntas.length > 0 && (
                                     <div className="flex items-center gap-3">
-                                        <div className="flex-1 h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
+                                        <div className="flex-1 h-1.5 rounded-full bg-surface-card-hover overflow-hidden">
                                             <div className="h-full rounded-full bg-brand transition-all duration-300"
                                                 style={{ width: `${(rfAnsweredCount / formPreguntas.length) * 100}%` }} />
                                         </div>
@@ -1241,7 +1241,7 @@ export default function EncuestaAdminView() {
                                                                                                                     <div className="w-5 h-5 rounded flex items-center justify-center text-micro font-black text-white shrink-0 bg-content-3">G</div>
                                                                                                                     <span className="text-label font-black text-content-2">Datos Generales</span>
                                                                                                                 </div>
-                                                                                                                <div className="divide-y divide-white/40">
+                                                                                                                <div className="divide-y divide-divider">
                                                                                                                     {gqs.map(p => {
                                                                                                                         const ans = row.responses?.[p.indice];
                                                                                                                         const optLabel = ans && p.opciones
@@ -1279,7 +1279,7 @@ export default function EncuestaAdminView() {
                                                                                                                         <span className={`text-label font-black px-2 py-0.5 rounded-lg ${scoreBg(bsc)}`}>{bsc}%</span>
                                                                                                                     )}
                                                                                                                 </div>
-                                                                                                                <div className="divide-y divide-white/40">
+                                                                                                                <div className="divide-y divide-divider">
                                                                                                                     {bqs.map(p => {
                                                                                                                         const ans = row.responses?.[p.indice];
                                                                                                                         return (

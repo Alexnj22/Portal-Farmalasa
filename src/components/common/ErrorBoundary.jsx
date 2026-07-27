@@ -31,7 +31,7 @@ export default class ErrorBoundary extends React.Component {
         return (
             <div className="fixed inset-0 flex items-center justify-center p-6" style={{ zIndex: 99998 }}>
                 <div className="relative w-full max-w-sm text-center
-                    bg-white/[0.18] backdrop-blur-[48px] backdrop-saturate-[160%]
+                    bg-surface-card backdrop-blur-[48px] backdrop-saturate-[160%]
                     border border-border-card
                     shadow-[var(--shadow-glass-5)]
                     rounded-header p-10 flex flex-col items-center gap-6">

@@ -707,11 +707,11 @@ const SchedulesView = ({ openModal, setView }) => {
     // ── Filter pill ────────────────────────────────────────────────────────────
     const filterPill = (
         <div className="relative flex items-center gap-0 rounded-2xl overflow-hidden
-            bg-white/[0.14] backdrop-blur-2xl
+            bg-surface-card backdrop-blur-2xl
             border border-border-card
             shadow-[var(--shadow-glass-1)]
             transition-all duration-300
-            hover:bg-white/[0.22] hover:shadow-[var(--shadow-glass-2)]
+            hover:bg-surface-card hover:shadow-[var(--shadow-glass-2)]
             hover:-translate-y-0.5 shrink-0">
 
             {/* Shimmer */}

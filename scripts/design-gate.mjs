@@ -151,6 +151,16 @@ const EXCEPTIONS = {
   // Mismo criterio que la excepción 'native' de LiquidSelect por ser el
   // canónico del <select>.
   'src/components/common/Badge.jsx': ['white'],
+  // ── Superficies siempre-oscuras, agregadas al cerrar D3.8 (2026-07-27) ──
+  // Mismo criterio que IdleScanPanel: los paneles del kiosco y los popovers
+  // anclados al sidebar NO siguen el tema activo — son oscuros en los cuatro.
+  // Ahí `bg-white/[0.06]` y `border-white/10` no son deuda: son la paleta
+  // bespoke de esa superficie, que ya está documentada en DESIGN.md §6.
+  'src/components/timeclock/AuthPromptPanel.jsx': ['color', 'white'],
+  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['color', 'white'],
+  'src/components/timeclock/EarlyExitForm.jsx': ['color', 'white'],
+  'src/components/common/SidebarSettingsMenu.jsx': ['color', 'white'],
+  'src/components/common/NotificationBell.jsx': ['white'],
   'src/views/productos/TabCatalogo.jsx': ['hex'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
   // ── D2.2, cierre (2026-07-27) ──────────────────────────────────────────
@@ -517,8 +527,13 @@ function scanFile(path) {
     });
   }
 
-  if (!hasException(path, 'motion') && MOTION_IMPORT_RE.test(text)) {
-    if (!MOTION_ALLOWED_RE.test(text)) {
+  // El chequeo de motion corre sobre el texto SIN COMENTARIOS: los ejemplos de
+  // uso en el JSDoc de MotionProvider/useMotionConfig contienen `motion.div` y
+  // se marcaban a sí mismos. El resto del gate ya usaba commentMask por línea;
+  // esta familia la salteaba por trabajar sobre el archivo entero.
+  const codeOnly = lines.filter((_, i) => !isComment[i]).join('\n');
+  if (!hasException(path, 'motion') && MOTION_IMPORT_RE.test(codeOnly)) {
+    if (!MOTION_ALLOWED_RE.test(codeOnly)) {
       findings.push({ line: 1, label: 'framer-motion decorativo (sin AnimatePresence/layout/drag) — usar @keyframes + Tailwind', category: 'motion', text: path });
     }
     // El chequeo por archivo de `useReducedMotion` se retiró en D2.4: ahora

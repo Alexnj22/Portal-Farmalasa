@@ -924,7 +924,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       {/* Toolbar — filtro de fecha siempre a la derecha, buscador expandible
           crece hacia la izquierda desde su lado (ver DESIGN.md §24). */}
       <div className="flex items-center justify-end gap-1.5 shrink-0">
-        <SearchInput expandable accentColor="#12B76A" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
+        <SearchInput expandable accentColor="var(--success)" value={search} onChange={setSearch} placeholder="Cliente, vendedor, factura..." />
 
         {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
         <div className="h-8 shrink-0 rounded-[0.65rem] border border-divider bg-surface-card flex items-center focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/10 transition-all">

@@ -338,22 +338,22 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                 <BarChart data={historicalData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#0052CC" stopOpacity={0.9}/>
-                                            <stop offset="95%" stopColor="#0052CC" stopOpacity={0.1}/>
+                                            <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.9}/>
+                                            <stop offset="95%" stopColor="var(--brand)" stopOpacity={0.1}/>
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--divider)" opacity={0.5} />
                                     <XAxis 
                                         dataKey="name" 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        tick={{ fill: '#64748B', fontSize: 10, fontWeight: 800 }} 
+                                        tick={{ fill: 'var(--chart-8)', fontSize: 10, fontWeight: 800 }} 
                                         dy={10}
                                     />
                                     <YAxis 
                                         axisLine={false} 
                                         tickLine={false} 
-                                        tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 800 }}
+                                        tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontWeight: 800 }}
                                         tickFormatter={(value) => `$${value}`}
                                     />
                                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0, 122, 255, 0.04)', rx: 8 }} />
@@ -365,7 +365,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                         className="transition-all duration-300 hover:opacity-90"
                                     >
                                         {historicalData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === historicalData.length - 1 ? '#0052CC' : 'url(#colorTotal)'} />
+                                            <Cell key={`cell-${index}`} fill={index === historicalData.length - 1 ? 'var(--brand)' : 'url(#colorTotal)'} />
                                         ))}
                                     </Bar>
                                 </BarChart>

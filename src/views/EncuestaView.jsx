@@ -687,9 +687,9 @@ export default function EncuestaView() {
                                 <span className="text-caption font-black uppercase tracking-wider text-content-2">Score Global</span>
                                 <div className="relative w-28 h-28">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                                        <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" strokeWidth="10" />
+                                        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--divider)" strokeWidth="10" />
                                         <circle cx="50" cy="50" r="42" fill="none"
-                                            stroke={globalScore >= 70 ? '#10b981' : globalScore >= 55 ? '#f59e0b' : '#f43f5e'}
+                                            stroke={globalScore >= 70 ? 'var(--chart-2)' : globalScore >= 55 ? 'var(--warning)' : 'var(--danger)'}
                                             strokeWidth="10"
                                             strokeDasharray={`${(globalScore / 100) * 263.9} 263.9`}
                                             strokeLinecap="round" />

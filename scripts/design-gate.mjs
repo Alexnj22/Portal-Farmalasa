@@ -139,6 +139,21 @@ const EXCEPTIONS = {
   // de 72px. Con esto la categoría `typography` queda en 0 y bloqueante.
   'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography'],
   'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography'],
+  // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
+  // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
+  // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
+  //   propio canónico; --danger es su final. Un degradado necesita dos
+  //   paradas y solo una es token. Candidato a --danger-gradient en D2.5.
+  // · TabCatalogo.jsx — `ctx.fillStyle` de canvas: canvas NO resuelve var(),
+  //   necesita un color literal. Único caso técnico real del barrido.
+  // · tabminmax/constants.js — #94a3b8 es el escalón MEDIO de la rampa
+  //   ABC/XYZ (A/X=chart-8 oscuro, B/Y=este, C/Z=warning/danger). Usar
+  //   chart-8 colapsaría dos categorías en un color. Es una rampa
+  //   secuencial y el sistema solo tiene paletas categóricas — decidirlo es
+  //   trabajo de D2.5, no de un reemplazo mecánico.
+  'src/components/common/Button.jsx': ['hex'],
+  'src/views/productos/TabCatalogo.jsx': ['hex'],
+  'src/views/productos/tabminmax/constants.js': ['hex'],
 };
 
 const hasException = (file, category) => (EXCEPTIONS[file] || []).includes(category);

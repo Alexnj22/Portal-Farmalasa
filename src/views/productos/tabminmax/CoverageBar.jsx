@@ -3,7 +3,7 @@ export default function CoverageBar({ current, velocity, cycleDays }) {
     const days = velocity > 0 ? current / velocity : null;
     if (days === null) return <span className="text-content-3 text-xs">—</span>;
     const pct  = Math.min(100, (days / cycleDays) * 100);
-    const fill = days === 0 ? '#ef4444' : days < (cycleDays * 0.2) ? '#f97316' : days < (cycleDays * 0.5) ? '#f59e0b' : '#10b981';
+    const fill = days === 0 ? 'var(--stock-out)' : days < (cycleDays * 0.2) ? 'var(--stock-below-min)' : days < (cycleDays * 0.5) ? 'var(--warning)' : 'var(--chart-2)';
     const label = days >= 999 ? '>999d' : `${Math.round(days)}d`;
     return (
         <div className="flex flex-col gap-0.5 items-end">

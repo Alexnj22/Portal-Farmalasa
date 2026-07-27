@@ -23,8 +23,8 @@ const ERP_BRANCH_MAP = {
 };
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
-const NEUTRAL_THEME = { dot: '#64748B', pill: 'bg-surface-card-hover border-divider', label: 'text-content-2' };
-const VENCIDOS_THEME = { dot: '#E11D48', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };
+const NEUTRAL_THEME = { dot: 'var(--chart-8)', pill: 'bg-surface-card-hover border-divider', label: 'text-content-2' };
+const VENCIDOS_THEME = { dot: 'var(--danger)', pill: 'bg-danger/10 border-danger/30', label: 'text-danger-text' };
 const DEFAULT_THEME = NEUTRAL_THEME;
 
 /* ─── SRS helpers ──────────────────────────────────────────────────────────── */
@@ -621,7 +621,7 @@ export default function WidgetInventorySearch() {
       <div className="flex items-center justify-end gap-1.5 shrink-0">
         <SearchInput
           expandable
-          accentColor="#F79009"
+          accentColor="var(--warning)"
           value={query}
           onChange={handleInput}
           placeholder="Buscar por nombre o principio activo..."

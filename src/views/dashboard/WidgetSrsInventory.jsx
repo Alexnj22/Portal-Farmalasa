@@ -71,7 +71,7 @@ export default function WidgetSrsInventory() {
     <div className="flex flex-col gap-3 h-full">
       {/* Toolbar — buscador expandible, filtros (si los hubiera) siempre a la derecha */}
       <div className="flex items-center justify-end gap-1.5 shrink-0">
-        <SearchInput expandable accentColor="#F79009" value={query} onChange={handleInput} placeholder="Buscar en Registro SRS..." loading={loading} />
+        <SearchInput expandable accentColor="var(--warning)" value={query} onChange={handleInput} placeholder="Buscar en Registro SRS..." loading={loading} />
       </div>
 
       {error && (

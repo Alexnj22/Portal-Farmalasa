@@ -328,7 +328,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                         )}
                       </div>
                       <span className="text-[10px] font-black text-content-3 shrink-0 tabular-nums">{lotTotal} uds</span>
-                      <ChevronRight size={11} className="text-content-3 group-hover:text-brand transition-colors shrink-0" strokeWidth={2.5} />
+                      <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
                     </div>
                     <div className="divide-y divide-white/40" style={{ background: 'rgba(255,255,255,0.18)' }}>
                       {prod.lots.map((row, li) => (
@@ -363,7 +363,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                     <span className="text-[10px] font-black text-content-2 shrink-0 tabular-nums w-14 text-right">
                       {prod.lots[0].cantidad} uds
                     </span>
-                    <ChevronRight size={11} className="text-content-3 group-hover:text-brand transition-colors shrink-0" strokeWidth={2.5} />
+                    <ChevronRight size={11} className="text-content-3 group-hover:text-brand-text transition-colors shrink-0" strokeWidth={2.5} />
                   </button>
                 )}
               </div>

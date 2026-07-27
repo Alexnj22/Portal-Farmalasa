@@ -754,10 +754,10 @@ export default function RecepcionModal({
                 {/* Extras section on cajas screen */}
                 <div className="flex-none border-t border-divider px-4 py-3">
                     <button onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
-                        className="flex items-center gap-1.5 text-[11px] font-semibold text-brand hover:text-brand-hover transition-colors py-0.5">
+                        className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
                         <PackagePlus size={13} />
                         ¿Llegó un producto extra?
-                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                        {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
                     </button>
                 </div>
 
@@ -832,7 +832,7 @@ export default function RecepcionModal({
 
                         {extras.length === 0 && (
                             <div className="py-12 text-center">
-                                <PackagePlus size={30} className="text-brand/40 mx-auto mb-2" />
+                                <PackagePlus size={30} className="text-brand-text/40 mx-auto mb-2" />
                                 <p className="text-[13px] font-semibold text-content-3">Sin productos extra</p>
                                 <p className="text-[11px] text-content-3 mt-1">Buscá un producto abajo para agregarlo</p>
                             </div>
@@ -850,7 +850,7 @@ export default function RecepcionModal({
                                     <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-danger/10' : eDiff ? 'bg-warning/10' : 'bg-white hover:bg-surface-card-hover/50'}`}>
                                         <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                             <div className="min-w-0">
-                                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand/10 text-brand mb-0.5">
+                                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text mb-0.5">
                                                     <Plus size={8} /> Extra
                                                 </span>
                                                 <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
@@ -943,7 +943,7 @@ export default function RecepcionModal({
                             {extraResults.map(prod => (
                                 <button key={prod.id} onMouseDown={() => addExtra(prod)}
                                     className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-content-2 hover:bg-brand/10 transition-colors border-b border-divider last:border-0">
-                                    <Plus size={12} className="text-brand shrink-0" />
+                                    <Plus size={12} className="text-brand-text shrink-0" />
                                     {prod.nombre}
                                 </button>
                             ))}
@@ -1056,7 +1056,7 @@ export default function RecepcionModal({
                             onClick={() => setShowSearch(s => { if (!s) setTimeout(() => searchRef.current?.focus(), 80); else setProdSearch(''); return !s; })}
                             animate={showSearch ? { scale: 1.15 } : { scale: 1 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-brand/10 text-brand' : 'text-content-3 hover:text-content-2'}`}
+                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-brand/10 text-brand-text' : 'text-content-3 hover:text-content-2'}`}
                             title="Buscar producto"
                         >
                             <Search size={15} />
@@ -1250,10 +1250,10 @@ export default function RecepcionModal({
             {/* Extras — navigate to dedicated screen */}
             <div className="flex-none border-t border-divider px-5 py-3">
                 <button onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
-                    className="flex items-center gap-1.5 text-[11px] font-semibold text-brand hover:text-brand-hover transition-colors py-0.5">
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-brand-text hover:text-brand-hover transition-colors py-0.5">
                     <PackagePlus size={13} />
                     ¿Llegó un producto extra?
-                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                    {extras.length > 0 && <span className="ml-1 bg-brand/10 text-brand-text text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
                 </button>
             </div>
 

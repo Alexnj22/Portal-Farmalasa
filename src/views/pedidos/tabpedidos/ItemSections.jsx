@@ -249,7 +249,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
             <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
                 <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
                     <span className="text-[11px] font-semibold text-content-2 flex-1">{label}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand border-brand/30' : badgeCls}`}>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand-text border-brand/30' : badgeCls}`}>
                         {search ? `${filteredRows.length}/${count}` : count}
                     </span>
                 </button>
@@ -269,7 +269,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                             </button>
                         </motion.div>
                     ) : (
-                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-brand/10 transition-colors shrink-0">
+                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-brand/10 transition-colors shrink-0">
                             <Search size={12} />
                         </motion.button>
                     )}
@@ -492,12 +492,12 @@ export default function ItemSections({ allItems, loading }) {
                             }}
                             className={inputCls(!!err && err !== 'MIN inválido')}
                         />
-                        {isSaving && <Loader2 size={10} className="animate-spin text-brand shrink-0" />}
+                        {isSaving && <Loader2 size={10} className="animate-spin text-brand-text shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
                         <button
                             onClick={() => restoreMinMax(row)} disabled={isSaving}
                             title="Restaurar MIN/MAX original"
-                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-card text-content-3 hover:text-brand hover:border-brand/30 hover:bg-brand/10 disabled:opacity-50 transition-colors shrink-0"
+                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-surface-card border border-border-card text-content-3 hover:text-brand-text hover:border-brand/30 hover:bg-brand/10 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <RotateCcw size={9} />Restaurar
                         </button>

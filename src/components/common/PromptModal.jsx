@@ -55,7 +55,7 @@ const PromptModal = ({
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-brand" />
 
                 <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-10">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm text-brand">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm text-brand-text">
                         <MessageSquarePlus size={28} strokeWidth={2.5} />
                     </div>
 

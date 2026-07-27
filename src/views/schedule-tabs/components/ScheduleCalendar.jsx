@@ -738,7 +738,7 @@ const ScheduleCalendar = memo(({
                                     dayTextColor = "text-warning";
                                 } else if (dayColor === 'var(--txvol-normal)') { // Normal (Azul)
                                     headerBg = "bg-chart-1/10 border-chart-1/30 shadow-[var(--shadow-glow-brand)]";
-                                    headerTextColor = "text-brand";
+                                    headerTextColor = "text-brand-text";
                                     dayTextColor = "text-chart-1-text";
                                 }
 

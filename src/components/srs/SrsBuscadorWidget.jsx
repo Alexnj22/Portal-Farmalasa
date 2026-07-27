@@ -66,7 +66,7 @@ export default function SrsBuscadorWidget({
             <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     {loading
-                        ? <Loader2 size={14} className="text-brand animate-spin" />
+                        ? <Loader2 size={14} className="text-brand-text animate-spin" />
                         : <Search size={14} className="text-content-3" />
                     }
                 </div>

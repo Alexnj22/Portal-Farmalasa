@@ -563,7 +563,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     <RotateCw size={11} strokeWidth={2.5} /> 90° der
                                 </button>
                                 {rotation !== 0 && (
-                                    <span className="ml-auto text-[10px] font-bold text-brand">{rotation}°</span>
+                                    <span className="ml-auto text-[10px] font-bold text-brand-text">{rotation}°</span>
                                 )}
                             </div>
 

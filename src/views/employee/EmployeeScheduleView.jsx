@@ -232,7 +232,7 @@ const EmployeeScheduleView = () => {
                 <div className="text-center">
                     <p className="text-[13px] font-black text-content">{weekLabel}</p>
                     {isCurrentWeek && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-brand">Semana actual</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-brand-text">Semana actual</span>
                     )}
                 </div>
                 <button
@@ -362,7 +362,7 @@ const EmployeeScheduleView = () => {
                                     {canRequest && (
                                         <button
                                             onClick={() => handleOpenChangeForm(vp)}
-                                            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-brand/20 bg-brand/5 text-brand text-[10px] font-black uppercase tracking-widest hover:bg-brand/10 transition-all"
+                                            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-brand/20 bg-brand/5 text-brand-text text-[10px] font-black uppercase tracking-widest hover:bg-brand/10 transition-all"
                                         >
                                             <MessageSquare size={11} strokeWidth={2.5} /> Solicitar cambio de fechas
                                         </button>

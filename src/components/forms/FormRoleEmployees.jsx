@@ -24,7 +24,7 @@ const FormRoleEmployees = ({ formData }) => {
                         <h3 className="text-[22px] md:text-[26px] font-black text-content uppercase tracking-tighter leading-none mb-1.5 pr-8">
                             {role.name}
                         </h3>
-                        <p className="text-[10px] md:text-[11px] font-black text-brand uppercase tracking-widest flex items-center gap-1.5">
+                        <p className="text-[10px] md:text-[11px] font-black text-brand-text uppercase tracking-widest flex items-center gap-1.5">
                             Personal Asignado ({employeesInRole.length})
                         </p>
                     </div>
@@ -48,7 +48,7 @@ const FormRoleEmployees = ({ formData }) => {
                                     )}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-content text-[14px] md:text-[15px] leading-tight group-hover:text-brand transition-colors">
+                                    <p className="font-bold text-content text-[14px] md:text-[15px] leading-tight group-hover:text-brand-text transition-colors">
                                         {emp.name}
                                     </p>
                                     <p className="text-[9px] md:text-[10px] font-black text-content-2 uppercase tracking-widest mt-0.5">
@@ -57,7 +57,7 @@ const FormRoleEmployees = ({ formData }) => {
                                 </div>
                             </div>
                             
-                            <div className="px-3 py-1.5 md:px-4 md:py-2 bg-surface-card-hover text-content-2 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-divider group-hover:bg-brand/5 group-hover:text-brand group-hover:border-brand/20 transition-all">
+                            <div className="px-3 py-1.5 md:px-4 md:py-2 bg-surface-card-hover text-content-2 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-divider group-hover:bg-brand/5 group-hover:text-brand-text group-hover:border-brand/20 transition-all">
                                 Activo
                             </div>
                         </div>

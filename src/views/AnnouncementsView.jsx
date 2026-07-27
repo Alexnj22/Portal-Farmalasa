@@ -23,7 +23,7 @@ import { useSearchToggle } from '../hooks/useSearchToggle';
 const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit, isEditingThis, canEdit = false }) => {
   const renderBadge = () => {
     switch (ann.badgeType) {
-      case 'GLOBAL': return <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
+      case 'GLOBAL': return <span className="flex items-center gap-1.5 text-brand-text bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'BRANCH': return <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'ROLE': return <span className="flex items-center gap-1.5 text-chart-3-text bg-chart-3/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-3/30"><Users size={12} strokeWidth={2} /> {ann.badgeText}</span>;
       case 'EMPLOYEE': return <span className="flex items-center gap-1.5 text-chart-4-text bg-chart-4/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-chart-4/30"><User size={12} strokeWidth={2} /> {ann.badgeText}</span>;
@@ -116,7 +116,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
       <div className="mt-2 space-y-2">
         <div className={`flex justify-between items-end text-[10px] font-bold uppercase tracking-widest ${ann.priority === 'URGENT' && !isScheduled ? 'text-danger' : 'text-content-3'}`}>
           <span>{isScheduled ? 'Progreso Bloqueado' : 'Progreso de Lectura'}</span>
-          <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-danger' : ann.readPercentage === 100 ? 'text-success' : isScheduled ? 'text-chart-3-text' : 'text-brand'}>
+          <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-danger' : ann.readPercentage === 100 ? 'text-success' : isScheduled ? 'text-chart-3-text' : 'text-brand-text'}>
             {ann.readPercentage}%
           </span>
         </div>
@@ -138,7 +138,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
               ? 'text-success border-success/30'
               : isScheduled
                 ? 'text-chart-3-text border-chart-3/30'
-                : 'text-brand border-white'
+                : 'text-brand-text border-white'
             }`}
         >
           {isScheduled ? <CalendarClock size={16} strokeWidth={2.5} /> : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 ? (
@@ -560,10 +560,10 @@ const AnnouncementsView = ({ openModal }) => {
   const renderFiltersContent = () => (
     <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
         {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-content-3 hover:text-danger transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchMode(false); setAnnouncementSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        <button onClick={() => { setIsSearchMode(false); setAnnouncementSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[800px] opacity-100 pl-2 pr-2 md:pr-3 gap-2 md:gap-3"}`}>
@@ -626,7 +626,7 @@ const AnnouncementsView = ({ openModal }) => {
                 <div>
                   <label className="text-[10px] font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
                   <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-surface-card border-brand/30 text-brand shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
+                    <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-surface-card border-brand/30 text-brand-text shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
                     <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-danger/10 border-danger/40 text-danger shadow-[var(--shadow-glow-danger)]' : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
                   </div>
                 </div>
@@ -654,7 +654,7 @@ const AnnouncementsView = ({ openModal }) => {
                         {targetTypes.map((type) => {
                           const isActive = targetType === type.id;
                           return (
-                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-white text-brand border-white shadow-sm scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-sm hover:border-border-card'}`}>{type.label}</button>
+                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-white text-brand-text border-white shadow-sm scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-sm hover:border-border-card'}`}>{type.label}</button>
                           );
                         })}
                       </div>
@@ -683,7 +683,7 @@ const AnnouncementsView = ({ openModal }) => {
                       {selectedEmployees.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 p-3 bg-surface-card rounded-[1rem] border border-border-card shadow-sm">
                           {selectedEmployees.map((id) => (
-                            <div key={id} className="flex items-center gap-1.5 bg-brand/10 text-brand px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-brand/20 hover:scale-105">
+                            <div key={id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-brand/20 hover:scale-105">
                               <span>{employeesById.get(String(id))?.name || 'Empleado'}</span>
                               <button type="button" onClick={() => removeEmployee(id)} disabled={isSubmitting} className="hover:text-danger"><X size={12} strokeWidth={2.5} /></button>
                             </div>
@@ -694,7 +694,7 @@ const AnnouncementsView = ({ openModal }) => {
                         <SearchInput value={empSearch} onChange={setEmpSearch} placeholder="Buscar persona por nombre..." disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div className="absolute z-20 w-full mt-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[1.25rem] shadow-[var(--shadow-elevation-lg)] max-h-60 overflow-y-auto p-1">
-                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-brand/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand" /></button>)) : <div className="p-3 text-[12px] text-content-3 font-bold text-center">Sin resultados.</div>}
+                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-brand/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-content-2">{emp.name}</p><Plus size={14} className="text-brand-text" /></button>)) : <div className="p-3 text-[12px] text-content-3 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
                       </div>
@@ -748,7 +748,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <div className="relative group flex flex-col items-center text-center">
                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-brand' : listTab === 'ACTIVE' ? 'bg-success' : listTab === 'SCHEDULED' ? 'bg-chart-3' : 'bg-content-3'}`}></div>
                     
-                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
+                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${announcementSearch ? 'text-brand-text' : listTab === 'ACTIVE' ? 'text-success' : listTab === 'SCHEDULED' ? 'text-chart-3-text' : 'text-content-3'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     
@@ -781,8 +781,8 @@ const AnnouncementsView = ({ openModal }) => {
               <div className="flex items-center justify-between pt-6 mt-2 border-t border-divider shrink-0 px-3 md:px-4">
                 <span className="text-[11px] font-bold text-content-3 uppercase tracking-widest bg-surface-card backdrop-blur-sm shadow-sm px-3 py-1.5 rounded-lg border border-border-card">Pág {currentPage} de {totalPages}</span>
                 <div className="flex gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-surface-card border border-border-card rounded-xl shadow-sm text-brand disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronLeft size={18} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-surface-card border border-border-card rounded-xl shadow-sm text-brand disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-surface-card border border-border-card rounded-xl shadow-sm text-brand-text disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronLeft size={18} strokeWidth={2.5} /></button>
+                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-surface-card border border-border-card rounded-xl shadow-sm text-brand-text disabled:opacity-30 transition-all active:scale-[0.97]"><ChevronRight size={18} strokeWidth={2.5} /></button>
                 </div>
               </div>
             )}

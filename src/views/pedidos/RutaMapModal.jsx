@@ -464,7 +464,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     : centerOnPosition;
 
   const gpsIconColor = isConductor
-    ? (gpsStatus === 'ok' ? 'text-brand' : gpsStatus === 'denied' ? 'text-danger' : 'text-content-3')
+    ? (gpsStatus === 'ok' ? 'text-brand-text' : gpsStatus === 'denied' ? 'text-danger' : 'text-content-3')
     : (driverOnline ? 'text-success' : driverPos ? 'text-warning' : 'text-content-3');
 
   return (

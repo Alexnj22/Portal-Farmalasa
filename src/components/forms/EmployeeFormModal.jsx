@@ -779,17 +779,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             <>
                 {isAnalyzing ? (
                     <div className="flex items-center gap-2 bg-white rounded-xl border border-brand/30 h-[40px] px-3">
-                        <Loader2 size={14} className="text-brand shrink-0 animate-spin" />
-                        <span className="text-[12px] font-bold text-brand truncate flex-1">Subiendo y analizando con IA…</span>
+                        <Loader2 size={14} className="text-brand-text shrink-0 animate-spin" />
+                        <span className="text-[12px] font-bold text-brand-text truncate flex-1">Subiendo y analizando con IA…</span>
                     </div>
                 ) : hasFile ? (
                     <div className="flex items-center gap-2 bg-white rounded-xl border border-divider h-[40px] px-3">
-                        <FileText size={14} className="text-brand shrink-0" />
+                        <FileText size={14} className="text-brand-text shrink-0" />
                         <span className="text-[12px] font-bold text-content-2 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
                         <button type="button" onClick={() => removeDocFile(category)} title="Quitar" className="text-content-3 hover:text-danger shrink-0"><X size={14} /></button>
                     </div>
                 ) : (
-                    <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-divider text-content-3 hover:border-brand/40 hover:text-brand cursor-pointer transition-colors">
+                    <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-divider text-content-3 hover:border-brand/40 hover:text-brand-text cursor-pointer transition-colors">
                         <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
                         <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(category, e)} />
                     </label>
@@ -1027,7 +1027,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             {/* ALERTA DE BORRADOR (solo en creación) */}
             {!isEditMode && hasDraft && (
                 <div className="mx-auto mb-4 bg-brand/10 border border-brand/30 p-3 rounded-2xl flex items-center justify-between shadow-sm animate-in slide-in-from-top-4 w-full max-w-lg backdrop-blur-md">
-                    <div className="flex items-center gap-2 text-brand">
+                    <div className="flex items-center gap-2 text-brand-text">
                         <RotateCcw size={16} strokeWidth={2.5} />
                         <span className="text-[11px] font-bold">Tienes un borrador sin guardar.</span>
                     </div>
@@ -1168,7 +1168,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono {phoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{phoneErrorMsg}</span>}</span>
-                                        <button type="button" onClick={addPhone} className="text-brand hover:text-chart-1-text flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
+                                        <button type="button" onClick={addPhone} className="text-brand-text hover:text-chart-1-text flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
                                             <Plus size={11} strokeWidth={3} /> Agregar
                                         </button>
                                     </label>
@@ -1247,7 +1247,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 <div className="md:col-span-2 -mt-2">
-                                    <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-brand hover:text-chart-1-text transition-colors">
+                                    <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-brand-text hover:text-chart-1-text transition-colors">
                                         <Plus size={11} strokeWidth={3} /> Agregar Dirección Alterna
                                     </button>
                                 </div>
@@ -1560,7 +1560,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         );
                                     })}
                                 </div>
-                                <button type="button" onClick={addSkill} className="mt-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
+                                <button type="button" onClick={addSkill} className="mt-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
                                     <Plus size={12} strokeWidth={3} /> Agregar Curso / Habilidad
                                 </button>
                             </div>
@@ -1655,7 +1655,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 {depAgeInvalid && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
                                                             </span>
                                                             <button type="button" onClick={() => toggleDependentAgeMode(idx)}
-                                                                className="text-brand font-bold normal-case tracking-normal hover:text-chart-1-text transition-colors">
+                                                                className="text-brand-text font-bold normal-case tracking-normal hover:text-chart-1-text transition-colors">
                                                                 {depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}
                                                             </button>
                                                         </label>
@@ -1710,7 +1710,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     })}
                                 </div>
                             )}
-                            <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
+                            <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
                                 <Plus size={12} strokeWidth={3} /> Agregar Persona
                             </button>
                         </div>
@@ -1780,7 +1780,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     })}
                                 </div>
                             )}
-                            <button type="button" onClick={addChronicCondition} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
+                            <button type="button" onClick={addChronicCondition} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
                                 <Plus size={12} strokeWidth={3} /> Agregar Condición
                             </button>
 
@@ -1862,7 +1862,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono de Emergencia {emergPhoneHasError && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md ml-1">{emergPhoneErrorMsg}</span>}</span>
-                                        <button type="button" onClick={addEmergencyPhone} className="text-brand hover:text-chart-1-text flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
+                                        <button type="button" onClick={addEmergencyPhone} className="text-brand-text hover:text-chart-1-text flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
                                             <Plus size={11} strokeWidth={3} /> Agregar
                                         </button>
                                     </label>
@@ -2038,7 +2038,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     {probationInfo.exempt ? (
                                         <p className="text-[10px] font-bold text-content-3 flex items-center gap-1.5"><ShieldCheck size={12} className="text-success" /> Recontratación antes de 1 año: no aplica período de prueba (Art. 28, último párrafo).</p>
                                     ) : probationInfo.inProbation ? (
-                                        <p className="text-[10px] font-bold text-brand flex items-center gap-1.5 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 w-fit">
+                                        <p className="text-[10px] font-bold text-brand-text flex items-center gap-1.5 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 w-fit">
                                             <Clock size={12} /> En Período de Prueba — vence el {probationInfo.probationEnd.toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' })} (Art. 28: 30 días desde la fecha de contratación)
                                         </p>
                                     ) : null}
@@ -2117,7 +2117,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className={`bg-brand/5 rounded-[1.5rem] p-4 md:p-5 border border-brand/20 shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-1 hover:shadow-md`}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="p-2 bg-brand text-white rounded-[0.8rem] shadow-[var(--shadow-glow-brand)]"><Lock size={16} strokeWidth={2.5} /></div>
-                                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand">Seguridad Kiosko</h4>
+                                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text">Seguridad Kiosko</h4>
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cod. Empleado <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30">Requerido</span></label>
@@ -2125,9 +2125,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
                                             onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
                                             className={`w-full bg-white border border-divider rounded-[1rem] px-4 h-[40px] text-[16px] font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-danger !bg-danger/10' : ''}`} />
-                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-brand hover:bg-chart-1/10 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
+                                        <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-brand-text hover:bg-chart-1/10 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
                                     </div>
-                                    <p className="text-[9px] font-bold text-brand mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
+                                    <p className="text-[9px] font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
 
                                     {/* PIN derivado del código (se recalcula en vivo al escribir) */}
                                     {formData.kiosk_pin && (
@@ -2144,7 +2144,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             useToastStore.getState().showToast('PIN Copiado', `${formData.kiosk_pin} está en el portapapeles.`, 'success');
                                                         } catch { /* sin permiso de clipboard */ }
                                                     }}
-                                                    className="w-10 h-10 shrink-0 flex items-center justify-center bg-white border border-divider rounded-[1rem] text-content-3 hover:text-brand hover:border-brand/40 hover:shadow-md transition-all active:scale-[0.97]"
+                                                    className="w-10 h-10 shrink-0 flex items-center justify-center bg-white border border-divider rounded-[1rem] text-content-3 hover:text-brand-text hover:border-brand/40 hover:shadow-md transition-all active:scale-[0.97]"
                                                     title="Copiar PIN">
                                                     <Copy size={15} strokeWidth={2.5} />
                                                 </button>
@@ -2163,7 +2163,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <>
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-brand/10 text-brand rounded-[0.8rem] border border-brand/20">
+                                <div className="p-2 bg-brand/10 text-brand-text rounded-[0.8rem] border border-brand/20">
                                     <FileText size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Documentación del Expediente</h4>
@@ -2226,7 +2226,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center justify-between mb-4">
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Otros Documentos</h4>
-                                <button type="button" onClick={addExtraDoc} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand hover:text-chart-1-text transition-colors">
+                                <button type="button" onClick={addExtraDoc} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-text hover:text-chart-1-text transition-colors">
                                     <Plus size={12} strokeWidth={3} /> Agregar Documento
                                 </button>
                             </div>

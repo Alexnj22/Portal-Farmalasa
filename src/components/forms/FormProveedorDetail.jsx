@@ -9,7 +9,7 @@ import LiquidSelect from '../common/LiquidSelect';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
-        <h4 className="text-[11px] font-black uppercase tracking-widest text-brand flex items-center gap-2 pt-5 border-t border-divider">
+        <h4 className="text-[11px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2 pt-5 border-t border-divider">
             <Icon size={13} strokeWidth={2.5} /> {children}
         </h4>
     );
@@ -171,7 +171,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                     <span>·</span>
                     <span>Última: {fmtDate(formData?.ultima_vez_visto)}</span>
                     <button type="button" onClick={verDocumentos}
-                        className="ml-auto flex items-center gap-1 text-[10px] font-bold text-brand hover:underline">
+                        className="ml-auto flex items-center gap-1 text-[10px] font-bold text-brand-text hover:underline">
                         Ver documentos <ExternalLink size={11} />
                     </button>
                 </div>

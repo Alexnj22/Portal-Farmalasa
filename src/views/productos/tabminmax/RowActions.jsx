@@ -52,8 +52,8 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
             dropCls: 'text-success hover:text-success-text hover:bg-success/10',
             onClick: () => onResetToCalc() },
         { key: 'hist', icon: <History size={13}/>, label: 'Historial',
-            cls: `${B} text-chart-1-text hover:text-brand hover:bg-chart-1/10`,
-            dropCls: 'text-chart-1-text hover:text-brand hover:bg-chart-1/10',
+            cls: `${B} text-chart-1-text hover:text-brand-text hover:bg-chart-1/10`,
+            dropCls: 'text-chart-1-text hover:text-brand-text hover:bg-chart-1/10',
             onClick: () => onOpenHistory() },
         filterHidden
             ? { key: 'show', icon: <Eye size={13}/>, label: 'Mostrar',
@@ -75,7 +75,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
         hasDraft && canManage && !isBodegaRow && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
             cls: 'text-danger-text hover:text-danger-text hover:bg-danger/10', onClick: () => onDiscardDraft() },
         hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
-            cls: 'text-brand hover:text-brand-hover hover:bg-chart-1/10',
+            cls: 'text-brand-text hover:text-brand-hover hover:bg-chart-1/10',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
     const allBtns      = [...pool, ...extraBtns];

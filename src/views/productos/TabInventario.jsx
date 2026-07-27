@@ -237,7 +237,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
-                            <Package size={15} className="text-brand" />
+                            <Package size={15} className="text-brand-text" />
                         </div>
                         <div className="text-left">
                             <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
@@ -482,7 +482,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     <DataCell>
                                         <div className="flex items-center gap-2">
                                             <ChevronDown size={12} strokeWidth={2.5}
-                                                className={`text-content-3 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand' : ''}`} />
+                                                className={`text-content-3 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-brand-text' : ''}`} />
                                             <div className="min-w-0">
                                                 <span className="text-[13px] font-medium text-content line-clamp-2 leading-tight">
                                                     {group.descripcion || '—'}

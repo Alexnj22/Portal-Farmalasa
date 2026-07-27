@@ -315,7 +315,7 @@ const FormTurnos = ({ branches }) => {
             <div className="flex flex-col h-full bg-surface-card-hover rounded-[2rem] border border-divider p-6 overflow-hidden">
                 <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-divider">
                     <h4 className="text-[12px] font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
-                        <ListTodo size={16} className="text-brand"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
+                        <ListTodo size={16} className="text-brand-text"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}
                     </h4>
                     
                     {/* FILTROS DE SUCURSAL Y ESTADO (Minificados) */}
@@ -345,7 +345,7 @@ const FormTurnos = ({ branches }) => {
                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-hide pb-8 relative">
                     {allShifts === null ? (
                          <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
-                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-brand" />
+                             <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-brand-text" />
                              <p className="text-[10px] font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
                          </div>
                     ) : visibleShifts.length > 0 ? (

@@ -89,13 +89,13 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
         <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
                 {onPrev
-                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
                 <p className="text-[10px] font-black uppercase tracking-widest text-content-2">
                     {MONTHS_SH[month]} {year}
                 </p>
                 {onNext
-                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-surface-card-hover flex items-center justify-center text-content-3 hover:text-brand-text transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
             </div>
 
@@ -134,11 +134,11 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                     if (isStart || isEnd) {
                         btnCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110 cursor-pointer';
                     } else if (inRange) {
-                        btnCls += 'text-brand font-black cursor-pointer hover:bg-surface-card-hover';
+                        btnCls += 'text-brand-text font-black cursor-pointer hover:bg-surface-card-hover';
                     } else if (isToday) {
-                        btnCls += 'text-brand font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover';
+                        btnCls += 'text-brand-text font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover';
                     } else {
-                        btnCls += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand';
+                        btnCls += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand-text';
                     }
 
                     return (
@@ -312,14 +312,14 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-2xl bg-brand/10 flex items-center justify-center shrink-0">
-                                <CalendarDays size={15} className="text-brand" strokeWidth={2.5} />
+                                <CalendarDays size={15} className="text-brand-text" strokeWidth={2.5} />
                             </div>
                             <div>
                                 <p className="text-[11px] font-black uppercase tracking-widest text-content-2 leading-tight">
                                     Seleccionar período
                                 </p>
                                 <p className={`text-[10px] font-bold leading-tight mt-0.5 transition-colors ${
-                                    dayPhase === 'picking-end' ? 'text-brand animate-pulse' : 'text-content-3'
+                                    dayPhase === 'picking-end' ? 'text-brand-text animate-pulse' : 'text-content-3'
                                 }`}>
                                     {subtitle()}
                                 </p>
@@ -344,7 +344,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                         className={`px-2 py-2 rounded-[0.875rem] text-[10.5px] font-bold transition-all text-center leading-tight
                                             ${active
                                                 ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-[1.03]'
-                                                : 'bg-surface-card-hover text-content-2 hover:bg-surface-card hover:text-brand hover:shadow-md hover:-translate-y-0.5 border border-border-card'
+                                                : 'bg-surface-card-hover text-content-2 hover:bg-surface-card hover:text-brand-text hover:shadow-md hover:-translate-y-0.5 border border-border-card'
                                             }`}>
                                         {p.label}
                                     </button>
@@ -377,13 +377,13 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         <div className="px-5 pb-5">
                             <div className="flex items-center justify-between mb-3">
                                 <button type="button" onClick={() => setViewYear(y => y - 1)}
-                                    className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand transition-all shadow-sm">
+                                    className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand-text transition-all shadow-sm">
                                     <ChevronLeft size={13} strokeWidth={3} />
                                 </button>
                                 <span className="text-[12px] font-black text-content-2 tracking-wide">{viewYear}</span>
                                 <button type="button" onClick={() => setViewYear(y => y + 1)}
                                     disabled={viewYear >= curY + 1}
-                                    className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
+                                    className="w-7 h-7 rounded-full bg-surface-card-hover hover:bg-surface-card flex items-center justify-center text-content-3 hover:text-brand-text transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
                                     <ChevronRight size={13} strokeWidth={3} />
                                 </button>
                             </div>
@@ -397,13 +397,13 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     if (isStart || isEnd) {
                                         cellCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-105 z-10 ';
                                     } else if (inRange) {
-                                        cellCls += 'bg-brand/[0.12] text-brand font-black ';
+                                        cellCls += 'bg-brand/[0.12] text-brand-text font-black ';
                                     } else if (isFuture) {
                                         cellCls += 'text-content-3 cursor-not-allowed ';
                                     } else if (isCurrent) {
-                                        cellCls += 'text-brand font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover hover:shadow-sm ';
+                                        cellCls += 'text-brand-text font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover hover:shadow-sm ';
                                     } else {
-                                        cellCls += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand hover:shadow-sm ';
+                                        cellCls += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand-text hover:shadow-sm ';
                                     }
 
                                     let stripCls = '';
@@ -451,7 +451,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                             </div>
                             {dayPhase === 'picking-end' && (
                                 <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-[10px] font-bold text-brand animate-pulse">
+                                    <p className="text-[10px] font-bold text-brand-text animate-pulse">
                                         Selecciona la fecha de fin
                                     </p>
                                     <button type="button" onClick={() => { setDayPhase('idle'); setDayDraftStart(null); setDayHover(null); }}
@@ -474,7 +474,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
             <div ref={triggerRef} onClick={open}
                 className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-[1rem] transition-all hover:bg-surface-card-hover group">
                 <CalendarDays size={13}
-                    className={fini ? 'text-brand' : 'text-content-3 group-hover:text-brand transition-colors'}
+                    className={fini ? 'text-brand-text' : 'text-content-3 group-hover:text-brand-text transition-colors'}
                     strokeWidth={2.5} />
                 <span className={`text-[12px] font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-content-2' : 'text-content-3'}`}>
                     {fini && ffin ? (rangeLabel || `${formatDisplay(fini)} → ${formatDisplay(ffin)}`) : placeholder}

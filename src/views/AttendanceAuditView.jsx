@@ -313,9 +313,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
           {/* Horario planificado */}
           {shift ? (
             <div className="flex items-start gap-3 bg-brand/[0.07] border border-brand/15 rounded-2xl px-4 py-3.5">
-              <Calendar size={15} className="text-brand shrink-0 mt-0.5" strokeWidth={2.5} />
+              <Calendar size={15} className="text-brand-text shrink-0 mt-0.5" strokeWidth={2.5} />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-brand mb-1">Horario planificado</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-brand-text mb-1">Horario planificado</p>
                 <p className="text-[14px] font-black text-content">
                   {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
                 </p>
@@ -542,7 +542,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           <div className="flex flex-col gap-1.5 shrink-0">
             <button
               onClick={() => onCorrect(emp, dateStr, dayPunches, shift, dayConfig)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-card backdrop-blur-sm border border-border-card text-content-3 hover:text-brand-text hover:border-brand/25 hover:bg-brand/[0.05] rounded-[1rem] text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.94] shadow-[var(--shadow-elevation-sm)]"
             >
               <Edit3 size={11} strokeWidth={2.5} /> Corregir
             </button>
@@ -614,7 +614,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {/* Horas */}
             {ts && !ts.is_absent && (
               <div className="flex items-center gap-2">
-                <Clock size={13} className="text-brand/50" strokeWidth={2.5} />
+                <Clock size={13} className="text-brand-text/50" strokeWidth={2.5} />
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-content-2">Horas</p>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -1228,7 +1228,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const pillDivider = 'h-5 w-px bg-divider mx-1';
   const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-white hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-content';
-  const pillSubText   = (ok) => ok ? 'text-success' : 'text-brand';
+  const pillSubText   = (ok) => ok ? 'text-success' : 'text-brand-text';
 
   // ── filtersContent ────────────────────────────────────────────────────────
   const filtersContent = (
@@ -1274,7 +1274,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
             {sortedBranchOptions.map(opt => (
               <button key={opt.value} type="button"
                 onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-[11px] font-bold tracking-wide transition-colors hover:bg-brand/[0.07] ${filterBranch === opt.value ? 'text-brand bg-brand/[0.05]' : 'text-content-2'}`}>
+                className={`w-full text-left px-4 py-2 text-[11px] font-bold tracking-wide transition-colors hover:bg-brand/[0.07] ${filterBranch === opt.value ? 'text-brand-text bg-brand/[0.05]' : 'text-content-2'}`}>
                 {opt.label}
               </button>
             ))}
@@ -1415,7 +1415,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {/* Stat cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { Icon: Users,        label: 'Empleados',   val: withData,          unit: '',  c: 'text-brand', bg: 'bg-brand/10' },
+                  { Icon: Users,        label: 'Empleados',   val: withData,          unit: '',  c: 'text-brand-text', bg: 'bg-brand/10' },
                   { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1), unit: 'h', c: 'text-content-2',  bg: 'bg-surface-card-hover' },
                   { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-warning' : 'text-content-3', bg: totOT > 0 ? 'bg-warning/10' : 'bg-surface-card-hover' },
                   { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-danger' : 'text-content-3', bg: totAbs > 0 ? 'bg-danger/10' : 'bg-surface-card-hover' },
@@ -1450,7 +1450,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                     <div key={branchId} className="space-y-2">
                       <div className="flex items-center gap-3 px-1 pt-1">
                         <div className="w-7 h-7 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-                          <Building2 size={13} className="text-brand" strokeWidth={2.5} />
+                          <Building2 size={13} className="text-brand-text" strokeWidth={2.5} />
                         </div>
                         <div className="min-w-0">
                           <p className="text-[12px] font-black text-content-2 leading-none">{bName}</p>
@@ -1495,7 +1495,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {quincenaSummary.length > 0 && (
                 <div className="flex justify-end pb-2">
                   <button type="button" onClick={handleExportCSVQuincena}
-                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-white hover:text-brand hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
+                    className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-black/[0.08] bg-surface-card text-content-2 hover:bg-white hover:text-brand-text hover:border-brand/30 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97]">
                     <Download size={11} strokeWidth={2.5} /> Exportar CSV
                   </button>
                 </div>

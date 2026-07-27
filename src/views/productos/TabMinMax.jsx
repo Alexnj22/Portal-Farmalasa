@@ -443,7 +443,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             disabled={!canManage}
                             title={canManage ? 'Configurar parámetros' : 'Necesitás permiso de edición en Min/Max'}
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${configOpen ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${configOpen ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                             <Settings2 size={13} />
                         </motion.button>
 
@@ -454,7 +454,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             disabled={!canManage}
                             title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitás permiso de edición en Min/Max'}
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${labsOpen ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${labsOpen ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                             <FlaskConical size={13} />
                         </motion.button>
 

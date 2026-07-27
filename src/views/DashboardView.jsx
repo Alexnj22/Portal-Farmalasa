@@ -323,16 +323,16 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
     <>
       {/* py-2.5 en mobile: sube la altura del touch target de ~24px a ~40px
           (el ancho ya es generoso, min-w-[120px], v2.47.4) */}
-      <button ref={btnRef} onClick={openPicker} className={`text-[11px] font-black text-content-2 capitalize hover:text-brand transition-colors px-2 ${isMobile ? 'py-2.5' : 'py-1'} rounded-xl hover:bg-surface-card-hover min-w-[120px] text-center`}>
+      <button ref={btnRef} onClick={openPicker} className={`text-[11px] font-black text-content-2 capitalize hover:text-brand-text transition-colors px-2 ${isMobile ? 'py-2.5' : 'py-1'} rounded-xl hover:bg-surface-card-hover min-w-[120px] text-center`}>
         {value.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
       </button>
       {open && createPortal(
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
           <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
             <div className="flex items-center justify-between mb-3 px-1">
-              <button onClick={() => setViewYear(y => y - 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={14} strokeWidth={2.5} /></button>
+              <button onClick={() => setViewYear(y => y - 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={14} strokeWidth={2.5} /></button>
               <span className="text-[13px] font-black text-content">{viewYear}</span>
-              <button onClick={() => setViewYear(y => y + 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={14} strokeWidth={2.5} /></button>
+              <button onClick={() => setViewYear(y => y + 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={14} strokeWidth={2.5} /></button>
             </div>
             <div className="grid grid-cols-3 gap-1">
               {MONTH_NAMES_SHORT.map((m, i) => {
@@ -340,7 +340,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
                 const isCur = new Date().getMonth() === i && new Date().getFullYear() === viewYear;
                 return (
                   <button key={i} onClick={() => { onChange(new Date(viewYear, i, 1)); setOpen(false); }}
-                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isCur ? 'text-brand font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
+                    className={`text-[11px] font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isCur ? 'text-brand-text font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
                     {m}
                   </button>
                 );
@@ -1129,7 +1129,7 @@ const DashboardView = ({ openModal }) => {
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
-              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-white border-divider text-content-3 hover:text-brand hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
+              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-white border-divider text-content-3 hover:text-brand-text hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
               title="Cambiar tamaño"
             >
               <Maximize2 size={11} strokeWidth={2.5} />
@@ -1179,9 +1179,9 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
             <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl px-1 py-0.5">
-              <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand hover:bg-white transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
               <span className="text-[11px] font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
-              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
             </div>
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
@@ -1269,8 +1269,8 @@ const DashboardView = ({ openModal }) => {
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
               <div className="flex items-center bg-surface-card-hover p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-content-3 hover:bg-surface-card flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
-                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-brand shadow-sm':'text-content-2 hover:text-content-2'}`}>Horas</button>
-                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-white text-brand shadow-sm':'text-content-2 hover:text-content-2'}`}>Días</button>
+                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Horas</button>
+                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-white text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Días</button>
               </div>
             </div>
           }>
@@ -1290,7 +1290,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
-                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-[9px] font-black text-brand/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
+                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-[9px] font-black text-brand-text/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
@@ -1303,7 +1303,7 @@ const DashboardView = ({ openModal }) => {
                         ):(
                           <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
                         )}
-                        {salesView==='DAYS'&&<p className="text-[7px] text-brand font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
+                        {salesView==='DAYS'&&<p className="text-[7px] text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
                       <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
                       <span className="text-[7px] font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
@@ -1398,7 +1398,7 @@ const DashboardView = ({ openModal }) => {
         : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
-          action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -1439,7 +1439,7 @@ const DashboardView = ({ openModal }) => {
         : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
-          action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todas <ChevronRight size={11}/></button>}>
+          action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todas <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -1477,7 +1477,7 @@ const DashboardView = ({ openModal }) => {
         : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
-          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
@@ -1522,9 +1522,9 @@ const DashboardView = ({ openModal }) => {
           // expandir el touch target de los chevrones sin solaparse con el
           // trigger de MonthYearPicker, v2.47.4)
           <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-0.5'}`}>
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-brand hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}><ChevronLeft size={12} strokeWidth={2.5}/></button>
+            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}><ChevronLeft size={12} strokeWidth={2.5}/></button>
             <MonthYearPicker value={calMonth} onChange={setCalMonth} isMobile={isMobile}/>
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-brand hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}><ChevronRight size={12} strokeWidth={2.5}/></button>
+            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}><ChevronRight size={12} strokeWidth={2.5}/></button>
           </div>
         }>
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
@@ -1570,7 +1570,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
-          action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todos <ChevronRight size={11}/></button>}>
+          action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todos <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-divider overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
@@ -1616,14 +1616,14 @@ const DashboardView = ({ openModal }) => {
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-[0.6rem] bg-brand/10 border border-brand/15 flex items-center justify-center">
-                  <Gift size={13} className="text-brand" strokeWidth={2.2}/>
+                  <Gift size={13} className="text-brand-text" strokeWidth={2.2}/>
                 </div>
                 <h3 className="text-[12px] font-black text-content tracking-tight">Cumpleaños</h3>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronLeft size={11} strokeWidth={2.5}/></button>
-                <span className="text-[10px] font-black text-brand uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronRight size={11} strokeWidth={2.5}/></button>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronLeft size={11} strokeWidth={2.5}/></button>
+                <span className="text-[10px] font-black text-brand-text uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronRight size={11} strokeWidth={2.5}/></button>
               </div>
             </div>
           </div>
@@ -1675,14 +1675,14 @@ const DashboardView = ({ openModal }) => {
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-brand':e.isTomorrow?'text-warning-text':'text-content'}`}>{e.name}</p>
+                        <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content'}`}>{e.name}</p>
                         <p className="text-[9px] text-content-3 font-medium truncate">{e.branchName}</p>
                       </div>
                       {/* Badges */}
                       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        <span className={`text-[10px] font-black ${e.isToday?'text-brand':e.isTomorrow?'text-warning-text':'text-content-2'}`}>{dayLabel}</span>
+                        <span className={`text-[10px] font-black ${e.isToday?'text-brand-text':e.isTomorrow?'text-warning-text':'text-content-2'}`}>{dayLabel}</span>
                         {e.isToday
-                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand/10 text-brand">Hoy</span>
+                          ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-brand/10 text-brand-text">Hoy</span>
                           :e.isTomorrow
                           ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-warning/10 text-warning-text">Mañana</span>
                           :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-surface-card-hover text-content-3':'bg-surface-card-hover text-content-3'}`}>{e.age} años</span>
@@ -1704,7 +1704,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
-          action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
               <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-divider shrink-0">
@@ -1748,7 +1748,7 @@ const DashboardView = ({ openModal }) => {
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="w-6 h-6 rounded-lg bg-chart-1/10 border border-chart-1/30 flex items-center justify-center shrink-0">
-                    <Receipt size={11} className="text-brand"/>
+                    <Receipt size={11} className="text-brand-text"/>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] font-semibold text-content truncate">{c.customer_name || '—'}</p>
@@ -1770,7 +1770,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
-          action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
               <div className="grid grid-cols-2 gap-3">
@@ -1835,7 +1835,7 @@ const DashboardView = ({ openModal }) => {
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
-          action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-brand hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-brand-text hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
               <div className="space-y-0.5 py-1">
@@ -2021,7 +2021,7 @@ const DashboardView = ({ openModal }) => {
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>
-                <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-content-3 hover:text-brand transition-colors px-2 py-1 rounded-lg hover:bg-surface-card-hover">
+                <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-content-3 hover:text-brand-text transition-colors px-2 py-1 rounded-lg hover:bg-surface-card-hover">
                   <RotateCcw size={11}/> Restablecer todo
                 </button>
               </div>
@@ -2032,7 +2032,7 @@ const DashboardView = ({ openModal }) => {
                   return (
                     <button key={tab.id} onClick={() => setConfigTab(tab.id)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
-                        configTab === tab.id ? 'bg-white text-brand shadow-sm' : 'text-content-3 hover:text-content-2'
+                        configTab === tab.id ? 'bg-white text-brand-text shadow-sm' : 'text-content-3 hover:text-content-2'
                       }`}>
                       <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
                     </button>
@@ -2048,7 +2048,7 @@ const DashboardView = ({ openModal }) => {
                   return (
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
                       className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-white border-divider hover:bg-surface-card-hover'}`}>
-                      <WIcon size={14} className={enabled && hasAccess ? 'text-brand' : 'text-content-3'}/>
+                      <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                       <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-brand' : 'bg-surface-card-hover'}`}>
                         <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled && hasAccess ? 'translate-x-4' : 'translate-x-0.5'}`}/>

@@ -993,18 +993,18 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <div className="flex items-center justify-between px-4 py-2.5">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setIsSidebarOpen(true)} type="button" aria-label="Abrir menú"
-                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
                                     <Menu size={22} strokeWidth={2.5} />
                                 </button>
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-[14px] font-black leading-none tracking-tight text-slate-800">Portal</h1>
-                                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand">La Salud</p>
+                                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button onClick={() => setSearchOpen(true)} type="button" aria-label="Buscar en el menú"
-                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand-text focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
                                     <Search size={19} strokeWidth={2.5} />
                                 </button>
                                 <NotificationBell variant="mobile" />
@@ -1054,14 +1054,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
                                             <div className="relative">
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
-                                                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand' : 'text-slate-500'} />
+                                                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand-text' : 'text-slate-500'} />
                                                 {badge > 0 && (
                                                     <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                         {badge > 9 ? '9+' : badge}
                                                     </span>
                                                 )}
                                             </div>
-                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-brand' : 'text-slate-600'}`}>{label}</span>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-brand-text' : 'text-slate-600'}`}>{label}</span>
                                         </button>
                                     );
                                 })}

@@ -146,7 +146,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
     return (
         <div className="relative group flex items-center w-full">
             {Icon && (
-                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[var(--shadow-elevation-xs)] transition-colors duration-300 group-focus-within:text-brand group-focus-within:bg-chart-1/10 pointer-events-none">
+                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[var(--shadow-elevation-xs)] transition-colors duration-300 group-focus-within:text-brand-text group-focus-within:bg-chart-1/10 pointer-events-none">
                     <Icon size={16} strokeWidth={2.5}/>
                 </div>
             )}

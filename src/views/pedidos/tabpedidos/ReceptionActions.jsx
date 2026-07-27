@@ -59,8 +59,8 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
             {/* Paso 1: Llegada — solo visible cuando aún no confirmada */}
             {!llegadaOk && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-brand/10 border-brand/20 text-[11px]">
-                    <PackageCheck size={13} className="text-brand" />
-                    <span className="text-brand">Paso 1 — Confirmar llegada de cajas</span>
+                    <PackageCheck size={13} className="text-brand-text" />
+                    <span className="text-brand-text">Paso 1 — Confirmar llegada de cajas</span>
                     <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-brand text-white hover:bg-brand-hover active:scale-[0.97] transition-all disabled:opacity-50">
                         {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
                     </button>

@@ -318,7 +318,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 {convenioMissing && reqBadge}
                             </label>
                             <div className={`relative flex items-center gap-3 bg-white rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
-                                <label className="flex items-center gap-1.5 text-[13px] font-bold text-brand cursor-pointer">
+                                <label className="flex items-center gap-1.5 text-[13px] font-bold text-brand-text cursor-pointer">
                                     <Upload size={14} strokeWidth={2.5} />
                                     {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
                                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => setConvenioFile(e.target.files?.[0] || null)} />

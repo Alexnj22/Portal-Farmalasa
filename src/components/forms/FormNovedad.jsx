@@ -268,7 +268,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             
             {isTransfer && !isPromotion && !isSupport && (
                 <div className="bg-chart-1/10 border border-chart-1/30 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
-                    <MapPin className="text-brand shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
+                    <MapPin className="text-brand-text shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-chart-1-text">Cambio de Sucursal</p>
                         <p className="text-[12px] text-chart-1-text/80 font-medium leading-tight mt-1">El empleado desaparecerá de la planilla actual inmediatamente.</p>
@@ -549,7 +549,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
 
                             <div className="flex items-center justify-center pt-5 px-1">
-                                <div className="p-2 bg-brand/10 text-brand rounded-full shadow-sm">
+                                <div className="p-2 bg-brand/10 text-brand-text rounded-full shadow-sm">
                                     <ArrowRight size={16} strokeWidth={3} />
                                 </div>
                             </div>
@@ -557,8 +557,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <div className="flex-1">
                                 <label className={labelClasses}>Nuevo Código</label>
                                 <div className="relative">
-                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-brand/50" size={14} strokeWidth={2.5}/>
-                                    <input type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-brand text-center focus:!ring-brand/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-text/50" size={14} strokeWidth={2.5}/>
+                                    <input type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-brand-text text-center focus:!ring-brand/20`} value={formData?.newCode || ''} onChange={(e) => {
                                         // El código es SOLO numérico (regla de negocio + trigger en BD)
                                         const cleanVal = e.target.value.replace(/\D/g, '');
                                         setFormData(prev => ({ ...prev, newCode: cleanVal }));
@@ -691,7 +691,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 text-content-3 group-hover:text-brand transition-colors">
+                                <div className="flex flex-col items-center gap-2 text-content-3 group-hover:text-brand-text transition-colors">
                                     <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
                                     <div className="text-center">
                                         <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>

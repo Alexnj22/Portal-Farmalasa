@@ -44,7 +44,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
             <div className="flex items-center justify-between mb-4">
                 {onPrev ? (
                     <button type="button" onClick={onPrev}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand">
+                        className="p-1.5 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand-text">
                         <ChevronLeft size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
@@ -53,7 +53,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                 </p>
                 {onNext ? (
                     <button type="button" onClick={onNext}
-                        className="p-1.5 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand">
+                        className="p-1.5 hover:bg-surface-card-hover rounded-full transition-colors text-content-3 hover:text-brand-text">
                         <ChevronRight size={14} strokeWidth={3} />
                     </button>
                 ) : <div className="w-7" />}
@@ -115,13 +115,13 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                     } else if (isAnyRangeStart || isAnyRangeEnd) {
                         btnClass += 'bg-success text-white shadow-[0_4px_12px_rgba(18,183,106,0.4)] scale-105 cursor-pointer';
                     } else if (inRange) {
-                        btnClass += 'text-brand font-black cursor-pointer hover:bg-surface-card-hover hover:shadow-sm';
+                        btnClass += 'text-brand-text font-black cursor-pointer hover:bg-surface-card-hover hover:shadow-sm';
                     } else if (isInAnyRange) {
                         btnClass += 'text-success font-black cursor-pointer hover:bg-surface-card-hover hover:shadow-sm';
                     } else if (isToday) {
-                        btnClass += 'text-brand font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover';
+                        btnClass += 'text-brand-text font-black ring-1 ring-brand/40 cursor-pointer hover:bg-surface-card-hover';
                     } else {
-                        btnClass += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand';
+                        btnClass += 'text-content-2 cursor-pointer hover:bg-surface-card-hover hover:text-brand-text';
                     }
 
                     return (
@@ -348,7 +348,7 @@ const RangeDatePicker = ({
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-brand/10 text-brand rounded-xl">
+                        <div className="p-2 bg-brand/10 text-brand-text rounded-xl">
                             <CalendarDays size={16} strokeWidth={2.5} />
                         </div>
                         <div>
@@ -451,7 +451,7 @@ const RangeDatePicker = ({
                     </div>
                 ) : (
                     <div data-surface="input" className={`flex items-center gap-3 h-[48px] px-4 transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
-                        <CalendarDays size={14} className={startDate ? 'text-brand' : 'text-content-3'} strokeWidth={2.5} />
+                        <CalendarDays size={14} className={startDate ? 'text-brand-text' : 'text-content-3'} strokeWidth={2.5} />
                         <span className={`flex-1 text-[13px] font-bold truncate ${startDate && endDate ? 'text-content-2' : 'text-content-3'}`}>
                             {startDate && endDate
                                 ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
@@ -460,7 +460,7 @@ const RangeDatePicker = ({
                                 : placeholder}
                         </span>
                         {startDate && endDate && (
-                            <span className="shrink-0 text-[10px] font-black text-brand bg-brand/10 px-2 py-0.5 rounded-full">
+                            <span className="shrink-0 text-[10px] font-black text-brand-text bg-brand/10 px-2 py-0.5 rounded-full">
                                 {Math.round((new Date(endDate + 'T12:00:00') - new Date(startDate + 'T12:00:00')) / 86400000) + 1}d
                             </span>
                         )}

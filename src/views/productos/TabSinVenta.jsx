@@ -188,7 +188,7 @@ function UltimaVentaCell({ row, allBranches }) {
         const tipContent = (
             <div className="flex items-center justify-between gap-6 whitespace-nowrap">
                 <span className="text-[12px] font-semibold text-content-2">{name}</span>
-                <span className="text-[12px] font-black tabular-nums text-brand">{fmtSucDate(s.fecha)}</span>
+                <span className="text-[12px] font-black tabular-nums text-brand-text">{fmtSucDate(s.fecha)}</span>
             </div>
         );
         return (
@@ -208,7 +208,7 @@ function UltimaVentaCell({ row, allBranches }) {
             <p className="text-[10px] font-black uppercase tracking-widest text-content-2 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
                 const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
-                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand';
+                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
                 return (
                     <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">
                         <span className="text-[12px] font-semibold text-content-2">{ERP_NAMES[s.esid] || `Suc.${s.esid}`}</span>
@@ -564,7 +564,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     {/* Total count card */}
                     <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-brand/[0.08]">
-                            <Package size={15} className="text-brand/60" />
+                            <Package size={15} className="text-brand-text/60" />
                         </div>
                         <div className="text-left min-w-0">
                             <div className="text-[22px] font-black leading-none tabular-nums text-content-2">
@@ -639,7 +639,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${
                                         active
-                                            ? 'bg-brand/[0.12] text-brand shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
+                                            ? 'bg-brand/[0.12] text-brand-text shadow-[inset_0_1px_3px_rgba(0,82,204,0.10)]'
                                             : tk.filterBtn
                                     }`}>
                                     {m.label}
@@ -729,7 +729,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
                                                 className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand transition-colors">
+                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
                                                 <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>
@@ -816,7 +816,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
                                                 className="group/copy flex items-center gap-1.5 text-left w-full">
-                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand transition-colors">
+                                                <span className="text-[13px] font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
                                                 <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100'}`}>

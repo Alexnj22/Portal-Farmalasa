@@ -291,7 +291,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                 ) : null}
                 <div className="flex items-center gap-1.5 ml-auto">
                     <span className="text-[9px] font-bold text-content-2 uppercase tracking-wider">Subtotal</span>
-                    <span className="text-[14px] font-black text-brand">{fmt(item.subtotal)}</span>
+                    <span className="text-[14px] font-black text-brand-text">{fmt(item.subtotal)}</span>
                 </div>
             </div>
         </div>
@@ -804,7 +804,7 @@ export default function CotizacionesView() {
                             {appliesRetention && <Row label="Retención 1%" val={`–${fmt(totals.retention)}`} className="text-warning" />}
                             <div className="flex justify-between items-center pt-3 border-t border-divider">
                                 <span className="text-[14px] font-black text-content">TOTAL</span>
-                                <span className="text-[22px] font-black text-brand">{fmt(totals.total)}</span>
+                                <span className="text-[22px] font-black text-brand-text">{fmt(totals.total)}</span>
                             </div>
                         </div>
                     </div>
@@ -970,7 +970,7 @@ export default function CotizacionesView() {
                             {cot.applies_retention && <Row label="Retención 1%" val={`–${fmt(vTotals.retention)}`} className="text-warning" />}
                             <div className="flex justify-between items-center pt-3 border-t border-divider">
                                 <span className="text-[14px] font-black text-content">TOTAL</span>
-                                <span className="text-[22px] font-black text-brand">{fmt(vTotals.total)}</span>
+                                <span className="text-[22px] font-black text-brand-text">{fmt(vTotals.total)}</span>
                             </div>
                         </div>
                     </div>
@@ -1073,7 +1073,7 @@ export default function CotizacionesView() {
                             className={isAnulada ? 'opacity-50 bg-danger/10' : ''}
                         >
                             <DataCell>
-                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-content-3' : 'text-brand'}`}>{cot.numero}</span>
+                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-content-3' : 'text-brand-text'}`}>{cot.numero}</span>
                             </DataCell>
                             <DataCell>
                                 <p className="text-[12px] font-bold text-content-2">{fmtD(cot.fecha)}</p>

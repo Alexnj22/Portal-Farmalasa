@@ -145,7 +145,7 @@ function SegmentControl({ options, value, onChange, compact = false }) {
                 <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
                     className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-[8px]' : 'h-8 text-[9px] md:text-[10px]'} ${
                         value === opt.id
-                            ? 'bg-white text-brand border-white shadow-sm scale-[1.02]'
+                            ? 'bg-white text-brand-text border-white shadow-sm scale-[1.02]'
                             : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
                     }`}>
                     {opt.label}
@@ -663,7 +663,7 @@ export default function EncuestaAdminView() {
                                                         {selectedEmps.map(e => {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
-                                                                <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand px-2.5 py-1 rounded-lg text-[11px] font-bold border border-brand/20">
+                                                                <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1 rounded-lg text-[11px] font-bold border border-brand/20">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={16} />
                                                                     <span>{fn}</span>
                                                                     <button type="button" onClick={() => toggleScopeId(e.id)} className="hover:text-danger transition-colors ml-0.5">
@@ -694,7 +694,7 @@ export default function EncuestaAdminView() {
                                                                         <p className="text-[12px] font-bold text-content-2">{fn}</p>
                                                                         <p className="text-[10px] text-content-3">{e.branch?.name}</p>
                                                                     </div>
-                                                                    <Plus size={13} className="text-brand shrink-0" strokeWidth={2.5} />
+                                                                    <Plus size={13} className="text-brand-text shrink-0" strokeWidth={2.5} />
                                                                 </button>
                                                             );
                                                         })}
@@ -781,7 +781,7 @@ export default function EncuestaAdminView() {
                                         <button type="button" onClick={() => setRfIsJefe(false)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
                                                 !rfIsJefe
-                                                    ? 'bg-surface-card border-brand/30 text-brand shadow-[var(--shadow-glow-brand)]'
+                                                    ? 'bg-surface-card border-brand/30 text-brand-text shadow-[var(--shadow-glow-brand)]'
                                                     : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
                                             <Users size={14} strokeWidth={2.5} /> Empleado/a
@@ -973,7 +973,7 @@ export default function EncuestaAdminView() {
                             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 bg-brand" />
-                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand group-hover:-translate-y-2 transition-all duration-700">
+                                    <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-brand-text group-hover:-translate-y-2 transition-all duration-700">
                                         <BarChart2 size={40} strokeWidth={2} />
                                     </div>
                                     <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">Sin encuestas aún</h3>
@@ -1069,7 +1069,7 @@ export default function EncuestaAdminView() {
                                                 )}
                                                 {!isExpanded && (
                                                     <button onClick={e => { e.stopPropagation(); toggleExpand(s); }}
-                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand px-3 h-7 rounded-full bg-brand/10 hover:bg-brand/20 transition-colors border border-brand/20 active:scale-[0.97]">
+                                                        className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand-text px-3 h-7 rounded-full bg-brand/10 hover:bg-brand/20 transition-colors border border-brand/20 active:scale-[0.97]">
                                                         Ver detalle <ChevronDown size={10} strokeWidth={2.5} />
                                                     </button>
                                                 )}
@@ -1184,7 +1184,7 @@ export default function EncuestaAdminView() {
                                                                                                 <PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
                                                                                                 <span className="text-[12px] font-black text-content">{nombre}</span>
                                                                                                 {isRowExp
-                                                                                                    ? <ChevronUp size={10} className="text-brand ml-1 shrink-0" strokeWidth={2.5} />
+                                                                                                    ? <ChevronUp size={10} className="text-brand-text ml-1 shrink-0" strokeWidth={2.5} />
                                                                                                     : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity" strokeWidth={2.5} />}
                                                                                             </button>
                                                                                         </td>

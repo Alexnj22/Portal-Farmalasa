@@ -256,7 +256,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     <div className="mt-2.5 pt-2 border-t border-slate-700 flex flex-col gap-1.5">
                         <span className="text-[9px] font-black uppercase tracking-widest text-content-3">{dateLabel}</span>
                         {activeView === 'DAYS' && isHistoricalView && (
-                            <div className="flex items-center gap-1.5 text-brand">
+                            <div className="flex items-center gap-1.5 text-brand-text">
                                 <MousePointerClick size={12} />
                                 <span className="text-[9px] font-black uppercase tracking-widest">Clic para ver horas</span>
                             </div>
@@ -297,7 +297,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             key={opt.value}
                             type="button"
                             onClick={(e) => { e.preventDefault(); setTimeRange(opt.value); }}
-                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-white text-brand shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
+                            className={`flex-1 sm:flex-initial h-full px-4 md:px-5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 transform-gpu ${timeRange === opt.value ? 'bg-white text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}
                         >
                             {opt.label}
                         </button>
@@ -315,7 +315,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
                             <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-10 transition-colors duration-300" />
                         </div>
-                        <h3 className="text-[16px] font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand transition-colors">
+                        <h3 className="text-[16px] font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand-text transition-colors">
                             {activeView === 'DAYS' ? 'Afluencia Histórica por Día' :
                                 activeView === 'GENERAL_HOURS' ? (timeRange === '0' ? 'Afluencia por Hora (Hoy)' : 'Afluencia General (Hr)') :
                                     `Afluencia por Hora - ${DAYS_MAP[activeView]}`}
@@ -329,7 +329,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                 <button
                                     type="button"
                                     onClick={(e) => { e.preventDefault(); setActiveView('DAYS'); }}
-                                    className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-white text-brand shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
+                                    className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-white text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
                                 >
                                     Semana
                                 </button>
@@ -337,7 +337,7 @@ const FormWfmAnalytics = ({ branches }) => {
                             <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); setActiveView('GENERAL_HOURS'); }}
-                                className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-white text-brand shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
+                                className={`px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-white text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
                             >
                                 {timeRange === '0' ? 'Horas de Hoy' : 'General (Hr)'}
                             </button>
@@ -364,7 +364,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
                 {isLoading ? (
                     <div className="flex-1 flex flex-col items-center justify-center gap-3 text-content-3 relative z-10">
-                        <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-brand" />
+                        <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-brand-text" />
                         <p className="text-[11px] font-black uppercase tracking-widest animate-pulse">Analizando operaciones con Sparkles...</p>
                     </div>
                 ) : chartData.length === 0 ? (

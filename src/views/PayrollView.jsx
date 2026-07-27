@@ -565,7 +565,7 @@ const PayrollView = ({ openModal }) => {
                                             <button key={p.id} onClick={() => setActivePeriod(p)}
                                                 className="w-full text-left p-3.5 rounded-2xl border transition-all duration-300 animate-in fade-in"
                                                 style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,82,204,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,82,204,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,82,204,0.12)':'none' }}>
-                                                <p className={`text-[11px] font-black leading-tight ${active?'text-brand':'text-content'}`}>{p.name}</p>
+                                                <p className={`text-[11px] font-black leading-tight ${active?'text-brand-text':'text-content'}`}>{p.name}</p>
                                                 <div className="flex items-center justify-between mt-1.5">
                                                     <p className="text-[9px] text-content-3">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
                                                     <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>

@@ -22,7 +22,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     return (
         <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
             <label htmlFor={name} className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                <span>{label} {helperText && <span className="text-[8px] text-brand ml-1">{helperText}</span>}</span>
+                <span>{label} {helperText && <span className="text-[8px] text-brand-text ml-1">{helperText}</span>}</span>
                 {isMissing && !hasError && <span id={messageId} className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                 {hasError && errorMessage && <span id={messageId} className="text-danger font-bold bg-danger/15 px-2 py-0.5 rounded-md shadow-sm border border-danger/40 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>

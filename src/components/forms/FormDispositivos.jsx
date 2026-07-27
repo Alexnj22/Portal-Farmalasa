@@ -67,7 +67,7 @@ const FormDispositivos = ({ formData }) => {
             {/* 🎛️ ENCABEZADO MINIMALISTA */}
             <div className="flex items-center justify-between px-1">
                 <h4 className="text-[12px] font-black uppercase tracking-widest text-content flex items-center gap-2">
-                    <Activity size={16} className="text-brand"/> Dispositivos aprobados
+                    <Activity size={16} className="text-brand-text"/> Dispositivos aprobados
                 </h4>
                 <div className="bg-success/10 text-success px-3 py-1.5 rounded-full border border-success/30 flex items-center gap-1.5 shadow-sm">
                     <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
@@ -81,7 +81,7 @@ const FormDispositivos = ({ formData }) => {
             <div className="relative min-h-[150px]">
                 {loading ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-content-3">
-                        <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-brand" />
+                        <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-brand-text" />
                         <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando...</p>
                     </div>
                 ) : (

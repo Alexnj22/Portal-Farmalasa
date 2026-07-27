@@ -43,7 +43,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
             {/* 📝 PERMISO DEL ESTABLECIMIENTO (TARJETA PADRE 1) */}
             <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 rounded-[2rem] shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
                 <div className="flex items-center gap-2 mb-2">
-                    <Award size={16} className="text-brand" strokeWidth={2.5}/>
+                    <Award size={16} className="text-brand-text" strokeWidth={2.5}/>
                     <h4 className="text-[11px] font-black uppercase tracking-widest text-content">
                         Permiso de Servicios de Enfermería
                     </h4>
@@ -51,7 +51,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="group/input">
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/input:text-brand transition-colors">
+                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/input:text-brand-text transition-colors">
                             N° Permiso / Licencia
                         </label>
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">
@@ -66,7 +66,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     </div>
                     
                     <div className="group/date flex flex-col justify-end">
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand transition-colors">
+                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
                             Vencimiento Permiso
                         </label>
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
@@ -89,11 +89,11 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'}`}>
                         <input type="file" accept="application/pdf,image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => updateLegalField('nursingServicePermitFile', e.target.files?.[0] || null)} />
                         
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-white text-brand border border-chart-1/30' : 'bg-white text-content-3 group-hover:text-brand'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-white text-brand-text border border-chart-1/30' : 'bg-white text-content-3 group-hover:text-brand-text'}`}>
                              {legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className={`text-[12px] font-black tracking-tight truncate ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'text-brand' : 'text-content-2'}`}>
+                            <p className={`text-[12px] font-black tracking-tight truncate ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'text-brand-text' : 'text-content-2'}`}>
                                 {legalData.nursingServicePermitFile ? legalData.nursingServicePermitFile.name : legalData.nursingServicePermitUrl ? "Archivo adjunto guardado" : "Toca para subir documento"}
                             </p>
                             <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest mt-0.5">
@@ -108,9 +108,9 @@ const FormNursingRegents = ({ formData, setFormData }) => {
             <div>
                 <div className="flex items-center justify-between mb-4 px-2 mt-8">
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-content flex items-center gap-2">
-                        <Users size={16} className="text-brand"/> Profesionales Asignados
+                        <Users size={16} className="text-brand-text"/> Profesionales Asignados
                     </h4>
-                    <button type="button" onClick={addNurse} className="text-[10px] font-black bg-white border border-brand/20 text-brand hover:bg-brand hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-[0.97] uppercase tracking-widest shadow-sm hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5">
+                    <button type="button" onClick={addNurse} className="text-[10px] font-black bg-white border border-brand/20 text-brand-text hover:bg-brand hover:text-white px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all duration-300 active:scale-[0.97] uppercase tracking-widest shadow-sm hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5">
                         <Plus size={14} strokeWidth={2.5}/> Añadir Profesional
                     </button>
                 </div>
@@ -127,7 +127,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                             <div className="space-y-5">
                                 {/* SELECT DEL EMPLEADO */}
                                 <div className="group/select">
-                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand transition-colors">
+                                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
                                         Empleado en Planilla
                                     </label>
                                     <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
@@ -147,10 +147,10 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         <label className="text-[9px] font-black text-content-3 uppercase tracking-widest ml-1 block">Carné JVQE (PDF/IMG)</label>
                                         <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.carneFile || nurse.carneUrl ? 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/40'}`}>
                                             <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'carneFile', e.target.files?.[0] || null)} />
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.carneFile || nurse.carneUrl ? 'bg-white text-brand shadow-sm border-chart-1/30' : 'bg-white text-content-3 border-divider group-hover/btn:text-brand'}`}>
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.carneFile || nurse.carneUrl ? 'bg-white text-brand-text shadow-sm border-chart-1/30' : 'bg-white text-content-3 border-divider group-hover/btn:text-brand-text'}`}>
                                                 {nurse.carneFile || nurse.carneUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
                                             </div>
-                                            <p className="text-[10px] font-black text-content-2 truncate transition-colors group-hover/btn:text-brand">
+                                            <p className="text-[10px] font-black text-content-2 truncate transition-colors group-hover/btn:text-brand-text">
                                                 {nurse.carneFile ? nurse.carneFile.name : nurse.carneUrl ? "Archivo guardado" : "Subir carné..."}
                                             </p>
                                         </div>
@@ -161,10 +161,10 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         <label className="text-[9px] font-black text-content-3 uppercase tracking-widest ml-1 block">Licencia Regencia (PDF)</label>
                                         <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/40'}`}>
                                             <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'licenciaFile', e.target.files?.[0] || null)} />
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-white text-brand shadow-sm border-chart-1/30' : 'bg-white text-content-3 border-divider group-hover/btn:text-brand'}`}>
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-white text-brand-text shadow-sm border-chart-1/30' : 'bg-white text-content-3 border-divider group-hover/btn:text-brand-text'}`}>
                                                 {nurse.licenciaFile || nurse.licenciaUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
                                             </div>
-                                            <p className="text-[10px] font-black text-content-2 truncate transition-colors group-hover/btn:text-brand">
+                                            <p className="text-[10px] font-black text-content-2 truncate transition-colors group-hover/btn:text-brand-text">
                                                 {nurse.licenciaFile ? nurse.licenciaFile.name : nurse.licenciaUrl ? "Archivo guardado" : "Subir licencia..."}
                                             </p>
                                         </div>
@@ -215,7 +215,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     
                     {nursingRegents.length === 0 && (
                         <div className="py-10 text-center border-2 border-dashed border-divider rounded-[2rem] bg-surface-card backdrop-blur-sm mt-4 transition-all duration-500 hover:bg-surface-card hover:-translate-y-1 hover:shadow-md cursor-pointer transform-gpu" onClick={addNurse}>
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand mx-auto mb-3 shadow-[var(--shadow-glow-brand)] border border-chart-1/30">
+                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-brand-text mx-auto mb-3 shadow-[var(--shadow-glow-brand)] border border-chart-1/30">
                                 <Plus size={20} strokeWidth={2.5}/>
                             </div>
                             <p className="text-[12px] font-black uppercase tracking-widest text-content-2">Sin profesionales asignados</p>

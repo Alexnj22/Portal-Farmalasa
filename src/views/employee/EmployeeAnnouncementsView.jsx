@@ -32,7 +32,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const meta = ann.metadata || null;
 
     const badgeEl = ann.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={11} strokeWidth={2} /> Global</span>
+        ? <span className="flex items-center gap-1.5 text-brand-text bg-brand/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={11} strokeWidth={2} /> Global</span>
         : ann.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-success bg-success/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
         : ann.targetType === 'ROLE'
@@ -319,7 +319,7 @@ const UnreadStack = memo(({ list, onRead }) => {
     })();
 
     const badgeEl = current.targetType === 'GLOBAL'
-        ? <span className="flex items-center gap-1.5 text-brand bg-brand/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
+        ? <span className="flex items-center gap-1.5 text-brand-text bg-brand/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-brand/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
         : current.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-success-text bg-success/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-success/30"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
         : current.targetType === 'ROLE'
@@ -699,7 +699,7 @@ const EmployeeAnnouncementsView = () => {
         <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
-                <Search size={16} className="text-brand shrink-0" strokeWidth={2.5} />
+                <Search size={16} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input
                     ref={searchInputRef}
                     type="text"
@@ -713,7 +713,7 @@ const EmployeeAnnouncementsView = () => {
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand ml-1">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-9 h-9 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text ml-1">
                     <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
             </div>

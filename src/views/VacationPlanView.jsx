@@ -225,7 +225,7 @@ const GanttChart = ({ plans, year }) => {
                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                             }
                                         </div>
-                                        <span className="text-[11px] font-bold text-content-2 truncate group-hover/row:text-brand transition-colors">{emp?.name || 'Empleado'}</span>
+                                        <span className="text-[11px] font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors">{emp?.name || 'Empleado'}</span>
                                     </div>
                                     <div className="flex-1 h-7 bg-surface-card border border-divider rounded-xl relative overflow-visible">
                                         {/* Month grid lines */}
@@ -678,11 +678,11 @@ const VacationPlanView = () => {
 
                 {/* Year selector */}
                 <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
+                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
                     <span className="text-[12px] font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -798,7 +798,7 @@ const VacationPlanView = () => {
                                     const used = usedDaysByEmpId.get(String(selectedEmployee.id)) || 0;
                                     const remaining = 15 - used;
                                     return (
-                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand' : 'bg-danger/10 border-danger/30 text-danger-text'}`}>
+                                        <div className={`flex items-center justify-between px-4 py-2.5 rounded-2xl border text-[11px] font-bold ${remaining >= 0 ? 'bg-brand/5 border-brand/15 text-brand-text' : 'bg-danger/10 border-danger/30 text-danger-text'}`}>
                                             <span className="font-black uppercase tracking-widest text-[9px]">Saldo vacacional {year}</span>
                                             <span className="font-black text-[14px]">{Math.max(0, remaining)}<span className="text-[9px] font-bold ml-0.5">/ 15 días</span></span>
                                         </div>
@@ -821,8 +821,8 @@ const VacationPlanView = () => {
                                 {/* Días calculados */}
                                 {computedDays > 0 && (
                                     <div className={`flex items-center gap-2 px-4 py-2.5 border rounded-2xl transition-colors duration-500 ${editingPlan ? 'bg-warning/10 border-warning/20' : 'bg-brand/8 border-brand/15'}`}>
-                                        <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand'} strokeWidth={2.5} />
-                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-warning-text' : 'text-brand'}`}>{computedDays} días calendario</span>
+                                        <Calendar size={13} className={editingPlan ? 'text-warning' : 'text-brand-text'} strokeWidth={2.5} />
+                                        <span className={`text-[12px] font-black ${editingPlan ? 'text-warning-text' : 'text-brand-text'}`}>{computedDays} días calendario</span>
                                     </div>
                                 )}
 
@@ -1012,7 +1012,7 @@ const VacationPlanView = () => {
                                                                             : (p.employee?.name || '?').charAt(0).toUpperCase()
                                                                         }
                                                                     </div>
-                                                                    <p className="font-bold text-content-2 group-hover/row:text-brand transition-colors">{p.employee?.name || '—'}</p>
+                                                                    <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
                                                                         <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
@@ -1030,7 +1030,7 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
                                                             <td className="py-3 pr-4 font-black text-content-2">{p.days}</td>
                                                             <td className="py-3 pr-4">
-                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand bg-brand/5 border-brand/15' : 'text-danger-text bg-danger/10 border-danger/30'}`}>
+                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand-text bg-brand/5 border-brand/15' : 'text-danger-text bg-danger/10 border-danger/30'}`}>
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
                                                                 </span>
                                                             </td>

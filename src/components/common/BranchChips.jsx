@@ -240,7 +240,7 @@ const BranchChips = ({
                             "w-full px-4 py-3 rounded-[1rem] text-left flex items-center justify-between",
                             "transition-all duration-200 transform-gpu",
                             active
-                                ? "bg-brand/10 text-brand"
+                                ? "bg-brand/10 text-brand-text"
                                 : "hover:bg-surface-card-hover hover:translate-x-1 text-content-2",
                           ].join(" ")}
                         >
@@ -256,7 +256,7 @@ const BranchChips = ({
                           </div>
 
                           {active && (
-                            <Check size={16} className="text-brand flex-shrink-0" strokeWidth={2.5} />
+                            <Check size={16} className="text-brand-text flex-shrink-0" strokeWidth={2.5} />
                           )}
                         </button>
                       );

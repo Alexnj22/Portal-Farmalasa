@@ -303,7 +303,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
             <button onClick={() => onSort(col)}
                 className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
-                        ? 'text-brand bg-brand/10'
+                        ? 'text-brand-text bg-brand/10'
                         : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover/70'
                 }`}>
                 {label}
@@ -1349,7 +1349,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
-                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand';
+                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
                 return (
                     <div key={s.branch_id} className="flex items-center justify-between gap-6 whitespace-nowrap">
                         <span className="text-[12px] font-semibold text-content-2">{name}</span>
@@ -1823,7 +1823,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 <div className="text-center py-16 text-danger">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
-                    <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-brand hover:underline">Reintentar</button>
+                    <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-brand-text hover:underline">Reintentar</button>
                 </div>
             )}
             {isProdFuzzy && searchTerm && (

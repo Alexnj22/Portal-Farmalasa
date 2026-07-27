@@ -165,7 +165,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             {/* Info card — total */}
             <div className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] ${infoCard}`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${statIconBg}`}>
-                    <Package size={15} className={'text-brand'} />
+                    <Package size={15} className={'text-brand-text'} />
                 </div>
                 <div className="text-left min-w-0">
                     <div className={`text-[22px] font-black leading-none tabular-nums ${statText}`}>
@@ -355,7 +355,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const inp = 'bg-surface-card-hover border-divider text-content-2 placeholder:text-content-3 focus:ring-brand/20';
     const numCls = 'text-content-3';
     const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
-    const addCls = 'text-content-3 hover:text-brand';
+    const addCls = 'text-content-3 hover:text-brand-text';
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
     const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
@@ -545,7 +545,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     const labelCls = 'text-content-3';
 
-    const salaActiveBtn  = 'bg-white text-brand shadow-sm';
+    const salaActiveBtn  = 'bg-white text-brand-text shadow-sm';
     const inactivBtn     = 'text-content-3 hover:text-content-2';
     const bodegaActiveBtn = 'bg-white text-warning shadow-sm';
 
@@ -944,8 +944,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-content-2',
         photoBtn: 'border-divider hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10',
         photoSubText: 'text-content-3',
-        photoUploadIcon: 'text-content-3 group-hover:text-brand',
-        photoUploadLabel: 'text-content-3 group-hover:text-brand',
+        photoUploadIcon: 'text-content-3 group-hover:text-brand-text',
+        photoUploadLabel: 'text-content-3 group-hover:text-brand-text',
         changesBadge: 'bg-warning/10 text-warning-text border-warning/30',
         emptyPresentaciones: 'bg-surface-card-hover border-divider text-content-3',
         pricingWrapper: 'bg-white border-divider shadow-sm',
@@ -1184,7 +1184,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                                         {photoLoading
-                                            ? <Loader2 size={24} className="text-brand animate-spin" />
+                                            ? <Loader2 size={24} className="text-brand-text animate-spin" />
                                             : <>
                                                 <Camera size={24} className={`transition-colors ${xk.photoUploadIcon}`} />
                                                 <span className={`text-[10px] font-semibold transition-colors ${xk.photoUploadLabel}`}>Subir foto</span>
@@ -1437,7 +1437,7 @@ export default function TabCatalogo({
         textMid: 'text-content-3',
         textInactive: 'text-content-3 line-through decoration-content-3',
         avatarBg: 'bg-brand/[0.07]',
-        avatarIcon: 'text-brand/50',
+        avatarIcon: 'text-brand-text/50',
         filterPill: 'bg-surface-card border-divider shadow-[var(--shadow-glow-brand)]',
         filterDivider: 'bg-surface-card-hover',
         filterBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',

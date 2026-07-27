@@ -144,7 +144,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     {/* MONTO EXACTO */}
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
-                            <DollarSign size={12} className="text-brand" /> Monto Pagado Exacto
+                            <DollarSign size={12} className="text-brand-text" /> Monto Pagado Exacto
                         </label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -166,7 +166,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     {/* MES QUE CUBRE (LIQUID DATE PICKER) */}
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
-                            <Calendar size={12} className={isConflict ? "text-danger" : "text-brand"} /> Mes que Cubre
+                            <Calendar size={12} className={isConflict ? "text-danger" : "text-brand-text"} /> Mes que Cubre
                         </label>
                         <div className={isConflict ? "ring-2 ring-danger/50 rounded-2xl transition-all" : ""}>
                             <LiquidDatePicker
@@ -207,7 +207,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 {/* UPLOAD FILE (ÁREA DE ARRASTRE MEJORADA) */}
                 <div className="pt-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex items-center gap-1.5">
-                        <UploadCloud size={12} className="text-brand" /> Comprobante / Recibo (Foto o PDF)
+                        <UploadCloud size={12} className="text-brand-text" /> Comprobante / Recibo (Foto o PDF)
                     </label>
 
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-6 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden ${paymentData.receiptFile
@@ -235,7 +235,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2 transition-transform duration-300 group-hover:-translate-y-1">
-                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-brand mb-1 group-hover:shadow-md transition-all">
+                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-brand-text mb-1 group-hover:shadow-md transition-all">
                                     <UploadCloud size={24} strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[13px] font-black text-content-2 tracking-tight">

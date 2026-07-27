@@ -205,7 +205,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             )}
                             {meta.docUrl ? (
                                 <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-bold text-content-2 hover:text-brand transition-all">
+                                    className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-surface-card border border-border-card text-[11px] font-bold text-content-2 hover:text-brand-text transition-all">
                                     <FileImage size={12} strokeWidth={2} />{meta.docName || 'Ver certificado adjunto'}
                                 </a>
                             ) : (
@@ -633,13 +633,13 @@ const RequestsView = () => {
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
                     className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
-                    className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2">
+                    className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -704,7 +704,7 @@ const RequestsView = () => {
                     <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="relative group flex flex-col items-center text-center">
                             <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-brand' : statusFilter === 'APPROVED' ? 'bg-success' : statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'}`} />
-                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
+                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] ${statusFilter === 'PENDING' ? 'text-brand-text' : statusFilter === 'APPROVED' ? 'text-success' : statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
                             <h3 className="font-bold text-[22px] text-content tracking-tight mb-2">
@@ -809,7 +809,7 @@ const RequestsView = () => {
                     <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2.5rem] shadow-[var(--shadow-elevation-lg)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
-                                <ClipboardList size={20} className="text-brand" strokeWidth={2} />
+                                <ClipboardList size={20} className="text-brand-text" strokeWidth={2} />
                             </div>
                             <div>
                                 <h3 className="text-[16px] font-bold text-content">Nueva Solicitud</h3>

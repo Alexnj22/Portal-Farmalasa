@@ -58,7 +58,7 @@ export default function ViewTabBar({
   const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active';
   const dividerCls   = 'bg-divider';
   const inputCls     = 'text-content-2 placeholder:text-content-3';
-  const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand hover:shadow-md';
+  const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand-text hover:shadow-md';
   const clearBtnCls  = 'text-content-3 hover:text-danger';
 
   return (
@@ -74,7 +74,7 @@ export default function ViewTabBar({
           ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3'
           : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
 
-        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
         <input
           ref={inputRef}
           type="text"

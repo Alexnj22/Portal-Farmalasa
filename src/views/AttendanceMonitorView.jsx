@@ -405,7 +405,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "EARLY_EXIT":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 text-brand rounded-xl text-[10px] font-bold uppercase tracking-widest border border-brand/20">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 text-brand-text rounded-xl text-[10px] font-bold uppercase tracking-widest border border-brand/20">
             <DoorOpen size={14} /> Permiso / Retiro
           </div>
         );
@@ -501,7 +501,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           )}
         </div>
         <div className="min-w-0">
-          <h3 className="font-bold text-content text-[13px] leading-tight truncate group-hover:text-brand transition-colors">
+          <h3 className="font-bold text-content text-[13px] leading-tight truncate group-hover:text-brand-text transition-colors">
             {emp.name}
           </h3>
           <p className="text-[9px] font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
@@ -520,7 +520,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       {scheduleDetails?.start && (
         <div className="bg-surface-card-hover/50 rounded-lg p-2 border border-black/[0.04] space-y-1 mb-2">
           <div className="flex items-center gap-1.5 text-[9px] font-semibold text-content-2">
-            <Clock size={11} className="text-brand shrink-0" />
+            <Clock size={11} className="text-brand-text shrink-0" />
             <span className="truncate">
               {formatTime12h(scheduleDetails.start)} - {formatTime12h(scheduleDetails.end)}
             </span>
@@ -596,7 +596,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           searchOpen ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0",
         ].join(" ")}
       >
-        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
         <input
           ref={searchInputRef}
           type="text"
@@ -617,7 +617,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         <button
           type="button"
           onClick={() => setSearchOpen(false)}
-          className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2 border border-white"
+          className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"
         >
           <ChevronRight size={18} strokeWidth={2.5} />
         </button>
@@ -697,7 +697,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <p
                 className={[
                   "text-[28px] font-black relative z-10 leading-none",
-                  isActive ? "text-brand" : card.color,
+                  isActive ? "text-brand-text" : card.color,
                 ].join(" ")}
               >
                 {card.count}
@@ -779,7 +779,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                                 <button
                                   type="button"
                                   onClick={() => showMoreInSection(sectionKey)}
-                                  className="text-[10px] font-black uppercase tracking-widest text-brand hover:text-brand-hover text-center py-2 rounded-xl hover:bg-brand/5 transition-colors"
+                                  className="text-[10px] font-black uppercase tracking-widest text-brand-text hover:text-brand-hover text-center py-2 rounded-xl hover:bg-brand/5 transition-colors"
                                 >
                                   Ver más ({remaining} restantes)
                                 </button>

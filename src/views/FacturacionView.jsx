@@ -162,8 +162,8 @@ function AuditThead({ cols, sortKey, sortDir, onSort, firstPl = 'pl-8', lastPr =
                                 {label}
                                 {key && (active
                                     ? (sortDir === 'asc'
-                                        ? <ChevronUp size={10} className="text-brand" />
-                                        : <ChevronDown size={10} className="text-brand" />)
+                                        ? <ChevronUp size={10} className="text-brand-text" />
+                                        : <ChevronDown size={10} className="text-brand-text" />)
                                     : <ChevronUp size={10} className="opacity-20" />
                                 )}
                             </span>
@@ -443,8 +443,8 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand font-medium">
-                        <Info size={13} className="text-brand shrink-0" />
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand-text font-medium">
+                        <Info size={13} className="text-brand-text shrink-0" />
                         Al resolverse la anulación en sistema, el estado se actualiza automáticamente en el portal.
                     </div>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
@@ -474,7 +474,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                             <div key={fecha} className="px-4 py-3">
                                                 <div className="flex items-center gap-2 mb-2.5">
                                                     <span className={`text-[11px] font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-brand/10 text-brand' : hasCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-brand/10 text-brand-text' : hasCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {fechaRows.map(r => {
@@ -899,8 +899,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                             Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                         </div>
                     )}
-                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand font-medium">
-                        <Info size={13} className="text-brand shrink-0" />
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand-text font-medium">
+                        <Info size={13} className="text-brand-text shrink-0" />
                         Al corregirse en sistema se confirman automáticamente en el portal.
                     </div>
                     {Object.entries(grouped).map(([branchId, byFecha]) => {
@@ -936,7 +936,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 <div className="flex items-center gap-2 mb-2.5">
                                                     <span className={`text-[11px] font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
                                                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                                                        isToday ? 'bg-brand/10 text-brand' :
+                                                        isToday ? 'bg-brand/10 text-brand-text' :
                                                         hasCCF  ? 'bg-danger/10 text-danger-text' :
                                                                   'bg-surface-card-hover text-content-3'
                                                     }`}>{dLabel}</span>
@@ -1279,8 +1279,8 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                         title="Sin saltos detectados" subtitle="Los correlativos están en orden. No hay brechas." />
                 ) : (
                     <div className="space-y-3">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand font-medium">
-                            <Info size={13} className="text-brand shrink-0" />
+                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-[11px] text-brand-text font-medium">
+                            <Info size={13} className="text-brand-text shrink-0" />
                             Cada salto indica correlativos faltantes entre dos documentos consecutivos.
                         </div>
                         {Object.entries(gapsByBranch).map(([branchId, branchGaps]) => {
@@ -2057,7 +2057,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             <DataCell>
                                                 {r.proof_url ? (
                                                     <button type="button" onClick={() => openStoredFile(r.proof_url)}
-                                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-chart-1-text hover:text-brand transition-colors">
+                                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-chart-1-text hover:text-brand-text transition-colors">
                                                         <Paperclip size={12} /> Ver <ExternalLink size={10} />
                                                     </button>
                                                 ) : <span className="text-[12px] text-content-3 italic">Sin comprobante</span>}
@@ -2141,14 +2141,14 @@ export default function FacturacionView() {
 
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
                     className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>
                 )}
-                <button onClick={closeSearch} className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2">
+                <button onClick={closeSearch} className="w-11 h-11 rounded-full hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>

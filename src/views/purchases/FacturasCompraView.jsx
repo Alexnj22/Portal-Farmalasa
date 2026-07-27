@@ -75,8 +75,8 @@ const fmtDateTime = (d) => {
 // reemplaza los botones de texto+ícono en línea que quedaban apretados). ──
 
 const ACTION_COLORS = {
-    slate:   'text-content-3 hover:text-brand hover:bg-chart-1/10',
-    blue:    'text-brand hover:text-brand-hover hover:bg-chart-1/10',
+    slate:   'text-content-3 hover:text-brand-text hover:bg-chart-1/10',
+    blue:    'text-brand-text hover:text-brand-hover hover:bg-chart-1/10',
     emerald: 'text-success hover:text-success-text hover:bg-success/10',
     red:     'text-danger hover:text-danger hover:bg-danger/10',
 };
@@ -166,7 +166,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 {canEdit && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
-                        className="text-[10px] font-bold text-brand underline shrink-0"
+                        className="text-[10px] font-bold text-brand-text underline shrink-0"
                     >
                         Emparejar
                     </button>
@@ -279,10 +279,10 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         // chico subrayado, no la caja ícono+subtítulo (esa es para la
         // columna de acciones dedicada de Revisión).
         if (state === 'idle') {
-            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] font-black text-content-3 hover:text-brand underline whitespace-nowrap">Detectar código</button>;
+            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] font-black text-content-3 hover:text-brand-text underline whitespace-nowrap">Detectar código</button>;
         }
         if (state === 'loading') return <span className="text-[9px] text-content-3 whitespace-nowrap">Analizando…</span>;
-        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] text-content-3 hover:text-brand underline whitespace-nowrap">Sin código, reintentar</button>;
+        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] text-content-3 hover:text-brand-text underline whitespace-nowrap">Sin código, reintentar</button>;
         if (state === 'error') return <span className="text-[9px] text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
         if (state === 'not_found') return <span className="text-[9px] text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
@@ -539,7 +539,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
             <div className="flex items-center gap-1.5">
                 <button
                     onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}
-                    className="text-[9px] font-black text-brand hover:text-brand-hover underline whitespace-nowrap"
+                    className="text-[9px] font-black text-brand-text hover:text-brand-hover underline whitespace-nowrap"
                 >
                     Adjuntar JSON
                 </button>
@@ -979,7 +979,7 @@ function TabDocumentos({
                             <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={() => viewDetail(row)}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors"
                                     title="Ver detalle"
                                 >
                                     <Eye size={14} />
@@ -987,7 +987,7 @@ function TabDocumentos({
                                 <button
                                     onClick={() => download(row.json_path, 'json', row)}
                                     disabled={!row.json_path}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                     title={row.json_path ? 'Descargar JSON' : 'Sin JSON'}
                                 >
                                     <FileJson size={14} />
@@ -995,14 +995,14 @@ function TabDocumentos({
                                 <button
                                     onClick={() => download(row.pdf_path, 'pdf', row)}
                                     disabled={!row.pdf_path}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors disabled:opacity-30 disabled:pointer-events-none"
                                     title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'}
                                 >
                                     <Download size={14} />
                                 </button>
                                 <button
                                     onClick={() => downloadPackage(row)}
-                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand hover:bg-chart-1/10 transition-colors"
+                                    className="p-1.5 rounded-lg text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-colors"
                                     title="Descargar paquete (JSON+PDF)"
                                 >
                                     <Archive size={14} />
@@ -1159,7 +1159,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                         <DataCell>
                             <button
                                 onClick={() => openFile(row)}
-                                className="text-[11px] font-medium text-brand hover:underline truncate max-w-[220px] text-left"
+                                className="text-[11px] font-medium text-brand-text hover:underline truncate max-w-[220px] text-left"
                                 title={row.filename}
                             >
                                 {row.filename}

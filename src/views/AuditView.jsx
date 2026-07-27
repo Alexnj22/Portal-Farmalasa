@@ -33,14 +33,14 @@ const getSeverityInfo = (severity) => {
             return { color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/30', icon: <AlertTriangle size={12} /> };
         case 'INFO':
         default:
-            return { color: 'text-brand', bg: 'bg-brand/10', border: 'border-brand/20', icon: <Info size={12} /> };
+            return { color: 'text-brand-text', bg: 'bg-brand/10', border: 'border-brand/20', icon: <Info size={12} /> };
     }
 };
 
 const getSourceIcon = (source) => {
     if (source === 'KIOSK') return <MonitorSmartphone size={10} className="md:w-3 md:h-3 text-chart-3-text" />;
     if (source === 'SYSTEM') return <Database size={10} className="md:w-3 md:h-3 text-content-3" />;
-    return <Globe size={10} className="md:w-3 md:h-3 text-brand" />; // ADMIN_PANEL
+    return <Globe size={10} className="md:w-3 md:h-3 text-brand-text" />; // ADMIN_PANEL
 };
 
 // ============================================================================
@@ -53,7 +53,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
     return (
         <DataRow>
             <DataCell>
-                <div className="text-[11px] md:text-xs font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand">
+                <div className="text-[11px] md:text-xs font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand-text">
                     {logDate.toLocaleDateString()}
                 </div>
                 <div className="text-[9px] md:text-[10px] font-bold text-content-3 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
@@ -98,7 +98,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             <DataCell align="right">
                 <button
                     onClick={() => openModal('viewAuditDetail', log)}
-                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-white text-content-2 hover:text-brand rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+                    className="inline-flex items-center justify-center gap-2 w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 bg-surface-card hover:bg-white text-content-2 hover:text-brand-text rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-300 shadow-sm border border-border-card hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
                     title="Ver Detalles"
                 >
                     <Database size={14} className="md:w-3 md:h-3" /> <span className="hidden md:inline">Detalles</span>
@@ -294,7 +294,7 @@ const filtersContent = (
                 ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"
                     }`}
             >
-                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
                     placeholder="Buscar usuario, equipo, acción..."
@@ -313,7 +313,7 @@ const filtersContent = (
                 )}
                 <button
                     onClick={() => { setIsSearchMode(false); setRawSearchTerm(""); }}
-                    className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"
+                    className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
                     title="Cerrar Búsqueda"
                 >
                     <ChevronRight size={18} strokeWidth={2.5} />
@@ -343,7 +343,7 @@ const filtersContent = (
                         >
                             <ListFilter
                                 size={16}
-                                className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${actionFilter !== 'ALL' ? 'text-brand' : 'group-hover:scale-110'}`}
+                                className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${actionFilter !== 'ALL' ? 'text-brand-text' : 'group-hover:scale-110'}`}
                             />
                             <span className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider">
                                 {ACTION_OPTIONS.find((o) => o.value === actionFilter)?.label || "Acciones"}
@@ -455,14 +455,14 @@ const filtersContent = (
         >
             <div className="px-4 md:px-8 py-4 md:py-5 bg-surface-card border-b border-border-card flex justify-between items-center">
                 <div className="flex items-center gap-2 text-[10px] md:text-[11px] font-bold uppercase text-content-2 tracking-widest">
-                    <Hash size={12} className="text-brand md:w-3 md:h-3" />
+                    <Hash size={12} className="text-brand-text md:w-3 md:h-3" />
                     {totalItems} <span className="hidden sm:inline">Registros</span>
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-3">
                     <button
                         onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-white hover:text-brand'}`}
+                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger text-white border-danger hover:bg-danger-hover shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-surface-card text-content-3 border-divider hover:bg-white hover:text-brand-text'}`}
                     >
                         {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
                         <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
@@ -471,7 +471,7 @@ const filtersContent = (
                     <button
                         onClick={exportToCSV}
                         disabled={processedLogs.length === 0 || isExporting}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-white text-content-2 border-divider hover:text-brand'}`}
+                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-[9px] md:text-[10px] uppercase tracking-widest rounded-full border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-white text-content-2 border-divider hover:text-brand-text'}`}
                     >
                         {isExporting ? <Check size={12} className="text-success" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
                         <span>{isExporting ? 'Ok' : 'Exportar'}</span>
@@ -518,8 +518,8 @@ const filtersContent = (
                         <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
                             <span className="text-[9px] md:text-[10px] font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
                             <div className="flex gap-2">
-                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
-                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
+                                <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand-text disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
+                                <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-surface-card backdrop-blur-md border border-border-card rounded-full shadow-sm text-content-2 hover:text-brand-text disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow hover:-translate-y-0.5 active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
                             </div>
                         </div>
                     </div>

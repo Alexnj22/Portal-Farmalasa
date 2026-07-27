@@ -140,7 +140,7 @@ const DayRow = memo(({
                 <div className="w-full xl:w-36 flex items-center justify-between xl:mt-2.5 flex-shrink-0">
                     <div>
                         <h4 className="text-[13px] md:text-[14px] font-black text-content uppercase tracking-widest">{day.name}</h4>
-                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-brand' : 'text-content-2'}`}>
+                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-brand-text' : 'text-content-2'}`}>
                             {conflict ? conflict.label : isWorking ? 'Día Laboral' : 'Día de Descanso'}
                         </p>
                     </div>
@@ -181,7 +181,7 @@ const DayRow = memo(({
                             {/* TURNO */}
                             <div className="lg:col-span-1 overflow-visible z-[100]">
                                 <label className="text-[8px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
-                                    <Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand'}/> Turno Asignado
+                                    <Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand-text'}/> Turno Asignado
                                 </label>
                                 <LiquidSelect 
                                     value={String(config.shiftId || '')}
@@ -393,7 +393,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                     <div className="flex justify-between items-end mb-1.5">
                         <div>
                             <h3 className="text-[10px] font-black text-content uppercase tracking-widest flex items-center gap-1.5">
-                                <Clock size={12} className={currentStats.isExcess ? 'text-danger' : 'text-brand'}/>
+                                <Clock size={12} className={currentStats.isExcess ? 'text-danger' : 'text-brand-text'}/>
                                 Horas Asignadas
                             </h3>
                             <p className="text-[8px] font-bold text-content-3 uppercase tracking-widest mt-0.5">

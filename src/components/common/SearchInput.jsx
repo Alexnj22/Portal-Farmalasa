@@ -124,8 +124,8 @@ const SearchInput = forwardRef(function SearchInput({
     return (
         <div className={`relative flex items-center ${className}`}>
             {loading
-                ? <Loader2 size={s.icon} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand animate-spin pointer-events-none shrink-0`} />
-                : <Search size={s.icon} strokeWidth={2.5} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand pointer-events-none shrink-0`} />}
+                ? <Loader2 size={s.icon} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand-text animate-spin pointer-events-none shrink-0`} />
+                : <Search size={s.icon} strokeWidth={2.5} className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand-text pointer-events-none shrink-0`} />}
             <input
                 ref={inputRef}
                 type="text"

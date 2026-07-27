@@ -109,14 +109,14 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.05)] ${isSelected ? 'border-brand text-brand bg-chart-1/10' : 'border-white text-content-3 bg-surface-card'}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[inset_0_2px_5px_rgba(0,0,0,0.05)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'border-white text-content-3 bg-surface-card'}`}>
                                         {emp.photo ? <img src={emp.photo} alt="" className="w-full h-full object-cover"/> : emp.name.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-[13px] font-black truncate leading-tight ${isSelected ? 'text-brand' : 'text-content'}`}>{emp.name}</p>
+                                        <p className={`text-[13px] font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`}>{emp.name}</p>
                                         <p className="text-[9px] font-bold text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
                                     </div>
-                                    {isSelected && <CheckCircle2 size={18} className="text-brand shrink-0" strokeWidth={2.5}/>}
+                                    {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                 </div>
                                 {isCurrentJefe && (
                                     <div className="bg-warning/10 backdrop-blur-sm text-warning-text text-[8px] font-black uppercase tracking-widest text-center py-1 rounded-lg mt-1 w-full border border-warning/30">
@@ -151,7 +151,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-content leading-tight">{selectedEmp.name}</h3>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className="bg-chart-1/10 text-brand border border-chart-1/30 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
+                                        <span className="bg-chart-1/10 text-brand-text border border-chart-1/30 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">{selectedEmp.role || 'Sin Rol'}</span>
                                         <span className="text-[10px] font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
                                     </div>
                                 </div>
@@ -191,12 +191,12 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 {/* 2. ANÁLISIS DE MOVIMIENTO */}
                                 <div className="bg-surface-card border border-white rounded-[1.5rem] p-4 shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]">
                                     <div className="flex items-center gap-3">
-                                        {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-brand shrink-0" strokeWidth={2.5}/>}
-                                        {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand shrink-0" strokeWidth={2.5}/>}
+                                        {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
+                                        {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER_PROMOTION' && <Award size={20} className="text-chart-3-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'LATERAL' && <Briefcase size={20} className="text-content-3 shrink-0" strokeWidth={2.5}/>}
                                         <p className="text-[11px] font-bold text-content-2 leading-tight">
-                                            Asumirá como <strong className="text-brand">{formData.targetRole}</strong>. 
+                                            Asumirá como <strong className="text-brand-text">{formData.targetRole}</strong>. 
                                             {moveType === 'PROMOTION' && ' Ascenso interno.'}
                                             {moveType === 'TRANSFER' && ' Traslado operativo.'}
                                             {moveType === 'TRANSFER_PROMOTION' && ' Traslado y ascenso.'}
@@ -219,7 +219,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         <div className="space-y-3">
                                             <label className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-all ${formData.outgoingAction === 'REASSIGN' ? 'bg-surface-card border-brand shadow-md ring-1 ring-brand/20' : 'bg-surface-card border-danger/30 hover:bg-surface-card'}`}>
                                                 <div className="flex items-start gap-3">
-                                                    <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-brand accent-brand" checked={formData.outgoingAction === 'REASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'REASSIGN'})} />
+                                                    <input type="radio" name="outgoingAction" className="w-4 h-4 mt-0.5 text-brand-text accent-brand" checked={formData.outgoingAction === 'REASSIGN'} onChange={() => setFormData({...formData, outgoingAction: 'REASSIGN'})} />
                                                     <div className="flex flex-col w-full">
                                                         <span className="text-[11px] font-black text-content uppercase tracking-widest">Reasignar Cargo</span>
                                                         

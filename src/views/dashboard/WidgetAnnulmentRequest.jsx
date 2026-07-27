@@ -615,7 +615,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                       isSelected ? 'bg-brand/5 border-brand/40' : 'bg-white border-divider hover:border-divider'
                     }`}>
                     <VendorAvatar employee={emp} size={8} />
-                    <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-brand' : 'text-content-2'}`}>{emp.name}</p>
+                    <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-brand-text' : 'text-content-2'}`}>{emp.name}</p>
                     {isSelected && (
                       <div className="w-4 h-4 rounded-full bg-brand flex items-center justify-center shrink-0">
                         <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -748,10 +748,10 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           {newClient && (
             <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border bg-brand/5 border-brand/40">
               <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
-                <span className="text-brand font-black text-[10px] leading-none">{newClient.name?.charAt(0)}</span>
+                <span className="text-brand-text font-black text-[10px] leading-none">{newClient.name?.charAt(0)}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-black text-brand truncate">{newClient.name}</p>
+                <p className="text-[12px] font-black text-brand-text truncate">{newClient.name}</p>
                 {(newClient.nit || newClient.dui) && (
                   <p className="text-[9px] text-content-3 font-mono truncate">{newClient.nit || newClient.dui}</p>
                 )}
@@ -892,7 +892,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         <div className="text-center">
           <p className="text-[14px] font-black text-content">{lbl.title}</p>
           <p className="text-[12px] text-content-3 mt-1 max-w-[200px] leading-relaxed">{lbl.sub}</p>
-          {successInfo.supervisor && <p className="text-[11px] text-brand font-bold mt-1">Supervisor: {successInfo.supervisor}</p>}
+          {successInfo.supervisor && <p className="text-[11px] text-brand-text font-bold mt-1">Supervisor: {successInfo.supervisor}</p>}
         </div>
       </div>
     );

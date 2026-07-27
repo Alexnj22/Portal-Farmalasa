@@ -117,7 +117,7 @@ const hasInjections = legal.injections === true;
             <div style={gpuLockStyle}>
                 <div className="flex items-center gap-2 mb-5 px-1">
                     <div className="p-1.5 bg-brand/10 rounded-lg border border-brand/20">
-                        <Building2 size={16} className="text-brand" strokeWidth={2.5} />
+                        <Building2 size={16} className="text-brand-text" strokeWidth={2.5} />
                     </div>
                     <h3 className="text-[13px] font-black text-content uppercase tracking-widest">Personal de Planta</h3>
                 </div>
@@ -169,7 +169,7 @@ const hasInjections = legal.injections === true;
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-2 text-content-2"><CalendarDays size={12} className="text-brand"/><span className="text-[9px] font-bold tracking-wider uppercase">Ingreso: {tiempoEmpresa}</span></div>
+                                        <div className="flex items-center gap-2 text-content-2"><CalendarDays size={12} className="text-brand-text"/><span className="text-[9px] font-bold tracking-wider uppercase">Ingreso: {tiempoEmpresa}</span></div>
                                         <div className="flex items-center gap-2 text-content-2"><MapPin size={12} className="text-success"/><span className="text-[9px] font-bold tracking-wider uppercase">En sucursal: {tiempoSucursal}</span></div>
                                     </div>
                                 </div>
@@ -211,7 +211,7 @@ const hasInjections = legal.injections === true;
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-[11px] font-bold text-content-2 leading-tight group-hover:text-brand transition-colors whitespace-normal truncate">{emp.name}</h4>
+                                    <h4 className="text-[11px] font-bold text-content-2 leading-tight group-hover:text-brand-text transition-colors whitespace-normal truncate">{emp.name}</h4>
                                     <p className="text-[8px] font-black text-content-2 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
                                 </div>
                             </div>

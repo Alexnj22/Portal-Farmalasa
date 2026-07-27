@@ -25,7 +25,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         <div className={cardClass}>
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-danger' : 'text-brand') : 'text-content-2 group-hover:text-content-2'}`}>
+                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-danger' : 'text-brand-text') : 'text-content-2 group-hover:text-content-2'}`}>
                         {day.name}
                     </p>
                     
@@ -33,7 +33,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                         <button
                             type="button"
                             onClick={() => copyPreviousDay(index)}
-                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-danger hover:text-danger hover:bg-danger/10' : 'text-brand/60 hover:text-brand hover:bg-brand/10'}`}
+                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-danger hover:text-danger hover:bg-danger/10' : 'text-brand-text/60 hover:text-brand-text hover:bg-brand/10'}`}
                             title={`Copiar horario de ${WEEK_DAYS[index - 1].name}`}
                         >
                             <CopyPlus size={13} strokeWidth={2.5}/>
@@ -94,7 +94,7 @@ const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
                 
                 {/* ENCABEZADO PRO */}
                 <div className="flex items-center gap-3 mb-5">
-                    <div className="p-2 bg-brand/10 text-brand rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-brand/10 text-brand-text rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Clock size={16} strokeWidth={2.5} />
                     </div>
                     <div className="flex flex-col">

@@ -69,7 +69,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">
-                    <div className="w-10 h-10 rounded-xl bg-chart-1/10 text-brand border border-chart-1/30 flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-chart-1/10 text-brand-text border border-chart-1/30 flex items-center justify-center shadow-sm">
                         <Award size={20} strokeWidth={2.5}/>
                     </div>
                     <div>
@@ -84,7 +84,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
 
                 {/* FILA 1: SELECT (AHORA OCUPA TODO EL ANCHO PARA NO CORTAR NOMBRES) */}
                 <div className="group/select">
-                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand transition-colors">
+                    <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-brand-text transition-colors">
                         Regente Asignado
                     </label>
                     <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
@@ -103,7 +103,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     
                     {/* FECHA VENCIMIENTO CREDENCIAL */}
                     <div className="group/date flex flex-col justify-end">
-                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand transition-colors">
+                        <label className="text-[10px] font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/date:text-brand-text transition-colors">
                             Vencimiento Credencial JVQF
                         </label>
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl h-[50px] bg-surface-card focus-within:bg-white focus-within:shadow-[var(--shadow-ring-brand)] flex items-center border border-divider hover:border-brand/40 focus-within:border-brand overflow-hidden">
@@ -130,12 +130,12 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                                 onChange={(e) => updateLegalField('regentCredentialFile', e.target.files?.[0] || null)} 
                             />
                             
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-white text-brand border border-chart-1/30' : 'bg-white text-content-3 border border-divider group-hover:text-brand group-hover:border-chart-1/30'}`}>
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-white text-brand-text border border-chart-1/30' : 'bg-white text-content-3 border border-divider group-hover:text-brand-text group-hover:border-chart-1/30'}`}>
                                  {legalData.regentCredentialFile || legalData.regentCredentialUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16} strokeWidth={2} />}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                                <p className={`text-[11px] font-black tracking-tight truncate ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'text-brand' : 'text-content-2'}`}>
+                                <p className={`text-[11px] font-black tracking-tight truncate ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'text-brand-text' : 'text-content-2'}`}>
                                     {legalData.regentCredentialFile ? legalData.regentCredentialFile.name : legalData.regentCredentialUrl ? "Credencial guardada" : "Subir documento..."}
                                 </p>
                             </div>

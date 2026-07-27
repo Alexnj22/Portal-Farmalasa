@@ -83,7 +83,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             {/* 1. Nombre del Documento */}
             <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
-                    <FilePlus size={12} className="text-brand"/> Nombre del Documento
+                    <FilePlus size={12} className="text-brand-text"/> Nombre del Documento
                 </label>
                 <div className="relative">
                     <input 
@@ -112,7 +112,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             {/* 3. Zona de Carga (PDF / Imagen) */}
             <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
-                    <UploadCloud size={12} className="text-brand"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
+                    <UploadCloud size={12} className="text-brand-text"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
                 </label>
                 <div className="relative">
                     <input
@@ -165,7 +165,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                         onClick={() => updateField('hasIssueDate', !data.hasIssueDate)}
                     >
                         <div>
-                            <p className="text-[13px] font-black text-content-2 group-hover:text-brand transition-colors">¿Tiene fecha de expedición?</p>
+                            <p className="text-[13px] font-black text-content-2 group-hover:text-brand-text transition-colors">¿Tiene fecha de expedición?</p>
                             <p className="text-[10px] font-bold text-content-3 mt-0.5">Útil para documentos de renovación periódica.</p>
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-success' : 'bg-surface-card-hover'}`}>

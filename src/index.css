@@ -13,6 +13,17 @@
   --brand-dark:   #003D99;
   --brand-purple: #6929C4;
 
+  /* Color de marca SEGURO COMO TEXTO (D1.1, 2026-07-26). --brand (#0052CC) es
+     el azul funcional de fondos/botones/focus y NO cambia por tema — pero se
+     usaba también como color de TEXTO en 512 lugares de 106 archivos, donde
+     sobre superficie oscura mide 2.85:1 y falla AA (mín 4.5:1). Medido en
+     vivo, no estimado: ver AUDITORIA-DISENO-2026-07-26.md S1.2.
+     Es el mismo bug que T7 resolvió para Badge.jsx creando los --chart-N-text,
+     con el color más usado del sistema dejado fuera. Mismo patrón de solución:
+     un token -text aparte, para no tocar bg-brand al arreglar text-brand.
+     En los temas claros es idéntico a --brand (5.23-6.82:1, ya pasaba). */
+  --brand-text: #0052CC;
+
   /* Colores reales del logo (public/Logo512.png, muestreados por pixel
      2026-07-23, no inventados): verde del arco superior, magenta de la cruz
      y el arco inferior. Decisión de esta sesión: estos son los acentos
@@ -286,6 +297,12 @@
   --border-tab:    rgba(255,255,255,0.08);
   --border-muted:  rgba(120,160,255,0.10);
 
+  /* D1.1 — el azul de marca aclarado para leerse sobre superficie oscura.
+     Mismo valor que --chart-1-text de este tema: se reusa el azul que el
+     sistema ya eligió para "texto azul sobre oscuro" en vez de inventar uno.
+     Medido: 7.64:1 sobre --bg-page, 7.35:1 sobre --surface-card. */
+  --brand-text: #60A5FA;
+
   --header-sheen: rgba(255,255,255,0.05); /* sutil, no el blanco de :root — ver nota en :root */
   --card-sheen:        rgba(255,255,255,0.05);
   --card-sheen-strong: rgba(255,255,255,0.06);
@@ -432,6 +449,7 @@
   --chart-4-text: #fb923c; --chart-5-text: #22d3ee; --chart-6-text: #f472b6;
   --chart-7-text: #facc15; --chart-8-text: #94a3b8; --chart-9-text: #2dd4bf;
   --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
+  --brand-text:   #60A5FA; /* D1.1 — 5.75:1 sobre la tarjeta #1e293b */
 
   --surface-card:       rgba(30,41,59,1.00);
   --surface-card-hover: rgba(51,65,85,1.00);
@@ -676,6 +694,7 @@
 @theme inline {
   /* Brand & semantic */
   --color-brand:        var(--brand);
+  --color-brand-text:   var(--brand-text);
   --color-brand-dark:   var(--brand-dark);
   --color-brand-purple: var(--brand-purple);
   --color-logo-green:        var(--logo-green);

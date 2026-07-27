@@ -51,7 +51,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
     const isPendingReceipt = statusObj.state === 'pending_receipt';
 
     const colorMap = {
-        blue: 'text-brand bg-chart-1/10 border-chart-1/30',
+        blue: 'text-brand-text bg-chart-1/10 border-chart-1/30',
         orange: 'text-chart-4-text bg-chart-4/10 border-chart-4/30',
         cyan: 'text-chart-5-text bg-chart-5/10 border-chart-5/20',
         purple: 'text-chart-3-text bg-chart-3/10 border-chart-3/20',
@@ -106,7 +106,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand hover:border-chart-1/30 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-[10px] uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-white transition-all active:scale-[0.97] shadow-sm relative z-10"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>
@@ -323,7 +323,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         
                         <div className="flex justify-between items-start mb-6 relative z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-surface-card text-brand rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
+                                <div className="w-12 h-12 bg-surface-card text-brand-text rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
                                 </div>
                                 <div>

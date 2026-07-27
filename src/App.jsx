@@ -157,7 +157,7 @@ const PermissionGuard = ({ moduleKey, children }) => {
 const RouteLoadingFallback = () => (
     <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-40">
         <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2rem] px-10 py-8 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-3">
-            <Loader2 className="text-brand animate-spin" size={28} strokeWidth={2.5} />
+            <Loader2 className="text-brand-text animate-spin" size={28} strokeWidth={2.5} />
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-3">Cargando…</span>
         </div>
     </div>
@@ -169,7 +169,7 @@ const RouteLoadingFallback = () => (
 // más cercano al suspender, no solo el componente lazy).
 const ContentLoadingFallback = () => (
     <div className="w-full h-full flex items-center justify-center">
-        <Loader2 className="text-brand animate-spin" size={28} strokeWidth={2.5} />
+        <Loader2 className="text-brand-text animate-spin" size={28} strokeWidth={2.5} />
     </div>
 );
 
@@ -490,7 +490,7 @@ function MainApp() {
                         {/* Brand text */}
                         <div className="flex flex-col items-center gap-1.5">
                             <span className="text-[21px] font-black text-content tracking-tight leading-none">Portal Farmalasa</span>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand/60">Sistema de Gestión</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-text/60">Sistema de Gestión</span>
                         </div>
 
                         {/* Animated dots */}

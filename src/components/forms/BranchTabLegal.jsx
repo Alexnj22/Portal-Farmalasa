@@ -38,7 +38,7 @@ const BranchTabLegal = ({
 
                 {/* ISLA 1: LICENCIA SRS */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand mb-5 flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <ShieldCheck size={18} strokeWidth={2.5} /> Licencia de Funcionamiento (CSSP/DNM)
                     </h4>
                     {/* 🚨 CONTENIDO EN 1 COLUMNA (flex-col) */}
@@ -81,7 +81,7 @@ const BranchTabLegal = ({
 
                 {/* ISLA 2: REGENCIA FARMACÉUTICA */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand mb-5 flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <FileBadge size={18} strokeWidth={2.5} /> Regencia Farmacéutica
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
@@ -127,7 +127,7 @@ const BranchTabLegal = ({
 
                 {/* ISLA 3: FARMACOVIGILANCIA */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand mb-5 flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <ShieldAlert size={18} strokeWidth={2.5} /> Referente de Farmacovigilancia
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
@@ -174,7 +174,7 @@ const BranchTabLegal = ({
                 {/* ISLA 4: ÁREA DE INYECTABLES */}
                 <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex items-center justify-between mb-5">
-                        <h4 className="text-[13px] font-black uppercase tracking-widest text-brand flex items-center gap-2">
+                        <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                             <Syringe size={18} strokeWidth={2.5} /> Área Inyectables
                         </h4>
                         <Switch on={legal.injections || false} onToggle={() => updateNestedSetting('legal', 'injections', !legal.injections)} />
@@ -229,7 +229,7 @@ const BranchTabLegal = ({
             {/* 🚨 BLOQUE FINAL (FULL WIDTH / 1 COLUMNA): LIBROS CONTROLADOS */}
             <div className={`${islandClass} ${islandHoverClass}`} style={gpuLockStyle}>
                 <div className="flex items-center justify-between mb-5">
-                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand flex items-center gap-2">
+                    <h4 className="text-[13px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                         <FileWarning size={18} strokeWidth={2.5} /> Libros Controlados
                     </h4>
                     <Switch on={legal.controlledBooks || false} onToggle={() => updateNestedSetting('legal', 'controlledBooks', !legal.controlledBooks)} />

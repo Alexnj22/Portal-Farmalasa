@@ -35,7 +35,7 @@ const tintForType = (type = '', metadata = {}, isDark = false) => {
             ? 'bg-danger/10 text-danger border-danger/30'
             : 'bg-success/10 text-success border-success/30';
     }
-    if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-brand border-chart-1/30';
+    if (type.startsWith('PEDIDO')) return 'bg-chart-1/10 text-brand-text border-chart-1/30';
     return 'bg-surface-card-hover text-content-3 border-border-card/70';
 };
 
@@ -284,12 +284,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         rowBody: 'text-content-3',
         rowTime: 'text-content-3',
         iconBtn: 'text-content-3 hover:text-content-2 hover:bg-surface-card',
-        emptyIconBox: 'bg-surface-card border-white text-brand/50',
+        emptyIconBox: 'bg-surface-card border-white text-brand-text/50',
         emptyTitle: 'text-content-2', emptySub: 'text-content-3',
         chipMuted: 'text-content-3',
         undoStrip: 'bg-surface-card-hover/80',
         undoText: 'text-content-2',
-        undoBtn: 'text-brand hover:bg-chart-1/10 border-chart-1/30',
+        undoBtn: 'text-brand-text hover:bg-chart-1/10 border-chart-1/30',
     };
 
     const undoButton = (key, label = 'Deshacer') => (
@@ -330,7 +330,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 {totalBadge > 0 ? (
                     <BellRing size={18} strokeWidth={2}
                         className={`relative z-10 transition-colors
-                            ${hasUrgentAnn ? (isDark ? 'text-danger-text animate-wiggle' : 'text-danger animate-wiggle') : (isDark ? 'text-chart-1-text' : 'text-brand')}
+                            ${hasUrgentAnn ? (isDark ? 'text-danger-text animate-wiggle' : 'text-danger animate-wiggle') : (isDark ? 'text-chart-1-text' : 'text-brand-text')}
                             ${justRang && !hasUrgentAnn ? 'animate-wiggle' : ''}`} />
                 ) : (
                     <Bell size={18} strokeWidth={2} className={`relative z-10 ${isDark ? 'text-white/45' : 'text-content-3'}`} />
@@ -378,7 +378,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             title="Marcar todas como leídas"
-                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand hover:bg-chart-1/10'}`}
+                                            className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1.5 rounded-xl transition-colors ${isDark ? 'text-chart-1-text hover:bg-chart-1/10' : 'text-brand-text hover:bg-chart-1/10'}`}
                                         >
                                             <CheckCheck size={13} strokeWidth={2.5} />
                                             Leídas
@@ -429,7 +429,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0
                                         ${hasUrgentAnn
                                             ? (isDark ? 'bg-danger/10 text-danger-text border-danger/40' : 'bg-danger/10 text-danger border-danger/30')
-                                            : (isDark ? 'bg-chart-1/10 text-chart-1-text border-chart-1/40' : 'bg-chart-1/10 text-brand border-chart-1/30')}`}>
+                                            : (isDark ? 'bg-chart-1/10 text-chart-1-text border-chart-1/40' : 'bg-chart-1/10 text-brand-text border-chart-1/30')}`}>
                                         <Megaphone size={16} strokeWidth={2} />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -513,7 +513,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                     <span className={`text-[10px] font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
                                                                     {actionLabel && (
                                                                         <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
-                                                                            ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand') : cx.chipMuted}`}>
+                                                                            ${unread ? (isDark ? 'text-chart-1-text' : 'text-brand-text') : cx.chipMuted}`}>
                                                                             {actionLabel}
                                                                             <ArrowRight size={10} strokeWidth={3} />
                                                                         </span>

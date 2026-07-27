@@ -127,7 +127,7 @@ const PdfZoomViewer = ({ src }) => {
                     href={src}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-brand hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 transition-colors"
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-brand-text hover:text-brand-hover px-2.5 py-1 rounded-lg hover:bg-chart-1/10 transition-colors"
                 >
                     <ExternalLink size={12} /> Abrir en pestaña nueva
                 </a>
@@ -237,7 +237,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
             <div className="p-6 border-b border-divider bg-white shrink-0 shadow-sm z-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand flex items-center justify-center shadow-inner shrink-0">
+                        <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
                             <Receipt size={24} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0">
@@ -338,7 +338,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     <PdfZoomViewer src={pdfUrl} />
                 ) : loading ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-white rounded-[1.5rem] border border-divider shadow-sm">
-                        <Loader2 size={32} className="animate-spin mb-3 text-brand" />
+                        <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
                         <p className="font-bold text-[11px] uppercase tracking-widest">Cargando detalle…</p>
                     </div>
                 ) : error ? (

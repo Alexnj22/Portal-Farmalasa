@@ -33,7 +33,7 @@ const BranchTabGeneral = ({
             {/* ISLA 1: IDENTIDAD */}
             <div className={`${islandClass} ${islandHoverClass}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-brand/10 text-brand rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                    <div className="p-2 bg-brand/10 text-brand-text rounded-[0.8rem] border border-brand/20 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                         <Building2 size={16} strokeWidth={2.5} />
                     </div>
                     <h4 className="text-[12px] font-black uppercase tracking-widest text-content">Identidad de Sucursal</h4>

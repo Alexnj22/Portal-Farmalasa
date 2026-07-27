@@ -868,7 +868,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     {employeesInView.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">
                             <div className="p-6 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] shadow-sm">
-                                <CalendarDays size={36} className="text-brand/30" strokeWidth={1.5} />
+                                <CalendarDays size={36} className="text-brand-text/30" strokeWidth={1.5} />
                             </div>
                             <div className="text-center">
                                 <p className="text-[16px] font-black text-content-2 mb-1">Sin empleados</p>

@@ -318,7 +318,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             )}
 
             <div className="flex items-center gap-1.5 relative z-10">
-              <p className="font-black text-content text-[12px] md:text-[13px] truncate transition-colors group-hover:text-brand tracking-tight" title={emp.name}>
+              <p className="font-black text-content text-[12px] md:text-[13px] truncate transition-colors group-hover:text-brand-text tracking-tight" title={emp.name}>
                 {shortName}
               </p>
               {isPendingData(emp) && <PendingBadge emp={emp} />}
@@ -354,7 +354,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                   <a href={`https://wa.me/${phoneDigits}`} target="_blank" rel="noreferrer" className="text-success hover:text-success hover:scale-110 hover:-translate-y-0.5 transition-all bg-success/10 rounded-full p-[3px]" title="WhatsApp" onClick={e => e.stopPropagation()}>
                     <MessageCircle size={10} strokeWidth={3} />
                   </a>
-                  <a href={`tel:${phoneDigits}`} className="text-brand hover:text-brand-hover hover:scale-110 hover:-translate-y-0.5 transition-all bg-brand/10 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
+                  <a href={`tel:${phoneDigits}`} className="text-brand-text hover:text-brand-hover hover:scale-110 hover:-translate-y-0.5 transition-all bg-brand/10 rounded-full p-[3px]" title="Llamar" onClick={e => e.stopPropagation()}>
                     <Phone size={10} strokeWidth={3} />
                   </a>
                 </div>
@@ -412,7 +412,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-glow-brand)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-surface-card hover:bg-surface-card-hover text-content-2 hover:text-brand-text transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-glow-brand)] border border-border-card hover:border-brand/20 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
             <ChevronRight size={16} strokeWidth={3} />
@@ -872,7 +872,7 @@ const StaffManagementView = ({
     <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
         <input
           ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
           type="text"
@@ -882,7 +882,7 @@ const StaffManagementView = ({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
+        <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-surface-card hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>

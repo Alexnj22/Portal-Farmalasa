@@ -720,7 +720,7 @@ const PermissionsView = () => {
         <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             {/* MODO BÚSQUEDA */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[800px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
@@ -734,7 +734,7 @@ const PermissionsView = () => {
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
+                <button onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2" title="Cerrar Búsqueda">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>

@@ -64,7 +64,7 @@ const FormAuditDetail = ({ data }) => {
 
                     <div className={itemContainerClass}>
                         <div className={`${iconBoxClass} bg-chart-1/10`}>
-                            <Activity size={16} className="text-brand" />
+                            <Activity size={16} className="text-brand-text" />
                         </div>
                         <div className="min-w-0 pt-0.5">
                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
@@ -91,7 +91,7 @@ const FormAuditDetail = ({ data }) => {
                         <div className="min-w-0 pt-0.5">
                             <p className="text-[9px] font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-black text-brand bg-surface-card border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
+                                <span className="text-[10px] font-black text-brand-text bg-surface-card border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
                                     {data.source}
                                 </span>
                                 {data.device_name && <span className="text-[13px] font-bold text-content-2 truncate">{data.device_name}</span>}

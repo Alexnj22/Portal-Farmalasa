@@ -15,7 +15,7 @@ const VARIANT_CLASSES = {
     success: 'text-success-text bg-gradient-to-b from-success/[0.16] to-success/[0.09] border-success/30',
     warning: 'text-warning-text bg-gradient-to-b from-warning/[0.18] to-warning/[0.09] border-warning/30',
     danger:  'text-danger-text bg-gradient-to-b from-danger/[0.16] to-danger/[0.09] border-danger/30',
-    info:    'text-brand bg-gradient-to-b from-brand/[0.16] to-brand/[0.09] border-brand/30',
+    info:    'text-brand-text bg-gradient-to-b from-brand/[0.16] to-brand/[0.09] border-brand/30',
     neutral: 'text-content-2 bg-gradient-to-b from-surface-card-hover to-surface-card border-border-card',
 };
 

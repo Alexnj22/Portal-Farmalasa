@@ -9,7 +9,7 @@ const navCls = (disabled) =>
     `w-8 h-8 flex items-center justify-center text-[11px] font-bold text-content-3 transition-colors duration-150 ${
         disabled
             ? 'opacity-45 cursor-not-allowed'
-            : 'hover:text-brand hover:bg-surface-card-hover'
+            : 'hover:text-brand-text hover:bg-surface-card-hover'
     }`;
 
 function NavBtn({ disabled, onClick, title, children }) {
@@ -186,7 +186,7 @@ export default function TablePagination({
             <div data-surface="input" className="flex items-center gap-1 px-3 h-8 min-w-[90px] justify-end">
                 {isFiltered ? (
                     <>
-                        <span className="text-[11px] font-black text-brand tabular-nums">{(filteredTotal ?? 0).toLocaleString()}</span>
+                        <span className="text-[11px] font-black text-brand-text tabular-nums">{(filteredTotal ?? 0).toLocaleString()}</span>
                         <span className="text-[9px] text-content-3 mx-0.5">/</span>
                         <span className="text-[10px] font-semibold text-content-3 tabular-nums">{total.toLocaleString()}</span>
                         <span className="text-[9px] text-content-3 ml-0.5">{unit}</span>

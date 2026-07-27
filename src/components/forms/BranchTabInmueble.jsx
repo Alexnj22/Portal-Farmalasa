@@ -46,7 +46,7 @@ const BranchTabInmueble = ({
             <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border-card pb-5">
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand flex items-center gap-2">
+                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                         <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
                     </h4>
 
@@ -64,7 +64,7 @@ const BranchTabInmueble = ({
                                 }
                             }));
                         }} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-brand' : 'text-content-2'}`}>Alquilado</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-brand-text' : 'text-content-2'}`}>Alquilado</span>
                     </div>
                 </div>
 
@@ -185,7 +185,7 @@ const BranchTabInmueble = ({
 
                 {/* ISLA 2: ALCALDÍA */}
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
-                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand mb-5 flex items-center gap-2">
+                    <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
                     </h4>
                     <div className="space-y-4 flex-1">
@@ -229,7 +229,7 @@ const BranchTabInmueble = ({
                 <div className={`bg-surface-card rounded-[2rem] p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex flex-col mb-5">
                         <div className="flex items-center justify-between">
-                            <h4 className="text-[12px] font-black uppercase tracking-widest text-brand flex items-center gap-2">
+                            <h4 className="text-[12px] font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
                                 <Trash2 size={16} strokeWidth={2.5} /> Desechos Bioinfecciosos
                             </h4>
                             <Switch 

@@ -78,7 +78,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
 
                 {/* Input */}
                 <div className="relative z-10 flex items-center gap-3 px-5 py-4 border-b border-divider">
-                    <Search size={18} strokeWidth={2.5} className="text-brand shrink-0" />
+                    <Search size={18} strokeWidth={2.5} className="text-brand-text shrink-0" />
                     <input
                         ref={inputRef}
                         type="text"
@@ -118,7 +118,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                                     }`}
                                 >
                                     <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                                        isSelected ? 'bg-brand/10 border-brand/20 text-brand' : 'bg-surface-card-hover border-border-card text-content-3'
+                                        isSelected ? 'bg-brand/10 border-brand/20 text-brand-text' : 'bg-surface-card-hover border-border-card text-content-3'
                                     }`}>
                                         {Icon && <Icon size={16} strokeWidth={2.25} />}
                                     </span>

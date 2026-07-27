@@ -21,7 +21,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
     const servicesList = [
         { id: 'light', icon: Zap, label: 'Energía Eléctrica', placeholder: 'Ej. CAESS', accountLabel: 'Nº de NIC / NPE', color: 'text-warning', bgIcon: 'bg-warning/10' },
         { id: 'water', icon: Droplet, label: 'Agua Potable', placeholder: 'Ej. ANDA', accountLabel: 'Nº de Cuenta', color: 'text-chart-5-text', bgIcon: 'bg-chart-5/10' },
-        { id: 'internet', icon: Wifi, label: 'Internet Fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato / Teléfono', color: 'text-brand', bgIcon: 'bg-chart-1/10' },
+        { id: 'internet', icon: Wifi, label: 'Internet Fijo', placeholder: 'Ej. Tigo / Claro', accountLabel: 'Nº de Contrato / Teléfono', color: 'text-brand-text', bgIcon: 'bg-chart-1/10' },
         { id: 'mobile', icon: Smartphone, label: 'Telefonía Móvil (Flota)', placeholder: 'Ej. Claro', accountLabel: 'Nº de Teléfono', color: 'text-chart-3-text', bgIcon: 'bg-chart-3/10' },
     ];
 

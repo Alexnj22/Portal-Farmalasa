@@ -345,7 +345,7 @@ const BranchCard = memo(({
                         <div className="w-px h-4 bg-divider mx-0.5"></div>
                         </>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-content-3 hover:text-brand hover:bg-brand/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-content-3 hover:text-brand-text hover:bg-brand/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
                     <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-content-3 hover:text-chart-3-text hover:bg-chart-3/10 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
 
                     {!deleteDisabled && (
@@ -377,12 +377,12 @@ const BranchCard = memo(({
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
                 <div className="flex items-start gap-3">
                     <button onClick={() => handleViewProfile(branch)} className="flex items-center gap-4 min-w-0 text-left group/header focus:outline-none w-full pr-[140px]">
-                        <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-border-card text-brand shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
+                        <div className="w-14 h-14 rounded-[1.25rem] bg-white border border-border-card text-brand-text shadow-[0_8px_20px_rgba(0,0,0,0.04),inset_0_2px_10px_rgba(255,255,255,1)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0 flex-1 flex flex-col justify-center">
                             <div className="flex items-center gap-2">
-                                <h3 className="text-[18px] font-bold text-content leading-tight group-hover/header:text-brand transition-colors duration-300 line-clamp-2">{branch.name}</h3>
+                                <h3 className="text-[18px] font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-300 line-clamp-2">{branch.name}</h3>
                                 <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
                                     {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[0_0_8px_rgba(245,158,11,0.5)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 bg-slate-800/90 backdrop-blur-xl text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-xl opacity-0 invisible group-hover/status:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-50 pointer-events-none border border-border-card">
@@ -410,7 +410,7 @@ const BranchCard = memo(({
 
                 <div className="flex flex-col gap-2.5 mt-2">
                     <a href={branch.settings?.location?.mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || branch.name)}`} target="_blank" rel="noreferrer" className={`group/map flex items-start gap-3 p-3.5 rounded-[1.25rem] ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Abrir en Maps">
-                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-brand border border-divider"><MapPin size={16} strokeWidth={2.5} /></div>
+                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-brand-text border border-divider"><MapPin size={16} strokeWidth={2.5} /></div>
                         <div className="flex-1 flex justify-between items-start gap-2 pr-1">
                             <div className="min-w-0 flex-1">
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
@@ -424,14 +424,14 @@ const BranchCard = memo(({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand"><Phone size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand-text"><Phone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
                                 <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Fijo</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
                             </div>
                         </button>
                         <button onClick={(e) => handlePhoneAction(e, branch.cell, 'Celular')} className={`group/cell flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full pr-8 ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand"><Smartphone size={14} strokeWidth={2.5} /></div>
+                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand-text"><Smartphone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
                                 <p className="text-[8px] font-black text-content-2 uppercase tracking-widest">Celular</p>
                                 <p className="text-[12px] font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
@@ -442,7 +442,7 @@ const BranchCard = memo(({
 
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-[1.25rem] px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[0_2px_10px_rgba(0,0,0,0.02),inset_0_2px_5px_rgba(255,255,255,0.8)] hover:bg-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,1)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
-                            <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand'}`} strokeWidth={2.5} />
+                            <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
                             <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>
                                 {!scheduleDefined ? 'Falta Horario' : 'Horario (Hoy)'}
                             </span>
@@ -500,7 +500,7 @@ const BranchCard = memo(({
                     title="Ver Listado de Personal"
                 >
                     <div className="flex items-center gap-2 text-content-3 transition-colors duration-300 group-hover/personal:text-content-2">
-                        <Users size={14} className="transition-transform duration-300 group-hover/personal:scale-110 group-hover/personal:text-brand" strokeWidth={2.5} />
+                        <Users size={14} className="transition-transform duration-300 group-hover/personal:scale-110 group-hover/personal:text-brand-text" strokeWidth={2.5} />
                         <span className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 group-hover/personal:text-content-2">Personal</span>
                     </div>
                     <div className="flex items-center gap-3 w-full pr-4">
@@ -697,17 +697,17 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     const renderFiltersContent = () => (
         <div {...searchContainerRef} className={`flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden`}>
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
-                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                 <input type="text" placeholder="Buscar sucursal o dirección..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-content-3 focus:ring-0" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} ref={(input) => { if (input && isSearchActive) setTimeout(() => input.focus(), 100) }} />
                 {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-content-3 hover:text-danger transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
-                <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
+                <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
 
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-3 gap-3"}`}>
                 <div className="flex items-center min-w-0 flex-1">
                     <div className={`flex items-center overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] ${isFilterPickerOpen ? "max-w-0 opacity-0 pointer-events-none gap-0 pr-0" : "max-w-[400px] opacity-100 gap-2 md:gap-3 pr-2 md:pr-3"}`}>
                         <button type="button" onClick={() => setIsFilterPickerOpen(true)} className={`px-3 md:px-5 h-9 rounded-full flex items-center gap-2 md:gap-3 transition-all duration-300 group whitespace-nowrap border shrink-0 ${filterStatus !== "ALL" ? "bg-white text-content border-white shadow-md" : "bg-transparent text-content-2 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"}`}>
-                            <Filter size={16} className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${filterStatus !== 'ALL' ? 'text-brand' : 'group-hover:scale-110'}`} />
+                            <Filter size={16} className={`transition-transform duration-200 transform-gpu md:w-[18px] md:h-[18px] ${filterStatus !== 'ALL' ? 'text-brand-text' : 'group-hover:scale-110'}`} />
                             <span className="text-[11px] md:text-[12px] font-bold uppercase tracking-wider">{FILTER_OPTIONS.find((o) => o.value === filterStatus)?.label || "Sucursales"}</span>
                         </button>
                     </div>
@@ -726,7 +726,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                     {filterStatus !== "ALL" && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-11 h-11 rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 hover:border-danger/30 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}
-                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
+                    {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-brand-text font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] border border-white hover:border-brand/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
                         <span className="hidden sm:inline">Nueva Sucursal</span>
                     </button>}

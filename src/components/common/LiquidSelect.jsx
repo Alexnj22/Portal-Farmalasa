@@ -398,8 +398,8 @@ const LiquidSelect = ({
                 <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-10 pointer-events-none ${isOpen
                         ? 'text-white bg-brand shadow-sm'
                         : bare
-                            ? 'bg-transparent text-brand'
-                            : 'bg-surface-card-hover text-brand border border-border-card shadow-sm'
+                            ? 'bg-transparent text-brand-text'
+                            : 'bg-surface-card-hover text-brand-text border border-border-card shadow-sm'
                     }`}>
                     {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
                 </div>
@@ -508,7 +508,7 @@ const LiquidSelect = ({
                             : 'bg-transparent group-hover:bg-surface-card-hover hover:bg-surface-card-hover'
                         }`}>
                         <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
-                                ? 'rotate-180 text-brand'
+                                ? 'rotate-180 text-brand-text'
                                 : 'text-content-3'
                             }`} />
                     </div>

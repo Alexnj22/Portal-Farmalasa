@@ -38,17 +38,17 @@ const ScheduleChart = ({
                             </button>
                         )}
                         <button onClick={() => setChartView('HOURS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-brand shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
                             Horas
                         </button>
                         <button onClick={() => setChartView('DAYS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-brand shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
                             Días
                         </button>
                     </div>
                     <div className="opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200">
                         <button onClick={() => openModal && openModal('viewWfmAnalytics')}
-                            className="w-6 h-6 rounded-full bg-surface-card backdrop-blur-md text-brand border border-chart-1/30 shadow-md flex items-center justify-center hover:bg-chart-1/10 hover:scale-105 active:scale-[0.97] transition-all"
+                            className="w-6 h-6 rounded-full bg-surface-card backdrop-blur-md text-brand-text border border-chart-1/30 shadow-md flex items-center justify-center hover:bg-chart-1/10 hover:scale-105 active:scale-[0.97] transition-all"
                             title="Expandir Análisis">
                             <Maximize2 size={10} strokeWidth={2.5} />
                         </button>
@@ -91,7 +91,7 @@ const ScheduleChart = ({
                                     {item.avg} Tx
                                 </p>
                                 {chartView === 'DAYS' && (
-                                    <p className="text-[6.5px] text-brand font-black uppercase tracking-widest mt-0.5">Clic → horas</p>
+                                    <p className="text-[6.5px] text-brand-text font-black uppercase tracking-widest mt-0.5">Clic → horas</p>
                                 )}
                             </div>
 

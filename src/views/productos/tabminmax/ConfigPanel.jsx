@@ -69,7 +69,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                     <div className="flex items-center gap-2">
-                        <Settings2 size={14} className="text-brand" />
+                        <Settings2 size={14} className="text-brand-text" />
                         <span className="text-[12px] font-black text-content">Configuración Min/Max</span>
                     </div>
                     <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-colors">

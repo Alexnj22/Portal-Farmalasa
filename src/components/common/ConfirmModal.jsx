@@ -60,7 +60,7 @@ const ConfirmModal = ({
 
                     {/* ÍCONO OPTIMIZADO */}
                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-300 ${
-                        isDestructive ? 'text-danger' : 'text-brand'
+                        isDestructive ? 'text-danger' : 'text-brand-text'
                     }`}>
                         {isProcessing ? (
                             <Loader2 size={28} strokeWidth={2.5} className="animate-spin" />

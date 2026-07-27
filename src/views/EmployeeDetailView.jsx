@@ -360,19 +360,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     }}
                 ></div>
 
-                <button onClick={() => setCurrentTab('history')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('history')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <Clock size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Historial</span>
                 </button>
-                <button onClick={() => setCurrentTab('documents')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('documents')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <FileText size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Archivo</span>
                 </button>
-                <button onClick={() => setCurrentTab('permissions')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('permissions')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <Stethoscope size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Ausencias</span>
                 </button>
-                <button onClick={() => setCurrentTab('payroll')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('payroll')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <Wallet size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Horarios</span>
                 </button>
-                <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-brand' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
                 </button>
             </div>
@@ -409,7 +409,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             title="Volver a Personal"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                            <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand transition-colors relative z-10" />
+                            <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-10" />
                         </button>
                     )}
 
@@ -439,7 +439,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </div>
                         </div>
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className="p-2.5 bg-chart-1/10 text-brand rounded-xl shadow-sm border border-chart-1/30"><Briefcase size={18} strokeWidth={2.5}/></div>
+                            <div className="p-2.5 bg-chart-1/10 text-brand-text rounded-xl shadow-sm border border-chart-1/30"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-[9px] font-black text-content-2 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-content truncate">{tenure}</p>
@@ -491,7 +491,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     </h2>
                                     
                                     <div className="flex flex-col items-center gap-2 mb-8">
-                                        <span className="px-4 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand font-black text-[10px] uppercase tracking-[0.15em] text-center shadow-sm">
+                                        <span className="px-4 py-1 rounded-full bg-brand/10 border border-brand/20 text-brand-text font-black text-[10px] uppercase tracking-[0.15em] text-center shadow-sm">
                                             {emp.role || 'Sin Cargo Asignado'}
                                         </span>
                                         <span className="text-[10px] font-black text-content-2 uppercase tracking-widest">
@@ -514,7 +514,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="w-full space-y-3">
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-white transition-colors shadow-[var(--shadow-elevation-xs)]">
-                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-brand group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
+                                            <div className="p-2.5 bg-white border border-divider rounded-[0.8rem] shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[9px] font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-[12px] font-bold text-content-2 truncate">{emp.email || emp.username || 'No registrado'}</p>
@@ -598,7 +598,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                                         <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-black text-content uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <Clock size={18} className="text-brand"/> Historial Operativo
+                                                <Clock size={18} className="text-brand-text"/> Historial Operativo
                                             </h3>
                                             <div className="px-3 py-1 bg-surface-card text-content-3 rounded-full text-[9px] font-black uppercase tracking-widest border border-white shadow-sm flex items-center gap-1.5">
                                                 {isLoadingTimeline && <Loader2 size={10} className="animate-spin"/>}
@@ -669,7 +669,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             
                                                             {ev.metadata?.old_value && ev.metadata?.new_value && (
                                                                  <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card-hover p-2 rounded-lg border border-divider flex gap-2 items-center">
-                                                                     <span className="font-bold line-through opacity-70">{ev.metadata.old_value}</span> <ArrowRightLeft size={10}/> <span className="font-bold text-brand">{ev.metadata.new_value}</span>
+                                                                     <span className="font-bold line-through opacity-70">{ev.metadata.old_value}</span> <ArrowRightLeft size={10}/> <span className="font-bold text-brand-text">{ev.metadata.new_value}</span>
                                                                  </p>
                                                             )}
                                                             
@@ -684,7 +684,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                             EDITADO
                                                                         </span>
                                                                     ) : ev.documentId ? (
-                                                                        <button className="flex items-center gap-1.5 text-brand bg-chart-1/10 hover:bg-chart-1/10 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm">
+                                                                        <button className="flex items-center gap-1.5 text-brand-text bg-chart-1/10 hover:bg-chart-1/10 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors shadow-sm">
                                                                             <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
                                                                         </button>
                                                                     ) : (
@@ -748,7 +748,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                          <div className="flex justify-between items-center mb-6">
                                             <h3 className="font-black text-content uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <FileText size={18} className="text-brand"/> Expediente Digital
+                                                <FileText size={18} className="text-brand-text"/> Expediente Digital
                                             </h3>
                                         </div>
                                         <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Expediente vacío" />
@@ -795,14 +795,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-chart-1/10 transition-all active:scale-[0.97]">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-all active:scale-[0.97]">
                                                     <ChevronLeft size={14} strokeWidth={2.5}/>
                                                 </button>
                                                 <span className="text-[13px] font-black text-content-2 capitalize">
                                                     {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
                                                 </span>
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand hover:bg-chart-1/10 transition-all active:scale-[0.97]">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-chart-1/10 transition-all active:scale-[0.97]">
                                                     <ChevronRight size={14} strokeWidth={2.5}/>
                                                 </button>
                                             </div>
@@ -1026,7 +1026,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div>
                                             <div className="flex justify-between items-center mb-5 pt-4 border-t border-divider">
                                                 <h3 className="font-black text-content uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                    <CalendarDays size={18} className="text-brand"/> Turnos de la Semana
+                                                    <CalendarDays size={18} className="text-brand-text"/> Turnos de la Semana
                                                 </h3>
                                             </div>
                                             
@@ -1088,7 +1088,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {/* Solo lectura — crear/aprobar vive en Gestión de Solicitudes */}
                                         <div className="flex items-center justify-between">
                                             <h3 className="font-black text-content uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <ClipboardList size={18} className="text-brand"/> Solicitudes del Empleado
+                                                <ClipboardList size={18} className="text-brand-text"/> Solicitudes del Empleado
                                             </h3>
                                             <button
                                                 onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}

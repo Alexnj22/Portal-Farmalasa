@@ -390,12 +390,12 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                            'bg-surface-card border-border-card shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]',
                     ].join(' ')}>
                         {st === 'reading' || isLoading
-                            ? <Loader2 size={compact?17:19} className="text-brand animate-spin" strokeWidth={2.2} />
+                            ? <Loader2 size={compact?17:19} className="text-brand-text animate-spin" strokeWidth={2.2} />
                             : st === 'success'
                                 ? <CheckCircle2 size={compact?17:19} className="text-success" strokeWidth={2.2} />
                                 : st === 'error'
                                     ? <AlertCircle size={compact?17:19} className="text-danger" strokeWidth={2.2} />
-                                    : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-content-3' : 'text-brand'} strokeWidth={2} />}
+                                    : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-content-3' : 'text-brand-text'} strokeWidth={2} />}
                         {active && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand/50" />
@@ -407,7 +407,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         {scanFeedback ? (
                             <>
                                 <p className="text-[9px] font-black uppercase tracking-widest text-content-3 truncate">Código: {scanFeedback.code}</p>
-                                <p className={`text-[12px] font-bold truncate ${st==='error'?'text-danger':st==='success'?'text-success':'text-brand'}`}>{scanFeedback.message}</p>
+                                <p className={`text-[12px] font-bold truncate ${st==='error'?'text-danger':st==='success'?'text-success':'text-brand-text'}`}>{scanFeedback.message}</p>
                             </>
                         ) : cameraActive ? (
                             <>
@@ -421,7 +421,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             </>
                         ) : (
                             <>
-                                <p className="text-[11px] font-black uppercase tracking-widest text-brand">Lector activo</p>
+                                <p className="text-[11px] font-black uppercase tracking-widest text-brand-text">Lector activo</p>
                                 <p className="text-[9px] font-bold text-content-3 uppercase tracking-wide mt-0.5">
                                     {scanHold ? `Escanea tu carné · usuario en ${scanHoldLeft}s` : 'Escanea tu carné para entrar'}
                                 </p>
@@ -439,7 +439,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 compact ? 'w-10 h-10' : 'w-11 h-11',
                                 cameraActive
                                     ? 'bg-danger/[0.15] border-danger/45 text-danger shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-danger/[0.25]'
-                                    : 'bg-white/[0.28] border-border-card text-content-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand',
+                                    : 'bg-white/[0.28] border-border-card text-content-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-border-card hover:text-brand-text',
                             ].join(' ')}
                         >
                             {cameraActive
@@ -469,7 +469,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     { ref: userPasswordRef, id: 'password', type: 'password', placeholder: 'Contraseña',      autoComplete: 'current-password', Icon: Lock },
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }) => (
                     <div key={id} className="relative group flex items-center">
-                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand transition-colors pointer-events-none z-10" />
+                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-10" />
                         <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
@@ -513,7 +513,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <form id="cpf" onSubmit={e=>{e.preventDefault();handleChangePassword();}} className="relative flex flex-col gap-3">
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
-                                    <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand transition-colors pointer-events-none z-10" />
+                                    <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-10" />
                                     <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[16px] rounded-[1.25rem]`} />
                                 </div>
                             ))}
@@ -543,7 +543,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
                 <div className="text-center mt-1">
                     <p className="font-black text-[20px] text-content tracking-tight leading-none">Portal Farmalasa</p>
-                    <p className="text-[9px] font-black text-brand/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
+                    <p className="text-[9px] font-black text-brand-text/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
                 </div>
             </div>
 
@@ -558,7 +558,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 className="group w-full p-3 rounded-[1.5rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-[0.875rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-colors shadow-sm">
-                                        <Clock size={15} className="text-content-3 group-hover:text-brand transition-colors" strokeWidth={2.2} />
+                                        <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2.2} />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-[10px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
@@ -608,7 +608,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         </div>
                         <div className="text-center">
                             <h1 className="text-[32px] font-black text-content tracking-tight leading-none">Portal</h1>
-                            <p className="text-[10px] font-black text-brand/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
+                            <p className="text-[10px] font-black text-brand-text/72 uppercase tracking-[0.22em] mt-2">Farmacias La Popular &amp; La Salud</p>
                         </div>
                     </div>
 
@@ -625,7 +625,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 className="group w-full p-4 rounded-[1.75rem] bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5">
                                 <div className="flex items-center gap-3.5">
                                     <div className="w-11 h-11 rounded-[1.1rem] bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-white transition-all duration-200 shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
-                                        <Clock size={19} className="text-content-3 group-hover:text-brand transition-colors" strokeWidth={2} />
+                                        <Clock size={19} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-[12px] font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>

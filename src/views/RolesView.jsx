@@ -365,7 +365,7 @@ const RolesView = ({ openModal }) => {
                     </div>
                 )}
 
-                <div className={`icon-container w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-border-card ${!role.parent_role_id ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isExternal ? 'bg-surface-card-hover/50 text-content-3' : 'bg-white text-brand group-hover:bg-brand group-hover:text-white transition-colors'}`}>
+                <div className={`icon-container w-10 h-10 rounded-xl flex items-center justify-center mb-3 shadow-sm border border-border-card ${!role.parent_role_id ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isExternal ? 'bg-surface-card-hover/50 text-content-3' : 'bg-white text-brand-text group-hover:bg-brand group-hover:text-white transition-colors'}`}>
                     <Award size={18} strokeWidth={2} />
                 </div>
 
@@ -382,7 +382,7 @@ const RolesView = ({ openModal }) => {
                             e.stopPropagation();
                             if (openModal) openModal('viewRoleEmployees', { role });
                         }}
-                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-divider hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand border border-brand/20 hover:bg-brand hover:text-white'}`}
+                        className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-divider hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand-text border border-brand/20 hover:bg-brand hover:text-white'}`}
                     >
                         <Users size={12} strokeWidth={2.5} /> {roleEmps.length} Personas
                     </button>
@@ -442,7 +442,7 @@ const RolesView = ({ openModal }) => {
                 <div
                     className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}
                 >
-                    <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
+                    <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
                     <input
                         ref={searchInputRef}
                         type="text"
@@ -461,7 +461,7 @@ const RolesView = ({ openModal }) => {
                     )}
                     <button
                         onClick={() => { setIsSearchExpanded(false); setSearchQuery(''); }}
-                        className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2"
+                        className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-content-3 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-brand-text hover:-translate-y-0.5 ml-2"
                         title="Cerrar Búsqueda"
                     >
                         <ChevronRight size={18} strokeWidth={2.5} />
@@ -478,7 +478,7 @@ const RolesView = ({ openModal }) => {
                                         : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
                             >
-                                <ShieldCheck size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'list' ? 'text-brand' : 'text-content-3'}`} />
+                                <ShieldCheck size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'list' ? 'text-brand-text' : 'text-content-3'}`} />
                                 Listado
                             </button>
                             <button
@@ -488,7 +488,7 @@ const RolesView = ({ openModal }) => {
                                         : "bg-transparent text-content-3 border-transparent hover:bg-white hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card"
                                     }`}
                             >
-                                <LayoutTemplate size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'chart' ? 'text-brand' : 'text-content-3'}`} />
+                                <LayoutTemplate size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'chart' ? 'text-brand-text' : 'text-content-3'}`} />
                                 Visual
                             </button>
                         </div>
@@ -602,7 +602,7 @@ const RolesView = ({ openModal }) => {
                                             Nombre del Cargo
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand group-focus-within:bg-brand/10">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand-text group-focus-within:bg-brand/10">
                                                 <Award size={16} />
                                             </div>
                                             <input
@@ -637,14 +637,14 @@ const RolesView = ({ openModal }) => {
                                                 Límite de Plazas
                                             </label>
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 group-focus-within:text-brand transition-colors z-10">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 group-focus-within:text-brand-text transition-colors z-10">
                                                     <Hash size={16} />
                                                 </div>
                                                 <input
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-white focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-[1.25rem] text-[16px] outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />
@@ -734,7 +734,7 @@ const RolesView = ({ openModal }) => {
 
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex gap-3.5 items-start min-w-0 w-full pr-2 relative">
-                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-white text-brand border-white group-hover:bg-brand/10'}`}>
+                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-brand text-white border-brand/20' : isExternal ? 'bg-surface-card text-content-3 border-border-card' : 'bg-white text-brand-text border-white group-hover:bg-brand/10'}`}>
                                                         <Award size={18} strokeWidth={isRoot ? 2.5 : 2} />
                                                     </div>
 
@@ -744,7 +744,7 @@ const RolesView = ({ openModal }) => {
                                                                 {role.name}
                                                             </h4>
                                                             {isRoot && (
-                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-[8px] font-black uppercase tracking-widest bg-brand/10 text-brand flex-shrink-0">
+                                                                <span className="px-2 py-0.5 rounded-md border border-brand/30 text-[8px] font-black uppercase tracking-widest bg-brand/10 text-brand-text flex-shrink-0">
                                                                     Raíz
                                                                 </span>
                                                             )}
@@ -852,7 +852,7 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-white border-border-card text-content-2 hover:text-brand hover:border-white'}`}
+                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-white text-content-2 cursor-not-allowed' : 'bg-white border-border-card text-content-2 hover:text-brand-text hover:border-white'}`}
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>

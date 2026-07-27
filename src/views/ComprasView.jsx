@@ -254,7 +254,7 @@ function TabFacturas({
                                 <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <button className="text-content-3 hover:text-brand transition-colors p-1 rounded-lg hover:bg-chart-1/10">
+                                <button className="text-content-3 hover:text-brand-text transition-colors p-1 rounded-lg hover:bg-chart-1/10">
                                     {expandedId === row.id
                                         ? <ChevronDown size={14} strokeWidth={2.5} />
                                         : <ChevronRight size={14} strokeWidth={2.5} />

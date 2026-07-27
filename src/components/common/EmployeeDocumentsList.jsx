@@ -39,7 +39,7 @@ const DocumentRow = ({ doc }) => {
                     <button
                         type="button"
                         onClick={() => openStoredFile(doc.url)}
-                        className="w-8 h-8 rounded-full bg-brand/10 text-brand flex items-center justify-center hover:bg-brand/20 hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] shrink-0"
+                        className="w-8 h-8 rounded-full bg-brand/10 text-brand-text flex items-center justify-center hover:bg-brand/20 hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] shrink-0"
                         title="Ver documento"
                     >
                         <Eye size={13} strokeWidth={2.2} />

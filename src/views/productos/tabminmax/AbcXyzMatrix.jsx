@@ -62,7 +62,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
         `py-1 px-2 rounded-md text-[10px] font-black text-center
          transition-[background-color,box-shadow,color] duration-75
          ${active
-             ? 'text-brand bg-[rgba(0,82,204,0.11)] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
+             ? 'text-brand-text bg-[rgba(0,82,204,0.11)] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
              : 'text-content-3 hover:text-content-2 hover:bg-surface-card'}`;
 
     return (
@@ -140,7 +140,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                     const descs = ['Estable', 'Mod.', 'Errática'];
                     return (
                         <span key={xyz} className="flex items-center gap-0.5 text-[8px]">
-                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-brand' : 'text-content-3'}`}>{xyz}</span>
+                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-brand-text' : 'text-content-3'}`}>{xyz}</span>
                             <span className="text-content-3">{descs[i]}</span>
                         </span>
                     );

@@ -742,22 +742,22 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             <div className="flex items-center gap-4">
 
                                 {(() => {
-                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-brand`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
-                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-brand`}><BookOpen size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-brand-text`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-brand-text`}><BookOpen size={22} strokeWidth={2.5} /></div>;
                                     if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-success`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-brand`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-brand`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-brand-text`}><Building2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-brand-text`}><UserPlus size={22} strokeWidth={2.5} /></div>;
                                     if (type === "rehireEmployee") return <div className={`${squircleClass} text-success`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
                                     if (type === "vacationRecall") return <div className={`${squircleClass} text-warning`}><Palmtree size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLegal") return <div className={`${squircleClass} text-success`}><Scale size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchServicios") return <div className={`${squircleClass} text-warning`}><Zap size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-brand`}><Clock size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-brand-text`}><Clock size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editBranchLeadership") return <div className={`${squircleClass} text-warning`}><Star size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand`}><FilePlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand-text`}><FilePlus size={22} strokeWidth={2.5} /></div>;
                                     if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-chart-3-text`}><Sparkles size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand`}><DollarSign size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand-text`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Edit2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editProveedor") return <div className={`${squircleClass} text-brand`}><Truck size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editProveedor") return <div className={`${squircleClass} text-brand-text`}><Truck size={22} strokeWidth={2.5} /></div>;
 
                                     return <div className={`${squircleClass} text-content-3`}><Settings size={22} strokeWidth={2.5} /></div>;
                                 })()}
@@ -792,10 +792,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 className="flex flex-col items-center gap-1.5 group"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand-text'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand' : isComplete ? 'text-success' : 'text-content-2'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand-text' : isComplete ? 'text-success' : 'text-content-2'}`}>
                                                     {step.label}
                                                 </span>
                                             </button>

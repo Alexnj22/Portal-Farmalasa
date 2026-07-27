@@ -561,7 +561,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                     <p className="text-[11px] font-medium text-content-3 mt-2 bg-surface-card p-2 rounded-lg border border-divider flex gap-2 items-center">
                                                         <span className="font-bold line-through opacity-70">{meta.old_value}</span>
                                                         <ArrowRightLeft size={10} />
-                                                        <span className="font-bold text-brand">{meta.new_value}</span>
+                                                        <span className="font-bold text-brand-text">{meta.new_value}</span>
                                                     </p>
                                                 )}
                                                 {(isCancelled || isEdited) && (

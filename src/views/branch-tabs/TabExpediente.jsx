@@ -51,7 +51,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand-text hover:bg-white transition-all active:scale-[0.97]"
                         title="Ver PDF"
                     >
                         <Eye size={14} strokeWidth={2.5} />
@@ -60,7 +60,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                 <button
                     onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand hover:bg-white transition-all active:scale-[0.97]"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-card backdrop-blur-sm shadow-sm border border-divider text-content-3 hover:text-brand-text hover:bg-white transition-all active:scale-[0.97]"
                     title="Editar/Actualizar Datos"
                 >
                     <Edit3 size={14} strokeWidth={2.5} />
@@ -80,7 +80,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             {/* HEADER DE LA TARJETA */}
             <div className="flex justify-between items-start mb-4 relative z-20">
                 <div className="flex items-center gap-2">
-                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-content-3' : 'text-brand'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
+                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-content-3' : 'text-brand-text'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
                         <FileText size={20} strokeWidth={1.5} />
                     </div>
 
@@ -175,7 +175,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="mt-4 relative z-10">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                        className="w-full h-10 rounded-xl bg-chart-1/10 text-brand font-black text-[10px] uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
+                        className="w-full h-10 rounded-xl bg-chart-1/10 text-brand-text font-black text-[10px] uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"
                     >
                         <UploadCloud size={16} strokeWidth={2.5} /> Subir Archivo
                     </button>
@@ -373,11 +373,11 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                     <div className="hidden sm:block w-px h-8 bg-content-3/60 shrink-0"></div>
 
                     <div className="hidden sm:flex items-center gap-3 bg-surface-card backdrop-blur-xl border border-border-card px-4 py-2 rounded-full shadow-[var(--shadow-elevation-xs)] cursor-default shrink-0">
-                        <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand'} />
+                        <FolderOpen size={14} className={progress === 100 ? 'text-success' : 'text-brand-text'} />
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between items-center w-20">
                                 <span className="text-[7px] font-black uppercase tracking-widest text-content-3 leading-none">Subidos</span>
-                                <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand'}`}>{progress}%</span>
+                                <span className={`text-[9px] font-black leading-none ${progress === 100 ? 'text-success' : 'text-brand-text'}`}>{progress}%</span>
                             </div>
                             <div className="w-full h-1.5 bg-surface-card-hover/60 rounded-full overflow-hidden">
                                 <div className={`h-full transition-all duration-1000 ease-out ${progress === 100 ? 'bg-success' : 'bg-brand'}`} style={{ width: `${progress}%` }}></div>
@@ -402,7 +402,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <button
                             onClick={() => openModal('addCustomDocument', liveBranch)}
-                            className="h-10 px-4 rounded-full bg-surface-card backdrop-blur-xl text-content-2 font-black text-[10px] uppercase tracking-widest border border-border-card flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-brand active:scale-[0.97] shrink-0"
+                            className="h-10 px-4 rounded-full bg-surface-card backdrop-blur-xl text-content-2 font-black text-[10px] uppercase tracking-widest border border-border-card flex items-center justify-center gap-1.5 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-md hover:text-brand-text active:scale-[0.97] shrink-0"
                         >
                             <Plus size={16} strokeWidth={3} /> Nuevo
                         </button>
@@ -421,7 +421,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                     <div {...searchContainerRef} className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
                         <div className="relative w-full shadow-[var(--shadow-glow-brand)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Search size={16} className="text-brand" />
+                                <Search size={16} className="text-brand-text" />
                             </div>
                             <input
                                 ref={searchInputRef}
@@ -456,7 +456,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-success">Expediente impecable</p>
                             <p className="text-[11px] font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand bg-white border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+                            <button onClick={() => setShowAllDocs(true)} className="mt-4 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand-text bg-white border border-brand/20 shadow-[var(--shadow-glow-brand)] hover:border-brand/50 hover:bg-chart-1/10 rounded-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
                                 Ver Documentos Al Día
                             </button>
                         </>
@@ -511,7 +511,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 return (
                     <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
-                            <Tags size={12} className="text-brand" strokeWidth={3} /> {category}
+                            <Tags size={12} className="text-brand-text" strokeWidth={3} /> {category}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {docs.map(doc => <DocumentCard key={doc.id} doc={doc} openModal={openModal} liveBranch={liveBranch} onDeleteClick={requestDeleteDoc} />)}

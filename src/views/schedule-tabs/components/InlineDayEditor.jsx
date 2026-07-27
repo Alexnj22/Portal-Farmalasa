@@ -320,7 +320,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         </div>
                         <div className="min-w-0">
                             <p className="text-[13px] font-black text-content truncate leading-tight">{employee?.name || '—'}</p>
-                            <p className="text-[10px] font-black text-brand uppercase tracking-widest leading-none mt-0.5 capitalize">
+                            <p className="text-[10px] font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
                                 {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}{' '}
                                 <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
                             </p>
@@ -392,11 +392,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand transition-colors">Entrada</label>
+                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Entrada</label>
                                     <TimePicker12 value={customStart} onChange={setCustomStart} />
                                 </div>
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand transition-colors">Salida</label>
+                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block group-hover/time:text-brand-text transition-colors">Salida</label>
                                     <TimePicker12 value={customEnd} onChange={setCustomEnd} />
                                 </div>
                             </div>

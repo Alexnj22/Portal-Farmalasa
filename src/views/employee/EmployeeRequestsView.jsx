@@ -219,7 +219,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             {statConf.label}
                         </span>
                         {req.status === 'PENDING' && req.current_level && req.type !== 'DISABILITY' && (
-                            <span className="text-[9px] font-bold text-brand">· Niv. {req.current_level}/{maxLevels}</span>
+                            <span className="text-[9px] font-bold text-brand-text">· Niv. {req.current_level}/{maxLevels}</span>
                         )}
                         {req.type === 'DISABILITY' && req.status === 'PENDING' && (
                             <span className="text-[9px] font-black text-danger uppercase tracking-widest">· Urgente</span>
@@ -297,7 +297,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                         {meta.docUrl && (
                             <a href={meta.docUrl} target="_blank" rel="noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[11px] font-bold text-content-2 hover:text-brand hover:border-brand/30 transition-all">
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider text-[11px] font-bold text-content-2 hover:text-brand-text hover:border-brand/30 transition-all">
                                 <FileImage size={13} strokeWidth={2} />
                                 {meta.docName || 'Ver certificado adjunto'}
                             </a>
@@ -743,7 +743,7 @@ const EmployeeRequestsView = () => {
                     {!existingVacation.approved && existingVacation.pending && (() => {
                         const m = typeof existingVacation.pending.metadata === 'object' ? existingVacation.pending.metadata : {};
                         return (
-                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-brand/8 border border-brand/20 text-[11px] font-bold text-brand">
+                            <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-brand/8 border border-brand/20 text-[11px] font-bold text-brand-text">
                                 <Info size={13} className="flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <span>Tienes vacaciones programadas en revisión{m.startDate ? ` — ${fmt(m.startDate)} al ${fmt(m.endDate)}` : ''}.</span>
                             </div>
@@ -1265,7 +1265,7 @@ const EmployeeRequestsView = () => {
                                         statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
                                     <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
-                                        statusFilter === 'PENDING' ? 'text-brand' :
+                                        statusFilter === 'PENDING' ? 'text-brand-text' :
                                         statusFilter === 'APPROVED' ? 'text-success' :
                                         statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'
                                     }`}>

@@ -77,9 +77,9 @@ const FormLeadership = ({ formData, setFormData }) => {
         <div className="flex flex-col md:flex-row h-[70vh] min-h-[550px] w-auto overflow-hidden -mx-6 md:-mx-10 -my-6 bg-surface-card-hover/20"> 
             
             {/* ====== PANEL IZQUIERDO: BUSCADOR ====== */}
-            <div className="w-full md:w-[38%] flex flex-col border-r border-border-card bg-surface-card backdrop-blur-xl relative z-20 shadow-[2px_0_20px_rgba(0,0,0,0.02)]">
+            <div className="w-full md:w-[38%] flex flex-col border-r border-border-card bg-surface-card backdrop-blur-xl relative z-content shadow-[2px_0_20px_rgba(0,0,0,0.02)]">
                 
-                <div className="p-4 border-b border-border-card bg-surface-card sticky top-0 z-30">
+                <div className="p-4 border-b border-border-card bg-surface-card sticky top-0 z-tabs">
                     <div className="relative">
                         <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3" strokeWidth={2.5}/>
                         <input 
@@ -93,7 +93,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                 </div>
                 
                 {/* 🚨 SCROLL OCULTO APLICADO */}
-                <div className={`flex-1 overflow-y-auto p-3 space-y-2 relative z-10 bg-surface-card-hover/10 ${hideScrollbarClass}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div className={`flex-1 overflow-y-auto p-3 space-y-2 relative z-base bg-surface-card-hover/10 ${hideScrollbarClass}`} style={{ WebkitOverflowScrolling: 'touch' }}>
                     {filteredEmployees.map(emp => {
                         const isSelected = formData.selectedEmpId === emp.id;
                         const isCurrentJefe = formData.currentAssignee === emp.id;
@@ -144,7 +144,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         
                         {/* 1. MINI-RESUMEN DEL EMPLEADO (EXPANDIDO) */}
                         <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-[1.5rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] relative overflow-hidden">
-                            <div className="flex items-center gap-4 relative z-10">
+                            <div className="flex items-center gap-4 relative z-base">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md overflow-hidden bg-surface-card-hover shrink-0">
                                     {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
                                 </div>
@@ -158,7 +158,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                             </div>
 
                             {/* Fila de Datos Clave */}
-                            <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border-card relative z-10">
+                            <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border-card relative z-base">
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col">

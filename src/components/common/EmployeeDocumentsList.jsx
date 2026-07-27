@@ -68,7 +68,7 @@ const EmployeeDocumentsList = ({ documents, emptyLabel = 'Sin documentos registr
             <div className="flex flex-col items-center justify-center min-h-[160px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-2 w-20 h-20 rounded-full blur-[40px] opacity-20 bg-content-3" />
-                    <div data-surface="dropdown" className="relative z-10 w-12 h-12 flex items-center justify-center mb-3 text-content-3">
+                    <div data-surface="dropdown" className="relative z-base w-12 h-12 flex items-center justify-center mb-3 text-content-3">
                         <FolderOpen size={22} strokeWidth={1.5} />
                     </div>
                     <h3 className="font-bold text-body-lg text-content tracking-tight">{emptyLabel}</h3>

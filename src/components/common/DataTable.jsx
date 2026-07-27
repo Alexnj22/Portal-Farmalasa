@@ -111,7 +111,7 @@ export function DataTable({
           <table className="w-full" style={{ minWidth }}>
 
             {/* ── Thead ──────────────────────────────────────────────────── */}
-            <thead className={`sticky top-0 z-10 ${tk.theadBg}`}>
+            <thead className={`sticky top-0 z-base ${tk.theadBg}`}>
               <tr className={tk.theadBorderRow}>
                 {columns.map((col) => {
                   const sortable = col.sortable && !!onSort;

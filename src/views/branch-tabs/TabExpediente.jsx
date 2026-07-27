@@ -41,13 +41,13 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
     const isMissing = status.type === 'MISSING';
 
     return (
-        <div className={`group relative flex flex-col p-5 rounded-[1.5rem] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-50 ${isMissing
+        <div className={`group relative flex flex-col p-5 rounded-[1.5rem] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-sidebar ${isMissing
             ? 'bg-surface-card border-2 border-dashed border-divider hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
             : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] min-h-[160px]'
             }`}>
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 translate-y-2 group-hover:translate-y-0">
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
@@ -78,7 +78,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             </div>
 
             {/* HEADER DE LA TARJETA */}
-            <div className="flex justify-between items-start mb-4 relative z-20">
+            <div className="flex justify-between items-start mb-4 relative z-content">
                 <div className="flex items-center gap-2">
                     <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-content-3' : 'text-brand-text'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
                         <FileText size={20} strokeWidth={1.5} />
@@ -86,7 +86,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                     {/* ✨ ÍCONO DE IA ESTANDARIZADO Y TOOLTIP MÁGICO ✨ */}
                     {doc.aiSummary && !isMissing && (
-                        <div className="group/ai relative z-50 ml-1">
+                        <div className="group/ai relative z-sidebar ml-1">
 
                             {/* Ícono Disparador (Mismo diseño que en Staff) */}
                             <button
@@ -95,11 +95,11 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-10 group-hover/ai:opacity-100 transition-all duration-500 group-hover/ai:animate-spin [animation-duration:3s]"></div>
                                 <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 group-hover/ai:bg-surface-card transition-colors duration-300 border border-chart-3/30"></div>
-                                <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai:text-chart-3-text group-hover/ai:animate-pulse z-20 relative transition-colors" />
+                                <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai:text-chart-3-text group-hover/ai:animate-pulse z-content relative transition-colors" />
                             </button>
 
                             {/* 🔮 EL TOOLTIP HOLOGRÁFICO */}
-                            <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-[100]">
+                            <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-modal">
 
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
@@ -116,7 +116,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                     <div className="absolute -top-1.5 left-3 w-3 h-3 bg-surface-card border-l border-t border-chart-3/30 transform rotate-45 shadow-[-2px_-2px_4px_rgba(0,0,0,0.02)]"></div>
 
                                     {/* Header del Tooltip */}
-                                    <div className="flex items-center gap-2 mb-3 relative z-10 border-b border-chart-3/30 pb-2.5">
+                                    <div className="flex items-center gap-2 mb-3 relative z-base border-b border-chart-3/30 pb-2.5">
                                         <div className="relative w-5 h-5 flex items-center justify-center">
                                             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:3s] blur-[2px] opacity-60"></div>
                                             <div className="relative w-full h-full bg-surface-card rounded-full flex items-center justify-center border border-chart-3/30">
@@ -127,7 +127,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                     </div>
 
                                     {/* Contenido */}
-                                    <div className="relative z-10 max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
+                                    <div className="relative z-base max-h-[160px] overflow-y-auto pr-1 group/scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">                                        <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/scroll:opacity-100 group-hover/scroll:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
                                         <p className="text-label font-semibold text-content-2 leading-relaxed text-justify pl-3">
                                             {doc.aiSummary}
                                         </p>
@@ -139,12 +139,12 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 </div>
 
                 {/* Píldora de Estado */}
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-20`}>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-micro font-black uppercase tracking-widest border ${status.color} transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 pointer-events-none relative z-content`}>
                     <StatusIcon size={12} strokeWidth={2.5} /> {status.label}
                 </div>
             </div>
 
-            <div className="flex-1 relative z-10">
+            <div className="flex-1 relative z-base">
                 <h4 className={`text-body font-black leading-tight mb-1 pr-2 ${isMissing ? 'text-content-2' : 'text-content'}`}>
                     {doc.title}
                 </h4>
@@ -172,7 +172,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             </div>
 
             {isMissing && (
-                <div className="mt-4 relative z-10">
+                <div className="mt-4 relative z-base">
                     <button
                         onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
                         className="w-full h-10 rounded-xl bg-chart-1/10 text-brand-text font-black text-caption uppercase tracking-widest border border-chart-1/30 hover:bg-brand hover:text-white hover:border-brand hover:shadow-[var(--shadow-glow-brand)] transition-all duration-300 flex items-center justify-center gap-2 transform active:scale-[0.97]"

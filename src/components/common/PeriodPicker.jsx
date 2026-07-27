@@ -130,7 +130,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                         }
                     }
 
-                    let btnCls = 'w-7 h-7 mx-auto flex items-center justify-center rounded-full text-label font-bold transition-all z-10 relative ';
+                    let btnCls = 'w-7 h-7 mx-auto flex items-center justify-center rounded-full text-label font-bold transition-all z-base relative ';
                     if (isStart || isEnd) {
                         btnCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110 cursor-pointer';
                     } else if (inRange) {
@@ -149,7 +149,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
                                 {day}
                             </button>
                             {isToday && !isStart && !isEnd && (
-                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-brand z-20" />
+                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-brand z-content" />
                             )}
                         </div>
                     );
@@ -302,9 +302,9 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
     const popup = isOpen && createPortal(
         <>
-            <div className="fixed inset-0 z-[9998] bg-scrim backdrop-blur-[2px]" onClick={close} />
+            <div className="fixed inset-0 z-tooltip bg-scrim backdrop-blur-[2px]" onClick={close} />
             <div ref={popRef}
-                className="fixed z-[9999]"
+                className="fixed z-toast"
                 style={{ ...popStyle, width: '460px', maxWidth: 'calc(100vw - 32px)' }}>
                 <div data-surface="dropdown" className="overflow-hidden">
 
@@ -395,7 +395,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
                                     let cellCls = 'relative h-10 flex items-center justify-center rounded-2xl text-label font-bold transition-all select-none ';
                                     if (isStart || isEnd) {
-                                        cellCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-105 z-10 ';
+                                        cellCls += 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-105 z-base ';
                                     } else if (inRange) {
                                         cellCls += 'bg-brand/[0.12] text-brand-text font-black ';
                                     } else if (isFuture) {
@@ -419,7 +419,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                             onMouseLeave={() => setMonthHovering(null)}
                                             className={cellCls}>
                                             {stripCls && <div className={stripCls} />}
-                                            <span className="relative z-10">{label}</span>
+                                            <span className="relative z-base">{label}</span>
                                         </button>
                                     );
                                 })}

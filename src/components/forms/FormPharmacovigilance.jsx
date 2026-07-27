@@ -39,7 +39,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
             <div className="bg-warning/10 backdrop-blur-xl border border-warning/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[var(--shadow-glow-warning)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
                 <div className="w-16 h-16 bg-surface-card rounded-[1.5rem] shadow-sm border border-warning/30 flex items-center justify-center text-warning mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
-                    <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
+                    <AlertCircle size={28} strokeWidth={2} className="relative z-base" />
                 </div>
                 <h3 className="text-body-xl font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
                 <p className="text-body-sm font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
@@ -113,7 +113,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                         <input 
                             type="file"
                             accept="application/pdf,image/jpeg,image/png,image/webp"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base"
                             onChange={(e) => {
                                 const f = e.target.files?.[0] || null;
                                 if (f) {

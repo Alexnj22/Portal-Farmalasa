@@ -71,7 +71,7 @@ const BranchTabServicios = ({ services, updateServiceField }) => {
                         </div>
                         
                         {/* 🚨 FIX: LiquidDatePicker con mode="month" */}
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={2.5}/> Último Mes Pagado
                             </label>

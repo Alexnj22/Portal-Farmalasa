@@ -511,7 +511,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                         opacity-50 cursor-default select-none`}
                 >
-                    <div className="relative z-10 flex-shrink-0">
+                    <div className="relative z-base flex-shrink-0">
                         <Icon size={indent ? 16 : 20} strokeWidth={1.5} className="text-white/35" />
                     </div>
                     {isExpanded && (
@@ -551,7 +551,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? accentBarActive : accentBarInactive}`} />
                 )}
 
-                <div className="relative z-10 flex-shrink-0">
+                <div className="relative z-base flex-shrink-0">
                     <Icon
                         size={indent ? 16 : 20}
                         strokeWidth={isActive ? 2 : 1.5}
@@ -564,7 +564,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </span>
                     )}
                     {!isExpanded && badge > 0 && (
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-20">
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-content">
                             {badge > 9 ? '9+' : badge}
                         </span>
                     )}
@@ -572,17 +572,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                 {isExpanded && (
                     <>
-                        <span className={`text-body-sm xl:text-body flex-1 whitespace-nowrap relative z-10 transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`text-body-sm xl:text-body flex-1 whitespace-nowrap relative z-base transition-colors ${isActive ? 'font-semibold' : 'font-medium'}`}>
                             {label}
                         </span>
                         {alert && (
-                            <span className="relative z-10 flex h-2 w-2">
+                            <span className="relative z-base flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-danger shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                             </span>
                         )}
                         {badge > 0 && (
-                            <span className="relative z-10 min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
+                            <span className="relative z-base min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
                                 {badge > 9 ? '9+' : badge}
                             </span>
                         )}
@@ -726,7 +726,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* Mobile backdrop */}
                 {isMobile && isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-scrim z-40 lg:hidden animate-in fade-in duration-300"
+                        className="fixed inset-0 bg-scrim z-header lg:hidden animate-in fade-in duration-300"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
@@ -734,21 +734,21 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* ── Sidebar ── */}
                 <aside
                     ref={asideRef}
-                    className={`fixed lg:relative z-50 lg:z-[60] lg:h-auto flex flex-col shrink-0
+                    className={`fixed lg:relative z-sidebar lg:z-sidebar-desktop lg:h-auto flex flex-col shrink-0
                         my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
                         ${isMobile
                             ? `top-0 bottom-0 w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
                             : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(env(safe-area-inset-left,8px),8px)] transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}
                         ${blurClasses}`}
                 >
-                    <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-10 pointer-events-none">
+                    <div className="sidebar-ambient absolute inset-y-0 left-0 w-full -z-base pointer-events-none">
                         <div className="absolute top-0 left-0 right-0 h-2/3 rounded-t-[2.6rem] bg-slate-500/[0.06] blur-3xl" />
                         <div className="absolute -inset-5 right-0 rounded-[3.5rem] bg-black/35 blur-[45px] opacity-80" />
                         <div className="absolute -inset-10 right-[-4px] rounded-[5rem] bg-black/20 blur-[70px] opacity-50" />
                     </div>
 
                     {/* ── Glass container ── */}
-                    <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
+                    <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-base rounded-[2.5rem] overflow-hidden flex flex-col
                         bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl
                         border border-white/[0.10]
                         shadow-[inset_1px_0_0_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.15),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.40)]">
@@ -761,10 +761,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, rgba(152,29,151,0.16) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
                         </div>
 
-                        <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none z-[1]" />
-                        <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/30 via-white/10 to-white/3 pointer-events-none z-[1]" />
-                        <div className="absolute right-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/8 via-transparent to-transparent pointer-events-none z-[1]" />
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/30 to-transparent pointer-events-none z-[1]" />
+                        <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none z-ambient" />
+                        <div className="absolute left-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/30 via-white/10 to-white/3 pointer-events-none z-ambient" />
+                        <div className="absolute right-0 inset-y-0 w-[1px] bg-gradient-to-b from-white/8 via-transparent to-transparent pointer-events-none z-ambient" />
+                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/30 to-transparent pointer-events-none z-ambient" />
 
                         <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden z-[2] pointer-events-none">
                             <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-logo-green/70 to-transparent animate-shimmer" style={{ animationDuration: '4s', animationTimingFunction: 'ease-in-out' }} />
@@ -776,14 +776,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             para la misma acción, reportado como "raro" por el usuario). Colapsado:
                             se apila debajo del logo en vez de a un lado (el rail es muy angosto
                             para una fila horizontal). */}
-                        <div className={`relative z-10 flex border-b border-white/[0.06]
+                        <div className={`relative z-base flex border-b border-white/[0.06]
                             ${isExpanded ? 'items-center px-4 py-3.5 justify-between' : 'flex-col items-center gap-2 px-2 py-3'}`}>
                             <div className="absolute inset-0 bg-gradient-to-b from-logo-magenta/[0.06] to-transparent pointer-events-none" />
                             <div className="absolute bottom-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
                                 <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-logo-green/45 to-transparent animate-shimmer" style={{ animationDuration: '5s', animationDelay: '1.5s', animationTimingFunction: 'ease-in-out' }} />
                             </div>
 
-                            <div className="flex items-center gap-3 relative z-10">
+                            <div className="flex items-center gap-3 relative z-base">
                                 <button type="button" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-[1.25rem] ${focusRing}`} onClick={() => navigate('/')}>
                                     <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
@@ -794,7 +794,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                         <img src="/Logo192.png" alt="FLS"
-                                            className={`object-contain relative z-10 transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
+                                            className={`object-contain relative z-base transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>
                                 </button>
 
@@ -808,7 +808,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} type="button"
                                 aria-label={isMobile ? 'Cerrar menú' : isExpanded ? 'Contraer menú' : 'Expandir menú'}
-                                className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
+                                className={`relative z-base w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-[0.97]
                                     bg-white/[0.07] hover:bg-white/[0.13] border border-white/[0.09] hover:border-white/[0.18] text-white/50 hover:text-white/80
                                     shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.15)] ${focusRing}`}>
                                 {isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}
@@ -816,7 +816,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
 
                         {/* ── Nav ── */}
-                        <nav ref={navRef} aria-label="Navegación principal" className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        <nav ref={navRef} aria-label="Navegación principal" className="relative z-base flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {/* Buscador (atajo de teclado en SHORTCUT_LABEL, Mac vs Windows/Linux) — es
                                 una ACCIÓN (abre un modal), no un destino de navegación, así que lleva
                                 fondo/borde permanentes (no solo al hover) + un divisor debajo para que
@@ -859,7 +859,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </nav>
 
                         {/* ── Footer ── */}
-                        <div className="relative z-10 px-3 pb-4 pt-3 border-t border-white/[0.07] flex flex-col gap-2.5">
+                        <div className="relative z-base px-3 pb-4 pt-3 border-t border-white/[0.07] flex flex-col gap-2.5">
                             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
                             {isExpanded ? (
@@ -891,7 +891,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
-                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                         <Cake size={9} className="text-white" />
                                                     </span>
                                                 )}
@@ -939,7 +939,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                         </button>
                                         {myBirthday && (
-                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                 <Cake size={9} className="text-white" />
                                             </span>
                                         )}
@@ -967,7 +967,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     alcance: no es que esté oculto, es literalmente inalcanzable. Bug real
                     detrás de Bloque 5.1 ("no puedo seleccionar Salud 1/3/5" en /pedidos,
                     "/productos pierde columnas" — ninguno de los dos era sobre hideBelow). */}
-                <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden min-w-0 ${blurClasses}`}>
+                <main className={`flex-1 flex flex-col relative z-content lg:overflow-hidden min-w-0 ${blurClasses}`}>
                     {/* Header móvil: sticky (NO position:fixed — en standalone el fixed
                         anidado en contextos de apilamiento dejaba de pintarse, franja gris)
                         sobre el body-scroll del documento: el contenido fluye por debajo de
@@ -975,7 +975,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         backdrop-filter (bugs de compositor standalone). Pinta su fondo bajo
                         el status bar vía padding-top: safe-area. */}
                     <div
-                        className="lg:hidden shrink-0 w-full sticky top-0 z-30 border-b border-white/25"
+                        className="lg:hidden shrink-0 w-full sticky top-0 z-tabs border-b border-white/25"
                         style={{
                             paddingTop: 'env(safe-area-inset-top, 0px)',
                             background: 'rgba(226,222,252,0.97)',
@@ -1015,7 +1015,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                                     </button>
                                     {myBirthday && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                             <Cake size={9} className="text-white" />
                                         </span>
                                     )}
@@ -1027,7 +1027,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     {/* Content */}
                     <div id="main-scroll" className={`flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
                         {!isMobile && (
-                            <div className="absolute top-4 right-5 z-[200] hidden lg:block">
+                            <div className="absolute top-4 right-5 z-bell-desktop hidden lg:block">
                                 <NotificationBell variant="desktop" />
                             </div>
                         )}
@@ -1042,7 +1042,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     root (SIN ancestros con z-index/overflow que creen contexto de
                     apilamiento — el fixed anidado era lo que standalone no pintaba) */}
                 {hasSelfOnly && (
-                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
+                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
                                 bg-white/95 border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {
@@ -1072,7 +1072,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* ── Flyout tooltip ── */}
                 {!isMobile && flyout && (
                     <div
-                        className="fixed z-[300] pointer-events-auto"
+                        className="fixed z-flyout pointer-events-auto"
                         style={{ left: flyout.x, top: flyout.y, transform: 'translateY(-50%)' }}
                         onMouseEnter={() => clearTimeout(flyoutTimerRef.current)}
                         onMouseLeave={closeFlyout}

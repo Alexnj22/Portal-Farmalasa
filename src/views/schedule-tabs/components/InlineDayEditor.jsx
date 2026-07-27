@@ -300,7 +300,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 .editor-scrollbar::-webkit-scrollbar-thumb { background-color: rgba(148, 163, 184, 0.4); border-radius: 10px; }
             `}</style>
             
-            <div className="fixed inset-0 z-[9990]" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>
+            <div className="fixed inset-0 z-popover" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>
 
             <motion.div
                 ref={popoverRef}
@@ -308,10 +308,10 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
                 transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 onAnimationComplete={() => { if (isExiting) onClose(); }}
-                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_30px_80px_rgba(0,0,0,0.22)] border border-border-card flex flex-col cursor-default transform-gpu overflow-hidden"
+                className="fixed z-popover w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_30px_80px_rgba(0,0,0,0.22)] border border-border-card flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-white/[0.22] shrink-0 z-40">
+                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-border-card bg-white/[0.22] shrink-0 z-header">
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-surface-card backdrop-blur-sm overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
@@ -338,7 +338,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     </div>
                 )}
 
-                <div className="px-4 pt-4 pb-2 shrink-0 relative z-[9999]">
+                <div className="px-4 pt-4 pb-2 shrink-0 relative z-toast">
                     <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-danger shadow-[0_0_15px_rgba(244,63,94,0.3)]' : ''}`}>
                         <LiquidSelect 
                             value={shiftId} 
@@ -351,7 +351,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     </div>
                 </div>
 
-                <div className="px-4 pb-4 space-y-4 overflow-y-auto editor-scrollbar flex-1 relative z-10">
+                <div className="px-4 pb-4 space-y-4 overflow-y-auto editor-scrollbar flex-1 relative z-base">
                     
                     {shiftId === 'NO_SHIFTS' && (
                         <div className="bg-danger/10 border border-danger/30 p-3 rounded-2xl flex gap-2.5 animate-in zoom-in duration-300">
@@ -376,7 +376,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-base animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-border-card'}`}>
                             
                             <div className="flex items-center justify-between border-b border-divider pb-2">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
@@ -404,7 +404,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className="space-y-3 relative z-10 animate-in fade-in duration-300">
+                        <div className="space-y-3 relative z-base animate-in fade-in duration-300">
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
@@ -464,7 +464,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
                 </div>
 
-                <div className="p-3 border-t border-border-card bg-white/[0.22] shrink-0 z-30">
+                <div className="p-3 border-t border-border-card bg-white/[0.22] shrink-0 z-tabs">
                     <button 
                         onClick={handleSave} 
                         disabled={isSaveDisabled}

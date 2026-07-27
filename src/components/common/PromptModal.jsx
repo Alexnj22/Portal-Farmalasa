@@ -42,7 +42,7 @@ const PromptModal = ({
     const canConfirm = !isProcessing && (!required || text.trim().length > 0);
 
     const modalContent = (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-confirm flex items-center justify-center p-4 sm:p-6">
             <div
                 className={`absolute inset-0 transition-opacity duration-300 ease-out bg-scrim backdrop-blur-sm ${overlayClass}`}
                 onClick={!isProcessing ? onClose : undefined}
@@ -54,7 +54,7 @@ const PromptModal = ({
             >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-brand" />
 
-                <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-10">
+                <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-base">
                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm text-brand-text">
                         <MessageSquarePlus size={28} strokeWidth={2.5} />
                     </div>
@@ -80,7 +80,7 @@ const PromptModal = ({
                     />
                 </div>
 
-                <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-10 bg-surface-card-hover">
+                <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-base bg-surface-card-hover">
                     <button
                         onClick={onClose}
                         disabled={isProcessing}

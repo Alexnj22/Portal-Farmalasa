@@ -37,7 +37,7 @@ export default function OfflineBanner() {
             role="status"
             aria-live="polite"
             data-surface="dropdown"
-            className={`fixed top-4 left-1/2 -translate-x-1/2 z-[500]
+            className={`fixed top-4 left-1/2 -translate-x-1/2 z-banner
                 flex items-center gap-2.5 px-5 py-2.5
                 transition-all duration-300 animate-in fade-in slide-in-from-top-2
                 ${isWarning ? 'text-warning' : 'text-success'}`}

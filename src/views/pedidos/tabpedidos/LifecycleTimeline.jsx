@@ -36,7 +36,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                 ⏸ {fmtMin(mins) ?? '—'}
             </motion.span>
             {pause && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-bell-desktop hidden group-hover/pb:block pointer-events-none">
                     <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
                         <div className="text-micro font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
                         <div className="text-micro text-content-3">
@@ -150,7 +150,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             {/* Dot */}
                             <div className="flex items-center justify-center w-6 h-6">
                                 <motion.div
-                                    className={`w-4 h-4 rounded-full flex items-center justify-center z-10 ${
+                                    className={`w-4 h-4 rounded-full flex items-center justify-center z-base ${
                                         isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-warning shadow-md' :
                                         isActive    ? `bg-surface-card border-2 ${tlBorder(idx)}` :
@@ -243,7 +243,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                 )}
                                 {/* Pause badges — above the line */}
                                 {node.key === 'iniciado' && hasPause && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5" style={{ top: -14 }}>
+                                    <div className="absolute left-1/2 -translate-x-1/2 z-base flex items-center gap-0.5" style={{ top: -14 }}>
                                         {pauses.length > 0
                                             ? pauses.map((p, i) => (
                                                 <PauseBadge key={i} pause={p} isPaused={isPaused && i === pauses.length - 1} empMap={empMap} />

@@ -55,7 +55,7 @@ const BranchTabGeneral = ({
                     </div>
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Apertura</label>
-                        <div className={`bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 relative z-30 ${inputHoverClass}`}>
+                        <div className={`bg-surface-card rounded-[1rem] border border-divider shadow-sm flex items-center h-[40px] px-1.5 relative z-tabs ${inputHoverClass}`}>
                             <LiquidDatePicker
                                 value={openingDate}
                                 onChange={(val) => setFormData(prev => ({ ...prev, openingDate: val, opening_date: val }))}
@@ -76,7 +76,7 @@ const BranchTabGeneral = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="relative z-20"> 
+                    <div className="relative z-content"> 
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
                         <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
                             <LiquidSelect
@@ -92,7 +92,7 @@ const BranchTabGeneral = ({
                         </div>
                     </div>
 
-                    <div className="relative z-10">
+                    <div className="relative z-base">
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Distrito / Municipio
                             {getTabStatus(1) === 'orange' && !location.municipality && <span className="text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-md shadow-[var(--shadow-glow-warning)] border border-warning/30">Falta info</span>}

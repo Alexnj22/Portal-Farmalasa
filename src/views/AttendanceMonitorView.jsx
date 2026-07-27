@@ -691,12 +691,12 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 </div>
               )}
 
-              <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1 relative z-10">
+              <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1 relative z-base">
                 {card.label}
               </p>
               <p
                 className={[
-                  "text-display font-black relative z-10 leading-none",
+                  "text-display font-black relative z-base leading-none",
                   isActive ? "text-brand-text" : card.color,
                 ].join(" ")}
               >

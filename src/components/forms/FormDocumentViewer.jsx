@@ -22,7 +22,7 @@ const FormDocumentViewer = ({ formData }) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-surface-card-hover/50">
-            <div className="flex items-center justify-between p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-10">
+            <div className="flex items-center justify-between p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-base">
                 <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 rounded-[1.25rem] bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
                         <FileText size={24} strokeWidth={1.5} />

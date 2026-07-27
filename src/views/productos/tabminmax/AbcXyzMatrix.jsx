@@ -111,7 +111,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                     whileTap={count > 0 ? { scale: 0.92, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } } : {}}
                                     className={`relative py-1.5 rounded-md text-center
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer'}
-                                        ${isActive ? 'z-10' : ''}`}
+                                        ${isActive ? 'z-base' : ''}`}
                                     style={{
                                         background: isActive
                                             ? `rgba(0,82,204,${Math.min(0.22, intensity + 0.10)})`

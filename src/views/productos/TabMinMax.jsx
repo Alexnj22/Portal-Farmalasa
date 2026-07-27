@@ -858,8 +858,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         }}>
                                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
                                             animate={{ x: ['-160%', '160%'] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 2.5 }} />
-                                        {publishing ? <Loader2 size={10} className="animate-spin relative z-10" /> : <Upload size={10} className="relative z-10" />}
-                                        <span className="relative z-10">Publicar {filterLabel} ({filteredDraftIds.length})</span>
+                                        {publishing ? <Loader2 size={10} className="animate-spin relative z-base" /> : <Upload size={10} className="relative z-base" />}
+                                        <span className="relative z-base">Publicar {filterLabel} ({filteredDraftIds.length})</span>
                                     </motion.button>
                                 ) : (
                                     <motion.button key="pub-all"
@@ -881,8 +881,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         }}>
                                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
                                             animate={{ x: ['-160%', '160%'] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 2.5 }} />
-                                        {publishing ? <Loader2 size={10} className="animate-spin relative z-10" /> : <Upload size={10} className="relative z-10" />}
-                                        <span className="relative z-10">Publicar todo ({draftCount})</span>
+                                        {publishing ? <Loader2 size={10} className="animate-spin relative z-base" /> : <Upload size={10} className="relative z-base" />}
+                                        <span className="relative z-base">Publicar todo ({draftCount})</span>
                                     </motion.button>
                                 )}
                                 </AnimatePresence>
@@ -1487,7 +1487,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
             {/* ── Toast notification (portal → fuera de backdrop-filter, siempre en viewport) ── */}
             {toast && createPortal(
-                <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-body font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-danger' : 'bg-brand'}`}>
+                <div className={`fixed bottom-6 right-6 z-toast flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-body font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-danger' : 'bg-brand'}`}>
                     {currentEmployee?.photo_url
                         ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
                         : <Info size={15} className="shrink-0" />}
@@ -1507,11 +1507,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
             {/* ── Historial MIN/MAX ── */}
             {historyRow && createPortal(
-                <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4" onClick={() => setHistoryRow(null)}>
+                <div className="fixed inset-0 z-tooltip flex items-center justify-center p-4" onClick={() => setHistoryRow(null)}>
                     {/* Overlay */}
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
                     {/* Card */}
-                    <div className="relative z-10 w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[var(--shadow-elevation-xl)] overflow-hidden"
+                    <div className="relative z-base w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[var(--shadow-elevation-xl)] overflow-hidden"
                         style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(40px) saturate(200%)' }}
                         onClick={e => e.stopPropagation()}>
 
@@ -1594,7 +1594,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
             {/* ── Photo zoom overlay ── */}
             {zoomPhoto && createPortal(
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center"
+                <div className="fixed inset-0 z-toast flex items-center justify-center"
                     style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
                     onClick={() => setZoomPhoto(null)}>
                     <motion.img

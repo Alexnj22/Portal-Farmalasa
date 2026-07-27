@@ -15,7 +15,7 @@ import ModalShell from './ModalShell';
  *   open      – controlled visibility (default true for inline-rendered modals)
  *   onClose   – called on Escape or backdrop click
  *   maxWidth  – Tailwind max-w-* class (default: max-w-sm)
- *   zClass    – z-index override (default: ModalShell default z-[100])
+ *   zClass    – z-index override (default: ModalShell default z-modal)
  *   className – extra classes on the card (e.g. max-h-[90vh] h-fit)
  *   ariaLabel – accessible name announced by screen readers (pass the
  *               modal's actual title — without it every LiquidModal in the
@@ -45,7 +45,7 @@ export default function LiquidModal({
                 {/* Glass layer — sits behind all content; color por tema y
                     apagada en solid/solid-dark (ver .modal-glass-layer en index.css) */}
                 <div
-                    className="modal-glass-layer absolute inset-0 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none"
+                    className="modal-glass-layer absolute inset-0 backdrop-blur-[15px] backdrop-saturate-[300%] -z-base pointer-events-none"
                     style={{ willChange: 'transform', transform: 'translateZ(0)' }}
                 />
                 {children}
@@ -60,7 +60,7 @@ export default function LiquidModal({
  */
 LiquidModal.Header = function LiquidModalHeader({ children, className = '' }) {
     return (
-        <div className={`flex-none bg-transparent px-6 py-5 border-b border-divider shrink-0 relative z-10 ${className}`}>
+        <div className={`flex-none bg-transparent px-6 py-5 border-b border-divider shrink-0 relative z-base ${className}`}>
             {children}
         </div>
     );
@@ -71,7 +71,7 @@ LiquidModal.Header = function LiquidModalHeader({ children, className = '' }) {
  */
 LiquidModal.Body = function LiquidModalBody({ children, className = '' }) {
     return (
-        <div className={`relative z-10 px-6 py-5 flex-1 overflow-y-auto ${className}`}>
+        <div className={`relative z-base px-6 py-5 flex-1 overflow-y-auto ${className}`}>
             {children}
         </div>
     );
@@ -82,7 +82,7 @@ LiquidModal.Body = function LiquidModalBody({ children, className = '' }) {
  */
 LiquidModal.Footer = function LiquidModalFooter({ children, className = '' }) {
     return (
-        <div className={`flex-none bg-surface-card-hover border-t border-divider px-6 py-4 relative z-10 ${className}`}>
+        <div className={`flex-none bg-surface-card-hover border-t border-divider px-6 py-4 relative z-base ${className}`}>
             {children}
         </div>
     );

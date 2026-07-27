@@ -12,7 +12,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
     };
 
     return (
-        <div className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
+        <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
             <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-5 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)]">
 
                 <div className="flex flex-col items-center text-center mb-6">
@@ -56,7 +56,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
 
                     <button
                         type="submit"
-                        className="relative z-20 pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-warning font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.97] transition-all duration-300"
+                        className="relative z-content pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-warning font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-[0.97] transition-all duration-300"
                     >
                         <CheckCircle size={14} /> Confirmar Horario
                     </button>
@@ -66,7 +66,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                     <button
                         type="button"
                         onClick={() => onSubmit(null, null)}
-                        className="relative z-20 pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/40 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]"
+                        className="relative z-content pointer-events-auto text-micro sm:text-caption uppercase tracking-widest font-bold text-white/40 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]"
                     >
                         <SkipForward size={14} /> No sé mi horario — Solo registrar entrada
                     </button>

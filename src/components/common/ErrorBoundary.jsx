@@ -39,13 +39,13 @@ export default class ErrorBoundary extends React.Component {
                     <div className="absolute inset-x-0 top-0 h-2/5 pointer-events-none rounded-t-[2.5rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen-strong), transparent)' }} />
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 blur-[60px] rounded-full pointer-events-none bg-danger/10" />
 
-                    <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center
+                    <div className="relative z-base w-20 h-20 rounded-[1.5rem] flex items-center justify-center
                         bg-surface-card border border-border-card
                         shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.90)]">
                         <AlertTriangle size={36} strokeWidth={2} className="text-danger" />
                     </div>
 
-                    <div className="relative z-10 flex flex-col gap-2">
+                    <div className="relative z-base flex flex-col gap-2">
                         <h2 className="text-title font-black uppercase tracking-tight text-content leading-none">
                             Algo salió mal
                         </h2>
@@ -56,7 +56,7 @@ export default class ErrorBoundary extends React.Component {
 
                     <button
                         onClick={() => window.location.reload()}
-                        className="relative z-10 overflow-hidden group flex items-center gap-2
+                        className="relative z-base overflow-hidden group flex items-center gap-2
                             px-7 py-3.5 rounded-[1.5rem]
                             bg-gradient-to-b from-brand/72 to-brand-hover/78
                             backdrop-blur-xl border border-border-card hover:border-border-card

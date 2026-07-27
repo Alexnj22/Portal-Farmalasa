@@ -649,7 +649,7 @@ function PhotoContextMenu({ pos, onPaste, onClose }) {
 
     return createPortal(
         <div
-            className="fixed z-[99999] bg-surface-card rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
+            className="fixed z-confirm bg-surface-card rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
             style={{ top: pos.y, left: pos.x }}
             onMouseDown={e => e.stopPropagation()}>
             <button
@@ -681,7 +681,7 @@ function PhotoLightbox({ src, onClose }) {
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[300] flex items-center justify-center"
+            className="fixed inset-0 z-flyout flex items-center justify-center"
             style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'rgba(0,0,0,0.65)' }}
             onClick={onClose}>
             <div

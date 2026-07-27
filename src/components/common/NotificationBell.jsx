@@ -329,18 +329,18 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[1.25rem] pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--btn-sheen), transparent)' }} />
                 {totalBadge > 0 ? (
                     <BellRing size={18} strokeWidth={2}
-                        className={`relative z-10 transition-colors
+                        className={`relative z-base transition-colors
                             ${hasUrgentAnn ? (isDark ? 'text-danger-text animate-wiggle' : 'text-danger animate-wiggle') : (isDark ? 'text-chart-1-text' : 'text-brand-text')}
                             ${justRang && !hasUrgentAnn ? 'animate-wiggle' : ''}`} />
                 ) : (
-                    <Bell size={18} strokeWidth={2} className={`relative z-10 ${isDark ? 'text-white/45' : 'text-content-3'}`} />
+                    <Bell size={18} strokeWidth={2} className={`relative z-base ${isDark ? 'text-white/45' : 'text-content-3'}`} />
                 )}
                 {totalBadge > 0 && (
                     <>
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-20 shadow-[var(--shadow-glow-danger)]">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-content shadow-[var(--shadow-glow-danger)]">
                             {totalBadge > 9 ? '9+' : totalBadge}
                         </span>
-                        <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-danger" />
+                        <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-base bg-danger" />
                     </>
                 )}
             </button>
@@ -354,7 +354,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.97, y: -6 }}
                         transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                        className={`absolute z-[400] origin-top-right
+                        className={`absolute z-bell-dropdown origin-top-right
                             ${isDesktop ? 'right-0 top-[3.25rem] w-[380px]' : 'right-0 top-[3.25rem] w-[calc(100vw-2rem)] max-w-[380px]'}`}
                     >
                         <div data-surface="dropdown" className="overflow-hidden transform-gpu">

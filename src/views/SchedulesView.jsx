@@ -715,13 +715,13 @@ const SchedulesView = ({ openModal, setView }) => {
             hover:-translate-y-0.5 shrink-0">
 
             {/* Shimmer */}
-            <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none z-10">
+            <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none z-base">
                 <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent animate-shimmer"
                     style={{ animationDuration: '4s' }} />
             </div>
 
             {/* Branch */}
-            <div className="px-2 py-2 overflow-visible relative z-10">
+            <div className="px-2 py-2 overflow-visible relative z-base">
                 <LiquidSelect value={filterBranch} onChange={setFilterBranch}
                     options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
                     compact clearable={false} icon={Building2} bare />
@@ -730,7 +730,7 @@ const SchedulesView = ({ openModal, setView }) => {
             <div className="h-5 w-px bg-divider shrink-0" />
 
             {/* Week navigator — hover-reveal arrows */}
-            <div className="group/week flex items-center overflow-visible cursor-default relative z-10">
+            <div className="group/week flex items-center overflow-visible cursor-default relative z-base">
                 <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
                     <button onClick={() => changeWeek(-7)}
                         className="w-7 h-7 rounded-full flex items-center justify-center text-content-2 hover:bg-surface-card active:scale-[0.97] transition-all shadow-sm">
@@ -758,7 +758,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 <>
                     <div className="h-5 w-px bg-divider shrink-0" />
                     <button onClick={handleResetFilters} title="Volver a semana actual"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-10">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-danger/10 hover:bg-danger-solid text-danger hover:text-white transition-all duration-200 shrink-0 hover:scale-110 relative z-base">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -771,7 +771,7 @@ const SchedulesView = ({ openModal, setView }) => {
                     <button
                         onClick={weekIsPublished ? undefined : triggerPublishAudit}
                         disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-10 border
+                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-base border
                             ${weekIsPublished
                                 ? 'bg-success/20 border-success/50 text-success-text cursor-default'
                                 : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97]'}

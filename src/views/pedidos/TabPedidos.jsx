@@ -257,7 +257,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     <div className="flex flex-col items-center justify-center min-h-[260px] animate-in fade-in zoom-in-95 duration-700">
                         <div className="relative flex flex-col items-center text-center">
                             <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-20 bg-chart-1" />
-                            <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-chart-1-text">
+                            <div className="relative z-base w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-chart-1-text">
                                 <Inbox size={34} strokeWidth={1.5} />
                             </div>
                             <h3 className="font-bold text-title-sm text-content-2 tracking-tight">Sin pedidos activos</h3>

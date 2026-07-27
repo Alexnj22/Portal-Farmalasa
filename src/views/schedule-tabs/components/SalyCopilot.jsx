@@ -67,14 +67,14 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
         <div className={`col-span-1 ${aiBoxBg} backdrop-blur-3xl backdrop-saturate-[180%] border rounded-[2rem] p-3.5 shadow-[var(--shadow-glass-lg)] text-white flex flex-col relative overflow-hidden transition-all duration-500 group/ai h-full max-h-[210px]`}>
             <div className={`absolute top-0 right-0 w-32 h-32 ${aiGlow} rounded-full blur-[60px] opacity-15 pointer-events-none`}></div>
             
-            <div className="flex items-center justify-between border-b border-border-card pb-2 mb-2 relative z-10 shrink-0">
+            <div className="flex items-center justify-between border-b border-border-card pb-2 mb-2 relative z-base shrink-0">
                 <div className="flex items-center gap-1.5 text-micro font-black text-chart-5 uppercase tracking-widest">
                     <Bot size={12} className={aiIconColor} /> {aiTitle}
                 </div>
                 <Sparkles size={12} className={`${aiIconColor} ${hasCriticalAlerts || hasWarningAlerts ? 'animate-pulse' : ''}`} />
             </div>
             
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 relative z-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 relative z-base [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {groupedAlerts.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center opacity-70">
                         <div className="relative mb-2">

@@ -296,15 +296,15 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
-                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-20 flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
+                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-content flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
                     <span className="text-micro leading-none">🎂</span>
                 </span>
             )}
             {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-surface-card rounded-full shadow-sm z-10" title="Disponible"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-surface-card rounded-full shadow-sm z-base" title="Disponible"></span>
             )}
             {isAbsent && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-warning border-2 border-surface-card rounded-full shadow-sm z-10" title="Ausencia"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-warning border-2 border-surface-card rounded-full shadow-sm z-base" title="Ausencia"></span>
             )}
           </div>
 
@@ -317,7 +317,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               </div>
             )}
 
-            <div className="flex items-center gap-1.5 relative z-10">
+            <div className="flex items-center gap-1.5 relative z-base">
               <p className="font-black text-content text-body-sm md:text-body truncate transition-colors group-hover:text-brand-text tracking-tight" title={emp.name}>
                 {shortName}
               </p>
@@ -345,7 +345,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               )}
             </div>
             
-            <div className="flex items-center gap-2 mt-0.5 h-[16px] relative z-10">
+            <div className="flex items-center gap-2 mt-0.5 h-[16px] relative z-base">
               <p className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest truncate">
                 {emp.code || 'Sin código'}
               </p>

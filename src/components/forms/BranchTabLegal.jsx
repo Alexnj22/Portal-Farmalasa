@@ -52,7 +52,7 @@ const BranchTabLegal = ({
                                 className={`!bg-surface-card shadow-sm h-[42px] text-body border-divider ${inputHoverClass}`}
                             />
                         </div>
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento de Licencia
                             </label>
@@ -85,7 +85,7 @@ const BranchTabLegal = ({
                         <FileBadge size={18} strokeWidth={2.5} /> Regencia Farmacéutica
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Regente Asignado
                                 {availableRegents.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
@@ -99,7 +99,7 @@ const BranchTabLegal = ({
                                 />
                             </div>
                         </div>
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
                             </label>
@@ -131,7 +131,7 @@ const BranchTabLegal = ({
                         <ShieldAlert size={18} strokeWidth={2.5} /> Referente de Farmacovigilancia
                     </h4>
                     <div className="flex flex-col flex-1 gap-4">
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-content-3 ml-1 mb-2 block flex items-center justify-between">
                                 Referente Asignado
                                 {availablePharmacovigilance.length === 0 && <span className="text-warning bg-warning/10 px-1.5 py-0.5 rounded text-micro border border-warning/30">Sin personal</span>}
@@ -145,7 +145,7 @@ const BranchTabLegal = ({
                                 />
                             </div>
                         </div>
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento Credencial
                             </label>

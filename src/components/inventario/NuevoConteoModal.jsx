@@ -104,7 +104,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
 
     return (
         <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-2xl" className="max-h-[90vh] h-fit" ariaLabel="Nuevo Conteo de Inventario">
-            <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-10 shrink-0">
+            <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-base shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-9-text`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>
                     <div>
@@ -117,7 +117,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full">
+            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full">
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
                     <div className={islandClass}>
                         <label className={fieldLabel}><span>Sucursal</span>{!branchId && reqBadge}</label>
@@ -175,7 +175,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 </div>
             </div>
 
-            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-10 shrink-0">
+            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
                 <button type="button" onClick={onClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>

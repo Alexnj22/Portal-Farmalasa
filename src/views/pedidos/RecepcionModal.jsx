@@ -813,7 +813,7 @@ export default function RecepcionModal({
                 {/* Item grid — mismo formato que pantalla de items */}
                 <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
                     <div className="max-h-[48vh] overflow-y-auto scrollbar-hide">
-                        <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
+                        <div className="sticky top-0 z-base bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
                                 <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>
@@ -1075,7 +1075,7 @@ export default function RecepcionModal({
             {/* Item grid */}
             <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
               <div className="max-h-[48vh] overflow-y-auto">
-                <div className="sticky top-0 z-10 bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
+                <div className="sticky top-0 z-base bg-surface-card backdrop-blur-sm border-b-2 border-divider shadow-sm">
                     <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                         <span /><span />
                         <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Físico</span>

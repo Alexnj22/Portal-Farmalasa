@@ -268,7 +268,7 @@ const LiquidSelect = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
             transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-            className={`fixed z-[99999] ${coords.transformOrigin} overflow-y-auto p-3
+            className={`fixed z-confirm ${coords.transformOrigin} overflow-y-auto p-3
             transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
         >
             {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
@@ -395,7 +395,7 @@ const LiquidSelect = ({
         >
             {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}
             {!nano && (
-                <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-10 pointer-events-none ${isOpen
+                <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-base pointer-events-none ${isOpen
                         ? 'text-white bg-brand shadow-sm'
                         : bare
                             ? 'bg-transparent text-brand-text'
@@ -490,7 +490,7 @@ const LiquidSelect = ({
                 <button
                     type="button"
                     onClick={handleClear}
-                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-1 cursor-pointer flex items-center justify-center`}
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center`}
                     title="Quitar selección"
                 >
                     <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">
@@ -501,7 +501,7 @@ const LiquidSelect = ({
                 <button
                     type="button"
                     onClick={handleToggle}
-                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-0.5 cursor-pointer flex items-center justify-center`}
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center`}
                 >
                     <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 ${isOpen
                             ? 'bg-brand/[0.12]'

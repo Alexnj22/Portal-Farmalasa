@@ -425,7 +425,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (
-                                    <span className="absolute top-2 left-2 flex items-center gap-1 z-10">
+                                    <span className="absolute top-2 left-2 flex items-center gap-1 z-base">
                                         <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-caption font-black leading-none bg-chart-8-solid text-white">
                                             {urgRankMap[id]}
                                         </span>
@@ -444,15 +444,15 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 <Building2
                                     size={20}
-                                    className="text-content-3 group-hover:text-content-2 transition-colors relative z-10 mt-1"
+                                    className="text-content-3 group-hover:text-content-2 transition-colors relative z-base mt-1"
                                 />
-                                <span className="text-body-sm font-bold leading-tight relative z-10 text-content">
+                                <span className="text-body-sm font-bold leading-tight relative z-base text-content">
                                     {ERP_NAMES[id]}
                                 </span>
 
                                 {stat && !dashLoading ? (
                                     <>
-                                        <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
+                                        <div className="flex items-center gap-1.5 mt-0.5 relative z-base">
                                             <span className="inline-flex items-center gap-0.5 text-caption font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text">
                                                 <span className="text-micro">✓</span>
                                                 {(stat.con_bodega_productos ?? 0)}
@@ -466,7 +466,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         {(() => {
                                             const label = fmtTimeSince(stat.last_pedido_at);
                                             if (!label) return (
-                                                <span className="text-micro relative z-10 text-content-3">sin pedidos</span>
+                                                <span className="text-micro relative z-base text-content-3">sin pedidos</span>
                                             );
                                             const days = stat.last_pedido_at
                                                 ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
@@ -475,7 +475,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                                           : days <= 14 ? 'text-warning'
                                                           : 'text-danger';
                                             return (
-                                                <span className={`text-micro font-medium relative z-10 ${timeCls}`}>
+                                                <span className={`text-micro font-medium relative z-base ${timeCls}`}>
                                                     {label}
                                                 </span>
                                             );

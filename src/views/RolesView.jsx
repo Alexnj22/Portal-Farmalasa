@@ -353,13 +353,13 @@ const RolesView = ({ openModal }) => {
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (
-                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-micro font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-10`}>
+                    <div className={`absolute -top-3 left-4 bg-surface-card text-content-3 text-micro font-black uppercase tracking-widest px-3 py-1 rounded-full border border-divider shadow-sm z-base`}>
                         Staff
                     </div>
                 )}
 
                 {hasDualReporting && !isExporting && (
-                    <div className="absolute -bottom-4 bg-chart-3/10 text-chart-3-text text-[7.5px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border border-chart-3/30 shadow-sm z-10 flex items-start justify-center gap-1 w-[90%] leading-tight text-center">
+                    <div className="absolute -bottom-4 bg-chart-3/10 text-chart-3-text text-[7.5px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border border-chart-3/30 shadow-sm z-base flex items-start justify-center gap-1 w-[90%] leading-tight text-center">
                         <GitMerge size={9} className="shrink-0 mt-[1px]" />
                         <span className="whitespace-normal break-words">{secondaryParentName}</span>
                     </div>
@@ -566,7 +566,7 @@ const RolesView = ({ openModal }) => {
                     <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
-                        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-[100] lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
+                        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
                             <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
                                 ? 'bg-surface-card border border-warning/40 shadow-[0_12px_40px_rgba(0,0,0,0.08),inset_0_2px_15px_rgba(255,255,255,0.7)]'
                                 : 'border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] group-hover/panel:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)]'
@@ -617,7 +617,7 @@ const RolesView = ({ openModal }) => {
 
                                     {/* 🚨 CONTROLES DE HEADCOUNT */}
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="relative z-[70]">
+                                        <div className="relative z-dropdown">
                                             <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                                 Alcance
                                             </label>
@@ -637,7 +637,7 @@ const RolesView = ({ openModal }) => {
                                                 Límite de Plazas
                                             </label>
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 group-focus-within:text-brand-text transition-colors z-10">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 group-focus-within:text-brand-text transition-colors z-base">
                                                     <Hash size={16} />
                                                 </div>
                                                 <input
@@ -652,7 +652,7 @@ const RolesView = ({ openModal }) => {
                                         </div>
                                     </div>
 
-                                    <div className="relative z-[60]">
+                                    <div className="relative z-sidebar-desktop">
                                         <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Dependencia (Reporta a)
                                         </label>
@@ -669,7 +669,7 @@ const RolesView = ({ openModal }) => {
                                         </div>
                                     </div>
 
-                                    <div className="relative z-[50]">
+                                    <div className="relative z-sidebar">
                                         <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Reporte Matricial
                                         </label>
@@ -699,7 +699,7 @@ const RolesView = ({ openModal }) => {
                         </div>
 
                         {/* PANEL DERECHO: GRID DE TARJETAS */}
-                        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-10">
+                        <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-base">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {isRoleSearchFuzzy && searchQuery && (
                                     <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
@@ -719,14 +719,14 @@ const RolesView = ({ openModal }) => {
                                         <div
                                             key={role.id}
                                             className={`p-5 rounded-[2rem] flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
-                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-10' : isExternal
+                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-base' : isExternal
                                                     ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-divider shadow-sm hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1'
                                                     : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:bg-surface-card hover:-translate-y-1'
                                                 }`}
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
                                             {role.max_limit < 99 && (
-                                                <div className={`absolute -top-3 right-4 text-micro font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-10 flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
+                                                <div className={`absolute -top-3 right-4 text-micro font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm z-base flex items-center gap-1.5 transition-opacity ${isEditingThis ? 'opacity-0' : 'opacity-100'} ${isGlobal ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30' : 'bg-warning/10 text-warning border-warning/30'}`}>
                                                     {isGlobal ? <Globe size={10} strokeWidth={2.5}/> : <Building2 size={10} strokeWidth={2.5}/>}
                                                     <span>{isGlobal ? 'GLOBAL' : 'LOCAL'} MAX: {role.max_limit}</span>
                                                 </div>
@@ -841,14 +841,14 @@ const RolesView = ({ openModal }) => {
                     <div className="animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative -mt-4 md:-mt-8 h-[calc(100vh-160px)] md:h-[calc(100vh-200px)] w-full z-0">
                         <div
                             ref={orgChartContainerRef}
-                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-[200] w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-[3rem]'}`}
+                            className={`relative flex flex-col select-none bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card shadow-[0_14px_40px_rgba(0,0,0,0.04),inset_0_2px_20px_rgba(255,255,255,0.8)] transition-all duration-500 overflow-hidden mx-2 md:mx-0 h-full w-full transform-gpu ${isFullscreen ? 'fixed inset-0 z-bell-desktop w-screen h-[100dvh] bg-surface-page rounded-none m-0 border-none' : 'rounded-[3rem]'}`}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
                             onMouseLeave={handleMouseUp}
                             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                         >
-                            <div className="flex gap-3 p-4 bg-surface-card backdrop-blur-md border-b border-border-card z-10 shrink-0 absolute top-0 left-0 right-0 pointer-events-auto shadow-sm">
+                            <div className="flex gap-3 p-4 bg-surface-card backdrop-blur-md border-b border-border-card z-base shrink-0 absolute top-0 left-0 right-0 pointer-events-auto shadow-sm">
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}

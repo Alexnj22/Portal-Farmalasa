@@ -37,7 +37,7 @@ const ConfirmModal = ({
     const modalClass = isOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95';
 
     const modalContent = (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-confirm flex items-center justify-center p-4 sm:p-6">
             
             {/* FONDO BLUR */}
             <div
@@ -56,7 +56,7 @@ const ConfirmModal = ({
                     isDestructive ? 'bg-danger' : 'bg-brand'
                 }`}></div>
 
-                <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-10">
+                <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-base">
 
                     {/* ÍCONO OPTIMIZADO */}
                     <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-300 ${
@@ -83,7 +83,7 @@ const ConfirmModal = ({
                 </div>
 
                 {/* FOOTER RESPONSIVO */}
-                <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-10 bg-surface-card-hover">
+                <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-base bg-surface-card-hover">
 
                     <button
                         onClick={onClose}

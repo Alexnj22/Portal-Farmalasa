@@ -265,7 +265,7 @@ const LiquidDatePicker = ({
         <div
             ref={popoverRef}
             style={{ top: coords.top, left: coords.left, transform: coords.transform }}
-            className={`absolute z-[99999] animate-in fade-in zoom-in-95 duration-300 ${coords.origin}`}
+            className={`absolute z-confirm animate-in fade-in zoom-in-95 duration-300 ${coords.origin}`}
         >
             <div data-surface="dropdown" className="p-4 md:p-5 w-[280px] font-sans">
 
@@ -316,7 +316,7 @@ const LiquidDatePicker = ({
                                 }
 
                                 // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)
-                                let btnClass = "w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-10 ";
+                                let btnClass = "w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base ";
                                 if (isSolidDot) {
                                     btnClass += "bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-110";
                                 } else if (inBetween) {

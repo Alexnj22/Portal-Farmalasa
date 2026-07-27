@@ -2256,7 +2256,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                             {line.tierChanged && (
                                                                                                                 <>
                                                                                                                     <span className="text-warning text-label cursor-help leading-none">⚠</span>
-                                                                                                                    <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-caption leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
+                                                                                                                    <div className="absolute bottom-full right-0 mb-1.5 z-sidebar hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-caption leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
                                                                                                                         <p className="font-black text-warning mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
                                                                                                                             <p className="text-content-3">

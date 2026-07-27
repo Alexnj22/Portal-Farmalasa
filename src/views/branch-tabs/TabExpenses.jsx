@@ -66,7 +66,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
         >
             <div className="absolute inset-0 bg-surface-card rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-            <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className="flex justify-between items-start mb-4 relative z-base">
                 <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shadow-sm transition-transform duration-300 group-hover:scale-110 ${isPendingReceipt ? 'text-chart-6 bg-surface-card border-chart-6/30' : colorMap[colorTheme]}`}>
                         {isPendingReceipt ? <AlertCircle size={20} strokeWidth={2}/> : <Icon size={20} strokeWidth={2} />}
@@ -81,7 +81,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                 </div>
             </div>
 
-            <div className="flex-1 flex items-end justify-between mt-2 relative z-10">
+            <div className="flex-1 flex items-end justify-between mt-2 relative z-base">
                 <div>
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
                     <p className="text-lg font-black text-content">${amount ? Number(amount).toFixed(2) : '0.00'}</p>
@@ -99,14 +99,14 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             {isPendingReceipt ? (
                 <button
                     onClick={onUploadReceipt}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6-solid border border-chart-6 text-white font-black text-caption uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-chart-6-solid border border-chart-6 text-white font-black text-caption uppercase tracking-widest hover:bg-chart-6/90 transition-all active:scale-[0.97] shadow-[0_4px_15px_rgba(217,70,239,0.3)] flex items-center justify-center gap-2 relative z-base"
                 >
                     <UploadCloud size={14} strokeWidth={2.5} /> Subir Comprobante
                 </button>
             ) : (
                 <button
                     onClick={onAction}
-                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-caption uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-surface-card-hover transition-all active:scale-[0.97] shadow-sm relative z-10"
+                    className="mt-4 w-full py-2.5 rounded-xl bg-surface-card backdrop-blur-sm border border-border-card text-content-2 font-bold text-caption uppercase tracking-widest hover:text-brand-text hover:border-chart-1/30 hover:bg-surface-card-hover transition-all active:scale-[0.97] shadow-sm relative z-base"
                 >
                     {isConfigured ? 'Registrar Pago' : 'Configurar Pago'}
                 </button>
@@ -321,7 +321,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-[var(--shadow-elevation-xs)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[var(--shadow-glow-brand)]">
                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
                         
-                        <div className="flex justify-between items-start mb-6 relative z-10">
+                        <div className="flex justify-between items-start mb-6 relative z-base">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 bg-surface-card text-brand-text rounded-[1.25rem] flex items-center justify-center border border-white shadow-sm transition-transform duration-500 group-hover:scale-110">
                                     <BarChart3 size={22} strokeWidth={2.5}/>
@@ -333,7 +333,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                             </div>
                         </div>
 
-                        <div className="flex-1 min-h-[180px] w-full relative z-10">
+                        <div className="flex-1 min-h-[180px] w-full relative z-base">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={historicalData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
@@ -379,11 +379,11 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         {/* Tarjeta de Variación Mensual */}
                         <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
-                            <div className="flex items-center gap-2 mb-3 relative z-10">
+                            <div className="flex items-center gap-2 mb-3 relative z-base">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-content-3">Variación vs Mes Anterior</h5>
                             </div>
-                            <div className="flex items-end gap-3 relative z-10">
+                            <div className="flex items-end gap-3 relative z-base">
                                 <span className="text-3xl font-black text-content tracking-tight">
                                     {Math.abs(stats.variation).toFixed(1)}%
                                 </span>
@@ -397,13 +397,13 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         {/* Tarjeta de Servicio Más Caro */}
                         <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-[2rem] p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
-                            <div className="flex items-center gap-2 mb-2 relative z-10">
+                            <div className="flex items-center gap-2 mb-2 relative z-base">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-white">
                                     <Zap size={16} className="text-warning" strokeWidth={2.5}/>
                                 </div>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-warning/90">Mayor Gasto Externo</h5>
                             </div>
-                            <p className="text-title-sm font-black text-warning-text leading-tight relative z-10 tracking-tight mt-1">
+                            <p className="text-title-sm font-black text-warning-text leading-tight relative z-base tracking-tight mt-1">
                                 {stats.highestService}
                             </p>
                         </div>

@@ -53,12 +53,12 @@ export default function FeedbackOverlay({
 
   return (
     // Contenedor principal Liquidglass Black
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center animate-in fade-in duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
+    <div className="fixed inset-0 z-bell-desktop flex flex-col items-center justify-center animate-in fade-in duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] bg-[#0A0F1C]/80 backdrop-blur-[40px] backdrop-saturate-[150%] overflow-hidden">
 
       {/* ORBE DE LUZ DE FONDO */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full blur-[140px] pointer-events-none transition-colors duration-1000 ${color === 'red' ? 'opacity-20' : 'opacity-10'} ${theme.glow}`}></div>
 
-      <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl h-full p-8 relative z-10">
+      <div className="flex flex-col items-center justify-center text-center w-full max-w-6xl h-full p-8 relative z-base">
 
         {isLactationAction && (
           <div className="absolute top-10 right-10 flex items-center gap-2 bg-chart-6/10 backdrop-blur-2xl border border-chart-6/30 px-5 py-2.5 rounded-full text-white font-bold animate-pulse shadow-[0_4px_20px_rgba(244,114,182,0.2),inset_0_1px_2px_rgba(255,255,255,0.15)] overflow-hidden">
@@ -95,7 +95,7 @@ export default function FeedbackOverlay({
                 </div>
 
                 {/* Nombre: Píldora encrustada */}
-                <div className="absolute -bottom-4 z-20 px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_15px_30px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.1)] max-w-[120%] w-max flex items-center justify-center">
+                <div className="absolute -bottom-4 z-content px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[0_15px_30px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.1)] max-w-[120%] w-max flex items-center justify-center">
                   <h2 className="text-caption sm:text-label md:text-xs font-black text-white uppercase tracking-[0.2em] drop-shadow-md truncate">
                     {employee?.name}
                   </h2>

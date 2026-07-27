@@ -38,13 +38,13 @@ const AlertModal = ({
     const Icon = currentConfig.icon;
 
     return (
-        <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-[9999]" ariaLabel={title}>
+        <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-toast" ariaLabel={title}>
             <div data-surface="modal" className="overflow-hidden relative">
 
                 {/* 🚨 Glow de fondo dinámico que tiñe el cristal superior */}
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 blur-[40px] rounded-full pointer-events-none ${currentConfig.glow}`}></div>
 
-                <div className="p-8 text-center flex flex-col items-center relative z-10">
+                <div className="p-8 text-center flex flex-col items-center relative z-base">
                     {/* ÍCONO SQUIRCLE */}
                     <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 transition-transform duration-500 hover:scale-105 border border-border-card bg-surface-card-hover shadow-sm ${currentConfig.iconColor}`}>
                         <Icon size={36} strokeWidth={2.5} />
@@ -59,7 +59,7 @@ const AlertModal = ({
                 </div>
 
                 {/* FOOTER */}
-                <div className="p-5 border-t border-divider flex relative z-10 bg-surface-card-hover">
+                <div className="p-5 border-t border-divider flex relative z-base bg-surface-card-hover">
                     <button 
                         onClick={onClose}
                         className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-label uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transform-gpu border-none ${currentConfig.btn}`}

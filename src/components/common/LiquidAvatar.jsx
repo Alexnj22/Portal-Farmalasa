@@ -34,7 +34,7 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "" }) => {
                 loading="lazy" 
                 onLoad={() => setIsLoading(false)}
                 onError={() => setHasError(true)}
-                className={`absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-500 ease-in-out ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
+                className={`absolute inset-0 w-full h-full object-cover z-base transition-opacity duration-500 ease-in-out ${isLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
             />
         </div>
     );

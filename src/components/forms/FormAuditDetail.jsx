@@ -35,7 +35,7 @@ const FormAuditDetail = ({ data }) => {
                 <div className="absolute top-0 right-0 w-40 h-40 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4 pointer-events-none opacity-50 transform-gpu transition-opacity duration-700 group-hover/main:opacity-80" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
 
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-10 relative z-10">
+                <div className="flex items-center gap-4 mb-10 relative z-base">
                     <div className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center shadow-lg shrink-0 transition-transform duration-700 group-hover/main:scale-105 ${sevStyles.bg}`}>
                         {sevStyles.icon}
                     </div>
@@ -50,7 +50,7 @@ const FormAuditDetail = ({ data }) => {
                 </div>
 
                 {/* Lista de Detalles (Estática) */}
-                <div className="flex flex-col gap-8 relative z-10 flex-1">
+                <div className="flex flex-col gap-8 relative z-base flex-1">
                     
                     <div className={itemContainerClass}>
                         <div className={iconBoxClass}>

@@ -187,7 +187,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
     return (
         <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>
-            <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-10 shrink-0">
+            <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-border-card flex items-center justify-between relative z-base shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-3-text`}><GraduationCap size={22} strokeWidth={2.5} /></div>
                     <div>
@@ -202,7 +202,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full">
+            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full">
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
 
                     <div className={`${islandClass} ${islandHoverClass}`}>
@@ -317,7 +317,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 <span>Convenio Institucional (PDF/imagen)</span>
                                 {convenioMissing && reqBadge}
                             </label>
-                            <div className={`relative flex items-center gap-3 bg-surface-card rounded-[1rem] border shadow-sm h-[40px] px-3 z-10 ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
+                            <div className={`relative flex items-center gap-3 bg-surface-card rounded-[1rem] border shadow-sm h-[40px] px-3 z-base ${inputHoverClass} ${convenioMissing ? '!border-danger !bg-danger/10' : 'border-divider'}`}>
                                 <label className="flex items-center gap-1.5 text-body font-bold text-brand-text cursor-pointer">
                                     <Upload size={14} strokeWidth={2.5} />
                                     {convenioFile ? convenioFile.name : 'Adjuntar convenio...'}
@@ -346,7 +346,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 </div>
             </div>
 
-            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-10 shrink-0">
+            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
                 <button type="button" onClick={handleClose} disabled={saving} className="px-6 py-3 h-12 rounded-full bg-surface-card border border-border-card text-content-3 font-bold text-label uppercase tracking-widest hover:bg-surface-card-hover hover:text-content transition-colors disabled:opacity-50">
                     Cancelar
                 </button>

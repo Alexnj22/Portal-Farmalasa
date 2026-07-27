@@ -232,8 +232,17 @@ const TYPE_FLOOR_PX = 9;
 // admite y difiere la migración a "T3/T4" — un plan cerrado el 2026-07-24.
 // Se marcan las tres formas, con etiquetas distintas por gravedad.
 const Z_ARBITRARY_RE = /\bz-\[(\d+)\]/g;
-const Z_NUMERIC_RE = /\bz-(\d+)\b/g;
-const Z_INLINE_RE = /\bzIndex\s*:/g;
+// z-0 no es una capa: significa "sin elevación". No se penaliza.
+const Z_NUMERIC_RE = /\bz-([1-9]\d*)\b/g;
+// `zIndex:` inline solo es deuda cuando es apilamiento CSS del sistema con un
+// valor fijo. Se excluyen tres cosas que NO lo son (D2.2, 2026-07-26):
+//   · marcadores de Google Maps (`new maps.Marker({ …, zIndex: 100 })`) — es
+//     el orden de dibujo de otra API, no la pila del DOM;
+//   · valores calculados (`zIndex: 4 - idx`) — un stack de tarjetas necesita
+//     el índice, no puede ser una clase;
+//   · `menuPortal` de react-select — estilo de librería, no admite className.
+const Z_INLINE_RE = /\bzIndex\s*:\s*\d+/g;
+const Z_INLINE_SKIP_RE = /maps\.Marker|new maps\.|menuPortal/;
 
 // ── Categoría 10: color literal fuera de clases (D0-bis, 2026-07-26) ────
 // Punto ciego encontrado al cerrar D1: un gate que lee CLASES no ve nada de
@@ -423,8 +432,11 @@ function scanFile(path) {
         findings.push({ line: i + 1, label: `z-index sin nombrar: ${m[0]}`, category: 'z-index', text: line.trim().slice(0, 120) });
       }
       Z_INLINE_RE.lastIndex = 0;
-      if (Z_INLINE_RE.test(line)) {
-        findings.push({ line: i + 1, label: 'zIndex inline', category: 'z-index', text: line.trim().slice(0, 120) });
+      // La llamada `new maps.Marker({…})` suele abrirse varias líneas antes
+      // del `zIndex:`, así que se mira una ventana, no la línea sola.
+      const zWindow = lines.slice(Math.max(0, i - 6), i + 2).join(' ');
+      if (Z_INLINE_RE.test(line) && !Z_INLINE_SKIP_RE.test(zWindow)) {
+        findings.push({ line: i + 1, label: 'zIndex inline con valor fijo', category: 'z-index', text: line.trim().slice(0, 120) });
       }
     });
   }

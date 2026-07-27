@@ -238,7 +238,7 @@ const FormWfmAnalytics = ({ branches }) => {
             }
 
             return (
-                <div className="bg-slate-800/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-[var(--shadow-glass-lg)] border border-slate-700/60 w-max z-[100] animate-in fade-in duration-300 transform-gpu">
+                <div className="bg-slate-800/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-[var(--shadow-glass-lg)] border border-slate-700/60 w-max z-modal animate-in fade-in duration-300 transform-gpu">
                     <p className="font-black text-caption uppercase tracking-widest text-content-2 mb-1 leading-none">{branchName}</p>
                     <p className="font-extrabold text-body-sm uppercase tracking-tight text-white mb-2 pb-1.5 border-b border-slate-700">{activeView === 'DAYS' ? 'Día' : 'Hora'}: {data.displayLabel}</p>
                     
@@ -276,7 +276,7 @@ const FormWfmAnalytics = ({ branches }) => {
                      <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[0_0_15px_rgba(52,211,153,0.3)] hover:shadow-[0_0_25px_rgba(52,211,153,0.6)] transition-shadow duration-500">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
                         <div className="absolute inset-[1px] bg-surface-card rounded-full border border-border-card"></div>
-                        <TrendingUp size={20} strokeWidth={2.5} className="text-chart-5-text group-hover/saly:text-chart-3-text relative z-10 transition-colors duration-300" />
+                        <TrendingUp size={20} strokeWidth={2.5} className="text-chart-5-text group-hover/saly:text-chart-3-text relative z-base transition-colors duration-300" />
                     </div>
                     
                     <div className="w-full sm:w-[250px] overflow-visible group/branch hover:-translate-y-0.5 transition-transform duration-300">
@@ -313,7 +313,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     <div className="flex items-center gap-3">
                         <div className="relative group/calendar w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-shadow duration-500 shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]">
                             <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-300"></div>
-                            <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-10 transition-colors duration-300" />
+                            <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-base transition-colors duration-300" />
                         </div>
                         <h3 className="text-body-xl font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand-text transition-colors">
                             {activeView === 'DAYS' ? 'Afluencia Histórica por Día' :
@@ -352,7 +352,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                         type="button"
                                         onClick={(e) => { e.preventDefault(); setActiveView(d); }}
                                         title={DAYS_MAP[d]}
-                                        className={`w-9 h-8 rounded-full text-label font-black uppercase transition-all duration-300 flex items-center justify-center ${activeView === d ? 'bg-brand text-white shadow-md scale-110 z-10' : 'text-content-3 hover:text-content hover:bg-surface-card'}`}
+                                        className={`w-9 h-8 rounded-full text-label font-black uppercase transition-all duration-300 flex items-center justify-center ${activeView === d ? 'bg-brand text-white shadow-md scale-110 z-base' : 'text-content-3 hover:text-content hover:bg-surface-card'}`}
                                     >
                                         {['D', 'L', 'M', 'M', 'J', 'V', 'S'][d]}
                                     </button>
@@ -363,17 +363,17 @@ const FormWfmAnalytics = ({ branches }) => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-content-3 relative z-10">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-content-3 relative z-base">
                         <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-brand-text" />
                         <p className="text-label font-black uppercase tracking-widest animate-pulse">Analizando operaciones con Sparkles...</p>
                     </div>
                 ) : chartData.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-content-2 text-label font-bold uppercase tracking-widest relative z-10">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-content-2 text-label font-bold uppercase tracking-widest relative z-base">
                         <Activity size={32} />
                          No hay datos de ventas registrados para este período.
                     </div>
                 ) : (
-                    <div className="w-full h-[280px] mt-auto relative z-10">
+                    <div className="w-full h-[280px] mt-auto relative z-base">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} transform-gpu>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />

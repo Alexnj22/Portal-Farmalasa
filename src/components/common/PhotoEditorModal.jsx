@@ -336,7 +336,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     const cH = canvasDims.h ? Math.round(canvasDims.h * baseScale * brushZoom) : undefined;
 
     return createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-scrim backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-confirm flex items-center justify-center bg-scrim backdrop-blur-sm p-4">
             <div data-surface="modal" className="w-full max-w-md flex flex-col overflow-hidden">
 
                 {/* ── Header ── */}

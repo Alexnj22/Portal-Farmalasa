@@ -238,10 +238,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10 w-full pb-8">
+        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500 relative z-base w-full pb-8">
             
             {/* SELECTOR PRINCIPAL */}
-            <div className="relative z-[60]">
+            <div className="relative z-sidebar-desktop">
                 <label className={labelClasses}>Tipo de Acción de Personal</label>
                 <div className="h-[40px]">
                     <LiquidSelect
@@ -317,7 +317,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             )}
 
             {isDisability && (
-                <div className="relative z-[30] animate-in fade-in">
+                <div className="relative z-tabs animate-in fade-in">
                     <label className={labelClasses}>Origen de la Incapacidad</label>
                     <div className="h-[40px]">
                         <LiquidSelect value={formData?.disabilityType || ''} onChange={(val) => setFormData(prev => ({ ...prev, disabilityType: val, disabilityDays: null, endDate: null }))} options={disabilityTypes} placeholder="Seleccionar..." icon={Activity} menuPosition="fixed" />
@@ -380,7 +380,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 ) : /* SI ES PERMISO MÚLTIPLE (DÍAS SALTEADOS) */
                 isPermission ? (
                     <div className="space-y-4 animate-in fade-in zoom-in-95">
-                        <div className="flex items-end gap-3 relative z-[50]">
+                        <div className="flex items-end gap-3 relative z-sidebar">
                             <div className="flex-1">
                                 <label className={labelClasses}>Agregar Fecha de Ausencia</label>
                                 <div className="h-[40px]">
@@ -415,7 +415,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 ) : (
                     /* SI ES RANGO O FECHA ÚNICA */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="relative z-[50] animate-in fade-in">
+                        <div className="relative z-sidebar animate-in fade-in">
                             <label className={labelClasses}>{isTemporalRange ? 'Primer Día de Ausencia' : 'Fecha Efectiva'}</label>
                             <div className="h-[40px]">
                                 <LiquidDatePicker
@@ -437,7 +437,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         </div>
 
                         {isTemporalRange && !isVacation && !(isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad') && (
-                            <div className="relative z-[40] animate-in fade-in">
+                            <div className="relative z-header animate-in fade-in">
                                 <label className={labelClasses}>Fecha de Retorno / Fin</label>
                                 <div className="h-[40px]">
                                     <LiquidDatePicker
@@ -492,7 +492,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
             {type && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isPromotion && (
-                    <div className="col-span-1 md:col-span-2 relative z-[30] animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-[1.5rem]">
+                    <div className="col-span-1 md:col-span-2 relative z-tabs animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-[1.5rem]">
                         <div className="flex items-center justify-between mb-3">
                             <label className="text-caption font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -507,7 +507,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isTransfer && (
-                    <div className="col-span-1 md:col-span-2 relative z-[20] animate-in fade-in">
+                    <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in">
                         <label className={labelClasses}>Sucursal Destino</label>
                         <div className="h-[40px]">
                             <LiquidSelect value={formData?.targetBranchId || ''} onChange={(val) => setFormData(prev => ({ ...prev, targetBranchId: val }))} options={branchOptions} placeholder="Buscar farmacia..." icon={MapPin} menuPosition="fixed" />
@@ -526,7 +526,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isTermination && (
-                    <div className="col-span-1 md:col-span-2 relative z-[20] animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-[1.5rem]">
+                    <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-[1.5rem]">
                         <label className="text-caption font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
                         <div className="h-[40px] mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
@@ -700,7 +700,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 </div>
                             )}
                             {formData?.file && (
-                                <div className="absolute top-2 right-2 p-1.5 bg-danger/10 text-danger hover:bg-danger-solid hover:text-white rounded-full transition-colors z-20" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
+                                <div className="absolute top-2 right-2 p-1.5 bg-danger/10 text-danger hover:bg-danger-solid hover:text-white rounded-full transition-colors z-content" onClick={(e) => { e.preventDefault(); setFormData(prev => ({ ...prev, file: null })); }} title="Quitar archivo">
                                     <XCircle size={14} strokeWidth={3}/>
                                 </div>
                             )}

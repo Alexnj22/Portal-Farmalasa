@@ -107,7 +107,7 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                         }
                     }
 
-                    let btnClass = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-10 select-none ';
+                    let btnClass = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-body-sm font-bold transition-all relative z-base select-none ';
                     if (holiday) {
                         btnClass += 'text-danger bg-danger/10 cursor-not-allowed opacity-70';
                     } else if (isStart || isEnd) {
@@ -141,10 +141,10 @@ const MonthGrid = ({ year, month, startDate, endDate, onDayMouseDown, onDayMouse
                                 {day}
                             </button>
                             {isToday && !isStart && !isEnd && !holiday && (
-                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-brand z-10" />
+                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-brand z-base" />
                             )}
                             {holiday && (
-                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-danger z-10" />
+                                <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-danger z-base" />
                             )}
                         </div>
                     );
@@ -337,11 +337,11 @@ const RangeDatePicker = ({
 
     const popup = isOpen && createPortal(
         <>
-            <div className="fixed inset-0 z-[9998] bg-scrim backdrop-blur-[2px]" onClick={handleClose} />
+            <div className="fixed inset-0 z-tooltip bg-scrim backdrop-blur-[2px]" onClick={handleClose} />
             <div
                 ref={popupRef}
                 data-surface="dropdown"
-                className="fixed z-[9999] p-6 w-[580px] max-w-[calc(100vw-32px)]"
+                className="fixed z-toast p-6 w-[580px] max-w-[calc(100vw-32px)]"
                 style={{ ...popupStyle, width: '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >

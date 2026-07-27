@@ -276,14 +276,14 @@ function ItemHistoryModal({ item, onClose }) {
 
     return (
         <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
-            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-10">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
                 </div>
                 <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
             </div>
-            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-10">
+            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-base">
                 {history === null ? (
                     <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-content-3" /></div>
                 ) : history.length === 0 ? (
@@ -335,14 +335,14 @@ function EditLoteModal({ item, onClose, onSave }) {
 
     return (
         <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
-            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-10">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
                 <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-card border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all"><X size={16} /></button>
             </div>
-            <div className="px-6 py-5 flex flex-col gap-3 relative z-10">
+            <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
                 <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>

@@ -3,10 +3,10 @@
   "updated": "2026-07-27",
   "categories": {
     "white": 694,
-    "z-index": 552,
     "shadow-literal": 417,
     "inline-color": 118,
     "motion": 30,
+    "z-index": 20,
     "hex": 32
   }
 }

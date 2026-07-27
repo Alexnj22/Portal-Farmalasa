@@ -169,7 +169,7 @@ function Lightbox({ url, onClose }) {
   if (!url) return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-8"
+      className="fixed inset-0 z-toast bg-black/75 backdrop-blur-sm flex items-center justify-center p-8"
       onClick={onClose}
     >
       <img
@@ -287,7 +287,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
         className="mb-4"
         style={{ animation: `inv-fade-up 0.28s ease both`, animationDelay: `${(animOffset + bi) * 55}ms` }}
       >
-        <div className="flex items-center gap-2 mb-1.5 sticky top-0 z-10 py-0.5">
+        <div className="flex items-center gap-2 mb-1.5 sticky top-0 z-base py-0.5">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-divider" />
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />

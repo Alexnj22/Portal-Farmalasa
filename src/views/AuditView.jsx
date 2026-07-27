@@ -393,7 +393,7 @@ const filtersContent = (
                             : "max-w-[600px] opacity-100 scale-100 ml-3 md:ml-4 pl-3 md:pl-4 gap-2 md:gap-4"
                         }`}
                 >
-                    <div className={`flex items-center gap-1 shrink-0 px-2 py-1 rounded-2xl transition-all duration-300 group relative z-10 border w-auto ${startDate || endDate || isDatePickerOpen
+                    <div className={`flex items-center gap-1 shrink-0 px-2 py-1 rounded-2xl transition-all duration-300 group relative z-base border w-auto ${startDate || endDate || isDatePickerOpen
                         ? 'bg-surface-card border-white shadow-md'
                         : 'bg-transparent border-transparent hover:shadow-md hover:bg-surface-card-hover hover:border-border-card hover:-translate-y-0.5'
                         }`}>

@@ -162,7 +162,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
       transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-      className="fixed z-[99999] p-3 flex flex-col gap-3 transform-gpu"
+      className="fixed z-confirm p-3 flex flex-col gap-3 transform-gpu"
     >
       <ThemeAxisPicker />
     </motion.div>

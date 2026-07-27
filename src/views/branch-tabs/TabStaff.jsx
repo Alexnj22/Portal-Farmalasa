@@ -84,11 +84,11 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
-            <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-white shadow-sm pointer-events-none">
+            <div className="absolute top-3 right-3 z-base flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-card backdrop-blur-md border border-white shadow-sm pointer-events-none">
                 <Edit3 size={10} strokeWidth={2.5} className="text-content-3" />
             </div>
 
-            <div className="flex flex-col items-center justify-center relative z-10 mb-3 mt-2">
+            <div className="flex flex-col items-center justify-center relative z-base mb-3 mt-2">
                 <div className="relative">
                     <div className={`w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr ${theme.gradient} shadow-sm group-hover:scale-105 transition-transform`}>
                         <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-xl">
@@ -101,7 +101,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 </div>
             </div>
 
-            <div className="text-center relative z-10 mb-3">
+            <div className="text-center relative z-base mb-3">
                 <p className="text-body-lg font-black text-content leading-tight group-hover:text-brand-text transition-colors truncate px-2">{employee.name}</p>
                 <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-surface-card border border-white rounded-full shadow-sm">
                     <div className={`w-1.5 h-1.5 rounded-full ${theme.badge}`}></div>
@@ -119,7 +119,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 </div>
             )}
 
-            <div className="mt-auto pt-3 border-t border-border-card relative z-10 flex flex-col gap-2 pb-1">
+            <div className="mt-auto pt-3 border-t border-border-card relative z-base flex flex-col gap-2 pb-1">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <div className="w-6 h-6 rounded-full bg-surface-card border border-white flex items-center justify-center text-content-3 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
@@ -151,7 +151,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 </div>
             </div>
 
-            <div className="absolute bottom-3 right-3 z-20">
+            <div className="absolute bottom-3 right-3 z-content">
                 <button
                     onClick={(e) => { e.stopPropagation(); onClick(employee); }}
                     className="h-9 w-9 rounded-full flex items-center justify-center bg-surface-card shadow-sm border border-white transition-all hover:bg-brand hover:border-brand hover:shadow-[var(--shadow-glow-brand)] text-content-3 hover:text-white group/btn"
@@ -441,7 +441,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         <div className="space-y-8 relative pb-6">
 
             {/* HEADER CON BOTONES Y PÍLDORAS */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border-card pb-4 relative z-50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border-card pb-4 relative z-sidebar">
                 <div>
                     <h3 className="font-black text-content uppercase tracking-tight text-xl">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -464,7 +464,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
                                 </div>
                             </div>
-                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
+                            <div className="absolute top-full right-0 mt-2 w-72 bg-slate-950/80 backdrop-blur-[30px] border border-border-card p-4 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/wfm:opacity-100 group-hover/wfm:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/wfm:translate-y-0 cursor-auto">
                                 {wfmApplied ? (
                                     <>
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
@@ -516,7 +516,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className={`h-full transition-all duration-1000 ease-out ${scoreTheme}`} style={{ width: `${complianceScore}%` }}></div>
                             </div>
                         </div>
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-50 transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-950/80 backdrop-blur-[40px] border border-border-card p-3 rounded-[1.2rem] shadow-[var(--shadow-elevation-xl)] opacity-0 invisible group-hover/health:opacity-100 group-hover/health:visible transition-all duration-300 z-sidebar transform translate-y-2 group-hover/health:translate-y-0 cursor-auto">
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-slate-700/50 pb-1">Auditoría Regulatoria</p>
                             {complianceIssues.length > 0 ? (
                                 <ul className="space-y-2">
@@ -538,7 +538,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
                     {isFarmacia && <button
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 z-50 animate-in zoom-in-95"
+                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-500 border-0 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:-translate-y-1 z-sidebar animate-in zoom-in-95"
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
                     >
                         {aiMode ? (
@@ -549,8 +549,8 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             <>
                                 <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-20 group-hover/ai-btn:opacity-100 transition-all duration-500 group-hover/ai-btn:animate-spin [animation-duration:3s]"></div>
                                 <div className="absolute inset-[1px] bg-surface-card backdrop-blur-sm rounded-full z-0 group-hover/ai-btn:bg-surface-card transition-colors duration-300"></div>
-                                <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-10"></div>
-                                <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-20 relative" />
+                                <div className="absolute inset-0 border border-chart-3/30 rounded-full group-hover/ai-btn:border-purple-400 transition-colors z-base"></div>
+                                <Sparkles size={18} strokeWidth={2.5} className="text-chart-3-text group-hover/ai-btn:animate-pulse z-content relative" />
                             </>
                         )}
                     </button>}
@@ -563,7 +563,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             <div className="relative w-full">
 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
-                <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
+                <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
                         <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.05),inset_0_2px_20px_rgba(255,255,255,0.8)] relative overflow-hidden">
 
@@ -574,7 +574,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-5/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
                             </div>
 
-                            <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                            <div className="relative z-base flex flex-col items-center justify-center text-center">
 
                                 <div className="relative w-16 h-16 flex items-center justify-center mb-6">
                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[5px] opacity-70"></div>
@@ -588,7 +588,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                 {isGeneratingAi ? (
                                     /* SKELETON DE CARGA NEURONAL */
-                                    <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-10">
+                                    <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-base">
                                         <div className="flex flex-col items-center justify-center mb-8">
                                             <div className="relative w-12 h-12 flex items-center justify-center mb-3">
                                                 <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]"></div>
@@ -608,7 +608,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     </div>
                                 ) : (
                                     /* RESULTADO DE LA IA */
-                                    <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm relative z-10">
+                                    <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm relative z-base">
                                         {aiSummaryData?.split('\n').map((paragraph, index) => (
                                             <div key={index} className="relative mb-6 last:mb-0 group/p">
                                                 <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-300"></div>
@@ -627,7 +627,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 </div>
 
                 {/* 🏢 VISTA NORMAL (ORGANIGRAMA Y DASHBOARD) */}
-                <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-20' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-10'}`}>
+                <div className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
 
                     {isLoadingWfm ? (
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
@@ -665,7 +665,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         <div className="pt-2">
                             {/* 🚨 DASHBOARD WFM EN VIVO — solo farmacias */}
                             {isFarmacia && (wfmApplied || isNewBranch) && (
-                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm relative z-10 mb-8 animate-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-gradient-to-br from-brand/5 to-chart-1/5 border border-chart-1/30 rounded-[1.5rem] p-5 shadow-sm relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />

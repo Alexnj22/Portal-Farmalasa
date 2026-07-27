@@ -200,7 +200,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <div className="relative w-24 h-24 flex items-center justify-center mb-8">
                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 rounded-full animate-spin [animation-duration:3s] blur-xl opacity-30"></div>
                     <div className="absolute inset-2 bg-gradient-to-bl from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:1.5s] blur-md opacity-50"></div>
-                    <div className="relative w-16 h-16 bg-surface-card rounded-full flex items-center justify-center border border-chart-3/30 shadow-inner z-10">
+                    <div className="relative w-16 h-16 bg-surface-card rounded-full flex items-center justify-center border border-chart-3/30 shadow-inner z-base">
                         <Sparkles size={28} strokeWidth={2.5} className="text-chart-3-text animate-pulse scale-110" />
                     </div>
                 </div>
@@ -275,13 +275,13 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             <div className="bg-chart-3/10 border border-chart-3/20 rounded-xl p-4 relative overflow-hidden shadow-sm">
                 <Sparkles className="absolute -bottom-4 -right-4 w-24 h-24 text-chart-3/30 opacity-50 -rotate-12 pointer-events-none" strokeWidth={1} />
                 <h4 className="text-caption font-black text-chart-3-text uppercase tracking-widest flex items-center gap-1.5 mb-1.5"><Sparkles size={12}/> Resumen de Gemini</h4>
-                <p className="text-body-sm font-bold text-content-2 leading-relaxed relative z-10 italic">"{aiResult?.ai_reasoning || 'Horario generado óptimamente.'}"</p>
+                <p className="text-body-sm font-bold text-content-2 leading-relaxed relative z-base italic">"{aiResult?.ai_reasoning || 'Horario generado óptimamente.'}"</p>
             </div>
 
             {/* TABLA DETALLADA */}
             <div className="border border-divider rounded-xl overflow-auto shadow-sm">
                 <table className="w-full text-left border-collapse bg-surface-card-hover/50 min-w-[1000px]">
-                    <thead className="sticky top-0 bg-surface-card shadow-[var(--shadow-elevation-sm)] z-20">
+                    <thead className="sticky top-0 bg-surface-card shadow-[var(--shadow-elevation-sm)] z-content">
                         <tr>
                             <th className="p-3 text-caption font-black text-content-3 uppercase tracking-widest w-[180px] bg-surface-card">Empleado</th>
                             <th className="p-3 text-caption font-black text-content-3 uppercase tracking-widest text-center border-r border-divider bg-surface-card w-[60px]">Hrs</th>
@@ -299,7 +299,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
                             return (
                                 <tr key={emp.id} className="hover:bg-surface-card-hover transition-colors group/row">
-                                    <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                                    <td className="p-3 border-r border-divider bg-surface-card sticky left-0 z-base shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                                         <p className="text-body-sm font-black text-content truncate">{emp.name}</p>
                                         <p className="text-micro font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>

@@ -60,7 +60,7 @@ const GlassViewLayout = ({
                     por especificidad SIEMPRE hubiera ganado sobre el token si el tema
                     cambiaba el blur) se retiraron en Fase T2; solo quedan layout/spacing. */}
                 <div data-surface="page-header"
-                    className="hidden lg:block lg:sticky lg:top-4 xl:top-5 z-40
+                    className="hidden lg:block lg:sticky lg:top-4 xl:top-5 z-header
                         mt-4 xl:mt-5 mx-4 xl:mx-6 mb-0
                         group/header
                         py-3 px-5 xl:py-3.5 xl:px-6 relative"
@@ -72,7 +72,7 @@ const GlassViewLayout = ({
                             oscuro. Ahora usa --header-sheen (token por tema, ver index.css). */}
                         <div className="absolute inset-0 rounded-[2.5rem] pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--header-sheen), transparent)' }} />
 
-                        <div className="relative z-10 flex flex-row items-center justify-between gap-4">
+                        <div className="relative z-base flex flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2.5 min-w-0 shrink-0">
                                 {headerLeft ? headerLeft : (
                                     <div className="flex items-center gap-2.5">
@@ -156,7 +156,7 @@ const GlassViewLayout = ({
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 16 }}
                         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                        className="fixed bottom-8 right-8 z-50 flex flex-col gap-2 pointer-events-auto"
+                        className="fixed bottom-8 right-8 z-sidebar flex flex-col gap-2 pointer-events-auto"
                     >
                         <motion.button
                             onClick={() => scrollTo(0)}

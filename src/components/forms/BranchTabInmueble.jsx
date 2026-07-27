@@ -115,7 +115,7 @@ const BranchTabInmueble = ({
                             />
                         </div>
 
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Inicio Contrato * {getTabStatus(3) === 'red' && !rentContract.startDate && <span className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md border border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.5)]">Requerido</span>}
                             </label>
@@ -199,7 +199,7 @@ const BranchTabInmueble = ({
                                 className={`!bg-surface-card shadow-sm ${inputHoverClass} border-divider`}
                             />
                         </div>
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Próx. Renovación / Pago
                             </label>
@@ -252,7 +252,7 @@ const BranchTabInmueble = ({
 
                     {isWasteManagementActive ? (
                         <div className="space-y-4 flex-1">
-                            <div className="relative focus-within:z-50">
+                            <div className="relative focus-within:z-sidebar">
                                 <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                     <AlertCircle size={12} strokeWidth={3} /> Vencimiento Contrato
                                 </label>
@@ -310,7 +310,7 @@ const BranchTabInmueble = ({
                             />
                         </div>
 
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Tipo Principal</label>
                             <div className={`rounded-2xl ${inputHoverClass}`}>
                                 <LiquidSelect
@@ -322,7 +322,7 @@ const BranchTabInmueble = ({
                             </div>
                         </div>
 
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-warning ml-1 mb-2 block flex items-center gap-1.5">
                                 <AlertCircle size={12} strokeWidth={3} /> Vencimiento
                             </label>
@@ -356,7 +356,7 @@ const BranchTabInmueble = ({
                             />
                         </div>
 
-                        <div className="relative focus-within:z-50">
+                        <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase tracking-widest text-success ml-1 mb-2 block flex items-center gap-1.5">
                                 <CalendarDays size={12} strokeWidth={3} /> Última Fumigación
                             </label>

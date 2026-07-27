@@ -179,7 +179,7 @@ const DayRow = memo(({
                             )}
 
                             {/* TURNO */}
-                            <div className="lg:col-span-1 overflow-visible z-[100]">
+                            <div className="lg:col-span-1 overflow-visible z-modal">
                                 <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-1.5">
                                     <Clock size={12} className={!config.shiftId ? 'text-danger animate-pulse' : 'text-brand-text'}/> Turno Asignado
                                 </label>
@@ -385,7 +385,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
     }, [setFormData]);
 
     return (
-        <div className="flex flex-col h-full -mx-6 -my-6 p-4 md:-mx-10 md:-my-8 md:p-10 relative z-10">
+        <div className="flex flex-col h-full -mx-6 -my-6 p-4 md:-mx-10 md:-my-8 md:p-10 relative z-base">
             
             {/* 🚨 DASHBOARD COMPACTO Y ELEGANTE */}
             <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-[1.2rem] border border-border-card shadow-[0_2px_15px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.9)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
@@ -433,7 +433,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
             </div>
 
             {/* LISTA DE DÍAS OPTIMIZADA */}
-            <div className="space-y-3 relative z-10 pb-4">
+            <div className="space-y-3 relative z-base pb-4">
                 {WEEK_DAYS.map(day => {
                     const conflict = getConflict(day.id);
                     const config = schedule[day.id] || {};

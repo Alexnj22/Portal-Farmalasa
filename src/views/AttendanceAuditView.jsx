@@ -70,7 +70,7 @@ function getRoleOrder(role) {
 const NocturnalLegalInfo = () => (
   <div className="relative group inline-flex items-center">
     <Info size={10} className="text-chart-3-text cursor-help" strokeWidth={2} />
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-caption leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-caption leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-sidebar">
       <p className="font-black text-chart-3-text mb-1.5">Art. 168 — Código de Trabajo SV</p>
       <p className="text-content-3 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
       <p className="text-content-3">• Hrs. ordinarias nocturnas: <span className="text-chart-3-text font-bold">+25% recargo</span> sobre tarifa diurna</p>
@@ -1270,7 +1270,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} />
         </button>
         {branchDropOpen && (
-          <div className="absolute left-0 top-full mt-2 z-50 min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-lg)] overflow-hidden py-1">
+          <div className="absolute left-0 top-full mt-2 z-sidebar min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-lg)] overflow-hidden py-1">
             {sortedBranchOptions.map(opt => (
               <button key={opt.value} type="button"
                 onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}

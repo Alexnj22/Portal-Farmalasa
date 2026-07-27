@@ -123,7 +123,7 @@ export default function SidebarSettingsMenu({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
       transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-      className="fixed z-[99999] p-3 flex flex-col gap-3 transform-gpu rounded-[1.4rem]
+      className="fixed z-confirm p-3 flex flex-col gap-3 transform-gpu rounded-[1.4rem]
         bg-[#0A1628]/92 backdrop-blur-2xl backdrop-saturate-150 border border-white/12
         shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]"
     >

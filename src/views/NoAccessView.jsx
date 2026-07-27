@@ -33,14 +33,14 @@ const NoAccessView = () => {
     };
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-surface-page z-50 overflow-hidden">
+        <div className="fixed inset-0 flex items-center justify-center bg-surface-page z-sidebar overflow-hidden">
 
             {/* Ambient blobs */}
             <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-danger/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
             <div className="absolute bottom-[-20%] right-[-10%] w-[55vw] h-[55vw] bg-danger/10 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
 
             {/* Card */}
-            <div className="relative z-10 flex flex-col items-center text-center max-w-sm w-full px-6 animate-in fade-in zoom-in-95 duration-700">
+            <div className="relative z-base flex flex-col items-center text-center max-w-sm w-full px-6 animate-in fade-in zoom-in-95 duration-700">
 
                 {/* Pulsing rings + icon */}
                 <div className="relative mb-10">

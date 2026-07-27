@@ -191,7 +191,7 @@ const TimeClockView = ({ setView }) => {
       {/* ── Exit button ───────────────────────────────────────────── */}
       <button
         onClick={handleLogout}
-        className="fixed top-[max(env(safe-area-inset-top,16px),16px)] right-[max(env(safe-area-inset-right,16px),16px)] z-50
+        className="fixed top-[max(env(safe-area-inset-top,16px),16px)] right-[max(env(safe-area-inset-right,16px),16px)] z-sidebar
           flex items-center justify-center gap-2
           w-10 h-10 sm:w-auto sm:h-10 sm:px-4
           text-white/40 hover:text-white/90
@@ -217,7 +217,7 @@ const TimeClockView = ({ setView }) => {
           contenedor usaba min-h en vez de h fija (ver el cambio de
           min-h-[100dvh]→h-[100dvh] arriba, que además deja un scroll real
           como red de seguridad para cualquier caso más extremo). */}
-      <main className="relative z-10 flex-1 w-full flex flex-col items-center px-4 py-20 sm:py-24 [@media(max-height:800px)]:py-6">
+      <main className="relative z-base flex-1 w-full flex flex-col items-center px-4 py-20 sm:py-24 [@media(max-height:800px)]:py-6">
         <div className="w-full max-w-[420px] my-auto flex flex-col items-center gap-5 sm:gap-6 [@media(max-height:800px)]:gap-2.5">
 
           {/* Logo */}

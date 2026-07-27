@@ -950,7 +950,7 @@ export default function EncuestaView() {
                                                                             {sColabs < 55 && <AlertTriangle size={11} className="text-danger-text shrink-0" />}
                                                                         </div>
                                                                         {/* Tooltip: individual colab scores */}
-                                                                        <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-surface-card rounded-xl shadow-xl border border-divider p-2.5 min-w-[190px] pointer-events-none">
+                                                                        <div className="absolute left-0 bottom-full mb-1.5 z-sidebar hidden group-hover:block bg-surface-card rounded-xl shadow-xl border border-divider p-2.5 min-w-[190px] pointer-events-none">
                                                                             <p className="text-micro font-black uppercase tracking-wider text-content-2 mb-1.5">Respuestas individuales</p>
                                                                             {colabRows.map(r => {
                                                                                 const s = blockScore([r], bloque.indices, invertedIndices);

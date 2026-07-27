@@ -63,7 +63,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-20 pointer-events-none">
+        <div className="fixed inset-0 z-sidebar flex items-start justify-end p-4 pt-20 pointer-events-none">
             <div className="pointer-events-auto w-80 rounded-2xl border border-border-card shadow-[var(--shadow-elevation-lg)] overflow-hidden"
                 style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(24px)' }}>
                 {/* Header */}

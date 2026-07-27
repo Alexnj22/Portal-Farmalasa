@@ -40,7 +40,7 @@ export default function IdleScanPanel({
 }) {
 
   return (
-    <div className="relative z-20 w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-500 pointer-events-auto">
+    <div className="relative z-content w-full flex flex-col items-center justify-center p-4 sm:p-6 [@media(max-height:800px)]:p-3 animate-in fade-in duration-500 pointer-events-auto">
 
       {/* 🚨 CAJA PRINCIPAL CENTRAL */}
       <div className="w-full max-w-[420px] flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-6 sm:p-8 [@media(max-height:800px)]:p-4 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
@@ -58,16 +58,16 @@ export default function IdleScanPanel({
         </div>
 
         {/* MIDDLE: estado de espera del escáner (nada se teclea a mano) */}
-        <div className="relative z-20 w-full flex flex-col justify-center shrink-0">
+        <div className="relative z-content w-full flex flex-col justify-center shrink-0">
           <ScanReadyRing specialMode={specialMode} />
 
           <div className="mt-5 [@media(max-height:800px)]:mt-2.5 flex flex-col items-center justify-center">
             {specialMode ? (
-              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-20 pointer-events-auto text-caption uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={cancelSpecialModeHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-danger flex items-center gap-2 transition-all duration-300 bg-danger/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-danger/30 hover:bg-danger/20 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <XCircle size={14} /> Cancelar Permiso
               </button>
             ) : (
-              <button type="button" onClick={specialOutHandler} className="relative z-20 pointer-events-auto text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
+              <button type="button" onClick={specialOutHandler} className="relative z-content pointer-events-auto text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center gap-2 transition-all duration-300 bg-chart-4/10 px-6 py-3.5 [@media(max-height:800px)]:py-2 rounded-full border border-chart-4/30 hover:bg-chart-4/20 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:-translate-y-0.5 active:scale-[0.97]">
                 <ShieldAlert size={14} /> Autorizar Permiso / Salida
               </button>
             )}

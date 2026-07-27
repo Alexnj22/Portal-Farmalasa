@@ -87,7 +87,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         Permiso Físico (PDF/IMG)
                     </label>
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-chart-1/10 border-chart-1/40 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/50'}`}>
-                        <input type="file" accept="application/pdf,image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => updateLegalField('nursingServicePermitFile', e.target.files?.[0] || null)} />
+                        <input type="file" accept="application/pdf,image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" onChange={(e) => updateLegalField('nursingServicePermitFile', e.target.files?.[0] || null)} />
                         
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-surface-card text-brand-text border border-chart-1/30' : 'bg-surface-card text-content-3 group-hover:text-brand-text'}`}>
                              {legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
@@ -120,7 +120,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         /* TARJETA PADRE 2 (DINÁMICA) */
                         <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-[2rem] relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
-                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 z-20 active:scale-[0.97] hover:scale-110">
+                            <button type="button" onClick={() => removeNurse(index)} className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-white border border-danger/30 text-danger rounded-full shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all duration-300 opacity-0 group-hover:opacity-100 z-content active:scale-[0.97] hover:scale-110">
                                 <Trash2 size={14} strokeWidth={2.5}/>
                             </button>
                             
@@ -146,7 +146,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                     <div className="space-y-1.5">
                                         <label className="text-micro font-black text-content-3 uppercase tracking-widest ml-1 block">Carné JVQE (PDF/IMG)</label>
                                         <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.carneFile || nurse.carneUrl ? 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/40'}`}>
-                                            <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'carneFile', e.target.files?.[0] || null)} />
+                                            <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-base" onChange={(e) => updateNurse(index, 'carneFile', e.target.files?.[0] || null)} />
                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.carneFile || nurse.carneUrl ? 'bg-surface-card text-brand-text shadow-sm border-chart-1/30' : 'bg-surface-card text-content-3 border-divider group-hover/btn:text-brand-text'}`}>
                                                 {nurse.carneFile || nurse.carneUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
                                             </div>
@@ -160,7 +160,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                     <div className="space-y-1.5">
                                         <label className="text-micro font-black text-content-3 uppercase tracking-widest ml-1 block">Licencia Regencia (PDF)</label>
                                         <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-chart-1/10 border-chart-1/30 hover:bg-chart-1/10' : 'bg-surface-card-hover/50 border-divider hover:bg-brand/5 hover:border-brand/40'}`}>
-                                            <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'licenciaFile', e.target.files?.[0] || null)} />
+                                            <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-base" onChange={(e) => updateNurse(index, 'licenciaFile', e.target.files?.[0] || null)} />
                                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-surface-card text-brand-text shadow-sm border-chart-1/30' : 'bg-surface-card text-content-3 border-divider group-hover/btn:text-brand-text'}`}>
                                                 {nurse.licenciaFile || nurse.licenciaUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
                                             </div>
@@ -183,7 +183,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         <div className="flex flex-col justify-end">
                                             <label className="text-micro font-black text-warning/80 uppercase tracking-widest ml-1 mb-1 block">Recibo de Pago</label>
                                             <div className={`relative group/btn h-[46px] border border-dashed rounded-xl px-2.5 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-2 cursor-pointer ${nurse.anualidadFile || nurse.anualidadUrl ? 'bg-warning/10 border-warning/40 hover:bg-warning/10' : 'bg-surface-card border-warning/30 hover:bg-surface-card-hover hover:border-warning'}`}>
-                                                <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'anualidadFile', e.target.files?.[0] || null)} />
+                                                <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-base" onChange={(e) => updateNurse(index, 'anualidadFile', e.target.files?.[0] || null)} />
                                                 <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border transition-transform duration-300 group-hover/btn:scale-105 ${nurse.anualidadFile || nurse.anualidadUrl ? 'bg-surface-card text-warning shadow-sm border-warning/30' : 'bg-surface-card text-warning border-warning/30 group-hover/btn:text-warning'}`}>
                                                     {nurse.anualidadFile || nurse.anualidadUrl ? <CheckCircle2 size={14} strokeWidth={2.5}/> : <UploadCloud size={14}/>}
                                                 </div>

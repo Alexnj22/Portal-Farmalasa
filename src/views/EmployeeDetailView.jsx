@@ -360,19 +360,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     }}
                 ></div>
 
-                <button onClick={() => setCurrentTab('history')} className={`relative z-10 px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('history')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <Clock size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Historial</span>
                 </button>
-                <button onClick={() => setCurrentTab('documents')} className={`relative z-10 px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('documents')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <FileText size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Archivo</span>
                 </button>
-                <button onClick={() => setCurrentTab('permissions')} className={`relative z-10 px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('permissions')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <Stethoscope size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Ausencias</span>
                 </button>
-                <button onClick={() => setCurrentTab('payroll')} className={`relative z-10 px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('payroll')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <Wallet size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Horarios</span>
                 </button>
-                <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
+                <button onClick={() => setCurrentTab('requests')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
                     <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
                 </button>
             </div>
@@ -405,11 +405,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }} 
-                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-surface-card"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-sidebar bg-surface-card"
                             title="Volver a Personal"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                            <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-10" />
+                            <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-base" />
                         </button>
                     )}
 
@@ -425,7 +425,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             filtersContent={headerControls}
             transparentBody={true}
         >
-            <div className="w-full relative z-10 animate-in fade-in duration-500">
+            <div className="w-full relative z-base animate-in fade-in duration-500">
                 <div className="max-w-7xl mx-auto w-full pb-12">
 
 
@@ -469,7 +469,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 
                                 <div className="absolute top-0 h-32 w-full bg-gradient-to-b from-brand/15 to-transparent"></div>
                                 
-                                <div className="px-6 pb-8 pt-10 flex flex-col items-center relative z-10">
+                                <div className="px-6 pb-8 pt-10 flex flex-col items-center relative z-base">
                                     
                                     <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-surface-card border border-white shadow-xl backdrop-blur-md mb-5 group relative">
                                         <div className="h-full w-full rounded-full overflow-hidden bg-surface-card-hover relative shadow-inner">
@@ -482,7 +482,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         )}
                                         {(emp.effectiveStatus === 'Activo' || emp.effectiveStatus === 'En Apoyo') && (
-                                            <span className="absolute bottom-2 right-4 w-5 h-5 bg-success border-4 border-white rounded-full shadow-sm z-10"></span>
+                                            <span className="absolute bottom-2 right-4 w-5 h-5 bg-success border-4 border-white rounded-full shadow-sm z-base"></span>
                                         )}
                                     </div>
                                     
@@ -560,7 +560,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <h3 className="text-caption font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2">
                                         <HeartPulse size={14} strokeWidth={3}/> Contacto de Emergencia
                                     </h3>
-                                    <div className="space-y-3 relative z-10">
+                                    <div className="space-y-3 relative z-base">
                                         {emp.emergency_contact_name && (
                                             <div>
                                                 <p className="text-micro font-bold text-content-2 uppercase tracking-widest">Avisar a</p>
@@ -642,7 +642,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                 return (
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
-                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-10 ${isHiring ? 'border-success' : 'border-brand'}`}></div>
+                                                        <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
                                                         
                                                         <div className={`bg-surface-card hover:bg-surface-card rounded-3xl p-5 border border-border-card transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-xs)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
@@ -860,7 +860,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                     return (
                                                         <div key={ds}
-                                                            className={`relative group/cal flex flex-col items-center justify-center rounded-lg transition-all duration-200 ${hasEvents ? 'cursor-pointer hover:scale-110 hover:z-20 hover:shadow-md' : 'cursor-default'} ${cellBg}`}
+                                                            className={`relative group/cal flex flex-col items-center justify-center rounded-lg transition-all duration-200 ${hasEvents ? 'cursor-pointer hover:scale-110 hover:z-content hover:shadow-md' : 'cursor-default'} ${cellBg}`}
                                                             onClick={() => hasEvents && setAusenciasSelectedDay(prev => prev === ds ? null : ds)}>
                                                             <span className={`text-body-sm font-bold leading-none select-none ${isSelected || isToday ? 'text-white' : hasEvents ? 'text-content-2' : 'text-content-3'}`}>
                                                                 {day}
@@ -874,7 +874,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             )}
                                                             {/* Tooltip */}
                                                             {hasEvents && tooltipLines.length > 0 && (
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-[999] min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 transition-opacity duration-200 text-left">
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-tooltip min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 transition-opacity duration-200 text-left">
                                                                     <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1.5">{ds}</p>
                                                                     {tooltipLines.map((item, li) => (
                                                                         <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-white/10' : ''}>
@@ -1171,11 +1171,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         )}
 
         {resetResult && createPortal(
-            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-confirm flex items-center justify-center p-4">
                 <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={() => setResetResult(null)} />
                 <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] overflow-hidden shadow-[var(--shadow-elevation-xl)]">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-success" />
-                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-10">
+                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
                         <div className="w-14 h-14 rounded-[1.2rem] flex items-center justify-center mb-4 border bg-surface-card border-success/30 shadow-sm text-success">
                             <KeyRound size={26} strokeWidth={2.5} />
                         </div>
@@ -1208,14 +1208,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         )}
 
         {cancelModalRender && createPortal(
-            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-confirm flex items-center justify-center p-4">
                 <div
                     className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-300 ${showCancelModal ? 'opacity-100' : 'opacity-0'}`}
                     onClick={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : undefined}
                 />
                 <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-[2rem] overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-danger"></div>
-                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-10">
+                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
                         <div className="w-14 h-14 rounded-[1.2rem] flex items-center justify-center mb-5 border bg-surface-card border-border-card shadow-sm text-danger">
                             {isCancelling ? <Loader2 size={28} strokeWidth={2.5} className="animate-spin"/> : <AlertTriangle size={28} strokeWidth={2.5}/>}
                         </div>
@@ -1238,7 +1238,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             </>
                         )}
                     </div>
-                    <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-surface-card-hover/50 border-divider flex gap-3 relative z-10">
+                    <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-surface-card-hover/50 border-divider flex gap-3 relative z-base">
                         <button
                             onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
                             disabled={isCancelling}

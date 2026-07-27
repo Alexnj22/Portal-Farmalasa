@@ -518,7 +518,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
             onClick={conductorBtnClick}
             disabled={conductorBtnDisabled}
             title={conductorBtnLabel}
-            className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-surface-card shadow-md border border-divider rounded-xl px-2.5 py-1.5 text-caption font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="absolute top-2 right-2 z-base flex items-center gap-1.5 bg-surface-card shadow-md border border-divider rounded-xl px-2.5 py-1.5 text-caption font-semibold text-content-2 hover:bg-surface-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {isConductor
               ? <Crosshair size={11} className={gpsIconColor} />

@@ -1075,7 +1075,7 @@ const EmployeeRequestsView = () => {
             <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8 px-2 lg:px-0 w-full lg:h-[calc(100vh-230px)]">
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
-                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-[50] transform-gpu">
+                <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar transform-gpu">
                     <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.12),inset_0_2px_15px_rgba(255,255,255,0.7)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
                         <div className="flex items-center gap-2 mb-6">
@@ -1090,7 +1090,7 @@ const EmployeeRequestsView = () => {
                                         <div className="w-7 h-7 rounded-full bg-danger/10 border border-danger/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
                                             <AlertTriangle size={13} className="text-danger" strokeWidth={2.5} />
                                         </div>
-                                        <div className="absolute right-0 top-full mt-1.5 w-64 z-50 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
+                                        <div className="absolute right-0 top-full mt-1.5 w-64 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150">
                                             <div className="bg-danger-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Ya tienes asignada una incapacidad del {fmtDisabilityPeriod(disabilityHeaderAlerts.overlap)} — las fechas seleccionadas se solapan con ese período.
                                             </div>
@@ -1102,7 +1102,7 @@ const EmployeeRequestsView = () => {
                                         <div className="w-7 h-7 rounded-full bg-warning/10 border border-warning/40 flex items-center justify-center cursor-default animate-in fade-in zoom-in-75 duration-200">
                                             <Info size={13} className="text-warning" strokeWidth={2.5} />
                                         </div>
-                                        <div className="absolute right-0 top-full mt-1.5 w-72 z-50 pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
+                                        <div className="absolute right-0 top-full mt-1.5 w-72 z-sidebar pointer-events-none opacity-0 group-hover/tip2:opacity-100 transition-opacity duration-150">
                                             <div className="bg-warning-solid text-white text-caption font-bold leading-snug px-3 py-2 rounded-xl shadow-lg">
                                                 Desde el día 4, aplica cobertura del ISSS. El ISSS cubre el 75% de tu salario a partir del día 4. Es obligatorio presentar la boleta oficial de incapacidad del ISSS dentro de 3 días hábiles para que la empresa pueda tramitar el reembolso. Puedes adjuntarla ahora o desde tu solicitud pendiente.
                                             </div>
@@ -1119,7 +1119,7 @@ const EmployeeRequestsView = () => {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                        <form onSubmit={handleSubmit} className="space-y-5 relative z-base">
 
                             {/* Selector de tipo */}
                             <div>
@@ -1264,7 +1264,7 @@ const EmployeeRequestsView = () => {
                                         statusFilter === 'APPROVED' ? 'bg-success' :
                                         statusFilter === 'REJECTED' ? 'bg-danger' : 'bg-content-3'
                                     }`} />
-                                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
+                                    <div className={`relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-brand-text' :
                                         statusFilter === 'APPROVED' ? 'text-success' :
                                         statusFilter === 'REJECTED' ? 'text-danger' : 'text-content-3'

@@ -120,10 +120,10 @@ export const FileUploader = ({ label, file, url, onChange }) => {
                 {/* BOTONES DE ACCIÓN (Solo si hay archivo) */}
                 {hasFile && (
                     <div className="flex items-center gap-1.5 pr-1 shrink-0">
-                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-success/30 rounded-lg text-success shadow-sm hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.97] z-20" title="Ver Documento">
+                        <button type="button" onClick={handleView} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-success/30 rounded-lg text-success shadow-sm hover:bg-success-solid hover:text-white hover:border-success transition-all active:scale-[0.97] z-content" title="Ver Documento">
                             <Eye size={16} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all active:scale-[0.97] z-20" title="Quitar Documento">
+                        <button type="button" onClick={handleClear} className="w-8 h-8 flex items-center justify-center bg-surface-card border border-danger/30 rounded-lg text-danger shadow-sm hover:bg-danger-solid hover:text-white hover:border-danger transition-all active:scale-[0.97] z-content" title="Quitar Documento">
                             <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>
@@ -146,7 +146,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
     return (
         <div className="relative group flex items-center w-full">
             {Icon && (
-                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[var(--shadow-elevation-xs)] transition-colors duration-300 group-focus-within:text-brand-text group-focus-within:bg-chart-1/10 pointer-events-none">
+                <div className="absolute left-4 z-base w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[var(--shadow-elevation-xs)] transition-colors duration-300 group-focus-within:text-brand-text group-focus-within:bg-chart-1/10 pointer-events-none">
                     <Icon size={16} strokeWidth={2.5}/>
                 </div>
             )}

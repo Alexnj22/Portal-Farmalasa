@@ -117,7 +117,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
             {/* 🎨 HEADER LIQUID GLASS */}
             <div className="relative overflow-hidden rounded-[2rem] p-5 border border-success/30 bg-gradient-to-br from-success/10 to-success/20 backdrop-blur-xl shadow-[var(--shadow-glow-success)]">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-success/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-                <div className="relative z-10 flex items-center gap-4">
+                <div className="relative z-base flex items-center gap-4">
                     <div className="w-14 h-14 bg-surface-card backdrop-blur-md rounded-2xl flex items-center justify-center text-success shadow-sm border border-success/30 shrink-0">
                         <Receipt size={26} strokeWidth={2} />
                     </div>
@@ -217,7 +217,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <input
                             type="file"
                             accept="application/pdf,image/*"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base"
                             onChange={handleFileChange}
                         />
 

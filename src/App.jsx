@@ -155,7 +155,7 @@ const PermissionGuard = ({ moduleKey, children }) => {
 // la carga diferida (React.lazy) de cada vista por ruta.
 // ============================================================================
 const RouteLoadingFallback = () => (
-    <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-40">
+    <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header">
         {/* D1.4 — seguía hardcodeado en claro (bg-white/35 border-white/70 +
             sombra literal) y se ve en CADA cambio de ruta. Se escapó del
             barrido de v2.62.4 porque aquel buscaba stops de gradiente, no
@@ -456,7 +456,7 @@ function MainApp() {
                 <GlobalBackground />
 
                 {/* Card */}
-                <div className="relative z-10 animate-in fade-in zoom-in-95 duration-700 ease-out">
+                <div className="relative z-base animate-in fade-in zoom-in-95 duration-700 ease-out">
                     <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-[2.5rem] px-14 py-12 shadow-[var(--card-shadow)] flex flex-col items-center gap-7 min-w-[280px]">
 
                         {/* Shimmer line top */}
@@ -537,7 +537,7 @@ function MainApp() {
                 !isAuthenticated ? (
                     <div className="relative min-h-[100dvh] w-full bg-surface-page">
                         <GlobalBackground />
-                        <div className="relative z-10 w-full min-h-[100dvh] flex flex-col">
+                        <div className="relative z-base w-full min-h-[100dvh] flex flex-col">
                             <LoginView setView={setView} setActiveEmployee={setActiveEmployee} />
                         </div>
                     </div>
@@ -555,7 +555,7 @@ function MainApp() {
                         <GlobalBackground />
                         <AuthSyncHelper />
 
-                        <div className="relative z-10 w-full flex-1 flex flex-col">
+                        <div className="relative z-base w-full flex-1 flex flex-col">
                             <AppLayout
                                 isOverlayActive={modalOpen || isAuditOverlayActive}
                                 handleLogout={handleLogout}

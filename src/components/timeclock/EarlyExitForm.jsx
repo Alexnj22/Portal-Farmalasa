@@ -28,7 +28,7 @@ function EarlyExitForm({
   const photoUrl = employee?.photo || employee?.photo_url;
 
   return (
-    <div className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
+    <div className="relative z-content w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">
       
       <div className="w-full max-w-[420px] max-h-full flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-5 sm:p-7 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 hover:scale-[1.01] hover:-translate-y-1 hover:bg-white/[0.04] hover:shadow-[0_30px_60px_rgba(0,0,0,0.4),inset_0_2px_15px_rgba(255,255,255,0.05)] hover:border-white/20">
         
@@ -45,7 +45,7 @@ function EarlyExitForm({
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="relative z-20 w-full flex-1 flex flex-col justify-start min-h-0 shrink-0 gap-3 sm:gap-4 overflow-y-auto scrollbar-hide py-1">
+        <form onSubmit={onSubmit} className="relative z-content w-full flex-1 flex flex-col justify-start min-h-0 shrink-0 gap-3 sm:gap-4 overflow-y-auto scrollbar-hide py-1">
           
           <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2.5 shadow-[inset_0_2px_10px_rgba(255,255,255,0.02)] shrink-0">
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/40 border border-chart-4/40 overflow-hidden flex items-center justify-center text-body-xl sm:text-lg font-bold text-white shadow-[0_0_15px_rgba(249,115,22,0.15)] shrink-0">
@@ -110,7 +110,7 @@ function EarlyExitForm({
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="flex-1 relative z-20 text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-3 sm:py-3.5 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={14} /> Cancelar
             </button>
@@ -118,7 +118,7 @@ function EarlyExitForm({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex-1 relative z-20 text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-full border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-4/15 py-3 sm:py-3.5 rounded-full border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               {isProcessing ? (
                 <span className="w-3.5 h-3.5 border-2 border-chart-4/30 border-t-chart-4 rounded-full animate-spin" />

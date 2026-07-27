@@ -41,7 +41,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
             <div className="bg-danger/10 backdrop-blur-xl border border-danger/30 p-8 rounded-[2rem] flex flex-col items-center text-center shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-bottom-4 duration-500 m-2">
                 <div className="w-16 h-16 bg-surface-card rounded-[1.5rem] shadow-sm border border-danger/30 flex items-center justify-center text-danger mb-5 relative overflow-hidden">
                     <div className="absolute inset-0 bg-danger/10 animate-pulse"></div>
-                    <AlertCircle size={28} strokeWidth={2} className="relative z-10" />
+                    <AlertCircle size={28} strokeWidth={2} className="relative z-base" />
                 </div>
                 <h3 className="text-body-xl font-black text-danger-text mb-2 tracking-tight">Ningún Profesional Disponible</h3>
                 <p className="text-body-sm font-bold text-danger-text/80 max-w-[300px] mb-6 leading-relaxed">
@@ -126,7 +126,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                             <input 
                                 type="file" 
                                 accept="application/pdf,image/*" 
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" 
                                 onChange={(e) => updateLegalField('regentCredentialFile', e.target.files?.[0] || null)} 
                             />
                             
@@ -152,7 +152,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <input 
                             type="file" 
                             accept=".pdf,image/*" 
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-base" 
                             onChange={(e) => updateLegalField('regentInscriptionFile', e.target.files?.[0] || null)} 
                         />
                         

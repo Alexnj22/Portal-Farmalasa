@@ -63,7 +63,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
     const modalClass = isOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95';
 
     const modalContent = (
-        <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[10vh] px-4">
+        <div className="fixed inset-0 z-confirm flex items-start justify-center pt-[10vh] px-4">
             <div
                 className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out ${overlayClass}`}
                 onClick={onClose}
@@ -77,7 +77,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[60px] rounded-full pointer-events-none w-56 h-24 opacity-[0.15] bg-brand" />
 
                 {/* Input */}
-                <div className="relative z-10 flex items-center gap-3 px-5 py-4 border-b border-divider">
+                <div className="relative z-base flex items-center gap-3 px-5 py-4 border-b border-divider">
                     <Search size={18} strokeWidth={2.5} className="text-brand-text shrink-0" />
                     <input
                         ref={inputRef}
@@ -96,7 +96,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 </div>
 
                 {/* Results */}
-                <div ref={listRef} className="relative z-10 max-h-[50vh] overflow-y-auto py-2">
+                <div ref={listRef} className="relative z-base max-h-[50vh] overflow-y-auto py-2">
                     {results.length === 0 ? (
                         <div className="px-5 py-10 text-center">
                             <div className="text-body font-semibold text-content-3">Sin resultados para “{query}”</div>
@@ -135,7 +135,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 </div>
 
                 {/* Footer hint */}
-                <div className="relative z-10 hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-caption font-bold uppercase tracking-wide text-content-3">
+                <div className="relative z-base hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-caption font-bold uppercase tracking-wide text-content-3">
                     <span className="flex items-center gap-1"><ArrowUp size={11} /><ArrowDown size={11} /> Navegar</span>
                     <span className="flex items-center gap-1"><CornerDownLeft size={11} /> Abrir</span>
                     <span className="ml-auto">Esc para cerrar</span>

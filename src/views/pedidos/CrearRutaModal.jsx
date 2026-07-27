@@ -594,7 +594,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
                 {/* Bodega (partida) */}
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-7 h-7 rounded-full bg-chart-8 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
+                  <div className="w-7 h-7 rounded-full bg-chart-8 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-base">
                     <Warehouse size={11} className="text-white" />
                   </div>
                   <div className="flex-1 py-1">
@@ -624,7 +624,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       {/* Card de la parada */}
                       <div className="flex items-start gap-3">
                         {/* Número + flechas */}
-                        <div className="flex flex-col items-center gap-0.5 z-10">
+                        <div className="flex flex-col items-center gap-0.5 z-base">
                           <div className={`w-7 h-7 rounded-full ${dotCls} border-2 border-white shadow-md flex items-center justify-center text-white text-caption font-black shrink-0`}>
                             {stop.orden}
                           </div>
@@ -747,7 +747,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-chart-8 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-10">
+                      <div className="w-7 h-7 rounded-full bg-chart-8 border-2 border-white shadow-md flex items-center justify-center shrink-0 z-base">
                         <Warehouse size={11} className="text-white" />
                       </div>
                       <div className="flex-1 bg-surface-card-hover border border-divider rounded-xl px-3 py-2">

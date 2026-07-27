@@ -1111,7 +1111,7 @@ const DashboardView = ({ openModal }) => {
             toque a ~44px sin agrandar la píldora visible (v2.47.4). */}
         <div
           onPointerDown={e => startDrag(e, id)}
-          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-30 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
+          className={`absolute -top-4 left-1/2 -translate-x-1/2 z-tabs scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none ${isMobile ? (showConfig ? "opacity-100 relative before:absolute before:content-[''] before:-inset-2.5" : "opacity-0 pointer-events-none") : ''}`}
         >
           <div className="bg-surface-card border border-divider rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-brand hover:border-brand hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
             <GripVertical size={12} className="text-content-3 group-hover/grip:text-white transition-colors" />
@@ -1125,7 +1125,7 @@ const DashboardView = ({ openModal }) => {
         {!dndActive && (
           <div
             data-resize-panel
-            className={`absolute bottom-3 right-3 z-30 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
+            className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 group-hover/drag:scale-100'}`}
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
@@ -1293,7 +1293,7 @@ const DashboardView = ({ openModal }) => {
                   if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-content-2"/><p className="text-micro font-black text-brand-text/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
-                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
+                      <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-border-card">
                         <p className="font-black text-micro uppercase tracking-widest text-content-2 mb-1 border-b border-border-card pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
@@ -1305,8 +1305,8 @@ const DashboardView = ({ openModal }) => {
                         )}
                         {salesView==='DAYS'&&<p className="text-micro text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
-                      <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
-                      <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
+                      <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
+                      <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-base">{item.label}</span>
                     </div>
                   ));
                 })()}
@@ -1366,7 +1366,7 @@ const DashboardView = ({ openModal }) => {
                       <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
                         onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
                         onMouseLeave={()=>setSalesBarTip(null)}>
-                        {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-10"/>}
+                        {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(52,211,153,0.9)] animate-pulse z-base"/>}
                         <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
                       </div>
                     );

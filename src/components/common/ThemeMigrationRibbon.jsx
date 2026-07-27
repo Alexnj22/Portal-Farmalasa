@@ -18,7 +18,7 @@ export default function ThemeMigrationRibbon() {
   return (
     <div
       role="status"
-      className="fixed top-0 inset-x-0 z-[560] flex items-end justify-center"
+      className="fixed top-0 inset-x-0 z-ribbon flex items-end justify-center"
       style={{ height: RIBBON_HEIGHT }}
     >
       <div

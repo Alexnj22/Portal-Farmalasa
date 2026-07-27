@@ -538,7 +538,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const isEdited    = meta.status === 'SUPERSEDED';
                                     return (
                                         <div key={ev.id || `ev-${idx}`} className="relative pl-7 group/ev">
-                                            <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-300 z-10 ${theme.dot}`} />
+                                            <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-300 z-base ${theme.dot}`} />
                                             <div className={`bg-surface-card backdrop-blur-xl rounded-2xl p-4 border border-border-card transition-all duration-300 shadow-sm hover:-translate-y-0.5 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-micro font-black uppercase tracking-widest border ${theme.bg} ${theme.text} ${theme.border}`}>{label}</span>

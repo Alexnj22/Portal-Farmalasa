@@ -316,8 +316,8 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
     return (
-        <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
-            <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
+        <tr className="group/row relative transition-[z-index] duration-150 hover:z-sidebar">
+            <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-glass-sm)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-surface-card backdrop-blur-md border border-border-card shadow-[inset_0_1px_4px_rgba(255,255,255,0.7)] overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-content-3" />}
@@ -405,7 +405,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                 const apoyoBranch = apoyoDaysByDow?.[dId];
 
                 return (
-                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-10 hover:z-[60]'}`} onClick={(e) => {
+                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-base hover:z-sidebar-desktop'}`} onClick={(e) => {
                         if (conf || isReadOnly || apoyoBranch) return;
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
@@ -421,12 +421,12 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         `}>
 
                             {!conf && !isReadOnly && !apoyoBranch && (
-                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-chart-1">
+                                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-brand text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-sidebar hover:bg-chart-1">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
                             )}
 
-                            <div className="relative z-10 w-full h-full flex flex-col">
+                            <div className="relative z-base w-full h-full flex flex-col">
                                 {apoyoBranch ? (
                                     <div className="w-full flex-1 flex flex-col items-center justify-center gap-1">
                                         <Building2 size={11} className="text-chart-3-text" strokeWidth={2} />
@@ -513,8 +513,8 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
     }, [homeRoster]);
 
     return (
-        <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
-            <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
+        <tr className="group/row relative transition-[z-index] duration-150 hover:z-sidebar">
+            <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-chart-3/10 backdrop-blur-xl border border-chart-3/30 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
                         {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-chart-3/40" />}
@@ -556,7 +556,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                 })();
 
                 return (
-                    <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-10 hover:z-[60]"
+                    <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop"
                         onClick={e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)}>
                         <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
@@ -565,12 +565,12 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     ? 'bg-surface-card border border-divider opacity-40'
                                     : 'border border-dashed border-divider bg-surface-card-hover/10 opacity-30'
                             }`}>
-                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 shadow-sm
+                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-sidebar shadow-sm
                                 ${isCoverageDay ? 'bg-chart-3-solid text-white' : 'bg-content-3 text-white'}">
                                 {isCoverageDay ? <Pencil size={8} strokeWidth={2.5} /> : <Plus size={8} strokeWidth={2.5} />}
                             </div>
 
-                            <div className="relative z-10 w-full h-full flex flex-col">
+                            <div className="relative z-base w-full h-full flex flex-col">
                                 {hasShift ? (
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
@@ -707,12 +707,12 @@ const ScheduleCalendar = memo(({
     }, [coverageByDay, calendarDates, onSalyAlertsUpdate]);
 
     return (
-        <div className="w-full relative z-10 shrink-0 mt-4">
+        <div className="w-full relative z-base shrink-0 mt-4">
             <div id="schedule-table-scroll" className="overflow-x-auto hide-scrollbar pb-10 px-2 pt-4" style={{ overflowAnchor: 'none' }}>
                 <table className="w-full text-left border-separate border-spacing-y-2 border-spacing-x-1 min-w-full relative">
-                    <thead className="relative z-[60]">
+                    <thead className="relative z-sidebar-desktop">
                         <tr>
-                            <th className="p-0 sticky left-0 z-[70] min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
+                            <th className="p-0 sticky left-0 z-dropdown min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
                                 <div className="bg-surface-card backdrop-blur-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] rounded-[1.5rem] pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-micro font-black uppercase text-content-3 tracking-widest flex flex-col items-center justify-center gap-1">
                                     Personal <span className="bg-surface-card px-2 py-0.5 rounded-lg text-content-3 border border-white">44H / 1 DESCANSO</span>
                                 </div>
@@ -743,10 +743,10 @@ const ScheduleCalendar = memo(({
                                 }
 
                                 return (
-                                    <th key={date} className="p-0 text-center min-w-[118px] 2xl:min-w-[132px] align-bottom group relative z-10 hover:z-[70]">
+                                    <th key={date} className="p-0 text-center min-w-[118px] 2xl:min-w-[132px] align-bottom group relative z-base hover:z-dropdown">
                                         <div className={`backdrop-blur-xl border shadow-sm rounded-[1.5rem] pt-4 pb-2 mx-1 mb-2 mt-4 flex flex-col items-center justify-center transition-[transform,box-shadow] duration-150 relative group-hover:-translate-y-1 group-hover:shadow-md ${headerBg}`}>
                                             
-                                            <div className="absolute bottom-[105%] left-0 right-0 flex justify-center px-1 z-20 pointer-events-none">
+                                            <div className="absolute bottom-[105%] left-0 right-0 flex justify-center px-1 z-content pointer-events-none">
                                                 <div className="flex flex-wrap justify-center items-end gap-[3px] w-full max-h-[40px] overflow-hidden">
                                                     {coverageData?.criticalGaps?.length > 0 && (
                                                         <>
@@ -774,12 +774,12 @@ const ScheduleCalendar = memo(({
                     </thead>
                     <AnimatePresence mode="wait" initial={false}>
                     {isLoading ? (
-                        <motion.tbody key="skeleton" className="relative z-10"
+                        <motion.tbody key="skeleton" className="relative z-base"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             transition={{ duration: 0.15 }}>
                             {[...Array(employeesInView.length || 5)].map((_, idx) => (
                                 <tr key={idx}>
-                                    <td className="p-0 sticky left-0 z-20 h-px">
+                                    <td className="p-0 sticky left-0 z-content h-px">
                                         <div className="h-full min-h-[72px] skeleton rounded-[2rem] mx-1 flex items-center gap-2.5 p-2.5" style={{ animationDelay: `${idx * 0.06}s` }}>
                                             <div className="w-10 h-10 rounded-xl bg-surface-card shrink-0" />
                                             <div className="flex-1 space-y-2">
@@ -798,7 +798,7 @@ const ScheduleCalendar = memo(({
                             ))}
                         </motion.tbody>
                     ) : (
-                        <motion.tbody key="data" className="relative z-10"
+                        <motion.tbody key="data" className="relative z-base"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                             transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}>
                             {employeesInView.map(emp => (

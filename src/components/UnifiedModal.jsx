@@ -734,10 +734,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
 
     return (
-        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-[100]" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-modal" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
 
                 {!hidesHeader && (
-                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-divider flex flex-col gap-4 relative z-10 shrink-0">
+                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-divider flex flex-col gap-4 relative z-base shrink-0">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4">
 
@@ -809,7 +809,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 <div
                     ref={scrollRef}
-                    className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full ${fillHeight ? 'flex flex-col' : ''}`}
+                    className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-base w-full ${fillHeight ? 'flex flex-col' : ''}`}
                     style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
                 >
                     <div className={`flex flex-col w-full ${fillHeight ? 'flex-1 min-h-0' : 'min-h-full'} ${hidesHeader ? 'p-0' : 'px-6 md:px-10 py-6'}`}>
@@ -885,7 +885,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const empSaveTitle = empError || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
                     if (isEmpForm) {
                         return (
-                            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-10 shrink-0">
+                            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
                                 {/* LEFT: Anterior */}
                                 {prevStep ? (
                                     <button type="button" onClick={() => setEmpActiveTab(prevStep)} disabled={isSaving}
@@ -923,7 +923,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     }
 
                     return (
-                        <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-10 shrink-0">
+                        <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
                             <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-label uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
                                 Cancelar
                             </button>

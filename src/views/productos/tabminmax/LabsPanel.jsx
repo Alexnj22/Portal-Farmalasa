@@ -81,7 +81,7 @@ export default function LabsPanel({ onClose, onChanged }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-20 pointer-events-none">
+        <div className="fixed inset-0 z-sidebar flex items-start justify-end p-4 pt-20 pointer-events-none">
             <motion.div
                 className="pointer-events-auto w-72 rounded-2xl overflow-hidden flex flex-col"
                 style={glass.panel}

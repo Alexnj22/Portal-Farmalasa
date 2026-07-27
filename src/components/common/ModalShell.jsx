@@ -6,7 +6,7 @@ export default function ModalShell({
   onClose,
   children,
   maxWidthClass = "max-w-lg",
-  zClass = "z-[100]",
+  zClass = "z-modal",
   closeOnEsc = true,
   lockScroll = true,
   ariaLabel = "Ventana modal",

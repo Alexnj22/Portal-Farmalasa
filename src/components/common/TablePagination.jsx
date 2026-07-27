@@ -89,7 +89,7 @@ function SmartPagination({ page, total, onChange }) {
                                     transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                                 />
                             )}
-                            <span className={`relative z-10 text-body-sm font-black transition-colors duration-150 ${
+                            <span className={`relative z-base text-body-sm font-black transition-colors duration-150 ${
                                 p === page ? 'text-white' : 'text-content-3'
                             }`}>
                                 {p}

@@ -305,7 +305,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                             key={tab.id}
                                             ref={(el) => tabBtnRefs.current.set(tab.id, el)}
                                             onClick={() => setActiveTab(tab.id)}
-                                            className={`relative flex items-center justify-center gap-2 py-2.5 px-4 text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 z-10 rounded-full shrink-0 border border-transparent ${isActive
+                                            className={`relative flex items-center justify-center gap-2 py-2.5 px-4 text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 z-base rounded-full shrink-0 border border-transparent ${isActive
                                                     ? 'text-brand-text'
                                                     : 'text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm hover:-translate-y-0.5 hover:border-border-card'
                                                 }`}
@@ -361,11 +361,11 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {/* 🚨 4. EL BOTÓN "VOLVER" AHORA USA EL ROUTER DIRECTO */}
                         <button 
                             onClick={() => navigate('/branches')} 
-                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-50 bg-surface-card"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-divider shadow-[var(--shadow-elevation-sm)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 z-sidebar bg-surface-card"
                             title="Volver a Sucursales"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-brand/20 to-chart-5/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>
-                            <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-10" />
+                            <ArrowLeft size={18} strokeWidth={2.5} className="text-content-3 group-hover/back:text-brand-text transition-colors relative z-base" />
                         </button>
 
                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-[1rem] md:rounded-[1.25rem] bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
@@ -396,7 +396,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 filtersContent={renderHeaderActions()}
                 transparentBody={true}
             >
-                <div className="w-full flex-1 flex flex-col relative z-10 pb-12">
+                <div className="w-full flex-1 flex flex-col relative z-base pb-12">
                     <div ref={sentinelRef} className="absolute -top-10 h-1 w-full pointer-events-none" aria-hidden="true" />
 
                     <div className="bg-surface-card backdrop-blur-[20px] backdrop-saturate-[180%] rounded-[2.5rem] border border-border-card shadow-[0_8px_30px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">

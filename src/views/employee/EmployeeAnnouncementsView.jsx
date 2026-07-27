@@ -284,7 +284,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-0 w-52 h-52 rounded-full blur-[80px] opacity-40 bg-success -translate-y-10" />
-                    <div className="relative z-10 w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-500">
+                    <div className="relative z-base w-28 h-28 rounded-[2.2rem] flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-500">
                         <Sparkles size={44} strokeWidth={1.6} />
                     </div>
                     <h3 className="font-black text-display text-content tracking-tight mb-2">¡Todo al día!</h3>
@@ -418,7 +418,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                 >
                     {/* Overlay de lectura confirmada */}
                     {phase === 'check' && (
-                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
+                        <div className="absolute inset-0 z-content flex flex-col items-center justify-center rounded-[2.5rem] bg-success/12 backdrop-blur-[3px] animate-in fade-in duration-150 pointer-events-none">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-success to-chart-9 flex items-center justify-center shadow-[var(--shadow-glow-success)] animate-in zoom-in-50 duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]">
                                 <CheckCircle2 size={40} strokeWidth={2} className="text-white" />
                             </div>
@@ -584,8 +584,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                             className="absolute inset-0 bg-warning/10"
                             style={{ transformOrigin: 'left center', animation: 'undo-shrink 5s linear forwards' }}
                         />
-                        <ChevronLeft size={14} strokeWidth={2.5} className="relative z-10 flex-shrink-0" />
-                        <span className="relative z-10 text-caption font-black uppercase tracking-widest">
+                        <ChevronLeft size={14} strokeWidth={2.5} className="relative z-base flex-shrink-0" />
+                        <span className="relative z-base text-caption font-black uppercase tracking-widest">
                             {pendingReads.length > 1
                                 ? `Retroceder · ${pendingReads.length} disponibles`
                                 : '¿Lo pasaste por error? — Retroceder'}
@@ -810,7 +810,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                             <div className="relative flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-success" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
+                                <div className="relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-md)] text-success">
                                     <CheckCircle2 size={40} strokeWidth={1.5} />
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">Todo al día</h3>
@@ -841,7 +841,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-content-3" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">
+                                <div className="relative z-base w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 transform-gpu overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
                                 <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">

@@ -245,7 +245,7 @@ const GanttChart = ({ plans, year }) => {
                                                     className={`absolute top-1 bottom-1 rounded-lg ${meta.bar} opacity-75 hover:opacity-100 transition-opacity cursor-default group/bar`}
                                                     style={{ left: `${pct(p.start_date)}%`, width: `${widthPct(p.start_date, p.end_date)}%` }}
                                                 >
-                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-50 pointer-events-none">
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-sidebar pointer-events-none">
                                                         <div className="bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
                                                             <span className="block font-black text-micro uppercase tracking-widest text-content-2 mb-0.5">{meta.label}</span>
                                                             <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
@@ -1016,7 +1016,7 @@ const VacationPlanView = () => {
                                                                     {p.metadata?.original_start_date && (
                                                                         <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-micro font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
-                                                                            <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                                                                            <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-micro font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-sidebar pointer-events-none">
                                                                                 <span className="text-content-2 font-black uppercase tracking-widest text-micro mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
                                                                                 <span className="text-content-2 font-black uppercase tracking-widest text-micro mt-1 mb-0.5">Fecha actual</span>

@@ -43,7 +43,7 @@ const KioskConfigModal = ({
   }));
 
   return (
-    <div className="absolute inset-0 z-[60] bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+    <div className="absolute inset-0 z-sidebar-desktop bg-[#0A0F1C]/80 backdrop-blur-[20px] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
       
       {/* Tarjeta Liquid Glass */}
       <div className="w-full max-w-[420px] max-h-full overflow-y-auto scrollbar-hide flex flex-col bg-white/[0.03] backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 rounded-[2.5rem] p-6 sm:p-8 shadow-[0_24px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] text-center relative">
@@ -78,7 +78,7 @@ const KioskConfigModal = ({
               type="button"
               onClick={onRevoke}
               disabled={isProcessing}
-              className="relative z-20 w-full text-caption sm:text-label uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="relative z-content w-full text-caption sm:text-label uppercase tracking-widest font-bold text-danger flex items-center justify-center gap-2 transition-all duration-300 bg-danger/10 py-4 rounded-full border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               <XCircle size={16} /> Revocar Permisos Locales
             </button>
@@ -99,10 +99,10 @@ const KioskConfigModal = ({
               Configuración Inicial
             </p>
 
-            <div className="w-full text-left flex flex-col gap-4 sm:gap-5 relative z-30">
+            <div className="w-full text-left flex flex-col gap-4 sm:gap-5 relative z-tabs">
               
               {/* 🚨 REEMPLAZO DEL SELECT NATIVO POR LIQUIDSELECT */}
-              <div className="flex flex-col gap-1.5 relative z-40">
+              <div className="flex flex-col gap-1.5 relative z-header">
                 <label className="text-white/50 text-micro sm:text-caption font-semibold uppercase tracking-widest ml-2">
                   Sucursal Física
                 </label>
@@ -123,7 +123,7 @@ const KioskConfigModal = ({
               </div>
 
               {/* Input de Nombre del Equipo */}
-              <div className="flex flex-col gap-1.5 relative z-10">
+              <div className="flex flex-col gap-1.5 relative z-base">
                 <label className="text-white/50 text-micro sm:text-caption font-semibold uppercase tracking-widest ml-2">
                   Identificador del Equipo
                 </label>
@@ -145,7 +145,7 @@ const KioskConfigModal = ({
                 type="button"
                 onClick={onSave}
                 disabled={isProcessing || !selectedBranchId || !deviceNameInput}
-                className="relative z-10 w-full mt-2 text-caption sm:text-label uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-full border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+                className="relative z-base w-full mt-2 text-caption sm:text-label uppercase tracking-widest font-bold text-chart-1-text flex items-center justify-center gap-2 transition-all duration-300 bg-chart-1/15 py-4 rounded-full border border-chart-1/30 hover:bg-chart-1/25 hover:border-chart-1/50 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isProcessing ? (
                   <span className="w-4 h-4 border-2 border-chart-1/30 border-t-blue-400 rounded-full animate-spin" />
@@ -163,7 +163,7 @@ const KioskConfigModal = ({
           type="button"
           onClick={onClose}
           disabled={isProcessing}
-          className="relative z-10 w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-micro sm:text-caption transition-colors"
+          className="relative z-base w-full mt-6 py-2 text-white/40 hover:text-white disabled:opacity-50 font-bold uppercase tracking-widest text-micro sm:text-caption transition-colors"
         >
           Cerrar Configuración
         </button>

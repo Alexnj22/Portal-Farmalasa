@@ -45,7 +45,7 @@ export default function LiquidTooltip({ children, content, side = 'top', classNa
 
             {pos && content && createPortal(
                 <div
-                    className="fixed z-[9999] pointer-events-none"
+                    className="fixed z-toast pointer-events-none"
                     style={tooltipStyle}
                 >
                     {/* Arrow — top tooltip: arrow below; bottom tooltip: arrow above */}

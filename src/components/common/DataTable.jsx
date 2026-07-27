@@ -164,7 +164,7 @@ export function DataTable({
                     const w = `${45 + ((i * 11 + ci * 17) % 40)}%`;
                     const alignCls = col.align === 'right' ? 'ml-auto' : '';
                     return (
-                      <td key={col.key} className={`px-4 md:px-6 py-[1.05rem] ${hideCls}`}>
+                      <td key={col.key} className={`px-4 md:px-6 h-[var(--row-h)] ${hideCls}`}>
                         <div
                           className={`h-[11px] rounded-full animate-pulse ${tk.skeletonPulse} ${alignCls}`}
                           style={{ width: w }}
@@ -253,7 +253,9 @@ export function DataCell({ children, align = 'left', hideBelow, className = '', 
     <td
       {...props}
       className={[
-        'px-4 md:px-6 py-3.5 text-body',
+        // D2.3 — el alto de fila sale de --row-h (44/38/32px con mouse, piso
+        // de 44px en táctil) en vez de un padding fijo.
+        'px-4 md:px-6 h-[var(--row-h)] text-body',
         tk.cellText || '',
         alignCls, hideCls, className,
       ].join(' ')}

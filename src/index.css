@@ -580,10 +580,30 @@
 
 
 /* ═══════════════════════════════════════════════════════════════
-   DENSIDAD ADAPTATIVA (Fase T2, §7.4) — 3 niveles según ancho Y alto
-   del viewport (la altura es la restricción dura a 1024×768, donde el
-   viewport útil real es ~1024×620). Independiente del tema de color:
-   aplica igual en liquid/dark/solid/solid-dark.
+   DENSIDAD ADAPTATIVA (Fase T2 §7.4; conectada en D2.3, 2026-07-26)
+
+   Tres niveles según ancho Y alto del viewport — la ALTURA es la restricción
+   dura a 1024×768, donde el viewport útil real es ~1024×620. Independiente
+   del tema de color: aplica igual en los 4.
+
+   D2.3 corrigió dos cosas antes de conectarla:
+
+   1. LOS DISPAROS SE ACOTAN A (pointer: fine). Tal como estaban, `ultra`
+      disparaba con `max-width: 1151.98px`, así que un teléfono de 390px caía
+      ahí y recibía controles y filas de 32px — bajo el mínimo táctil de 44px
+      que el propio DESIGN.md §25 documenta (WCAG 2.5.8 AA). Conectarla sin
+      tocar los disparos habría hecho lo contrario de lo que se busca.
+      La causa: un solo disparo mezclaba dos problemas distintos. La densidad
+      por viewport responde a CUÁNTO ENTRA en una pantalla que se opera con
+      mouse; en táctil la restricción no son los píxeles disponibles sino el
+      tamaño del dedo. Son ejes independientes y ahora se tratan como tales.
+
+   2. --font-data ELIMINADO. Era una preocupación tipográfica metida en el
+      sistema de densidad; con la escala de D2.1 habría dos fuentes de verdad
+      para el tamaño de texto. El tamaño de dato lo fija --text-body/-body-lg.
+
+   Ojo: la densidad es RESPONSIVA, no una preferencia del usuario. Un selector
+   cómoda/compacta/ultra en Ajustes sería trabajo aparte.
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
@@ -592,26 +612,36 @@
   --control-h: 40px;
   --row-h:     44px;
   --header-h:  72px;
-  --font-data: 14px;
 }
-@media (max-width: 1439.98px), (max-height: 819.98px) {
+@media (max-width: 1439.98px) and (pointer: fine),
+       (max-height:  819.98px) and (pointer: fine) {
   :root {
-    /* Compacta: <1440 ancho O <820 alto */
+    /* Compacta: <1440 ancho O <820 alto, solo con puntero de precisión */
     --space-card-padding: 16px;
     --control-h: 36px;
     --row-h:     38px;
     --header-h:  56px;
-    --font-data: 14px;
   }
 }
-@media (max-width: 1151.98px), (max-height: 699.98px) {
+@media (max-width: 1151.98px) and (pointer: fine),
+       (max-height:  699.98px) and (pointer: fine) {
   :root {
     /* Ultra: <1152 ancho O <700 alto (incluye el mínimo soportado, 1024×768) */
     --space-card-padding: 12px;
     --control-h: 32px;
     --row-h:     32px;
     --header-h:  44px;
-    --font-data: 13px;
+  }
+}
+/* Táctil: el espaciado SÍ compacta (la pantalla es chica), pero la altura de
+   lo que se toca tiene piso de 44px. No es "sin densidad en móvil": es que
+   el dedo no se achica con el viewport. */
+@media (pointer: coarse) {
+  :root {
+    --space-card-padding: 14px;
+    --control-h: 44px;
+    --row-h:     44px;
+    --header-h:  56px;
   }
 }
 

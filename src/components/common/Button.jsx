@@ -23,11 +23,15 @@ const VARIANT_CLASSES = {
 };
 
 const SIZE_CLASSES = {
-    sm: 'h-[34px] px-3.5 text-[12.5px] gap-1.5',
-    md: 'h-[42px] px-[18px] text-body gap-1.5',
+    // D2.3 — la altura sale de --control-h, el token de densidad que T2 declaró
+    // y nadie consumía. Reacciona al viewport (40/36/32px con mouse) y tiene
+    // piso de 44px en táctil, así que un botón nunca queda bajo el mínimo del
+    // dedo. `sm` es un escalón por debajo, con su propio piso.
+    sm: 'h-[max(34px,calc(var(--control-h)-6px))] px-3.5 text-[12.5px] gap-1.5',
+    md: 'h-[var(--control-h)] px-[18px] text-body gap-1.5',
 };
 
-const ICON_ONLY_SIZE = { sm: 'w-[34px] px-0', md: 'w-[42px] px-0' };
+const ICON_ONLY_SIZE = { sm: 'w-[max(34px,calc(var(--control-h)-6px))] px-0', md: 'w-[var(--control-h)] px-0' };
 
 const Button = memo(({
     variant = 'primary',

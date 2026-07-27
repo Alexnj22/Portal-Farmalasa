@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import Checkbox from '../../../components/common/Checkbox';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound, Building2 } from 'lucide-react';
@@ -411,12 +412,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                 className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={hasLunch} 
-                                        readOnly 
- className="w-4 h-4 rounded text-chart-4-text border-chart-4/30 transition-transform group-hover/row:scale-110"
-                                    />
+                                    <Checkbox checked={hasLunch} size="sm" />
                                     <span className="text-body-sm font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
                                 {hasLunch && (
@@ -431,12 +427,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                 className="flex items-center justify-between bg-surface-card-hover border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={hasLactation} 
-                                        readOnly 
- className="w-4 h-4 rounded text-chart-6 border-chart-6/30 transition-transform group-hover/row:scale-110"
-                                    />
+                                    <Checkbox checked={hasLactation} size="sm" />
                                     <span className="text-body-sm font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
                                 </div>
                                 {hasLactation && (

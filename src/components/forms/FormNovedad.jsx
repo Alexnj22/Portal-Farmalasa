@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Checkbox from '../common/Checkbox';
 import {
     Paperclip, GitPullRequest, MapPin, Briefcase,
     CalendarClock, FileText, AlertTriangle, DollarSign,
@@ -495,10 +496,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <div className="col-span-1 md:col-span-2 relative z-tabs animate-in fade-in bg-chart-1/10 p-4 border border-chart-1/30 rounded-3xl">
                         <div className="flex items-center justify-between mb-3">
                             <label className="text-caption font-black uppercase tracking-widest text-chart-1-text">Nuevo Cargo Asignado</label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <span className="text-micro font-black uppercase tracking-widest text-content-3">¿Cambia de sucursal?</span>
-                                <input type="checkbox" className="accent-brand w-4 h-4 cursor-pointer" checked={formData?.isTransferAndPromotion || false} onChange={(e) => setFormData(prev => ({...prev, isTransferAndPromotion: e.target.checked}))} />
-                            </label>
+                            <Checkbox size="sm"
+                                checked={formData?.isTransferAndPromotion || false}
+                                onChange={(v) => setFormData(prev => ({...prev, isTransferAndPromotion: v}))}
+                                label={<span className="text-micro font-black uppercase tracking-widest text-content-3">¿Cambia de sucursal?</span>} />
                         </div>
                         <div className="h-[40px]">
                             <LiquidSelect value={formData?.newRole || ''} onChange={(val) => setFormData(prev => ({ ...prev, newRole: val }))} options={rolesOptions} placeholder="Seleccionar cargo oficial..." icon={Briefcase} menuPosition="fixed" />
@@ -531,10 +532,12 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="h-[40px] mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
-                        <label className="flex items-center gap-2 cursor-pointer mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-surface-card-hover">
-                            <input type="checkbox" className="accent-danger w-4 h-4 cursor-pointer" checked={formData?.hasFiniquito || false} onChange={(e) => setFormData(prev => ({...prev, hasFiniquito: e.target.checked}))} />
-                            <span className="text-caption font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>
-                        </label>
+                        <div className="mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-surface-card-hover">
+                            <Checkbox size="sm"
+                                checked={formData?.hasFiniquito || false}
+                                onChange={(v) => setFormData(prev => ({...prev, hasFiniquito: v}))}
+                                label={<span className="text-caption font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>} />
+                        </div>
                     </div>
                 )}
 

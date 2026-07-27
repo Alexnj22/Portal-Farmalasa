@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Checkbox from '../../components/common/Checkbox';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import {
@@ -393,11 +394,11 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
                 <strong>CCF de fecha anterior.</strong> Solo se anulan el mismo día y requieren nota de crédito.
               </p>
             </div>
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={ccfAck} onChange={e => setCcfAck(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded accent-danger shrink-0" />
-              <span className="text-label font-black text-danger-text">Entiendo y confirmo que tengo autorización para solicitarlo</span>
-            </label>
+            <Checkbox
+              checked={ccfAck}
+              onChange={setCcfAck}
+              label={<span className="text-label font-black text-danger-text">Entiendo y confirmo que tengo autorización para solicitarlo</span>}
+            />
           </div>
         )}
         {!withinGrace && !ccfNotSameDay && (

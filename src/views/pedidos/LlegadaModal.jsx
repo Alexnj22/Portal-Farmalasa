@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import Checkbox from '../../components/common/Checkbox';
 import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -322,12 +323,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                         <div className="flex items-center justify-between gap-2">
                                             <span className="text-caption font-bold text-warning-text">Caja extra {i + 1}</span>
                                             <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!d.sinRotulacion}
-                                                    onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
-                                                    className="w-3.5 h-3.5 rounded accent-warning"
-                                                />
+                                                <Checkbox checked={!!d.sinRotulacion} onChange={(v) => setExtraField(i, 'sinRotulacion', v)} size="sm" />
                                                 <span className="text-caption text-content-3">Sin rotulación</span>
                                             </label>
                                         </div>

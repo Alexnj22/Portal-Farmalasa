@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
 import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText, Loader2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
@@ -1408,10 +1409,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
                                     <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/30 animate-in fade-in zoom-in-95 duration-200">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                            <span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Actualmente estudiando?</span>
-                                        </label>
+                                        <Checkbox
+                                checked={!!formData.is_studying}
+                                onChange={(v) => handleSelectChange('is_studying', v)}
+                                label={<span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Actualmente estudiando?</span>}
+                            />
 
                                         {!!formData.is_studying && (
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
@@ -1444,10 +1446,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
                                         <div className="md:col-span-2 bg-chart-3/10 rounded-2xl p-3.5 border border-chart-3/20 animate-in fade-in zoom-in-95 duration-200">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input type="checkbox" checked={!!formData.has_maestria} onChange={(e) => handleSelectChange('has_maestria', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                                <span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>
-                                            </label>
+                                            <Checkbox
+                                checked={!!formData.has_maestria}
+                                onChange={(v) => handleSelectChange('has_maestria', v)}
+                                label={<span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>}
+                            />
                                             {!!formData.has_maestria && (
                                                 <div className="mt-3 grid grid-cols-1 gap-3">
                                                     <div>
@@ -1478,10 +1481,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         </div>
                                                     )}
                                                     <div className="pt-2 border-t border-chart-3/20">
-                                                        <label className="flex items-center gap-2 cursor-pointer">
-                                                            <input type="checkbox" checked={!!formData.maestria_is_studying} onChange={(e) => handleSelectChange('maestria_is_studying', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                                            <span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Maestría en curso?</span>
-                                                        </label>
+                                                        <Checkbox
+                                checked={!!formData.maestria_is_studying}
+                                onChange={(v) => handleSelectChange('maestria_is_studying', v)}
+                                label={<span className="text-label font-black text-chart-3-text uppercase tracking-wide">¿Maestría en curso?</span>}
+                            />
 
                                                         {!!formData.maestria_is_studying && (
                                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
@@ -1576,31 +1580,31 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
-                                    <input type="checkbox" checked={!!formData.has_motorcycle} onChange={(e) => handleSelectChange('has_motorcycle', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                    <Bike size={15} strokeWidth={2.5} className="text-content-3" />
-                                    <span className="text-label font-black text-content-2 uppercase tracking-wide">Posee Moto</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
-                                    <input type="checkbox" checked={!!formData.has_car} onChange={(e) => handleSelectChange('has_car', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                    <Car size={15} strokeWidth={2.5} className="text-content-3" />
-                                    <span className="text-label font-black text-content-2 uppercase tracking-wide">Posee Carro</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
-                                    <input type="checkbox" checked={!!formData.has_motorcycle_license} onChange={(e) => handleSelectChange('has_motorcycle_license', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                    <Bike size={15} strokeWidth={2.5} className="text-content-3" />
-                                    <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Motocicleta</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
-                                    <input type="checkbox" checked={!!formData.has_car_license} onChange={(e) => handleSelectChange('has_car_license', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                    <Car size={15} strokeWidth={2.5} className="text-content-3" />
-                                    <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Automóvil</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-divider bg-surface-card-hover/60 md:col-span-2">
-                                    <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-brand" />
-                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-content-3" />
-                                    <span className="text-label font-black text-content-2 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span>
-                                </label>
+                                <Checkbox
+                                checked={!!formData.has_motorcycle}
+                                onChange={(v) => handleSelectChange('has_motorcycle', v)}
+                                label={<><Bike size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Posee Moto</span></>}
+                            />
+                                <Checkbox
+                                checked={!!formData.has_car}
+                                onChange={(v) => handleSelectChange('has_car', v)}
+                                label={<><Car size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Posee Carro</span></>}
+                            />
+                                <Checkbox
+                                checked={!!formData.has_motorcycle_license}
+                                onChange={(v) => handleSelectChange('has_motorcycle_license', v)}
+                                label={<><Bike size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Motocicleta</span></>}
+                            />
+                                <Checkbox
+                                checked={!!formData.has_car_license}
+                                onChange={(v) => handleSelectChange('has_car_license', v)}
+                                label={<><Car size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Licencia de Automóvil</span></>}
+                            />
+                                <Checkbox
+                                checked={!!formData.has_srs_accreditation}
+                                onChange={(v) => handleSelectChange('has_srs_accreditation', v)}
+                                label={<><ShieldCheck size={15} strokeWidth={2.5} className="text-content-3" /> <span className="text-label font-black text-content-2 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span></>}
+                            />
                             </div>
                             {(formData.has_motorcycle_license || formData.has_car_license || isPharmacistRegent || isNursing) && (
                                 <p className="text-micro text-chart-9-text font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
@@ -1789,10 +1793,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <ShieldCheck size={12} strokeWidth={2.5} /> Discapacidad
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-danger/30 bg-surface-card md:col-span-3">
-                                    <input type="checkbox" checked={!!formData.has_disability} onChange={(e) => handleSelectChange('has_disability', e.target.checked)} className="w-4 h-4 rounded accent-danger" />
-                                    <span className="text-label font-black text-content-2 uppercase tracking-wide">¿Tiene alguna discapacidad?</span>
-                                </label>
+                                <Checkbox
+                                checked={!!formData.has_disability}
+                                onChange={(v) => handleSelectChange('has_disability', v)}
+                                label={<span className="text-label font-black text-content-2 uppercase tracking-wide">¿Tiene alguna discapacidad?</span>}
+                            />
                                 {formData.has_disability && (() => {
                                     const isOtherDisability = isCatalogOther(formData.disability_type, tipoDiscapacidadOptions);
                                     return (
@@ -1821,10 +1826,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <LiquidSelect value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                                 </div>
                                             </div>
-                                            <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-danger/30 bg-surface-card">
-                                                <input type="checkbox" checked={!!formData.disability_has_certification} onChange={(e) => handleSelectChange('disability_has_certification', e.target.checked)} className="w-4 h-4 rounded accent-danger shrink-0" />
-                                                <span className="text-label font-black text-content-2 uppercase tracking-wide">Cuenta con certificación (ISRI / CONAIPD)</span>
-                                            </label>
+                                            <Checkbox
+                                checked={!!formData.disability_has_certification}
+                                onChange={(v) => handleSelectChange('disability_has_certification', v)}
+                                label={<span className="text-label font-black text-content-2 uppercase tracking-wide">Cuenta con certificación (ISRI / CONAIPD)</span>}
+                            />
                                             {isOtherDisability && (
                                                 <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-200">
                                                     <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 flex items-center justify-between">

@@ -21,6 +21,7 @@ import PortalTextarea from '../components/common/PortalTextarea';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
 import FilterBar from '../components/common/FilterBar';
+import PortalInput from '../components/common/PortalInput';
 import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
     fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
@@ -524,20 +525,24 @@ export default function EncuestaAdminView() {
 
                             <div className="space-y-3">
                                 {/* Título */}
-                                <div>
-                                    <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Título *</label>
-                                    <input value={sfNombre} onChange={e => setSfNombre(e.target.value)}
-                                        placeholder="Encuesta de clima organizacional…"
-                                        className={`w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal ${sfError && !sfNombre.trim() ? 'border-warning/40' : ''}`} />
-                                </div>
+                                <PortalInput
+                                    name="sf-nombre"
+                                    label="Título"
+                                    required
+                                    placeholder="Encuesta de clima organizacional…"
+                                    value={sfNombre}
+                                    onChange={e => setSfNombre(e.target.value)}
+                                />
 
                                 {/* Año + Estado */}
                                 <div className="grid grid-cols-[100px_1fr] gap-3 items-end">
-                                    <div>
-                                        <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Año</label>
-                                        <input aria-label="Año de la encuesta" type="number" value={sfAño} onChange={e => setSfAño(e.target.value)}
-                                            className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300" />
-                                    </div>
+                                    <PortalInput
+                                            name="sf-anio"
+                                            label="Año"
+                                            type="number"
+                                            value={sfAño}
+                                            onChange={e => setSfAño(e.target.value)}
+                                        />
                                     <div>
                                         <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
                                         <SegmentedControl size="sm" tone="neutro" label="Estado de la encuesta"

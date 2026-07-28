@@ -16,7 +16,23 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.155.0';
+export const APP_VERSION = '2.156.0';
+
+// v2.156.0 — D3.4: los formularios de contrasena y contacto.
+//
+// `FormSetPassword` (2), `FormChangeOwnPassword` (2), `FormEditContact` (3) y
+// dos de encuestas. Los tres traian el mismo patron: un icono posicionado en
+// absoluto sobre un `<input>` con `pl-10` a mano. `PortalInput` tiene ranura
+// `icon` — es literalmente para eso.
+//
+// El ojo de ver/ocultar pasa a ser HERMANO del canonico en vez de un hijo
+// encimado, y gana nombre accesible ("Mostrar la contrasena" / "Ocultar…") —
+// antes era un boton de icono mudo.
+//
+// Verificado en vivo: los dos campos con `<label for>` asociado y el ojo con
+// su nombre.
+//
+// Inputs a mano: 83 → 76.
 
 // v2.155.0 — D3.4 sigue, y un error mio de 80 archivos.
 //

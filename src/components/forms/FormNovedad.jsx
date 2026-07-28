@@ -17,6 +17,7 @@ import { useNowTick } from '../../hooks/useNowTick';
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import Badge from '../common/Badge';
+import PortalInput from '../common/PortalInput';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -520,11 +521,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
                 {isDisability && (
                     <div className="col-span-1 md:col-span-2 animate-in fade-in">
-                        <label className={labelClasses}>N° Boleta ISSS / Médico</label>
-                        <div className="relative">
-                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-content-3" size={14} strokeWidth={2.5}/>
-                            <input type="text" placeholder="Ej. B-12345678" className={`${inputClasses} pl-9 uppercase`} value={formData?.certificateNumber || ''} onChange={(e) => setFormData(prev => ({ ...prev, certificateNumber: e.target.value }))} />
-                        </div>
+                        <PortalInput
+                            name="certificateNumber"
+                            label="N° Boleta ISSS / Médico"
+                            icon={FileText}
+                            placeholder="Ej. B-12345678"
+                            inputClassName="uppercase"
+                            value={formData?.certificateNumber || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, certificateNumber: e.target.value }))}
+                        />
                     </div>
                 )}
 

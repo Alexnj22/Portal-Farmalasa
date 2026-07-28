@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { Phone, Loader2, Check } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import PortalInput from '../common/PortalInput';
 
 const FIELDS = [
     { key: 'phone',                   label: 'Celular',                placeholder: '0412-000-0000'    },
@@ -30,18 +31,15 @@ const FormEditContact = ({ formData, onClose }) => {
     return (
         <div className="flex flex-col gap-4 p-1">
             {FIELDS.map(({ key, label, placeholder }) => (
-                <div key={key}>
-                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
-                    <div className="relative flex items-center">
-                        <Phone size={14} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
-                        <input
-                            value={form[key]}
-                            onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                            placeholder={placeholder}
- className="w-full pl-10 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                        />
-                    </div>
-                </div>
+                <PortalInput
+                    key={key}
+                    name={key}
+                    label={label}
+                    icon={Phone}
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                />
             ))}
             <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
         </div>

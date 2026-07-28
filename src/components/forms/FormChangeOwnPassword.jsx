@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { Eye, EyeOff, KeyRound, Loader2, Lock, CheckCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
+import PortalInput from '../common/PortalInput';
 
 const FormChangeOwnPassword = ({ onClose }) => {
     const [newPass, setNewPass] = useState('');
@@ -35,21 +36,27 @@ const FormChangeOwnPassword = ({ onClose }) => {
     return (
         <div className="flex flex-col gap-5 p-1">
             {[['Nueva contraseña', newPass, setNewPass, false], ['Confirmar contraseña', confirm, setConfirm, true]].map(([label, val, setter, isLast]) => (
-                <div key={label}>
-                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">{label}</label>
-                    <div className="relative flex items-center">
-                        <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
-                        <input
-                            type={showPw ? 'text' : 'password'}
-                            placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
-                            value={val}
-                            onChange={e => setter(e.target.value)}
- className="w-full pl-10 pr-10 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                        />
-                        {isLast && (
-                            <Button variant="ghost" onClick={() => setShowPw(v => !v)}>{showPw ? <EyeOff size={15} /> : <Eye size={15} />}</Button>
-                        )}
-                    </div>
+                // El ojo de ver/ocultar sigue viviendo al lado del campo, pero
+                // ahora es hermano del canónico y no un hijo posicionado sobre
+                // un `<input>` a mano.
+                <div key={label} className="relative">
+                    <PortalInput
+                        name={`pw-${isLast ? 'confirm' : 'new'}`}
+                        label={label}
+                        icon={Lock}
+                        type={showPw ? 'text' : 'password'}
+                        placeholder="Mín. 8 caracteres, 1 mayúscula y 1 número"
+                        value={val}
+                        onChange={e => setter(e.target.value)}
+                        inputClassName={isLast ? 'pr-10' : ''}
+                    />
+                    {isLast && (
+                        <div className="absolute right-2 bottom-1">
+                            <Button variant="ghost" size="sm" iconOnly icon={showPw ? EyeOff : Eye}
+                                aria-label={showPw ? 'Ocultar la contraseña' : 'Mostrar la contraseña'}
+                                onClick={() => setShowPw(v => !v)} />
+                        </div>
+                    )}
                 </div>
             ))}
             <Button size="lg" disabled={loading || !newPass || !confirm} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>}</Button>

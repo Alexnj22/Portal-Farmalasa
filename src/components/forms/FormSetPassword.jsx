@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { KeyRound, Lock, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
+import PortalInput from '../common/PortalInput';
 
 const FormSetPassword = ({ formData, onClose }) => {
     const [password, setPassword] = useState('');
@@ -65,38 +66,26 @@ const FormSetPassword = ({ formData, onClose }) => {
             </div>
 
             {/* Nueva contraseña */}
-            <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
-                    Nueva Contraseña
-                </label>
-                <div className="relative flex items-center">
-                    <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
-                    <input
-                        type="password"
-                        placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
-                        value={password}
-                        onChange={e => { setPassword(e.target.value); setError(''); }}
- className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                    />
-                </div>
-            </div>
+            <PortalInput
+                name="password"
+                label="Nueva Contraseña"
+                icon={Lock}
+                type="password"
+                placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(''); }}
+            />
 
             {/* Confirmar contraseña */}
-            <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">
-                    Confirmar Contraseña
-                </label>
-                <div className="relative flex items-center">
-                    <Lock size={15} strokeWidth={2.5} className="absolute left-3.5 text-content-3 pointer-events-none" />
-                    <input
-                        type="password"
-                        placeholder="Repite la contraseña"
-                        value={confirm}
-                        onChange={e => { setConfirm(e.target.value); setError(''); }}
- className="w-full pl-10 pr-4 bg-surface-card border border-divider rounded-2xl h-[44px] text-body-xl font-bold text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                    />
-                </div>
-            </div>
+            <PortalInput
+                name="confirm"
+                label="Confirmar Contraseña"
+                icon={Lock}
+                type="password"
+                placeholder="Repite la contraseña"
+                value={confirm}
+                onChange={e => { setConfirm(e.target.value); setError(''); }}
+            />
 
             {/* Error */}
             {error && (

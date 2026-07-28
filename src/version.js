@@ -5,7 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.96.0';
+export const APP_VERSION = '2.97.0';
+
+// v2.97.0 — FilterBar: 4 barras adoptadas (Ventas, Proveedores, Compras, Staff).
+//
+// Hallazgo al migrar Staff y FacturasCompra: tenian ACCIONES dentro de la
+// pildora — "Exportar a Excel", "Descargar ZIP". Eso viola la regla §17 que
+// escribi hace tres commits: la barra es para filtrar, las acciones van al
+// otro lado del titulo. Meterlas en el mismo contenedor hacia que "Exportar"
+// pareciera un filtro mas. Sacadas al migrar.
+//
+// Bug del migrador, corregido: el contador de <div> no distinguia los
+// AUTOCERRADOS (`<div ... />`), asi que abria profundidad de mas y cortaba el
+// bloque en el lugar equivocado. Rompio ProveedoresView en el primer intento.
+//
+// Error propio, corregido tras el build: en StaffManagementView el valor "sin
+// filtrar" es la cadena 'ALL', no ''. Mi `activeCount` con `.filter(Boolean)`
+// lo habria contado como filtro activo SIEMPRE — el boton de limpiar visible
+// sin nada que limpiar. Es justo lo que advertí en el comentario de `Section`:
+// solo la vista sabe cual es su valor neutro.
 
 // v2.96.0 — FilterBar estrena adopcion: VentasView, la barra de referencia.
 //

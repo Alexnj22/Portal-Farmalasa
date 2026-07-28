@@ -10,6 +10,7 @@ import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import Button from '../components/common/Button';
+import FilterBar from '../components/common/FilterBar';
 import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
     fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
@@ -189,32 +190,35 @@ function TabFacturas({
             )}
 
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
-            <div className="flex items-center justify-end gap-3 rounded-2xl bg-surface-card border border-divider px-4 py-2 flex-wrap">
-                {/* Date start */}
-                <LiquidDatePicker compact shortcuts value={dateStart} onChange={setDateStart} />
+            <div className="flex justify-end">
+                <FilterBar
+                    onClear={() => { setSupplierId(''); setSinProveedor(false); }}
+                    activeCount={[supplierId, sinProveedor].filter(Boolean).length}
+                >
+                    {/* 3 · tiempo — esta vista no tiene ámbito ni entidad antes */}
+                    <FilterBar.Section>
+                        <LiquidDatePicker compact shortcuts value={dateStart} onChange={setDateStart} />
+                    </FilterBar.Section>
 
-                <div className="h-5 w-px bg-divider" />
+                    <FilterBar.Section>
+                        <LiquidDatePicker compact shortcuts value={dateEnd} onChange={setDateEnd} />
+                    </FilterBar.Section>
 
-                {/* Date end */}
-                <LiquidDatePicker compact shortcuts value={dateEnd} onChange={setDateEnd} />
-
-                <div className="h-5 w-px bg-divider" />
-
-                {/* Supplier filter */}
-                <div className="flex items-center gap-1.5">
-                    <Users size={12} className="text-content-3" />
-                    <div className="w-[180px]">
-                        <LiquidSelect
-                            value={sinProveedor ? '' : supplierId}
-                            onChange={val => { setSupplierId(val); setSinProveedor(false); }}
-                            disabled={sinProveedor}
-                            options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
-                            placeholder="Todos los proveedores"
-                            compact
-                            bare
-                        />
-                    </div>
-                </div>
+                    {/* 2 · entidad */}
+                    <FilterBar.Section active={!!supplierId} onClear={() => setSupplierId('')} label="proveedor">
+                        <Users size={12} className="text-content-3 shrink-0" />
+                        <div className="w-[180px]">
+                            <LiquidSelect
+                                value={sinProveedor ? '' : supplierId}
+                                onChange={val => { setSupplierId(val); setSinProveedor(false); }}
+                                disabled={sinProveedor}
+                                options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                                placeholder="Todos los proveedores"
+                                compact bare
+                            />
+                        </div>
+                    </FilterBar.Section>
+                </FilterBar>
             </div>
 
             {/* Summary line */}

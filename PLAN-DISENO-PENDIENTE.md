@@ -1332,6 +1332,36 @@ botón era un segmentado disfrazado y perdió su estado activo. El build no lo v
 `FileField` · `FilterBar` · `TablePagination` reescrito · `useMediaQuery`.
 Más el contrato Liquid/Solid (DESIGN.md §2.1) y las reglas de la barra (§17).
 
+## §17 · Auditoría de filtros — el alcance real (2026-07-27)
+
+Preguntado por el usuario: *"¿ya todos los filter pill están completos, en
+todas las vistas?"*. La respuesta es **no**, y el conteo que yo venía dando
+(«quedan 13 barras») estaba mal: contaba solo la escritura
+`h-5 w-px bg-divider`. Auditado por **filtros que de verdad recortan datos**:
+
+| forma | vistas |
+|---|---|
+| `FilterBar` | 4 |
+| píldora a mano | 7 |
+| **sueltos, sin contenedor** | **17** |
+
+**El hallazgo no era de estilo sino de arquitectura.** Convivían tres patrones,
+y el tercero —filtros en `filtersContent`, 37 vistas— no lo veía ningún grep
+porque escribe el divisor distinto (`w-px h-6` en vez de `h-5 w-px`).
+
+Resuelto en DESIGN.md §17: **`filtersContent` es el canónico** (renderiza en la
+misma fila del `<h2>` con `justify-end`, o sea que esas 37 ya cumplían la regla
+— la mal escrita era la regla). El cuerpo queda como excepción documentada para
+barras que no entran en el header.
+
+### Lo que falta, en orden
+
+1. **17 vistas con filtros sueltos** — las de mayor impacto: sin píldora no hay
+   orden de ranuras, ni limpiar-todo, ni cuenta en móvil.
+2. **7 píldoras a mano** → `FilterBar`.
+3. Revisar si las 4 ya migradas deben volver a `filtersContent` o quedarse en
+   el cuerpo por ancho (medir, no suponer).
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

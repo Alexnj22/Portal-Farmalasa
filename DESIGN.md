@@ -1469,6 +1469,28 @@ fondo que tenga detrás. Por eso va del color de la superficie, **no blanco fijo
 sucursal, estado. No es una decoración: es el lugar único donde el usuario mira
 para saber qué está filtrando y para soltarlo.
 
+#### Dónde va — la ambigüedad resuelta (2026-07-27)
+
+Esta regla decía *"a la derecha, en la fila del título"*, que se podía leer de
+dos formas. Al auditarlo aparecieron **tres patrones conviviendo**: 37 vistas
+con los filtros en `filtersContent`, 3 con un comentario que dice
+explícitamente *"vive en el body, no en el header"*, y 17 con los filtros
+sueltos sin contenedor.
+
+**Resuelto mirando qué hace `filtersContent`:** `GlassViewLayout` lo renderiza
+en el **mismo flex row que el `<h2>` del título, con `justify-end`**. O sea que
+las 37 vistas ya cumplían la regla — la que estaba mal escrita era la regla.
+
+| | |
+|---|---|
+| **canónico** | `<GlassViewLayout filtersContent={<FilterBar>…</FilterBar>}>` |
+| **excepción documentada** | en el cuerpo, bajo el título, **solo si la barra no entra en el header** (5+ ranuras o selectores anchos). Ventas, Compras, Proveedores y Staff están así por ancho. |
+| **prohibido** | filtros sueltos sin contenedor — 17 vistas hoy. Sin píldora no hay orden, no hay limpiar-todo, y en móvil no hay cuenta. |
+
+El divisor también tenía dos escrituras —`h-5 w-px bg-divider` y `w-px h-6
+bg-divider`— y por eso una auditoría por grep veía la mitad. Con `FilterBar` el
+divisor lo pone el contenedor y esa divergencia deja de ser posible.
+
 Ya existía un `FilterPill`, pero vivía en `views/pedidos/tabpedidos/` y estaba
 **clavado a los filtros de Pedidos** (sucursal, fecha, estado). No era un
 contenedor, era esa barra concreta. Por eso las otras 13 vistas no podían usarlo

@@ -5,7 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.97.0';
+export const APP_VERSION = '2.97.1';
+
+// v2.97.1 — §17: resuelta la ambiguedad de DONDE va la barra de filtros.
+//
+// El usuario pregunto si los filter pill estaban completos en todas las vistas.
+// Al auditarlo de verdad —por filtros que RECORTAN datos, no por la clase del
+// divisor— aparecio que mi conteo estaba mal y, peor, que convivian TRES
+// patrones: 4 vistas con FilterBar, 7 con pildora a mano y 17 con los filtros
+// sueltos sin contenedor. Mas un cuarto grupo de 37 en `filtersContent` que
+// ningun grep mio veia, porque escriben el divisor `w-px h-6` en vez de
+// `h-5 w-px`.
+//
+// Y habia una contradiccion: 3 vistas comentan "vive en el body, no en el
+// header" mientras 37 hacen lo contrario. Mi propio §17 decia "a la derecha, en
+// la fila del titulo", que se lee de las dos formas — lo escribi sin medir.
+//
+// RESUELTO mirando el codigo: GlassViewLayout renderiza `filtersContent` en el
+// MISMO flex row que el <h2>, con justify-end. O sea que las 37 ya cumplian la
+// regla; la que estaba mal escrita era la regla. `filtersContent` es el
+// canonico; el cuerpo queda como excepcion para barras que no entran.
+//
+// Con el divisor puesto por el contenedor, esa divergencia de escritura deja de
+// ser posible — que es la razon de fondo por la que el canonico importa.
 
 // v2.97.0 — FilterBar: 4 barras adoptadas (Ventas, Proveedores, Compras, Staff).
 //

@@ -16,7 +16,39 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.115.0';
+export const APP_VERSION = '2.116.0';
+
+// v2.116.0 — D3.4 en el formulario de nomina, que es el de mas riesgo.
+//
+// `FormEditPayrollEntry` ya sacaba 11 campos de `PortalInput` via `numField`,
+// pero tres seguian escritos a mano con `<InputLabel>` + `<input
+// className={glassInput}>`. Eso es el canonico reconstruido clase por clase:
+// la etiqueta, el alto, el borde, el glow. En el mismo formulario, once campos
+// pasaban por el componente y tres no, y se notaba.
+//
+// Migrados los tres. `InputLabel` y `glassInput` se fueron con ellos.
+//
+// ── La prueba de por que el arreglo de v2.115.0 tenia que ir primero ──────
+// "Dias Trabajados" lleva `min="0" max="16" step="0.5"`. Verificado en vivo en
+// el editor: los tres atributos SIGUEN en el DOM despues de migrar. Antes del
+// `...rest` el campo habria perdido su tope de 16 dias sin que fallara nada, y
+// una quincena mal capturada en nomina no es un detalle visual.
+//
+// De paso, el asterisco rojo a mano de "Motivo de edicion" era una convencion
+// inventada en este archivo; ahora usa el badge "Requerido" del canonico, que
+// es lo que muestra el resto del portal.
+//
+// ── Los cuatro que NO se migran, y por que ───────────────────────────────
+// Los del banco de horas. El color del borde no es decoracion: dice de que
+// bolsa sale la hora (diurna ambar, nocturna chart-3) y que se hace con ella
+// (compensar, chart-1). `PortalInput` no tiene eje de color, asi que migrarlos
+// borraria el dato. Queda anotado en el bloque.
+//
+// Verificado en vivo con un periodo y una entrada SINTETICOS interceptados en
+// red — no se escribio nada en la base. Los 14 campos del editor tienen ahora
+// etiqueta asociada por `<label for>`; cero errores.
+//
+// Inputs fuera del canonico: 102 → 99.
 
 // v2.115.0 — D3.4 era una migracion con trampa. Ya no.
 //

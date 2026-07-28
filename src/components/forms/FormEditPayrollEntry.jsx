@@ -9,11 +9,10 @@ import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
-const InputLabel = ({ children }) => (
-    <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
-);
-
-const glassInput = "w-full h-10 px-3 bg-surface-card border border-divider hover:border-brand/40 focus:border-brand/50 rounded-2xl text-body-xl font-bold text-content transition-all duration-300 placeholder-content-3 placeholder:font-normal";
+// `InputLabel` y `glassInput` vivían acá: la etiqueta y el campo de PortalInput
+// reescritos clase por clase. Los dos se fueron con el último campo migrado
+// (2026-07-28). Los cuatro `<input>` que quedan son los del banco de horas, y
+// no pasan por el canónico a propósito — ver la nota en su bloque.
 
 
 const EMPTY_OBJ = {};
@@ -120,6 +119,13 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 <p className="text-micro font-black uppercase tracking-widest text-warning-text">HE Diurnas</p>
                                 <span className="text-body font-black text-warning-text">{otBank.diurnal.toFixed(1)}h</span>
                             </div>
+                            {/* Estos cuatro NO pasan por PortalInput a propósito. El
+                                color del borde no es decoración: dice de qué bolsa
+                                sale la hora (diurna ámbar, nocturna chart-3) y qué se
+                                hace con ella (compensar, chart-1). El canónico no
+                                tiene eje de color, así que migrarlos borraría el dato.
+                                Su `max` además es dinámico —el saldo del banco— que es
+                                justo lo que se habría perdido antes de v2.115.0. */}
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-micro font-black text-warning mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
@@ -179,16 +185,20 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                 </div>
             )}
 
-            <div className="col-span-2">
-                <InputLabel>Días Trabajados</InputLabel>
-                <input
-                    aria-label="Días trabajados"
-                    type="number" step="0.5" min="0" max="16"
-                    value={formData.days_worked ?? entry.days_worked ?? 15}
-                    onChange={e => setFormData(f => ({ ...f, days_worked: parseFloat(e.target.value) || 0 }))}
-                    className={glassInput}
-                />
-            </div>
+            {/* `InputLabel` + `<input className={glassInput}>` es PortalInput
+                reconstruido a mano, igual que los 7 de `numField`. El `aria-label`
+                se va porque ya no hace falta: la etiqueta queda asociada por
+                `<label for>`. Y `min`/`max`/`step` sobreviven — antes del arreglo
+                de v2.115.0 este campo habría perdido su tope de 16 días. */}
+            <PortalInput
+                colSpan={2}
+                name="days_worked"
+                label="Días Trabajados"
+                type="number" step="0.5" min="0" max="16"
+                value={String(formData.days_worked ?? entry.days_worked ?? 15)}
+                onChange={e => setFormData(f => ({ ...f, days_worked: parseFloat(e.target.value) || 0 }))}
+                inputClassName="tabular-nums"
+            />
 
             <div className="col-span-2 pt-2">
                 <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3 flex items-center">
@@ -207,16 +217,14 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {numField('bonifications',     'Bonificaciones ($)')}
             {numField('vacation_bonus',    'Bono Vacacional ($)')}
             {numField('viaticos',          'Viáticos ($)')}
-            <div className="col-span-2">
-                <InputLabel>Detalle de Viáticos</InputLabel>
-                <input
-                    type="text"
-                    value={formData.viaticos_detail ?? entry.viaticos_detail ?? ''}
-                    onChange={e => setFormData(f => ({ ...f, viaticos_detail: e.target.value }))}
-                    placeholder="Ej: Por 1 visita de supervisión $10.00"
-                    className={glassInput}
-                />
-            </div>
+            <PortalInput
+                colSpan={2}
+                name="viaticos_detail"
+                label="Detalle de Viáticos"
+                value={formData.viaticos_detail ?? entry.viaticos_detail ?? ''}
+                onChange={e => setFormData(f => ({ ...f, viaticos_detail: e.target.value }))}
+                placeholder="Ej: Por 1 visita de supervisión $10.00"
+            />
 
             <div className="col-span-2 pt-2">
                 <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Descuentos adicionales</p>
@@ -245,16 +253,18 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             {/* Edit reason */}
-            <div className="col-span-2">
-                <InputLabel>Motivo de edición <span className="text-danger">*</span></InputLabel>
-                <input
-                    type="text"
-                    value={formData._reason || ''}
-                    onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
-                    placeholder="Ej: Corrección de días por permiso autorizado"
- className="w-full h-10 px-3 bg-warning/10 border border-warning/40 hover:border-warning focus:border-warning rounded-2xl text-body-xl font-bold text-content transition-all duration-300"
-                />
-            </div>
+            {/* El asterisco rojo a mano era una convención inventada acá; el
+                canónico ya marca "Requerido" en su badge cuando falta, que es
+                lo que el resto del portal muestra. */}
+            <PortalInput
+                colSpan={2}
+                name="_reason"
+                label="Motivo de edición"
+                required
+                value={formData._reason || ''}
+                onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
+                placeholder="Ej: Corrección de días por permiso autorizado"
+            />
         </div>
     );
 };

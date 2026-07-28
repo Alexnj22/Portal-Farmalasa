@@ -685,13 +685,17 @@
     --backdrop-header:    blur(20px) saturate(200%);
     --backdrop-modal:     blur(24px) saturate(140%);
     --tab-track-backdrop: blur(20px) saturate(140%);
-    /* El sidebar SÍ lleva blur en móvil, con el radio reducido de esta
-       escala. Antes no llevaba ninguno (`lg:backdrop-blur-2xl`) y el fondo
-       al 95% dejaba ver el texto de atrás nítido a través del menú. Y se
-       opaca un punto más: sobre un teléfono el menú tapa la vista entera,
-       así que no hay nada que "dejar entrever" — solo ruido. */
-    --sidebar-bg:       rgba(7,3,26,0.92);
-    --sidebar-backdrop: blur(20px) saturate(150%);
+    /* En móvil el sidebar es OPACO y sin blur, y no por rendimiento: es que
+       el blur ahí no puede funcionar. El panel se desliza con `transform`, y
+       un ancestro transformado crea contexto de apilamiento — así que el
+       "backdrop" que el filtro tiene para difuminar es el de ESE contexto,
+       no la página. Resultado medido en un iPhone 13: el filtro se declara,
+       el navegador lo acepta, y el texto de la vista se sigue leyendo NÍTIDO
+       a través del menú. Es el mismo bloque contenedor que ya nos mordió con
+       la hoja de filtros (que medía 108px en vez de 390).
+       Un menú que tapa la app entera no tiene nada que dejar entrever. */
+    --sidebar-bg:       #07031a;
+    --sidebar-backdrop: none;
   }
 }
 

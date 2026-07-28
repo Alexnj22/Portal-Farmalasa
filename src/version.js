@@ -5,7 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.100.0';
+export const APP_VERSION = '2.100.1';
+
+// v2.100.1 — Dos cierres del bloque movil, los dos vistos en la captura.
+//
+// 1 · El menu movil seguia dejando leer la vista de atras, aunque el blur
+//     estaba declarado y el navegador lo aceptaba (medido: `blur(20px)
+//     saturate(1.5)` sobre `rgba(7,3,26,.92)`). La razon: el panel se desliza
+//     con `transform`, y un ancestro transformado crea contexto de
+//     apilamiento — asi que el "backdrop" que el filtro tiene para difuminar
+//     es el de ESE contexto, no la pagina. El filtro se aplica sobre nada.
+//
+//     Es el mismo bloque contenedor que ya nos mordio con la hoja de filtros
+//     (que medio 108px en vez de 390, v2.71.0). En movil el sidebar pasa a
+//     OPACO: no es una concesion de rendimiento, es que ahi el vidrio no
+//     puede existir. Y un menu que tapa la app entera no tiene nada que dejar
+//     entrever. En escritorio el sidebar no se transforma, asi que su vidrio
+//     sigue funcionando y sigue saliendo del tema.
+//
+// 2 · `AttendanceAuditView`: la fila de empleado era un `<button>` que
+//     CONTENIA el `<Button>` de "Aprobar todo". HTML invalido —React lo
+//     avisaba en cada carga de /audit— y dos paradas de tabulacion para la
+//     misma fila, con el `stopPropagation` de rigor para que el click de
+//     adentro no disparara el de afuera. Ahora la fila es un `<div>`, quien
+//     se expande es un disparador propio, y el boton de aprobar queda AL
+//     LADO. El `stopPropagation` se fue solo: era la marca de que la
+//     estructura estaba mal, no una necesidad.
 
 // v2.100.0 — Movil: el Inicio ya no revienta, y el vidrio sigue al tema.
 //

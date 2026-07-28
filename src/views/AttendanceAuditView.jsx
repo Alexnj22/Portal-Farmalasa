@@ -712,12 +712,21 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 
   return (
     <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-card shadow-[var(--shadow-elevation-xs)] overflow-hidden transition-all duration-200 hover:shadow-[var(--shadow-elevation-sm)]">
-      {/* Collapsed header row */}
-      <button
-        type="button"
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card active:bg-surface-card transition-all duration-150"
-      >
+      {/* Fila colapsada.
+          Era un `<button>` que CONTENÍA el `<Button>` de "Aprobar todo": HTML
+          inválido (React lo avisa en cada carga de /audit) y dos paradas de
+          tabulación para la misma fila, con el `stopPropagation` de rigor para
+          que el click de adentro no disparara el de afuera. Ahora la fila es un
+          `<div>` y quien se expande es un disparador propio que ocupa la parte
+          clickeable — el botón de aprobar queda al lado, no adentro. */}
+      <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-surface-card transition-all duration-150">
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? 'Contraer' : 'Expandir'} la quincena de ${emp.name}`}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+        >
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
           <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-white shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
@@ -757,6 +766,8 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             </div>
           )}
         </div>
+
+        </button>
 
         {/* Quincena stats strip — sm+ */}
         <div className="hidden sm:flex items-center gap-3 shrink-0">
@@ -800,7 +811,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
             </div>
           )}
           {!allApproved && onApproveAll && (
-            <Button tone="success" icon={ShieldCheck} onClick={e => { e.stopPropagation(); onApproveAll(); }}>Aprobar todo</Button>
+            <Button tone="success" icon={ShieldCheck} onClick={onApproveAll}>Aprobar todo</Button>
           )}
           <div className="w-px h-8 bg-divider mx-0.5" />
           {allApproved ? (
@@ -818,12 +829,18 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           )}
         </div>
 
-        <ChevronDown
-          size={16}
-          className={`text-content-3 transition-transform duration-300 ease-out shrink-0 ${expanded ? 'rotate-180' : ''}`}
-          strokeWidth={2.5}
-        />
-      </button>
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          aria-hidden="true" tabIndex={-1}
+          className="shrink-0 p-1 -m-1 rounded-full text-content-3 hover:text-content transition-colors">
+          <ChevronDown
+            size={16}
+            className={`transition-transform duration-300 ease-out ${expanded ? 'rotate-180' : ''}`}
+            strokeWidth={2.5}
+          />
+        </button>
+      </div>
 
       {/* 15-day quincena detail */}
       {expanded && (

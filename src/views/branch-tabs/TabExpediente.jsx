@@ -367,15 +367,12 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                     <div inert={isSearchExpanded ? true : undefined} className={`flex flex-wrap md:flex-nowrap items-center gap-2 shrink-0 transition-all duration-300 ease-in-out absolute right-0 w-full md:w-auto justify-end ${isSearchExpanded ? 'opacity-0 scale-95 pointer-events-none translate-x-10' : 'opacity-100 scale-100 translate-x-0'}`}>
 
-                        <button
+                        <Button
+                            size="md"
+                            variant="secondary"
+                            icon={Layers}
                             onClick={() => setShowAllDocs(!showAllDocs)}
-                            className={`h-10 px-4 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-300 border flex items-center gap-1.5 transform hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ${showAllDocs
-                                ? 'bg-surface-card backdrop-blur-xl text-content border-border-card'
-                                : 'bg-surface-card backdrop-blur-xl text-content-3 border-border-card'
-                                }`}
-                        >
-                            <Layers size={14} strokeWidth={2.5} /> {showAllDocs ? 'Ocultar' : 'Ver Todos'}
-                        </button>
+                        >{showAllDocs ? 'Ocultar' : 'Ver Todos'}</Button>
 
                         <Button variant="secondary" icon={Plus} onClick={() => openModal('addCustomDocument', liveBranch)}>Nuevo</Button>
 

@@ -443,13 +443,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <Button variant="secondary" disabled={printingPdf === row.pedido_id} onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}>{printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF</Button>
                                             )}
                                             {canActuar && !isBranch && stage === 'preparado' && (
-                                                <button
+                                                <Button
+                                                    size="sm"
+                                                    tone="chart-3"
+                                                    icon={CalendarClock}
                                                     onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
-                                                    className={`flex items-center gap-1 text-caption font-bold px-2.5 py-1.5 rounded-xl active:scale-[0.97] transition-all ${row.entrega_programada_at ? 'bg-chart-3/10 text-chart-3-text hover:bg-chart-3/20 border border-chart-3/30' : 'bg-surface-card-hover text-content-2 hover:bg-surface-card-hover border border-border-card'}`}
                                                 >
-                                                    <CalendarClock size={10} />
                                                     {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}
-                                                </button>
+                                                </Button>
                                             )}
                                             {/* Entregué — conductor, junto a PDF para ahorrar espacio */}
                                             {pedidoRutaMap.has(row.pedido_id) && (() => {

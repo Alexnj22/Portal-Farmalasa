@@ -273,14 +273,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             <p className="text-micro text-content-3 uppercase tracking-widest font-bold">Por lote</p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {MULTIPLO_PILLS.map(n => (
-                                    <button key={n} type="button"
+                                    <Button
+                                        size="sm"
+                                        tone="chart-1"
+                                        key={n}
+                                        type="button"
                                         onClick={() => selectMultiplo(n)}
-                                        className={`px-3 py-1.5 rounded-xl text-body-sm font-semibold border-2 transition-all ${
-                                            multiplo === n
-                                                ? 'bg-chart-1-solid border-chart-1 text-white shadow-md'
-                                                : 'bg-surface-card border-border-card text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
-                                        }`}
-                                    >×{n}</button>
+                                    >×{n}</Button>
                                 ))}
                                 <input type="number" min={1} placeholder="Otro…"
                                     value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
@@ -314,19 +313,17 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         Caja especial
                         <span className="normal-case tracking-normal font-medium text-content-3"> · producto va fuera de cajas normales</span>
                     </p>
-                    <button type="button"
+                    <Button
+                        tone="chart-6"
+                        icon={Package}
+                        type="button"
                         onClick={() => {
                             const next = { ...vals, caja_especial: !vals.caja_especial };
                             setVals(next); onApply(next);
                         }}
-                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-body-sm font-semibold ${
-                            vals.caja_especial
-                                ? 'bg-chart-6-solid border-chart-6 text-white shadow-md'
-                                : 'bg-surface-card border-border-card text-content-3 hover:border-chart-6/40 hover:text-chart-6-text'
-                        }`}>
-                        <Package size={13} />
+                    >
                         {vals.caja_especial ? 'Caja especial activa — E1, E2…' : 'Activar caja especial'}
-                    </button>
+                    </Button>
                     {vals.caja_especial && (
                         <p className="text-caption text-chart-6-text mt-1.5 px-0.5">
                             Cada unidad en el pedido recibe una etiqueta E1, E2… independiente.

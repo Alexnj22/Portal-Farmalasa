@@ -65,13 +65,13 @@ const NoAccessView = () => {
                 {/* Actions */}
                 <div className="flex flex-col items-center gap-3 w-full animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '300ms' }}>
                     {/* WhatsApp support */}
-                    <button
+                    <Button
+                        size="lg"
+                        variant="ghost"
+                        className="w-full"
+                        icon={MessageCircle}
                         onClick={handleWhatsApp}
-                        className="w-full inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-btn bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[var(--shadow-glow-success-lg)] hover:shadow-[var(--shadow-glow-success-lg)]"
-                    >
-                        <MessageCircle size={15} strokeWidth={2.5} />
-                        Contacta con soporte
-                    </button>
+                    >Contacta con soporte</Button>
 
                     {/* Logout */}
                     <Button variant="secondary" disabled={loggingOut} onClick={handleLogout}>{loggingOut

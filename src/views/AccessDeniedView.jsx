@@ -57,13 +57,7 @@ const AccessDeniedView = () => {
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both" style={{ animationDelay: '280ms' }}>
                 <Button variant="secondary" icon={ArrowLeft} onClick={() => navigate(-1)}>Volver</Button>
 
-                <button
-                    onClick={handleWhatsApp}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-btn bg-[#25D366] text-white text-body font-black hover:bg-[#1fb855] active:scale-[0.97] transition-all shadow-[var(--shadow-glow-success-lg)]"
-                >
-                    <MessageCircle size={14} strokeWidth={2.5} />
-                    Contactar soporte
-                </button>
+                <Button variant="ghost" icon={MessageCircle} onClick={handleWhatsApp}>Contactar soporte</Button>
             </div>
         </div>
     );

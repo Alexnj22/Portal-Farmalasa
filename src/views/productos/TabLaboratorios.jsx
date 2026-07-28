@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import Button from '../../components/common/Button';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
@@ -430,15 +431,13 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                             ]}
                                             value={section} onChange={setSection} label="Sección" className="flex-1" />,
                                     ].map(t => (
-                                        <button
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="flex-1"
                                             key={t.key}
                                             onClick={() => setSection(t.key)}
-                                            className={`flex-1 text-label font-semibold py-1.5 px-2 rounded-xl transition-all duration-150 ${
-                                                section === t.key ? t.active : 'text-content-3 hover:text-content-2'
-                                            }`}
-                                        >
-                                            {t.label}
-                                        </button>
+                                        >{t.label}</Button>
                                     ))}
                                 </div>
                             )}
@@ -457,17 +456,13 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                             { key: 'vitrina', label: 'Vitrina' },
                                             { key: 'estante', label: 'Estante' },
                                         ].map(t => (
-                                            <button
+                                            <Button
+                                                size="sm"
+                                                tone="chart-9"
+                                                className="flex-1"
                                                 key={t.key}
                                                 onClick={() => setSalaType(t.key)}
-                                                className={`flex-1 py-1 rounded-lg text-label font-bold border transition-all duration-150 ${
-                                                    salaType === t.key
-                                                        ? 'bg-chart-9-solid text-white border-chart-9 shadow-sm shadow-chart-9/30'
-                                                        : 'bg-surface-card text-content-3 border-border-card hover:border-chart-9/30 hover:text-chart-9-text'
-                                                }`}
-                                            >
-                                                {t.label}
-                                            </button>
+                                            >{t.label}</Button>
                                         ))}
                                     </div>
                                     <GlassInput

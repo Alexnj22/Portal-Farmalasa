@@ -302,21 +302,18 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                     const alertStatus = getTabAlert(tab.id);
 
                                     return (
-                                        <button
+                                        <Button
+                                            variant="secondary"
+                                            icon={Icon}
                                             key={tab.id}
                                             ref={(el) => tabBtnRefs.current.set(tab.id, el)}
                                             onClick={() => setActiveTab(tab.id)}
-                                            className={`relative flex items-center justify-center gap-2 py-2.5 px-4 text-caption md:text-label font-black uppercase tracking-widest transition-all duration-300 z-base rounded-full shrink-0 border border-transparent ${isActive
-                                                    ? 'text-brand-text'
-                                                    : 'text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm hover:-translate-y-0.5 hover:border-border-card'
-                                                }`}
                                         >
-                                            <Icon size={14} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'text-brand-text' : ''} />
                                             <span className="hidden xl:inline">{tab.label}</span>
 
                                             {alertStatus === 'critical' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-danger rounded-full shadow-[var(--shadow-glow-danger-md)] animate-pulse border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
                                             {alertStatus === 'warning' && <span className={`absolute top-1.5 right-2 w-2 h-2 bg-warning rounded-full shadow-[var(--shadow-glow-warning-md)] border ${isActive ? 'border-border-card' : 'border-transparent'}`}></span>}
-                                        </button>
+                                        </Button>
                                     );
                                 })}
                             </div>

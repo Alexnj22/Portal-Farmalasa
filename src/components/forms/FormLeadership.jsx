@@ -6,6 +6,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect'; 
 import PortalTextarea from '../common/PortalTextarea';
+import Button from '../common/Button';
 
 const getTenure = (dateString) => {
     if (!dateString) return 'N/A';
@@ -279,12 +280,20 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <h3 className="text-caption font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
                                     
                                     <div className="flex p-1.5 bg-surface-card backdrop-blur-md border border-border-card rounded-2xl shadow-[var(--shadow-shine-lg)]">
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-label font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-surface-card text-content shadow-[var(--shadow-elevation-md)]' : 'text-content-3 hover:bg-surface-card'}`}>
-                                            <ShieldCheck size={14}/> Permanente
-                                        </button>
-                                        <button type="button" onClick={() => setFormData({...formData, isPermanent: false})} className={`flex-1 py-3 text-label font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent === false ? 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]' : 'text-content-3 hover:bg-surface-card'}`}>
-                                            <Clock size={14}/> Interinato
-                                        </button>
+                                        <Button
+                                            variant="secondary"
+                                            className="flex-1"
+                                            icon={ShieldCheck}
+                                            type="button"
+                                            onClick={() => setFormData({...formData, isPermanent: true})}
+                                        >Permanente</Button>
+                                        <Button
+                                            tone="warning"
+                                            className="flex-1"
+                                            icon={Clock}
+                                            type="button"
+                                            onClick={() => setFormData({...formData, isPermanent: false})}
+                                        >Interinato</Button>
                                     </div>
 
                                     {formData.isPermanent === false && (

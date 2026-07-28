@@ -475,10 +475,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     <div key={yearGroup.year} className="w-full mb-4">
 
                                         <div className="relative flex justify-center items-center w-full mb-4 group">
-                                            <button onClick={() => toggleYear(yearGroup.year)} className={`relative z-content flex items-center gap-2 px-6 py-2.5 rounded-full font-black text-body tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border backdrop-blur-xl ${isYearOpen ? 'bg-brand/10 text-brand-text border-white shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card text-content-2 border-border-card shadow-[var(--shadow-elevation-xs)] hover:bg-brand/5 hover:text-brand-text hover:border-white hover:shadow-[var(--shadow-glow-brand)]'}`}>
-                                                <Calendar size={15} strokeWidth={2.5} /> AÑO {yearGroup.year}
-                                                <ChevronRight size={16} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isYearOpen ? 'rotate-90 text-brand-text' : 'text-content-3'}`} />
-                                            </button>
+                                            <Button
+                                                variant="primary"
+                                                icon={Calendar}
+                                                onClick={() => toggleYear(yearGroup.year)}
+                                            >AÑO {yearGroup.year}</Button>
                                             <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
                                         </div>
 
@@ -493,10 +494,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                         <div key={monthGroup.id} className="w-full mt-2 mb-2">
 
                                                             <div className="relative flex justify-center items-center w-full mb-4 group">
-                                                                <button onClick={() => toggleMonth(monthGroup.id)} className={`relative z-content flex items-center gap-2 px-5 py-2.5 rounded-full font-black text-caption tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.97] border ${isMonthOpen ? 'bg-surface-card text-brand-text border-white shadow-[var(--shadow-glow-brand)]' : 'bg-surface-card backdrop-blur-md text-content-3 border-border-card hover:text-content-2 shadow-sm'}`}>
-                                                                    {monthGroup.name}
-                                                                    <ChevronRight size={12} strokeWidth={3} className={`transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isMonthOpen ? 'rotate-90 text-brand-text' : 'text-content-3'}`} />
-                                                                </button>
+                                                                <Button
+                                                                    variant="secondary"
+                                                                    icon={ChevronRight}
+                                                                    onClick={() => toggleMonth(monthGroup.id)}
+                                                                >{monthGroup.name}</Button>
                                                                 <div className="absolute left-[20px] md:left-1/2 w-[30px] md:w-0 h-[2px] bg-surface-card-hover/80 -z-base md:hidden"></div>
                                                             </div>
 

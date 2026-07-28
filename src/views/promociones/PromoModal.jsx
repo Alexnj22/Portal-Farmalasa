@@ -77,35 +77,25 @@ function StepInfo({ form, set, branches }) {
             <div>
                 <label className={lbl}>Sucursales participantes</label>
                 <div className="flex gap-2 flex-wrap mt-1">
-                    <button
+                    <Button
+                        size="sm"
+                        variant="primary"
                         type="button"
                         onClick={() => set('branch_ids', form.branch_ids.length === branches.length
                             ? [] : branches.map(b => b.id))}
-                        className={`px-3 py-1.5 text-label font-bold rounded-full border transition-all ${
-                            form.branch_ids.length === branches.length
-                                ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white shadow-sm shadow-brand/20'
-                                : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
-                        }`}
-                    >
-                        Todas
-                    </button>
+                    >Todas</Button>
                     {branches.map(b => {
                         const active = form.branch_ids.includes(b.id);
                         return (
-                            <button
+                            <Button
+                                size="sm"
+                                variant="primary"
                                 key={b.id}
                                 type="button"
                                 onClick={() => set('branch_ids', active
                                     ? form.branch_ids.filter(id => id !== b.id)
                                     : [...form.branch_ids, b.id])}
-                                className={`px-3 py-1.5 text-label rounded-full border transition-all ${
-                                    active
-                                        ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
-                                        : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
-                                }`}
-                            >
-                                {b.name}
-                            </button>
+                            >{b.name}</Button>
                         );
                     })}
                 </div>

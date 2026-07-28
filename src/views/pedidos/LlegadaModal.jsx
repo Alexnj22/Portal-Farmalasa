@@ -225,13 +225,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
+                            <Button
+                                size="sm"
+                                tone="success"
+                                className="flex-1"
                                 onClick={() => setElectrolitFaltantes(0)}
-                                className={`flex-1 text-caption font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitFaltantes === 0
-                                    ? 'bg-success-solid text-white border-success shadow-sm'
-                                    : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
-                                ✓ Todas llegaron
-                            </button>
+                            >✓ Todas llegaron</Button>
                             <div className="flex items-center gap-1 shrink-0">
                                 <Button variant="secondary" size="xs" disabled={(electrolitFaltantes ?? 0) <= 0} onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}>−</Button>
                                 <span className={`w-8 text-center text-subtitle font-black tabular-nums ${

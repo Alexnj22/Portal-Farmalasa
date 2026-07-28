@@ -672,17 +672,20 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                       return (
                         <div key={sectionKey} className="flex flex-col gap-3">
                           {group.branchName && (
-                            <button
-                              type="button"
-                              onClick={() => toggleSectionCollapsed(sectionKey)}
-                              className="w-full flex items-center justify-between px-1 py-1 -my-1 rounded-lg hover:bg-black/[0.03] transition-colors"
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="w-full"
+                                icon={ChevronDown}
+                                type="button"
+                                onClick={() => toggleSectionCollapsed(sectionKey)}
                             >
-                              <span className="text-caption font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
-                                <ChevronDown size={12} className={`transition-transform duration-200 ${isCollapsed ? "-rotate-90" : ""}`} />
+                                <span className="text-caption font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
+                                
                                 {group.branchName}
                               </span>
                               <span className="text-caption font-bold text-content-3">{group.rows.length}</span>
-                            </button>
+                            </Button>
                           )}
                           {!isCollapsed && (
                             <>

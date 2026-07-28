@@ -1896,10 +1896,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         const assigned = (formData.assigned_branch_ids || []).map(String);
                                                         const isActive = assigned.includes(opt.value);
                                                         return (
-                                                            <button key={opt.value} type="button"
+                                                            <Button
+                                                                size="xs"
+                                                                tone="chart-9"
+                                                                key={opt.value}
+                                                                type="button"
                                                                 onClick={() => setFormData(p => { const cur = (p.assigned_branch_ids || []).map(String); return { ...p, assigned_branch_ids: isActive ? cur.filter(id => id !== opt.value) : [...cur, opt.value] }; })}
-                                                                className={`px-3 h-7 rounded-full text-caption font-black uppercase tracking-wider border transition-all duration-200 ${isActive ? 'bg-chart-9-solid text-white border-chart-9 shadow-sm' : 'bg-surface-card text-content-3 border-divider hover:border-chart-9/50 hover:text-chart-9-text'}`}
-                                                            >{opt.label}</button>
+                                                            >{opt.label}</Button>
                                                         );
                                                     })}
                                                 </div>

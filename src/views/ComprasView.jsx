@@ -9,6 +9,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import Button from '../components/common/Button';
 import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
     fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
@@ -176,18 +177,15 @@ function TabFacturas({
         <div className="flex flex-col gap-4">
             {/* Aviso global: facturas sin proveedor */}
             {unlinkedCount > 0 && (
-                <button
+                <Button
+                    size="sm"
+                    tone="warning"
+                    icon={AlertTriangle}
                     onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
-                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-label font-semibold border transition-colors w-fit ${
-                        sinProveedor
-                            ? 'bg-warning/10 border-warning/40 text-warning-text'
-                            : 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
-                    }`}
                 >
-                    <AlertTriangle size={12} className="text-warning" />
                     {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
                     <span className="ml-1 text-caption font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
-                </button>
+                </Button>
             )}
 
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}

@@ -777,19 +777,13 @@ const RequestsView = () => {
                                 {CREATABLE_TYPES.map(({ key, icon: Icon }) => {
                                     const conf = REQUEST_TYPES[key];
                                     return (
-                                        <button
+                                        <Button
+                                            variant="secondary"
+                                            icon={Icon}
                                             key={key}
                                             type="button"
                                             onClick={() => { setCreateType(key); setCreatePayload({}); }}
-                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-label font-bold transition-all ${
-                                                createType === key
-                                                    ? `${conf.color} ${conf.border} shadow-sm`
-                                                    : 'border-divider text-content-3 hover:border-divider bg-surface-card'
-                                            }`}
-                                        >
-                                            <Icon size={13} strokeWidth={2} />
-                                            {conf.label}
-                                        </button>
+                                        >{conf.label}</Button>
                                     );
                                 })}
                             </div>

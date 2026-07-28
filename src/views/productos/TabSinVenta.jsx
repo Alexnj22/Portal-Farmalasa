@@ -728,16 +728,19 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     <DataRow key={row.erp_product_id} index={row.erp_product_id}
                                         className={isIgnored ? 'opacity-50' : ''}>
                                         <DataCell>
-                                            <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
+                                            <Button
+                                                variant="ghost"
+                                                className="w-full"
+                                                onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
-                                                className="group/copy flex items-center gap-1.5 text-left w-full">
+                                            >
                                                 <span className="text-body font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
                                                 <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
-                                            </button>
+                                            </Button>
                                             <span className="text-caption text-content-3">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                         </DataCell>
                                         <DataCell hideBelow="md" className="text-body-sm text-content-3">{row.laboratorio || '—'}</DataCell>
@@ -809,16 +812,19 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 return (
                                     <DataRow key={row.erp_product_id} index={row.erp_product_id}>
                                         <DataCell>
-                                            <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
+                                            <Button
+                                                variant="ghost"
+                                                className="w-full"
+                                                onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
-                                                className="group/copy flex items-center gap-1.5 text-left w-full">
+                                            >
                                                 <span className="text-body font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand-text transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
                                                 <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
-                                            </button>
+                                            </Button>
                                             {row.fecha_vencimiento_min && (() => {
                                                 const exp = new Date(row.fecha_vencimiento_min);
                                                 const expired = exp < new Date();

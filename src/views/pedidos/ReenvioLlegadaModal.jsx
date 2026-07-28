@@ -142,20 +142,13 @@ export default function ReenvioLlegadaModal({
                             )}
                         </div>
                         <div className="flex gap-2">
-                            <button
-                                onClick={() => setElectrolitOk(true)}
-                                className={`flex-1 text-caption font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
-                                    ? 'bg-success-solid text-white border-success shadow-sm'
-                                    : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
-                                ✓ Sí llegaron
-                            </button>
-                            <button
+                            <Button size="sm" tone="success" className="flex-1" onClick={() => setElectrolitOk(true)}>✓ Sí llegaron</Button>
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="flex-1"
                                 onClick={() => setElectrolitOk(false)}
-                                className={`flex-1 text-caption font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
-                                    ? 'bg-danger-solid text-white border-danger shadow-sm'
-                                    : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
-                                ✗ Aún faltan
-                            </button>
+                            >✗ Aún faltan</Button>
                         </div>
                     </div>
                 )}

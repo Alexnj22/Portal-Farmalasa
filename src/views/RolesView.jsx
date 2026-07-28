@@ -369,7 +369,10 @@ const RolesView = ({ openModal }) => {
                 </h5>
 
                 {!isExporting && (
-                    <button
+                    <Button
+                        variant="primary"
+                        className="w-full"
+                        icon={Users}
                         onMouseDown={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
                         onClick={(e) => {
@@ -377,10 +380,7 @@ const RolesView = ({ openModal }) => {
                             e.stopPropagation();
                             if (openModal) openModal('viewRoleEmployees', { role });
                         }}
-                        className={`w-full py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.97] ${isExternal ? 'bg-surface-card text-content-3 border border-divider hover:bg-surface-card-hover hover:text-content-2' : 'bg-brand/10 text-brand-text border border-brand/20 hover:bg-brand hover:text-white'}`}
-                    >
-                        <Users size={12} strokeWidth={2.5} /> {roleEmps.length} Personas
-                    </button>
+                    >{roleEmps.length} Personas</Button>
                 )}
 
                 {isExporting && (

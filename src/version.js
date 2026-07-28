@@ -5,7 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.93.0';
+export const APP_VERSION = '2.94.0';
+
+// v2.94.0 — Familia A, primer lote: 24 archivos de botones de accion al canonico.
+//
+// De 102 candidatos que el migrador creia automatizables quedaron 24 archivos
+// aplicados. Los tres filtros que se agregaron probando, cada uno por un caso
+// real que rompio:
+//
+// 1 · Ternario que devuelve JSX. `{editando ? <><Save/> Guardar</> : <><Plus/>
+//     Crear</>}` no se puede desarmar sacando los iconos: quedaba
+//     `{editando ?  Guardar :  Crear}`, que no compila. Detectado probando en
+//     RolesView ANTES de correrlo sobre 51 archivos.
+//
+// 2 · Solo se migra si el ternario del className contiene UNICAMENTE clases de
+//     presentacion (bg/text/border/hover...). Si trae layout o ancho, el
+//     ternario esta haciendo algo que el canonico no sabe y se saltea.
+//
+// 3 · **El filtro que faltaba y salio del lint**: 12 archivos quedaron con
+//     `isActive` / `isSel` / `salaActiveBtn` HUERFANOS. Eso no es basura — es
+//     que ese boton PERDIA su distincion de estado activo al colapsar el
+//     ternario. O sea que eran segmentados disfrazados, no botones planos.
+//     Revertidos los 12. Sin eslint esto habria pasado el build en silencio y
+//     el usuario habria visto pestanas que ya no marcan cual esta abierta.
+//
+// Red de seguridad del corredor: migra archivo por archivo, corre eslint tras
+// cada uno y revierte el que rompa o el que quede a menos de la mitad.
 
 // v2.93.0 — Familia D completa: 25 botones de solo icono al canonico.
 //

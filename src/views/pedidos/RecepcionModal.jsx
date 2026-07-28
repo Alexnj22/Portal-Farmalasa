@@ -919,11 +919,13 @@ export default function RecepcionModal({
                             zIndex: 99999,
                         }} className="rounded-xl border border-brand/30 bg-surface-card backdrop-blur-xl shadow-2xl overflow-hidden">
                             {extraResults.map(prod => (
-                                <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-body-sm text-content-2 hover:bg-brand/10 transition-colors border-b border-divider last:border-0">
-                                    <Plus size={12} className="text-brand-text shrink-0" />
-                                    {prod.nombre}
-                                </button>
+                                <Button
+                                    variant="primary"
+                                    className="w-full"
+                                    icon={Plus}
+                                    key={prod.id}
+                                    onMouseDown={() => addExtra(prod)}
+                                >{prod.nombre}</Button>
                             ))}
                         </div>,
                         document.body

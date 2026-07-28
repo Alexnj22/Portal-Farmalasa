@@ -1195,13 +1195,17 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       <div className={pillWrap}>
         <Button variant="ghost" icon={ChevronLeft} iconOnly className={pillIconBtn} onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))} />
         <div className={pillDivider} />
-        <button type="button" onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
-          className="flex flex-col items-center px-2 py-1 min-w-[110px] rounded-2xl hover:bg-black/[0.04] transition-all">
-          <span className={`text-body-sm font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
+        <Button
+            size="sm"
+            variant="ghost"
+            type="button"
+            onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
+        >
+            <span className={`text-body-sm font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
           <span className={`text-micro font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
             {isCurrentQuincena ? 'Actual' : '← Ir a hoy'}
           </span>
-        </button>
+        </Button>
         <div className={pillDivider} />
         <Button variant="ghost" icon={ChevronRight} disabled={isCurrentQuincena} iconOnly className={pillIconBtn} onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))} />
       </div>
@@ -1215,11 +1219,13 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
         {branchDropOpen && (
           <div className="absolute left-0 top-full mt-2 z-sidebar min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-lg)] overflow-hidden py-1">
             {sortedBranchOptions.map(opt => (
-              <button key={opt.value} type="button"
-                onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
-                className={`w-full text-left px-4 py-2 text-label font-bold tracking-wide transition-colors hover:bg-brand/[0.07] ${filterBranch === opt.value ? 'text-brand-text bg-brand/[0.05]' : 'text-content-2'}`}>
-                {opt.label}
-              </button>
+              <Button
+                  variant="primary"
+                  className="w-full"
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
+              >{opt.label}</Button>
             ))}
           </div>
         )}

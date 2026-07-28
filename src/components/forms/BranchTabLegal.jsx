@@ -4,6 +4,7 @@ import { ShieldCheck, FileBadge, ShieldAlert, FileWarning, Syringe, AlertCircle 
 import { LazyInput, Switch, FileUploader } from './BranchHelpers';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
+import Button from '../common/Button';
 
 const BranchTabLegal = ({
     legal, updateNestedSetting, availableRegents,
@@ -191,14 +192,13 @@ const BranchTabLegal = ({
                                         {availableNurses.map(emp => {
                                             const isSelected = (legal.nurses || []).includes(emp.id);
                                             return (
-                                                <button
+                                                <Button
+                                                    size="sm"
+                                                    tone="chart-5"
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}
-                                                    className={`px-3 py-1.5 rounded-xl text-label font-bold transition-all active:scale-[0.97] ${isSelected ? 'bg-chart-5/10 text-chart-5-text border border-chart-5/30 shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/30 hover:shadow-sm'}`}
-                                                >
-                                                    {emp.name.split(' ')[0]} {isSelected && '✓'}
-                                                </button>
+                                                >{emp.name.split(' ')[0]} {isSelected && '✓'}</Button>
                                             );
                                         })}
                                     </div>

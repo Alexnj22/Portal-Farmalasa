@@ -174,14 +174,7 @@ function Pagination({ page, total, onChange }) {
         <div className="flex items-center justify-center gap-1.5 px-5 py-3 border-t border-divider">
             <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={page === 1} iconOnly onClick={() => onChange(page - 1)} />
             {pages.map(p => (
-                <button key={p} onClick={() => onChange(p)}
-                    className={`w-8 h-8 rounded-full text-body-sm font-bold transition-all ${
-                        page === p
-                            ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]'
-                            : 'text-content-3 hover:bg-surface-card-hover'
-                    }`}>
-                    {p}
-                </button>
+                <Button size="sm" variant="primary" key={p} onClick={() => onChange(p)}>{p}</Button>
             ))}
             <Button variant="secondary" size="sm" icon={ChevronRight} disabled={page === total} iconOnly onClick={() => onChange(page + 1)} />
         </div>

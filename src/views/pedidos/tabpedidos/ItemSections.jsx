@@ -244,12 +244,12 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
     return (
         <div className="border-t border-divider">
             <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
-                <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
+                <Button variant="ghost" className="flex-1" onClick={() => setOpen(v => !v)}>
                     <span className="text-label font-semibold text-content-2 flex-1">{label}</span>
                     <span className={`text-caption font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand-text border-brand/30' : badgeCls}`}>
                         {search ? `${filteredRows.length}/${count}` : count}
                     </span>
-                </button>
+                </Button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
                         <motion.div {...searchContainerRef} key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 190, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0 flex items-center gap-1">

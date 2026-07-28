@@ -193,10 +193,12 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     {/* ABC */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (
-                            <button key={cls} onClick={() => { setFilterAbc(cls); setPage(1); }}
-                                className={`px-2.5 py-1 rounded-xl text-label font-black transition-all duration-150 ${filterAbc === cls ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:text-content-2'}`}>
-                                {cls === 'all' ? 'ABC' : cls}
-                            </button>
+                            <Button
+                                size="sm"
+                                variant="primary"
+                                key={cls}
+                                onClick={() => { setFilterAbc(cls); setPage(1); }}
+                            >{cls === 'all' ? 'ABC' : cls}</Button>
                         ))}
                     </div>
 

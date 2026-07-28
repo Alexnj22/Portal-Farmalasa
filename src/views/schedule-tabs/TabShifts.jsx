@@ -118,9 +118,12 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                     </div>
                     <div className="flex items-center gap-2 mt-2 w-full">
                         <Button variant="secondary" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }}>Cancelar</Button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }} className={`flex-1 py-3 rounded-xl text-white text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97] shadow-sm ${confirmAction === 'archive' ? 'bg-danger hover:bg-danger-hover' : 'bg-success hover:bg-success-hover'}`}>
+                        <Button
+                            className="flex-1"
+                            tone={confirmAction === 'archive' ? 'danger' : 'success'}
+                            onClick={(e) => { e.stopPropagation(); confirmAction === 'archive' ? onArchive(group.all_ids) : onUnarchive(group.all_ids); setConfirmAction(null); }}>
                             {confirmAction === 'archive' ? 'Archivar' : 'Reactivar'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}

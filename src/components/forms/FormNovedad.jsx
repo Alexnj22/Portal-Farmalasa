@@ -593,7 +593,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         )}
 
                         {formData?.newKioskPin && (
-                            <button type="button" disabled={!!codeConflict}
+                            <Button
+                                tone="chart-8"
+                                className="mt-3 w-full"
+                                icon={Printer}
+                                disabled={!!codeConflict}
                                 onClick={() => {
                                     const win = window.open('', '_blank', 'noopener');
                                     const safeName = (activeEmployee?.name || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -619,9 +623,9 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     win.document.close();
                                     setTimeout(() => win.print(), 600);
                                 }}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-chart-8-solid hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-caption font-black uppercase tracking-widest transition-all active:scale-[0.97]">
-                                <Printer size={14} strokeWidth={2.5} /> Imprimir Nuevo Carné
-                            </button>
+                            >
+                                Imprimir Nuevo Carné
+                            </Button>
                         )}
                     </div>
                 )}

@@ -1085,18 +1085,22 @@ const EmployeeRequestsView = () => {
                                     /* Tipo seleccionado — compacto */
                                     (() => {
                                         const sel  = TYPE_OPTIONS.find(o => o.key === formType);
-                                        const conf = REQUEST_TYPES[formType];
                                         const Icon = sel?.icon || FileText;
                                         return (
-                                            <button
-                                                type="button"
+                                            <Button
+                                                variant="secondary"
+                                                tone={REQUEST_TYPES[formType]?.color.match(/bg-(chart-\d)/)?.[1] ?? 'brand'}
+                                                soft
+                                                size="lg"
+                                                className="w-full justify-start"
+                                                icon={Icon}
+                                                aria-expanded={false}
+                                                aria-label={`Tipo de solicitud: ${sel?.label}. Cambiar`}
                                                 onClick={() => setTypePickerOpen(true)}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm ${conf?.color} ${conf?.border} bg-surface-card`}
                                             >
-                                                <Icon size={16} strokeWidth={2} />
-                                                <span className="flex-1 text-left text-label font-black uppercase tracking-widest">{sel?.label}</span>
-                                                <Badge size="sm">Cambiar</Badge>
-                                            </button>
+                                                <span className="flex-1 text-left uppercase tracking-widest">{sel?.label}</span>
+                                                <Badge size="sm" className="ml-2">Cambiar</Badge>
+                                            </Button>
                                         );
                                     })()
                                 ) : (

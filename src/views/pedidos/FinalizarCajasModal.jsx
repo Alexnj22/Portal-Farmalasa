@@ -5,6 +5,7 @@ import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw } from 'lucid
 import PedidoModal from './PedidoModal';
 import { getExactPageGroups } from '../../utils/pedidoPrint';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
+import FilterBar from '../../components/common/FilterBar';
 
 export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero, paginas = null, draftKey = null }) {
     const [screen,          setScreen]          = useState(1);
@@ -246,14 +247,10 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                         {boxes.map(box => {
                                             const sel = assigned.includes(box);
                                             return (
-                                                <button key={box} onClick={() => toggleBox(idx, box)}
-                                                    className={`text-label font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
-                                                        sel
-                                                            ? 'bg-chart-3-solid border-chart-3 text-white shadow-[var(--shadow-glow-chart-3)]'
-                                                            : 'bg-surface-card border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text hover:bg-chart-3/10'
-                                                    }`}>
+                                                <FilterBar.Chip key={box} tone="brand" active={sel}
+                                                    onToggle={() => toggleBox(idx, box)}>
                                                     Caja {box}
-                                                </button>
+                                                </FilterBar.Chip>
                                             );
                                         })}
                                     </div>

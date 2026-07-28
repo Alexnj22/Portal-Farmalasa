@@ -16,7 +16,22 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.125.0';
+export const APP_VERSION = '2.126.0';
+
+// v2.126.0 — D3.3: cuatro acciones mas.
+//
+//   · "Imprimir Nuevo Carne" (FormNovedad) — tenia su `bg-chart-8-solid` a
+//     mano; ahora es `tone`.
+//   · Confirmar archivar/reactivar un turno — el color decia cual de las dos
+//     acciones era; sigue diciendolo con `tone` danger/success.
+//   · Las cajas de FinalizarCajasModal → `FilterBar.Chip`. Son seleccion
+//     MULTIPLE (un pedido puede ir en varias cajas), asi que no es
+//     `SegmentedControl`.
+//   · El tipo de solicitud ya elegido, en su forma compacta. Llevaba el color
+//     del tipo por `${conf.color} ${conf.border}` y un `Badge` adentro; ahora
+//     el color sale de `tone` + `soft` y el badge se queda como hijo.
+//
+// Botones a mano: 71 → 67.
 
 // v2.125.0 — D3.3: siete interruptores y tres grupos de eleccion.
 //

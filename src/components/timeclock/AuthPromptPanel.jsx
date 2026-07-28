@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { ShieldAlert, XCircle, SkipForward } from 'lucide-react';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];

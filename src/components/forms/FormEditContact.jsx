@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Phone, Loader2, Check } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';

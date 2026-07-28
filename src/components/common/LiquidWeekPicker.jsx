@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 

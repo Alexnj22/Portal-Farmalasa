@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
 
 // 3. Componente de Controles de Paginación (Liquidglass)

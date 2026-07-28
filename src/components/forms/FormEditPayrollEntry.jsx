@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import PortalInput from '../common/PortalInput';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
 import { fetchOvertimeBankRows } from '../../data/payroll';

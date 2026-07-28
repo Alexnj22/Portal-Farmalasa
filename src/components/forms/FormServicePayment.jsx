@@ -1,6 +1,7 @@
 import React from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, CalendarCheck, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
+import PortalInput from '../common/PortalInput';
 
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
@@ -91,30 +92,25 @@ const FormServicePayment = ({ formData, setFormData }) => {
             </div>
 
             <div className="bg-surface-card-hover/50 border border-divider rounded-modal p-6 shadow-sm space-y-5">
-                <div>
-                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">{config.providerLabel}</label>
-                    <input 
-                        required
-                        type="text" 
- className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider transition-all font-bold text-content shadow-sm ${config.ring}`}
-                        placeholder={`Ej: Proveedor de ${config.title}`}
-                        value={providerValue || ""} 
-                        onChange={(e) => handleChange('provider', e.target.value)} 
-                    />
-                </div>
+                <PortalInput
+                    name="servicio-provider"
+                    label={config.providerLabel}
+                    required
+                    placeholder={`Ej: Proveedor de ${config.title}`}
+                    value={providerValue || ""}
+                    onChange={(e) => handleChange('provider', e.target.value)}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Monto Mensual Aprox. ($)</label>
-                        <input 
+                    <PortalInput
+                            name="servicio-amount"
+                            label="Monto Mensual Aprox."
                             required
-                            type="number" min="0" step="0.01" 
- className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider transition-all font-bold text-content shadow-sm ${config.ring}`}
+                            type="number" min="0" step="0.01"
                             placeholder="0.00"
-                            value={currentData.amount || ""} 
-                            onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))} 
+                            value={currentData.amount || ""}
+                            onChange={(e) => handleChange('amount', e.target.value === "" ? null : Number(e.target.value))}
                         />
-                    </div>
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
                         <input 

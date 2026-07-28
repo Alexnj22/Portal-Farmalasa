@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2 } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';

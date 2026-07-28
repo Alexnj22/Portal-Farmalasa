@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Users, ShieldCheck, FileText, AlertCircle } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';

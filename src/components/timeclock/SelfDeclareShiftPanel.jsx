@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Clock, SkipForward, CheckCircle } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
 

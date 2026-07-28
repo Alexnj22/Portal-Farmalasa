@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import { Bell, X } from 'lucide-react';
 import { usePushSubscription } from '../../hooks/usePushSubscription';
 

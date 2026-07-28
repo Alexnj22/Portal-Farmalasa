@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import {
     GitPullRequest, MapPin, Briefcase,

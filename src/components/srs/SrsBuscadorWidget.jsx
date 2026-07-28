@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 import Badge from '../common/Badge';

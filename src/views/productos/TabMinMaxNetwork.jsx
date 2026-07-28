@@ -6,7 +6,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { ERP_NAMES as ERP_NAMES_FULL, ERP_ORDER } from './tabminmax/constants';
-import Badge from '../components/common/Badge';
+import Badge from '../../components/common/Badge';
 
 const ERP_SHORT = { 1: 'S.1', 2: 'S.2', 3: 'S.3', 4: 'S.4', 5: 'LaP.', 6: 'Bod.', 7: 'S.5' };
 

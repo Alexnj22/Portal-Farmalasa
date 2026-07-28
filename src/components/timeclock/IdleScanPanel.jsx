@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { ScanBarcode, ShieldAlert, XCircle, Bell } from 'lucide-react';
 
 // Anillo "esperando escaneo" — reemplaza el <input> que simulaba tecleo

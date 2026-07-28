@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import SegmentedControl from './SegmentedControl';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import { createPortal } from 'react-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
 

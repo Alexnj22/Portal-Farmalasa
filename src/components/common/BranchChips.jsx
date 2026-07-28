@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Badge from '../../components/common/Badge';
+import Badge from './Badge';
 import { ChevronDown, Check } from "lucide-react";
 
 const BranchChips = ({

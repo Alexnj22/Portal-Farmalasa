@@ -1,5 +1,5 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
-import Button from '../components/common/Button';
+import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
     User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2, Truck

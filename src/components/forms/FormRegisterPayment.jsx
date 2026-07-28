@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Badge from '../../components/common/Badge';
+import Badge from '../common/Badge';
 import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { AiThinkingState } from '../common/StateViews';
 import { Loader2, Sparkles, AlertTriangle, Save, X, Utensils, Baby, Users } from 'lucide-react';
 import { supabase } from '../../supabaseClient';

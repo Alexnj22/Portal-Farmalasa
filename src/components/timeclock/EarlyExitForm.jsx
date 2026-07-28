@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';

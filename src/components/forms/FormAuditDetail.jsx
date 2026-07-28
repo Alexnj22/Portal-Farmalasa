@@ -1,5 +1,5 @@
 import React from 'react';
-import Badge from '../../components/common/Badge';
+import Badge from '../common/Badge';
 import { 
     User, Activity, MonitorSmartphone, CalendarClock, 
     ShieldAlert, CheckCircle2, AlertTriangle, Code2

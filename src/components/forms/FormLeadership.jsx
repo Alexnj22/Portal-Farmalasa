@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import Badge from '../../components/common/Badge';
+import Badge from '../common/Badge';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import Cropper from 'react-easy-crop';
 import { createPortal } from 'react-dom';
 import {

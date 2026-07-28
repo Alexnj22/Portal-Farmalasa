@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { SkeletonText } from '../common/StateViews';
 import {
     BookOpen, Building2, Trash2, ListTodo, Plus, Pencil, Check, X,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import { supabase } from '../../supabaseClient';
 import {

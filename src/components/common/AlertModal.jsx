@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import ModalShell from './ModalShell';
 

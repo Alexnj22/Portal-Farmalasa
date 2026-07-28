@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { GraduationCap, X, Check, Upload, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';

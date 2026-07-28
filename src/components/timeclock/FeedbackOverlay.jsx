@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, TimerReset } from 'lucide-react';
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)

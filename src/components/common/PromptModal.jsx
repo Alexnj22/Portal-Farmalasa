@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import { createPortal } from 'react-dom';
 import { MessageSquarePlus, Loader2 } from 'lucide-react';
 import PortalTextarea from './PortalTextarea';

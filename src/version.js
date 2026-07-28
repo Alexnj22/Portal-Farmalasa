@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.154.0';
+export const APP_VERSION = '2.155.0';
+
+// v2.155.0 — D3.4 sigue, y un error mio de 80 archivos.
+//
+// `FormServicePayment` migra sus dos campos con etiqueta. Y los siete de
+// `RecepcionModal` quedan documentados como NO migrables: son celdas de una
+// grilla densa, no campos de formulario — sin etiqueta visible (usan
+// `aria-label`), con `data-qty-row`/`data-qty-col` y un `onKeyDown` propio
+// para moverse con las flechas como en una hoja de calculo, y con el borde
+// cambiando de color segun la diferencia contra lo facturado. Mismo criterio
+// que el banco de horas de nomina (v2.116.0).
+//
+// ── El error, y las dos lecciones ────────────────────────────────────────
+// Al agregar imports automaticos fui calculando la ruta relativa a mano, con
+// una cuenta de `../` por profundidad. Estaba mal, y un intento de
+// "arreglarla" en lote la rompio en **80 archivos** — quedaron imports como
+// `from 'common/Button'`, sin ningun `../`.
+//
+//   1. Para una ruta relativa se usa `os.path.relpath`, no una cuenta a ojo.
+//      El arreglo final calcula la ruta Y **verifica que el archivo destino
+//      exista** antes de dejarla; asi aparecieron 100 imports que no
+//      resolvian, incluidos varios anteriores a este lote.
+//
+//   2. Mi chequeo de build era `grep -E "ERROR|✓ built"`, y rollup dice
+//      "Could not resolve" en minuscula. El build llevaba varios comandos
+//      fallando sin que yo lo viera. Ahora: `grep -iE "could not resolve|
+//      error during|✓ built"`.
+//
+// Verificado en vivo tras el arreglo: 780 botones en 14 vistas, 0 errores.
+//
+// Inputs a mano: 85 → 83.
 
 // v2.154.0 — D3.5 CERRADA. 101 → 1.
 //

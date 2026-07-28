@@ -78,6 +78,15 @@ async function fetchPresOpts(productId) {
     return opts;
 }
 
+// ── Los campos de cantidad NO pasan por `PortalInput` (2026-07-28, D3.4) ──
+// Son celdas de una grilla densa, no campos de formulario:
+//   · no tienen etiqueta visible (usan `aria-label`) y `PortalInput` siempre
+//     dibuja un `<label>` arriba — acá no hay lugar ni sentido
+//   · llevan `data-qty-row`/`data-qty-col` y un `onKeyDown` propio para
+//     moverse con las flechas entre celdas, como una hoja de cálculo
+//   · su borde cambia de color segun la diferencia contra lo facturado
+// Es el mismo criterio que el banco de horas de nómina (v2.116.0).
+
 export default function RecepcionModal({
     open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed,
     cajaDanada   = [],   // box numbers that arrived damaged (items still present)

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import Button from '../../components/common/Button';
-import Badge from '../common/Badge';
+import Button from './Button';
+import Badge from './Badge';
 import { FileText, Receipt, Award, CreditCard, Eye, FolderOpen } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
 import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';

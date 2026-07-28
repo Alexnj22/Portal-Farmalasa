@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';

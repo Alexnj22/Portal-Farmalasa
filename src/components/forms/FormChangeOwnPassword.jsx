@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { Eye, EyeOff, KeyRound, Loader2, Lock, CheckCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';

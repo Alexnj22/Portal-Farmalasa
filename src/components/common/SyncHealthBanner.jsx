@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from './Button';
 import { AlertTriangle, Bell, CheckCircle2 } from 'lucide-react';
 import { fetchInventorySyncLogRecent } from '../../data/inventory';
 import { useNowTick } from '../../hooks/useNowTick';

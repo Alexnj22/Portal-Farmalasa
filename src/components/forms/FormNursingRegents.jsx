@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { EmptyState } from '../common/StateViews';
 import { Plus, Trash2, UploadCloud, ShieldCheck, Users, Award, Receipt, CheckCircle2 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';

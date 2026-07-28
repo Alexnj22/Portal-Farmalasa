@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import { createPortal } from 'react-dom';
 import { Search, CornerDownLeft, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { smartFilter } from '../../utils/searchUtils';

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import Button from '../../components/common/Button';
+import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';

@@ -1298,6 +1298,40 @@ agarró el `.map()` interno cuando el array de opciones tenía otro `.map()`
 anidado, y contó el `${}` de un template literal como bloque. Los dos archivos
 se rehicieron por rango de líneas exacto.
 
+## D3.3 — estado al cierre del 2026-07-27 · **276 → 178**
+
+Ocho lotes, cada uno verificado en navegador con sesión real antes de commitear.
+
+| familia | antes | ahora | estado |
+|---|---|---|---|
+| **D · ícono suelto** | 21 | **0** | ✅ cerrada |
+| **C · uno de N** | 56 | **14** | 21 migrados a `SegmentedControl` |
+| **A · acción** | 111 | **85** | 24 archivos migrados |
+| **B · fila/tarjeta** | 78 | **71** | apenas empezada |
+| **E · filter pill** | 8 | **8** | se quedan (§17) |
+
+### Por qué B casi no avanzó
+
+Probé un filtro de "estructura simple (1-2 `<div>`)" y dio 22 candidatos. Al
+abrirlos, **ninguno era una fila**: son encabezados de sección plegables
+(`FacturacionView:426`), sub-filas dentro de una tarjeta (`BranchesView:434`) y
+títulos con línea divisoria (`TabLaboratorios:153`). La cantidad de `<div>` no
+identifica la anatomía de `ListRow` —caja de ícono + título + subtítulo—, así
+que **esta familia necesita lectura caso por caso**. No hay atajo.
+
+### Las herramientas quedan versionadas
+
+En `scripts/migradores/` con su `LEEME.md`. Lo caro no fue escribirlas sino
+descubrir sus cinco filtros, cada uno nacido de un caso que rompió — sobre todo
+el quinto: *si tras migrar queda un `isActive` huérfano, revertir*, porque ese
+botón era un segmentado disfrazado y perdió su estado activo. El build no lo ve.
+
+### Canónicos construidos en esta tanda
+
+`soft` en `Button` · `tone` y `surface="card"` en `ListRow` · `PortalTextarea` ·
+`FileField` · `FilterBar` · `TablePagination` reescrito · `useMediaQuery`.
+Más el contrato Liquid/Solid (DESIGN.md §2.1) y las reglas de la barra (§17).
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

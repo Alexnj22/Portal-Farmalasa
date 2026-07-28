@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
+import Contador from './Contador';
 
 // ── Apariencia por tipo de notificación ──────────────────────────────────────
 const iconForType = (type = '') => {
@@ -332,9 +333,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 )}
                 {totalBadge > 0 && (
                     <>
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center z-content shadow-[var(--shadow-glow-danger)]">
-                            {totalBadge > 9 ? '9+' : totalBadge}
-                        </span>
+                        <Contador valor={totalBadge}
+                            className="absolute -top-1.5 -right-1.5 z-content shadow-[var(--shadow-glow-danger)]"
+                            aria-label={`${totalBadge} sin leer`} />
                         <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-base bg-danger" />
                     </>
                 )}
@@ -378,9 +379,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                 <div className="flex items-center gap-2">
                                     <span className={`text-body-lg font-black tracking-tight ${cx.title}`}>Notificaciones</span>
                                     {unreadNotifs.length > 0 && (
-                                        <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
-                                            {unreadNotifs.length > 99 ? '99+' : unreadNotifs.length}
-                                        </span>
+                                        <Contador valor={unreadNotifs.length} max={99} size="md"
+                                            aria-label={`${unreadNotifs.length} notificación${unreadNotifs.length === 1 ? '' : 'es'} sin leer`} />
                                     )}
                                 </div>
                                 <div className="flex items-center gap-0.5">

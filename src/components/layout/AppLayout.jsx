@@ -29,6 +29,7 @@ import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
 import OfflineBanner from '../common/OfflineBanner';
 import ThemeMigrationRibbon, { RIBBON_HEIGHT } from '../common/ThemeMigrationRibbon';
+import Contador from '../common/Contador';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -608,9 +609,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </span>
                         )}
                         {badge > 0 && (
-                            <span className="relative z-base min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
-                                {badge > 9 ? '9+' : badge}
-                            </span>
+                            <Contador valor={badge} size="md" className="relative z-base"
+                                aria-label={`${badge} pendiente${badge === 1 ? '' : 's'} en ${label}`} />
                         )}
                     </>
                 )}
@@ -695,9 +695,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {label}
                             </span>
                             {!isOpen && groupBadge > 0 && (
-                                <span className="min-w-[20px] h-5 px-1.5 bg-danger-solid text-white text-caption font-black rounded-full flex items-center justify-center">
-                                    {groupBadge > 9 ? '9+' : groupBadge}
-                                </span>
+                                <Contador valor={groupBadge} size="md"
+                                    aria-label={`${groupBadge} pendiente${groupBadge === 1 ? '' : 's'} en ${label}`} />
                             )}
                             {!isOpen && groupAlert && (
                                 <span className="relative flex h-2 w-2 flex-shrink-0">
@@ -1149,9 +1148,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     </div>
                                     <span className="text-body font-semibold whitespace-nowrap text-white pr-1">{flyout.label}</span>
                                     {flyout.badge > 0 && (
-                                        <span className="min-w-[18px] h-[18px] px-1 bg-danger-solid text-white text-micro font-black rounded-full flex items-center justify-center">
-                                            {flyout.badge > 9 ? '9+' : flyout.badge}
-                                        </span>
+                                        <Contador valor={flyout.badge}
+                                            aria-label={`${flyout.badge} pendiente${flyout.badge === 1 ? '' : 's'}`} />
                                     )}
                                     {flyout.alert && (
                                         <span className="relative flex h-2 w-2 flex-shrink-0">

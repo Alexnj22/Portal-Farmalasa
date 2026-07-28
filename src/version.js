@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.132.0';
+export const APP_VERSION = '2.133.0';
+
+// v2.133.0 — `Contador`: la tercera familia de badge, que se habia quedado sin
+// canonico.
+//
+// Al medir los 316 "badges" del proyecto (D3.5) salieron TRES familias:
+//
+//     249  chip inline corto     → `Badge`
+//      58  aviso con icono       → `Notice`
+//       9  **contador flotante** → sin canonico, hasta hoy
+//
+// `Badge` no sirve para esto y por eso se dejo fuera en su momento: un chip
+// crece con su texto, un contador tiene que ser CIRCULAR con un digito y
+// OVALADO con dos — o sea ancho minimo fijo y alto fijo. Meterlo en `Badge`
+// habria dado burbujas de anchos distintos segun el numero.
+//
+// Pero dejarlo sin canonico tampoco era la respuesta: estaba escrito nueve
+// veces, y **cuatro de ellas DENTRO de componentes canonicos**
+// (`NotificationBell` ×2, `FilterBar`, y el del menu lateral). Ahi es donde
+// mas duele: un canonico que reconstruye a mano algo que deberia ser otro
+// canonico es como se multiplica la deuda.
+//
+// Tres cosas que el componente arregla de una vez:
+//   · el corte ("9+") lo decide el llamador con `max`, porque el umbral
+//     depende de donde vive — en el menu cabe "9+", en la campana "99+".
+//   · devuelve `null` cuando el valor es 0, en vez de que cada sitio repita
+//     su propio `{n > 0 && …}`.
+//   · **nombre accesible obligatorio**: un "3" suelto no le dice nada a un
+//     lector de pantalla. Ahora dice "3 notificaciones sin leer".
+//
+// Verificado en vivo en movil: el contador de `FilterBar` sale 18×18,
+// circular, azul de marca, con `aria-label="1 filtro aplicado"`.
 
 // v2.132.0 — D3.5: tres paletas mas que eran la del canonico.
 //

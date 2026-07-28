@@ -2,6 +2,7 @@ import React, { memo, Children, isValidElement, useState, useEffect, useId } fro
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import Contador from './Contador';
 
 /**
  * FilterBar — la píldora donde vive TODO el filtro de la vista actual.
@@ -144,10 +145,8 @@ const FilterBar = memo(({
                     <SlidersHorizontal size={14} strokeWidth={2.5} />
                     {title}
                     {activeCount > 0 && (
-                        <span className="min-w-[17px] h-[17px] px-1 rounded-full bg-brand text-white
-                            text-micro font-black flex items-center justify-center tabular-nums">
-                            {activeCount}
-                        </span>
+                        <Contador valor={activeCount} tono="brand" max={99}
+                            aria-label={`${activeCount} filtro${activeCount === 1 ? '' : 's'} aplicado${activeCount === 1 ? '' : 's'}`} />
                     )}
                 </button>
 

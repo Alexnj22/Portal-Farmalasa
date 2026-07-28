@@ -903,8 +903,6 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         pricingOldValue: 'text-content-3',
         pricingFactor: 'text-content-3',
         pricingCosto: 'text-content-3',
-        statusActive: 'bg-success/10 text-success border border-success/30',
-        statusInactive: 'bg-surface-card-hover text-content-3',
         changelog: 'bg-warning/10 border border-warning/30',
         changelogDate: 'bg-surface-card border-divider text-content-3',
         changelogField: 'text-content-2',
@@ -1215,9 +1213,9 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                             );
                                                         })}
                                                         <td className="px-3 py-2.5 text-center">
-                                                            <span className={`text-micro font-bold px-2 py-0.5 rounded-full border ${pp.activo !== false ? xk.statusActive : xk.statusInactive}`}>
+                                                            <Badge variant={pp.activo !== false ? 'success' : 'neutral'} size="sm" uppercase={false}>
                                                                 {pp.activo !== false ? 'Activa' : 'Inactiva'}
-                                                            </span>
+                                                            </Badge>
                                                         </td>
                                                     </tr>
                                                 );

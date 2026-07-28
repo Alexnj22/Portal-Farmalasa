@@ -109,6 +109,11 @@ const TIPO_DESC = {
     adhoc:        'Encuesta libre para objetivos específicos que no encajan en los otros tipos.',
 };
 
+// El color de cada estado y cada tipo, como NOMBRE de variante de `Badge` —
+// antes vivía en dos cascadas de ternarios dentro del JSX (2026-07-28, D3.5).
+const VARIANTE_ESTADO = { activa: 'success', cerrada: 'chart-1', borrador: 'neutral', archivada: 'neutral' };
+const VARIANTE_TIPO   = { clima: 'chart-3', satisfaccion: 'chart-9', desempeno: 'chart-6', adhoc: 'warning' };
+
 const ESTADO_TABS = [
     { id: 'borrador',  label: 'Borrador' },
     { id: 'activa',    label: 'Activa' },
@@ -1013,18 +1018,12 @@ export default function EncuestaAdminView() {
 
                                         {/* Badges */}
                                         <div className="flex flex-wrap items-center gap-2 pr-28">
-                                            <span className={`text-caption font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                s.estado === 'activa'    ? 'text-success bg-success/10 border-success/30' :
-                                                s.estado === 'cerrada'   ? 'text-chart-1-text bg-chart-1/10 border-chart-1/30' :
-                                                s.estado === 'borrador'  ? 'text-content-3 bg-surface-card-hover border-divider' :
-                                                                           'text-content-3 bg-surface-card-hover border-divider'
-                                            }`}>{s.estado}</span>
-                                            <span className={`text-caption font-black uppercase px-2.5 py-1 rounded-md border tracking-widest ${
-                                                s.tipo === 'clima'        ? 'text-chart-3-text bg-chart-3/10 border-chart-3/30' :
-                                                s.tipo === 'satisfaccion' ? 'text-chart-9-text bg-chart-9/10 border-chart-9/30' :
-                                                s.tipo === 'desempeno'    ? 'text-chart-6-text bg-chart-6/10 border-chart-6/30' :
-                                                                            'text-warning bg-warning/10 border-warning/30'
-                                            }`}>{TIPO_LABEL[s.tipo] || s.tipo}</span>
+                                            {/* Eran dos cascadas de ternarios escribiendo
+                                                `text-X bg-X/10 border-X/30` por rama. El color de
+                                                cada estado y cada tipo vive ahora en una tabla,
+                                                junto a sus etiquetas. */}
+                                            <Badge variant={VARIANTE_ESTADO[s.estado] || 'neutral'}>{s.estado}</Badge>
+                                            <Badge variant={VARIANTE_TIPO[s.tipo] || 'warning'}>{TIPO_LABEL[s.tipo] || s.tipo}</Badge>
                                             {s.anonima && (
                                                 <Badge variant="chart-3" icon={EyeOff}>Anónima</Badge>
                                             )}
@@ -1158,9 +1157,9 @@ export default function EncuestaAdminView() {
                                                                                                     : <ChevronDown size={10} className="text-content-3 ml-1 shrink-0 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity" strokeWidth={2.5} />}</Button>
                                                                                         </td>
                                                                                         <td className="py-2.5 px-2 text-center">
-                                                                                            <span className={`text-micro font-black px-2 py-0.5 rounded-full ${row.is_jefe ? 'bg-warning/10 text-warning-text' : 'bg-surface-card-hover text-content-3'}`}>
+                                                                                            <Badge variant={row.is_jefe ? 'warning' : 'neutral'} size="sm" uppercase={false}>
                                                                                                 {row.is_jefe ? 'Jefe/a' : 'Colab.'}
-                                                                                            </span>
+                                                                                            </Badge>
                                                                                         </td>
                                                                                         {bloques.map(b => {
                                                                                             const sc = blockScore(row.responses || [], b.indices || [], invertedIndices);

@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.131.0';
+export const APP_VERSION = '2.132.0';
+
+// v2.132.0 — D3.5: tres paletas mas que eran la del canonico.
+//
+//   · `TIPO_PAGO_COLORS` (Facturacion) — una fila por forma de pago,
+//     `bg-chart-N/10 text-chart-N-text border-chart-N/30`. Ahora guarda el
+//     nombre de la variante.
+//   · `xk.statusActive/statusInactive` (Catalogo) — dos entradas de un objeto
+//     de tema local que solo existian para pintar un chip.
+//   · Estado y tipo de encuesta — DOS cascadas de ternarios dentro del JSX,
+//     una rama por valor. Ahora dos tablas al lado de sus etiquetas.
+//
+// Es el mismo hallazgo por cuarta vez: cuando el color no tiene NOMBRE, se
+// vuelve a escribir en cada sitio. Con `variante` en la tabla, agregar un
+// estado es una linea.
+//
+// Verificado en vivo: /facturacion 40 badges y 6 colores (credito, tarjeta,
+// transferencia…), /encuesta-admin los de estado y tipo, /productos 39.
+//
+// Chips a mano: 96 → 90.
 
 // v2.131.0 — D3.5 arranca: la paleta del canonico escrita QUINCE veces.
 //

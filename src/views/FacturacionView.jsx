@@ -124,12 +124,11 @@ const ChipDoc = memo(({
     );
 });
 
-const TIPO_PAGO_COLORS = {
-    tarjeta:       'bg-chart-1/10 text-chart-1-text border-chart-1/30',
-    credito:       'bg-chart-3/10 text-chart-3-text border-chart-3/30',
-    transferencia: 'bg-chart-5/10 text-chart-5-text border-chart-5/30',
-    bitcoin:       'bg-chart-4/10 text-chart-4-text border-chart-4/30',
-    cheque:        'bg-chart-9/10 text-chart-9-text border-chart-9/30',
+// Era la paleta SOFT de `Badge` escrita a mano, una fila por forma de pago.
+// Ahora guarda el NOMBRE de la variante y el color lo pone el canónico.
+const TIPO_PAGO_VARIANTE = {
+    tarjeta: 'chart-1', credito: 'chart-3', transferencia: 'chart-5',
+    bitcoin: 'chart-4', cheque:  'chart-9',
 };
 
 
@@ -1724,9 +1723,9 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                     <span className="text-label font-bold uppercase text-content-3 tracking-widest">{pendingFiltered.length} pendientes</span>
                     <span className="text-label font-bold text-chart-1-text">{fmt(totalPending)}</span>
                     {Object.entries(byTipo).map(([tipo, rows]) => (
-                        <span key={tipo} className={`inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border ${TIPO_PAGO_COLORS[tipo] || 'bg-surface-card-hover text-content-3 border-divider'}`}>
+                        <Badge key={tipo} variant={TIPO_PAGO_VARIANTE[tipo] || 'neutral'} size="sm">
                             {tipo} {rows.length}
-                        </span>
+                        </Badge>
                     ))}
                 </div>
                 <div className="w-[170px] md:w-[200px]">
@@ -1995,7 +1994,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                     return (
                                         <DataRow key={r.id} index={ci}>
                                             <DataCell>
-                                                <span className={`inline-flex px-2 py-0.5 rounded-md text-micro font-black uppercase border ${TIPO_PAGO_COLORS[tipoPago] || 'bg-surface-card-hover text-content-3 border-divider'}`}>{r.tipo_pago}</span>
+                                                <Badge variant={TIPO_PAGO_VARIANTE[tipoPago] || 'neutral'} size="sm">{r.tipo_pago}</Badge>
                                             </DataCell>
                                             <DataCell>
                                                 <div className="font-mono text-body-sm text-content-2">{inv?.correlativo || '—'}</div>

@@ -14,7 +14,7 @@ hallazgo nuevo se documenta siempre, se resuelva o no.
 | **D3.8 baseline del gate** | ✓ **cerrada** — las 11 categorías en **0 y bloqueantes**, sin baseline |
 | **§17 barra de filtros** | 18 vistas con `FilterBar` (eran 4) |
 | **Móvil** | ✓ los 4 reportes del usuario, reproducidos y resueltos |
-| D3.3 botones | **156** — 58 fila/tarjeta · 48 acción · 40 uno-de-N · 6 bespoke · 4 composición |
+| D3.3 botones | **137** — 51 fila/tarjeta · 40 acción · 36 uno-de-N · 6 bespoke · 4 composición |
 | **D3.4 accesibilidad de campos** | ✓ **cerrada** — 22 campos sin nombre accesible corregidos; `input-label` nace en 0 y bloqueante |
 | D3.4 inputs de texto | ~100 fuera de `PortalInput` (los nativos ya son **0**) |
 | D3.5 `Badge` | abierta — el conteo no se re-midió |
@@ -1048,7 +1048,7 @@ comentarios JSX y decidiendo por lo que **contiene**, no por su forma:
    `86 A / 9 C` a **`48 A / 47 C`** — o sea que la mitad de lo que iba a migrar
    a `Button` es en realidad `SegmentedControl`.
 
-### Migrados en esta pasada (166 → 156)
+### Migrados (166 → 137)
 
 | | |
 |---|---|
@@ -1058,6 +1058,10 @@ comentarios JSX y decidiendo por lo que **contiene**, no por su forma:
 | 8 bloques de encuesta → `ListRow` | con la letra en la ranura `leading` |
 | la **13ª barra de vista** a mano | `EmployeeAnnouncementsView` → `ViewTabBar`; quedaron 3 refs huérfanos |
 | **una opción fuera de su grupo** | `EmployeeProfileView` tenía `<button>Todos</button>` **suelto** al lado del `SegmentedControl` con el resto: el grupo anunciaba "1 de 4" cuando hay 5 |
+| 7 encabezados de `FacturacionView` | desbloqueados interceptando la red (ver abajo) |
+| 4 pares OK/Falta de los modales de llegada | verificados **por código**: solo se abren con un pedido en ruta y no hay ninguno |
+| 3 enlaces de acción de `TabCatalogo` | los tres con la misma cadena de clases dentro de un template literal de interpolación **constante** — justo lo que hacía que el migrador de v2.76.0 los saltara |
+| **las 5 pestañas de la ficha de empleado** | tenían una **píldora deslizante a mano**: `translateX` de cinco ternarios y `w-[calc(20%-2px)]`, o sea que una sexta pestaña rompía la aritmética en silencio. Y su fondo era `bg-white` fijo |
 
 **La lección, por cuarta vez: contar por forma da un número; hay que abrir cada
 caso para saber qué es.** Y el clasificador corregido tampoco alcanza: al
@@ -1247,17 +1251,23 @@ otro nombre; queda como envoltorio finito que solo traduce su paleta local.
 aparición de sus tarjetas — sin eso había que elegir entre el canónico y la
 animación.
 
-### Lo que NO se migró, y por qué
+### Los 7 de `FacturacionView` · ✓ RESUELTO (v2.109.0) — y cómo se desbloqueó
 
-Los **7 encabezados plegables de `FacturacionView`** se migraron a `ListRow`
-—que ya cubre esa anatomía: ícono, título, subtítulo y el chevron en
-`trailing`—, compilaban, pasaban el lint… y **se revirtieron**. La cuenta no
-tiene datos de facturación en ninguna pestaña ni mes, así que no había forma de
-mirarlos en el navegador.
+Los migré, compilaban, pasaban el lint… y los **reverti** porque la cuenta no
+tiene facturas anuladas en ninguna pestaña ni mes. Escribí que hacía falta
+*"una cuenta o un mes con datos"*.
 
-La regla del proyecto es que una migración en lote se mira antes de comitear, y
-una vista de facturación no es donde saltársela. Para retomarlo hace falta una
-cuenta o un mes con datos.
+**Estaba equivocado: hacía falta interceptar la red.** `page.route()` de
+Playwright responde la consulta de PostgREST con filas sintéticas, sin tocar
+una línea de código de producción ni escribir en la base. Doce facturas en dos
+sucursales y dos fechas, una con CCF, alcanzan para que las cabeceras tengan
+que pintar su badge, su tono de peligro y su contador.
+
+Verificado contra una captura del **antes** tomada con los mismos datos.
+
+> **La lección no es sobre facturación: *"no hay datos para verificar"* casi
+> nunca es el final del camino.** Los datos de una vista entran por HTTP, y eso
+> se puede responder.
 
 ### Hallazgo sobre este documento
 
@@ -1420,6 +1430,25 @@ Los 92 no se arreglan ampliando el selector: eso rompería los 4. Se arreglan
 migrando **el fondo** a `bg-surface-*`, y entonces la regla que ya existe los
 cubre sola. O sea que no es deuda de vidrio: es la misma deuda `white` del
 baseline, vista desde otro ángulo.
+
+## Un hallazgo que investigué y resultó infundado (2026-07-28)
+
+Al migrar las pestañas de la ficha de empleado aparecieron **dos `radiogroup`
+con el mismo nombre**, y parecía un bug de accesibilidad: `GlassViewLayout`
+renderiza `filtersContent` **dos veces**, una rama para escritorio y otra para
+móvil, en las 34 vistas que usan esa prop.
+
+**Medido antes de "arreglarlo":** las ramas se ocultan con `hidden lg:block` /
+`lg:hidden`, y `display:none` **sí** saca del árbol de accesibilidad — 2 en el
+DOM, 1 alcanzable. No hay duplicado para un lector de pantalla.
+
+Lo que sí es real, y quedó anotado en el propio archivo: son **dos instancias
+de React con estado propio** (abrir el buscador en escritorio y achicar la
+ventana deja el de móvil cerrado), y todo el contenido se renderiza dos veces
+por render. Unificarlo toca las 34 vistas; no se hizo.
+
+Vale anotarlo igual: **una alarma que se investiga y se descarta también es
+trabajo**, y sin dejarla escrita el próximo la vuelve a levantar.
 
 ## Abiertos sin resolver
 

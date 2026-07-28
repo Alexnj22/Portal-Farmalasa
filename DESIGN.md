@@ -29,6 +29,8 @@
 | acción en la barra de vista | `TabBarAction` | §15.5 |
 | aviso inline | `Notice` | §15.6 |
 | fila de lista | `ListRow` | §15.7 |
+| barra de filtros de la vista | `FilterBar` | §17 |
+| paginación de tabla | `TablePagination` | §17.1 |
 | adjuntar archivo | `FileField` | §15.8 |
 | nota al pasar el puntero | `LiquidTooltip` | §15.9 |
 | etiqueta de estado | `Badge` | §16.1 |
@@ -1289,6 +1291,13 @@ imagen.
 ruta actual); `selected` es *qué elegí*. Se veían igual cuando la única señal
 era el borde.
 
+
+**`tone`** tiñe la fila entera con su categoría (2026-07-27). Una fila que
+representa algo anulado, vencido o urgente **es** de esa categoría, y antes eso
+solo se podía decir tiñendo el ícono. El tinte es suave a propósito, nunca
+sólido: una fila es un contenedor de contenido, no una acción — misma razón por
+la que existe `soft` en `Button`.
+
 #### Tarjeta seleccionable = `ListRow` + `Checkbox`
 
 No hay un `SelectableCard`, y es a propósito (decisión 3b, 2026-07-27). Las 9
@@ -1446,53 +1455,53 @@ fondo que tenga detrás. Por eso va del color de la superficie, **no blanco fijo
 
 ---
 
-## 17. Filter Pills
+## 17. Filter Pills — canónico `FilterBar` (2026-07-27)
 
-All view-level filters live in a pill container, never as loose controls scattered in the content body.
-
-**Standard pill anatomy:**
-```
-rounded-card bg-surface-card border border-border-card
-```
-Dividers between filter controls: `h-5 w-px bg-slate-100`.
-
-**Placement: body, not header.** The filter pill renders in the view **body**, in the same row as the stat cards — stat cards in a `flex-1 min-w-0` group on the left, filter pill `shrink-0` on the right:
 ```jsx
-<div className="flex items-start gap-3 flex-wrap">
-  <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
-    {/* stat cards */}
-  </div>
-  <div className="rounded-card bg-surface-card border border-border-card ... shrink-0">
-    {/* branch select, period picker, toggles, individual clear buttons */}
-  </div>
-</div>
+<FilterBar onClear={limpiar} activo={hayFiltro}>
+    <FilterBar.Section><LiquidSelect value={suc} onChange={setSuc} options={sucs} /></FilterBar.Section>
+    <FilterBar.Section><PeriodPicker value={rango} onChange={setRango} /></FilterBar.Section>
+    <FilterBar.Section compact><SegmentedControl value={estado} onChange={setEstado} options={estados} /></FilterBar.Section>
+</FilterBar>
 ```
-`GlassViewLayout`'s `filtersContent` prop is a **different** slot — it renders in the page header (right slot on desktop, below the mobile title) and is reserved for the search toggle, tab buttons, and primary actions (export, "Nuevo X"), not for the filter pill itself. Do not put branch/period/status filters there.
 
-Reference implementation: `VentasView` — see `FilterControls` (`src/views/VentasView.jsx:118`), rendered inline in each tab body (`TabVentas`/`TabVendedores`/`TabProductos`) immediately after the stat cards row, never passed through `filtersContent`. Same pattern in the Productos tabs (`TabInventario`, `TabCatalogo`, `TabSinVenta`) and `StaffManagementView`.
+**La píldora donde vive TODO el filtro de la vista actual** — fecha, categoría,
+sucursal, estado. No es una decoración: es el lugar único donde el usuario mira
+para saber qué está filtrando y para soltarlo.
 
-**Bug real de responsive encontrado y corregido (2026-07-25, QA autenticado
-en móvil real):** el propio contenedor del pill (`shrink-0 overflow-visible`,
-sin `flex-wrap` ni `max-w-full`) se desbordaba fuera del viewport en pantallas
-angostas (390px) — el texto del rango de fechas quedaba cortado en el borde
-en vez de ajustarse. Pre-existente desde 2026-05-03, no introducido por
-ninguna sesión de tema. Corregido agregando `flex-wrap max-w-full` al
-contenedor del pill en los 8 archivos que copian esta anatomía:
-`VentasView.jsx` (`FilterControls`), `StaffManagementView.jsx`,
-`ProveedoresView.jsx`, `FacturasCompraView.jsx`, `TabPromos.jsx`,
-`TabBonificaciones.jsx`, `TabHistorial.jsx`, `TabSinVenta.jsx` (vía
-`tk.filterPill`). Con esto, en vez de desbordar o cortar texto, los
-controles del pill (sucursal / rango de fecha / toggles) se acomodan en
-varias líneas dentro del propio pill. Verificado sin scroll horizontal en
-`document.documentElement` a 390px de ancho.
+Ya existía un `FilterPill`, pero vivía en `views/pedidos/tabpedidos/` y estaba
+**clavado a los filtros de Pedidos** (sucursal, fecha, estado). No era un
+contenedor, era esa barra concreta. Por eso las otras 13 vistas no podían usarlo
+y lo reescribieron. Medido sobre esas 14:
 
-**Excepción documentada, no un bug:** `TabInventario.jsx` (Productos) usa
-`hidden lg:flex` en su pill — los filtros de esa tab simplemente no están
-disponibles en móvil (no hay una versión alterna). Es una brecha de
-paridad de features entre desktop/móvil, no un bug de overflow — fuera de
-alcance de esta corrección puntual.
+| | |
+|---|---|
+| radio | `rounded-2xl` ×13 · `rounded-header` ×1 — **clavado**, no del token |
+| contenido | `LiquidSelect` ×9 · `Button` ×9 · `PeriodPicker` ×2 · fechas ×1 |
+| divisor | `<div className="h-5 w-px bg-divider" />` repetido a mano en las 14 |
 
----
+**El divisor lo pone el contenedor**, entre hijos. Era lo que más se repetía y
+lo que más quedaba de más: un divisor colgando al final cuando una sección se
+ocultaba por permisos.
+
+**El botón de limpiar deja de ser opcional por olvido.** Estaba escrito a mano
+en 6 de las 14; en las otras 8 no existía — o sea que ahí no había forma de
+volver al estado sin filtros salvo recargar la página. Si la vista pasa
+`onClear`, el botón está.
+
+El radio sale de `--card-radius`, así que la barra es muy redondeada en Liquid
+Glass y tensa en Solid, como el resto.
+
+### 17.1 `TablePagination` — paginación
+
+Ya existe y lo usan 17 vistas. **Nunca escribir la paginación a mano**: las
+que quedan sueltas dibujan los números de página como botones con
+`rounded-full` y pierden el salto rápido, el "…" de rango largo y el selector
+de tamaño de página.
+
+Y no es un `SegmentedControl`: aunque se comporta como uno-de-N,
+`role="radiogroup"` es incorrecto para un lector de pantalla — paginar es
+navegar, no elegir una opción de un grupo.
 
 ## 18. Estados de vista — `StateViews`
 

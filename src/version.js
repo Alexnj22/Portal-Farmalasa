@@ -5,7 +5,43 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.90.5';
+export const APP_VERSION = '2.91.0';
+
+// v2.91.0 — Infraestructura para canonizar las 5 familias.
+//
+// Decidido por el usuario: familias A, B, C y D se canonizan enteras; la
+// paginacion y la filter pill se canonizan APARTE. Antes de migrar nada, lo
+// que faltaba:
+//
+// 1 · `ListRow` gana `tone`. Preguntado al revisar la forma 14 (rounded-2xl
+//     peligro, 6 usos): una fila que representa algo anulado o vencido ES de
+//     esa categoria, y hasta ahora eso solo se decia tinendo el icono — se
+//     perdia al migrar. El tinte es SUAVE, nunca solido: una fila es un
+//     contenedor de contenido, no una accion. Misma razon que `soft` en Button.
+//
+// 2 · `FilterBar` nuevo. Ya existia un `FilterPill`, pero vivia en
+//     views/pedidos/tabpedidos/ y estaba CLAVADO a los filtros de Pedidos
+//     (sucursal, fecha, estado): no era un contenedor, era esa barra concreta.
+//     Por eso las otras 13 vistas lo reescribieron. Medido sobre las 14:
+//     rounded-2xl clavado en 13, y el divisor `h-5 w-px bg-divider` repetido a
+//     mano en las 14. Ahora el divisor lo pone el contenedor entre hijos — era
+//     lo que mas se repetia y lo que mas quedaba de mas (un divisor colgando
+//     al final cuando una seccion se ocultaba por permisos).
+//     El boton de limpiar deja de ser opcional por olvido: estaba en 6 de 14;
+//     en las otras 8 no habia forma de volver al estado sin filtros salvo
+//     recargar.
+//
+// 3 · Paginacion: NO hace falta canonico nuevo. `TablePagination` ya existe y
+//     lo usan 17 vistas. El trabajo es migrar las escritas a mano.
+//     Y no es un SegmentedControl: aunque se comporta como uno-de-N,
+//     role="radiogroup" es incorrecto para un lector de pantalla — paginar es
+//     navegar, no elegir.
+//
+// Bug del gate, encontrado y corregido de paso: la regla `import` marcaba el
+// JSX de EJEMPLO dentro de un comentario de bloque. Documentar bien rompia el
+// gate. Ahora blanquea los comentarios antes de buscar usos (blanquea, no
+// borra, para no correr los numeros de linea). Verificado que sigue atrapando
+// un uso real sin importar.
 
 // v2.90.5 — Quinto lote: primeras 2 "tarjetas clickeables" a ListRow.
 //

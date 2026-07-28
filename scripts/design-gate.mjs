@@ -601,13 +601,22 @@ function scanFile(path) {
       'Checkbox','TabBarAction','ViewTabBar','EmptyState','Skeleton','SkeletonText',
       'PortalInput','LiquidSelect','LiquidDatePicker','RangeDatePicker'];
     const imports = lines.filter(l => /^\s*import\b/.test(l)).join('\n');
+    // Los comentarios de bloque se descartan ANTES de buscar usos. Un canónico
+    // suele documentar cómo se usa con un ejemplo JSX en su propio docstring
+    // (`FilterBar` muestra un LiquidSelect adentro), y eso no es un uso real:
+    // marcarlo hacía que documentar bien rompiera el gate. Detectado el
+    // 2026-07-27 al crear `FilterBar`. Se blanquean en vez de borrarse para no
+    // correr los números de línea de los hallazgos que sí valen.
+    const sinComentarios = text.replace(/\/\*[\s\S]*?\*\//g,
+      m => m.replace(/[^\n]/g, ' '));
+    const lineasSC = sinComentarios.split('\n');
     for (const comp of CANONICOS) {
       const uso = new RegExp(`<${comp}[\\s/>]`);
-      if (!uso.test(text)) continue;
+      if (!uso.test(sinComentarios)) continue;
       const importado = new RegExp(`\\b${comp}\\b`).test(imports);
       const definido = new RegExp(`^(?:export\\s+)?(?:const|function)\\s+${comp}\\b`, 'm').test(text);
       if (importado || definido) continue;
-      const i = lines.findIndex(l => uso.test(l));
+      const i = lineasSC.findIndex(l => uso.test(l));
       findings.push({ line: i + 1, label: `<${comp}> usado sin importar — el build NO lo detecta`,
         category: 'import', text: (lines[i] || '').trim().slice(0, 120) });
     }

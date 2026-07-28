@@ -343,17 +343,10 @@ const FormWfmAnalytics = ({ branches }) => {
                         {/* FILA 2: L M M J V S D (Se oculta si el filtro es de hoy) (PILL TABS) */}
                         {timeRange !== '0' && (
                             <div className="flex items-center bg-surface-card-hover/70 p-1 rounded-full border border-divider shadow-inner w-max gap-0.5">
-                                {DAYS_ORDER.map(d => (
-                                    <button
-                                        key={d}
-                                        type="button"
-                                        onClick={(e) => { e.preventDefault(); setActiveView(d); }}
-                                        title={DAYS_MAP[d]}
-                                        className={`w-9 h-8 rounded-full text-label font-black uppercase transition-all duration-300 flex items-center justify-center ${activeView === d ? 'bg-brand text-white shadow-md scale-110 z-base' : 'text-content-3 hover:text-content hover:bg-surface-card'}`}
-                                    >
-                                        {['D', 'L', 'M', 'M', 'J', 'V', 'S'][d]}
-                                    </button>
-                                ))}
+                                <SegmentedControl
+                                    size="sm"
+                                    options={DAYS_ORDER.map(d => ({ value: d, label: ['D','L','M','M','J','V','S'][d] }))}
+                                    value={activeView} onChange={setActiveView} label="Día de la semana" />
                             </div>
                         )}
                     </div>

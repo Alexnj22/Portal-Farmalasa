@@ -13,6 +13,7 @@ import { useToastStore } from '../../store/toastStore';
 import LiquidSelect      from '../../components/common/LiquidSelect';
 import LiquidDatePicker  from '../../components/common/LiquidDatePicker';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import {
     searchActiveProductsByName, fetchProductPreciosForPromo, fetchSalesBranches,
     insertPromotion, insertPromotionBranches, insertPromotionProducts,
@@ -288,20 +289,10 @@ function AddProductInline({ onAdd }) {
                         <div className="flex items-center gap-2 text-label text-content-3 py-2 w-full"><SkeletonText lines={2} /></div>
                     ) : (
                         <div className="flex gap-2 flex-wrap">
-                            {presentOptions.map(opt => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => setPresentacionId(opt.value)}
-                                    className={`px-3 py-1.5 text-label rounded-full border transition-all ${
-                                        presentacionId === opt.value
-                                            ? 'bg-gradient-to-r from-brand to-chart-1 border-brand text-white font-bold shadow-sm shadow-brand/20'
-                                            : 'bg-surface-card border-divider text-content-3 hover:border-chart-1/40 hover:text-chart-1-text'
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
+                            <SegmentedControl
+                                size="sm" tone="chart-1"
+                                options={presentOptions.map(o => ({ value: o.value, label: o.label }))}
+                                value={presentacionId} onChange={setPresentacionId} label="Presentación" />
                         </div>
                     )}
                 </div>

@@ -501,12 +501,10 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         <div className="flex flex-col gap-1.5">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Cambiar a *</label>
           <div className="grid grid-cols-2 gap-1.5">
-            {available.map(m => (
-              <button key={m} onClick={() => setNewPayment(m)}
-                className={`text-left px-3 py-2 rounded-2xl border text-label font-bold transition-all ${
-                  newPayment === m ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-2 border-divider hover:border-brand/40'
-                }`}>{PAYMENT_LABELS[m] || m}</button>
-            ))}
+            <SegmentedControl
+                layout="block" columns={2}
+                options={available.map(m => ({ value: m, label: PAYMENT_LABELS[m] || m }))}
+                value={newPayment} onChange={setNewPayment} label="Cambiar a" />
           </div>
         </div>
 

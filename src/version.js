@@ -5,7 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.90.2';
+export const APP_VERSION = '2.90.3';
+
+// v2.90.3 — Tercer lote: 4 segmentados mas (16 en total).
+// FormWfmAnalytics (dias L-D), DashboardView (tabs de configuracion),
+// WidgetAnnulmentRequest (metodo de pago, layout="block"), PromoModal.
+//
+// Dos que el clasificador daba por segmentados y NO lo son, verificados a ojo
+// antes de tocarlos: AttendanceAuditView:1221 es un DROPDOWN (vive dentro de
+// un popover con branchDropOpen) y TabCatalogo:1757 esta dentro del contenedor
+// de filter pill. Quedan como estan.
 
 // v2.90.2 — Segundo lote: 12 grupos "uno de N" a SegmentedControl.
 //

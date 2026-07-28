@@ -29,6 +29,7 @@ import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
+import SegmentedControl from '../components/common/SegmentedControl';
 import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
     fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
@@ -2029,17 +2030,11 @@ const DashboardView = ({ openModal }) => {
               </div>
               {/* Tab selector inside panel */}
               <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl p-1">
-                {TABS.map(tab => {
-                  const TabIcon = tab.icon;
-                  return (
-                    <button key={tab.id} onClick={() => setConfigTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-label font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
-                        configTab === tab.id ? 'bg-surface-card text-brand-text shadow-sm' : 'text-content-3 hover:text-content-2'
-                      }`}>
-                      <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
-                    </button>
-                  );
-                })}
+                <SegmentedControl
+                    size="sm" tone="neutro"
+                    options={TABS.map(t => ({ value: t.id, label: t.label, icon: t.icon }))}
+                    value={configTab} onChange={setConfigTab} label="Sección de configuración"
+                    className="w-full" />
               </div>
               {/* Widgets for selected tab */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">

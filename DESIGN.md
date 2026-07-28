@@ -1288,6 +1288,28 @@ bug real, estaba en varios de los 30 tooltips escritos a mano.
 
 Se muestra también con el foco del teclado, no solo con el puntero.
 
+#### Tooltip ≠ hover card — dónde termina la regla 1a
+
+Al terminar la migración quedaron 9 elementos que aparecen al pasar el puntero y
+que **no** son tooltips. La distinción no es cosmética, decide el color:
+
+| | tooltip | hover card |
+|---|---|---|
+| contenido | una nota, texto corto | datos con estructura: filas, barras, listas |
+| interactivo | no (`pointer-events-none`) | a veces sí |
+| superficie | `data-surface="tooltip"` — **oscuro siempre** | `data-surface="dropdown"` — **sigue el tema** |
+| ejemplo | "Se sincronizó hace 3 min" | el desglose de Horas Hombre en `TabStaff` |
+
+Una hover card oscura sobre tema claro sería un panel de datos flotando en
+negativo — ahí la coherencia con la pantalla pesa más que la separación. Los que
+quedan como hover card: los 3 de `FacturacionView`, `EncuestaView`,
+`TabExpediente` y los 2 de `TabStaff`.
+
+**Excepción con significado:** los tooltips de `EmployeeRequestsView` usan
+`bg-danger-solid`. Ahí el rojo *es* el mensaje ("las fechas se solapan"), y
+pintarlos de navy quitaría información. Un tooltip puede llevar color semántico;
+lo que no puede es llevar un gris crudo elegido a ojo.
+
 ---
 
 ## 16. Badges, avisos e indicadores

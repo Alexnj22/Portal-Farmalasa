@@ -2243,12 +2243,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                                     <div data-surface="tooltip" className="absolute bottom-full right-0 mb-1.5 z-sidebar hidden group-hover/tier:block w-max max-w-[220px] text-caption leading-relaxed px-3 py-2 pointer-events-none">
                                                                                                                         <p className="font-black text-warning mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
-                                                                                                                            <p className="text-content-3">
+                                                                                                                            <p className="text-content-tooltip-2">
                                                                                                                                 {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                                                                                             </p>
                                                                                                                         )}
-                                                                                                                        <p className="mt-1">Al vender: <strong className="text-white">{line.tier.label}</strong></p>
-                                                                                                                        <p>Hoy: <strong className="text-white">{line.currentTier?.label ?? '—'}</strong></p>
+                                                                                                                        <p className="mt-1">Al vender: <strong className="text-content-tooltip">{line.tier.label}</strong></p>
+                                                                                                                        <p>Hoy: <strong className="text-content-tooltip">{line.currentTier?.label ?? '—'}</strong></p>
                                                                                                                     </div>
                                                                                                                 </>
                                                                                                             )}

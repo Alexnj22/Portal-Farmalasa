@@ -356,7 +356,7 @@ const BranchCard = memo(({
                                 {alertStatus.list.map((al, idx) => (
                                     <div key={idx} className="flex items-start gap-2.5 text-caption font-bold">
                                         <al.icon size={13} className={`mt-0.5 shrink-0 ${al.level === 'critical' ? 'text-danger animate-pulse' : 'text-warning'}`} strokeWidth={2.5} />
-                                        <span className="leading-tight text-white/90">{al.message}</span>
+                                        <span className="leading-tight text-content-tooltip">{al.message}</span>
                                     </div>
                                 ))}
                             </div>

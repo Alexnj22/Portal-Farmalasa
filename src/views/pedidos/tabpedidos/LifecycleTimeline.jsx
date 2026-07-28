@@ -48,7 +48,7 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                             {pause.reanudado_at
                                 ? <>
                                     <span className="text-content-tooltip font-semibold">{fmtHM(pause.reanudado_at)}</span>
-                                    {empName(pause.reanudado_por) && <span className="text-content-3"> · {empName(pause.reanudado_por)}</span>}
+                                    {empName(pause.reanudado_por) && <span className="text-content-tooltip-2"> · {empName(pause.reanudado_por)}</span>}
                                   </>
                                 : <span className="text-warning font-semibold">En curso</span>}
                         </div>

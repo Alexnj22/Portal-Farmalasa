@@ -5,7 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.88.0';
+export const APP_VERSION = '2.88.1';
+
+// v2.88.1 — Repaso de los hallazgos de v2.88.0: lo que quedaba a medias.
+//
+// Al revisar si los hallazgos estaban CORREGIDOS o solo documentados aparecieron
+// dos huecos propios:
+//
+// · 5 tooltips ya migrados seguian pintando su texto interno con tokens que
+//   siguen el tema (`text-content-3`, `text-white`) sobre una superficie que no
+//   lo sigue. Es el mismo bug que dije haber arreglado, en tooltips que yo mismo
+//   habia tocado. Encontrados con un barrido del cuerpo de CADA tooltip, no con
+//   un grep de 3 lineas: el grep corto fue lo que me hizo creer que estaba
+//   cerrado. VentasView, FormWfmAnalytics, BranchesView, EmployeeDetailView,
+//   LifecycleTimeline.
+//
+// · Dije "el resto eran paneles y dropdowns". Falso: quedaban 9 elementos de
+//   hover sin migrar. Al leerlos, 7 son hover CARDS —paneles de datos con
+//   desgloses, barras y listas— y no tooltips. Esa distincion no existia escrita,
+//   y sin ella la regla 1a se aplicaba de mas. Ahora esta en DESIGN.md §15.9:
+//   tooltip = nota corta, oscuro siempre; hover card = datos con estructura,
+//   sigue el tema. Los 2 de TabStaff si eran defecto real (`bg-slate-950/80`,
+//   `border-slate-700/50`, `text-red-300` crudos) y pasaron a data-surface.
+//
+// Excepcion con significado, ahora documentada: los tooltips de
+// EmployeeRequestsView usan `bg-danger-solid` porque ahi el rojo ES el mensaje.
+//
+// Anotado sin tocar (necesita decision del usuario): TabStaff.jsx:243, el panel
+// "Motor de Sincronizacion WFM" en oscuro fijo — volverlo theme-aware le cambia
+// el aspecto, y eso se decide, no se aplica de rebote.
 
 // v2.88.0 — Las tres decisiones de diseno pendientes, resueltas y aplicadas.
 //

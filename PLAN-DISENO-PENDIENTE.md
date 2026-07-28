@@ -719,6 +719,20 @@ bloqueantes.
 
 ## Abiertos sin resolver
 
+- **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**
+  `bg-slate-900` + `border-slate-700` + `bg-slate-800` + `from-blue-500`, con
+  `text-content-3` adentro (token que sigue el tema, sobre un fondo que no lo
+  sigue: el mismo bug de contraste que tenían los tooltips). Encontrado el
+  2026-07-27 al migrar los dos hover cards de ese archivo.
+  **No lo toqué a propósito**: convertirlo a `data-surface="card"` lo volvería
+  claro en tema claro, y eso es un cambio de aspecto que hay que decidir, no
+  aplicar de rebote mientras se arregla otra cosa. Dos salidas posibles —
+  (a) que siga el tema como cualquier tarjeta, o (b) que se quede oscuro a
+  propósito usando la paleta bespoke del sidebar, como los flyouts anclados.
+  Es un panel de administración, así que (b) es defendible. **Falta que el
+  usuario elija.**
+
+
 - **`MenuSearchModal` — NO REPRODUCIDO.** Reportado como "siempre claro".
   Medido en vivo en los 4 temas contra el build actual: el fondo del modal
   resuelve correctamente en cada uno (`rgba(240,248,255,.72)` claro ·

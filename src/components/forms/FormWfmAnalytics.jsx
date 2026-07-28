@@ -255,7 +255,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     </div>
 
                     <div className="mt-2.5 pt-2 border-t border-slate-700 flex flex-col gap-1.5">
-                        <span className="text-micro font-black uppercase tracking-widest text-content-3">{dateLabel}</span>
+                        <span className="text-micro font-black uppercase tracking-widest text-content-tooltip-2">{dateLabel}</span>
                         {activeView === 'DAYS' && isHistoricalView && (
                             <div className="flex items-center gap-1.5 text-brand-text">
                                 <MousePointerClick size={12} />

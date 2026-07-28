@@ -831,7 +831,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                                 <span className="text-label font-black">{item.label}</span>
                                                                                 {item.hoursStr && <span className="text-caption font-bold text-warning whitespace-nowrap">{item.hoursStr}</span>}
                                                                             </div>
-                                                                            {item.note && <p className="text-caption text-content-3 mt-0.5 leading-snug whitespace-normal">{item.note}</p>}
+                                                                            {item.note && <p className="text-caption text-content-tooltip-2 mt-0.5 leading-snug whitespace-normal">{item.note}</p>}
                                                                         </div>
                                                                     ))}
                                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-4 border-transparent border-t-slate-800/95"/>

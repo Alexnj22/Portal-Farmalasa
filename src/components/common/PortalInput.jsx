@@ -6,6 +6,20 @@ import { inputHoverClass, applyInputMask } from '../../utils/inputStyles';
 // izquierdo opcional, glow azul de marca al hover/focus, borde rojo cuando
 // falta o es inválido. Todo formulario nuevo debe reusar este componente en
 // vez de duplicar el estilo (ver memoria feedback_design_audit_means_full_pass).
+// Clases completas y literales: Tailwind escanea el fuente, un
+// `border-${tono}/30` armado en tiempo de ejecución no genera nada.
+const TONOS = {
+    brand:     { caja: 'border-brand/30 bg-brand/5',       texto: 'text-brand-text',   icono: 'text-brand' },
+    success:   { caja: 'border-success/30 bg-success/5',   texto: 'text-success-text', icono: 'text-success' },
+    danger:    { caja: 'border-danger/30 bg-danger/5',     texto: 'text-danger',       icono: 'text-danger' },
+    warning:   { caja: 'border-warning/30 bg-warning/5',   texto: 'text-warning-text', icono: 'text-warning' },
+    'chart-1': { caja: 'border-chart-1/30 bg-chart-1/5',   texto: 'text-chart-1-text', icono: 'text-chart-1' },
+    'chart-3': { caja: 'border-chart-3/30 bg-chart-3/5',   texto: 'text-chart-3-text', icono: 'text-chart-3' },
+    'chart-4': { caja: 'border-chart-4/30 bg-chart-4/5',   texto: 'text-chart-4-text', icono: 'text-chart-4' },
+    'chart-6': { caja: 'border-chart-6/30 bg-chart-6/5',   texto: 'text-chart-6-text', icono: 'text-chart-6' },
+    'chart-9': { caja: 'border-chart-9/30 bg-chart-9/5',   texto: 'text-chart-9-text', icono: 'text-chart-9' },
+};
+
 const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "text", placeholder, colSpan = 1, required = false, helperText, prefix, readOnly = false, maskType, hasError, errorMessage,
     // ── 2026-07-27 ──────────────────────────────────────────────────────
     // `labelAction`: una acción a la derecha de la etiqueta (`+ Agregar` en
@@ -19,6 +33,16 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     // dentro de una tabla y no como campo de formulario.
     compact = false,
     inputClassName = '',
+    // `tono`: el campo tintado con un color semántico o de categoría. Al medir
+    // D3.4 aparecieron **33 inputs a mano en 16 archivos** que son exactamente
+    // esto — el salario nuevo en verde, el MIN propuesto en naranja y el MAX en
+    // azul, las cantidades recibidas en el color de su fila. Ninguno podía usar
+    // el canónico porque solo sabía pintarse neutro, así que cada uno reescribía
+    // también la etiqueta y el contenedor.
+    //
+    // Los valores son los de la paleta CERRADA (DESIGN.md §6.0): no agrega
+    // ningún color, solo hace alcanzables desde el canónico los que ya existen.
+    tono,
     // ── 2026-07-28: sin esto, D3.4 era una migración con trampa ──────────
     // El componente aceptaba una lista FIJA de props y tiraba todo lo demás.
     // Medido sobre los 104 `<input>` que faltan migrar: **54 (51%) usan al
@@ -45,6 +69,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
         onChange(e);
     };
 
+    const t = TONOS[tono];
     const isMissing = required && !value?.trim();
     const isInvalid = hasError || isMissing;
     const errorClasses = isInvalid ? 'outline outline-2 outline-danger/50' : '';
@@ -60,8 +85,12 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 {isMissing && !hasError && <span id={messageId} className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
                 {hasError && errorMessage && <span id={messageId} className="text-danger font-bold bg-danger/15 px-2 py-0.5 rounded-md shadow-sm border border-danger/40 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>
-            <div data-surface="input" className={`relative flex items-center ${compact ? 'h-8' : 'h-[40px]'} z-base ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
-                {Icon && <div className="absolute left-3 text-content-3"><Icon size={14} strokeWidth={2.5} /></div>}
+            {/* Sin `tono` manda la superficie del tema (`data-surface="input"`).
+                Con `tono` NO se emite: esa regla de index.css va sin @layer, así
+                que le gana a cualquier utilidad de Tailwind — el borde tintado
+                no se vería. Tintado ⇒ el contenedor se pinta entero acá. */}
+            <div data-surface={t ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : 'h-[40px]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
+                {Icon && <div className={`absolute left-3 ${t?.icono ?? 'text-content-3'}`}><Icon size={14} strokeWidth={2.5} /></div>}
                 {prefix && <div className="absolute left-3 text-content-3 font-black text-body">{prefix}</div>}
                 <input
                     {...rest}
@@ -77,7 +106,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
                     aria-describedby={isInvalid ? messageId : rest['aria-describedby']}
-                    className={`w-full h-full bg-transparent ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold text-content outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    className={`w-full h-full bg-transparent ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold ${t?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}
             </div>

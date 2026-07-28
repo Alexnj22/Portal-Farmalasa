@@ -5,6 +5,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import SearchInput from '../../components/common/SearchInput';
+import PortalInput from '../../components/common/PortalInput';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
@@ -190,22 +191,22 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
         {/* Nuevos valores */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-caption font-black text-chart-4-text uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
-            <input aria-label="Mínimo propuesto" type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
- className="w-full text-right text-body-xl font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-caption font-black text-chart-1-text uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
-            <input aria-label="Máximo propuesto" type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
- className="w-full text-right text-body-xl font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2" />
-          </div>
+          <PortalInput
+              label="Nuevo MIN (und) *" name="minmax-min" tono="chart-4"
+              type="number" min="0" value={mn} inputClassName="text-right"
+              onChange={e => { setMn(e.target.value); setErr(''); }}
+          />
+          <PortalInput
+              label="Nuevo MAX (und) *" name="minmax-max" tono="chart-1"
+              type="number" min="0" value={mx} inputClassName="text-right"
+              onChange={e => { setMx(e.target.value); setErr(''); }}
+          />
         </div>
 
         {/* Motivo */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
           <PortalTextarea
+              label="Motivo"
               value={reason}
               onChange={e => setReason(e.target.value)}
               rows={2}

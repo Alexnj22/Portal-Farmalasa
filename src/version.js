@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.156.0';
+export const APP_VERSION = '2.157.0';
+
+// v2.157.0 — el canonico aprende a tintarse, y NINGUN desplegable se podia
+// abrir con el teclado.
+//
+// D3.4 seguia encontrando inputs a mano que no eran descuido: **33 en 16
+// archivos** estaban tintados con un color semantico o de categoria (el
+// salario nuevo en verde, el MIN propuesto en naranja y el MAX en azul, las
+// cantidades recibidas en el color de su fila) y `PortalInput` solo sabia
+// pintarse neutro. Prop `tono` nueva, con los nueve colores de la paleta
+// CERRADA — no agrega ninguno, solo los hace alcanzables desde el canonico.
+// Detalle: la regla `[data-surface="input"]` de index.css va SIN @layer, asi
+// que le gana a cualquier utilidad de Tailwind; con `tono` el atributo no se
+// emite y el contenedor se pinta entero en el componente.
+//
+// Y buscando por que Playwright no lograba abrir un combo, el hallazgo real:
+// el disparador de `LiquidSelect` es un `<div role="combobox">` con `onClick`
+// y **sin `tabIndex` ni `onKeyDown`**. Medido en /staff: 2 combobox en la
+// vista, **0 alcanzables con Tab**. Como LiquidSelect reemplaza a TODO
+// `<select>` nativo del portal (74 archivos), eso significaba que ningun
+// desplegable — filtros, formularios, modales — se podia usar sin mouse.
+// Ahora: Tab llega, Enter/Espacio/Flecha-abajo abren, las flechas y Enter
+// eligen (eso ya lo hacia el buscador interno), y al cerrarse el foco VUELVE
+// al disparador en vez de caer al <body>. Anillo de foco con
+// `outline-solid` — sin el, en Tailwind v4 no pinta nada.
+//
+// Verificado en vivo el ciclo completo de teclado y el campo verde renderizado
+// en Accion RRHH > Ajuste Salarial.
+//
+// Inputs a mano: 85 → 72.
 
 // v2.156.0 — D3.4: los formularios de contrasena y contacto.
 //

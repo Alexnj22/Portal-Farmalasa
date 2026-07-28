@@ -465,24 +465,18 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
 
                         {isDisability && formData?.disabilityType && formData?.disabilityType !== 'Maternidad' && (
                             <div className="animate-in fade-in">
-                                <label className={labelClasses}>Días de Incapacidad</label>
-                                <div className="relative flex items-center h-[40px]">
-                                    <input
-                                        type="number"
-                                        min="1" max="365"
-                                        value={formData?.disabilityDays || ''}
-                                        onChange={e => {
-                                            const days = parseInt(e.target.value) || 0;
-                                            const end = formData?.date && days > 0
-                                                ? (() => { const d = new Date(formData.date + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
-                                                : '';
-                                            setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
-                                        }}
- className="w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 pr-12 text-body-xl font-bold text-content-2 transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:border-brand/50"
-                                        placeholder="Ej: 3"
-                                    />
-                                    <span className="absolute right-4 text-content-2 text-label font-black uppercase tracking-widest">días</span>
-                                </div>
+                                <PortalInput
+                                    label="Días de Incapacidad" name="nov-dias-incapacidad"
+                                    type="number" min="1" max="365" placeholder="Ej: 3"
+                                    value={formData?.disabilityDays || ''}
+                                    onChange={e => {
+                                        const days = parseInt(e.target.value) || 0;
+                                        const end = formData?.date && days > 0
+                                            ? (() => { const d = new Date(formData.date + 'T12:00:00'); d.setDate(d.getDate() + days - 1); return d.toISOString().split('T')[0]; })()
+                                            : '';
+                                        setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
+                                    }}
+                                />
                                 {formData?.endDate && formData?.disabilityDays > 0 && (() => {
                                     const retorno = new Date(formData.endDate + 'T12:00:00');
                                     retorno.setDate(retorno.getDate() + 1);
@@ -668,12 +662,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
                             {/* Nuevo salario */}
                             <div>
-                                <label className={labelClasses}>Nuevo Salario Base Mensual</label>
-                                <div className="flex items-center gap-3">
-                                    <div className="relative flex-1 max-w-xs">
-                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-success" size={16} strokeWidth={3}/>
- <input type="number" step="0.01" placeholder="0.00" className="w-full bg-surface-card border border-success/30 rounded-2xl h-[44px] px-4 pl-10 text-body-xl font-black text-success-text transition-all hover:shadow-md focus:border-success/50" value={formData?.newSalary || ''} onChange={(e) => setFormData(prev => ({ ...prev, newSalary: e.target.value }))} />
-                                    </div>
+                                <div className="flex items-end gap-3">
+                                    <div className="flex-1 max-w-xs"><PortalInput
+                                        label="Nuevo Salario Base Mensual" name="nov-salario"
+                                        tono="success" icon={DollarSign}
+                                        type="number" step="0.01" placeholder="0.00"
+                                        value={formData?.newSalary || ''}
+                                        colSpan={1}
+                                        onChange={e => setFormData(prev => ({ ...prev, newSalary: e.target.value }))}
+                                    /></div>
                                     {diff !== null && !isNaN(diff) && (
                                         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                             {diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {diff > 0 ? '+' : ''}${diff.toFixed(2)}

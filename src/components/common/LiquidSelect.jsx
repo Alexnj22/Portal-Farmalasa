@@ -36,6 +36,13 @@ const LiquidSelect = ({
     // Texto del botón de limpiar selección. Default 'Todos' (uso como filtro
     // de listas); en formularios de datos usar algo como 'Ninguno'.
     clearLabel = 'Todos',
+    // ── 2026-07-28 ──────────────────────────────────────────────────────
+    // Nombre accesible del disparador. Ahora que es enfocable hace falta:
+    // un `role="combobox"` sin nombre se anuncia solo como "cuadro
+    // combinado". Cuando el select vive bajo un <label> propio, pasar
+    // `ariaLabelledBy` con el id de esa etiqueta en vez de este.
+    ariaLabel,
+    ariaLabelledBy,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +52,7 @@ const LiquidSelect = ({
     const optionId = (idx) => `${listboxId}-option-${idx}`;
 
     const selectRef = useRef(null);
+    const triggerRef = useRef(null);
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
     const searchDebounceRef = useRef(null);
@@ -186,6 +194,31 @@ const LiquidSelect = ({
         return () => cancelAnimationFrame(rafId);
     }, [isOpen]);
 
+    // El disparador es un <div role="combobox">, no un <button> — un <button>
+    // no puede contener el input de búsqueda que se le superpone al abrirse.
+    // Eso obliga a implementar a mano lo que el navegador da gratis: foco y
+    // teclado. Faltaba hasta el 2026-07-28, y como LiquidSelect reemplaza a
+    // TODO <select> nativo del portal (74 archivos), el resultado era que
+    // ningún desplegable se podía abrir sin mouse. Medido: 0 de los
+    // combobox de /staff alcanzables con Tab.
+    //
+    // Con el menú ya abierto las flechas y Enter las maneja el input de
+    // búsqueda (más abajo); acá solo hace falta la apertura y Escape.
+    const handleTriggerKeyDown = (e) => {
+        if (disabled) return;
+        // El input de búsqueda vive DENTRO de este div: sin este guardia, su
+        // Enter burbujea hasta acá y vuelve a abrir el menú que se acaba de
+        // cerrar al elegir. Mismo patrón que en DataRow.
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            handleOpen();
+        } else if (e.key === 'Escape' && isOpen) {
+            e.preventDefault();
+            setIsOpen(false);
+        }
+    };
+
     const handleOpen = () => {
         if (disabled) return;
         updateCoords(); // Calculamos el espacio antes de abrir
@@ -216,6 +249,10 @@ const LiquidSelect = ({
         onChange(val);
         setIsOpen(false);
         setSearchTerm('');
+        // Al cerrarse desmonta el input de búsqueda, que es quien tenía el
+        // foco: sin esto el foco cae al <body> y el siguiente Tab arranca de
+        // nuevo desde el principio de la página. Devolverlo al disparador.
+        triggerRef.current?.focus();
     };
 
     const isLargeList = !serverSearch && options.length > searchThreshold;
@@ -382,7 +419,11 @@ const LiquidSelect = ({
     // del padre sin fondo propio, y data-surface siempre pinta su bg/border/
     // shadow por cascade layers sin importar las clases Tailwind del mismo
     // elemento, así que no puede convivir con "bg-transparent".
-    const pillBaseClasses = `w-full transition-all duration-300 outline-none ${minHeightClass} flex items-center text-content ${
+    // `outline-solid` explícito: en Tailwind v4 un `outline-2` sin él no pinta
+    // nada (ver memoria feedback_tailwind_v4_outline_solid_gotcha). El anillo de
+    // foco va con `focus-visible` para que solo aparezca al navegar con teclado.
+    const anilloFoco = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+    const pillBaseClasses = `w-full transition-all duration-300 outline-none ${anilloFoco} ${minHeightClass} flex items-center text-content ${
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${bare ? 'bg-transparent' : ''} ${
         !bare && isOpen ? 'outline-solid outline-1 outline-offset-[-1px] outline-brand/60' : ''
@@ -412,9 +453,15 @@ const LiquidSelect = ({
             <div
                 {...(!bare ? { 'data-surface': 'input' } : {})}
                 className={`${pillBaseClasses} relative`}
+                ref={triggerRef}
                 onClick={handleOpen}
+                onKeyDown={handleTriggerKeyDown}
+                tabIndex={disabled ? -1 : 0}
                 role="combobox"
+                aria-label={ariaLabel}
+                aria-labelledby={ariaLabelledBy}
                 aria-haspopup="listbox"
+                aria-disabled={disabled || undefined}
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? listboxId : undefined}
                 aria-activedescendant={isOpen && highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined}

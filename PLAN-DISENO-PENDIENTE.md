@@ -1263,6 +1263,41 @@ Que un elemento esté `absolute` tampoco lo hacía excepción: la posición es
 layout, y `Button` acepta `className`. Un `<Button iconOnly icon={ChevronLeft}
 className="absolute left-2 top-1/2" />` es perfectamente válido.
 
+## D3.3 — estado de la migración al 2026-07-27 (medido)
+
+**276 → 246 botones a mano.** Cinco lotes, cada uno verificado en navegador con
+sesión real antes de commitear.
+
+| lote | qué | versión |
+|---|---|---|
+| 1 | 8 "guardar con carga", incluidos los dos de `UnifiedModal` | v2.90.1 |
+| 2 | 12 grupos uno-de-N → `SegmentedControl` | v2.90.2 |
+| 3 | 4 segmentados más | v2.90.3 |
+| 4 | 6 de `className` literal, 2 estrenan `soft` | v2.90.4 |
+| 5 | 2 tarjetas clickeables → `ListRow surface="card"` | v2.90.5 |
+
+**Lo que sigue pendiente, con su forma real:**
+
+| forma | cuántos | por qué no está hecho |
+|---|---|---|
+| tarjeta con 3+ `<div>` anidados | 36 | estructura propia; hay que leer cada una |
+| tarjeta/fila con ícono y dos líneas | ~24 | mecánico, va a `ListRow` |
+| condicional múltiple en `className` | ~60 | el ternario codifica semántica distinta en cada uno |
+| toggles y acordeones | 12 | no son uno-de-N; falta decidir si hay canónico |
+| dentro del contenedor de filter pill (§17) | 3 | **se quedan**, tienen su propio estándar |
+| navegación (`AppLayout` sidebar y barra móvil) | 2 | **se quedan**: flyouts, refs, indentación |
+
+**Por qué no se automatizó en una pasada.** 150 de 167 tienen `className`
+dinámica —al revés que los `<textarea>`, donde 31 de 37 eran literales y un
+migrador automático funcionó—. Acá el ternario codifica *semántica*: si es
+deshabilitado, si es activo, si es uno-de-N. Un migrador a ciegas habría metido
+37 segmentados dentro de `Button`.
+
+**Dos trampas que costaron reversiones** (las dos del mismo matcher de llaves):
+agarró el `.map()` interno cuando el array de opciones tenía otro `.map()`
+anidado, y contó el `${}` de un template literal como bloque. Los dos archivos
+se rehicieron por rango de líneas exacto.
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

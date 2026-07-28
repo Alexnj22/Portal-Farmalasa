@@ -20,7 +20,7 @@ const LiquidToast = () => {
         },
         info: {
             icon: <Info size={20} strokeWidth={2.5} className="text-white" />,
-            iconContainer: 'bg-content-2 shadow-[0_4px_12px_rgba(51,65,85,0.4)]'
+            iconContainer: 'bg-content-2 shadow-[var(--shadow-elevation-md)]'
         },
         birthday: {
             icon: <Cake size={20} strokeWidth={2.5} className="text-white animate-[bounce_2s_infinite]" />,
@@ -28,7 +28,7 @@ const LiquidToast = () => {
         }
     }[type] || {
         icon: <Info size={20} strokeWidth={2.5} className="text-white" />,
-        iconContainer: 'bg-content-2 shadow-[0_4px_12px_rgba(51,65,85,0.4)]'
+        iconContainer: 'bg-content-2 shadow-[var(--shadow-elevation-md)]'
     };
 
     const toastContent = (

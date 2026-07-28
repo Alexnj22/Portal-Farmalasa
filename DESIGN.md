@@ -826,14 +826,14 @@ Current files using framer-motion:
 ```jsx
 // Desktop
 <div className="bg-gradient-to-tr from-brand to-brand-purple rounded-2xl
-                shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2.5
+                shadow-[var(--shadow-glow-brand-md)] p-2.5
                 flex items-center justify-center">
   <Icon className="text-white" size={20} strokeWidth={1.5} />
 </div>
 
 // Mobile
 <div className="bg-gradient-to-tr from-brand to-brand-purple rounded-xl
-                shadow-[0_4px_12px_rgba(0,82,204,0.3)] p-2 flex-shrink-0
+                shadow-[var(--shadow-glow-brand-md)] p-2 flex-shrink-0
                 flex items-center justify-center">
   <Icon className="text-white" size={16} strokeWidth={1.5} />
 </div>

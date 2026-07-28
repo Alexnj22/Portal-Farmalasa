@@ -5,7 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.102.0';
+export const APP_VERSION = '2.102.1';
+
+// v2.102.1 — Arreglo de un error propio del commit anterior.
+//
+// Para comprobar que `shadow-literal` habia quedado BLOQUEANTE, le meti una
+// sombra literal a proposito a `LiquidToast`, vi al gate fallar (bien) y la
+// revertí con `git checkout -- LiquidToast.jsx`. Y ahi estuvo el error: ese
+// checkout no deshace la prueba, deshace el archivo al ULTIMO COMMIT — o sea
+// que se llevo tambien las dos sombras que YO habia migrado en esa misma
+// sesion. Commiteé con el gate en rojo.
+//
+// La leccion no es "revisar el gate antes de commitear" (ya estaba en la
+// lista): es que **una prueba destructiva sobre un archivo con cambios sin
+// commitear no se deshace con `checkout`**. O se prueba sobre un archivo
+// limpio, o se revierte con la edicion inversa.
+//
+// Y de rebote lo agarró `gate:doc`: DESIGN.md ENSEÑABA dos sombras literales
+// en su ejemplo del squircle de icono (`shadow-[0_4px_12px_rgba(0,82,204,…)]`)
+// — invisibles mientras la categoria tenia baseline, imposibles de ignorar
+// ahora que esta en cero. Es exactamente para lo que existe ese gate.
 
 // v2.102.0 — D3.8: `shadow-literal` de 28 a CERO, y bloqueante para siempre.
 //

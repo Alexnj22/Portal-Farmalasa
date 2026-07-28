@@ -1059,9 +1059,9 @@ export default function CotizacionesView() {
                                 <p className="text-body-sm text-content-2 truncate max-w-[160px]">{cot.customer_name}</p>
                             </DataCell>
                             <DataCell hideBelow="sm">
-                                <span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md ${cot.document_type === 'CCF' ? 'bg-chart-1/10 text-chart-1-text' : 'bg-success/10 text-success-text'}`}>
+                                <Badge variant={cot.document_type === 'CCF' ? 'chart-1' : 'neutral'} size="sm">
                                     {cot.document_type}
-                                </span>
+                                </Badge>
                             </DataCell>
                             <DataCell hideBelow="lg">
                                 <span className="text-label text-content-2">{branchName}</span>
@@ -1075,9 +1075,7 @@ export default function CotizacionesView() {
                                 ) : <span className="text-content-3">—</span>}
                             </DataCell>
                             <DataCell hideBelow="sm">
-                                <span className={`text-micro font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-success/10 text-success-text border-success/30' : 'bg-danger/10 text-danger-text border-danger/30'}`}>
-                                    {cot.status}
-                                </span>
+                                <Badge variant={cot.status === 'ACTIVA' ? 'success' : 'neutral'} size="sm">{cot.status}</Badge>
                             </DataCell>
                             <DataCell align="right">
                                 <span className={`text-body font-black ${isAnulada ? 'line-through text-content-3' : 'text-content'}`}>{fmt(cot.total)}</span>

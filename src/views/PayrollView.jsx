@@ -32,9 +32,9 @@ const roleOrder = (emp) => {
 };
 
 const STATUS_META = {
-    DRAFT:    { label: 'Borrador',  color: 'bg-surface-card-hover text-content-2 border-divider' },
-    APPROVED: { label: 'Aprobada', color: 'bg-success/10 text-success-text border-success/30' },
-    PAID:     { label: 'Pagada',   color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' },
+    DRAFT:    { label: 'Borrador', variante: 'neutral' },
+    APPROVED: { label: 'Aprobada', variante: 'success' },
+    PAID:     { label: 'Pagada',   variante: 'chart-1' },
 };
 
 // ─── Number to words ──────────────────────────────────────────────────────────
@@ -551,7 +551,7 @@ const PayrollView = ({ openModal }) => {
                                                 onClick={() => setActivePeriod(p)}
                                                 title={p.name}
                                                 subtitle={p.pay_date ? `Pago: ${new Date(p.pay_date + 'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}
-                                                trailing={<span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>}
+                                                trailing={<Badge variant={meta.variante} size="sm">{meta.label}</Badge>}
                                             />
                                         );
                                     })}
@@ -580,9 +580,7 @@ const PayrollView = ({ openModal }) => {
                                             <p className="text-caption text-content-3 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <span className={`text-micro font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).color}`}>
-                                                {(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).label}
-                                            </span>
+                                            <Badge variant={STATUS_META[activePeriod?.status]?.variante || 'neutral'}>{(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).label}</Badge>
                                             {(isDraft||isApproved) && (
                                                 <Button variant="secondary" icon={RotateCcw} disabled={generating} onClick={handleGenerate}>{generating ? 'Generando…' : payrollEntries.length > 0 ? 'Regenerar' : 'Generar Planilla'}</Button>
                                             )}

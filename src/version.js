@@ -16,7 +16,18 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.141.0';
+export const APP_VERSION = '2.142.0';
+
+// v2.142.0 — D3.5: los tres "Urgente" de Mis Avisos, nomina y cotizaciones.
+//
+// El chip "Urgente" estaba escrito TRES veces en el mismo archivo, y las tres
+// distinto: una con `bg-danger-solid` y radio md, otra con radio full y una
+// sombra, la tercera con un GRADIENTE `from-danger to-danger/80`. Mismo texto,
+// mismo icono, mismo significado, tres formas.
+//
+// Tambien `STATUS_META` de nomina y los dos de cotizaciones.
+//
+// Chips a mano: 59 → 52.
 
 // v2.141.0 — D3.5: Facturacion y Catalogo cerrados.
 //

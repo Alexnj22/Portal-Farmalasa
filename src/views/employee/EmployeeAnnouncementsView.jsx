@@ -59,9 +59,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             <div className="flex flex-wrap items-center gap-2">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-content-3' : isUrgent ? 'bg-danger' : 'bg-brand'}`} />
                 {isUrgent && (
-                    <span className={`flex items-center gap-1 text-white bg-danger-solid px-3 py-1 rounded-md text-caption font-black uppercase tracking-widest shadow-sm shadow-red-500/30 ${!isRead ? 'animate-pulse' : ''}`}>
-                        <Flame size={11} strokeWidth={2.5} /> Urgente
-                    </span>
+                    <Badge variant="danger" tone="solid" icon={Flame}>Urgente</Badge>
                 )}
                 {wasReadBefore && (
                     <Badge variant="warning" icon={Pencil}>Actualización</Badge>
@@ -350,9 +348,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                         </span>
                     </div>
                     {urgentLeft > 0 && (
-                        <span className="flex items-center gap-1.5 text-caption font-black text-white bg-danger-solid px-3 py-1.5 rounded-full shadow-[var(--shadow-glow-danger)] animate-pulse self-center">
-                            <Flame size={11} strokeWidth={2.5} /> {urgentLeft} urgente{urgentLeft !== 1 ? 's' : ''}
-                        </span>
+                        <Badge variant="danger" tone="solid" icon={Flame} uppercase={false}>{urgentLeft} urgente{urgentLeft !== 1 ? 's' : ''}</Badge>
                     )}
                 </div>
                 {total > 1 && (
@@ -436,9 +432,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                             {/* Badges + fecha */}
                             <div className="flex flex-wrap items-center gap-2">
                                 {isUrgent && (
-                                    <span className="flex items-center gap-1.5 text-white bg-gradient-to-r from-danger to-danger/80 px-3 py-1 rounded-lg text-caption font-black uppercase tracking-widest shadow-[var(--shadow-glow-danger)] animate-pulse">
-                                        <Flame size={11} strokeWidth={2.5}/> Urgente
-                                    </span>
+                                    <Badge variant="danger" tone="solid" icon={Flame}>Urgente</Badge>
                                 )}
                                 {badgeEl}
                                 <span className="ml-auto text-caption font-bold text-content-3 flex items-center gap-1 flex-shrink-0">

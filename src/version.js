@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.133.0';
+export const APP_VERSION = '2.134.0';
+
+// v2.134.0 — D3.5: dos paletas mas, y una leccion sobre mi propio proceso.
+//
+//   · `PCT_COLORS.badge` (EncuestaView) — un `badge:` por color, la paleta
+//     SOFT otra vez. Y la nota contextual sacaba su borde con
+//     `ctx.badge.replace('text-', 'border-')`: manipular la clase de Tailwind
+//     como STRING para inventarle un borde. Ahora usa el `border` que la tabla
+//     ya tenia.
+//   · `STATUS_META` y `HEADER_STATUS_META` (VacationPlanView) — ocho y tres
+//     filas de `bg`/`text`/`border`. El `bar` se queda: ese si se usa aparte,
+//     para la barra del Gantt.
+//
+// ── Y lo que me paso, que vale mas que el refactor ───────────────────────
+// Deje `<Badge>` sin importar en VacationPlanView. **El build paso, el lint
+// paso, y la vista entera cayo en el ErrorBoundary** — "ALGO SALIO MAL", sin
+// contenido. Solo lo vi en la captura.
+//
+// Lo importante: el gate SI lo detecta, y su mensaje literalmente dice "el
+// build NO lo detecta". Existe desde v2.76 justo para esto. Mi fallo fue
+// saltarme `gate:design` entre la edicion y la verificacion visual.
+//
+// Confirmado con una copia de prueba: el gate reporta
+// `[import] <Badge> usado sin importar`. Y un barrido sobre los 14 canonicos
+// en todo `src/` da 0 usos sin importar.
+//
+// Chips a mano: 90 → 83.
 
 // v2.133.0 — `Contador`: la tercera familia de badge, que se habia quedado sin
 // canonico.

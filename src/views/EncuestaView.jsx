@@ -45,14 +45,14 @@ const OPT_COLORS = {
 // nombre de color se conservan (referenciadas por posición en otras partes
 // del archivo) pero los valores ya no inventan un color Tailwind por vista.
 const PCT_COLORS = {
-    blue:    { bar: 'bg-chart-1',    text: 'text-chart-1-text',    bg: 'bg-chart-1/10',    border: 'border-chart-1/30',    badge: 'bg-chart-1/10 text-chart-1-text' },
-    emerald: { bar: 'bg-chart-2', text: 'text-chart-2-text', bg: 'bg-chart-2/10', border: 'border-chart-2/30', badge: 'bg-chart-2/10 text-chart-2-text' },
-    amber:   { bar: 'bg-chart-7',   text: 'text-chart-7-text',   bg: 'bg-chart-7/10',   border: 'border-chart-7/30',   badge: 'bg-chart-7/10 text-chart-7-text' },
-    indigo:  { bar: 'bg-chart-3',  text: 'text-chart-3-text',  bg: 'bg-chart-3/10',  border: 'border-chart-3/30',  badge: 'bg-chart-3/10 text-chart-3-text' },
-    purple:  { bar: 'bg-chart-3',  text: 'text-chart-3-text',  bg: 'bg-chart-3/10',  border: 'border-chart-3/30',  badge: 'bg-chart-3/10 text-chart-3-text' },
-    teal:    { bar: 'bg-chart-9',    text: 'text-chart-9-text',    bg: 'bg-chart-9/10',    border: 'border-chart-9/30',    badge: 'bg-chart-9/10 text-chart-9-text' },
-    rose:    { bar: 'bg-chart-6',    text: 'text-chart-6-text',    bg: 'bg-chart-6/10',    border: 'border-chart-6/30',    badge: 'bg-chart-6/10 text-chart-6-text' },
-    slate:   { bar: 'bg-content-3',   text: 'text-content-2',   bg: 'bg-surface-card-hover',   border: 'border-border-card',   badge: 'bg-surface-card-hover text-content-2' },
+    blue:    { bar: 'bg-chart-1',    text: 'text-chart-1-text',    bg: 'bg-chart-1/10',    border: 'border-chart-1/30',    variante: 'chart-1' },
+    emerald: { bar: 'bg-chart-2', text: 'text-chart-2-text', bg: 'bg-chart-2/10', border: 'border-chart-2/30', variante: 'chart-2' },
+    amber:   { bar: 'bg-chart-7',   text: 'text-chart-7-text',   bg: 'bg-chart-7/10',   border: 'border-chart-7/30',   variante: 'chart-7' },
+    indigo:  { bar: 'bg-chart-3',  text: 'text-chart-3-text',  bg: 'bg-chart-3/10',  border: 'border-chart-3/30',  variante: 'chart-3' },
+    purple:  { bar: 'bg-chart-3',  text: 'text-chart-3-text',  bg: 'bg-chart-3/10',  border: 'border-chart-3/30',  variante: 'chart-3' },
+    teal:    { bar: 'bg-chart-9',    text: 'text-chart-9-text',    bg: 'bg-chart-9/10',    border: 'border-chart-9/30',    variante: 'chart-9' },
+    rose:    { bar: 'bg-chart-6',    text: 'text-chart-6-text',    bg: 'bg-chart-6/10',    border: 'border-chart-6/30',    variante: 'chart-6' },
+    slate:   { bar: 'bg-content-3',   text: 'text-content-2',   bg: 'bg-surface-card-hover',   border: 'border-border-card',   variante: 'neutral' },
 };
 
 function scoreVal(v) {
@@ -910,8 +910,8 @@ export default function EncuestaView() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="text-body font-black text-content">{bloque.nombre}</span>
-                                                <span className={`text-micro font-black px-2 py-0.5 rounded-full ${c.badge}`}>{pqs.length} preguntas</span>
-                                                {ctx && <span className={`text-micro font-black px-2 py-0.5 rounded-full ${ctx.badge}`}>→ {ctx.dirigido}</span>}
+                                                <Badge variant={c.variante} size="sm" uppercase={false}>{pqs.length} preguntas</Badge>
+                                                {ctx && <Badge variant={ctx.variante} size="sm" uppercase={false}>→ {ctx.dirigido}</Badge>}
                                                 {score && <span className={`text-micro font-black ${sl.color}`}>{sl.label}</span>}
                                             </div>
                                             <p className="text-caption text-content-3 mt-0.5">{bloque.desc}</p>
@@ -921,8 +921,11 @@ export default function EncuestaView() {
                                     {isOpen && (
                                         <div className="border-t border-divider">
                                             {/* Nota contextual */}
+                                            {/* El borde salía de `ctx.badge.replace('text-','border-')`: manipular
+                                                la clase de Tailwind como string para inventarle un borde. Ahora usa
+                                                el `border` que la tabla ya tenía. */}
                                             {ctx && (
-                                                <div className={`mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl border text-caption text-content-2 leading-relaxed flex gap-2 items-start ${ctx.badge.replace('text-', 'border-').replace('bg-', 'bg-')} bg-opacity-30`}
+                                                <div className={`mx-4 mt-3 mb-1 px-3 py-2.5 rounded-xl border text-caption text-content-2 leading-relaxed flex gap-2 items-start ${ctx.bg} ${ctx.border}`}
                                                     style={{ background: 'none' }}>
                                                     <Info size={12} className="shrink-0 mt-0.5 opacity-60" />
                                                     <span><strong>¿A quién va dirigido?</strong> {ctx.nota}</span>

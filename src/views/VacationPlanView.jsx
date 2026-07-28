@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Button from '../components/common/Button';
+import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
@@ -25,29 +26,29 @@ const fmtShort = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV'
 const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000) + 1;
 
 const STATUS_META = {
-    DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3'   },
-    PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1'    },
-    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30',   bar: 'bg-warning'   },
-    APPROVED:         { label: 'Aprobado',      bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success' },
-    PLANNED:          { label: 'Planificado',   bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1'    },
-    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success' },
-    TAKEN:            { label: 'Tomado',        bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3'   },
-    CANCELLED:        { label: 'Cancelado',     bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',     bar: 'bg-danger/60'     },
+    DRAFT:            { label: 'Borrador',      bg: 'bg-surface-card-hover',   text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3', variante: 'neutral'   },
+    PRE_APPROVED:     { label: 'Pre-aprobado',  bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1', variante: 'chart-1'    },
+    CHANGE_REQUESTED: { label: 'Cambio sol.',   bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30',   bar: 'bg-warning', variante: 'warning'   },
+    APPROVED:         { label: 'Aprobado',      bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success', variante: 'success' },
+    PLANNED:          { label: 'Planificado',   bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30',    bar: 'bg-chart-1', variante: 'chart-1'    },
+    CONFIRMED:        { label: 'Confirmado',    bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', bar: 'bg-success', variante: 'success' },
+    TAKEN:            { label: 'Tomado',        bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider',   bar: 'bg-content-3', variante: 'neutral'   },
+    CANCELLED:        { label: 'Cancelado',     bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',     bar: 'bg-danger/60', variante: 'danger'     },
 };
 
 const HEADER_STATUS_META = {
-    DRAFT:        { label: 'Borrador',     color: 'text-content-3',   bg: 'bg-surface-card-hover'   },
-    PRE_APPROVED: { label: 'Pre-aprobado', color: 'text-chart-1-text',    bg: 'bg-chart-1/10'     },
-    FINALIZED:    { label: 'Finalizado',   color: 'text-success-text', bg: 'bg-success/10'  },
+    DRAFT:        { label: 'Borrador',     color: 'text-content-3',   bg: 'bg-surface-card-hover', variante: 'neutral'   },
+    PRE_APPROVED: { label: 'Pre-aprobado', color: 'text-chart-1-text',    bg: 'bg-chart-1/10', variante: 'chart-1'     },
+    FINALIZED:    { label: 'Finalizado',   color: 'text-success-text', bg: 'bg-success/10', variante: 'success'  },
 };
 
+// `STATUS_META` guardaba `bg`/`text`/`border` —la paleta SOFT de `Badge`
+// escrita a mano, una fila por estado— además de `bar`, que sí se usa aparte
+// para la barra del Gantt. Ahora el chip sale del canónico y la tabla solo
+// aporta el NOMBRE de la variante. (2026-07-28, D3.5)
 const StatusBadge = ({ status }) => {
     const m = STATUS_META[status] || STATUS_META.PLANNED;
-    return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-micro font-black uppercase tracking-widest border ${m.bg} ${m.text} ${m.border}`}>
-            {m.label}
-        </span>
-    );
+    return <Badge variant={m.variante} size="sm">{m.label}</Badge>;
 };
 
 const InputLabel = ({ children }) => (
@@ -846,10 +847,10 @@ const VacationPlanView = () => {
                                     <div>
                                         <p className="text-body font-black text-content">Plan de Vacaciones {year}</p>
                                         {activeHeader ? (
-                                            <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${HEADER_STATUS_META[activeHeader.status]?.bg || 'bg-surface-card-hover'} ${HEADER_STATUS_META[activeHeader.status]?.color || 'text-content-3'}`}>
+                                            <Badge variant={HEADER_STATUS_META[activeHeader.status]?.variante || 'neutral'} size="sm">
                                                 {HEADER_STATUS_META[activeHeader.status]?.label || activeHeader.status}
                                                 {activeHeader.ai_generated && ' · IA'}
-                                            </span>
+                                            </Badge>
                                         ) : (
                                             <span className="text-micro font-black uppercase tracking-widest text-content-2">Sin plan generado</span>
                                         )}

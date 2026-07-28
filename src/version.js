@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.128.0';
+export const APP_VERSION = '2.129.0';
+
+// v2.129.0 — La tarjeta de sucursal: cinco bloques que eran dos.
+//
+// `TarjetaTelefono` estaba escrita DOS veces (fijo y celular) y
+// `PanelCompletitud` TRES (legal, local, servicios), identicas salvo el icono,
+// la etiqueta y el campo. Extraidas a un componente local cada una.
+//
+// No pasan por `Button`: son tarjetas con icono, dos lineas de texto y una
+// barra de progreso — el canonico no tiene eso y forzarlas las romperia. Lo
+// que hacia falta era que existiera UNA definicion.
+//
+// ── El hallazgo: el WhatsApp era un `<div onClick>` DENTRO del `<button>` ──
+// O sea que no lo alcanzaba el teclado (un `div` no recibe foco) y su clic
+// disparaba tambien el del padre. Se hizo asi porque un `<button>` dentro de
+// otro es HTML invalido — pero la solucion no era degradarlo a `div`, era
+// sacarlo. Ahora los dos son hermanos dentro de un contenedor, que es lo que
+// siempre fueron. Son 7 botones de WhatsApp, uno por sucursal con celular.
+//
+// Y de paso ganan nombre: los paneles decian solo "Legal"; ahora dicen
+// "Completar datos legales — 0% completo", que es el dato que importa.
+//
+// ── Un error de mi parte, y como se detecto ──────────────────────────────
+// El primer intento uso `s.index('</button>', …)` para encontrar el cierre y
+// se paso de largo: se comio 35 lineas de la tarjeta. El build fallo, asi que
+// no llego a ningun lado — pero la leccion es la de siempre: para cortar JSX
+// no sirve buscar el primer cierre, hay que anclar el bloque COMPLETO.
+//
+// Verificado en vivo: 8 tarjetas, los telefonos con su nombre
+// ("Fijo: 2301-0013"), 7 WhatsApp, los paneles con su porcentaje, 0 botones
+// sin nombre y la tarjeta identica a como estaba.
 
 // v2.128.0 — D3.3, familia B: lo que les faltaba no era el componente.
 //

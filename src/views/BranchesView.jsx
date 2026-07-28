@@ -200,6 +200,57 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 // ============================================================================
 // 🚀 COMPONENTE DE TARJETA (CON ESTILO IA FUTURISTA)
 // ============================================================================
+// ── Dos bloques que estaban escritos varias veces (2026-07-28, D3.3) ─────
+// `TarjetaTelefono` iba dos veces (fijo y celular) y `PanelCompletitud` TRES
+// (legal, local, servicios), idénticas salvo el ícono, la etiqueta y el campo.
+// No pasan por `Button`: son tarjetas con ícono, dos líneas de texto y una
+// barra de progreso — el canónico no tiene eso y forzarlas las rompería. Lo
+// que sí hacía falta era que existiera UNA definición.
+const TarjetaTelefono = memo(({ icono: Icono, etiqueta, numero, onAccion, onWhatsApp }) => (
+    // El de WhatsApp era un `<div onClick>` DENTRO del `<button>`: no lo
+    // alcanzaba el teclado y su clic disparaba también el del padre. Ahora los
+    // dos son hermanos dentro de un contenedor, que es lo que siempre fueron.
+    <div className={`group/tel flex items-center rounded-2xl relative ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
+        <button onClick={onAccion}
+            aria-label={`${etiqueta}: ${numero || 'sin número'}`}
+            className="flex items-center gap-2 p-2.5 text-left flex-1 min-w-0 rounded-2xl">
+            <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/tel:scale-110 group-hover/tel:text-brand-text">
+                <Icono size={14} strokeWidth={2.5} />
+            </div>
+            <div className="min-w-0 flex-1">
+                <p className="text-micro font-black text-content-2 uppercase tracking-widest">{etiqueta}</p>
+                <p className="text-body-sm font-bold text-content-2 whitespace-nowrap tracking-tight">{numero || "\u2014"}</p>
+            </div>
+        </button>
+        {onWhatsApp && numero && (
+            <button onClick={onWhatsApp} type="button"
+                aria-label={`Abrir WhatsApp con ${numero}`}
+                title="Abrir WhatsApp"
+                className="mr-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm shrink-0 opacity-0 group-hover/tel:opacity-100 focus-visible:opacity-100 transition-all hover:bg-success-solid hover:text-white">
+                <MessageCircle size={13} strokeWidth={2.5} />
+            </button>
+        )}
+    </div>
+));
+TarjetaTelefono.displayName = 'TarjetaTelefono';
+
+const PanelCompletitud = memo(({ icono: Icono, etiqueta, pct, titulo, disabled, onClick }) => (
+    <button type="button" onClick={onClick} disabled={disabled} title={titulo}
+        aria-label={`${titulo} \u2014 ${pct}% completo`}
+        className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
+        <div className="flex items-center justify-between w-full">
+            <Icono size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${pct === 0 ? 'text-danger' : pct === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
+            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${pct === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>{etiqueta}</span>
+        </div>
+        {pct < 100 && (
+            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
+                <div className={`h-full transition-all duration-500 ${pct === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(pct, 5)}%` }} />
+            </div>
+        )}
+    </button>
+));
+PanelCompletitud.displayName = 'PanelCompletitud';
+
 const BranchCard = memo(({
     branch, branchEmployees, count, activeKiosks, currentTime,
     handleViewProfile, onActivarSucursal, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
@@ -419,21 +470,11 @@ const BranchCard = memo(({
                     </a>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-2xl relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-brand-text"><Phone size={14} strokeWidth={2.5} /></div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Fijo</p>
-                                <p className="text-body-sm font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
-                            </div>
-                        </button>
-                        <button onClick={(e) => handlePhoneAction(e, branch.cell, 'Celular')} className={`group/cell flex items-center gap-2 p-2.5 rounded-2xl relative text-left w-full pr-8 ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
-                            <div className="w-8 h-8 rounded-lg bg-surface-card shadow-sm text-content-3 border border-divider flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-brand-text"><Smartphone size={14} strokeWidth={2.5} /></div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Celular</p>
-                                <p className="text-body-sm font-bold text-content-2 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
-                            </div>
-                            {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-all hover:bg-success-solid hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
-                        </button>
+                        <TarjetaTelefono icono={Phone} etiqueta="Fijo" numero={branch.phone}
+                            onAccion={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} />
+                        <TarjetaTelefono icono={Smartphone} etiqueta="Celular" numero={branch.cell}
+                            onAccion={(e) => handlePhoneAction(e, branch.cell, 'Celular')}
+                            onWhatsApp={(e) => handleWhatsAppAction(e, branch.cell)} />
                     </div>
 
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
@@ -450,41 +491,17 @@ const BranchCard = memo(({
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos legales">
-                        <div className="flex items-center justify-between w-full">
-                            <Scale size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.legal === 0 ? 'text-danger' : completion.legal === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
-                            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${completion.legal === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>Legal</span>
-                        </div>
-                        {completion.legal < 100 && (
-                            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
-                                <div className={`h-full transition-all duration-500 ${completion.legal === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(completion.legal, 5)}%` }} />
-                            </div>
-                        )}
-                    </button>
+                    <PanelCompletitud icono={Scale} etiqueta="Legal" pct={completion.legal}
+                        titulo="Completar datos legales" disabled={!canEdit}
+                        onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} />
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos de inmueble">
-                        <div className="flex items-center justify-between w-full">
-                            <Building2 size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.property === 0 ? 'text-danger' : completion.property === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
-                            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${completion.property === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>Local</span>
-                        </div>
-                        {completion.property < 100 && (
-                            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
-                                <div className={`h-full transition-all duration-500 ${completion.property === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(completion.property, 5)}%` }} />
-                            </div>
-                        )}
-                    </button>
+                    <PanelCompletitud icono={Building2} etiqueta="Local" pct={completion.property}
+                        titulo="Completar datos de inmueble" disabled={!canEdit}
+                        onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} />
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar servicios básicos">
-                        <div className="flex items-center justify-between w-full">
-                            <Zap size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.services === 0 ? 'text-danger' : completion.services === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
-                            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${completion.services === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>Serv.</span>
-                        </div>
-                        {completion.services < 100 && (
-                            <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">
-                                <div className={`h-full transition-all duration-500 ${completion.services === 0 ? 'bg-danger' : 'bg-warning'}`} style={{ width: `${Math.max(completion.services, 5)}%` }} />
-                            </div>
-                        )}
-                    </button>
+                    <PanelCompletitud icono={Zap} etiqueta="Serv." pct={completion.services}
+                        titulo="Completar servicios básicos" disabled={!canEdit}
+                        onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} />
                 </div>
             </div>
 

@@ -26,6 +26,13 @@ import { useSearchToggle } from '../../hooks/useSearchToggle';
  *                  Ver DESIGN.md §24 "Buscador expandible de widget" para
  *                  cuándo usar esto vs. un SearchInput normal vs. el
  *                  buscador de ViewTabBar (header de vista).
+ *   ariaLabel    – nombre accesible del campo. Por defecto usa el
+ *                  `placeholder`, que es lo correcto en un buscador (el
+ *                  texto ya dice qué se busca) pero NO es un nombre de
+ *                  verdad: se pierde en cuanto el campo tiene contenido, y
+ *                  varios lectores de pantalla no lo exponen. Pasarlo
+ *                  explícito cuando el placeholder es genérico ("Buscar…")
+ *                  y hay más de un buscador en la pantalla.
  *   accentColor  – hex de categoría (CATEGORY_META) para el ícono cuando
  *                  está colapsado — nunca azul genérico, se integra con el
  *                  color del propio widget. Solo aplica con expandable.
@@ -46,6 +53,7 @@ const SearchInput = forwardRef(function SearchInput({
     className = '',
     expandable = false,
     accentColor,
+    ariaLabel,
 }, forwardedRef) {
     const inputRef = useRef(null);
     const [isOpen, setIsOpen] = useState(false);
@@ -101,6 +109,8 @@ const SearchInput = forwardRef(function SearchInput({
                     onBlur={() => setIsFocused(false)}
                     onKeyDown={onKeyDown}
                     placeholder={placeholder}
+                aria-label={ariaLabel ?? placeholder}
+                    aria-label={ariaLabel ?? placeholder}
                     autoFocus={autoFocus}
                     disabled={disabled}
                     tabIndex={open ? 0 : -1}

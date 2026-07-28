@@ -16,7 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.158.0';
+export const APP_VERSION = '2.159.0';
+
+// v2.159.0 — cuatro buscadores a mano, y tres canonicos que dejaban campos
+// sin nombre.
+//
+// FormLeadership, EncuestaAdminView, LabsPanel y SrsBuscadorWidget eran
+// `SearchInput` reescrito: lupa en absoluto + input + un boton de limpiar
+// propio. Los cuatro al canonico; el boton de limpiar ya lo trae.
+//
+// Al medir despues quedo a la vista lo que faltaba mas arriba. Contando los
+// `<input>` sin `aria-label` NI `<label for>` asociado:
+//
+//   /encuesta-admin  6 anonimos  → los tres segmentos DD/MM/AAAA de
+//                                  `LiquidDatePicker`, x2 fechas
+//   /productos       2 anonimos  → el buscador del header de vista
+//                                  (`ViewTabBar`), en TODA vista con buscador
+//
+// Los tres canonicos se apoyaban solo en el `placeholder`. Un placeholder no
+// es un nombre accesible: desaparece apenas el campo tiene contenido, y varios
+// lectores de pantalla no lo exponen. `SearchInput` gana prop `ariaLabel`
+// (default: el placeholder), `ViewTabBar` lo pone siempre, y los segmentos de
+// fecha se anuncian "Dia" / "Mes" / "Ano".
+//
+// Verificado en vivo: /encuesta-admin y /productos, cero campos anonimos.
+//
+// Inputs a mano: 65 → 61.
 
 // v2.158.0 — D3.4: los ocho campos de formulario que quedaban con etiqueta.
 //

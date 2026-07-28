@@ -27,6 +27,7 @@ import {
     fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
 } from '../data/encuestas';
+import SearchInput from '../components/common/SearchInput';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
@@ -686,13 +687,13 @@ export default function EncuestaAdminView() {
                                                         })}
                                                     </div>
                                                 )}
-                                                <div className="relative">
-                                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-3" size={13} strokeWidth={2.5} />
-                                                    <input type="text" value={sfEmpSearch} onChange={e => setSfEmpSearch(e.target.value)}
-                                                        placeholder="Buscar por nombre…"
-                                                        className="w-full pl-9 pr-4 py-2.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
-                                                    {sfEmpSearch && <Button variant="ghost" icon={X} iconOnly onClick={() => setSfEmpSearch('')} />}
-                                                </div>
+                                                <SearchInput
+                                                    size="sm"
+                                                    placeholder="Buscar por nombre…"
+                                                    ariaLabel="Buscar un empleado por su nombre"
+                                                    value={sfEmpSearch}
+                                                    onChange={setSfEmpSearch}
+                                                />
                                                 {empResults.length > 0 && (
                                                     <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl shadow-[var(--shadow-elevation-lg)] overflow-hidden">
                                                         {empResults.map(e => {

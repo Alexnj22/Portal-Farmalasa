@@ -7,6 +7,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect'; 
 import PortalTextarea from '../common/PortalTextarea';
 import Button from '../common/Button';
+import SearchInput from '../common/SearchInput';
 
 const getTenure = (dateString) => {
     if (!dateString) return 'N/A';
@@ -83,16 +84,11 @@ const FormLeadership = ({ formData, setFormData }) => {
             <div className="w-full md:w-[38%] flex flex-col border-r border-border-card bg-surface-card backdrop-blur-xl relative z-content shadow-[var(--shadow-sticky-r)]">
                 
                 <div className="p-4 border-b border-border-card bg-surface-card sticky top-0 z-tabs">
-                    <div className="relative">
-                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3" strokeWidth={2.5}/>
-                        <input 
-                            type="text" 
-                            placeholder="Buscar candidato..." 
-                            className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl pl-10 pr-4 py-3 text-body-xl font-bold text-content placeholder:text-content-3 outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-glow-brand)] transition-all shadow-[var(--shadow-shine-lg)]"
+                    <SearchInput
+                            placeholder="Buscar candidato..."
                             value={formData.searchQuery || ''}
-                            onChange={(e) => setFormData({...formData, searchQuery: e.target.value})}
-                        />
-                    </div>
+                        onChange={v => setFormData({...formData, searchQuery: v})}
+                    />
                 </div>
                 
                 {/* 🚨 SCROLL OCULTO APLICADO */}

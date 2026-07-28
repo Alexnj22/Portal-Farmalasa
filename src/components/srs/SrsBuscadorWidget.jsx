@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 import Badge from '../common/Badge';
+import SearchInput from '../common/SearchInput';
 
 // Direct fetch wrapper using supabase session token
 async function srsFetch(q, page = 1) {
@@ -66,25 +67,13 @@ export default function SrsBuscadorWidget({
         <div className="flex flex-col gap-3">
             {/* Search bar */}
             <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    {loading
-                        ? <Loader2 size={14} className="text-brand-text animate-spin" />
-                        : <Search size={14} className="text-content-3" />
-                    }
-                </div>
-                <input
-                    type="text"
-                    value={query}
-                    onChange={e => handleInput(e.target.value)}
+                <SearchInput
                     placeholder="Buscar en Registro SRS..."
- className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 focus:border-brand transition-all"
+                    value={query}
+                    onChange={handleInput}
+                    loading={loading}
                     autoFocus
-                    spellCheck={false}
-                    autoComplete="off"
                 />
-                {query && (
-                    <Button variant="secondary" icon={X} iconOnly onClick={() => { setQuery(''); setResults(null); setTotal(0); }} />
-                )}
             </div>
 
             {/* Error */}

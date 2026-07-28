@@ -88,10 +88,13 @@ export default function ViewTabBar({
           : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
 
         <Search size={18} className="text-brand-text shrink-0" strokeWidth={2.5} />
+        {/* El buscador del header de vista no tenía nombre accesible: se
+            apoyaba solo en el placeholder, que desaparece apenas hay texto. */}
         <input
           ref={inputRef}
           type="text"
           placeholder={placeholder}
+          aria-label={placeholder}
  className={`flex-1 bg-transparent border-none
             text-body-xl font-bold
             w-[180px] sm:w-[280px] md:w-[380px] ${inputCls}`}

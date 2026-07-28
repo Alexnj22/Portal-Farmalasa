@@ -11,6 +11,7 @@ import {
     fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts, updateLaboratorioMinMaxVisibility,
     fetchProductIdsByLaboratorio, unhideStockParamsForProducts,
 } from '../../../data/minmaxLabs';
+import SearchInput from '../../../components/common/SearchInput';
 
 export default function LabsPanel({ onClose, onChanged }) {
     const [labs,      setLabs]      = useState([]);
@@ -109,19 +110,13 @@ export default function LabsPanel({ onClose, onChanged }) {
 
                 {/* Search */}
                 <div className="px-3 pt-3 pb-1.5">
-                    <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl" style={glass.search}>
-                        <Search size={11} className="text-content-3 shrink-0" />
-                        <input
-                            ref={searchRef}
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder="Buscar laboratorio…"
-                            className="flex-1 text-body-xl text-content-2 placeholder-content-3 bg-transparent outline-none"
-                        />
-                        {search && (
-                            <Button variant="ghost" icon={X} iconOnly onClick={() => setSearch('')} />
-                        )}
-                    </div>
+                    <SearchInput
+                        ref={searchRef}
+                        size="sm"
+                        placeholder="Buscar laboratorio…"
+                        value={search}
+                        onChange={setSearch}
+                    />
                 </div>
 
                 {/* Hint */}

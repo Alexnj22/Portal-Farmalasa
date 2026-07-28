@@ -36,12 +36,9 @@ export const COLOR_CLS = {
 
 // Tokenizado T7 — mismo criterio de color por sucursal que TabPedidos.jsx
 // (SUC_COLORS local, paleta cat-N por posición; 6=Bodega queda neutro).
-export const SUC_COLORS = {
-    1: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
-    2: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
-    3: 'bg-success/10 text-success-text border-success/30',
-    4: 'bg-warning/10 text-warning-text border-warning/30',
-    5: 'bg-chart-6/10 text-chart-6-text border-chart-6/30',
-    6: 'bg-surface-card-hover text-content-2 border-border-card',
-    7: 'bg-chart-9/10 text-chart-9-text border-chart-9/30',
+// Guarda el NOMBRE de la variante de `Badge`, no las tres clases: era la
+// paleta SOFT del canónico escrita a mano (2026-07-28, D3.5).
+export const SUC_VARIANTE = {
+    1: 'chart-1', 2: 'chart-3', 3: 'success', 4: 'warning',
+    5: 'chart-6', 6: 'neutral', 7: 'chart-9',
 };

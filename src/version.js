@@ -16,7 +16,20 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.147.0';
+export const APP_VERSION = '2.148.0';
+
+// v2.148.0 — D3.5: `SucPill`, y una tabla que estaba duplicada.
+//
+// `SUC_COLORS` (color por sucursal) vivia DOS VECES con el mismo contenido:
+// en `tabpedidos/constants.js` y otra copia dentro de `TabPedidos.jsx` que ya
+// no usaba nadie. Se queda la de constants —la usa `SucPill`, que es quien
+// pinta el chip— y guarda el nombre de la variante en vez de tres clases.
+//
+// `STATUS_BADGE` de rutas estaba en dos archivos (TabRutas y RutaEnCursoCard)
+// con el mismo contenido salvo que a uno le falta `con_alerta`. Los dos pasan
+// a la misma forma. `en_ruta` deja `chart-5` —retirado— y usa `chart-9`.
+//
+// Chips a mano: 42 → 38.
 
 // v2.147.0 — D3.4: los ocho campos del modal de promocion.
 //

@@ -55,17 +55,9 @@ const PAGE_SIZE = 30;
 const MINI_PAGE = 15;
 const DONE_STATUSES = ['completado', 'parcial', 'anulado'];
 
-// Tokenizado T7 — mismo criterio de color por sucursal en toda la app
-// (paleta cat-N por posición; 6=Bodega queda neutro como ya estaba).
-const SUC_COLORS = {
-    1: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
-    2: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
-    3: 'bg-success/10 text-success-text border-success/30',
-    4: 'bg-warning/10 text-warning-text border-warning/30',
-    5: 'bg-chart-6/10 text-chart-6-text border-chart-6/30',
-    6: 'bg-surface-card-hover text-content-2 border-border-card',
-    7: 'bg-chart-9/10 text-chart-9-text border-chart-9/30',
-};
+// La tabla de color por sucursal vivía duplicada acá y en
+// `tabpedidos/constants.js`. Se queda la de constants (la usa `SucPill`, que
+// es quien pinta el chip); ésta no la usaba nadie. (2026-07-28, D3.5)
 
 // Mismo lifecycle de despacho por sucursal que TabEnCurso.jsx — mismo
 // criterio: pausado/erp son severidad real (excepción/completado), el

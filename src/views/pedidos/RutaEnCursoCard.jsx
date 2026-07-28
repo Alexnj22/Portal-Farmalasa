@@ -9,11 +9,13 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { notifyBranch } from '../../utils/notify';
 import RutaMapModal from './RutaMapModal';
 import { updateRutaStatus, updateRutaPedidoEntregado, fetchBranchIdForSucursal } from '../../data/pedidos';
+import Badge from '../../components/common/Badge';
 
 const STATUS_BADGE = {
-  pendiente:  { label: 'Pendiente',  cls: 'bg-warning/10  text-warning-text  border-warning/30'  },
-  en_ruta:    { label: 'En ruta',    cls: 'bg-chart-5/10 text-chart-5-text border-chart-5/30' },
-  completada: { label: 'Completada', cls: 'bg-success/10 text-success-text border-success/30' },
+  pendiente:  { label: 'Pendiente',  variante: 'warning' },
+  en_ruta:    { label: 'En ruta',    variante: 'chart-9' },
+  completada: { label: 'Completada', variante: 'success' },
+  con_alerta: { label: 'Con alerta', variante: 'danger'  },
 };
 
 function fmtDist(m) {
@@ -106,7 +108,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
           <div>
             <div className="flex items-center gap-2">
               <span className="text-body font-black text-content">Ruta #{ruta.numero}</span>
-              <span className={`text-micro font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
+              <Badge variant={badge.variante} size="sm" uppercase={false}>{badge.label}</Badge>
               {ruta.salida_at && (
                 <span className="text-caption text-content-3">· Salida {fmtTime(ruta.salida_at)}</span>
               )}

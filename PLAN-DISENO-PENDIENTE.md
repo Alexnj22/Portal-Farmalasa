@@ -690,6 +690,518 @@ corrigieron) están en el changelog de v2.76.0. El más importante:
 `title={\`plantilla\`}` se serializaba como string con backticks adentro —
 **el build pasaba igual**, lo atrapó eslint por la variable huérfana.
 
+### D3.4 — inputs · CERO NATIVOS (2026-07-27)
+
+**Ya no queda ningún control de formulario nativo en el portal.** Medido:
+
+| control | nativos | canónico |
+|---|---|---|
+| `<select>` | 0 | `LiquidSelect` |
+| `<textarea>` | 0 | `PortalTextarea` ← v2.89.0 |
+| `type="checkbox"` | 0 | `Checkbox` |
+| `type="date\|time"` | 0 | `LiquidDatePicker` · `TimePicker12` |
+| `type="file"` | 0 | `FileField` ← v2.88.0 |
+| `window.alert\|confirm\|prompt` | 0 | `AlertModal` · `ConfirmModal` |
+
+Las 6 categorías son **cero absoluto y bloqueantes** en `gate:design`. Dos
+excepciones vivas y documentadas: los selectores de **foto** (avatar de empleado
+y foto de producto), donde el disparador es la imagen y el resultado va al
+recortador — no son "adjuntar un documento".
+
+Lo que sí queda: **100 `<input>` de texto/número** fuera de `PortalInput`. No es
+lo mismo que lo anterior — el input nativo dentro de `PortalInput` es correcto;
+lo que falta es que esos 100 pasen por el canónico. Varios son celdas numéricas
+densas dentro de grillas (nómina, min/max), para las que ya existe
+`compact`. Es mecánico, pero hay que medir las variantes antes de migrar: es el
+error que casi se comete con los botones.
+
+### D3.5 — `Badge` y `StatCard`
+
+**Cierre:** o se adoptan, o se eliminan si el patrón real resultó ser otro.
+Un canónico con 1 import es peor que ninguno: aparenta un estándar que no existe.
+
+### D3.6 — `UnifiedModal` sobre `ModalShell` · ✓ YA ESTABA HECHA
+
+El plan asumía mal. La cadena **ya existe**:
+`UnifiedModal` → `LiquidModal` → `ModalShell`, y `AlertModal` → `ModalShell`.
+Las 940 líneas de `UnifiedModal` no son una implementación de modal: son un
+**despachador** que carga en lazy el formulario que corresponde. No hay nada que
+migrar ahí.
+
+Lo que sí queda medido: **6 modales fuera de la cadena** —`MenuSearchModal`,
+`PromptModal`, `PhotoEditorModal`, `EmployeeDetailView`, más los paneles de
+`ViewTabBar` y `LiquidDatePicker` que son hojas, no modales—. Esos tres primeros
+sí son candidatos reales.
+
+#### Suposición original (incorrecta)
+
+Decisión ya tomada. Lo que el canónico no cubra se le agrega, no se resuelve
+inline.
+
+### D3.7 — `NotFoundView` · ✓ CERRADA (2026-07-27)
+
+Antes el catch-all hacía `<Navigate to={defaultRedirect} replace />`: un
+redirect **silencioso** al primer módulo con permiso. El usuario tecleaba una
+URL vieja y aterrizaba en otra pantalla sin saber si el enlace estaba roto o
+si le faltaba acceso.
+
+Construida sobre el `EmptyState` compartido en vez de inventar un layout
+propio — una ruta inexistente **es** un estado vacío, y el sistema ya resolvió
+cómo se ve eso. Muestra la ruta pedida, que es el dato que convierte "algo
+falló" en "este enlace está mal".
+
+Estrena `Button` en una vista: **primera adopción real del canónico**, que
+hasta ahora solo importaba `DataTable`.
+
+### D3.8 — Cerrar el baseline del gate
+
+#### La sombra tenía DOS ejes, no uno (2026-07-27)
+
+400 sombras a mano con **269 valores distintos** parecían 269 decisiones de
+diseño. No lo eran: eran **5 elevaciones × N brillos × retoques sueltos**.
+
+| eje | estado |
+|---|---|
+| **Elevación** — cuánto se despega de la superficie | Ya tokenizado (`--shadow-elevation-xs…xl`). Al agrupar los 400 literales por radio de blur caen casi exactos en esas bandas: 7-14px, 15-24, 25-34, 35-49, 50+. |
+| **Brillo** — el inset que hace que lea como vidrio | **Nunca se tokenizó.** 154 de los 400 usos son *solo* inset, con 112 valores distintos para la misma idea. |
+
+Por eso T7.3 había dejado fuera las combinadas: sin el segundo eje, forzarlas
+a un token de una capa las aplanaba. Con los dos ejes nombrados, la
+consolidación deja de tener pérdida.
+
+**Escala de vidrio de 5 niveles** (`--shadow-glass-1…5`), cada uno con su par
+elevación+brillo, más `--shadow-shine` / `-lg` para el brillo solo y
+`--shadow-glass-dark` para superficie oscura (el brillo blanco al 85% delata
+el borde en dark). No reemplaza a `--shadow-elevation-*`: eso sigue sirviendo
+para lo que no es vidrio.
+
+**242 literales migrados** por su banda de blur. `shadow-literal` de 412 a
+165. Lo que queda son sombras de color (glows de marca/estado) y casos
+realmente únicos.
+
+Al migrar vistas caen solas: `white` 692 · `shadow-literal` 412 ·
+`inline-color` 118. Lo que quede al final se excepciona con motivo o se cierra.
+
+**Cierre de D3:** las 5 categorías del ratchet en 0 y bloqueantes, o con
+excepción documentada. Y re-correr el escáner de contraste: 0/0 como en D1.
+
+### Hallazgos que se resuelven dentro de D3
+
+- **A1** — la densidad no comprime filas: `h-[var(--row-h)]` en `<td>` es
+  mínimo, no máximo, y el contenido (avatar 36px + dos líneas) lo excede.
+  Se arregla al migrar la anatomía de fila.
+- **A10** — `Skeleton` con 0 adopciones.
+- **A11** — skeleton en 36 de 59 vistas con carga.
+
+---
+
+## D4 — Reescribir `DESIGN.md`
+
+Solo cuando D3 esté cerrada: antes, el doc describiría algo que aún cambia.
+
+1. Corregir las 36 prescripciones prohibidas y las 5 afirmaciones falsas.
+2. Documentar los 8 componentes que no aparecen, más los nuevos
+   (`StateViews`, `MotionProvider`).
+3. Agregar lo que falta para un sistema terminado: escala tipográfica,
+   contrato de estados por componente, plantilla de ficha, guía de densidad,
+   tokens de motion, y la regla de los **dos gates de movimiento**.
+4. Gobernanza: **toda sección que prescriba clases debe estar cubierta por el
+   gate**. Si no se puede verificar, es una convención, no un estándar.
+
+**Cierre:** un script extrae los bloques de código de `DESIGN.md` y los pasa
+por `gate:design`. Si el doc prescribe algo prohibido, falla.
+
+---
+
+
+### A16 · Aros — el canónico existía y nadie lo usaba (RESUELTO v2.67.0)
+
+Al preguntar "por qué hay tantas variables" apareció algo peor que variación:
+`index.css` **ya tenía** un aro de foco canónico —una regla sobre
+`button/input/select/textarea/a/[role=button]/[tabindex]:focus-visible`— y
+encima había **171 aros escritos a mano en 47 archivos**. Los 171 eran
+redundantes: no agregaban nada, solo tapaban el canónico con un color distinto
+en cada formulario (ring-4/2/1 × brand/10, /20, /25, /50, chart-9/20,
+chart-3/70, success/50…).
+
+Y el canónico estaba roto donde importa: `--focus-ring-color` era
+`rgba(0,82,204,0.55)` fijo, **sin variante por tema**.
+
+| | contraste | WCAG 1.4.11 (3:1) |
+|---|---|---|
+| antes, tarjeta clara | 2.61:1 | ✗ |
+| antes, navy oscuro | **1.63:1** | ✗ prácticamente invisible |
+| ahora, claro | 6.42:1 | ✓ |
+| ahora, oscuro | 7.18:1 | ✓ |
+
+Y **20 `focus:outline-none`** lo apagaban del todo en inputs de Pedidos,
+MinMax, Promociones y el kiosco: esos campos se enfocaban sin ninguna señal
+visible (WCAG 2.4.7). Retirados.
+
+**Por qué importa el orden de los hallazgos**: el primer intento fue crear una
+utilidad `ring-focus` nueva. Al verificarla en vivo apareció que competía con
+una regla que ya existía — así que lo correcto no era agregar un canónico sino
+**borrar los 171 que lo tapaban**. Verificar en el navegador no confirmó el
+trabajo: lo cambió.
+
+### A18 · Acciones que solo existen en hover (RESUELTO v2.67.2)
+
+El reverso exacto de A17, encontrado al verificarlo. **16 bloques en 12
+archivos** se revelan con `opacity-0 group-hover:opacity-100` y contienen
+acciones reales — llamar por teléfono, abrir WhatsApp, editar, eliminar. Con
+teclado se llega a ellas pero **no se ven**: el foco entra en un elemento
+transparente (WCAG 2.4.7, y 2.1.1 en la práctica porque nadie activa lo que no
+ve). Acá `inert` sería el error opuesto: quitaría un acceso legítimo. La
+corrección es `focus-within:opacity-100` — si el teclado llega, se muestra.
+
+### A14 · Switches — no eran 18, eran 9 (RESUELTO v2.67.2)
+
+Corrección de un conteo mío. Al revisarlos uno por uno, de los "18" solo
+**9 son switches**; los otros 10 eran badges de esquina, puntos de línea de
+tiempo y píldoras deslizantes de pestaña — comparten el `bg-white` redondo pero
+no son el mismo control.
+
+Y el hallazgo real era otro: no había 9 copias sueltas sino **tres componentes
+Switch locales compitiendo** —`BranchHelpers.Switch` (5 usos en 3 archivos),
+`PermissionsView.Toggle` (3 usos) y `FormPlanificador.Switch`— ninguno
+importable desde afuera de su archivo, más 5 copias inline. Tres canónicos
+parciales es peor que ninguno: cada uno parecía "el estándar" dentro de su
+carpeta.
+
+El canónico agrega una regla que faltaba: **sin `onChange` renderiza un
+`<span>`, no un `<button>`**. Tres de los nueve viven dentro de una fila que ya
+es clickeable, donde un `<button>` anidado es HTML inválido y una segunda
+parada de tabulación para la misma acción.
+
+**Pendiente de verificación visual**: los 3 toggles de `PermissionsView` no se
+pudieron ver en vivo — la cuenta de QA no tiene acceso a `/permissions`.
+
+### A17 · Se tabula dentro de lo invisible (RESUELTO v2.67.1, ampliado v2.67.2)
+
+Encontrado mientras se verificaba A16: la sonda aterrizaba una y otra vez en un
+input que no podía mostrar. Era el buscador colapsado del header — y al medirlo
+no eran dos sitios sino **49 regiones**. El conteo creció en dos tandas porque
+la primera pasada solo miraba una forma del patrón:
+
+| pasada | qué se le escapaba | encontradas |
+|---|---|---|
+| 1ª | — | 26 |
+| 2ª | ramas de ternario con **comillas dobles** | +20 |
+| 3ª | colapso con `h-0` / `w-0` / `max-*-0` / `scale-0` en vez de `pointer-events-none` | +4 |
+
+Las tres formas aparecieron una tras otra al verificar en el navegador, no al
+leer el código. El gate cubre las tres.
+
+`opacity-0 pointer-events-none` esconde del ojo y del mouse, pero **no del
+teclado**. Quien navega tabulando entraba en menús cerrados, buscadores
+colapsados y paneles de IA apagados, y el foco desaparecía de la pantalla
+(WCAG 2.4.3 y 2.4.7). Medido en `/proveedores`: 26 paradas invisibles en 60
+tabulaciones. Ahora 0, verificado también en `/solicitudes`, `/facturacion`
+y `/permisos`.
+
+Lo que el conteo dice de fondo: el "modo búsqueda" está **copiado vista por
+vista** en vez de salir de `ViewTabBar` — 8 de las 14 apariciones son la misma
+barra reescrita. Ese es el trabajo de D3, y este bug es una de sus
+consecuencias.
+
+Gate: categoría `inert` nueva, en 0 y bloqueante.
+
+## Revisión de los "casos únicos" (2026-07-27)
+
+A pedido del usuario se revisó si lo excepcionado era **necesario** o eran
+decisiones sueltas que después driftearon. El método: ver si cada grupo es
+**consistente entre sí** (patrón real) o si cada instancia difiere (drift).
+
+| grupo | veredicto |
+|---|---|
+| **Perillas de switch** (18) | El `bg-white` **sí** es necesario y es consistente en las 18 — una perilla es blanca sobre su riel en los 4 temas. **Pero todo lo demás drifteó**: 8 tamaños, 6 sombras, 8 offsets. No era una decisión, era la ausencia de un componente. → **`Switch.jsx` creado**, 3 tamaños. **A14**: migrar los 18. |
+| **Barridos especulares** (8) | RESUELTO v2.67.0 — la regla faltante: va en variantes RELLENAS. Estaba en 3 de 11 botones brand y NO en el canónico. **Patrón real**: 6 de 8 comparten `w-[55%]`, `translate-x-[220%]`, `duration-700`, y solo varía el alpha según el fondo, que es correcto. Copiado 8 veces. → **utilidad `sweep`** con `--sweep-alpha`. **A15**: migrar los 8; los 2 de `TabMinMax` usan otra anatomía y hay que decidir si convergen. |
+| **Sombras direccionales** (4) | **Necesarias**, y el sentido importa: columna fija → derecha, panel lateral → derecha, overlay que sube → arriba, barra inferior → arriba. Pero eran **4, no 5**: `--shadow-sticky-b` quedó sin uso y **se borró** — un token que nadie consume es la misma escala muerta que este plan vino a arreglar. |
+| **Aros y superficies sueltas** (4) | Contextos distintos y reales (visor de foto, avatar, gradiente de tarjeta). Migrados a `border-card` / `card-tint-base`. |
+
+**Conclusión del método:** de cuatro grupos "excepcionados", **dos escondían un
+componente faltante**. La excepción era correcta a nivel de color pero tapaba
+que nadie había nombrado el control. Revisar excepciones no es burocracia:
+es donde aparecen los componentes que faltan.
+
+---
+
+
+
+## D3.9 — Consolidar la barra de vista · ✓ CERRADA (v2.70.0)
+
+**13 de 13 migradas. 0 barras escritas a mano.** 28 vistas usan el canónico.
+
+Lo que se corrigió sobre la marcha:
+- Mi clasificación en 3 grupos estaba mal en dos casos: `AnnouncementsView` y
+  `RequestsView` figuraban con "tercer estado" porque conté `inert` de filas
+  expandibles que no tenían nada que ver con la barra. Eran swap directo.
+- El tercer estado real —`AuditView` y `BranchesView`— resultó ser **un dropdown
+  escrito a mano**: una píldora que se expandía en línea a 5 opciones,
+  colapsando el resto de la barra. Con 5 opciones eso es un `LiquidSelect`, que
+  es lo que la regla del proyecto manda y lo que ya usaban Facturación y
+  Monitor. Al cambiarlo el tercer estado desapareció solo: `ViewTabBar` nunca
+  necesitó modelarlo.
+- `TabHistory` no usaba las dos mitades colapsables sino renderizado condicional
+  (`isSearchOpen ? A : B`), por eso su forma no calzaba con las otras doce.
+
+## D3.9 — histórico (plan original de las 9 restantes)
+
+**Hecho (4/13)**: `EmployeeDocumentsView`, `StaffManagementView`,
+`ConteoInventarioView`, `ConteoDetailView` — ~190 líneas menos.
+Canónicos disponibles: `ViewTabBar` + `TabBarAction` (D3.10).
+
+### Grupo 1 · swap directo (3)
+La barra tiene los dos estados estándar; todo lo que no es buscador pasa a
+`trailingActions`.
+
+| vista | qué lleva al canónico |
+|---|---|
+| `FacturacionView` | 6 tabs propios + 5 `LiquidSelect` de filtro |
+| `PermissionsView` | buscador de cargos + 2 selects |
+| `AttendanceMonitorView` | filtro de sucursal (respeta `getScope`) |
+
+### Grupo 2 · barra con más controles (2)
+Mismos dos estados, pero el bloque normal trae media docena de controles.
+Van igual, con `trailingActions` más largo.
+
+| vista | qué lleva |
+|---|---|
+| `TabHistory` | botón de IA, menú de descarga, select de tipo, rango de fechas, reset |
+| `RolesView` | tabs propios; hay que ver por qué tiene un solo estado colapsable |
+
+### Grupo 3 · tercer estado (4)
+**No son swap.** Tienen un selector de filtro que se expande *dentro* de la
+misma barra — un estado que el canónico no modela. Para estas hay que decidir
+antes: o `ViewTabBar` gana un modo `filterPicker`, o se quedan aparte con la
+razón escrita.
+
+| vista | estados colapsables |
+|---|---|
+| `AnnouncementsView` | 3 |
+| `RequestsView` | 4 |
+| `AuditView` | 5 |
+| `BranchesView` | 7 |
+
+### Regla de cierre
+Cada vista migrada: `npm run build` + `eslint` en verde, la barra abierta y
+cerrada verificada en vivo, y 0 paradas de foco invisibles en su ruta. Al
+terminar, `gate:design` en verde y una pasada por las 25 rutas.
+
+
+## D3.11 — Selectores de fecha (auditoría 2026-07-27)
+
+### Corregido
+- **`TeclaFecha` estaba definido DENTRO de `RangeDatePicker`.** React trata cada
+  render como un tipo de componente nuevo → desmontaba y remontaba el input en
+  cada tecla → **el foco se perdía al primer caracter**. Medido: tras escribir
+  `15/07/2026`, `activeElement` era `BODY`. Eso era lo que se sentía como
+  "lento y no renderiza bien". Ahora está afuera y sincroniza el prop durante el
+  render, no en un `useEffect` (que además disparaba un render en cascada por
+  cada cambio del calendario).
+
+### Abierto — móvil
+- **La barra se sale de la pantalla.** En `/auditview` a 390px quedan
+  **10 controles fuera del viewport**: el segundo campo de fecha y el botón de
+  buscar son inalcanzables. Lo causé al mover todo a `trailingActions` sin
+  estrategia móvil.
+- **El panel de rango no cabe de alto**: 557px en una ventana útil de 664px.
+  Con el teclado abierto, no entra.
+
+### Decisión tomada — TODO propio, con variante táctil (v2.71.0)
+
+**No se usa nada nativo.** El razonamiento del usuario: mezclar controles
+nativos con controles del tema se vería inconsistente. Y tiene razón — pero la
+solución no era resignar calidad en móvil, sino construir la **variante táctil
+propia** de cada control:
+
+| | escritorio | táctil |
+|---|---|---|
+| panel | popover anclado, 280px | **hoja inferior**, ancho completo, respeta `safe-area-inset` |
+| día | 32px | **44px** (WCAG 2.5.8) |
+| rango | arrastre | **dos toques** — el primero fija inicio, el segundo fin |
+| meses visibles | 1 o 2 | siempre 1 |
+| acciones de la barra | en línea | **botón + hoja de filtros** |
+
+Mismo calendario, mismos tokens, mismos 4 temas: cambia la **presentación**, no
+el material.
+
+Bugs que aparecieron al construirlo:
+- Con el dedo, un toque dispara `mousedown` Y `mouseup` sobre el mismo día, así
+  que el rango caía en `start === end` y **auto-calculaba 15 días** en vez de
+  dejar elegir el fin.
+- La hoja de filtros medía **108px de ancho en vez de 390**: la barra tiene
+  `transform-gpu`, y un ancestro transformado crea bloque contenedor para
+  `position: fixed`. Se resolvió con portal a `document.body`.
+
+### ~~Decisión pendiente — nativo en móvil~~ (descartado)
+Propuesta híbrida **por trabajo, no por plataforma**:
+
+| caso | escritorio | móvil |
+|---|---|---|
+| una fecha en formulario | calendario propio | **rueda nativa** |
+| una fecha en filtro | calendario + atajos | hoja propia |
+| rango | un mes + atajos | **hoja a pantalla completa** |
+| barra de vista | todo en línea | **un botón "Filtros"** |
+
+Razonamiento: la rueda nativa aparece *encima* de la app, como el teclado —
+nadie le reclama al teclado que no combine con el tema, porque se lee como capa
+del sistema. Gana en familiaridad y accesibilidad gratis. **Pero para un rango
+se cae**: el sistema no tiene el concepto, serían dos ruedas separadas, sin ver
+los extremos juntos, sin atajos, sin feriados.
+
+
+
+
+## Cierre 2026-07-27 (segunda jornada)
+
+### Los siete canónicos
+`Switch` · `TabBarAction` · `Checkbox` · `SegmentedControl` · `Notice` ·
+**`ListRow`** — cinco salieron de *medir lo que un migrador no podía convertir*,
+no de una idea previa.
+
+`ListRow` tiene una ranura `leading` que acepta **ícono, letra o imagen**. Los
+tres aparecieron migrando (labs, encuestas, min/max) y los tres comparten caja,
+tamaño y alineación. Cerrarla a "solo íconos" habría dejado fuera dos de tres.
+
+`PortalInput` ganó `labelAction`, `compact` e `inputClassName`: sin eso, 37
+inputs que **son este componente reconstruido a mano** no podían entrar.
+
+### Números
+| | inicio | ahora |
+|---|---|---|
+| `<button>` a mano | 940 | **331** |
+| badges inline | 244 | **35** |
+| casillas nativas | 16 | **0** |
+| barras de búsqueda | 13 | **0** |
+| copias de estado vacío | 5 | **0** |
+| `DESIGN.md` vs gate | 35 | **0** |
+
+### Los cuatro fallos silenciosos del día
+Ninguno lo vio el build:
+
+| qué | lo detectó |
+|---|---|
+| `title={plantilla}` serializado como string | eslint (variable huérfana) |
+| atributos descartados → `key` perdido en 11 badges | eslint (índice sin usar) |
+| 4 vistas con `<SegmentedControl>` sin import | abrir la vista |
+| **12 bumps de `APP_VERSION` fallidos** | **una captura de pantalla** |
+
+Tres gates nuevos cubren justo eso: `import` (categoría del gate de diseño),
+`gate:doc` y `gate:version`.
+
+**La regla que salió**: un `replace` que no encuentra su ancla no falla —
+simplemente no hace nada. Toda operación automática se verifica, y las
+migraciones en lote se miran en el navegador **antes** de comitear.
+
+### Lo que queda, con su decisión pendiente
+- **~17 filas** candidatas a `ListRow` — mecánicas, mismo patrón.
+- **331 botones**: ~117 segmentados caso por caso, 30 botones de ícono con
+  capas (composición visual, **no van**), 9 tarjetas seleccionables (decidir
+  después de que `ListRow` se asiente), resto compuesto.
+- **45 inputs**: 18 son `file`, que tienen su propio patrón (`FileUploader` en
+  `BranchHelpers` — hay que ver si sirve como canónico); el resto son sueltos
+  sin forma compartida.
+- **35 badges** con hijos compuestos: varios llevan un tooltip adentro. Lo que
+  falta ahí **es un tooltip canónico**, no un `Badge` más flexible.
+- **`gate:design`**: `inline-color` 58 · `shadow-literal` 30 · `motion` 5.
+
+## Cierre de la jornada 2026-07-27 — qué quedó y por qué
+
+### Lo que se movió
+
+| | antes | ahora |
+|---|---|---|
+| `<button>` a mano | 940 | **337** |
+| badges inline | 244 | **72** |
+| casillas nativas | 16 | **0** |
+| barras de búsqueda a mano | 13 | **0** |
+| copias del estado vacío | 5 | **0** |
+| `DESIGN.md` contra el gate | 35 | **0** |
+
+### Los seis canónicos que faltaban
+`Switch` · `TabBarAction` · `Checkbox` · `SegmentedControl` · `Notice` ·
+(`SegmentedControl` y `Notice` salieron de medir lo que los migradores no podían
+convertir, no de una idea previa).
+
+### Por qué lo que queda NO se migró
+
+Esto no es "faltó tiempo". Cada grupo tiene una razón medida:
+
+**D3.3 · 337 botones**
+- ~117 **segmentados**: varios no son el mismo control. Los de
+  `AnnouncementsView` son tarjetas de elección a ancho completo en dos columnas
+  — meterlas en un segmentado compacto las encogería.
+- 92 con `<div>` adentro, y al medirlos **solo 9 son tarjetas**. Los otros 53
+  son **filas de lista compuestas** (ícono + etiqueta + elemento final, con
+  contenido distinto en cada una) y 30 son botones de ícono con estructura
+  interna. Un canónico que los cubriera a todos sería un cajón de sastre.
+- El resto: composición real.
+
+**D3.4 · 49 inputs de texto/número**
+Al mirarlos: **37 son un `PortalInput` reconstruido a mano** —etiqueta con badge
+de error, contenedor con ícono, input desnudo adentro—. Migrables en principio,
+**pero cada uno trae extras que el canónico no tiene**: acciones dentro de la
+etiqueta (`+ Agregar` en teléfono), máscaras, campos que se multiplican.
+Los otros 12 son celdas numéricas densas (`h-8`, borde de color, dentro de una
+grilla), donde `PortalInput` no calza.
+
+Son formularios de RRHH y nómina. Migrarlos a ritmo de script es la forma más
+rápida de romper la carga de datos de la empresa. **Requisito previo**: decidir
+si `PortalInput` gana `labelAction` y una variante compacta, o si esos casos se
+quedan documentados como excepción.
+
+**D3.5 · 72 badges** con hijos compuestos (dos `<span>` con estilo propio, o un
+`<div>` adentro). Caso por caso.
+
+### Lo que aprendieron los migradores
+Tres errores, los tres **atrapados por eslint y no por el build**:
+
+| | qué pasaba |
+|---|---|
+| `title={\`plantilla\`}` | se serializaba como string **con backticks adentro**; se renderizaba el código crudo |
+| `className` con `${}` | se descartaba entero, incluso cuando interpolaba una constante |
+| atributos ≠ `className` | **se tiraban**: 11 badges de un `.map()` perdieron su `key` |
+
+La regla que salió de ahí: **un atributo que el migrador no entiende se copia,
+no se tira.**
+
+## Estado de D3 al 2026-07-27 (medido, no estimado)
+
+### Cerradas
+| | |
+|---|---|
+| D3.1 estados de carga | ✓ |
+| D3.2 estado vacío | ✓ 0 copias locales |
+| D3.6 modales | ✓ ya estaba hecha (`UnifiedModal → LiquidModal → ModalShell`) |
+| D3.7 `NotFoundView` | ✓ |
+
+### Los cinco canónicos que faltaban
+El hallazgo que se repitió toda la semana: **lo que parecía un caso especial era
+un componente que nadie había nombrado.**
+
+| componente | qué destapó |
+|---|---|
+| `Switch` | 3 implementaciones locales compitiendo, 8 tamaños de perilla |
+| `TabBarAction` | cada vista escribía su botón de barra, con halo fijo |
+| `Checkbox` | 16 casillas **nativas** — el único control sin pasar por el tema |
+| `SegmentedControl` | 123 botones con `X === valor ? activo : inactivo` |
+| `Notice` | 58 avisos inline; existía el modal y el banner, faltaba el del medio |
+
+### D3.3 — botones · 940 → 337
+| grupo | cuántos | qué falta decidir |
+|---|---|---|
+| migrados | 603 | — |
+| segmentados restantes | ~117 | caso por caso: **no todos son el mismo control**. Los de `AnnouncementsView` son tarjetas de elección a ancho completo, no un segmentado compacto. |
+| con `<div>` adentro | 50 | probablemente **tarjetas clickeables**, no botones. Hay que mirarlas: si son tarjetas, el canónico que falta es otro. |
+| varios `<span>` con estilo | 6 | composición real |
+| sin `onClick` / sin clase | 11 | triviales |
+
+**Aprendizajes del migrador** (los tres errores que cometió y cómo se
+corrigieron) están en el changelog de v2.76.0. El más importante:
+`title={\`plantilla\`}` se serializaba como string con backticks adentro —
+**el build pasaba igual**, lo atrapó eslint por la variable huérfana.
+
 ### D3.4 — inputs
 | tipo | cuántos | destino |
 |---|---|---|

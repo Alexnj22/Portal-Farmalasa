@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.118.0';
+export const APP_VERSION = '2.119.0';
+
+// v2.119.0 — Ordenar una tabla era solo de raton. En las 12 vistas.
+//
+// Tercera vez esta semana que el defecto esta en el canonico y no en la vista,
+// y esta se descubrio de la forma mas ironica posible: migrando los botones a
+// mano de VentasView, que tiene su PROPIO encabezado ordenable escrito a
+// mano... y ese si usa `<button>`. El canonico era MENOS accesible que lo que
+// venia a reemplazar.
+//
+// `DataTable` ponia el `onClick` en el `<th>` mismo: sin `<button>`, sin
+// `tabIndex`, sin manejador de teclas y sin `aria-sort`. O sea:
+//
+//   · con teclado NO se podia ordenar ninguna tabla del portal
+//   · el estado de orden solo existia en la flecha dibujada — un lector de
+//     pantalla no tenia forma de saber por que columna esta ordenado
+//
+// Son **62 columnas ordenables en 12 vistas**, arregladas de una sola vez.
+//
+// Dos decisiones del arreglo:
+//   · `aria-sort` va en el `<th>` (es lo que la norma espera) y el nombre del
+//     boton dice que PASARA al pulsar ("Ordenar por Usuario, ascendente"), no
+//     el estado actual. Ponerlo en los dos lados lo haria sonar dos veces.
+//   · `flex-row-reverse` cuando la columna es de alineado derecho, para que la
+//     flecha no se despegue del texto.
+//
+// Verificado en vivo en /auditview: 3 columnas con `aria-sort`, el foco cae en
+// el boton con su aro, Enter alterna descending→ascending, la etiqueta se
+// actualiza y la tabla se reordena de verdad.
 
 // v2.118.0 — D3.3: el control unido de Facturacion y cinco grupos uno-de-N.
 //

@@ -125,20 +125,42 @@ export function DataTable({
                     : 'text-left';
 
                   return (
+                    // ── Encabezado ordenable (arreglado el 2026-07-28) ──────
+                    // El `onClick` estaba en el `<th>` mismo: sin `<button>`,
+                    // sin `tabIndex`, sin manejador de teclas y sin `aria-sort`.
+                    // O sea que ordenar una tabla era SOLO DE RATÓN, y el
+                    // estado de orden solo existía en la flecha dibujada.
+                    // Son 62 columnas ordenables en 12 vistas.
+                    //
+                    // Se descubrió migrando los botones de VentasView, que
+                    // tiene su propio encabezado ordenable escrito a mano
+                    // —y ése SÍ usa `<button>`. El canónico era menos accesible
+                    // que lo que venía a reemplazar. Tercera vez esta semana
+                    // que el defecto está en el canónico y no en la vista.
                     <th
                       key={col.key}
-                      onClick={sortable ? () => onSort(col.key) : undefined}
+                      aria-sort={sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                       className={[
                         'px-4 md:px-6 py-3',
                         'text-micro md:text-caption font-black uppercase tracking-widest',
                         'select-none whitespace-nowrap',
                         tk.thText, alignCls, hideCls,
-                        sortable ? `cursor-pointer transition-colors duration-150 ${tk.thHover}` : '',
+                        sortable ? `transition-colors duration-150 ${tk.thHover}` : '',
                         col.className || '',
                       ].join(' ')}
                     >
                       {sortable ? (
-                        <span className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onSort(col.key)}
+                          // El nombre dice qué PASARÁ al pulsar, no el estado
+                          // actual: el estado ya lo lleva `aria-sort` en el
+                          // `<th>`, y repetirlo acá lo haría sonar dos veces.
+                          aria-label={`Ordenar por ${col.label}${isSorted && sortDir === 'asc' ? ', descendente' : ', ascendente'}`}
+                          className={`inline-flex items-center gap-1.5 cursor-pointer
+                            font-black uppercase tracking-widest
+                            ${col.align === 'right' ? 'flex-row-reverse' : ''}`}
+                        >
                           {col.label}
                           {isSorted
                             ? sortDir === 'asc'
@@ -146,7 +168,7 @@ export function DataTable({
                               : <ArrowDown size={10} strokeWidth={3} />
                             : <ChevronsUpDown size={9} strokeWidth={2.5} className="opacity-35" />
                           }
-                        </span>
+                        </button>
                       ) : col.label}
                     </th>
                   );

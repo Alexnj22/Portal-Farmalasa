@@ -1469,50 +1469,37 @@ fondo que tenga detrás. Por eso va del color de la superficie, **no blanco fijo
 sucursal, estado. No es una decoración: es el lugar único donde el usuario mira
 para saber qué está filtrando y para soltarlo.
 
-#### Dónde va — la ambigüedad resuelta (2026-07-27)
+#### Dónde va — resuelto (2026-07-27)
 
-Esta regla decía *"a la derecha, en la fila del título"*, que se podía leer de
-dos formas. Al auditarlo aparecieron **tres patrones conviviendo**: 37 vistas
-con los filtros en `filtersContent`, 3 con un comentario que dice
-explícitamente *"vive en el body, no en el header"*, y 17 con los filtros
-sueltos sin contenedor.
+**La barra de filtros va en el CUERPO de la vista, bajo el título. Nunca en el
+header.** El header ya tiene su ocupante: la barra de pestañas.
 
-**Resuelto mirando qué hace `filtersContent`:** `GlassViewLayout` lo renderiza
-en el **mismo flex row que el `<h2>` del título, con `justify-end`**. O sea que
-las 37 vistas ya cumplían la regla — la que estaba mal escrita era la regla.
+Esto costó una corrección del usuario y vale documentar por qué me equivoqué,
+porque la trampa sigue ahí para el próximo:
 
-| | |
-|---|---|
-| **canónico** | `<GlassViewLayout filtersContent={<FilterBar>…</FilterBar>}>` |
-| **excepción documentada** | en el cuerpo, bajo el título, **solo si la barra no entra en el header** (5+ ranuras o selectores anchos). Ventas, Compras, Proveedores y Staff están así por ancho. |
-| **prohibido** | filtros sueltos sin contenedor — 17 vistas hoy. Sin píldora no hay orden, no hay limpiar-todo, y en móvil no hay cuenta. |
+`GlassViewLayout` tiene una prop llamada **`filtersContent`**, y renderiza su
+contenido en la fila del título con `justify-end`. Al ver 37 vistas usándola
+concluí que ése era el lugar canónico de los filtros. **Falso**: al mirar qué
+le pasan, **22 de ellas le pasan un `ViewTabBar`** — o sea las pestañas de la
+vista, no filtros. La prop está mal nombrada, y ese nombre fue exactamente lo
+que me hizo leer mal el código.
+
+| ranura | qué va | dónde |
+|---|---|---|
+| `filtersContent` de `GlassViewLayout` | **`ViewTabBar`** (pestañas) y el buscador | fila del título |
+| `FilterBar` | los filtros de la vista | **cuerpo**, bajo el título, a la derecha |
+
+Las 3 vistas que comentaban *"Filter pill — vive en el body, no en el header"*
+tenían razón desde el principio. Ventas, Compras, Proveedores y Staff quedaron
+bien.
+
+**Filtros sueltos sin contenedor: prohibido.** Son 17 vistas hoy. Sin píldora no
+hay orden de ranuras, no hay limpiar-todo y en móvil no hay cuenta de filtros
+aplicados.
 
 El divisor también tenía dos escrituras —`h-5 w-px bg-divider` y `w-px h-6
 bg-divider`— y por eso una auditoría por grep veía la mitad. Con `FilterBar` el
 divisor lo pone el contenedor y esa divergencia deja de ser posible.
-
-Ya existía un `FilterPill`, pero vivía en `views/pedidos/tabpedidos/` y estaba
-**clavado a los filtros de Pedidos** (sucursal, fecha, estado). No era un
-contenedor, era esa barra concreta. Por eso las otras 13 vistas no podían usarlo
-y lo reescribieron. Medido sobre esas 14:
-
-| | |
-|---|---|
-| radio | `rounded-2xl` ×13 · `rounded-header` ×1 — **clavado**, no del token |
-| contenido | `LiquidSelect` ×9 · `Button` ×9 · `PeriodPicker` ×2 · fechas ×1 |
-| divisor | `<div className="h-5 w-px bg-divider" />` repetido a mano en las 14 |
-
-**El divisor lo pone el contenedor**, entre hijos. Era lo que más se repetía y
-lo que más quedaba de más: un divisor colgando al final cuando una sección se
-ocultaba por permisos.
-
-**El botón de limpiar deja de ser opcional por olvido.** Estaba escrito a mano
-en 6 de las 14; en las otras 8 no existía — o sea que ahí no había forma de
-volver al estado sin filtros salvo recargar la página. Si la vista pasa
-`onClear`, el botón está.
-
-El radio sale de `--card-radius`, así que la barra es muy redondeada en Liquid
-Glass y tensa en Solid, como el resto.
 
 ### 17.1 `TablePagination` — paginación
 

@@ -5,7 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.97.1';
+export const APP_VERSION = '2.97.2';
+
+// v2.97.2 — Corregido: la barra de filtros va en el CUERPO, no en el header.
+//
+// En v2.97.1 "resolvi" la ambiguedad al reves. Vi 37 vistas usando la prop
+// `filtersContent` de GlassViewLayout, verifique que renderiza en la fila del
+// titulo con justify-end, y concluí que ese era el lugar canonico de los
+// filtros. El usuario me corrigio: el header es de las PESTANAS.
+//
+// Al mirar QUE le pasan a esa prop: **22 de las 37 le pasan un `ViewTabBar`**.
+// La prop se llama `filtersContent` pero sostiene la barra de pestanas — y ese
+// nombre fue exactamente lo que me hizo leer mal el codigo. Verifique donde
+// renderiza pero no que le pasaban.
+//
+// Regla correcta, que es la que ya decian 3 vistas en un comentario:
+//   header → ViewTabBar (pestanas) + buscador
+//   cuerpo → FilterBar, bajo el titulo, a la derecha
+// Las 4 barras migradas quedaron bien. Los filtros sueltos sin contenedor
+// (17 vistas) siguen prohibidos.
 
 // v2.97.1 — §17: resuelta la ambiguedad de DONDE va la barra de filtros.
 //

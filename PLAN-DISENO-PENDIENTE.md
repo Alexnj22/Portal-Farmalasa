@@ -1349,10 +1349,16 @@ todas las vistas?"*. La respuesta es **no**, y el conteo que yo venía dando
 y el tercero —filtros en `filtersContent`, 37 vistas— no lo veía ningún grep
 porque escribe el divisor distinto (`w-px h-6` en vez de `h-5 w-px`).
 
-Resuelto en DESIGN.md §17: **`filtersContent` es el canónico** (renderiza en la
-misma fila del `<h2>` con `justify-end`, o sea que esas 37 ya cumplían la regla
-— la mal escrita era la regla). El cuerpo queda como excepción documentada para
-barras que no entran en el header.
+**Me equivoqué al resolverlo la primera vez y el usuario me corrigió.** Vi 37
+vistas usando la prop `filtersContent` de `GlassViewLayout` y concluí que ése
+era el lugar canónico. Al mirar QUÉ le pasan, **22 le pasan un `ViewTabBar`**:
+son las pestañas, no filtros. La prop está mal nombrada y ese nombre fue lo que
+me hizo leer mal el código.
+
+Resuelto en DESIGN.md §17: **la barra de filtros va en el CUERPO**, bajo el
+título. El header es de las pestañas. Las 3 vistas que comentaban *"vive en el
+body, no en el header"* tenían razón desde el principio, y las 4 que migré
+quedaron bien.
 
 ### Lo que falta, en orden
 

@@ -100,6 +100,12 @@ const Badge = memo(({
     uppercase = true,
     className = '',
     children,
+    // Sin este `...rest` el componente TRAGABA en silencio cualquier atributo
+    // extra. Se descubrió al migrar los chips de TabSinVenta (2026-07-28): los
+    // escritos a mano llevaban `title={detalle}` con la explicación de por qué
+    // el producto está en esa categoría, y al pasar al canónico el tooltip
+    // habría desaparecido sin que nada fallara.
+    ...rest
 }) => {
     const palette = tone === 'solid' ? SOLID : SOFT;
     return (
@@ -107,7 +113,8 @@ const Badge = memo(({
             ${uppercase ? 'uppercase tracking-widest' : 'tracking-[-0.005em]'}
             ${SIZE[size] || SIZE.md}
             ${palette[variant] || palette.neutral}
-            ${className}`}>
+            ${className}`}
+            {...rest}>
             {dot && <span className={`${DOT_PX[size] || DOT_PX.md} rounded-full ${DOT[variant] || DOT.neutral}`} />}
             {Icon && <Icon size={ICON_PX[size] || 11} strokeWidth={2.5} />}
             {children}

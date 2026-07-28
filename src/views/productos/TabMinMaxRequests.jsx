@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import Notice from '../../components/common/Notice';
 import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, CheckCheck, TrendingUp, Building2 } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
@@ -351,11 +352,16 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         </div>
       </div>
 
+      {/* Era una caja de error escrita a mano con una X sin nombre accesible:
+          un lector de pantalla la anunciaba solo como "botón". `Notice` ya es
+          esta caja, y su ranura `action` es justo para esto. */}
       {error && (
-        <div className="rounded-xl bg-danger/10 border border-danger/30 px-3.5 py-2 text-body-sm font-semibold text-danger flex items-center justify-between">
+        <Notice
+          variant="danger"
+          action={<Button variant="ghost" size="xs" iconOnly icon={X}
+                          aria-label="Descartar el error" onClick={() => setError(null)} />}>
           {error}
-          <button onClick={() => setError(null)}><X size={13} /></button>
-        </div>
+        </Notice>
       )}
 
       {/* ── Grid de cards ── */}

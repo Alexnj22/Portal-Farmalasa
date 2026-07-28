@@ -27,14 +27,12 @@ const ERP_NAMES = {
 };
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
-const SUC_COLORS = {
-    1: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',
-    2: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',
-    3: 'bg-success/10 text-success-text border-success/30',
-    4: 'bg-warning/10 text-warning-text border-warning/30',
-    5: 'bg-danger/10 text-danger-text border-danger/30',
-    7: 'bg-chart-5/10 text-chart-5-text border-chart-5/30',
-    6: 'bg-surface-card-hover text-content-2 border-divider',
+// Era la paleta SOFT de `Badge` copiada clase por clase. Ahora es solo el
+// NOMBRE de la variante y el canónico pone el color: una sucursal nueva se
+// agrega acá y ya, sin volver a escribir tres clases de Tailwind.
+const SUC_VARIANTE = {
+    1: 'chart-1', 2: 'chart-3', 3: 'success',
+    4: 'warning', 5: 'danger',  7: 'chart-5', 6: 'neutral',
 };
 
 
@@ -76,7 +74,7 @@ function getSuggestion(row) {
     const stock  = Number(row.current_stock);
     if (!stock) {
         if (row.in_minmax)
-            return { label: 'Sin existencias', detail: 'Tiene Min/Max asignado pero sin stock físico — reabastecer', icon: AlertCircle, cls: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' };
+            return { label: 'Sin existencias', detail: 'Tiene Min/Max asignado pero sin stock físico — reabastecer', icon: AlertCircle, variante: 'chart-3' };
         return null;
     }
     const soldIn = row.sold_in || [];
@@ -84,18 +82,18 @@ function getSuggestion(row) {
     if (row.fecha_vencimiento_min)
         daysToExpiry = Math.floor((new Date(row.fecha_vencimiento_min) - new Date()) / 86_400_000);
     if (daysToExpiry !== null && daysToExpiry < 0)
-        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, cls: 'bg-danger/10 text-danger-text border-danger/40' };
+        return { label: `Vencido hace ${Math.abs(daysToExpiry)}d`, detail: 'Producto vencido — dar de baja o liquidar', icon: AlertCircle, variante: 'danger' };
     if (daysToExpiry !== null && daysToExpiry <= 30)
-        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, cls: 'bg-danger/10 text-danger-text border-danger/30' };
+        return { label: `Vence en ${daysToExpiry}d`, detail: 'No transferir — gestionar baja o liquidación', icon: AlertCircle, variante: 'danger' };
     const urgentExpiry = daysToExpiry !== null && daysToExpiry <= 90;
     if (soldIn.length === 0)
-        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-surface-card-hover text-content-3 border-border-card' };
+        return { label: 'Sin demanda', detail: urgentExpiry ? 'Liquidar antes de vencer' : 'Enviar a Bodega o dar de baja', icon: Archive, variante: urgentExpiry ? 'warning' : 'neutral' };
     const best = soldIn[0], bestUnits = Number(best.units), bestName = ERP_NAMES[best.esid] || `Suc.${best.esid}`;
     if (bestUnits < 5)
-        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-surface-card-hover text-content-3 border-border-card' };
+        return { label: 'Baja demanda', detail: `Máx. ${bestUnits} und/6m en ${bestName} — enviar a Bodega`, icon: Archive, variante: urgentExpiry ? 'warning' : 'neutral' };
     if (bestUnits < 20)
-        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-chart-1/10 text-chart-1-text border-chart-1/30' };
-    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, cls: urgentExpiry ? 'bg-warning/10 text-warning-text border-warning/30' : 'bg-success/10 text-success-text border-success/30' };
+        return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · traslado posible${urgentExpiry ? ' (urgente)' : ''}`, icon: Truck, variante: urgentExpiry ? 'warning' : 'chart-1' };
+    return { label: `→ ${bestName}`, detail: `${bestUnits} und/6m · transferir${urgentExpiry ? ' urgente' : ''}`, icon: Truck, variante: urgentExpiry ? 'warning' : 'success' };
 }
 
 // units_sold está en unidades comerciales (cajas/bolsas), igual que el ERP.
@@ -725,34 +723,32 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {isIgnored ? (
-                                                <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit">
-                                                    <EyeOff size={9} />No sugerir
-                                                </span>
+                                                <Badge icon={EyeOff} uppercase={false} size="sm" className="w-fit">No sugerir</Badge>
                                             ) : (
                                                 <div className="flex flex-col gap-1">
                                                     {lvl === 'agregar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-success/10 text-success-text border-success/30 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
+                                                        <Badge variant="success" icon={PlusCircle} uppercase={false} size="sm" className="w-fit">Agregar Min/Max</Badge>
                                                         <span className="text-micro text-content-3 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
                                                         <span className="text-micro text-content-3 italic">{sugg.reason}</span>
                                                         <span className="text-micro text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'evaluar' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-warning/10 text-warning-text border-warning/30 w-fit"><AlertTriangle size={9} />Evaluar</span>
+                                                        <Badge variant="warning" icon={AlertTriangle} uppercase={false} size="sm" className="w-fit">Evaluar</Badge>
                                                         <span className="text-micro text-content-3 italic">{sugg.reason}</span>
                                                         <span className="text-micro text-content-3">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'encargo' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-chart-4/10 text-chart-4-text border-chart-4/30 w-fit"><ShoppingBag size={9} />Posible encargo</span>
+                                                        <Badge variant="chart-4" icon={ShoppingBag} uppercase={false} size="sm" className="w-fit">Posible encargo</Badge>
                                                         <span className="text-micro text-chart-4-text font-semibold">{sugg.reason}</span>
                                                         <span className="text-micro text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'mayorista' && (<>
-                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-chart-3/10 text-chart-3-text border-chart-3/30 w-fit"><Truck size={9} />Venta mayorista</span>
+                                                        <Badge variant="chart-3" icon={Truck} uppercase={false} size="sm" className="w-fit">Venta mayorista</Badge>
                                                         <span className="text-micro text-chart-3-text font-semibold">{sugg.reason}</span>
                                                         <span className="text-micro text-content-3 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'omitir' && (
-                                                        <span className="inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border bg-surface-card-hover text-content-3 border-divider w-fit"><Minus size={9} />Sin acción</span>
+                                                        <Badge icon={Minus} uppercase={false} size="sm" className="w-fit">Sin acción</Badge>
                                                     )}
                                                 </div>
                                             )}
@@ -831,7 +827,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {sug
-                                                ? <span title={sug.detail} className={`inline-flex items-center gap-1 text-caption font-bold px-2.5 py-1 rounded-full border cursor-default ${sug.cls}`}><sug.icon size={9} className="shrink-0" /><span className="truncate max-w-[110px]">{sug.label}</span></span>
+                                                ? <Badge variant={sug.variante} icon={sug.icon} uppercase={false} title={sug.detail} className="cursor-default max-w-[150px]"><span className="truncate">{sug.label}</span></Badge>
                                                 : <span className="text-label text-content-3">—</span>}
                                         </DataCell>
                                         <DataCell hideBelow="md">
@@ -842,10 +838,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 {soldIn.length === 0
                                                     ? <Badge uppercase={false}>Sin historial</Badge>
                                                     : soldIn.map(s => (
-                                                        <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
-                                                            className={`inline-flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-surface-card-hover text-content-2 border-divider'}`}>
+                                                        <Badge key={s.esid} variant={SUC_VARIANTE[s.esid] || 'neutral'} size="sm" uppercase={false}
+                                                            title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
+                                                            className="cursor-default">
                                                             {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
-                                                        </span>
+                                                        </Badge>
                                                     ))}
                                             </div>
                                         </DataCell>

@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.113.0';
+export const APP_VERSION = '2.114.0';
+
+// v2.114.0 — D3.5 `Badge` re-medido, y un componente que tragaba props.
+//
+// El plan tenia D3.5 como "abierta — el conteo no se re-midio". Medido hoy:
+// **110 chips a mano en 51 archivos** (eran 249 en la medicion original), y
+// otra vez CUATRO radios para una sola idea: full 62 · md 30 · lg 14 · xl 4.
+//
+// ── El hallazgo que importa: `Badge` tragaba props ────────────────────────
+// No tenia `...rest`. Los chips de TabSinVenta llevaban `title={detalle}` con
+// la explicacion de POR QUE el producto cae en esa categoria ("Tiene Min/Max
+// asignado pero sin stock fisico — reabastecer"). Al pasarlos al canonico ese
+// tooltip habria desaparecido y NADA habria fallado: ni el build, ni el lint,
+// ni el gate. Es el mismo tipo de bug que el `presentaciones.descripcion` del
+// sync — una perdida silenciosa que vive semanas.
+//
+// ── TabSinVenta: dos paletas que eran el canonico copiado a mano ──────────
+// `SUC_COLORS` y el campo `cls` de `getSuggestion()` mapeaban cada estado a
+// TRES clases de Tailwind. Comparadas contra `SOFT` de Badge, eran 1:1 — la
+// misma paleta, escrita otra vez. Ahora guardan el NOMBRE de la variante y el
+// color lo pone el canonico: agregar una sucursal es una linea, no tres clases.
+// (Una de las siete tenia `border-danger/40` donde el resto usa /30. Nadie lo
+// habria visto nunca; es exactamente la deriva que el canonico existe para
+// eliminar.)
+//
+// ── Y el conteo de botones estaba inflado ─────────────────────────────────
+// El clasificador no blanqueaba comentarios `//`, asi que contaba la palabra
+// `<button>` escrita en PROSA. Mismo agujero que ya costo dos conteos en el
+// gate de `input-label` (80 → 29 → 22). Corregido: **126 → 120**.
+//
+// Verificado en vivo en /productos?tab=sinventa: 157 chips, 93 conservan su
+// tooltip, 8 colores distintos, cero errores.
 
 // v2.113.0 — La fila clickeable no existia para el teclado.
 //

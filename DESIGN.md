@@ -1315,7 +1315,103 @@ La casilla es lo que resuelve la ambigüedad — sin ella, "seleccionada" y
 
 ---
 
-### 15.8 `FileField` — adjuntar un archivo
+### 15.8 Cuándo NO es un botón (cierre de D3.3, 2026-07-28)
+
+Se abrieron los **137** `<button>` escritos a mano que quedaban. Migraron 77;
+los otros 60 **no** eran deuda: eran el canónico equivocado. Esta sección
+existe para que nadie los "arregle" de nuevo.
+
+#### Navegar no es una acción → `<Link>`
+
+```jsx
+// ❌ pierde ⌘+clic, la vista previa de la URL, y suena como "botón"
+<button onClick={() => navigate('/payroll')}>Nómina</button>
+
+// ✅
+<Link to="/payroll">Nómina</Link>
+```
+
+Los **nueve** ítems del menú principal eran botones. Eso costaba tres cosas que
+la gente usa todos los días: ⌘/Ctrl+clic y el botón del medio no abrían en otra
+pestaña, el navegador no mostraba a dónde lleva, y un lector de pantalla
+anunciaba "botón" para los 36 enlaces del menú.
+
+El `onClick` se queda **solo para el efecto secundario** (cerrar el panel en
+móvil, cerrar un flyout). Navegar lo hace el `href`.
+
+#### Los cuatro casos donde el `<button>` a mano es correcto
+
+| caso | por qué el canónico lo rompería | ejemplo |
+|---|---|---|
+| **Segmento pegado** dentro de un borde común (`items-stretch` + `border-r`) | `Button` le da a cada uno su radio y su sombra: se ve la costura | `ChipDoc` de Facturación |
+| **Tarjeta rica** — avatar, contador, barra de progreso | `Button` no tiene ranuras para eso | `PanelCompletitud` de Sucursales |
+| **Tres estados**, no dos | `SegmentedControl` solo distingue activo/inactivo | la rejilla de meses: *elegido* / *hoy* / *resto* — migrarla borra el aro del día de hoy |
+| **Superficie bespoke** | tiene su propio lenguaje visual, declarado | login, kiosco |
+
+**Si se repite, se extrae a un componente local.** No a `Button` — a un
+componente con nombre en el mismo archivo. Así se cerraron `ChipDoc` (4 copias),
+`TarjetaTelefono` (2) y `PanelCompletitud` (3).
+
+#### Lo que SÍ debe tener todo control, canónico o no
+
+Un botón sin esto **no dice lo que es**: su estado vive en el color del borde y
+en un chevron girado, o sea que no existe para quien no lo ve.
+
+| si el control… | lleva | ejemplo |
+|---|---|---|
+| alterna un modo | `aria-pressed` | pausar el refresco, ocultar montos |
+| abre o cierra algo | `aria-expanded` | encabezado de sección plegable |
+| marca dónde estás | `aria-current` | paso de un asistente, mes de hoy |
+| es una de N excluyente | `role="radio"` + `aria-checked` | lo pone `SegmentedControl` |
+| no tiene texto | `aria-label` o `title` | lo pone `Button` desde el ícono |
+
+**Y la distinción que más se equivoca**: `aria-pressed` es para un **interruptor
+de dos estados**. Si el botón abre otra pantalla, agrega algo y se cierra, o su
+texto ya cambia según el modo, **no lleva `aria-pressed`** — sería mentir sobre
+lo que es. Se anota en el código por qué, porque el próximo barrido lo va a
+volver a marcar.
+
+Si el control no responde (sin permiso, con cero datos), lleva `disabled`. Un
+`onClick` condicional que no hace nada **simula** que responde.
+
+#### `SegmentedControl` vs `FilterBar.Chip`
+
+```jsx
+// una sola activa  → radiogroup, anuncia "2 de 4"
+<SegmentedControl value={estado} onChange={setEstado} options={…} />
+
+// varias a la vez  → cada chip es un interruptor independiente
+<FilterBar.Chip active={sel} onToggle={…}>Sucursal</FilterBar.Chip>
+```
+
+Confundirlos da un `radiogroup` que anuncia **"1 de 6"** para algo donde pueden
+estar las seis. Se apagan al volver a pulsarlos y dibujan su × cuando están
+activos.
+
+#### `stacked` — tarjeta de elección vertical
+
+```jsx
+<SegmentedControl layout="block" columns={3} stacked options={…} />
+```
+
+`layout="block"` ya existía para las tarjetas de elección, pero solo horizontal.
+`stacked` pone el ícono **arriba** del texto y cambia el radio a `rounded-card`:
+una tarjeta alta con `rounded-btn` sale con forma de pastilla.
+
+> **Trampa al migrar a `layout="block"`**: el canónico **ya es una grilla**. Si
+> se deja el `<div className="grid grid-cols-3">` original envolviéndolo, las
+> tarjetas quedan metidas en una sola celda, a un tercio del ancho y con las
+> etiquetas encimadas. Build, lint y gate pasan en verde — solo se ve mirando.
+
+#### El gate lo sostiene
+
+`button-name` falla si aparece un `<button>` cuyo contenido son solo íconos y no
+tiene `aria-label` ni `title`. Nace en **0 y bloqueante**, igual que
+`input-label`.
+
+---
+
+### 15.9 `FileField` — adjuntar un archivo
 
 ```jsx
 <FileField label="Constancia (PDF/IMG)" accept=".pdf,image/*" maxSizeMB={10}
@@ -1344,7 +1440,7 @@ el disparador es la imagen misma y el resultado va a otro flujo.
 
 ---
 
-### 15.9 `LiquidTooltip` — nota al pasar el puntero
+### 15.10 `LiquidTooltip` — nota al pasar el puntero
 
 ```jsx
 <LiquidTooltip content="Se sincronizó hace 3 minutos" side="top">

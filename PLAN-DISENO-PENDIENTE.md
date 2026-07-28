@@ -14,11 +14,12 @@ hallazgo nuevo se documenta siempre, se resuelva o no.
 | **D3.8 baseline del gate** | ✓ **cerrada** — las 11 categorías en **0 y bloqueantes**, sin baseline |
 | **§17 barra de filtros** | 18 vistas con `FilterBar` (eran 4) |
 | **Móvil** | ✓ los 4 reportes del usuario, reproducidos y resueltos |
-| D3.3 botones | **119** — 49 fila/tarjeta · 60 acción · 6 bespoke · 4 composición. **Uno-de-N cerrada** |
+| **D3.3 botones** | ✓ **CERRADA** — 137 → 60, y los 60 con su razón escrita en el código |
 | **D3.4 accesibilidad de campos** | ✓ **cerrada** — 22 campos sin nombre accesible corregidos; `input-label` nace en 0 y bloqueante |
 | D3.4 inputs de texto | **102** fuera de `PortalInput`. ✓ **Desbloqueada**: el canónico ya reenvía props (v2.115.0) |
 | D3.5 `Badge` | **102** chips a mano en 50 archivos (eran 249). `Badge` ya reenvía props (v2.114.0) |
-| **Teclado en tablas** | ✓ **cerrada** — `DataRow` clickeable no era alcanzable por teclado en ninguna vista (v2.113.0) |
+| **Teclado en tablas** | ✓ **cerrada** — ni la fila clickeable (`DataRow`, v2.113.0) ni el encabezado ordenable (`DataTable`, 62 columnas, v2.119.0) eran alcanzables |
+| **Nombre accesible de botones** | ✓ **cerrada** — `button-name` nace en 0 y bloqueante; 935 botones verificados en vivo, 0 mudos |
 | D4 reescribir `DESIGN.md` | abierta |
 
 > **Cómo leer este documento.** Crece por el FINAL: las secciones de arriba son
@@ -37,6 +38,41 @@ hallazgo nuevo se documenta siempre, se resuelva o no.
 
 ---
 
+## D3.3 · qué significó "cerrada"
+
+**137 → 60**, pero el número no es lo importante: lo importante es que **los 60
+que quedan tienen su razón escrita en el código, en el punto donde se ven**.
+
+Migró lo que tenía canónico:
+
+| a dónde | qué |
+|---|---|
+| `Button` | acciones, interruptores de modo, los 9 "guardar" del formulario lateral |
+| `SegmentedControl` | 11 grupos uno-de-N (incluido un `SegmentControl` duplicado en un archivo que ya usaba el canónico) |
+| `FilterBar.Chip` | 5 grupos de selección **múltiple** — donde un `radiogroup` mentiría diciendo "1 de N" |
+| `<Link>` | **13 destinos** que eran botones: el menú entero, ⌘K, la tarjeta de sucursal |
+| componente local | `ChipDoc` (4 copias), `TarjetaTelefono` (2), `PanelCompletitud` (3) |
+
+**Los 60 que no migran son de cuatro tipos, y ninguno es pereza:**
+
+1. **Segmentos pegados** dentro de un borde común (`items-stretch` + `border-r`).
+   El canónico les daría a cada uno su radio y su sombra, rompiendo la unión.
+2. **Tarjetas ricas** — avatar, contador, barra de progreso. `Button` no tiene
+   eso. Se extrajeron a componentes locales cuando se repetían.
+3. **Controles con TRES estados**, como la rejilla de meses (elegido / hoy /
+   resto). `SegmentedControl` solo distingue activo-inactivo: migrarla habría
+   borrado el aro del día de hoy.
+4. **Superficies bespoke** — login, kiosco.
+
+Lo que sí recibieron TODOS: **decir lo que son**. `aria-pressed` en los
+interruptores, `aria-expanded` en los plegables, `aria-current` en los pasos,
+nombre accesible en los mudos. Antes eso vivía entero en el color del borde y
+en un chevron girado — o sea que no existía para quien no lo ve.
+
+**Verificado en vivo: 935 botones en 15 vistas, 0 sin nombre accesible.**
+
+---
+
 ## Lo aprendido el 2026-07-28: el defecto suele estar en el canónico
 
 Tres de los cuatro hallazgos del día no estaban en las vistas sino en el
@@ -47,8 +83,15 @@ migración en una pérdida silenciosa**.
 | Canónico | El hueco | Lo que se habría perdido |
 |---|---|---|
 | `DataRow` | `<tr onClick>` sin `tabIndex` ni teclas | Abrir cualquier fila con teclado, en 8 vistas |
+| `DataTable` (`<th>`) | `onClick` en la celda, sin `<button>` ni `aria-sort` | Ordenar cualquier tabla con teclado — **62 columnas en 12 vistas** |
 | `Badge` | sin `...rest` | El `title` con el porqué de cada categoría |
 | `PortalInput` / `PortalTextarea` | sin `...rest` | `min`/`max`/`step` de nómina y **22 `aria-label`** |
+| `Button` / `TabBarAction` | `iconOnly` sin nombre | **102 de 194** botones que se anunciaban solo como "botón" |
+| `SegmentedControl` | `layout="block"` solo horizontal | La forma de las 6 tarjetas del selector de tipo de solicitud |
+
+El de `DataTable` es el más ilustrativo: se descubrió migrando el encabezado
+ordenable **escrito a mano** de VentasView — que sí usaba `<button>`. El
+canónico era MENOS accesible que lo que venía a reemplazar.
 
 **Regla que sale de esto:** antes de migrar N sitios a un canónico, comparar la
 lista de props que el canónico ACEPTA contra los atributos que usan los N

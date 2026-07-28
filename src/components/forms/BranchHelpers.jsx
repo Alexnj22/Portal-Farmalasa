@@ -83,7 +83,7 @@ export const FileUploader = ({ label, file, url, onChange }) => (
 // ============================================================================
 // ⌨️ LAZY INPUT LIQUIDGLASS (Reacciona al Focus como los modales)
 // ============================================================================
-export const LazyInput = ({ value, onChange, className = "", placeholder, required, pattern, minLength, maxLength, type = "text", icon: Icon }) => {
+export const LazyInput = ({ value, onChange, className = "", placeholder, required, pattern, minLength, maxLength, type = "text", icon: Icon, ariaLabel }) => {
     const [localValue, setLocalValue] = useState(value || '');
     
     useEffect(() => { setLocalValue(value || ''); }, [value]); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el input local con el prop controlado
@@ -97,6 +97,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
             )}
             <input
                 type={type}
+                aria-label={ariaLabel ?? placeholder}
                 required={required}
                 pattern={pattern}
                 minLength={minLength}

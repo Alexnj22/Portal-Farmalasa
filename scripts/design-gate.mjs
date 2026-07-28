@@ -880,6 +880,41 @@ function scanFile(path) {
       }
     }
 
+    // ── `input-sin-nombre` (2026-07-28, CERO ABSOLUTO) ──────────────────
+    // Hermano de `button-name`, para el campo. Un `<input>` sin `aria-label`
+    // y sin un `<label htmlFor>` que lo apunte se anuncia como "cuadro de
+    // edición, en blanco": no hay forma de saber qué se escribe ahí.
+    //
+    // El `placeholder` NO cuenta y por eso no se lo mira. Desaparece apenas
+    // el campo tiene contenido — justo cuando alguien vuelve a revisar lo que
+    // escribió — y varios lectores de pantalla no lo exponen como nombre.
+    //
+    // Medido el 2026-07-28 al cerrar D3.4: **45 campos anónimos** en 30
+    // archivos, la mayoría celdas de grilla densa que se quedan a mano a
+    // propósito (`input-a-mano` las tolera vía ratchet). Que un campo sea
+    // legítimamente artesanal no lo exime de tener nombre: son dos
+    // categorías distintas, y ESTA arranca en cero y es bloqueante.
+    //
+    // Se salta `components/common/`: ahí `PortalInput` pone el `<label
+    // htmlFor>` a varias líneas del `<input>`, fuera de la ventana que mira
+    // esta regla, y los demás canónicos ya reciben `ariaLabel`.
+    if (!path.includes('components/common/')) {
+      const RE_IN2 = /<input\b/g;
+      let mi3;
+      while ((mi3 = RE_IN2.exec(sinComentarios2))) {
+        const tag = sinComentarios2.slice(mi3.index, finEtiqueta(sinComentarios2, mi3.index));
+        const tipo = (tag.match(/type=["'{\s]*([a-z]+)/) || [, 'text'])[1];
+        if (['checkbox', 'radio', 'hidden', 'file', 'range', 'color'].includes(tipo)) continue;
+        if (/aria-label|aria-labelledby/.test(tag)) continue;
+        // un <label htmlFor> cerca, arriba — el patrón real de un formulario
+        const antes = sinComentarios2.slice(Math.max(0, mi3.index - 500), mi3.index);
+        if (/<label[^>]*htmlFor/.test(antes)) continue;
+        const linea = sinComentarios2.slice(0, mi3.index).split('\n').length;
+        findings.push({ line: linea, label: 'input sin nombre accesible: `aria-label` o `<label htmlFor>` (el placeholder no cuenta)',
+          category: 'input-sin-nombre', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
     // ── `button-name` (2026-07-28) ──────────────────────────────────────
     // Hermano del anterior, para el otro lado del formulario: un `<button>`
     // cuyo contenido son SOLO íconos, sin `aria-label` ni `title`. Un lector
@@ -979,8 +1014,11 @@ function scanFile(path) {
 // esa categoría queda bloqueante para siempre.
 //
 // Las categorías que hoy están en 0 (native, color, search-toggle,
-// small-input, scale-tap, left-border) siguen siendo bloqueantes: su
-// baseline es 0, así que cualquier hallazgo las hace fallar.
+// small-input, scale-tap, left-border, button-name, paleta-cerrada,
+// input-sin-nombre) siguen siendo bloqueantes: su baseline es 0, así que
+// cualquier hallazgo las hace fallar. Una categoría NUEVA que no figure en
+// el JSON también arranca bloqueante (`baseline[c] ?? 0`) — agregarla al
+// baseline es una decisión explícita, no el default.
 //
 // `npm run gate:design -- --update-baseline` reescribe el archivo. Se usa
 // deliberadamente al BAJAR deuda, nunca para tapar un hallazgo nuevo.

@@ -16,7 +16,25 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.160.0';
+export const APP_VERSION = '2.161.0';
+
+// v2.161.0 — el gate blinda el resultado: `input-sin-nombre`, cero absoluto.
+//
+// Arreglar los 45 campos anonimos de v2.160.0 no sirve de nada si el 46o
+// entra la semana que viene. Categoria nueva, hermana de `button-name`: un
+// `<input>` sin `aria-label` y sin un `<label htmlFor>` que lo apunte.
+//
+// El `placeholder` NO cuenta y la regla no lo mira. Desaparece apenas el
+// campo tiene contenido — justo cuando alguien vuelve a revisar lo que
+// escribio — y varios lectores de pantalla no lo exponen como nombre.
+//
+// Nota sobre el ratchet: una categoria que no figura en el JSON arranca
+// bloqueante sola (`baseline[c] ?? 0`). Agregarla al baseline es una decision
+// explicita, no el default — que es como tiene que ser.
+//
+// La regla encontro uno mas que mi barrido manual no vio: `LazyInput` de
+// BranchHelpers, un helper compartido. Ese es exactamente el caso que un
+// grep a ojo se pierde y un gate no.
 
 // v2.160.0 — D3.4 cierra: los 45 campos que no tenian nombre accesible.
 //

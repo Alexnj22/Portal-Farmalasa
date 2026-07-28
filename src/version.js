@@ -16,7 +16,30 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.110.1';
+export const APP_VERSION = '2.111.0';
+
+// v2.111.0 — Una casilla simulada con `<button>` y un grupo partido en dos.
+//
+// `FormPlanificador.BeautifulCheckbox` era una CASILLA ESCRITA A MANO con un
+// `<button>`: caja de 16px, un `<Check>` adentro y un `theme` que solo elegia
+// entre dos colores de relleno. El canonico `Checkbox` es exactamente eso —y
+// ademas renderiza un `<input type="checkbox">` REAL, asi que un lector de
+// pantalla lo anuncia como casilla y no como boton, y la barra espaciadora lo
+// marca. Antes ninguna de las dos cosas pasaba.
+//
+// El `theme` se descarta a proposito: las dos instancias (almuerzo naranja,
+// lactancia rosa) usaban color solo para diferenciarse entre si, y ya viven
+// dentro de secciones con su propio encabezado de color.
+//
+// ── Y en FormWfmAnalytics, un grupo partido en dos ────────────────────────
+// La fila de los 7 dias YA era un `SegmentedControl`; la de arriba
+// ("Semana | General (Hr)") seguian siendo dos `<button>` sueltos. **Las dos
+// controlan el MISMO `activeView`.** Es el mismo hallazgo que el
+// `<button>Todos</button>` suelto de EmployeeProfileView: media opcion de un
+// grupo se quedo fuera del grupo.
+//
+// Se dejan como dos `SegmentedControl` y no como uno solo porque 2 + 7
+// opciones no entran en una fila; cada `label` dice cual es cual.
 
 // v2.110.1 — Medida la duplicacion de `filtersContent`: no vale arreglarla, y
 // mi anotacion anterior era enganosa.

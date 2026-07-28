@@ -322,24 +322,21 @@ const FormWfmAnalytics = ({ branches }) => {
 
                     <div className="flex flex-col items-end gap-2.5">
                         {/* FILA 1: SEMANA | GENERAL (PILL TABS) */}
-                        <div className="flex items-center bg-surface-card-hover/70 p-1 rounded-full border border-divider shadow-inner w-max">
-                            {timeRange !== '0' && (
-                                <button
-                                    type="button"
-                                    onClick={(e) => { e.preventDefault(); setActiveView('DAYS'); }}
-                                    className={`px-5 py-1.5 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'DAYS' ? 'bg-surface-tab-active text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
-                                >
-                                    Semana
-                                </button>
-                            )}
-                            <button
-                                type="button"
-                                onClick={(e) => { e.preventDefault(); setActiveView('GENERAL_HOURS'); }}
-                                className={`px-5 py-1.5 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-300 ${activeView === 'GENERAL_HOURS' ? 'bg-surface-tab-active text-brand-text shadow-md scale-[1.02]' : 'text-content-3 hover:text-content'}`}
-                            >
-                                {timeRange === '0' ? 'Horas de Hoy' : 'General (Hr)'}
-                            </button>
-                        </div>
+                        {/* La fila de abajo (los 7 días) YA era un `SegmentedControl`
+                            y ésta seguía siendo dos `<button>` sueltos — las dos
+                            controlan el MISMO `activeView`. Se separan en dos grupos a
+                            propósito: 2 + 7 opciones no entran en una fila, y cada
+                            `label` dice cuál es cuál. */}
+                        <SegmentedControl
+                            size="sm"
+                            label="Vista del análisis"
+                            value={activeView === 'GENERAL_HOURS' ? 'GENERAL_HOURS' : (activeView === 'DAYS' ? 'DAYS' : null)}
+                            onChange={setActiveView}
+                            options={[
+                                ...(timeRange !== '0' ? [{ value: 'DAYS', label: 'Semana' }] : []),
+                                { value: 'GENERAL_HOURS', label: timeRange === '0' ? 'Horas de Hoy' : 'General (Hr)' },
+                            ]}
+                        />
 
                         {/* FILA 2: L M M J V S D (Se oculta si el filtro es de hoy) (PILL TABS) */}
                         {timeRange !== '0' && (

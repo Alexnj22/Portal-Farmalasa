@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, memo } from 'react';
 import CanonSwitch from '../common/Switch';
+import CanonCheckbox from '../common/Checkbox';
 import Badge from '../common/Badge';
 import { Clock, Palmtree, Utensils, Baby, HeartPulse, FileText, Building2, AlertTriangle, CheckCircle2, CalendarOff, ArrowRight, Check } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12'; 
@@ -46,25 +47,19 @@ const Switch = memo(({ on, onToggle, disabled }) => (
     <CanonSwitch checked={!!on} onChange={onToggle} disabled={disabled} size="md" />
 ));
 
-const BeautifulCheckbox = memo(({ checked, onChange, theme }) => {
-    const isOrange = theme === 'orange';
-    const activeBg = isOrange ? 'bg-chart-4' : 'bg-chart-6';
-    const shadowHover = isOrange ? 'hover:shadow-[var(--shadow-glow-chart-4)]' : 'hover:shadow-[var(--shadow-glow-chart-6-md)]';
-
-    return (
-        <button
-            type="button"
-            onClick={() => onChange(!checked)}
-            className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all duration-200 border cursor-pointer outline-none ${
-                checked 
-                ? `${activeBg} border-transparent shadow-sm scale-110` 
-                : `bg-surface-card border-divider ${shadowHover} hover:bg-surface-card-hover`
-            }`}
-        >
-            {checked && <Check size={11} strokeWidth={4} className="text-white" />}
-        </button>
-    );
-});
+// `BeautifulCheckbox` era una casilla ESCRITA A MANO con un `<button>`: caja de
+// 16px, `<Check>` dentro y un `theme` que solo elegía entre dos colores de
+// relleno. El canónico `Checkbox` ya es exactamente eso —y además renderiza un
+// `<input type="checkbox">` real, así que un lector de pantalla lo anuncia como
+// casilla y no como botón, y la barra espaciadora lo marca.
+//
+// El `theme` se pierde a propósito: las dos instancias (almuerzo naranja,
+// lactancia rosa) usaban color solo para diferenciarse entre sí, y ya están
+// dentro de secciones con su propio encabezado de color. Una casilla marcada
+// dice lo mismo en los dos casos.
+const BeautifulCheckbox = memo(({ checked, onChange }) => (
+    <CanonCheckbox checked={!!checked} onChange={onChange} size="sm" />
+));
 
 // ============================================================================
 // 🚀 COMPONENTE FILA DE DÍA
@@ -193,7 +188,7 @@ const DayRow = memo(({
                                     <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                         <Utensils size={12} className="text-chart-4-text"/> Almuerzo (-1h)
                                     </label>
-                                    <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} theme="orange" />
+                                    <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} />
                                 </div>
                                 {config.lunchTime ? (
                                     <div className="flex flex-col gap-1">
@@ -218,7 +213,7 @@ const DayRow = memo(({
                                     <label className="text-micro font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                         <Baby size={12} className="text-chart-6"/> Lactancia (+1h)
                                     </label>
-                                    <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} theme="pink" />
+                                    <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} />
                                 </div>
                                 {config.lactationTime ? (
                                     <div className="flex flex-col gap-1">

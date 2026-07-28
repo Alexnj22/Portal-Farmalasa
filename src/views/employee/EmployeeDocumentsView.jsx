@@ -58,10 +58,10 @@ const DEFAULT_CFG = {
 };
 
 const STATUS_CFG = {
-    APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, cls: 'bg-success/10 text-success-text border-success/30' },
-    PENDING:   { label: 'Pendiente', Icon: Clock,         cls: 'bg-warning/10  text-warning-text  border-warning/30'   },
-    REJECTED:  { label: 'Rechazada', Icon: XCircle,       cls: 'bg-danger/10    text-danger    border-danger/30'     },
-    CANCELLED: { label: 'Cancelada', Icon: X,             cls: 'bg-surface-card-hover  text-content-3  border-divider'   },
+    APPROVED:  { label: 'Aprobada',  Icon: CheckCircle2, variante: 'success' },
+    PENDING:   { label: 'Pendiente', Icon: Clock,        variante: 'warning' },
+    REJECTED:  { label: 'Rechazada', Icon: XCircle,      variante: 'danger'  },
+    CANCELLED: { label: 'Cancelada', Icon: X,            variante: 'neutral' },
 };
 
 const CERT_LABELS = {
@@ -89,7 +89,7 @@ const TABS = [
 const DocCard = ({ doc }) => {
     const cfg    = DOC_CFG[doc.type] || DEFAULT_CFG;
     const DocIcon = cfg.Icon;
-    const status = STATUS_CFG[doc.status] || { label: doc.status, Icon: AlertCircle, cls: 'bg-surface-card-hover text-content-3 border-divider' };
+    const status = STATUS_CFG[doc.status] || { label: doc.status, Icon: AlertCircle, variante: 'neutral' };
     const StatusIcon = status.Icon;
 
     const title = doc.type === 'CERTIFICATE' && doc.meta?.certificateType
@@ -126,10 +126,7 @@ const DocCard = ({ doc }) => {
                                 </p>
                             )}
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest border flex-shrink-0 ${status.cls}`}>
-                            <StatusIcon size={9} strokeWidth={2.5} />
-                            {status.label}
-                        </span>
+                        <Badge variant={status.variante} size="sm" icon={StatusIcon}>{status.label}</Badge>
                     </div>
 
                     {/* Nota */}
@@ -159,9 +156,7 @@ const DocCard = ({ doc }) => {
                     {doc.meta?.permissionDates?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                             {doc.meta.permissionDates.slice(0, 5).map((d, i) => (
-                                <span key={i} className={`px-2 py-0.5 rounded-lg text-micro font-black border ${cfg.bg} ${cfg.border} ${cfg.text}`}>
-                                    {fmtDate(d)}
-                                </span>
+                                <Badge key={i} variant={cfg.variante} size="sm" uppercase={false}>{fmtDate(d)}</Badge>
                             ))}
                             {doc.meta.permissionDates.length > 5 && (
                                 <Badge size="sm" uppercase={false}>+{doc.meta.permissionDates.length - 5} más</Badge>

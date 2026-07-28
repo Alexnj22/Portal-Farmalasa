@@ -64,10 +64,10 @@ const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5
 // ─────────────────────────────────────────────────────────────────────────────
 const MinMaxStatusCard = memo(({ req }) => {
     const cfg = req.status === 'approved'
-        ? { border: 'border-success/40 bg-success/10', badge: 'bg-success/10 text-success-text border-success/30', label: 'Aprobada' }
+        ? { border: 'border-success/40 bg-success/10', variante: 'success', label: 'Aprobada' }
         : req.status === 'rejected'
-        ? { border: 'border-danger/40 bg-surface-card', badge: 'bg-danger/10 text-danger border-danger/30', label: 'Rechazada' }
-        : { border: 'border-brand/30 bg-surface-card', badge: 'bg-warning/10 text-warning-text border-warning/30', label: 'Pendiente' };
+        ? { border: 'border-danger/40 bg-surface-card', variante: 'danger', label: 'Rechazada' }
+        : { border: 'border-brand/30 bg-surface-card', variante: 'warning', label: 'Pendiente' };
     return (
         <div className={`p-5 rounded-modal border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[var(--shadow-elevation-sm)]`}>
             <div className="flex items-start justify-between gap-3">
@@ -80,7 +80,7 @@ const MinMaxStatusCard = memo(({ req }) => {
                         <p className="text-caption text-content-3 font-medium">{MM_ERP_NAMES[req.erp_sucursal_id] || req.erp_sucursal_id}</p>
                     </div>
                 </div>
-                <span className={`text-caption font-bold px-2.5 py-1 rounded-full border whitespace-nowrap flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+                <Badge variant={cfg.variante} size="sm" className="flex-shrink-0" uppercase={false}>{cfg.label}</Badge>
             </div>
 
             <p className="text-body font-bold text-content leading-tight">{req.product_name || `Producto ${req.erp_product_id}`}</p>

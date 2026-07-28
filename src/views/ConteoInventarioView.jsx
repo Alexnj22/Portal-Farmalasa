@@ -12,11 +12,11 @@ import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 
 const ESTADO_CFG = {
-    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-divider',  icon: Clock,       label: 'Borrador' },
-    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-warning-text',  border: 'border-warning/30',  icon: Clock,       label: 'En Progreso' },
-    FINALIZADO:  { bg: 'bg-chart-1/10',    text: 'text-chart-1-text',   border: 'border-chart-1/30',   icon: FileCheck2,  label: 'Finalizado' },
-    APROBADO:    { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Aprobado' },
-    CERRADO:     { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Cerrado' },
+    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-divider',  icon: Clock,       label: 'Borrador', variante: 'neutral' },
+    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-warning-text',  border: 'border-warning/30',  icon: Clock,       label: 'En Progreso', variante: 'warning' },
+    FINALIZADO:  { bg: 'bg-chart-1/10',    text: 'text-chart-1-text',   border: 'border-chart-1/30',   icon: FileCheck2,  label: 'Finalizado', variante: 'chart-1' },
+    APROBADO:    { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Aprobado', variante: 'success' },
+    CERRADO:     { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Cerrado', variante: 'success' },
 };
 
 const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual' };
@@ -103,9 +103,7 @@ export default function ConteoInventarioView() {
                                 <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-bold border ${es.bg} ${es.text} ${es.border}`}>
-                                    <es.icon size={12} strokeWidth={2.5} /> {es.label}
-                                </span>
+                                <Badge variant={es.variante} size="sm" icon={es.icon}>{es.label}</Badge>
                             </DataCell>
                             <DataCell align="right">
                                 <ChevronRight size={16} className="text-content-3" />

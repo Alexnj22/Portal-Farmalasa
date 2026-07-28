@@ -16,7 +16,19 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.142.0';
+export const APP_VERSION = '2.143.0';
+
+// v2.143.0 — D3.5: el chip ACTIVO/INACTIVO, tres veces, y cuatro tablas mas.
+//
+// El mismo chip —mismo texto, misma condicion, mismo color— estaba en
+// `SrsBuscadorWidget`, `WidgetInventorySearch` y `WidgetSrsInventory`, con
+// tres paddings distintos (`px-2`, `px-1.5`, `px-2`). Nadie lo decidio: se
+// copio tres veces y cada copia se fue moviendo.
+//
+// Y `STATUS_CFG` (Mis Documentos), el `cfg` de una solicitud min/max,
+// `ESTADO_CFG` (conteo de inventario).
+//
+// Chips a mano: 52 → 45.
 
 // v2.142.0 — D3.5: los tres "Urgente" de Mis Avisos, nomina y cotizaciones.
 //

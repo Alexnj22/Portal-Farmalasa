@@ -116,11 +116,7 @@ export default function WidgetSrsInventory() {
                   {hasStock && (
                     <Badge variant="success" size="sm" icon={CheckCircle2} uppercase={false}>En stock</Badge>
                   )}
-                  <span className={`text-micro font-black px-2 py-0.5 rounded-full ${
-                    activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
-                  }`}>
-                    {activo ? 'ACTIVO' : 'INACTIVO'}
-                  </span>
+                  <Badge variant={activo ? 'success' : 'neutral'} size="sm" className="shrink-0">{activo ? 'ACTIVO' : 'INACTIVO'}</Badge>
                 </div>
               </div>
 

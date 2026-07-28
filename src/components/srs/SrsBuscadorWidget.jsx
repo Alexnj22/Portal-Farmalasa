@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import Button from '../../components/common/Button';
 import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
+import Badge from '../common/Badge';
 
 // Direct fetch wrapper using supabase session token
 async function srsFetch(q, page = 1) {
@@ -183,11 +184,7 @@ function SrsResultCard({ product: p, onSelect }) {
                 <p className="text-body-sm font-black text-content leading-tight flex-1">
                     {nombre || <span className="text-content-3 font-normal italic">Sin nombre</span>}
                 </p>
-                <span className={`shrink-0 text-micro font-black px-2 py-0.5 rounded-full ${
-                    activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
-                }`}>
-                    {activo ? 'ACTIVO' : 'INACTIVO'}
-                </span>
+                <Badge variant={activo ? 'success' : 'neutral'} size="sm" className="shrink-0">{activo ? 'ACTIVO' : 'INACTIVO'}</Badge>
             </div>
 
             {/* Lab + forma */}

@@ -214,11 +214,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
       {/* Header row: nombre + estatus + reportar */}
       <div className="flex items-start gap-1.5">
         <p className="text-label font-black text-content leading-tight flex-1">{nombre || '—'}</p>
-        <span className={`shrink-0 text-micro font-black px-1.5 py-0.5 rounded-full ${
-          activo ? 'bg-success/10 text-success-text' : 'bg-surface-card-hover text-content-3'
-        }`}>
-          {activo ? 'ACTIVO' : 'INACTIVO'}
-        </span>
+        <Badge variant={activo ? 'success' : 'neutral'} size="sm" className="shrink-0">{activo ? 'ACTIVO' : 'INACTIVO'}</Badge>
         {rState === 'done' ? (
           <Badge variant="success" size="sm" icon={CheckCircle2} uppercase={false}>OK</Badge>
         ) : formOpen ? (

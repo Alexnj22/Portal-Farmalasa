@@ -5,7 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.92.0';
+export const APP_VERSION = '2.93.0';
+
+// v2.93.0 — Familia D completa: 25 botones de solo icono al canonico.
+//
+// 15 archivos. El migrador saca el tamano del ancho declarado (w-7→xs, w-8→sm,
+// w-9→md) y la jerarquia del fondo, y aplica la regla que ya me falle una vez a
+// mano: TODO atributo que no sea className se COPIA tal cual. Por eso los
+// onClick, title y disabled reales sobrevivieron.
+//
+// Dos trampas propias, las dos del proceso y no del codigo:
+//
+// · Primera version del migrador: BUCLE INFINITO. Re-escaneaba desde DISCO en
+//   cada vuelta del while, asi que encontraba el mismo boton para siempre.
+//   Se colgo 2 minutos hasta que la mate. No escribio nada — la escritura
+//   estaba al final y nunca llego. Corregido a: recolectar todos los rangos de
+//   una pasada y aplicar de ATRAS hacia adelante, para que los offsets sigan
+//   siendo validos.
+//
+// · Despues aparecieron 5 archivos con parse error, uno truncado de 131 lineas
+//   a 40. Al investigarlo, el migrador funcionaba bien en aislamiento sobre ese
+//   mismo archivo: la corrupcion la habia metido un `git stash push`/`pop` que
+//   hice en el medio para inspeccionar (aviso con "8 lines add whitespace
+//   errors"). Leccion: no meter un round-trip de stash sobre trabajo sin
+//   commitear para "mirar" algo — git checkout de un archivo puntual alcanza.
+//
+// El corredor final migra archivo por archivo, corre eslint despues de cada uno
+// y REVIERTE el que rompa o el que quede a menos de la mitad de su tamano.
+// Resultado: 15 migrados, 0 revertidos, 13 rutas sin errores de JS.
 
 // v2.92.0 — Paginacion reescrita (P1) y FilterBar v2, sobre la revision del usuario.
 //

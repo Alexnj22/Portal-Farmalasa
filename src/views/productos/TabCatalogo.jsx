@@ -680,11 +680,7 @@ function PhotoLightbox({ src, onClose }) {
                 style={{ animation: 'lightbox-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}
                 onClick={e => e.stopPropagation()}>
                 <img src={src} alt="" className="block max-w-[90vw] max-h-[90vh] object-contain" />
-                <button
-                    onClick={onClose}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-btn bg-scrim backdrop-blur-sm flex items-center justify-center text-white hover:bg-scrim transition-colors border border-border-card">
-                    <X size={16} strokeWidth={2.5} />
-                </button>
+                <Button icon={X} iconOnly size="md" variant="ghost" onClick={onClose} />
             </div>
         </div>,
         document.body

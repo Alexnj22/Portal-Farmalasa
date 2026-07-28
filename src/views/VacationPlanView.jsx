@@ -1007,14 +1007,16 @@ const VacationPlanView = () => {
                                                             <td className="py-3">
                                                                 <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                                                                     {(p.status === 'PLANNED' || p.status === 'CONFIRMED') && (
-                                                                        <button
+                                                                        <Button
+                                                                            icon={Edit2}
+                                                                            iconOnly
+                                                                            size="xs"
+                                                                            tone="warning"
+                                                                            soft
                                                                             title="Editar"
                                                                             onClick={() => handleStartEdit({ id: p.id, employee_id: p.employee_id, start_date: p.start_date, end_date: p.end_date, notes: p.notes || '', employee: p.employee })}
                                                                             disabled={!canEdit}
-                                                                            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${isEditing ? 'bg-warning/10 border-warning/40 text-warning hover:bg-warning-solid hover:text-white hover:border-warning' : 'bg-surface-card-hover border-border-card text-content-3 hover:bg-content-3 hover:text-white hover:border-content-3'}`}
-                                                                        >
-                                                                            <Edit2 size={11} strokeWidth={2.5} />
-                                                                        </button>
+                                                                        />
                                                                     )}
                                                                     {p.status === 'PLANNED' && (
                                                                         <Button tone="success" size="xs" icon={Check} disabled={!canEdit} title="Confirmar" iconOnly onClick={() => handleConfirmPlan(p.id)} />

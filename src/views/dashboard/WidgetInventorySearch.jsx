@@ -156,15 +156,7 @@ function SkeletonSection({ rows }) {
 function PhotoThumb({ url, onZoom }) {
   if (!url) return null;
   return (
-    <button
-      onClick={e => { e.stopPropagation(); onZoom(url); }}
-      className="relative w-8 h-8 rounded-lg overflow-hidden border border-divider bg-surface-card-hover shrink-0 group"
-    >
-      <img src={url} alt="" className="w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center">
-        <ZoomIn size={10} className="text-white" strokeWidth={2.5} />
-      </div>
-    </button>
+    <Button icon={ZoomIn} iconOnly size="sm" variant="secondary" onClick={e => { e.stopPropagation(); onZoom(url); }} />
   );
 }
 
@@ -493,15 +485,13 @@ export default function WidgetInventorySearch() {
           <Button variant="secondary" size="xs" icon={ArrowLeft} iconOnly onClick={() => setDrillProduct(null)} />
 
           {drillProduct.fotoUrl ? (
-            <button
-              onClick={() => setLightboxUrl(drillProduct.fotoUrl)}
-              className="relative w-11 h-11 rounded-xl overflow-hidden border border-divider bg-surface-card-hover shrink-0 group"
-            >
-              <img src={drillProduct.fotoUrl} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-scrim opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center">
-                <ZoomIn size={12} className="text-white" strokeWidth={2.5} />
-              </div>
-            </button>
+            <Button
+                icon={ZoomIn}
+                iconOnly
+                size="lg"
+                variant="secondary"
+                onClick={() => setLightboxUrl(drillProduct.fotoUrl)}
+            />
           ) : (
             <div className="w-11 h-11 rounded-xl bg-surface-card-hover border border-divider flex items-center justify-center shrink-0">
               <Package size={18} strokeWidth={1.5} className="text-content-3" />

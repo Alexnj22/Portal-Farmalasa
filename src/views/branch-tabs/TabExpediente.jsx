@@ -72,14 +72,13 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                         <div className="group/ai relative z-sidebar ml-1">
 
                             {/* Ícono Disparador (Mismo diseño que en Staff) */}
-                            <button
-                                className="relative w-8 h-8 flex items-center justify-center rounded-btn cursor-help transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] group-hover/ai:shadow-[var(--shadow-glow-chart-3-lg)] group-hover/ai:-translate-y-0.5"
+                            <Button
+                                icon={Sparkles}
+                                iconOnly
+                                size="sm"
+                                variant="ghost"
                                 title="Ver Análisis de IA del Documento"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-500 rounded-full opacity-10 group-hover/ai:opacity-100 transition-all duration-500 group-hover/ai:animate-spin [animation-duration:3s]"></div>
-                                <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 group-hover/ai:bg-surface-card transition-colors duration-300 border border-chart-3/30"></div>
-                                <Sparkles size={14} strokeWidth={2.5} className="text-chart-3-text group-hover/ai:text-chart-3-text group-hover/ai:animate-pulse z-content relative transition-colors" />
-                            </button>
+                            />
 
                             {/* 🔮 EL TOOLTIP HOLOGRÁFICO */}
                             <div className="absolute left-0 top-full mt-3 opacity-0 pointer-events-none group-hover/ai:opacity-100 focus-within:opacity-100 group-hover/ai:pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] w-[280px] translate-y-3 group-hover/ai:translate-y-0 z-modal">

@@ -57,13 +57,15 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
         {canEdit && !ann.isCompleted && (
           <>
             {ann.readIds.length === 0 && (
-              <button
-                onClick={() => onEdit(ann)}
-                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning-solid hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:border-warning/30 hover:-translate-y-0.5 hover:shadow-md'}`}
-                title="Editar aviso"
-              >
-                <Edit3 size={14} strokeWidth={2.5} />
-              </button>
+              <Button
+                  icon={Edit3}
+                  iconOnly
+                  size="sm"
+                  tone="warning"
+                  soft
+                  onClick={() => onEdit(ann)}
+                  title="Editar aviso"
+              />
             )}
             <Button variant="secondary" icon={Archive} title="Archivar aviso" iconOnly onClick={() => onArchive(ann.id)} />
           </>

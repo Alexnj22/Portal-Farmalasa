@@ -3,6 +3,7 @@ import { Clock, CopyPlus } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
 import { WEEK_DAYS } from '../../data/constants';
 import { Switch } from './BranchHelpers';
+import Button from '../common/Button';
 
 // 🚨 OPTIMIZACIÓN MÁXIMA: Extraemos el Día a su propio componente Memoizado
 // Solo se re-renderizará si sus props exactas (open, start, end, isInvalid) cambian.
@@ -30,14 +31,14 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </p>
                     
                     {index > 0 && open && (
-                        <button
-                            type="button"
+                        <Button
+                            icon={CopyPlus}
+                            iconOnly
+                            size="sm"
+                            variant="destructive"
                             onClick={() => copyPreviousDay(index)}
-                            className={`p-1 rounded-md active:scale-[0.97] transition-all duration-200 ${isInvalid ? 'text-danger hover:text-danger hover:bg-danger/10' : 'text-brand-text/60 hover:text-brand-text hover:bg-brand/10'}`}
                             title={`Copiar horario de ${WEEK_DAYS[index - 1].name}`}
-                        >
-                            <CopyPlus size={13} strokeWidth={2.5}/>
-                        </button>
+                        />
                     )}
                 </div>
                 <Switch label={`${day.name}: ${open ? "abierta" : "cerrada"}`} on={open} onToggle={() => setDay(day.id, open ? { isOpen: false } : { isOpen: true, start: "", end: "" })} />

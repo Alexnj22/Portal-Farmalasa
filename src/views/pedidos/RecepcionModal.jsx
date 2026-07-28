@@ -1148,17 +1148,15 @@ export default function RecepcionModal({
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-content-2 focus:border-chart-3'}`}
                                     />
 
-                                    <button onClick={toggleProblema}
+                                    <Button
+                                        icon={AlertTriangle}
+                                        iconOnly
+                                        size="sm"
+                                        tone="chart-4"
+                                        soft
+                                        onClick={toggleProblema}
                                         title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
-                                        className={`flex justify-center p-1 rounded-lg transition-colors ${
-                                            tp === 'done' ? 'text-chart-4-text bg-chart-4/10'
-                                            : tp === true  ? 'text-chart-4-text bg-chart-4/10'
-                                            : hasDiff      ? 'text-warning hover:bg-warning/10'
-                                            : 'text-content-3 hover:text-warning hover:bg-warning/10'
-                                        }`}
-                                    >
-                                        <AlertTriangle size={14} />
-                                    </button>
+                                    />
                                 </div>
 
                                 {panelOpen && (

@@ -980,14 +980,14 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
 
               <div className="flex items-center gap-1 shrink-0">
                 <Button size="xs" icon={Eye} title="Ver detalle" iconOnly onClick={() => { setFocused(inv); setView('detail'); }} />
-                <button onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
-                  className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
-                    ok ? 'bg-warning/10 hover:bg-warning-solid hover:text-white text-warning'
-                       : 'bg-danger/10 hover:bg-danger-solid hover:text-white text-danger'
-                  }`}
-                  title="Solicitar modificación">
-                  <AlertCircle size={12} strokeWidth={2.5} />
-                </button>
+                <Button
+                    icon={AlertCircle}
+                    iconOnly
+                    size="xs"
+                    variant="destructive"
+                    onClick={() => { setFocused(inv); setPrevView('list'); setView('type_select'); }}
+                    title="Solicitar modificación"
+                />
               </div>
             </div>
           );

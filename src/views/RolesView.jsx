@@ -696,20 +696,19 @@ const RolesView = ({ openModal }) => {
                                                 </div>
 
                                                 <div className={`flex items-center gap-1 transition-opacity ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
-                                                    <button
+                                                    <Button
+                                                        icon={Edit3}
+                                                        iconOnly
+                                                        size="sm"
+                                                        tone="warning"
+                                                        soft
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             isEditingThis ? handleCancelEdit() : handleEditClick(e, role);
                                                         }}
                                                         disabled={!canEdit}
-                                                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed ${isEditingThis
-                                                            ? 'bg-warning/10 text-warning border border-warning/40 hover:bg-warning-solid hover:text-white'
-                                                            : 'bg-surface-card border border-border-card text-warning hover:bg-warning/10 hover:text-warning'
-                                                            }`}
                                                         title={isEditingThis ? "Cancelar edición" : "Editar cargo"}
-                                                    >
-                                                        <Edit3 size={14} strokeWidth={2.5} />
-                                                    </button>
+                                                    />
                                                     <Button variant="destructive" size="sm" icon={Trash2} disabled={!canEdit} title="Eliminar cargo" iconOnly onClick={(e) => handleDeleteRoleRequest(e, role)} />
                                                 </div>
                                             </div>
@@ -727,16 +726,14 @@ const RolesView = ({ openModal }) => {
                                                     </div>
                                                 </div>
 
-                                                <button
+                                                <Button
+                                                    icon={ArrowUpRight}
+                                                    iconOnly
+                                                    size="md"
+                                                    variant="primary"
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
-                                                    className={`w-9 h-9 rounded-xl bg-surface-card border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
-                                                        ? 'border-warning/30 text-warning hover:bg-warning-solid hover:text-white'
-                                                        : 'border-divider text-content-3 hover:bg-brand hover:text-white hover:border-brand'
-                                                        }`}
                                                     title="Ver Empleados"
-                                                >
-                                                    <ArrowUpRight size={16} strokeWidth={2.5} />
-                                                </button>
+                                                />
                                             </div>
                                         </div>
                                     );

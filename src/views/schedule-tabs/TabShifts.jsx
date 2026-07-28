@@ -129,9 +129,15 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                 {!isArchived && !confirmAction && (
                     <>
                         <Button variant="secondary" icon={Copy} title="Duplicar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate(group); }} />
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[var(--shadow-elevation-sm)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-warning/10 text-warning border-warning/40' : 'bg-surface-card text-warning border-white hover:bg-surface-card-hover hover:text-warning'}`} title="Editar">
-                            <Edit3 size={12} strokeWidth={2.5} />
-                        </button>
+                        <Button
+                            icon={Edit3}
+                            iconOnly
+                            size="sm"
+                            tone="warning"
+                            soft
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }}
+                            title="Editar"
+                        />
                         <Button variant="secondary" icon={Archive} title="Archivar" iconOnly onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} />
                     </>
                 )}

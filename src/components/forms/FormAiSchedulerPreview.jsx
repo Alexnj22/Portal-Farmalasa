@@ -369,9 +369,15 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
                                                         {/* Mini Toolbar Editable */}
                                                         <div className="flex border-t border-divider bg-surface-card-hover/50 mt-auto">
-                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lunchTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lunchTime ? 'text-chart-4-text bg-chart-4/10' : 'text-content-3 hover:text-chart-4-text hover:bg-surface-card-hover'}`} title="Con/Sin Almuerzo">
-                                                                <Utensils size={11} strokeWidth={2.5}/>
-                                                            </button>
+                                                            <Button
+                                                                icon={Utensils}
+                                                                iconOnly
+                                                                size="sm"
+                                                                tone="chart-4"
+                                                                soft
+                                                                onClick={() => toggleModifier(emp.id, dayId, 'lunchTime')}
+                                                                title="Con/Sin Almuerzo"
+                                                            />
                                                             <div className="w-px bg-divider"></div>
                                                             <button onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-chart-6 bg-chart-6/10' : 'text-content-3 hover:text-chart-6 hover:bg-surface-card-hover'}`} title="Con/Sin Lactancia">
                                                                 <Baby size={11} strokeWidth={2.5}/>

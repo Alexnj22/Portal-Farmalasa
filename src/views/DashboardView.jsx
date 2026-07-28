@@ -335,9 +335,21 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
           <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
             <div className="flex items-center justify-between mb-3 px-1">
-              <button onClick={() => setViewYear(y => y - 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={14} strokeWidth={2.5} /></button>
+              <Button
+                  icon={ChevronLeft}
+                  iconOnly
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => setViewYear(y => y - 1)}
+              />
               <span className="text-body font-black text-content">{viewYear}</span>
-              <button onClick={() => setViewYear(y => y + 1)} className={`relative w-7 h-7 rounded-full flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-colors active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={14} strokeWidth={2.5} /></button>
+              <Button
+                  icon={ChevronRight}
+                  iconOnly
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => setViewYear(y => y + 1)}
+              />
             </div>
             <div className="grid grid-cols-3 gap-1">
               {MONTH_NAMES_SHORT.map((m, i) => {
@@ -1132,13 +1144,14 @@ const DashboardView = ({ openModal }) => {
             data-resize-panel
             className={`absolute bottom-3 right-3 z-tabs transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] ${isResizeOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.95] group-hover/drag:opacity-100 focus-within:opacity-100 group-hover/drag:scale-100'}`}
           >
-            <button
-              onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
-              className={`relative w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-brand border-brand text-white' : 'bg-surface-card border-divider text-content-3 hover:text-brand-text hover:border-brand/50'} ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}
-              title="Cambiar tamaño"
-            >
-              <Maximize2 size={11} strokeWidth={2.5} />
-            </button>
+            <Button
+                icon={Maximize2}
+                iconOnly
+                size="xs"
+                variant="primary"
+                onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
+                title="Cambiar tamaño"
+            />
 
             {isResizeOpen && (
               <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-150">
@@ -1184,9 +1197,22 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
             <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl px-1 py-0.5">
-              <button onClick={() => setTrendOffset(o=>o-1)} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronLeft size={13} strokeWidth={2.5} /></button>
+              <Button
+                  icon={ChevronLeft}
+                  iconOnly
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => setTrendOffset(o=>o-1)}
+              />
               <span className="text-label font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
-              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className={`relative w-6 h-6 rounded-lg flex items-center justify-center text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed ${isMobile ? "before:absolute before:content-[''] before:-inset-2" : ''}`}><ChevronRight size={13} strokeWidth={2.5} /></button>
+              <Button
+                  icon={ChevronRight}
+                  iconOnly
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => setTrendOffset(o=>Math.min(0,o+1))}
+                  disabled={trendOffset===0}
+              />
             </div>
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
@@ -1270,7 +1296,13 @@ const DashboardView = ({ openModal }) => {
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
-              {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className={`relative w-7 h-7 rounded-full flex items-center justify-center bg-surface-card-hover text-content-3 hover:bg-brand hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0 ${isMobile ? "before:absolute before:content-[''] before:-inset-1.5" : ''}`}><Maximize2 size={12} strokeWidth={2.5}/></button>}
+              {openModal&&<Button
+                              icon={Maximize2}
+                              iconOnly
+                              size="xs"
+                              variant="primary"
+                              onClick={()=>openModal('viewWfmAnalytics')}
+                          />}
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
               <div className="flex items-center bg-surface-card-hover p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<Button variant="secondary" icon={ChevronLeft} onClick={()=>setSalesView('DAYS')}>Días</Button>}
@@ -1527,9 +1559,21 @@ const DashboardView = ({ openModal }) => {
           // expandir el touch target de los chevrones sin solaparse con el
           // trigger de MonthYearPicker, v2.47.4)
           <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-0.5'}`}>
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}><ChevronLeft size={12} strokeWidth={2.5}/></button>
+            <Button
+                icon={ChevronLeft}
+                iconOnly
+                size="xs"
+                variant="secondary"
+                onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))}
+            />
             <MonthYearPicker value={calMonth} onChange={setCalMonth} isMobile={isMobile}/>
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-6 h-6 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-surface-card-hover transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}><ChevronRight size={12} strokeWidth={2.5}/></button>
+            <Button
+                icon={ChevronRight}
+                iconOnly
+                size="xs"
+                variant="secondary"
+                onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))}
+            />
           </div>
         }>
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
@@ -1626,9 +1670,21 @@ const DashboardView = ({ openModal }) => {
                 <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronLeft size={11} strokeWidth={2.5}/></button>
+                <Button
+                    icon={ChevronLeft}
+                    iconOnly
+                    size="xs"
+                    variant="primary"
+                    onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))}
+                />
                 <span className="text-caption font-black text-brand-text uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className={`relative w-5 h-5 flex items-center justify-center rounded-full text-content-3 hover:text-brand-text hover:bg-brand/8 transition-[background-color,color] active:scale-[0.97] ${isMobile ? "before:absolute before:content-[''] before:-inset-2.5" : ''}`}><ChevronRight size={11} strokeWidth={2.5}/></button>
+                <Button
+                    icon={ChevronRight}
+                    iconOnly
+                    size="xs"
+                    variant="primary"
+                    onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))}
+                />
               </div>
             </div>
           </div>

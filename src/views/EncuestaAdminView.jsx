@@ -996,11 +996,15 @@ export default function EncuestaAdminView() {
                                                 <Button variant="secondary" size="sm" icon={ChevronUp} onClick={e => { e.stopPropagation(); toggleExpand(s); }}>Colapsar</Button>
                                             )}
                                             {canManage && (
-                                            <button onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
-                                                className={`p-2.5 rounded-full transition-all duration-300 active:scale-[0.97] shadow-sm border ${isEditing ? 'bg-warning/10 text-warning border-warning/40 hover:bg-warning-solid hover:text-white' : 'bg-surface-card text-warning border-warning/30 hover:bg-warning/10 hover:text-warning hover:-translate-y-0.5 hover:shadow-md'}`}
-                                                title="Editar encuesta">
-                                                <Edit3 size={14} strokeWidth={2.5} />
-                                            </button>
+                                            <Button
+                                                icon={Edit3}
+                                                iconOnly
+                                                size="sm"
+                                                tone="warning"
+                                                soft
+                                                onClick={e => { e.stopPropagation(); loadSurveyIntoForm(s); }}
+                                                title="Editar encuesta"
+                                            />
                                             )}
                                         </div>
 

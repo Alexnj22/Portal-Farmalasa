@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
+import StatCard from '../../components/common/StatCard';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { normSearch } from '../../utils/searchUtils';
@@ -249,90 +250,55 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                     </div>
 
-                    <button
+                    {/* §16.x — estas cuatro eran la MISMA tarjeta escrita a mano,
+                        cuatro veces seguidas en el mismo bloque. `StatCard` ya la
+                        tenía, incluida la × al estar activa. */}
+                    <StatCard
+                        icon={AlertTriangle} iconBg={filterVencidos ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger"
+                        label="Vencidos" sub="por fecha"
+                        value={loading ? '–' : expiredTotal.toLocaleString()} valueCls="text-danger"
+                        active={filterVencidos}
+                        activeBg="bg-danger/10 border-danger/40 shadow-md"
                         onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
-                            filterVencidos
-                                ? 'bg-danger/10 border-danger/40 shadow-md shadow-red-100/80 -translate-y-px'
-                                : 'bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10'
-                        }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterVencidos ? 'bg-surface-card' : 'bg-danger/10'}`}>
-                            <AlertTriangle size={15} className="text-danger" />
-                        </div>
-                        <div className="text-left">
-                            <div className="text-title-lg font-black leading-none tabular-nums text-danger">
-                                {loading ? <span className="text-content-3">–</span> : expiredTotal.toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold text-content-2">Vencidos</div>
-                            <div className="text-micro text-content-3">por fecha</div>
-                        </div>
-                        {filterVencidos && <X size={11} className="text-content-3 ml-auto shrink-0" />}
-                    </button>
+                    />
 
-                    <button
+                    <StatCard
+                        icon={CalendarClock} iconBg={filterSixMonths ? 'bg-surface-card' : 'bg-chart-4/10'} iconCls="text-chart-4-text"
+                        label="Próx. a vencer" sub="en 6 meses"
+                        value={loading ? '–' : sixMonthsTotal.toLocaleString()} valueCls="text-chart-4-text"
+                        active={filterSixMonths}
+                        activeBg="bg-chart-4/10 border-chart-4/40 shadow-md"
                         onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); setFilterAreaVenc(false); }}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
-                            filterSixMonths
-                                ? 'bg-chart-4/10 border-chart-4/40 shadow-md shadow-orange-100/80 -translate-y-px'
-                                : 'bg-surface-card border-divider hover:border-chart-4/30 hover:bg-chart-4/10'
-                        }`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterSixMonths ? 'bg-surface-card' : 'bg-chart-4/10'}`}>
-                            <CalendarClock size={15} className="text-chart-4-text" />
-                        </div>
-                        <div className="text-left">
-                            <div className="text-title-lg font-black leading-none tabular-nums text-chart-4-text">
-                                {loading ? <span className="text-content-3">–</span> : sixMonthsTotal.toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold text-content-2">Próx. a vencer</div>
-                            <div className="text-micro text-content-3">en 6 meses</div>
-                        </div>
-                        {filterSixMonths && <X size={11} className="text-content-3 ml-auto shrink-0" />}
-                    </button>
+                    />
 
                     {isBodega && (
-                        <button
+                        <StatCard
+                            icon={PackageX} iconBg={filterAreaVenc ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
+                            label="Área vencidos" sub="ubicación bodega"
+                            value={loading ? '–' : Object.keys(vencidosMap).length.toLocaleString()} valueCls="text-danger-text"
+                            active={filterAreaVenc}
+                            activeBg="bg-danger/10 border-danger/50 shadow-md"
                             onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}
-                            className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
-                                filterAreaVenc
-                                    ? 'bg-danger/10 border-danger/50 shadow-md shadow-danger/20 -translate-y-px'
-                                    : 'bg-surface-card border-border-card hover:border-danger/30 hover:bg-danger/10'
-                            }`}>
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-surface-card' : 'bg-danger/10'}`}>
-                                <PackageX size={15} className="text-danger-text" />
-                            </div>
-                            <div className="text-left">
-                                <div className="text-title-lg font-black leading-none tabular-nums text-danger-text">
-                                    {loading ? <span className="text-content-3">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
-                                </div>
-                                <div className="text-caption font-bold text-content-2">Área vencidos</div>
-                                <div className="text-micro text-content-3">ubicación bodega</div>
-                            </div>
-                            {filterAreaVenc && <X size={11} className="text-content-3 ml-auto shrink-0" />}
-                        </button>
+                        />
                     )}
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-surface-card min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-success/10">
-                            <DollarSign size={15} className="text-success" />
-                        </div>
-                        <div className="text-left">
-                            <div className="text-title-lg font-black leading-none tabular-nums text-success-text">
-                                {loading
-                                    ? <span className="text-content-3">–</span>
-                                    : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                }
-                            </div>
-                            <div className="text-caption font-bold text-content-2">Inversión</div>
-                            <div className="text-micro text-content-3">costo sin IVA</div>
-                        </div>
-                    </div>
+                    <StatCard
+                        icon={DollarSign} iconBg="bg-success/10" iconCls="text-success"
+                        label="Inversión" sub="costo sin IVA"
+                        value={loading ? '–' : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        valueCls="text-success-text"
+                    />
 
                 </div>
 
+                {/* `ml-auto`: sin él la barra se queda pegada a la izquierda
+                    cuando las tarjetas envuelven a otra línea (§17 la quiere a
+                    la derecha). Mismo caso que TabMinMax y TabCatalogo. */}
                 {/* §17 — píldora escrita a mano, y encima `hidden lg:flex`:
                     bajo 1024px esta pestaña no tenía NINGÚN filtro. `FilterBar`
                     colapsa a hoja inferior en vez de desaparecer. */}
                 <FilterBar
+                    className="ml-auto"
                     onClear={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
                     activeCount={[selectedErp !== null, filterLab !== null, filterCat !== null].filter(Boolean).length}
                 >

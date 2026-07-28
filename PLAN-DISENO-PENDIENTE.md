@@ -1473,6 +1473,60 @@ para la misma fila; React lo avisa en consola. Se arregla con la anatomía de
 `ListRow` + `trailing`, que es familia B de D3.3 — no de rebote mientras se
 migra la barra de filtros.
 
+## D3.5 — `StatCard` · ✓ RESUELTA (v2.101.0): se adopta
+
+La pregunta era *"o se adopta, o se elimina si el patrón real resultó ser
+otro"*. **Medido: 17 tarjetas de métrica escritas a mano**, todas con la misma
+anatomía —caja de ícono, número, etiqueta, subtexto, y la × al estar activa—.
+El patrón es real; la respuesta es adoptarlo.
+
+Pero el canónico estaba mal en algo concreto, y solo se vio al medir:
+
+> **`StatCard` ponía la etiqueta arriba y el valor abajo. De las 10 tarjetas
+> comparables, las 10 ponen el valor arriba. Ninguna la etiqueta.**
+
+El canónico había elegido un orden que **no usaba nadie más** — el mismo
+hallazgo que con los aros de foco (existía y 171 lo tapaban) y con los ejes que
+le faltaban a `Button`. Invertido, con `aria-label` para que un lector de
+pantalla siga oyendo *"Vencidos: 500"* y no *"500, Vencidos"*.
+
+Y el orden importa: un tablero se **escanea**. Con el número arriba el ojo salta
+de dato en dato y la etiqueta confirma; con la etiqueta arriba hay que leer para
+encontrar el dato.
+
+### Dos defectos que solo aparecieron en la captura
+
+| | |
+|---|---|
+| `truncate` en el valor | `$331,327.89` se leía **`$331,3…`** |
+| `truncate` en etiqueta y subtexto | **`Modificados est…`** · `precios o datos ca…` |
+
+Los tres pasan a `whitespace-nowrap`: la tarjeta crece, que es lo que hacían las
+10 versiones a mano. Ninguno se ve leyendo el código — el `truncate` está desde
+que se escribió el canónico y parece correcto ahí.
+
+**Migradas 8** (`TabInventario` 4, `TabCatalogo` 4), verificadas con datos
+reales. Quedan 9 en `BranchesView`, `TabSinVenta`, `StaffManagementView`,
+`TabPedidos`, `DashboardView`, `LoginView` y `NotificationBell`.
+
+### Lo que NO se migró, y por qué
+
+Los **7 encabezados plegables de `FacturacionView`** se migraron a `ListRow`
+—que ya cubre esa anatomía: ícono, título, subtítulo y el chevron en
+`trailing`—, compilaban, pasaban el lint… y **se revirtieron**. La cuenta no
+tiene datos de facturación en ninguna pestaña ni mes, así que no había forma de
+mirarlos en el navegador.
+
+La regla del proyecto es que una migración en lote se mira antes de comitear, y
+una vista de facturación no es donde saltársela. Para retomarlo hace falta una
+cuenta o un mes con datos.
+
+### Hallazgo sobre este documento
+
+`PLAN-DISENO-PENDIENTE.md` tiene **D3.5, D3.6, D3.7 y D3.8 duplicadas**
+literalmente, de una copia-pega histórica. Por eso esta resolución va acá abajo
+y no reemplazando "la" sección D3.5: no hay una, hay dos. Es trabajo de D4.
+
 ## Móvil — cuatro reportes del usuario, los cuatro reproducidos (v2.100.0)
 
 Reproducidos en **WebKit con un iPhone 13**, no en Chromium con el viewport

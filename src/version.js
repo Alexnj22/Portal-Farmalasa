@@ -5,7 +5,51 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.100.1';
+export const APP_VERSION = '2.101.0';
+
+// v2.101.0 — D3.5: `StatCard` adoptado, y corregido contra la medicion.
+//
+// El plan decia de `StatCard`: "o se adopta, o se elimina si el patron real
+// resulto ser otro — un canonico con 1 import es peor que ninguno". Medido
+// antes de decidir: **17 tarjetas de metrica escritas a mano** con la misma
+// anatomia (caja de icono + numero + etiqueta + subtexto, y la × al estar
+// activa). O sea que el patron era real y la respuesta es adoptarlo.
+//
+// Pero el canonico estaba mal en algo concreto, y solo se vio al medir:
+//
+//   ORDEN — `StatCard` ponia la ETIQUETA arriba y el valor abajo. De las 10
+//   tarjetas a mano que se pudieron comparar, **las 10 ponen el valor
+//   arriba**; ninguna la etiqueta. El canonico habia elegido un orden que no
+//   usaba nadie mas. Es el mismo hallazgo que con los aros de foco (el
+//   canonico existia y 171 lo tapaban) y con los ejes que le faltaban a
+//   `Button`. Invertido, con `aria-label` para que un lector de pantalla
+//   siga oyendo "Vencidos: 500" y no "500, Vencidos".
+//
+//   Y el orden importa: un tablero se ESCANEA. Con el numero arriba el ojo
+//   salta de dato en dato y la etiqueta confirma; con la etiqueta arriba hay
+//   que leer para encontrar el dato.
+//
+// Dos defectos del canonico que solo aparecieron EN LA CAPTURA, no leyendo:
+//   · `truncate` en el valor → "$331,327.89" se leia "$331,3…". Un numero
+//     cortado no comunica nada.
+//   · `truncate` en etiqueta y subtexto → "Modificados est…", "precios o
+//     datos ca…". Lo mismo.
+//   Los tres pasan a `whitespace-nowrap`: la tarjeta crece, que es
+//   exactamente lo que hacian las 10 versiones a mano.
+//
+// Migradas: TabInventario (4) y TabCatalogo (4). Verificadas con datos
+// reales — 14,109 productos, 500 vencidos, $331,318.64 de inversion.
+//
+// Y de paso, el bug de `flex-1` al envolver que ya se corrigio en TabMinMax
+// y TabCatalogo estaba tambien en TabInventario: la barra de filtros se
+// quedaba a la IZQUIERDA cuando las tarjetas bajaban de linea.
+//
+// NO migrado a proposito: los 7 encabezados plegables de `FacturacionView`.
+// Se migraron a `ListRow`, compilaban y pasaban el lint, y se REVIRTIERON:
+// la cuenta no tiene datos de facturacion en ningun mes ni pestaña, asi que
+// no habia forma de mirarlos en el navegador. La regla del proyecto es que
+// una migracion en lote se ve antes de comitear, y una vista de facturacion
+// no es donde saltarsela. Queda anotado en el plan con la razon.
 
 // v2.100.1 — Dos cierres del bloque movil, los dos vistos en la captura.
 //

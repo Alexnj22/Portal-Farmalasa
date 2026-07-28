@@ -61,6 +61,9 @@ export default function StatCard({
         <Tag
             type={isClickable ? 'button' : undefined}
             onClick={onClick}
+            // El DOM dice "12, Vencidos" porque el valor va primero; esto lo
+            // devuelve al orden en que una persona lo diría.
+            aria-label={loading ? undefined : `${label}: ${value ?? 0}${sub ? `, ${sub}` : ''}`}
             disabled={isClickable && loading ? true : undefined}
             {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
             className={`
@@ -81,22 +84,42 @@ export default function StatCard({
                 }
             </div>
 
-            {/* Bloque de texto */}
+            {/* Bloque de texto — EL VALOR VA ARRIBA.
+                Hasta el 2026-07-28 este canónico ponía la etiqueta primero. Al
+                medir las tarjetas de métrica escritas a mano en el portal
+                aparecieron **10, y las 10 ponen el valor arriba**; ninguna la
+                etiqueta. O sea que el canónico había elegido un orden que no
+                usaba nadie más — el mismo hallazgo que con los aros de foco y
+                con los ejes que le faltaban a `Button`.
+                Y el orden importa: un tablero se ESCANEA, el ojo salta de
+                número en número y la etiqueta confirma. Con la etiqueta
+                primero hay que leer para encontrar el dato.
+                Lo que se pierde así es el orden de lectura de un lector de
+                pantalla ("12, Vencidos"), y por eso la tarjeta lleva
+                `aria-label` con el orden natural. */}
             <div className="flex flex-col min-w-0 flex-1 text-left">
-
-                {/* Label -- arriba del numero */}
-                {loading
-                    ? <div className="skeleton h-[9px] w-14 mb-1.5 rounded" />
-                    : <span className="text-caption font-bold uppercase tracking-wider text-content-3 leading-none mb-1 truncate">
-                        {label}
-                      </span>
-                }
 
                 {/* Valor / numero principal */}
                 {loading
                     ? <div className="skeleton h-[22px] w-12 rounded" />
-                    : <span className={`text-title-sm font-black tabular-nums leading-none truncate ${valueCls}`}>
+                    // Sin `truncate`: un número cortado no comunica nada — se
+                    // vio en Inventario, donde "$331,327.89" se leía "$331,3…".
+                    // La tarjeta tiene `flex-1 basis-0` y `min-w` es un mínimo,
+                    // no un máximo: que crezca es exactamente lo correcto.
+                    : <span className={`text-title-sm font-black tabular-nums leading-none whitespace-nowrap ${valueCls}`}>
                         {value ?? 0}
+                      </span>
+                }
+
+                {loading
+                    ? <div className="skeleton h-[9px] w-14 mt-1.5 rounded" />
+                    // Ni la etiqueta ni el subtexto se truncan, por la misma
+                    // razón que el valor: "Modificados est…" no dice nada. La
+                    // tarjeta crece; con `flex-1 basis-0` las anchas se llevan
+                    // más espacio de la fila, que es lo que hacían las 10
+                    // versiones a mano antes de migrar.
+                    : <span className="text-caption font-bold text-content-2 leading-none mt-1 whitespace-nowrap">
+                        {label}
                       </span>
                 }
 
@@ -106,7 +129,7 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] truncate">
+                <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] whitespace-nowrap">
                     {!loading ? sub : ''}
                 </span>
             </div>

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
+import StatCard from '../../components/common/StatCard';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
@@ -184,53 +185,30 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 </div>
             </div>
 
-            {/* Nuevos filter card */}
-            <button
+            {/* §16.x — estas tarjetas de métrica eran la misma anatomía escrita
+                a mano. `StatCard` ya la tenía, con la × al estar activa incluida. */}
+            <StatCard
+                icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success"
+                label="Nuevos este mes"
+                sub={`agregados en ${new Date().toLocaleDateString('es-SV', { month: 'long' })}`}
+                value={productStatsLoading ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
+                valueCls="text-success"
+                active={filterNuevos} inactiveBg={nuevosBg}
+                activeBg={nuevosBg}
+                loading={productStatsLoading}
                 onClick={onFilterNuevos}
-                disabled={productStatsLoading}
-                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${nuevosBg}`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${nuevosIconBg}`}>
-                    <Sparkles size={15} className={'text-success'} />
-                </div>
-                <div className="text-left min-w-0">
-                    <div className={`text-title-lg font-black leading-none tabular-nums ${'text-success'}`}>
-                        {productStatsLoading ? <span className={'text-content-3'}>–</span> : (productStats?.nuevos ?? 0).toLocaleString()}
-                    </div>
-                    <div className={`text-caption font-bold leading-tight ${statLabel}`}>Nuevos este mes</div>
-                    <div className={`text-micro ${statSub}`}>agregados en {new Date().toLocaleDateString('es-SV', { month: 'long' })}</div>
-                </div>
-                {filterNuevos && <X size={11} className={`${'text-content-3'} ml-auto shrink-0`} />}
-            </button>
+            />
 
-            {/* Modificados este mes filter card */}
-            <button
+            <StatCard
+                icon={History} iconBg={filterModificados ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning"
+                label="Modificados este mes" sub="precios o datos cambiados"
+                value={modificadosLoading ? '–' : (modificadosStats?.count ?? 0).toLocaleString()}
+                valueCls={(modificadosStats?.count ?? 0) > 0 ? 'text-warning' : 'text-content-3'}
+                active={filterModificados}
+                activeBg="bg-warning/10 border-warning/40 shadow-md"
+                loading={modificadosLoading}
                 onClick={onFilterModificados}
-                disabled={modificadosLoading}
-                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[140px] disabled:opacity-40 disabled:cursor-wait ${
-                    filterModificados
-                        ? 'bg-warning/10 border-warning/40 shadow-md shadow-amber-100/80 -translate-y-px'
-                        : 'bg-surface-card border-divider hover:border-warning/30 hover:bg-warning/10'
-                }`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    filterModificados
-                        ? 'bg-surface-card'
-                        : 'bg-warning/10'
-                }`}>
-                    <History size={15} className={'text-warning'} />
-                </div>
-                <div className="text-left min-w-0">
-                    <div className={`text-title-lg font-black leading-none tabular-nums ${
-                        (modificadosStats?.count ?? 0) > 0
-                            ? 'text-warning'
-                            : 'text-content-3'
-                    }`}>
-                        {modificadosLoading ? <span className={'text-content-3'}>–</span> : (modificadosStats?.count ?? 0).toLocaleString()}
-                    </div>
-                    <div className={`text-caption font-bold leading-tight ${statLabel}`}>Modificados este mes</div>
-                    <div className={`text-micro ${statSub}`}>precios o datos cambiados</div>
-                </div>
-                {filterModificados && <X size={11} className={`${'text-content-3'} ml-auto shrink-0`} />}
-            </button>
+            />
 
             {/* Divider */}
             <div className={`w-px h-14 self-center hidden sm:block ${divider}`} />
@@ -239,24 +217,15 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             {filterCardDef.map(c => {
                 const active = filterMargin === c.id;
                 return (
-                    <button key={c.id}
+                    <StatCard key={c.id}
+                        icon={c.Icon} iconBg={c.iconBg} iconCls={c.iconColor}
+                        label={c.label} sub={c.sub}
+                        value={loading ? '–' : c.count.toLocaleString()} valueCls={c.countColor}
+                        active={active}
+                        activeBg={`${c.activeBg} shadow-md`} inactiveBg={c.inactiveBg}
+                        loading={loading}
                         onClick={() => onFilter(c.id)}
-                        disabled={loading}
-                        className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[160px] ${
-                            active ? c.activeBg + ' shadow-md -translate-y-px' : c.inactiveBg
-                        } disabled:opacity-40 disabled:cursor-wait`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${c.iconBg}`}>
-                            <c.Icon size={15} className={c.iconColor} />
-                        </div>
-                        <div className="text-left min-w-0">
-                            <div className={`text-title-lg font-black leading-none tabular-nums ${c.countColor}`}>
-                                {loading ? <span className={'text-content-3'}>–</span> : c.count.toLocaleString()}
-                            </div>
-                            <div className={`text-caption font-bold leading-tight ${statLabel}`}>{c.label}</div>
-                            <div className={`text-micro ${statSub}`}>{c.sub}</div>
-                        </div>
-                        {active && <X size={11} className={`${'text-content-3'} ml-auto shrink-0`} />}
-                    </button>
+                    />
                 );
             })}
         </div>

@@ -14,10 +14,11 @@ hallazgo nuevo se documenta siempre, se resuelva o no.
 | **D3.8 baseline del gate** | ✓ **cerrada** — las 11 categorías en **0 y bloqueantes**, sin baseline |
 | **§17 barra de filtros** | 18 vistas con `FilterBar` (eran 4) |
 | **Móvil** | ✓ los 4 reportes del usuario, reproducidos y resueltos |
-| D3.3 botones | **137** — 51 fila/tarjeta · 40 acción · 36 uno-de-N · 6 bespoke · 4 composición |
+| D3.3 botones | **119** — 49 fila/tarjeta · 60 acción · 6 bespoke · 4 composición. **Uno-de-N cerrada** |
 | **D3.4 accesibilidad de campos** | ✓ **cerrada** — 22 campos sin nombre accesible corregidos; `input-label` nace en 0 y bloqueante |
-| D3.4 inputs de texto | ~100 fuera de `PortalInput` (los nativos ya son **0**) |
-| D3.5 `Badge` | abierta — el conteo no se re-midió |
+| D3.4 inputs de texto | **102** fuera de `PortalInput`. ✓ **Desbloqueada**: el canónico ya reenvía props (v2.115.0) |
+| D3.5 `Badge` | **102** chips a mano en 50 archivos (eran 249). `Badge` ya reenvía props (v2.114.0) |
+| **Teclado en tablas** | ✓ **cerrada** — `DataRow` clickeable no era alcanzable por teclado en ninguna vista (v2.113.0) |
 | D4 reescribir `DESIGN.md` | abierta |
 
 > **Cómo leer este documento.** Crece por el FINAL: las secciones de arriba son
@@ -28,6 +29,31 @@ hallazgo nuevo se documenta siempre, se resuelva o no.
 > Y una advertencia que se ganó a pulso: **casi todos los conteos publicados
 > acá estuvieron mal alguna vez**, siempre por contar por forma en vez de abrir
 > cada caso. Ver «D3.3 · el conteo real» para los cuatro errores y sus causas.
+> El quinto apareció el 2026-07-28: el clasificador **no blanqueaba comentarios
+> `//`**, así que contaba la palabra `<button>` escrita en prosa (126 → 120).
+> Es el mismo agujero que ya había costado dos conteos en el gate de
+> `input-label` (80 → 29 → 22). Regla: **antes de publicar un conteo, blanquear
+> las tres formas de comentario** (`//`, `/* */`, `{/* */}`).
+
+---
+
+## Lo aprendido el 2026-07-28: el defecto suele estar en el canónico
+
+Tres de los cuatro hallazgos del día no estaban en las vistas sino en el
+componente al que se estaba migrando. Es un patrón, no coincidencia: una vista
+mal escrita afecta a una pantalla; un canónico con un hueco **convierte cada
+migración en una pérdida silenciosa**.
+
+| Canónico | El hueco | Lo que se habría perdido |
+|---|---|---|
+| `DataRow` | `<tr onClick>` sin `tabIndex` ni teclas | Abrir cualquier fila con teclado, en 8 vistas |
+| `Badge` | sin `...rest` | El `title` con el porqué de cada categoría |
+| `PortalInput` / `PortalTextarea` | sin `...rest` | `min`/`max`/`step` de nómina y **22 `aria-label`** |
+
+**Regla que sale de esto:** antes de migrar N sitios a un canónico, comparar la
+lista de props que el canónico ACEPTA contra los atributos que usan los N
+sitios. Si la diferencia no es vacía, el canónico se arregla primero. Es una
+medición de dos minutos que acá evitó romper campos de captura de nómina.
 
 ---
 

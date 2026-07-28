@@ -19,6 +19,7 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SegmentedControl from '../components/common/SegmentedControl';
+import ListRow from '../components/common/ListRow';
 import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
     fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
@@ -815,18 +816,20 @@ export default function EncuestaAdminView() {
                                     const answered = gqs.filter(p => rfAnswers[p.indice] !== null).length;
                                     return (
                                         <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
-                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
-                                                onClick={() => setRfOpenBloques(p => ({ ...p, general: !p.general }))}>
-                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-label font-black text-white shrink-0 bg-content-3">
-                                                    G
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <span className="text-body-sm font-black text-content">Datos Generales</span>
-                                                    <span className="ml-2 text-caption text-content-3 font-semibold">{answered}/{gqs.length}</span>
-                                                </div>
-                                                {answered === gqs.length && <Check size={13} className="text-success shrink-0" strokeWidth={3} />}
-                                                {isOpen ? <ChevronUp size={13} className="text-content-3 shrink-0" /> : <ChevronDown size={13} className="text-content-3 shrink-0" />}
-                                            </button>
+                                            {/* La ranura `leading` de `ListRow` acepta una LETRA,
+                                                no solo un ícono — se agregó precisamente por estos
+                                                bloques de encuesta ("G", "B3"). */}
+                                            <ListRow density="sm"
+                                                leading={<span className="text-label font-black text-white">G</span>}
+                                                iconBoxClass="bg-content-3 border-transparent"
+                                                title={<>Datos Generales<span className="ml-2 text-caption text-content-3 font-semibold">{answered}/{gqs.length}</span></>}
+                                                onClick={() => setRfOpenBloques(p => ({ ...p, general: !p.general }))}
+                                                aria-expanded={isOpen}
+                                                className="rounded-none border-x-0 border-t-0 px-4"
+                                                trailing={<>
+                                                    {answered === gqs.length && <Check size={13} className="text-success" strokeWidth={3} />}
+                                                    {isOpen ? <ChevronUp size={13} className="text-content-3" /> : <ChevronDown size={13} className="text-content-3" />}
+                                                </>} />
                                             {isOpen && (
                                                 <div className="border-t border-border-card">
                                                     {gqs.map((p, qi) => {
@@ -863,18 +866,17 @@ export default function EncuestaAdminView() {
                                     const barCls = BAR_COLORS[bloque.color] || 'bg-content-3';
                                     return (
                                         <div key={bloque.id} className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-sm overflow-hidden">
-                                            <button className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-card transition-colors"
-                                                onClick={() => setRfOpenBloques(p => ({ ...p, [bloque.id]: !p[bloque.id] }))}>
-                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-label font-black text-white shrink-0 ${barCls}`}>
-                                                    B{bloque.numero}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <span className="text-body-sm font-black text-content">{bloque.nombre}</span>
-                                                    <span className="ml-2 text-caption text-content-3 font-semibold">{answered}/{bqs.length}</span>
-                                                </div>
-                                                {answered === bqs.length && <Check size={13} className="text-success shrink-0" strokeWidth={3} />}
-                                                {isOpen ? <ChevronUp size={13} className="text-content-3 shrink-0" /> : <ChevronDown size={13} className="text-content-3 shrink-0" />}
-                                            </button>
+                                            <ListRow density="sm"
+                                                leading={<span className="text-label font-black text-white">B{bloque.numero}</span>}
+                                                iconBoxClass={`${barCls} border-transparent`}
+                                                title={<>{bloque.nombre}<span className="ml-2 text-caption text-content-3 font-semibold">{answered}/{bqs.length}</span></>}
+                                                onClick={() => setRfOpenBloques(p => ({ ...p, [bloque.id]: !p[bloque.id] }))}
+                                                aria-expanded={isOpen}
+                                                className="rounded-none border-x-0 border-t-0 px-4"
+                                                trailing={<>
+                                                    {answered === bqs.length && <Check size={13} className="text-success" strokeWidth={3} />}
+                                                    {isOpen ? <ChevronUp size={13} className="text-content-3" /> : <ChevronDown size={13} className="text-content-3" />}
+                                                </>} />
                                             {isOpen && (
                                                 <div className="border-t border-border-card">
                                                     {bqs.map((p, qi) => {

@@ -16,7 +16,17 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.107.0';
+export const APP_VERSION = '2.107.1';
+
+// v2.107.1 — Los 8 bloques de encuesta a `ListRow`.
+//
+// Las cabeceras de bloque del formulario de respuestas ("G · Datos Generales
+// 0/1", "B2 · Liderazgo Directo 0/11") estaban escritas a mano. Son `ListRow`
+// con la ranura `leading` — que acepta una LETRA y no solo un icono, y que se
+// agrego al canonico precisamente por estos bloques.
+//
+// Verificado en vivo navegando hasta el formulario: los 8 bloques con su
+// letra, su nombre, su contador y su chevron, identicos a antes.
 
 // v2.107.0 — Dos filas del Inicio a `ListRow`, y un detalle que solo el
 // canonico arregla.

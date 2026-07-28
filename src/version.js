@@ -5,7 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.101.1';
+export const APP_VERSION = '2.102.0';
+
+// v2.102.0 — D3.8: `shadow-literal` de 28 a CERO, y bloqueante para siempre.
+//
+// Al mirar las 28 una por una no eran 28 decisiones de sombra: eran cuatro
+// grupos, y dos de ellos ni siquiera pertenecian a esta categoria.
+//
+//   13  glows de estado con el color QUEMADO en rgba. Los 7 chips de Min/Max
+//       brillaban `rgba(239,68,68,.22)` para "sin stock", etc. La escala
+//       `--shadow-glow-*-{sm,md,lg}` YA EXISTIA y ninguno la usaba, asi que un
+//       cambio de paleta no los alcanzaba: el chip seguia brillando del rojo
+//       viejo. Mismo caso en LiquidToast (×2) y en la flecha del tooltip de
+//       Facturacion (×4, el mismo literal copiado).
+//
+//   11  elevaciones de dos y tres capas que caen exactas en las bandas de
+//       `--shadow-elevation-*` (BranchChips, TabExpediente, las tarjetas
+//       apiladas de EmployeeAnnouncements).
+//
+//    3  `drop-shadow`, que NO ES `box-shadow`: una sigue la silueta alfa del
+//       elemento —un icono, un PNG con transparencia— y la otra la caja.
+//       Pedirle a un halo de icono un token de elevacion es pedirle que sea
+//       otra cosa. **El gate estaba mal, no el codigo**: ahora su regex lleva
+//       `(?<!drop-)`.
+//
+//    1  excepcion real y documentada: el filo del item activo del menu es el
+//       unico glow BICOLOR del portal (verde + magenta del logo). La escala es
+//       de un color por token; un token propio para esto seria una escala de
+//       uno.
+//
+// Y uno de los 28 escondia un bug de tema: la linea de la linea de tiempo de
+// `TabHistory` tenia `bg-surface-card shadow-[0_0_10px_rgba(255,255,255,1)]` —
+// un halo BLANCO OPACO fijo, que sobre los dos temas oscuros dibujaba una raya
+// luminosa. Ahora es `bg-divider`, que es lo que un separador es.
+//
+// La categoria queda en 0 y bloqueante: verificado metiendo una sombra literal
+// a proposito y viendo al gate fallar.
 
 // v2.101.1 — D3.8: el modulo Min/Max no seguia el tema. `inline-color` 58 → 37.
 //

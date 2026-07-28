@@ -16,7 +16,7 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
         return {
             state: 'pending_receipt',
             label: 'Recibo Pendiente',
-            colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[0_0_15px_rgba(217,70,239,0.15)] ring-1 ring-chart-6/30'
+            colorClass: 'border-chart-6 bg-chart-6/10 text-chart-6-text shadow-[var(--shadow-glow-chart-6-md)] ring-1 ring-chart-6/30'
         };
     }
 

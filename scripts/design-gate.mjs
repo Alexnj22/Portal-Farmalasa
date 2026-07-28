@@ -76,7 +76,10 @@ const EXCEPTIONS = {
   // backdrop para cerrar (patrón de modal estándar, cierra siempre sin
   // importar el texto tipeado, a diferencia de un buscador inline donde
   // perder el texto por accidente sí importa). Ver MenuSearchModal.jsx.
-  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index'],
+  // 'shadow-literal': el filo del ítem activo es el único glow BICOLOR del
+  // portal (verde + magenta del logo). La escala --shadow-glow-* es de un color
+  // por token; un token propio para esto sería una escala de uno.
+  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index', 'shadow-literal'],
   'src/views/branch-tabs/TabStaff.jsx': ['color', 'native'], // panel WFM dark + shimmer IA
   'src/components/forms/FormWfmAnalytics.jsx': ['color'], // tooltip flotante dark
   'src/components/timeclock/IdleScanPanel.jsx': ['color'], // kiosco
@@ -400,7 +403,12 @@ const RING_ALPHA_RE = /(?<![:\w-])ring-1\s+ring-(?:brand|success|warning|danger|
 const INERT_RE = /\?\s*(['"])[^'"]*\1\s*:\s*(['"])[^'"]*\2/g;
 const HIDDEN_BRANCH = /(['"])([^'"]*)\1/g;
 
-const SHADOW_LITERAL_RE = /shadow-\[(?!var\(--)[^\]]+\]/g;
+// `(?<!drop-)`: `drop-shadow` NO es `box-shadow` y la escala `--shadow-*` no le
+// aplica — una sigue la silueta alfa del elemento (un ícono, un PNG con
+// transparencia) y la otra la caja. Pedirle a un halo de ícono que use un token
+// de elevación es pedirle que sea otra cosa. Detectado el 2026-07-28 al bajar
+// esta categoría a 4: los 4 "restantes" eran 3 drop-shadow y un glow bicolor.
+const SHADOW_LITERAL_RE = /(?<!drop-)shadow-\[(?!var\(--)[^\]]+\]/g;
 
 // ── Categoría 9: motion (D0.5, 2026-07-26) ──────────────────────────────
 // La regla vieja ("no new framer-motion usage") baneaba la librería entera

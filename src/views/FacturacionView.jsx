@@ -495,7 +495,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                             <p className={`text-body font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{fmt(r.total)}</p>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
                                                                 </div>
                                                             </div>
                                                         );
@@ -970,7 +970,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         </div>
                                                                     </div>
                                                                     {/* Arrow */}
-                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                    <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
                                                                 </div>
                                                             </div>
                                                         );
@@ -1294,7 +1294,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                         <p className="font-mono text-label font-semibold text-content-2">{g.siguiente_correlativo}</p>
                                                                     </div>}
                                                                 </div>
-                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
                                                             </div>
                                                         </div>
                                                     );
@@ -1399,7 +1399,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[2px_2px_4px_rgba(0,0,0,0.06)]" />
+                                                                <div className="w-3 h-3 bg-surface-card border-r border-b border-divider rotate-45 mx-auto -mt-1.5 shadow-[var(--shadow-elevation-xs)]" />
                                                             </div>
                                                         </div>
                                                     );

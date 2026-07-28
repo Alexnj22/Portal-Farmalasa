@@ -470,7 +470,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   })());
 
   const cardBg = isToday
-    ? 'bg-brand/[0.09] border-brand/25 shadow-[0_0_0_1px_rgba(0,82,204,0.1),0_2px_8px_rgba(0,82,204,0.08)]'
+    ? 'bg-brand/[0.09] border-brand/25 shadow-[var(--shadow-glow-brand-sm)]'
     : isFuture
     ? 'bg-surface-card-hover border-black/[0.04]'
     : 'bg-surface-card border-black/[0.07] shadow-[var(--shadow-elevation-sm)]';

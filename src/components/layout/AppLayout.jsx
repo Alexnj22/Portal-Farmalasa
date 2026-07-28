@@ -882,7 +882,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                                 style={{ top: pill.top, height: pill.height }}
                             >
-                                <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_rgba(152,29,151,0.7),0_0_20px_rgba(142,195,15,0.35)]" />
+                                {/* Único glow BICOLOR del portal: el filo del ítem activo lleva los dos
+                        colores reales del logo (verde y magenta) para que la marca se lea
+                        en el borde. La escala `--shadow-glow-*` es de un color por token,
+                        así que este no cabe ahí — y hacerle un token propio sería una
+                        escala de uno. Documentado como excepción en el gate. */}
+                    <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_rgba(152,29,151,0.7),0_0_20px_rgba(142,195,15,0.35)]" />
                             </div>
 
                             {visibleGroups.map(g => renderGroup(g))}

@@ -425,10 +425,10 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div
                         className={`rounded-header border flex flex-col transition-all duration-500 group/card hover:-translate-y-1.5 ${
                             phase === 'check'
-                                ? 'border-success/50 shadow-[0_16px_60px_rgba(16,185,129,0.25),0_0_0_2px_rgba(16,185,129,0.2)] bg-surface-card'
+                                ? 'border-success/50 shadow-[var(--shadow-glow-success-lg)] bg-surface-card'
                                 : isUrgent
-                                ? 'border-danger/30   shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(239,68,68,0.10),0_24px_60px_rgba(0,0,0,0.07)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(239,68,68,0.18),0_32px_80px_rgba(0,0,0,0.1)] bg-surface-card'
-                                : 'border-divider shadow-[0_4px_6px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.07),0_24px_60px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_10px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.11),0_32px_80px_rgba(0,0,0,0.08)] bg-surface-card'
+                                ? 'border-danger/30   shadow-[var(--shadow-glow-danger-lg)] hover:shadow-[var(--shadow-glow-danger-lg)] bg-surface-card'
+                                : 'border-divider shadow-[var(--shadow-elevation-xl)] hover:shadow-[var(--shadow-elevation-xl)] bg-surface-card'
                         }`}
                     >
                         <div className="p-7 flex flex-col gap-5">

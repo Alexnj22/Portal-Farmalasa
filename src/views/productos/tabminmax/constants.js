@@ -19,14 +19,21 @@ export const ALERT = {
 // Alert stat chips — usados por useMinMaxData.js (inicializar contadores) y
 // por TabMinMax.jsx (render de los chips de filtro). Extraído de TabMinMax.jsx
 // a este archivo compartido (Bloque 6.C, continuación) para que ambos lo importen.
+//
+// D3.8 (2026-07-28): los siete glows eran `rgba()` literales con el color de
+// cada estado quemado — `rgba(239,68,68,.22)` para "sin stock", etc. La escala
+// `--shadow-glow-*-{sm,md,lg}` ya existía y ninguno la usaba, así que un cambio
+// de paleta no los alcanzaba: el chip seguía brillando del rojo viejo. El de
+// "sin movimiento" no era un glow sino una sombra gris, y por eso va a
+// `--shadow-elevation-sm`.
 export const STAT_CFGS = [
-    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-stock-out',         active: 'bg-stock-out/20 backdrop-blur-sm border-stock-out/40 text-danger-text shadow-[0_3px_14px_rgba(239,68,68,0.22)]',             chipActive: 'bg-stock-out/10 text-danger-text'       },
-    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-stock-below-min',   active: 'bg-stock-below-min/20 backdrop-blur-sm border-stock-below-min/40 text-chart-4-text shadow-[0_3px_14px_rgba(249,115,22,0.22)]',   chipActive: 'bg-stock-below-min/10 text-chart-4-text' },
-    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-stock-approaching', active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[0_3px_14px_rgba(245,158,11,0.22)]',      chipActive: 'bg-stock-approaching/10 text-warning-text'   },
-    { key: 'ok',           label: 'OK',              dot: 'bg-stock-ok', active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[0_3px_14px_rgba(16,185,129,0.22)]', chipActive: 'bg-stock-ok/10 text-success-text'},
-    { key: 'overstocked',  label: 'Excesos',         dot: 'bg-stock-overstocked',    active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[0_3px_14px_rgba(59,130,246,0.22)]',         chipActive: 'bg-stock-overstocked/10 text-chart-1-text'     },
-    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-stock-dead',   active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2 shadow-[0_3px_14px_rgba(148,163,184,0.18)]',     chipActive: 'bg-surface-card-hover text-content-2'  },
-    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-stock-no-data',   active: 'bg-stock-no-data/20 backdrop-blur-sm border-stock-no-data/40 text-chart-7-text shadow-[0_3px_14px_rgba(234,179,8,0.18)]',    chipActive: 'bg-stock-no-data/10 text-chart-7-text' },
+    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-stock-out',         active: 'bg-stock-out/20 backdrop-blur-sm border-stock-out/40 text-danger-text shadow-[var(--shadow-glow-danger-md)]',             chipActive: 'bg-stock-out/10 text-danger-text'       },
+    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-stock-below-min',   active: 'bg-stock-below-min/20 backdrop-blur-sm border-stock-below-min/40 text-chart-4-text shadow-[var(--shadow-glow-chart-4-md)]',   chipActive: 'bg-stock-below-min/10 text-chart-4-text' },
+    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-stock-approaching', active: 'bg-stock-approaching/20 backdrop-blur-sm border-stock-approaching/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',      chipActive: 'bg-stock-approaching/10 text-warning-text'   },
+    { key: 'ok',           label: 'OK',              dot: 'bg-stock-ok', active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]', chipActive: 'bg-stock-ok/10 text-success-text'},
+    { key: 'overstocked',  label: 'Excesos',         dot: 'bg-stock-overstocked',    active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]',         chipActive: 'bg-stock-overstocked/10 text-chart-1-text'     },
+    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-stock-dead',   active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2 shadow-[var(--shadow-elevation-sm)]',     chipActive: 'bg-surface-card-hover text-content-2'  },
+    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-stock-no-data',   active: 'bg-stock-no-data/20 backdrop-blur-sm border-stock-no-data/40 text-chart-7-text shadow-[var(--shadow-glow-chart-7-md)]',    chipActive: 'bg-stock-no-data/10 text-chart-7-text' },
 ];
 // Solo estos chips se muestran en el filtro bar
 export const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];

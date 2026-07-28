@@ -86,7 +86,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
 
-                                <div className="bg-surface-card backdrop-blur-2xl border border-chart-3/30 p-4 rounded-2xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
+                                <div className="bg-surface-card backdrop-blur-2xl border border-chart-3/30 p-4 rounded-2xl shadow-[var(--shadow-glow-chart-3-lg)] relative overflow-hidden">
 
                                     {/* Fondo de luz sutil interno (Estilo holográfico) */}
                                     <div className="absolute inset-0 pointer-events-none z-0">
@@ -95,7 +95,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                     </div>
 
                                     {/* Flechita decorativa del tooltip */}
-                                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-surface-card border-l border-t border-chart-3/30 transform rotate-45 shadow-[-2px_-2px_4px_rgba(0,0,0,0.02)]"></div>
+                                    <div className="absolute -top-1.5 left-3 w-3 h-3 bg-surface-card border-l border-t border-chart-3/30 transform rotate-45 shadow-[var(--shadow-elevation-xs)]"></div>
 
                                     {/* Header del Tooltip */}
                                     <div className="flex items-center gap-2 mb-3 relative z-base border-b border-chart-3/30 pb-2.5">

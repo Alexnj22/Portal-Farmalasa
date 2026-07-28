@@ -436,7 +436,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 <div inert={aiMode ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${!aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 -translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     
                     {/* Línea Central Estética */}
-                    <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-surface-card shadow-[0_0_10px_rgba(255,255,255,1)] md:-translate-x-1/2 rounded-full"></div>
+                    <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-[2px] bg-divider md:-translate-x-1/2 rounded-full"></div>
 
                     {isLoadingHistory ? (
                         /* SKELETON DE LÍNEA DE TIEMPO */

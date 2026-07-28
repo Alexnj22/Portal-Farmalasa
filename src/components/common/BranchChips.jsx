@@ -147,7 +147,7 @@ const BranchChips = ({
         {/* Slider activo */}
         <div
           className={`absolute top-2 bottom-2 bg-surface-tab-active rounded-2xl
-            shadow-[0_10px_22px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.06)]
+            shadow-[var(--shadow-elevation-md)]
             transform-gpu transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
             pointer-events-none
             ${indicator.show ? "opacity-100" : "opacity-0"}

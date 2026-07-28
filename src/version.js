@@ -5,7 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.97.3';
+export const APP_VERSION = '2.98.0';
+
+// v2.98.0 — EncuestaView: la separacion de las dos pildoras, hecha de verdad.
+//
+// Primera vista donde se aplica §16.9 completo, y sirve de referencia para las
+// otras 11. El header tenia TODO junto: las 5 pestanas, el filtro de sucursal
+// y el selector de encuesta, dentro de un contenedor escrito a mano
+// (rounded-header h-[4rem] md:h-[4.5rem], backdrop-blur-2xl, hover propio).
+//
+// Separado en lo que cada cosa es:
+//   header → ViewTabBar con las 5 pestanas (navegacion: que seccion veo)
+//   cuerpo → FilterBar con sucursal y encuesta (recorte: que datos veo)
+//
+// Los dos selectores estaban en el header porque ahi estaba el contenedor, no
+// porque correspondiera. Sucursal RECORTA los datos — es un filtro, y va
+// primero en el orden de ranuras (§17) por ser el ambito.
+//
+// Verificado en vivo: pestanas arriba, barra de filtros abajo a la derecha,
+// sin errores de JS.
 
 // v2.97.3 — DESIGN.md §16.9: las DOS pildoras de una vista, cual es cual.
 //

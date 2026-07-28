@@ -14,6 +14,8 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import SegmentedControl from '../components/common/SegmentedControl';
+import ViewTabBar from '../components/common/ViewTabBar';
+import FilterBar from '../components/common/FilterBar';
 import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
     fetchSurveyAiSummaries, updateSurvey,
@@ -574,40 +576,51 @@ export default function EncuestaView() {
     const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
 
     const filtersContent = (
-        <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
-            <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
-                <SegmentedControl
-                    options={TABS.map(({ key, label, Icon }) => ({ value: key, label, icon: Icon }))}
-                    value={tab} onChange={setTab} tone="neutro" label="Sección" />
-                <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                <div className="py-1.5 overflow-visible" style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
+        // Solo las PESTAÑAS y el buscador van en el header (§16.9). Los dos
+        // filtros —sucursal y encuesta— bajaron al cuerpo, dentro de FilterBar,
+        // porque recortan los datos: no son navegación.
+        <ViewTabBar
+            tabs={TABS.map(({ key, label, Icon }) => ({ key, label, icon: Icon }))}
+            activeTab={tab}
+            onTabChange={setTab}
+            showSearch={false}
+        />
+    );
+
+    const filtrosCuerpo = (
+        <FilterBar
+            onClear={() => setFilterSucursal('')}
+            activeCount={[filterSucursal].filter(Boolean).length}
+        >
+            {/* 1 · ámbito — la sucursal va primero (§17) */}
+            <FilterBar.Section active={!!filterSucursal} onClear={() => setFilterSucursal('')} label="sucursal">
+                <div style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
                     <LiquidSelect
                         value={filterSucursal}
                         onChange={setFilterSucursal}
                         options={sucursales.map(s => ({ value: s, label: s }))}
                         placeholder="Todas las sucursales"
                         icon={Building2}
-                        compact
-                        bare
+                        compact bare
                     />
                 </div>
-                {surveys.length > 1 && (
-                    <>
-                        <div className="h-6 w-px bg-divider mx-1 shrink-0" />
-                        <div className="py-1.5 overflow-visible w-[200px]">
-                            <LiquidSelect
-                                value={selectedSurveyId ?? ''}
-                                onChange={val => setSelectedSurveyId(Number(val))}
-                                options={surveys.map(s => ({ value: s.id, label: `${s.nombre} (${s.año})` }))}
-                                clearable={false}
-                                compact
-                                bare
-                            />
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
+            </FilterBar.Section>
+
+            {/* 2 · entidad */}
+            {surveys.length > 1 && (
+                <FilterBar.Section label="encuesta">
+                    <div className="w-[200px]">
+                        <LiquidSelect
+                            value={selectedSurveyId ?? ''}
+                            onChange={val => setSelectedSurveyId(Number(val))}
+                            options={surveys.map(s => ({ value: s.id, label: `${s.nombre} (${s.año})` }))}
+                            clearable={false}
+                            compact bare
+                        />
+                    </div>
+                </FilterBar.Section>
+            )}
+        </FilterBar>
     );
 
     return (
@@ -622,6 +635,9 @@ export default function EncuestaView() {
             subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} empleados`}
             filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
+
+                {/* La barra de filtros vive en el CUERPO, a la derecha (§17). */}
+                <div className="flex justify-end">{filtrosCuerpo}</div>
 
                 {loading ? (
                     <div className="space-y-5">

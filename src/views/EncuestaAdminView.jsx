@@ -478,13 +478,11 @@ export default function EncuestaAdminView() {
 
     // ── Header ────────────────────────────────────────────────────────────────
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max">
-            <div className="flex items-center h-full pl-2 pr-1 md:pr-2">
-                <Button variant="secondary" size="sm" icon={ClipboardList}>
-                    <span className="hidden sm:inline">Encuestas</span>
-                </Button>
-            </div>
-        </div>
+        // El contenedor de píldora envolvía UN botón: no es una barra de
+        // pestañas ni de filtros, así que no necesita contenedor (§16.9).
+        <Button variant="secondary" size="sm" icon={ClipboardList}>
+            <span className="hidden sm:inline">Encuestas</span>
+        </Button>
     );
 
     return (

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../components/common/Button';
 import { EmptyState } from '../components/common/StateViews';
 import Badge from '../components/common/Badge';
@@ -9,7 +9,6 @@ import {
 import { fetchUnapprovedTimesheetsCount } from '../data/payroll';
 import { useStaffStore } from '../store/staffStore';
 import { smartFilter } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -18,6 +17,8 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ListRow from '../components/common/ListRow';
+import ViewTabBar from '../components/common/ViewTabBar';
+import FilterBar from '../components/common/FilterBar';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -374,11 +375,9 @@ const PayrollView = ({ openModal }) => {
         getScope('payroll') === 'BRANCH' ? String(user?.branchId || '') : ''
     );
     const [filterStatus, setFilterStatus] = useState('ALL');
-    const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchTerm,   setSearchTerm]   = useState('');
     const [generating,   setGenerating]   = useState(false);
     const [confirming,   setConfirming]   = useState(null);
-    const searchInputRef = useRef(null);
 
     // Timesheet approval check for the active period
     const [unapprovedCount, setUnapprovedCount] = useState(null); // null = loading, 0 = all approved
@@ -472,41 +471,42 @@ const PayrollView = ({ openModal }) => {
     const isApproved = activePeriod?.status === 'APPROVED';
     const isDraft    = !activePeriod?.status || activePeriod?.status === 'DRAFT';
 
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchMode,
-        value: searchTerm,
-        onClear: () => setSearchTerm(''),
-        onClose: () => setIsSearchMode(false),
-    });
 
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
-            {/* Search mode */}
-            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[700px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[240px] border border-border-card shadow-sm">
-                    <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
-                    <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full" />
-                    {searchTerm && <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchTerm('')} />}
+        // Sin pestañas: esta vista solo necesita el buscador. `ViewTabBar` lo
+        // da con el contrato de §24 (Escape cierra Y limpia; clic afuera cierra
+        // solo si está vacío) — la versión anterior lo reimplementaba a mano,
+        // con su propio `inert`, sus transiciones y su punto rojo.
+        <ViewTabBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            placeholder="Buscar empleado…"
+        />
+    );
+
+    // Los filtros bajan al CUERPO (§17): recortan la planilla, no navegan.
+    const filtrosCuerpo = (
+        <FilterBar
+            onClear={() => { setFilterBranch(''); setFilterStatus('ALL'); }}
+            activeCount={[!!filterBranch, filterStatus !== 'ALL'].filter(Boolean).length}
+        >
+            {getScope('payroll') !== 'BRANCH' && (
+                <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
+                    <div className="w-[185px]">
+                        <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
+                            options={branchOptions} placeholder="Todas las sucursales"
+                            compact clearable={false} icon={Building2} bare />
+                    </div>
+                </FilterBar.Section>
+            )}
+
+            <FilterBar.Section active={filterStatus !== 'ALL'} onClear={() => setFilterStatus('ALL')} label="estado">
+                <div className="w-[160px]">
+                    <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val || 'ALL')}
+                        options={statusOptions} compact clearable={false} icon={ListFilter} bare />
                 </div>
-                <Button variant="secondary" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
-            </div>
-            {/* Normal mode */}
-            <div inert={isSearchMode ? true : undefined} className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
-                {getScope('payroll') !== 'BRANCH' && <><div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                    <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} bare />
-                </div>
-                <div className="w-px h-6 bg-divider mx-1 shrink-0" /></>}
-                <div className="w-[160px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                    <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} bare />
-                </div>
-                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-                <Button icon={Search} title="Buscar" onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}>{searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}</Button>
-            </div>
-        </div>
+            </FilterBar.Section>
+        </FilterBar>
     );
 
     return (
@@ -522,7 +522,10 @@ const PayrollView = ({ openModal }) => {
             />
 
             <GlassViewLayout icon={DollarSign} title="Nómina" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
-                <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
+                <div className="flex flex-col gap-4 w-full h-full">
+                    {/* Barra de filtros: cuerpo, a la derecha (§17) */}
+                    <div className="flex justify-end px-2 md:px-0">{filtrosCuerpo}</div>
+                    <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
                     {/* ── Sidebar: Períodos ── */}
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
@@ -694,6 +697,7 @@ const PayrollView = ({ openModal }) => {
                         )}
                     </div>
                 </div>
+            </div>
             </GlassViewLayout>
         </>
     );

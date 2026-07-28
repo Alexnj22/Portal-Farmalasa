@@ -5,7 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.98.0';
+export const APP_VERSION = '2.98.1';
+
+// v2.98.1 — PayrollView y EncuestaAdminView: header al canonico.
+//
+// PayrollView REIMPLEMENTABA el buscador toggleable entero: su propio
+// `useSearchToggle`, su propio ref de input, su propio `inert`, sus
+// transiciones y hasta el punto rojo de "hay busqueda activa". Todo eso ya lo
+// da `ViewTabBar` con el contrato de §24. Al migrarlo, esos refs quedaron
+// huerfanos — que es la prueba de que eran duplicado, no personalizacion.
+//
+// `ViewTabBar` acepta `tabs={[]}`: ya tenia el guard `tabs.length > 0`, asi que
+// sirve para vistas que solo necesitan el buscador. No hizo falta tocarlo.
+//
+// Sus dos filtros (sucursal, estado) bajaron al cuerpo dentro de FilterBar:
+// recortan la planilla, no navegan.
+//
+// EncuestaAdminView: su "pildora del header" envolvia UN boton. No era una
+// barra de nada — el contenedor se saco entero.
 
 // v2.98.0 — EncuestaView: la separacion de las dos pildoras, hecha de verdad.
 //

@@ -169,15 +169,18 @@ export default function ReenvioLlegadaModal({
                                 return (
                                     <div key={label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-success/10 border-success/30' : 'bg-danger/10 border-danger/30'}`}>
                                         <span className={`text-label font-black w-7 shrink-0 ${est === 'ok' ? 'text-success' : 'text-danger-text'}`}>{label}</span>
-                                        <div className="flex items-center gap-1 ml-auto shrink-0">
-                                            <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-micro font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-success-solid text-white border-success' : 'bg-surface-card text-content-3 border-divider hover:border-success/30 hover:text-success'}`}>
-                                                ✓ OK
-                                            </button>
-                                            <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-micro font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-danger-solid text-white border-danger' : 'bg-surface-card text-content-3 border-divider hover:border-danger/30 hover:text-danger-text'}`}>
-                                                ✗ Falta
-                                            </button>
+                                        {/* OK · Falta es un uno-de-N, no dos botones. */}
+                                        <div className="ml-auto shrink-0">
+                                            <SegmentedControl
+                                                size="sm" tone={est === 'ok' ? 'success' : 'danger'}
+                                                label={`Estado de la caja ${label}`}
+                                                value={est}
+                                                onChange={v => setEspEstados(p => ({ ...p, [label]: v }))}
+                                                options={[
+                                                    { value: 'ok',       label: '✓ OK' },
+                                                    { value: 'faltante', label: '✗ Falta' },
+                                                ]}
+                                            />
                                         </div>
                                     </div>
                                 );

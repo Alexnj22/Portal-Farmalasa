@@ -16,7 +16,20 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.109.0';
+export const APP_VERSION = '2.109.1';
+
+// v2.109.1 — Los pares OK/Falta de los dos modales de llegada.
+//
+// `LlegadaModal` y `ReenvioLlegadaModal` tienen, por cada caja especial, un
+// par "✓ OK / ✗ Falta" escrito como dos `<button>` con `est === 'ok' ? … : …`.
+// Es un uno-de-N: con `SegmentedControl` la caja se lee como UN control con
+// dos estados y no como dos acciones sueltas, y el lector de pantalla anuncia
+// "1 de 2".
+//
+// VERIFICADO POR CODIGO, no en vivo: estos modales solo se abren desde un
+// pedido en estado "en ruta", y ahora mismo no hay ninguno. El cambio es
+// identico —misma forma, mismos dos valores— al de EncuestaAdminView, que si
+// se verifico en vivo hoy. Queda anotado como tal, no como "hecho y visto".
 
 // v2.109.0 — Los 7 encabezados de FacturacionView, y como se desbloqueo.
 //

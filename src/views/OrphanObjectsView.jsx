@@ -7,6 +7,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { fetchOrphanObjects, updateOrphanObjectStatus } from '../data/orphanObjects';
+import Badge from '../components/common/Badge';
 
 const STATUS_LABELS = {
     candidate: 'Candidato',
@@ -18,10 +19,10 @@ const STATUS_LABELS = {
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 const STATUS_BADGE = {
-    candidate: { icon: HelpCircle, cls: 'bg-warning/10 text-warning border-warning/30' },
-    confirmed_orphan: { icon: XCircle, cls: 'bg-danger/10 text-danger border-danger/30' },
-    false_positive: { icon: XCircle, cls: 'bg-surface-card-hover text-content-3 border-divider' },
-    resolved: { icon: CheckCircle2, cls: 'bg-success/10 text-success border-success/30' },
+    candidate: { icon: HelpCircle, variante: 'warning' },
+    confirmed_orphan: { icon: XCircle, variante: 'danger' },
+    false_positive: { icon: XCircle, variante: 'neutral' },
+    resolved: { icon: CheckCircle2, variante: 'success' },
 };
 
 const TABS = [
@@ -127,9 +128,7 @@ const OrphanObjectsView = () => {
                                             />
                                         </div>
                                     ) : (
-                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-micro font-black uppercase tracking-widest border ${badge.cls}`}>
-                                            <BadgeIcon size={10} /> {STATUS_LABELS[row.status] || row.status}
-                                        </span>
+                                        <Badge variant={badge.variante} size="sm" icon={BadgeIcon}>{STATUS_LABELS[row.status] || row.status}</Badge>
                                     )}
                                 </DataCell>
                             </DataRow>

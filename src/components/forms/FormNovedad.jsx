@@ -16,6 +16,7 @@ import { useToastStore } from '../../store/toastStore';
 import { useNowTick } from '../../hooks/useNowTick';
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
+import Badge from '../common/Badge';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -403,10 +404,10 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
                             <div className="flex flex-wrap gap-2">
                                 {formData?.permissionDates?.map((date, idx) => (
-                                    <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-chart-1/10 text-chart-1-text border border-chart-1/30 rounded-lg text-label font-black shadow-sm animate-in zoom-in-95">
+                                    <Badge key={idx} variant="chart-1" uppercase={false}>
                                         {date} 
                                         <Button variant="ghost" icon={XCircle} iconOnly onClick={() => handleRemovePermissionDate(date)} />
-                                    </span>
+                                    </Badge>
                                 ))}
                                 {(!formData?.permissionDates || formData?.permissionDates.length === 0) && (
                                     <span className="text-label font-medium text-content-3 italic">No hay fechas agregadas.</span>

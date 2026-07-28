@@ -870,9 +870,7 @@ const VacationPlanView = () => {
                                             <Button tone="chart-1" icon={ShieldCheck} onClick={handlePreApprove}>Pre-aprobar plan</Button>
                                         )}
                                         {activeHeader?.status === 'PRE_APPROVED' && (
-                                            <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-chart-1/10 border border-chart-1/30 text-chart-1-text text-caption font-black uppercase tracking-widest">
-                                                <CheckCircle2 size={12} strokeWidth={2.5} /> Visible para empleados
-                                            </span>
+                                            <Badge variant="chart-1" icon={CheckCircle2} uppercase={false}>Visible para empleados</Badge>
                                         )}
                                     </div>
                                 )}

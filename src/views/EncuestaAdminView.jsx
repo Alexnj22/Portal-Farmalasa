@@ -67,12 +67,13 @@ function scoreColor(s) {
 
 // Tokenizado T7 — mismo criterio de EncuestaView.jsx (excelente/bueno/
 // regular/crítico → success/chart-1/warning/danger).
-function scoreBg(s) {
-    if (s == null) return 'bg-surface-card-hover text-content-3';
-    if (s >= 85) return 'bg-success/10 text-success-text';
-    if (s >= 70) return 'bg-chart-1/10 text-chart-1-text';
-    if (s >= 55) return 'bg-warning/10 text-warning-text';
-    return 'bg-danger/10 text-danger-text';
+// Devuelve el NOMBRE de la variante de `Badge`, no dos clases de Tailwind.
+function scoreVariante(s) {
+    if (s == null) return 'neutral';
+    if (s >= 85) return 'success';
+    if (s >= 70) return 'chart-1';
+    if (s >= 55) return 'warning';
+    return 'danger';
 }
 
 const BAR_COLORS = {
@@ -1166,7 +1167,7 @@ export default function EncuestaAdminView() {
                                                                                             return (
                                                                                                 <td key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="py-2.5 px-2 text-center cursor-help">
                                                                                                     {sc != null
-                                                                                                        ? <span className={`text-caption font-bold px-1.5 py-0.5 rounded-lg ${scoreBg(sc)}`}>{sc}</span>
+                                                                                                        ? <Badge variant={scoreVariante(sc)} size="sm" uppercase={false}>{sc}</Badge>
                                                                                                         : <span className="text-content-3 text-caption">—</span>}
                                                                                                 </td>
                                                                                             );
@@ -1241,7 +1242,7 @@ export default function EncuestaAdminView() {
                                                                                                                         <span className="text-label font-black text-content-2">{bloque.nombre}</span>
                                                                                                                     </div>
                                                                                                                     {bsc != null && (
-                                                                                                                        <span className={`text-label font-black px-2 py-0.5 rounded-lg ${scoreBg(bsc)}`}>{bsc}%</span>
+                                                                                                                        <Badge variant={scoreVariante(bsc)} uppercase={false}>{bsc}%</Badge>
                                                                                                                     )}
                                                                                                                 </div>
                                                                                                                 <div className="divide-y divide-divider">

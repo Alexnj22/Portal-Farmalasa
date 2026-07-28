@@ -805,10 +805,10 @@ const EmployeeRequestsView = () => {
                     {permDates.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {permDates.map(d => (
-                                <span key={d} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-chart-3/10 border border-chart-3/30 text-chart-3-text text-label font-bold">
+                                <Badge key={d} variant="chart-3" uppercase={false}>
                                     {new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
                                     <Button variant="ghost" icon={XCircle} iconOnly onClick={() => handleRemovePermDate(d)} />
-                                </span>
+                                </Badge>
                             ))}
                         </div>
                     )}

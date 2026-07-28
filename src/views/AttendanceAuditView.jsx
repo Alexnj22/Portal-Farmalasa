@@ -1192,9 +1192,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       trailingActions={!isDemoMode && isQuincenaPast && (
         quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
           <>
-            <span className="flex items-center gap-1.5 text-caption font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full whitespace-nowrap">
-              <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
-            </span>
+            <Badge variant="success" icon={ShieldCheck} uppercase={false}>Quincena cerrada</Badge>
             <TabBarAction icon={ArrowRight} tone="success" onClick={() => navigate('/payroll')}>
               Ver planilla
             </TabBarAction>

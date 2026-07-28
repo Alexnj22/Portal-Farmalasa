@@ -6,6 +6,7 @@ import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
 import AlertModal from '../common/AlertModal';
+import Badge from '../common/Badge';
 
 const AI_LOADING_PHRASES = [
     "Analizando horarios de apertura y cierre...",
@@ -292,9 +293,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                         <p className="text-micro font-bold text-content-3 uppercase truncate">{emp.role}</p>
                                     </td>
                                     <td className="p-2 text-center align-middle border-r border-divider">
-                                        <span className={`px-2 py-1 rounded-md text-caption font-black tracking-widest ${isOver ? 'bg-danger/10 text-danger' : isUnder ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                                            {weeklyHrs}H
-                                        </span>
+                                        <Badge variant={isOver ? 'danger' : isUnder ? 'warning' : 'success'} size="sm">{weeklyHrs}H</Badge>
                                     </td>
                                     {[1, 2, 3, 4, 5, 6, 0].map(dayId => {
                                         const dayData = empSch[dayId];

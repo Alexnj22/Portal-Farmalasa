@@ -1756,7 +1756,7 @@ const DashboardView = ({ openModal }) => {
                           ?<Badge variant="info" size="sm" uppercase={false}>Hoy</Badge>
                           :e.isTomorrow
                           ?<Badge variant="warning" size="sm" uppercase={false}>Mañana</Badge>
-                          :<span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-surface-card-hover text-content-3':'bg-surface-card-hover text-content-3'}`}>{e.age} años</span>
+                          :<Badge size="sm" uppercase={false}>{e.age} años</Badge>
                         }
                       </div>
                     </div>

@@ -16,7 +16,22 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.149.0';
+export const APP_VERSION = '2.150.0';
+
+// v2.150.0 — D3.5: ocho chips sueltos, y una funcion que devolvia clases.
+//
+// `scoreBg()` (Encuestas) devolvia dos clases de Tailwind segun el puntaje.
+// Ahora es `scoreVariante()` y devuelve el nombre de la severidad — que es lo
+// que la funcion de verdad sabe: 85+ bien, 70+ aceptable, 55+ atencion, menos
+// mal.
+//
+// Uno tenia el MISMO color en las dos ramas del ternario
+// (`e.isPast ? bg-surface-card-hover : bg-surface-card-hover`): un condicional
+// que no condicionaba nada, escrito y nunca releido.
+//
+// El gate atrapo dos `<Badge>` sin importar. Van tres veces que me salva.
+//
+// Chips a mano: 36 → 27.
 
 // v2.149.0 — D3.5: las cuatro tablas de Producto.
 //

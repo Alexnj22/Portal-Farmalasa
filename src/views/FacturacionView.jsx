@@ -461,14 +461,17 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                 )}
                 <div className="flex items-center gap-2 ml-auto">
                     {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
-                    <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-black uppercase tracking-wider border transition-all ${
-                            paused
-                                ? 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
-                                : 'bg-surface-card-hover border-divider text-content-3 hover:bg-surface-card-hover'
-                        }`}>
-                        {paused ? <><Play size={9} /> Reanudar</> : <><Pause size={9} /> Pausar</>}
-                    </button>
+                    <Button
+                        size="xs"
+                        aria-pressed={paused}
+                        variant="secondary"
+                        tone={paused ? 'warning' : null}
+                        soft
+                        icon={paused ? Play : Pause}
+                        title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
+                        onClick={() => setPaused(p => !p)}>
+                        {paused ? 'Reanudar' : 'Pausar'}
+                    </Button>
                 </div>
             </div>
 
@@ -891,14 +894,17 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                 )}
                 <div className="flex items-center gap-2 ml-auto">
                     {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
-                    <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-black uppercase tracking-wider border transition-all ${
-                            paused
-                                ? 'bg-warning/10 border-warning/30 text-warning-text hover:bg-warning/10'
-                                : 'bg-surface-card-hover border-divider text-content-3 hover:bg-surface-card-hover'
-                        }`}>
-                        {paused ? <><Play size={9} /> Reanudar</> : <><Pause size={9} /> Pausar</>}
-                    </button>
+                    <Button
+                        size="xs"
+                        aria-pressed={paused}
+                        variant="secondary"
+                        tone={paused ? 'warning' : null}
+                        soft
+                        icon={paused ? Play : Pause}
+                        title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
+                        onClick={() => setPaused(p => !p)}>
+                        {paused ? 'Reanudar' : 'Pausar'}
+                    </Button>
                 </div>
             </div>
 

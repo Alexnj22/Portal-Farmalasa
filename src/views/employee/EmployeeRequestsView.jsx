@@ -1100,28 +1100,33 @@ const EmployeeRequestsView = () => {
                                         );
                                     })()
                                 ) : (
-                                    /* Todos los tipos — expandido */
-                                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                                        {TYPE_OPTIONS.map(({ key, icon: Icon, label }) => {
-                                            const conf     = REQUEST_TYPES[key];
-                                            const isActive = formType === key;
-                                            return (
-                                                <button
-                                                    key={key}
-                                                    type="button"
-                                                    onClick={() => { setFormType(key); setPayload({}); setError(''); setPermPickerKey(0); setDisabilityFile(null); setTypePickerOpen(false); }}
-                                                    className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border text-caption font-black uppercase tracking-widest transition-all duration-300 ${
-                                                        isActive
-                                                            ? `bg-surface-card ${conf.color} ${conf.border} shadow-sm scale-[1.02]`
-                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card-hover hover:-translate-y-0.5 hover:shadow-sm'
-                                                    }`}
-                                                >
-                                                    <Icon size={18} strokeWidth={1.8} />
-                                                    {label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                    /* Todos los tipos — expandido.
+                                       OJO: acá había un `<div className="grid grid-cols-3">`
+                                       envolviendo. `SegmentedControl` en bloque YA ES una grilla,
+                                       así que dejarlo dentro lo metía en una sola celda y las seis
+                                       tarjetas se encogían a un tercio del ancho con las etiquetas
+                                       encimadas. Se vio en la verificación, no en el build. */
+                                    <>
+                                        {/* Seis tarjetas de elección excluyente: eso es
+                                            `SegmentedControl` con `layout="block"`, que ya existía
+                                            justamente para este caso. Lo que faltaba era `stacked`
+                                            (ícono arriba del texto), agregado al canónico para no
+                                            cambiarles la forma. El color por tipo se conserva:
+                                            `tone` acepta un valor POR OPCIÓN, y el `bg-chart-N/10`
+                                            de `REQUEST_TYPES` se mapea a su `chart-N`. */}
+                                        <SegmentedControl
+                                            layout="block" columns={3} stacked
+                                            label="Tipo de solicitud"
+                                            value={formType}
+                                            onChange={(k) => { setFormType(k); setPayload({}); setError(''); setPermPickerKey(0); setDisabilityFile(null); setTypePickerOpen(false); }}
+                                            options={TYPE_OPTIONS.map(({ key, icon, label }) => ({
+                                                value: key,
+                                                label,
+                                                icon,
+                                                tone: REQUEST_TYPES[key]?.color.match(/bg-(chart-\d)/)?.[1] ?? 'brand',
+                                            }))}
+                                        />
+                                    </>
                                 )}
                             </div>
 
@@ -1178,16 +1183,16 @@ const EmployeeRequestsView = () => {
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                 <ClipboardList size={10} /> Mis Solicitudes
                             </p>
-                            <button
+                            <Button
+                                size="xs"
+                                aria-pressed={showOldApproved}
+                                variant="secondary"
+                                tone={showOldApproved ? 'success' : null}
+                                soft
                                 onClick={() => setShowOldApproved(v => !v)}
-                                className={`text-caption font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-200 ${
-                                    showOldApproved
-                                        ? 'bg-success/10 border-success/30 text-success-text'
-                                        : 'bg-surface-card border-border-card text-content-3 hover:text-content-2 hover:bg-surface-card'
-                                }`}
                             >
                                 {showOldApproved ? 'Solo este mes' : 'Ver anteriores'}
-                            </button>
+                            </Button>
                         </div>
 
                         {isLoading ? (

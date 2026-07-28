@@ -63,6 +63,14 @@ const SegmentedControl = memo(({
     // que se escriban controles nuevos sin necesidad.
     layout = 'inline',
     columns = 2,
+    // `stacked`: en layout de bloque, el ícono va ARRIBA del texto en vez de al
+    // lado. Se agregó el 2026-07-28 al migrar el selector de tipo de solicitud
+    // (`EmployeeRequestsView`), que son seis tarjetas verticales. El layout de
+    // bloque existía pero solo en horizontal, así que sin esto la migración
+    // habría cambiado la forma de las tarjetas — que es justo lo que D3.3
+    // intenta NO hacer. Los cuatro usos previos de `block` son horizontales y
+    // no cambian.
+    stacked = false,
     className = '',
 }) => {
     const s = SIZE[size] || SIZE.md;
@@ -89,17 +97,20 @@ const SegmentedControl = memo(({
                         aria-checked={activa}
                         disabled={disabled || op.disabled}
                         onClick={() => !disabled && !op.disabled && onChange?.(op.value)}
-                        className={`inline-flex items-center justify-center gap-1.5 rounded-btn
+                        className={`inline-flex items-center justify-center gap-1.5
+                            ${stacked ? 'rounded-card' : 'rounded-btn'}
                             font-black uppercase tracking-widest
                             transition-[background-color,color,border-color] duration-200
                             disabled:opacity-40 disabled:cursor-not-allowed
-                            ${enBloque ? 'w-full h-11 px-3 text-caption border' : `whitespace-nowrap ${s.op}`}
+                            ${enBloque
+                                ? `w-full px-3 text-caption border ${stacked ? 'flex-col gap-1.5 py-3' : 'h-11'}`
+                                : `whitespace-nowrap ${s.op}`}
                             ${activa
                                 ? (ACTIVO[op.tone || tone] || ACTIVO.brand) + ' shadow-sm'
                                     + (enBloque ? ' border-transparent' : '')
                                 : 'text-content-3 hover:text-content-2'
                                     + (enBloque ? ' bg-surface-card border-border-card hover:border-brand/40' : '')}`}>
-                        {Icono && <Icono size={s.icono} strokeWidth={2.5} />}
+                        {Icono && <Icono size={stacked ? 18 : s.icono} strokeWidth={stacked ? 1.8 : 2.5} />}
                         {op.label}
                     </button>
                 );

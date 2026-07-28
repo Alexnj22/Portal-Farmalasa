@@ -520,17 +520,18 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     <span className="text-micro font-semibold text-content-3 whitespace-nowrap">viñeta</span>
                 </div>
 
-                <button
-                    onClick={() => setDraft(d => ({ ...d, devolutivo: !d.devolutivo, meses_devolucion: d.devolutivo ? '' : d.meses_devolucion }))}
+                <Button
+                    size="xs"
+                    iconOnly
+                    aria-pressed={!draft.devolutivo}
+                    variant="secondary"
+                    tone={!draft.devolutivo ? 'warning' : null}
+                    soft
+                    icon={!draft.devolutivo ? Ban : RotateCcw}
+                    className="shrink-0"
                     title={draft.devolutivo ? 'Marcar como No Devolutivo (ND)' : 'No Devolutivo (ND) — no acepta devolución'}
-                    className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors shrink-0 ${
-                        !draft.devolutivo
-                            ? 'bg-warning/10 text-warning-text border-warning/30'
-                            : 'bg-surface-card-hover text-content-3 border-divider hover:border-divider'
-                    }`}
-                >
-                    {!draft.devolutivo ? <Ban className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
-                </button>
+                    onClick={() => setDraft(d => ({ ...d, devolutivo: !d.devolutivo, meses_devolucion: d.devolutivo ? '' : d.meses_devolucion }))}
+                />
 
                 <input
                     value={draft.notas}

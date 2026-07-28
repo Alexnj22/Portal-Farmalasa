@@ -331,21 +331,20 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                 {/* Modos */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <button
+                    {/* El bug de contraste que documentaba el comentario de aquí
+                        (pastilla blanca con texto invisible en dark, v2.62.4) deja de
+                        ser posible: el color lo pone el tema vía `tone`, no un
+                        `bg-surface-card` opaco escrito a mano. */}
+                    <Button
+                        size="sm"
+                        aria-pressed={globalMode}
+                        variant="secondary"
+                        tone={globalMode ? 'chart-3' : null}
                         onClick={() => setGlobalMode(v => !v)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-label font-semibold transition-all ${
-                            globalMode
-                                ? 'bg-chart-3-solid border-chart-3 text-white shadow-sm'
-                                // `bg-surface-card` opaco + text-content-3: en dark quedaba una pastilla
-                                // blanca con el texto casi invisible encima (visto en la captura de
-                                // verificación de v2.62.4). No es del patrón sheen, pero es el mismo
-                                // bug y estaba en este archivo.
-                                : 'bg-surface-card border-divider text-content-3 hover:border-chart-3/50 hover:text-chart-3-text'
-                        }`}
                     >
                         Distribución global de bodega
                         {globalMode && <Check size={11} />}
-                    </button>
+                    </Button>
                 </div>
 
                 {globalMode && (

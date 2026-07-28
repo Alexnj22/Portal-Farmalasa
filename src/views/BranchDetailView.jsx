@@ -334,16 +334,17 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
                         <div className="w-px h-6 md:h-8 bg-content-3/30 mx-1.5 shrink-0"></div>
 
-                        {canEdit && <button
+                        {canEdit && <Button
+                            iconOnly
+                            aria-pressed={isEditMode}
+                            variant="secondary"
+                            tone={isEditMode ? 'danger' : null}
+                            soft
+                            icon={isEditMode ? X : SlidersHorizontal}
+                            className="shrink-0"
+                            title={isEditMode ? 'Cerrar edición' : 'Configurar sucursal'}
                             onClick={() => setIsEditMode(!isEditMode)}
-                            className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-full transition-all duration-300 transform-gpu active:scale-[0.97] shadow-sm hover:shadow-md hover:-translate-y-0.5 ${isEditMode
-                                    ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger-solid hover:text-white'
-                                    : 'bg-surface-card text-brand-text border border-border-card hover:border-brand/30'
-                                }`}
-                            title={isEditMode ? "Cerrar edición" : "Configurar sucursal"}
-                        >
-                            {isEditMode ? <X size={16} strokeWidth={2.5} /> : <SlidersHorizontal size={16} strokeWidth={2.5} />}
-                        </button>}
+                        />}
                     </div>
                 )}
             </div>

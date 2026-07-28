@@ -330,21 +330,18 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
     const addCls = 'text-content-3 hover:text-brand-text';
 
-    const presetChipBase = 'px-2.5 py-0.5 rounded-full text-caption font-bold border transition-all';
-    const presetChipOn  = 'bg-warning/10 text-warning border-warning/40';
-    const presetChipOff = 'bg-surface-card text-content-3 border-divider hover:border-chart-8/50 hover:text-content-2';
+    // `presetChipBase/On/Off` vivían acá: el riel de `SegmentedControl` escrito
+    // a mano. Se fueron con los chips (2026-07-28).
 
     return (
         <div className="space-y-2">
-            {/* Preset chips */}
-            <div className="flex gap-1.5">
-                {PA_PRESETS.map(p => (
-                    <button key={p} onClick={() => selectPreset(p)}
-                        className={`${presetChipBase} ${preset === p ? presetChipOn : presetChipOff}`}>
-                        {p}
-                    </button>
-                ))}
-            </div>
+            <SegmentedControl
+                size="sm"
+                label="Presentación sugerida"
+                value={preset}
+                onChange={selectPreset}
+                options={PA_PRESETS.map(p => ({ value: p, label: p }))}
+            />
 
             {/* Input list — hidden when a preset is active */}
             {!preset && (
@@ -1079,21 +1076,22 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                     {/* Default esperado: Devolutivo (el proveedor acepta devolución). Activar este
                         botón marca la EXCEPCIÓN — el producto NO se puede devolver (ND) — por eso
                         el estado "activado" se resalta en ámbar, no en verde. */}
-                    <button
+                    <Button
+                        size="sm"
+                        aria-pressed={!devolutivo}
+                        loading={savingDevolutivo}
+                        variant="secondary"
+                        tone={!devolutivo ? 'warning' : null}
+                        soft
+                        icon={!devolutivo ? Ban : RotateCcw}
                         onClick={toggleDevolutivo}
-                        disabled={savingDevolutivo}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold border transition-colors disabled:opacity-50 ${
-                            !devolutivo
-                                ? 'bg-warning/10 text-warning-text border-warning/30 hover:bg-warning/10'
-                                : 'bg-surface-card-hover text-content-3 border-divider hover:border-divider'
-                        }`}
                         title={devolutivo
                             ? 'Este producto SÍ puede devolverse al proveedor antes de vencer. Clic para marcarlo como No Devolutivo (ND).'
                             : 'Este producto NO puede devolverse al proveedor (ND). Clic para marcarlo como Devolutivo.'}
                     >
                         {savingDevolutivo ? <Loader2 size={12} className="animate-spin" /> : !devolutivo ? <Ban size={12} /> : <RotateCcw size={12} />}
                         {!devolutivo ? 'No devolutivo (ND)' : 'Devolutivo'}
-                    </button>
+                    </Button>
 
                     {/* ── Main layout: two columns ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6">
@@ -1291,14 +1289,17 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     <FlaskConical size={9} /> Principios activos
                                 </p>
                                 {!PA_PRESETS.includes(product.principio_activo) && (
-                                    <button
+                                    <Button
+                                        size="xs"
+                                        aria-pressed={showSrs}
+                                        variant="secondary"
+                                        tone={showSrs ? 'brand' : null}
+                                        soft
+                                        icon={Search}
                                         onClick={() => setShowSrs(v => !v)}
-                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-caption font-bold transition-all border ${
-                                            showSrs ? xk.srsBtnActive : xk.srsBtnInactive
-                                        }`}
                                     >
-                                        <Search size={9} strokeWidth={2.5} /> SRS
-                                    </button>
+                                        SRS
+                                    </Button>
                                 )}
                             </div>
                             <PrincipiosEditor

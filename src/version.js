@@ -16,7 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.124.0';
+export const APP_VERSION = '2.125.0';
+
+// v2.125.0 — D3.3: siete interruptores y tres grupos de eleccion.
+//
+// ── Interruptores (7) ────────────────────────────────────────────────────
+// Pausar/Reanudar de Facturacion (×2), modo global de pedidos, devolutivo y
+// SRS del catalogo, ND de la politica de vencimiento, "ver anteriores" de mis
+// solicitudes y el modo edicion de una sucursal. Todos ganan `aria-pressed`:
+// antes el estado vivia solo en el color.
+//
+// En TabGenerar el comentario del codigo documentaba un bug de contraste
+// (pastilla blanca con texto invisible en dark, v2.62.4). Ese bug deja de ser
+// posible: el color lo pone el tema via `tone`, no un `bg-surface-card` opaco
+// escrito a mano.
+//
+// ── Grupos de eleccion (3) ───────────────────────────────────────────────
+//   · presets del catalogo → `SegmentedControl`
+//   · sucursales del alcance de una encuesta → `FilterBar.Chip`, porque es
+//     seleccion MULTIPLE: un `radiogroup` diria "1 de 6" para algo donde
+//     pueden estar las seis.
+//   · el selector de tipo de solicitud → `SegmentedControl layout="block"`,
+//     que existia justo para estas tarjetas. Falto agregarle `stacked` (icono
+//     arriba del texto) para no cambiarles la forma, y el radio de tarjeta:
+//     una tarjeta alta con `rounded-btn` sale con forma de pastilla.
+//     El color POR TIPO se conserva — `tone` acepta valor por opcion.
+//
+// ── Un error que solo se vio mirando ─────────────────────────────────────
+// Deje el `<div className="grid grid-cols-3">` original envolviendo al
+// `SegmentedControl`, que en bloque YA ES una grilla. Resultado: las seis
+// tarjetas metidas en una sola celda, a un tercio del ancho y con las
+// etiquetas encimadas. Build verde, lint verde, gate verde. Solo aparecio en
+// la captura.
+//
+// Botones a mano: 82 → 71.
 
 // v2.124.0 — Los otros tres destinos que eran botones.
 //

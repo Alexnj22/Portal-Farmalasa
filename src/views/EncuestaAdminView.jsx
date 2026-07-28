@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
+import FilterBar from '../components/common/FilterBar';
 import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
     fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
@@ -633,17 +634,18 @@ export default function EncuestaAdminView() {
                                         options={SCOPE_TABS.map(t => ({ value: t.id, label: t.label }))}
                                         value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
 
+                                    {/* Los chips de sucursal son selección MÚLTIPLE, no uno-de-N:
+                                        por eso `FilterBar.Chip` y no `SegmentedControl`. Un
+                                        `radiogroup` diría "1 de 6" para algo donde pueden estar
+                                        las seis a la vez. */}
                                     {sfScope === 'branches' && (
                                         <div className="flex flex-wrap gap-2 mt-2">
                                             {storeBranches.map(b => (
-                                                <button key={b.id} type="button" onClick={() => toggleScopeId(b.id)}
-                                                    className={`flex items-center gap-1.5 px-3 h-7 rounded-xl border text-label font-black transition-all ${
-                                                        sfScopeIds.includes(b.id)
-                                                            ? 'bg-brand border-brand text-white shadow-sm'
-                                                            : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card-hover hover:border-brand/30'
-                                                    }`}>
+                                                <FilterBar.Chip key={b.id} tone="brand"
+                                                    active={sfScopeIds.includes(b.id)}
+                                                    onToggle={() => toggleScopeId(b.id)}>
                                                     <Building2 size={9} strokeWidth={2.5} /> {b.name}
-                                                </button>
+                                                </FilterBar.Chip>
                                             ))}
                                         </div>
                                     )}

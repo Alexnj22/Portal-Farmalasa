@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.136.0';
+export const APP_VERSION = '2.137.0';
+
+// v2.137.0 — La paleta es CERRADA, y ahora el gate lo verifica.
+//
+// Regla del usuario: **no se agregan colores ni variantes de color; se usan
+// los definidos**. Cuando algo necesita un color que "todavia no existe", la
+// respuesta es elegir uno de los que ya estan, no crear el numero siguiente.
+//
+// Verificado primero que no agregue ninguno en toda la sesion: cero tokens
+// nuevos en index.css y cero variantes nuevas en los canonicos. Lo que hice
+// fue mapear colores escritos a mano a variantes que YA existian — eso no es
+// agregar, es dejar de repetir.
+//
+// Pero el conteo muestra por que la regla hace falta:
+//
+//     chart-3 76 · chart-1 43 · chart-4 21 · chart-9 18 · chart-6 12
+//     chart-2 7 · chart-5 7 · chart-7 6 · chart-8 4   ← un color por caso
+//
+// Los cuatro de abajo no son categorias del negocio: son "hacia falta otro
+// color" resuelto agregando uno. No se borran —cambiaria el aspecto de varias
+// vistas y es decision aparte— pero no se usan para nada nuevo.
+//
+// La regla queda en DESIGN.md §6 y, sobre todo, en el gate: `paleta-cerrada`
+// falla ante cualquier `chart-N` con N fuera de 1..9. Nace en 0 y bloqueante.
+// Probado con una copia desechable: reporta `chart-10` y `chart-12`.
 
 // v2.136.0 — D3.5 en VentasView, y dos fallos de verificacion mios.
 //

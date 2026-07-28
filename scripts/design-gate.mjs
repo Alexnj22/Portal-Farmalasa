@@ -293,6 +293,9 @@ const COLOR_PREFIXES = [
   'bg', 'text', 'border', 'from', 'via', 'to', 'ring', 'divide',
   'placeholder', 'decoration', 'outline', 'accent', 'caret', 'fill', 'stroke',
 ];
+// `chart-N` con N fuera de 1..9 = un color que no existe en el tema.
+const RE_CHART_FUERA = /\bchart-(?:[1-9]\d+|0)\b/g;
+
 const GRAY_RE = new RegExp(
   `\\b(${COLOR_PREFIXES.join('|')})-(${GRAY_PALETTES.join('|')})-\\d{2,3}\\b`,
   'g'
@@ -514,6 +517,33 @@ function scanFile(path) {
       DATE_TYPE_RE.lastIndex = 0;
       if (DATE_TYPE_RE.test(line) && nearestOpenTag(lines, i) === 'input') {
         findings.push({ line: i + 1, label: 'input date/time nativo', category: 'native', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+
+  // ── `paleta-cerrada` (2026-07-28) ────────────────────────────────────────
+  // Regla del usuario: **no se agregan colores ni variantes de color; se usan
+  // los definidos**. Este chequeo la hace verificable en vez de dejarla como
+  // buena intención en un documento.
+  //
+  // Falla si aparece un `--chart-N`, un `chart-N` en clase de Tailwind o una
+  // variante `chart-N` con N fuera de la lista. Los nueve existen hoy y no se
+  // borran acá —eso cambiaría el aspecto de varias vistas y es decisión del
+  // usuario— pero un `chart-10` sería exactamente lo que la regla prohíbe.
+  //
+  // También marca los nombres de color CRUDOS de Tailwind que no son tokens
+  // del tema (violet-500, indigo-400…): son la otra forma de agregar un color
+  // sin pasar por la paleta.
+  if (!hasException(path, 'paleta-cerrada')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      let m;
+      RE_CHART_FUERA.lastIndex = 0;
+      while ((m = RE_CHART_FUERA.exec(line))) {
+        findings.push({ line: i + 1,
+          label: `color fuera de la paleta: ${m[0]} — la paleta es CERRADA (DESIGN.md §6)`,
+          category: 'paleta-cerrada', text: line.trim().slice(0, 120) });
       }
     });
   }

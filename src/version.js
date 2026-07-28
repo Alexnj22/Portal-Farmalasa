@@ -16,7 +16,19 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.145.0';
+export const APP_VERSION = '2.146.0';
+
+// v2.146.0 — D3.4 arranca: los cuatro campos del proveedor.
+//
+// El patron clasico: `<div><label sin htmlFor><input className=…></div>`, o
+// sea `PortalInput` reconstruido a mano. Las cuatro etiquetas no estaban
+// asociadas al campo; ahora lo estan por `<label for>`.
+//
+// El `title` del Alias —"Nombre alterno para buscarlo (ej. como le dicen de
+// palabra en Bodega)"— sobrevive gracias al `...rest` de v2.115.0. Antes de
+// ese arreglo, migrarlo lo habria borrado.
+//
+// Inputs a mano: 97 → 93.
 
 // v2.145.0 — El gate cubre las dos deudas que faltaban: chips e inputs.
 //

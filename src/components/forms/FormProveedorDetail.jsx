@@ -8,6 +8,7 @@ import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier } fr
 import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
+import PortalInput from '../common/PortalInput';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -235,42 +236,35 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             <div className="space-y-3">
                 <SectionHeader icon={Phone}>Contacto y Pago</SectionHeader>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Contacto</label>
-                        <input
-                            value={form.contacto_nombre}
-                            onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
-                            placeholder="Nombre del contacto"
- className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Teléfono 2</label>
-                        <input
-                            value={form.telefono2}
-                            onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
-                            placeholder="Teléfono adicional"
- className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)">Alias</label>
-                        <input
-                            value={form.alias}
-                            onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
-                            placeholder="Nombre alterno de búsqueda"
- className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nombre para Cheques</label>
-                        <input
-                            value={form.nombre_cheques}
-                            onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
-                            placeholder="Si difiere de la razón social"
- className="w-full px-3.5 bg-surface-card border border-divider rounded-2xl h-[44px] text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50"
-                        />
-                    </div>
+                    <PortalInput
+                        name="contacto_nombre"
+                        label="Contacto"
+                        placeholder="Nombre del contacto"
+                        value={form.contacto_nombre}
+                        onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
+                    />
+                    <PortalInput
+                        name="telefono2"
+                        label="Teléfono 2"
+                        placeholder="Teléfono adicional"
+                        value={form.telefono2}
+                        onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
+                    />
+                    <PortalInput
+                        name="alias"
+                        label="Alias"
+                        title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)"
+                        placeholder="Nombre alterno de búsqueda"
+                        value={form.alias}
+                        onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
+                    />
+                    <PortalInput
+                        name="nombre_cheques"
+                        label="Nombre para Cheques"
+                        placeholder="Si difiere de la razón social"
+                        value={form.nombre_cheques}
+                        onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
+                    />
                 </div>
             </div>
 

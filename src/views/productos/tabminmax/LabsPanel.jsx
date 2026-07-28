@@ -149,6 +149,8 @@ export default function LabsPanel({ onClose, onChanged }) {
                         const count  = counts[lab.id] ?? 0;
                         return (
                             <button key={lab.id}
+                                aria-pressed={hidden}
+                                aria-label={`${lab.nombre}: ${hidden ? 'oculto, mostrar' : 'visible, ocultar'}`}
                                 onClick={() => toggle(lab)}
                                 disabled={saving === lab.id}
                                 className="flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-200 disabled:opacity-60 hover:scale-[1.01] active:scale-[0.99]"

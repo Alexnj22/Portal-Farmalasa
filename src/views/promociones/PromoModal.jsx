@@ -492,10 +492,16 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                     {idx > 0 && (
                                         <div className={`flex-1 h-[2px] rounded-full transition-all duration-400 ${isDone ? 'bg-surface-card' : 'bg-surface-card'}`} />
                                     )}
+                                    {/* Paso del asistente: `aria-current` y no
+                                        `aria-pressed` — no es un interruptor, es "dónde
+                                        estás". Y los pasos futuros no son controles:
+                                        `disabled` en vez de un onClick que no hace nada. */}
                                     <button
                                         type="button"
+                                        aria-current={idx === step ? 'step' : undefined}
+                                        disabled={idx >= step}
                                         onClick={() => idx < step && setStep(idx)}
-                                        className="flex items-center gap-2 shrink-0"
+                                        className="flex items-center gap-2 shrink-0 disabled:cursor-default"
                                     >
                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                                             isActive ? 'bg-surface-card border-border-card text-chart-1-text scale-110 shadow-lg shadow-brand/30'

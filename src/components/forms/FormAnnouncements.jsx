@@ -101,6 +101,7 @@ const FormAnnouncements = ({ data }) => {
           {/* BOTÓN DE ACORDEÓN */}
           <button 
             type="button"
+            aria-expanded={isConfirmedOpen}
             onClick={() => setIsConfirmedOpen(!isConfirmedOpen)}
             className="w-full flex items-center justify-between text-caption md:text-label font-black text-success uppercase tracking-widest mb-4 border-b border-success/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
           >
@@ -154,6 +155,7 @@ const FormAnnouncements = ({ data }) => {
           {/* BOTÓN DE ACORDEÓN */}
           <button 
             type="button"
+            aria-expanded={isPendingOpen}
             onClick={() => setIsPendingOpen(!isPendingOpen)}
             className="w-full flex items-center justify-between text-caption md:text-label font-black text-warning uppercase tracking-widest mb-4 border-b border-warning/30 pb-2 transition-all hover:opacity-70 active:scale-[0.99] group"
           >

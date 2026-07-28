@@ -47,6 +47,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                                     <button
                                         key={opt.key}
                                         disabled={isUsed}
+                                        aria-pressed={isSel}
                                         onClick={() => !isUsed && setRazonSel(opt.key)}
                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-body-sm font-medium transition-all text-left ${
                                             isUsed ? 'border-divider bg-surface-card-hover text-content-3 cursor-not-allowed' :

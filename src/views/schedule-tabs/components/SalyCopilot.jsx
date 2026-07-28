@@ -117,6 +117,7 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
                             <div key={group.name} className={`rounded-xl border backdrop-blur-sm transition-all duration-300 ${cardBg} flex flex-col overflow-hidden`}>
                                 <button 
                                     onClick={() => toggleExpand(group.name)}
+                                    aria-expanded={isExpanded}
                                     className="w-full px-2 py-1.5 flex items-center justify-between gap-2 text-left active:scale-[0.98] transition-transform"
                                 >
                                     <div className="flex items-center gap-2 min-w-0">

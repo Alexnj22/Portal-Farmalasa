@@ -799,6 +799,7 @@ const PermissionsView = () => {
                             return (
                                 <button
                                     key={r.id}
+                                    aria-pressed={isActive}
                                     onClick={() => setSelectedRoleId(r.id)}
                                     className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
                                         isActive

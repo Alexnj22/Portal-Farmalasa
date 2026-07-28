@@ -126,7 +126,10 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
             ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}
+            {/* Encabezado plegable. Le faltaba `aria-expanded`: el estado
+                abierto/cerrado vivía solo en el giro del chevron. */}
             <button onClick={() => setExpanded(v => !v)}
+                aria-expanded={expanded}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-card-hover/40 transition-colors duration-200">
 
                 {/* Colored circle avatar */}
@@ -671,7 +674,8 @@ const RequestsView = () => {
 
                         return (
                             <section key={type}>
-                                <button onClick={() => toggleSection(type)} className="w-full flex items-center gap-2 mb-3">
+                                <button onClick={() => toggleSection(type)} aria-expanded={!isCollapsed}
+                                    className="w-full flex items-center gap-2 mb-3">
                                     <div className={`w-6 h-6 rounded-lg flex items-center justify-center border ${tc.sectionIcon}`}>
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>

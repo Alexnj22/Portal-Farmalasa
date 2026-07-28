@@ -603,6 +603,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             <button
               key={card.id}
               type="button"
+              aria-pressed={isActive}
               onClick={() => setStatusTab(card.id)}
               className={[
                 "text-left p-5 rounded-modal border transition-all duration-300 group relative overflow-hidden",

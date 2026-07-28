@@ -168,6 +168,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
     return (
         <div className="border-b border-divider last:border-0">
             <button className="w-full text-left px-4 py-3 hover:bg-surface-card-hover/60 transition-colors flex items-start gap-3"
+                aria-expanded={showDetail}
                 onClick={onToggle}>
                 <span className="shrink-0 w-7 h-7 rounded-lg bg-surface-card-hover flex items-center justify-center text-caption font-black text-content-3 mt-0.5">
                     P{pregunta.id}

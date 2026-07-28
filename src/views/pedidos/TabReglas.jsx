@@ -214,6 +214,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             const { Icon } = style;
                             return (
                                 <button key={pres.id_presentacion} type="button"
+                                    aria-pressed={isActive}
                                     onClick={() => selectPres(pres.id_presentacion)}
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-150 select-none text-left ${
                                         isActive

@@ -413,6 +413,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         return (
                             <button
                                 key={id}
+                                aria-pressed={isOn}
                                 onClick={() => toggleSuc(id)}
                                 className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${baseCls} ${stateCls}`}
                             >

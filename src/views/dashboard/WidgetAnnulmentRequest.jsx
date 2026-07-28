@@ -609,7 +609,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               {vendorList.map(emp => {
                 const isSelected = String(newVendorId) === String(emp.id);
                 return (
-                  <button key={emp.id} onClick={() => setNewVendorId(String(emp.id))}
+                  <button key={emp.id} aria-pressed={isSelected} onClick={() => setNewVendorId(String(emp.id))}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all ${
                       isSelected ? 'bg-brand/5 border-brand/40' : 'bg-surface-card border-divider hover:border-divider'
                     }`}>

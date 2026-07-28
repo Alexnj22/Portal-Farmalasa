@@ -152,6 +152,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                             <div key={sec.key}>
                                 <button
                                     onClick={() => toggleSec(sec.key)}
+                                    aria-expanded={isOpen}
                                     className="w-full flex items-center gap-2.5 mb-3 group"
                                 >
                                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sec.dot}`} />

@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.127.0';
+export const APP_VERSION = '2.128.0';
+
+// v2.128.0 — D3.3, familia B: lo que les faltaba no era el componente.
+//
+// Las 38 "fila o tarjeta" NO son botones en el sentido del canonico: son
+// superficies compuestas —avatar, contador, descripcion, barra de progreso—
+// que ni `Button` ni `SegmentedControl` cubren. Forzarlas seria romperlas.
+//
+// Lo que SI les faltaba, a casi todas, es lo mismo: **no decian su estado**.
+// Vivia entero en el color del borde y en un chevron girado.
+//
+// ── Encabezado de seccion plegable (7) ───────────────────────────────────
+// FormAnnouncements ×2, RequestsView ×2, TabLaboratorios, SalyCopilot y
+// EncuestaView. Todos ganan `aria-expanded`. Antes, si la seccion estaba
+// abierta o cerrada solo lo sabia quien veia girar el chevron.
+//
+// ── Fila/tarjeta seleccionable (8) ───────────────────────────────────────
+// El rol elegido en Permisos, la razon de pausa, la tarjeta de estado del
+// monitor, la presentacion en Reglas, la sucursal en Generar, el laboratorio
+// en LabsPanel y el vendedor en la anulacion. Todos ganan `aria-pressed`.
+//
+// Dos que NO llevan `aria-pressed`, y la distincion importa:
+//   · Los pasos de PromoModal llevan `aria-current="step"` — no son un
+//     interruptor, son "donde estas". Y los pasos futuros dejan de ser
+//     controles: `disabled`, en vez de un `onClick` que no hacia nada.
+//   · El laboratorio de LabsPanel ademas necesitaba nombre: la fila muestra el
+//     nombre y un contador, pero el boton no decia que iba a HACER. Ahora dice
+//     "Bayer: visible, ocultar".
+//
+// Verificado en vivo: /monitor 6 tarjetas con `aria-pressed` y "Total" activa,
+// /pedidos 7, y 13-17 `aria-expanded` por vista. /permissions no la puede ver
+// la cuenta de prueba — queda verificada por codigo.
 
 // v2.127.0 — D3.3: los dos paneles del SRS, la matriz y el selector de mes.
 //

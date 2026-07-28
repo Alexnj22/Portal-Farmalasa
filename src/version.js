@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.144.0';
+export const APP_VERSION = '2.145.0';
+
+// v2.145.0 — El gate cubre las dos deudas que faltaban: chips e inputs.
+//
+// Hasta hoy D3.4 y D3.5 se median con scripts sueltos en el scratchpad —
+// exactamente lo que la memoria del proyecto dice que NO hay que hacer
+// (feedback_structural_grep_over_manual_dictionary). Ahora son categorias del
+// gate, versionadas y con el resto.
+//
+//   chip-a-mano   45  un `<span>` con relleno + radio + texto chico en negrita
+//   input-a-mano  97  un `<input>` de texto fuera de `PortalInput`
+//
+// Van con RATCHET, no en cero: las dos colas son largas y planas (1-2 por
+// archivo). Un gate permanentemente rojo no lo mira nadie; lo que importa es
+// que **no suban**. Probado con un archivo desechable: 45→46 y 97→98 lo
+// marcan como deuda nueva.
+//
+// Dos exclusiones deliberadas: el chip no marca los que tienen `min-w-[…]`
+// (esos son `Contador`, no `Badge`), y el input no mira dentro de
+// `components/common/` (ahi viven los canonicos mismos).
 
 // v2.144.0 — D3.5: el tipo de documento, por cuarta vez.
 //

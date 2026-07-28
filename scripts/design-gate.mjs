@@ -831,6 +831,55 @@ function scanFile(path) {
         category: 'input-label', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
     }
 
+
+    // ── `chip-a-mano` (2026-07-28, D3.5) ────────────────────────────────
+    // Un `<span>` con relleno horizontal + radio + texto chico en negrita es
+    // un chip, y el chip es `Badge`. Medidos al empezar: 101 en 49 archivos,
+    // con CUATRO radios para una sola idea (full 62 · md 30 · lg 14 · xl 4).
+    //
+    // Va con ratchet, no en cero: la cola es larga y plana (1-2 por archivo)
+    // y un gate permanentemente rojo no lo mira nadie. Lo que importa es que
+    // **no suba**.
+    //
+    // NO marca: los que envuelven otro elemento (no son chips de texto) ni
+    // los contadores, que son `Contador` y tienen ancho mínimo fijo.
+    if (!hasException(path, 'chip-a-mano')) {
+      const RE_SPAN = /<span\b/g;
+      let ms;
+      while ((ms = RE_SPAN.exec(sinComentarios2))) {
+        const abre = sinComentarios2.slice(ms.index, finEtiqueta(sinComentarios2, ms.index));
+        const cls = (abre.match(/className=\{?(`[^`]*`|"[^"]*")/) || [])[1] || '';
+        if (!/\bpx-[\d.]+/.test(cls)) continue;
+        if (!/\brounded-/.test(cls)) continue;
+        if (!/text-(micro|caption|label)\b/.test(cls)) continue;
+        if (!/font-(black|bold)\b/.test(cls)) continue;
+        if (/min-w-\[/.test(cls)) continue;            // eso es `Contador`
+        const linea = sinComentarios2.slice(0, ms.index).split('\n').length;
+        findings.push({ line: linea, label: 'chip escrito a mano — usar `Badge` (DESIGN.md §16)',
+          category: 'chip-a-mano', text: abre.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
+    // ── `input-a-mano` (2026-07-28, D3.4) ───────────────────────────────
+    // Un `<input>` de texto fuera de `PortalInput`. El canónico ya reenvía
+    // props desde v2.115.0, así que migrar dejó de perder `min`/`max`/`step`
+    // y los `aria-label`. Ratchet por el mismo motivo que el anterior.
+    //
+    // NO marca: checkbox/radio (esos son `Checkbox`), ni los que viven dentro
+    // de `components/common/` (ahí están los canónicos mismos).
+    if (!hasException(path, 'input-a-mano') && !path.includes('components/common/')) {
+      const RE_IN = /<input\b/g;
+      let mi2;
+      while ((mi2 = RE_IN.exec(sinComentarios2))) {
+        const tag = sinComentarios2.slice(mi2.index, finEtiqueta(sinComentarios2, mi2.index));
+        const tipo = (tag.match(/type=["'{\s]*([a-z]+)/) || [, 'text'])[1];
+        if (['checkbox', 'radio', 'hidden', 'file', 'range', 'color'].includes(tipo)) continue;
+        const linea = sinComentarios2.slice(0, mi2.index).split('\n').length;
+        findings.push({ line: linea, label: 'input fuera de `PortalInput` (DESIGN.md §15)',
+          category: 'input-a-mano', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
     // ── `button-name` (2026-07-28) ──────────────────────────────────────
     // Hermano del anterior, para el otro lado del formulario: un `<button>`
     // cuyo contenido son SOLO íconos, sin `aria-label` ni `title`. Un lector

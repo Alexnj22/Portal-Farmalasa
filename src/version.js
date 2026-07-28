@@ -16,7 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.108.0';
+export const APP_VERSION = '2.109.0';
+
+// v2.109.0 — Los 7 encabezados de FacturacionView, y como se desbloqueo.
+//
+// En v2.105.0 migre estos 7 encabezados a `ListRow`, compilaban, pasaban el
+// lint — y **los revertí**, porque la cuenta no tiene facturas anuladas en
+// ninguna pestaña ni mes y no habia forma de mirarlos en el navegador. Dije
+// que hacia falta "una cuenta o un mes con datos".
+//
+// Estaba equivocado: **hacia falta interceptar la red**. `page.route()` de
+// Playwright deja responder la consulta de PostgREST con filas sinteticas, sin
+// tocar una linea de codigo de produccion ni escribir en la base. Doce
+// facturas en dos sucursales y dos fechas, una con CCF, alcanzan para que las
+// cabeceras tengan que pintar su badge, su tono de peligro y su contador.
+//
+// La leccion no es sobre facturacion: **"no hay datos para verificar" casi
+// nunca es el final del camino.** Los datos de una vista entran por HTTP, y
+// eso se puede responder.
+//
+// Migrados: 3 cabeceras de historial (icono en caja + titulo + subtitulo) y 4
+// agrupadores de sucursal (icono suelto + nombre + badge + contador). Los 7
+// eran `ListRow` con el chevron en `trailing`, escritos a mano con dos
+// anatomias y cuatro rellenos distintos.
+//
+// Verificado contra una captura del ANTES: mismas agrupaciones, mismo badge
+// CCF, mismo tono rosado en la sucursal con CCF, mismo contador.
 
 // v2.108.0 — La barra numero 13, y una opcion que estaba fuera de su grupo.
 //

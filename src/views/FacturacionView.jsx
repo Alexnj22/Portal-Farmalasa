@@ -18,6 +18,7 @@ import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
+import ListRow from '../components/common/ListRow';
 import TabBarAction from '../components/common/TabBarAction';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
@@ -425,18 +426,18 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                         const isCollapsed = !!collapsedBranches[branchId];
                         return (
                             <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
-                                <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-divider rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
-                                    <div className="flex items-center gap-2">
-                                        <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
-                                        <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        {branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}
-                                    </div>
-                                    <div className="flex items-center gap-2">
+                                <ListRow
+                                    density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
+                                    tone={branchHasCCF ? 'danger' : null}
+                                    title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
+                                    onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                    aria-expanded={!isCollapsed}
+                                    className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
+                                    trailing={<>
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
                                         <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
-                                    </div>
-                                </button>
+                                    </>}
+                                />
                                 {!isCollapsed && <div className="divide-y divide-divider">
                                     {Object.entries(byFecha).map(([fecha, fechaRows]) => {
                                         const hasCCF   = fechaRows.some(r => r.tipo_documento === 'CCF');
@@ -541,19 +542,15 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Historial */}
             {!loading && resolved.length > 0 && (
                 <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
-                    <button onClick={() => setShowHistorial(v => !v)}
-                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-card-hover/40 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                                <Check size={13} className="text-success" strokeWidth={3} />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-body font-bold text-content-2">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventada{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
-                                <p className="text-label text-content-3">Historial de resoluciones</p>
-                            </div>
-                        </div>
-                        <ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />
-                    </button>
+                    <ListRow
+                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
+                        title={`${showAllResolved ? resolved.length : resolvedThisMonth.length} solventada${resolved.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
+                        subtitle="Historial de resoluciones"
+                        onClick={() => setShowHistorial(v => !v)}
+                        aria-expanded={showHistorial}
+                        className="rounded-none border-x-0 border-t-0"
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />}
+                    />
                     {showHistorial && (
                         <div className="border-t border-divider">
                             {resolvedDisplay.map((r, i) => {
@@ -874,18 +871,18 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                         return (
                             <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
                                 {/* Branch header — collapsible */}
-                                <button onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                    className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-divider rounded-t-2xl'} ${branchHasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
-                                    <div className="flex items-center gap-2">
-                                        <Building2 size={13} className={branchHasCCF ? 'text-danger' : 'text-content-3'} />
-                                        <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        {branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}
-                                    </div>
-                                    <div className="flex items-center gap-2">
+                                <ListRow
+                                    density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
+                                    tone={branchHasCCF ? 'danger' : null}
+                                    title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
+                                    onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                    aria-expanded={!isCollapsed}
+                                    className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
+                                    trailing={<>
                                         <span className="text-caption font-black text-content-3">{branchTotal} doc</span>
                                         <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
-                                    </div>
-                                </button>
+                                    </>}
+                                />
 
                                 {/* Date sections */}
                                 {!isCollapsed && <div className="divide-y divide-divider">
@@ -1018,19 +1015,15 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             {/* Historial solventados */}
             {!loading && resolved.length > 0 && (
                 <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
-                    <button onClick={() => setShowResolved(v => !v)}
-                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-card-hover/40 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                                <Check size={13} className="text-success" strokeWidth={3} />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-body font-bold text-content-2">{showAllResolved ? resolved.length : resolvedThisMonth.length} solventado{resolved.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
-                                <p className="text-label text-content-3">Historial de envíos al MH</p>
-                            </div>
-                        </div>
-                        <ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />
-                    </button>
+                    <ListRow
+                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
+                        title={`${showAllResolved ? resolved.length : resolvedThisMonth.length} solventado${resolved.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
+                        subtitle="Historial de envíos al MH"
+                        onClick={() => setShowResolved(v => !v)}
+                        aria-expanded={showResolved}
+                        className="rounded-none border-x-0 border-t-0"
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />}
+                    />
                     {showResolved && (
                         <div className="border-t border-divider">
                             {resolvedDisplay.map((r, i) => {
@@ -1246,18 +1239,18 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                             const hasCCF = branchGaps.some(g => g.tipo_documento === 'CCF');
                             return (
                                 <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
-                                    <button onClick={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                        className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${isCollapsed ? 'rounded-2xl' : 'border-b border-divider rounded-t-2xl'} ${hasCCF ? 'bg-danger/10 hover:bg-danger/10' : 'bg-surface-card-hover/60 hover:bg-surface-card-hover/60'}`}>
-                                        <div className="flex items-center gap-2">
-                                            <Building2 size={13} className={hasCCF ? 'text-danger' : 'text-content-3'} />
-                                            <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                            {hasCCF && <Badge variant="danger" size="sm">CCF</Badge>}
-                                        </div>
-                                        <div className="flex items-center gap-2">
+                                    <ListRow
+                                        density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={hasCCF ? 'text-danger' : 'text-content-3'}
+                                        tone={hasCCF ? 'danger' : null}
+                                        title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{hasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
+                                        onClick={() => setCollapsedGapBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                        aria-expanded={!isCollapsed}
+                                        className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
+                                        trailing={<>
                                             <span className="text-caption font-black text-content-3">{branchGaps.length} salto{branchGaps.length !== 1 ? 's' : ''}</span>
                                             <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
-                                        </div>
-                                    </button>
+                                        </>}
+                                    />
                                     {!isCollapsed && (
                                         <div className="px-4 py-3">
                                             <div className="flex flex-wrap gap-1.5">
@@ -1343,17 +1336,17 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                             const isCollapsed = !!collapsedNullBranches[branchId];
                             return (
                                 <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
-                                    <button onClick={() => setCollapsedNullBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
-                                        className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors bg-surface-card-hover/60 hover:bg-surface-card-hover/60 ${isCollapsed ? 'rounded-2xl' : 'border-b border-divider rounded-t-2xl'}`}>
-                                        <div className="flex items-center gap-2">
-                                            <Building2 size={13} className="text-content-3" />
-                                            <span className="text-body font-black text-content-2">{getBranch(Number(branchId))}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
+                                    <ListRow
+                                        density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent" iconClass={'text-content-3'}
+                                        title={getBranch(Number(branchId))}
+                                        onClick={() => setCollapsedNullBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                        aria-expanded={!isCollapsed}
+                                        className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
+                                        trailing={<>
                                             <span className="text-caption font-black text-content-3">{branchNulls.length} doc</span>
                                             <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
-                                        </div>
-                                    </button>
+                                        </>}
+                                    />
                                     {!isCollapsed && (
                                         <div className="px-4 py-3">
                                             <div className="flex flex-wrap gap-1.5">
@@ -1439,19 +1432,15 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
             {/* ── Historial solventados ── */}
             {resolvedGaps.length > 0 && (
                 <div ref={resolvedSectionRef} className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
-                    <button onClick={() => setShowHistorial(v => !v)}
-                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-surface-card-hover/40 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-7 h-7 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                                <Check size={13} className="text-success" strokeWidth={3} />
-                            </div>
-                            <div className="text-left">
-                                <p className="text-body font-bold text-content-2">{showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto{resolvedGaps.length !== 1 ? 's' : ''} solventado{resolvedGaps.length !== 1 ? 's' : ''} {showAllResolved ? 'en total' : 'este mes'}</p>
-                                <p className="text-label text-content-3">Historial de resoluciones</p>
-                            </div>
-                        </div>
-                        <ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />
-                    </button>
+                    <ListRow
+                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
+                        title={`${showAllResolved ? resolvedGaps.length : resolvedGapsThisMonth.length} salto${resolvedGaps.length !== 1 ? 's' : ''} solventado${resolvedGaps.length !== 1 ? 's' : ''} ${showAllResolved ? 'en total' : 'este mes'}`}
+                        subtitle="Historial de resoluciones"
+                        onClick={() => setShowHistorial(v => !v)}
+                        aria-expanded={showHistorial}
+                        className="rounded-none border-x-0 border-t-0"
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showHistorial ? 'rotate-180' : ''}`} />}
+                    />
                     {showHistorial && (
                         <div className="border-t border-divider">
                             {resolvedGapsDisplay.map((r, i) => {

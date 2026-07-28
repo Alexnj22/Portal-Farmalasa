@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.121.0';
+export const APP_VERSION = '2.122.0';
+
+// v2.122.0 — D3.3: el caso mas claro de por que existe esta fase.
+//
+// `EncuestaAdminView` tenia un `SegmentControl` propio —el canonico reescrito
+// clase por clase— **en un archivo que YA importaba `SegmentedControl` y lo
+// usaba cinco veces**. No es que faltara el componente: es que nadie lo busco
+// antes de escribir otro. Sus tres usos migrados, el duplicado borrado.
+//
+// Tambien:
+//   · TabPromos: cuatro filtros excluyentes con su propio activo y su propio
+//     contador → `SegmentedControl`, con el contador en el label.
+//   · FilterPill (pedidos): `statusBtn` era `FilterBar.Chip` EXACTO — se apaga
+//     al volver a pulsarlo, y hasta dibujaba la × cuando esta activo, que es
+//     lo ultimo que hacia a mano. El `activeClass` de tres clases pasa a ser
+//     un `tone`.
+//
+// Verificado en vivo: /encuesta-admin muestra los 5 grupos como `radiogroup`
+// con su etiqueta y su marcado ("Estado de la encuesta: Borrador | Activa✓ |
+// Cerrada | Archivada"), /promociones el suyo, 0 botones sin nombre, 0
+// errores.
+//
+// Botones a mano: 97 → 94.
 
 // v2.121.0 — D3.3: acciones sueltas y la familia "chip que enciende un panel".
 //

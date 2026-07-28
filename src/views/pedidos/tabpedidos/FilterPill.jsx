@@ -4,6 +4,7 @@ import Button from '../../../components/common/Button';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import PeriodPicker from '../../../components/common/PeriodPicker';
 import { currentMonthRange } from './helpers';
+import FilterBar from '../../../components/common/FilterBar';
 
 export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilterStatus, filterOptions, filterDate, setFilterDate }) {
     const defaultDate = currentMonthRange();
@@ -11,17 +12,17 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     const hasActive   = (!isBranch && filterSuc !== '') || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
-    const statusBtn = (key, label, activeClass = 'bg-chart-1-solid text-white border-chart-1') => (
-        <button
-            onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
-            className={`flex items-center gap-1 text-label px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
-                filterStatus === key
-                    ? activeClass
-                    : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'
-            }`}
+    // `FilterBar.Chip` es EXACTAMENTE esto: se apaga al volver a pulsarlo,
+    // lleva `aria-pressed` y ya dibuja la × cuando está activo — que era lo
+    // último que este botón hacía a mano. El `activeClass` pasa a ser `tone`.
+    const statusBtn = (key, label, tone = 'brand') => (
+        <FilterBar.Chip
+            tone={tone}
+            active={filterStatus === key}
+            onToggle={() => setFilterStatus(v => v === key ? 'all' : key)}
         >
-            {label}{filterStatus === key && <X size={9} strokeWidth={3} className="ml-0.5" />}
-        </button>
+            {label}
+        </FilterBar.Chip>
     );
 
     return (
@@ -59,8 +60,8 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado',    'En ruta')}
                 <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
-                {statusBtn('observacion','Con observación', 'bg-warning-solid text-white border-warning')}
-                {statusBtn('completado', 'Completados',     'bg-success-solid text-white border-success')}
+                {statusBtn('observacion','Con observación', 'warning')}
+                {statusBtn('completado', 'Completados',     'success')}
             </div>
 
             {hasActive && (

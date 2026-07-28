@@ -143,23 +143,10 @@ function PersonAvatar({ src, name, isJefe, size = 28 }) {
     );
 }
 
-// ─── Segment Control ──────────────────────────────────────────────────────────
-function SegmentControl({ options, value, onChange, compact = false }) {
-    return (
-        <div className={`flex items-center gap-1 bg-surface-card-hover/40 rounded-full border border-divider shadow-[var(--shadow-shine)] ${compact ? 'p-1' : 'p-1.5'}`}>
-            {options.map(opt => (
-                <button key={opt.id} type="button" onClick={() => onChange(opt.id)}
-                    className={`flex-1 rounded-full font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${compact ? 'h-7 text-micro' : 'h-8 text-micro md:text-caption'} ${
-                        value === opt.id
-                            ? 'bg-surface-card text-brand-text border-border-card shadow-sm scale-[1.02]'
-                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5 hover:shadow-sm'
-                    }`}>
-                    {opt.label}
-                </button>
-            ))}
-        </div>
-    );
-}
+// `SegmentControl` vivía acá: el canónico `SegmentedControl` reescrito a mano
+// **en un archivo que ya importaba el canónico y lo usaba cinco veces**. Es el
+// caso más claro de por qué D3.3 existe: no es que faltara el componente, es
+// que nadie lo buscó antes de escribir otro. (2026-07-28)
 
 function computeTenureCategory(hireDateStr) {
     if (!hireDateStr) return null;
@@ -546,14 +533,18 @@ export default function EncuestaAdminView() {
                                     </div>
                                     <div>
                                         <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Estado</label>
-                                        <SegmentControl options={ESTADO_TABS} value={sfEstado} onChange={setSfEstado} compact />
+                                        <SegmentedControl size="sm" tone="neutro" label="Estado de la encuesta"
+                                            options={ESTADO_TABS.map(t => ({ value: t.id, label: t.label }))}
+                                            value={sfEstado} onChange={setSfEstado} />
                                     </div>
                                 </div>
 
                                 {/* Tipo */}
                                 <div>
                                     <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Tipo de encuesta</label>
-                                    <SegmentControl options={TIPO_TABS} value={sfTipo} onChange={setSfTipo} />
+                                    <SegmentedControl tone="neutro" label="Tipo de encuesta"
+                                        options={TIPO_TABS.map(t => ({ value: t.id, label: t.label }))}
+                                        value={sfTipo} onChange={setSfTipo} />
                                     <p className="text-caption text-content-3 mt-1.5 ml-1 leading-snug">{TIPO_DESC[sfTipo]}</p>
                                 </div>
 
@@ -638,7 +629,9 @@ export default function EncuestaAdminView() {
                                     <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Users size={10} strokeWidth={2.5} /> Dirigida a
                                     </label>
-                                    <SegmentControl options={SCOPE_TABS} value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
+                                    <SegmentedControl tone="neutro" label="A quién va dirigida"
+                                        options={SCOPE_TABS.map(t => ({ value: t.id, label: t.label }))}
+                                        value={sfScope} onChange={v => { setSfScope(v); setSfScopeIds([]); setSfEmpSearch(''); }} />
 
                                     {sfScope === 'branches' && (
                                         <div className="flex flex-wrap gap-2 mt-2">

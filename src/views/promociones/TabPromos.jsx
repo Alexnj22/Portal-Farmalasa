@@ -11,6 +11,7 @@ import { useToastStore } from '../../store/toastStore';
 import PromoModal        from './PromoModal';
 import ConfirmModal      from '../../components/common/ConfirmModal';
 import { fetchPromotionsList, updatePromotionEstado, deletePromotion } from '../../data/promotions';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -291,28 +292,23 @@ export default function TabPromos({ searchTerm, canEdit }) {
                         <Tag size={13} className="text-content-3 flex-shrink-0" />
                     </div>
                     <div className="h-5 w-px bg-divider shrink-0" />
-                    {pillFilters.map((pf, idx) => (
-                        <React.Fragment key={pf.key}>
-                            {idx > 0 && <div className="h-5 w-px bg-divider shrink-0" />}
-                            <button
-                                onClick={() => setFilterState(pf.key)}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-label font-semibold transition-all ${
-                                    filterState === pf.key
-                                        ? 'bg-chart-1-solid text-white shadow-sm'
-                                        : 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover'
-                                }`}
-                            >
-                                {pf.label}
-                                {pf.count > 0 && (
-                                    <span className={`text-micro font-bold px-1 py-0.5 rounded-full ${
-                                        filterState === pf.key ? 'bg-surface-card text-white' : 'bg-surface-card-hover text-content-3'
-                                    }`}>
-                                        {pf.count}
-                                    </span>
-                                )}
-                            </button>
-                        </React.Fragment>
-                    ))}
+                    {/* Era un `<button>` por filtro con su propio activo y su propio
+                        contador. `SegmentedControl` los toma como opciones —son
+                        excluyentes, `setFilterState(pf.key)` sin apagar— y el
+                        contador va en el label. */}
+                    <div className="px-1">
+                        <SegmentedControl
+                            size="sm"
+                            tone="chart-1"
+                            label="Estado de las promociones"
+                            value={filterState}
+                            onChange={setFilterState}
+                            options={pillFilters.map(pf => ({
+                                value: pf.key,
+                                label: pf.count > 0 ? `${pf.label} · ${pf.count}` : pf.label,
+                            }))}
+                        />
+                    </div>
 
                     {canEdit && (
                         <>

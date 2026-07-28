@@ -16,7 +16,39 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.114.0';
+export const APP_VERSION = '2.115.0';
+
+// v2.115.0 — D3.4 era una migracion con trampa. Ya no.
+//
+// `PortalInput` aceptaba una lista FIJA de props y tiraba en silencio todo lo
+// demas. Medido sobre los 104 `<input>` que faltan migrar:
+//
+//     54 de 104 (51%) usan al menos un atributo que el canonico NO acepta
+//     min 38 · aria-label 22 · step 18 · max 13 · ref 6 · inputMode 2
+//
+// Traducido: migrar un campo de cantidad de nomina le habria quitado su rango
+// (`min`/`max`/`step`) y alguien habria podido escribir -5 o 3.7 donde no va.
+// Y los 22 con `aria-label` habrian PERDIDO su nombre accesible — justo los
+// que D3.4 acababa de arreglar. Sin que fallara el build, ni el lint, ni el
+// gate. El plan avisaba que "migrar estos a velocidad de script es la forma
+// mas rapida de romper la captura de datos de la empresa"; esta es la razon
+// concreta, y estaba en el canonico, no en las vistas.
+//
+// Ahora `PortalInput` y `PortalTextarea` reenvian `...rest`. Va PRIMERO en el
+// elemento a proposito: lo que el componente gestiona (id, type, value,
+// onChange, className, el estado de error) gana siempre, y lo del llamador
+// llena los huecos. Unica excepcion, `aria-describedby`: se fusiona, porque si
+// el campo no esta en error el valor del llamador tiene que sobrevivir.
+//
+// Primera migracion real con esto, en CotizacionesView: Cantidad y P. Unitario
+// llevaban un `<label>` suelto SIN `htmlFor` —no estaba asociado al campo, por
+// eso el `aria-label` de parche— mas `min`/`step`. Verificado en vivo: los dos
+// atributos llegan al DOM y la etiqueta ahora la asocia `<label for>` de
+// verdad.
+//
+// Barrido aparte: de los 38 canonicos de common/, `Badge` era el unico donde
+// no reenviar props causaba una perdida real hoy. El resto toma props
+// explicitas por diseno (un modal no necesita atributos arbitrarios).
 
 // v2.114.0 — D3.5 `Badge` re-medido, y un componente que tragaba props.
 //

@@ -19,6 +19,24 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     // dentro de una tabla y no como campo de formulario.
     compact = false,
     inputClassName = '',
+    // ── 2026-07-28: sin esto, D3.4 era una migración con trampa ──────────
+    // El componente aceptaba una lista FIJA de props y tiraba todo lo demás.
+    // Medido sobre los 104 `<input>` que faltan migrar: **54 (51%) usan al
+    // menos un atributo que no estaba en la lista**. Los de arriba:
+    //
+    //     min 38 · aria-label 22 · step 18 · max 13 · ref 6 · inputMode 2
+    //
+    // O sea que migrar un campo de cantidad de nómina le habría quitado su
+    // rango (`min`/`max`/`step`) y migrar los 22 con `aria-label` habría
+    // borrado justo los nombres accesibles que D3.4 acababa de agregar. Sin
+    // que fallara el build, ni el lint, ni el gate.
+    //
+    // `rest` va PRIMERO en el `<input>` a propósito: lo que el componente
+    // gestiona (id, type, value, onChange, className, el estado de error) gana
+    // siempre, y lo que pasa el llamador llena los huecos. La única excepción
+    // es `aria-describedby`, que se fusiona más abajo — si el campo no está en
+    // error, el valor del llamador tiene que sobrevivir.
+    ...rest
 }) => {
     const handleInputChange = (e) => {
         let val = e.target.value;
@@ -46,6 +64,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 {Icon && <div className="absolute left-3 text-content-3"><Icon size={14} strokeWidth={2.5} /></div>}
                 {prefix && <div className="absolute left-3 text-content-3 font-black text-body">{prefix}</div>}
                 <input
+                    {...rest}
                     id={name}
                     type={type}
                     name={name}
@@ -57,7 +76,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     required={required}
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
-                    aria-describedby={isInvalid ? messageId : undefined}
+                    aria-describedby={isInvalid ? messageId : rest['aria-describedby']}
                     className={`w-full h-full bg-transparent ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold text-content outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}

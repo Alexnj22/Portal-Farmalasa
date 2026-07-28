@@ -42,6 +42,10 @@ const PortalTextarea = memo(({
     maxLength,
     className = '',
     textareaClassName = '',
+    // Mismo arreglo que `PortalInput` (2026-07-28): la lista fija de props
+    // tiraba en silencio todo lo demás — `onBlur`, `onKeyDown`, `ref`,
+    // `aria-label`, `autoComplete`. Ver la nota larga allá.
+    ...rest
 }) => {
     const isMissing = required && !value?.trim();
     const isInvalid = hasError || isMissing;
@@ -69,6 +73,7 @@ const PortalTextarea = memo(({
 
             <div data-surface="input" className={`relative z-base ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
                 <textarea
+                    {...rest}
                     id={name}
                     name={name}
                     rows={rows}
@@ -81,7 +86,7 @@ const PortalTextarea = memo(({
                     maxLength={maxLength}
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
-                    aria-describedby={isInvalid ? messageId : undefined}
+                    aria-describedby={isInvalid ? messageId : rest['aria-describedby']}
                     // `resize-none` a propósito: el tirador nativo de la esquina
                     // es el mismo elemento del navegador que ya sacamos de todos
                     // los demás controles — no sigue el tema y se sale de la

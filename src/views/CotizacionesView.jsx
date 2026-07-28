@@ -10,6 +10,7 @@ import {
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
+import PortalInput from '../components/common/PortalInput';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import LiquidAvatar from '../components/common/LiquidAvatar';
@@ -251,21 +252,26 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                     <LiquidSelect value={item.priceType} onChange={v => updateItem(item._id, 'priceType', v)}
                         options={priceOptions} placeholder="Precio..." icon={Percent} compact clearable={false} />
                 </div>
-                <div>
-                    <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">Cantidad</label>
-                    <input aria-label="Cantidad" type="number" min="0" step="0.001" value={item.cantidad}
-                        onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
- className="w-full bg-surface-card border border-border-card rounded-2xl px-3 py-2.5 text-body-xl font-bold text-content text-center focus:border-brand transition-all" />
-                </div>
-                <div>
-                    <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-caption font-black text-content-3">$</span>
-                        <input aria-label="Precio unitario" type="number" min="0" step="0.01" value={item.precioUnitario}
-                            onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
- className="w-full bg-surface-card border border-border-card rounded-2xl pl-6 pr-3 py-2.5 text-body-xl font-bold text-content text-right focus:border-brand transition-all" />
-                    </div>
-                </div>
+                {/* La etiqueta era un `<label>` suelto SIN `htmlFor`: no estaba
+                    asociada al campo, y por eso hacía falta el `aria-label` de
+                    parche. `PortalInput` la asocia de verdad, y desde hoy
+                    reenvía `min`/`step`, que antes se habrían perdido. */}
+                <PortalInput
+                    label="Cantidad"
+                    name={`cotiz-cantidad-${item._id}`}
+                    type="number" min="0" step="0.001"
+                    value={item.cantidad}
+                    onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
+                    inputClassName="text-center"
+                />
+                <PortalInput
+                    label="P. Unitario (c/IVA)"
+                    name={`cotiz-precio-${item._id}`}
+                    type="number" min="0" step="0.01" prefix="$"
+                    value={item.precioUnitario}
+                    onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
+                    inputClassName="text-right"
+                />
             </div>
             <div className={`flex flex-wrap items-center gap-x-5 gap-y-1 pt-2 border-t border-dashed border-divider ${isCCF ? '' : 'justify-end'}`}>
                 {isCCF ? (

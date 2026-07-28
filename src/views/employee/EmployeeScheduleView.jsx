@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import { ChevronLeft, ChevronRight, Coffee, Palmtree, Calendar, ArrowRight, Loader2, MessageSquare, Check, X } from 'lucide-react';
+import PeriodStepper from '../../components/common/PeriodStepper';
+import { Coffee, Palmtree, Calendar, ArrowRight, Loader2, MessageSquare, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import { formatTime12h } from '../../utils/helpers';
@@ -224,16 +225,20 @@ const EmployeeScheduleView = () => {
 
     return (
         <div className="px-4 pt-4 pb-6 space-y-4">
-            {/* Navegación de semana */}
-            <div className="flex items-center justify-between bg-surface-card backdrop-blur-xl border border-border-card rounded-card px-4 py-3 shadow-sm">
-                <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={() => setWeekOffset(v => v - 1)} />
-                <div className="text-center">
-                    <p className="text-body font-black text-content">{weekLabel}</p>
-                    {isCurrentWeek && (
-                        <span className="text-micro font-black uppercase tracking-widest text-brand-text">Semana actual</span>
-                    )}
-                </div>
-                <Button variant="secondary" icon={ChevronRight} iconOnly onClick={() => setWeekOffset(v => v + 1)} />
+            {/* Navegación de semana — `PeriodStepper` (§17.1). Antes las dos
+                flechas no tenían nombre accesible (un lector decía "botón,
+                botón") y desde una semana lejana no había forma de volver a la
+                actual salvo repetir clics. */}
+            <div className="flex items-center justify-center bg-surface-card backdrop-blur-xl border border-border-card rounded-card px-4 py-2 shadow-sm">
+                <PeriodStepper
+                    unit="semana"
+                    label={weekLabel}
+                    isCurrent={isCurrentWeek}
+                    resetLabel="Semana actual"
+                    onPrev={() => setWeekOffset(v => v - 1)}
+                    onNext={() => setWeekOffset(v => v + 1)}
+                    onReset={() => setWeekOffset(0)}
+                />
             </div>
 
             {isLoading ? (

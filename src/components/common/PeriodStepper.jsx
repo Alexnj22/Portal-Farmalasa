@@ -37,6 +37,11 @@ const SIZES = {
 
 const PeriodStepper = memo(({
     label,
+    // `children` reemplaza al rótulo cuando el centro NO es texto sino un
+    // control — el caso real es el calendario del Inicio, donde el mes es un
+    // selector que se abre. Va como hijo y no como `label` a propósito: si se
+    // envolviera en el botón de `onReset` quedaría un `<button>` dentro de otro.
+    children,
     unit = 'período',
     onPrev,
     onNext,
@@ -74,7 +79,9 @@ const PeriodStepper = memo(({
                 title={`${unit.charAt(0).toUpperCase()}${unit.slice(1)} anterior`}
                 aria-label={`${unit.charAt(0).toUpperCase()}${unit.slice(1)} anterior`} />
 
-            {onReset ? (
+            {children ? (
+                <span className="flex items-center justify-center px-1 min-w-0">{children}</span>
+            ) : onReset ? (
                 <button type="button" onClick={onReset} disabled={isCurrent}
                     title={isCurrent ? undefined : `Volver a ${unit === 'período' ? 'el período actual' : `la ${unit} actual`}`}
                     className={`flex flex-col items-center justify-center px-2 ${s.min} rounded-btn

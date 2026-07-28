@@ -5,7 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.99.1';
+export const APP_VERSION = '2.99.2';
+
+// v2.99.2 — PeriodStepper adoptado en los 5 usos que quedaban.
+//
+// DashboardView (tendencia, calendario, cumpleaños y el año del selector de
+// mes) y EmployeeScheduleView. Con esto el control «‹ etiqueta ›» ya no
+// existe escrito a mano en ningun lado: era 7 copias con 5 anatomias.
+//
+// El canonico gano `children`: en el calendario del Inicio el centro NO es un
+// rotulo sino un selector que se abre. Va como HIJO y no como `label` a
+// proposito — si se envolviera en el boton de "volver a hoy" quedaria un
+// <button> dentro de otro, que es HTML invalido y una segunda parada de
+// tabulacion para la misma accion. Misma regla que ya aprendio `Switch`.
+//
+// Lo que ganan de paso los cinco: nombre accesible en las dos flechas (antes
+// un lector de pantalla decia "boton, boton") y, donde aplica, un atajo para
+// volver al periodo actual sin repetir clics.
 
 // v2.99.1 — §17, tanda 2: ocho vistas mas. FilterBar de 10 a 18 adopciones.
 //

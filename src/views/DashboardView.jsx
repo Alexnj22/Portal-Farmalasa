@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Button from '../components/common/Button';
+import PeriodStepper from '../components/common/PeriodStepper';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -334,21 +335,13 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
       {open && createPortal(
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
           <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
-            <div className="flex items-center justify-between mb-3 px-1">
-              <Button
-                  icon={ChevronLeft}
-                  iconOnly
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => setViewYear(y => y - 1)}
-              />
-              <span className="text-body font-black text-content">{viewYear}</span>
-              <Button
-                  icon={ChevronRight}
-                  iconOnly
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => setViewYear(y => y + 1)}
+            <div className="flex items-center justify-center mb-3 px-1">
+              <PeriodStepper
+                  size="sm"
+                  unit="año"
+                  label={String(viewYear)}
+                  onPrev={() => setViewYear(y => y - 1)}
+                  onNext={() => setViewYear(y => y + 1)}
               />
             </div>
             <div className="grid grid-cols-3 gap-1">
@@ -1196,24 +1189,17 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('trend',
         <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
-            <div className="flex items-center gap-1 bg-surface-card-hover border border-divider rounded-xl px-1 py-0.5">
-              <Button
-                  icon={ChevronLeft}
-                  iconOnly
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => setTrendOffset(o=>o-1)}
-              />
-              <span className="text-label font-bold text-content-2 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
-              <Button
-                  icon={ChevronRight}
-                  iconOnly
-                  size="xs"
-                  variant="secondary"
-                  onClick={() => setTrendOffset(o=>Math.min(0,o+1))}
-                  disabled={trendOffset===0}
-              />
-            </div>
+            <PeriodStepper
+              size="sm"
+              unit="semana"
+              label={trendOffset === 0 ? 'Esta semana' : trendRangeLabel}
+              isCurrent={trendOffset === 0}
+              resetLabel="Esta semana"
+              onPrev={() => setTrendOffset(o => o - 1)}
+              onNext={() => setTrendOffset(o => Math.min(0, o + 1))}
+              onReset={() => setTrendOffset(0)}
+              nextDisabled={trendOffset === 0}
+            />
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
             {!attendanceLoaded ? (
@@ -1555,26 +1541,17 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('calendar','dash_calendar')) return null;
       return wrapWidget('calendar',
         <WidgetCard title="Calendario" icon={CalendarDays} category="general" action={
-          // gap ampliado en mobile (gap-0.5=2px era insuficiente para
-          // expandir el touch target de los chevrones sin solaparse con el
-          // trigger de MonthYearPicker, v2.47.4)
-          <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-0.5'}`}>
-            <Button
-                icon={ChevronLeft}
-                iconOnly
-                size="xs"
-                variant="secondary"
-                onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))}
-            />
+          // El centro no es un rótulo sino un selector que se abre, así que va
+          // como hijo de `PeriodStepper` (§17.1) — envolverlo en el botón de
+          // "volver a hoy" daría un `<button>` dentro de otro.
+          <PeriodStepper
+            size="sm"
+            unit="mes"
+            onPrev={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))}
+            onNext={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))}
+          >
             <MonthYearPicker value={calMonth} onChange={setCalMonth} isMobile={isMobile}/>
-            <Button
-                icon={ChevronRight}
-                iconOnly
-                size="xs"
-                variant="secondary"
-                onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))}
-            />
-          </div>
+          </PeriodStepper>
         }>
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
             {/* Day headers — always visible */}
@@ -1669,23 +1646,13 @@ const DashboardView = ({ openModal }) => {
                 </div>
                 <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
               </div>
-              <div className="flex items-center gap-1">
-                <Button
-                    icon={ChevronLeft}
-                    iconOnly
-                    size="xs"
-                    variant="primary"
-                    onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))}
-                />
-                <span className="text-caption font-black text-brand-text uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
-                <Button
-                    icon={ChevronRight}
-                    iconOnly
-                    size="xs"
-                    variant="primary"
-                    onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))}
-                />
-              </div>
+              <PeriodStepper
+                size="sm"
+                unit="mes"
+                label={MONTH_ES[bdMonth.getMonth()]}
+                onPrev={() => setBdMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                onNext={() => setBdMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+              />
             </div>
           </div>
           {/* Content */}

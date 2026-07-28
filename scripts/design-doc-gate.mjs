@@ -55,7 +55,14 @@ try {
   salida = (e.stdout || '') + (e.stderr || '');
 }
 
-const hallazgos = salida.split('\n').filter(l => /\[\w[\w-]*\]/.test(l));
+// `import` no aplica a un documento: un ejemplo de DESIGN.md muestra CÓMO se
+// usa un componente, no un archivo completo — nunca trae sus imports, y
+// pedírselos lo llenaría de ruido que no enseña nada. Apareció el 2026-07-27
+// al hacer que el gate leyera los canónicos de la carpeta en vez de una lista
+// a mano: `SearchInput` entró a la lista y el §24 del doc pasó a "fallar".
+const hallazgos = salida.split('\n')
+  .filter(l => /\[\w[\w-]*\]/.test(l))
+  .filter(l => !/\[import\]/.test(l));
 console.log(`\n  ${candidatos.length} bloques de código revisados en ${DOC}\n`);
 if (!hallazgos.length) {
   console.log('  ✓ El documento no enseña nada que el gate prohíba.\n');

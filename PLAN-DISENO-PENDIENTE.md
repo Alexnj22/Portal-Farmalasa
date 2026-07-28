@@ -1473,6 +1473,162 @@ para la misma fila; React lo avisa en consola. Se arregla con la anatomía de
 `ListRow` + `trailing`, que es familia B de D3.3 — no de rebote mientras se
 migra la barra de filtros.
 
+## Móvil — cuatro reportes del usuario, los cuatro reproducidos (v2.100.0)
+
+Reproducidos en **WebKit con un iPhone 13**, no en Chromium con el viewport
+angosto. La diferencia no es un detalle: tres de los cuatro bugs **solo
+existen en WebKit**, y el barrido con Chromium móvil los daba todos en verde.
+
+### 1 · El Inicio reventaba en Safari móvil
+
+`ALGO SALIÓ MAL` apenas cargaba. El error, capturado interceptando
+`console.error` (no llega como `pageerror`):
+
+```
+Maximum update depth exceeded
+  commitHookPassiveMountEffects → recharts dispatch ×5 → forceStoreRerender
+```
+
+Un bucle infinito **dentro de recharts**. Medido en los cuatro entornos antes
+de tocar nada, porque *"es el móvil"* habría sido la conclusión fácil y falsa:
+
+| | |
+|---|---|
+| WebKit móvil | ✗ bucle |
+| Chromium móvil | ✓ (contenedor 308×142) |
+| WebKit 1500px | ✓ |
+| Chromium 1500px | ✓ |
+
+La causa está en `useReportScale` de recharts:
+`getBoundingClientRect().width / offsetWidth` — una medida fraccionaria
+dividida por una entera— y despacha al store si el cociente cambia. Con un
+ancestro transformado (las tarjetas del Inicio entran con `staggerEnter`),
+WebKit devuelve un rect distinto en cada frame y no converge.
+
+**`ChartContainer` nuevo**: mide él el contenedor, pasa **píxeles enteros** al
+gráfico y no lo monta mientras un ancestro esté animando.
+
+**Tres intentos, y por qué los dos primeros no bastaron** — vale más que el
+arreglo:
+
+| intento | resultado |
+|---|---|
+| `debounce={80}` (lo que recharts documenta) | bajó la frecuencia, dejó el bug **intermitente** |
+| medir yo y pasar enteros | 0/5 pantallas rotas, pero 3/5 seguían con bucle |
+| esperar a que no haya animación en curso | ← el guard correcto |
+
+Lo importante del intermedio: **intermitente es peor que reproducible**. Dos
+corridas seguidas daban resultados distintos, y una de ellas parecía la
+confirmación del arreglo. Por eso la verificación pasó a ser 5 corridas, no
+una.
+
+Y un bug **propio** encontrado al arreglarlo: la primera versión encolaba un
+`requestAnimationFrame` por llamada sin cancelar el anterior, y como el
+`ResizeObserver` también llama a medir, los frames se multiplicaban en vez de
+sustituirse. Un arreglo que se apoya en rAF tiene que traer su propio cancel;
+si no, es otro bucle con distinto nombre.
+
+### 2 · "El menú en móvil no funciona correctamente"
+
+Dos cosas distintas bajo el mismo reporte:
+
+- **El vidrio.** El sidebar tenía `bg-[#07031a]/95 lg:bg-[#07031a]/80
+  lg:backdrop-blur-2xl`. Ese `lg:` era el bug: en un teléfono **no había blur**
+  pero el fondo seguía translúcido al 95%, así que ese 5% dejaba ver el texto
+  de la vista **nítido** a través del menú. Es peor que cualquiera de los dos
+  extremos — opaco se ve limpio, vidrio con blur se ve vidrio; opaco-al-95%
+  sin blur se ve sucio.
+- **La mitad del menú era invisible.** 47 ítems, **23 visibles** en un iPhone
+  13, y el nav usa `scrollbar-hide`: no había ninguna señal de que hubiera
+  más. Ahora un desvanecido aparece solo cuando queda lista por debajo.
+
+#### El sidebar es bespoke en color, no en material
+
+Esa distinción es la que faltaba, y es la respuesta a *"aplicalo según tema,
+lo que no es el color"*. El sidebar es oscuro en los cuatro temas a propósito
+—igual que el kiosco—, pero eso no lo hace dueño de su **material**. Ahora sale
+de `--sidebar-bg` / `--sidebar-backdrop` / `--sidebar-border`, verificado en
+los cuatro:
+
+| tema | fondo | vidrio |
+|---|---|---|
+| liquid · dark | `rgba(7,3,26,.80)` | `blur(28px) saturate(1.8)` |
+| solid · solid-dark | `#0B1020` | **none** |
+
+### 3 · "En móvil el selector de fecha abre el teclado"
+
+Literal: los tres campos DD/MM/AAAA **son `<input>`**, así que tocarlos enfoca
+y el sistema levanta el teclado numérico — que tapa media pantalla y, con
+ella, la hoja del calendario que acababa de abrirse. Con el dedo nadie teclea
+`15/07/2026` teniendo días de 44px al lado.
+
+En táctil los tres se renderizan como **texto** y el control entero es el
+disparador de la hoja. Misma regla que ya aprendió `Switch`: **si algo no se va
+a usar como campo, no debe SER un campo** — un `readOnly` se seguiría
+enfocando. Igual en `RangeDatePicker`, donde además el panel medía 557px en
+una ventana útil de 664px y con el teclado no entraba.
+
+#### Y al abrirlo apareció otra superficie sin nombrar: la hoja
+
+Con el teclado fuera del camino se vio el problema de abajo: **la hoja del
+calendario dejaba leer la hoja de filtros que tenía debajo**. En la captura se
+leían *"Filtros"*, *"DD/MM/AAAA"* y los cuatro estados del segmentado a través
+del calendario, todo encimado.
+
+Las tres hojas del portal —selector de fecha, de rango y `FilterBar`— usaban
+`--surface-dropdown`, al **72% de opacidad**. Y ahí está el error de
+clasificación: un dropdown de escritorio se apoya sobre *un control* y dejar
+entrever el fondo es parte del material; una hoja táctil **tapa la app entera**
+y a veces se apila sobre otra hoja. Son dos superficies distintas con el mismo
+nombre.
+
+`--surface-sheet` + `data-surface="sheet"`: sigue siendo vidrio —el blur está—
+pero a una opacidad donde lo de atrás es luz, no texto. Opaco en los dos temas
+Solid, como corresponde.
+
+Y de paso: los cinco atajos (*Hoy · Ayer · Hace 7 días…*) eran cinco
+**rellenos azules** seguidos, cada uno gritando ser la acción principal, y sin
+`key` porque salen de un `.map()`. Son atajos: secundarios y chicos. El mismo
+par de fallos estaba en `RangeDatePicker`.
+
+### 4 · "Al abrir las notificaciones se corta"
+
+El panel era `absolute right-0` con ancho `100vw - 2rem`. Como la campana no
+está pegada al borde derecho, el panel se extendía hacia la izquierda y se
+salía: medido en iPhone 13, **x = -36px** — el título se leía *"otificaciones"*.
+Ahora en móvil es `fixed` anclado a los bordes de la **pantalla**, con `max-h`
+y scroll propio. Verificado: x=8, derecha=382 de 390.
+
+### El barrido que confirma que no hay más
+
+8 rutas en WebKit móvil: **0 errores de JS, 0 scroll horizontal, 0 elementos
+recortados**. Los 6 que reporta el escáner en cada ruta son los blobs
+ambientales decorativos y el `<aside>` cerrado — los dos fuera de pantalla a
+propósito.
+
+### El gate aprendió algo
+
+Su lista de canónicos estaba **escrita a mano**, así que al crear `FilterBar`,
+`PeriodStepper` y `ChartContainer` el gate seguía mirando los 16 viejos — y un
+`<FilterBar>` sin import volvía a pasar el lint, el build **y** el gate. Ahora
+sale de `readdirSync('components/common')`. Un diccionario a mano siempre
+termina desactualizado; la carpeta no. Probado quitando un import a propósito.
+
+### Vidrio que el contrato Solid todavía no alcanza — medido, no resuelto
+
+La regla `[data-theme="solid"] [class*="bg-surface-"][class*="backdrop-blur"]`
+exige **las dos** subcadenas en la misma clase. Al medirlo hoy:
+
+| | |
+|---|---|
+| blur sobre fondo translúcido crudo (el blur sostiene la legibilidad) | 4 |
+| blur **sin** fondo translúcido en la misma clase → costo sin efecto en Solid | **92** |
+
+Los 92 no se arreglan ampliando el selector: eso rompería los 4. Se arreglan
+migrando **el fondo** a `bg-surface-*`, y entonces la regla que ya existe los
+cubre sola. O sea que no es deuda de vidrio: es la misma deuda `white` del
+baseline, vista desde otro ángulo.
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

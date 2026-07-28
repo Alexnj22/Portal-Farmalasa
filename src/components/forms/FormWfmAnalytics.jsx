@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import SegmentedControl from '../common/SegmentedControl';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
+import ChartContainer from '../common/ChartContainer';
 import { fetchBranchHourlySalesOrdered } from '../../data/schedules';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -364,7 +365,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     </div>
                 ) : (
                     <div className="w-full h-[280px] mt-auto relative z-base">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ChartContainer>
                             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} transform-gpu>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                                 <XAxis dataKey="displayLabel" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#64748B' }} dy={12} />
@@ -382,7 +383,7 @@ const FormWfmAnalytics = ({ branches }) => {
                                     ))}
                                 </Bar>
                             </BarChart>
-                        </ResponsiveContainer>
+                        </ChartContainer>
                     </div>
                 )}
                 

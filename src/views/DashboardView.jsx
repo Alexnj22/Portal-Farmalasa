@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import {
   AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
+  XAxis, YAxis, CartesianGrid, Tooltip} from 'recharts';
+import ChartContainer from '../components/common/ChartContainer';
 import {
   Users, UserCheck, ClipboardList, Building2, TrendingUp,
   CalendarDays, Megaphone, ChevronRight, ChevronLeft,
@@ -1216,7 +1216,7 @@ const DashboardView = ({ openModal }) => {
                 </div>
               </div>
             ) : (
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer>
               <AreaChart data={trendData} margin={{top:5,right:5,left:-20,bottom:0}}>
                 <defs><linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0052CC" stopOpacity={0.25}/><stop offset="95%" stopColor="#0052CC" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
@@ -1225,7 +1225,7 @@ const DashboardView = ({ openModal }) => {
                 <Tooltip contentStyle={{background:'#1e293b',border:'none',borderRadius:'0.75rem',fontSize:12,color:'#f8fafc'}} labelStyle={{color:'#64748b',fontWeight:700}} formatter={(v,_,p)=>[v,`Presentes · ${p.payload?.date||''}`]}/>
                 <Area type="monotone" dataKey="total" stroke="#0052CC" strokeWidth={2.5} fill="url(#colorTotal)" dot={{fill:'#0052CC',strokeWidth:0,r:3}} activeDot={{r:5,fill:'#0052CC'}}/>
               </AreaChart>
-            </ResponsiveContainer>
+            </ChartContainer>
             )}
           </div>
         </WidgetCard>

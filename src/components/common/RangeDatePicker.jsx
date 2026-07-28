@@ -446,7 +446,7 @@ const RangeDatePicker = ({
                 calendario y mismos tokens: cambia la presentación, no el material. */}
             <div
                 ref={popupRef}
-                data-surface="dropdown"
+                data-surface={esTactil ? "sheet" : "dropdown"}
                 className={esTactil
                     ? `fixed z-toast left-0 right-0 bottom-0 w-full rounded-t-modal rounded-b-none
                        px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]
@@ -472,6 +472,21 @@ const RangeDatePicker = ({
                                         ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}`
                                         : 'Arrastra para seleccionar períodos'}
                                 </p>
+                            ) : esTactil ? (
+                                /* En táctil los dos extremos se MUESTRAN, no se
+                                   escriben. Tocarlos enfocaba un input y el sistema
+                                   levantaba el teclado — que en un panel de 557px
+                                   dentro de una ventana útil de 664px tapa el propio
+                                   calendario que uno vino a usar. Y con el dedo nadie
+                                   teclea una fecha teniendo días de 44px al lado.
+                                   El acceso sin mouse que justificaba estos campos
+                                   (WCAG 2.1.1) lo da el calendario, que en táctil se
+                                   completa con dos toques. */
+                                <p className="text-body-sm font-black text-content tabular-nums mt-1">
+                                    {aTexto(draftStart) || 'DD/MM/AAAA'}
+                                    <span className="text-content-3 mx-1.5">→</span>
+                                    {aTexto(draftEnd) || 'DD/MM/AAAA'}
+                                </p>
                             ) : (
                                 /* D3.11: los dos extremos, escribibles. Antes el rango
                                    NO se podía completar sin mouse (WCAG 2.1.1) — había
@@ -491,8 +506,12 @@ const RangeDatePicker = ({
 
                 {atajos && (
                     <div className="flex flex-wrap gap-1.5 mb-5 pb-5 border-b border-divider">
+                        {/* `key` faltaba: los atajos salen de un `.map()` y React
+                            los reordenaba sin poder identificarlos. El migrador de
+                            botones tira los atributos que no entiende — es el
+                            mismo fallo de los 11 badges de v2.76.0. */}
                         {atajos.map(a => (
-                            <Button  onClick={() => aplicarAtajo(a)}>{a.label}</Button>
+                            <Button key={a.label} size="sm" variant="secondary" onClick={() => aplicarAtajo(a)}>{a.label}</Button>
                         ))}
                     </div>
                 )}

@@ -40,10 +40,19 @@
 // AUDITORIA-TEMA-2026-07.md. Si un archivo nuevo necesita una excepción,
 // agregarla aquí Y documentar el motivo en DESIGN.md — nunca solo aquí.
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 const ROOTS = ['src'];
+
+// Los canónicos, leídos de la carpeta y no de una lista a mano. Todo lo que
+// vive en `components/common/` es un componente compartido, así que su nombre
+// de archivo ES su nombre de componente. Ver la nota en la categoría `import`.
+const CANONICOS_COMMON = existsSync('src/components/common')
+  ? readdirSync('src/components/common')
+      .filter(f => f.endsWith('.jsx'))
+      .map(f => f.replace(/\.jsx$/, ''))
+  : [];
 // Prosa (changelog), no UI real — el gate no debe leer nombres de clases
 // mencionados en comentarios históricos como si fueran código vivo.
 const EXCLUDE_FILES = new Set(['src/version.js']);
@@ -597,9 +606,14 @@ function scanFile(path) {
   // Fue un bug del migrador, pero la lección es del gate: si el build no lo
   // ve, tiene que verlo alguien más.
   {
-    const CANONICOS = ['SegmentedControl','ListRow','Notice','Badge','Button','Switch',
-      'Checkbox','TabBarAction','ViewTabBar','EmptyState','Skeleton','SkeletonText',
-      'PortalInput','LiquidSelect','LiquidDatePicker','RangeDatePicker'];
+    // La lista NO se escribe a mano: sale de los archivos que hay en
+    // `components/common/`. Estaba a mano y por eso se quedó atrás — cuando
+    // se crearon `FilterBar`, `PeriodStepper` y `ChartContainer` el gate
+    // seguía mirando los 16 de la lista vieja, así que un `<FilterBar>` sin
+    // import volvía a pasar el lint, el build Y el gate. Un diccionario a
+    // mano siempre termina desactualizado; la carpeta no.
+    const CANONICOS = [...CANONICOS_COMMON, 'EmptyState', 'Skeleton', 'SkeletonText',
+      'DataTable', 'DataRow', 'DataCell', 'AiThinkingState'];
     const imports = lines.filter(l => /^\s*import\b/.test(l)).join('\n');
     // Los comentarios de bloque se descartan ANTES de buscar usos. Un canónico
     // suele documentar cómo se usa con un ejemplo JSX en su propio docstring

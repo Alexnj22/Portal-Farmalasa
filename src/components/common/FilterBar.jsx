@@ -158,7 +158,7 @@ const FilterBar = memo(({
                             className="absolute inset-0 bg-scrim animate-in fade-in duration-200" />
 
                         <div id={idHoja} role="dialog" aria-modal="true" aria-label={title}
-                            data-surface="modal"
+                            data-surface="sheet"
                             className="relative w-full max-h-[80vh] overflow-y-auto rounded-t-modal rounded-b-none
                                 px-4 pt-3 pb-[max(20px,env(safe-area-inset-bottom))]
                                 animate-in slide-in-from-bottom duration-300 ease-out">

@@ -349,8 +349,23 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.97, y: -6 }}
                         transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                        className={`absolute z-bell-dropdown origin-top-right
-                            ${isDesktop ? 'right-0 top-[3.25rem] w-[380px]' : 'right-0 top-[3.25rem] w-[calc(100vw-2rem)] max-w-[380px]'}`}
+                        // Móvil: `fixed` anclado a los bordes de la PANTALLA, no
+                        // al botón. Estaba `absolute right-0` con un ancho de
+                        // `100vw - 2rem`: como la campana no está pegada al borde
+                        // derecho, el panel se extendía hacia la izquierda y salía
+                        // de la pantalla. Medido en iPhone 13: x = -36px, o sea
+                        // que el título se leía "otificaciones". Es lo que el
+                        // usuario reportó como "al abrir las notificaciones se
+                        // corta".
+                        //
+                        // Y `max-h` + scroll propio: con varias notificaciones el
+                        // panel crecía hasta pasarse por abajo, donde tampoco hay
+                        // forma de alcanzarlo.
+                        className={`z-bell-dropdown origin-top-right
+                            ${isDesktop
+                                ? 'absolute right-0 top-[3.25rem] w-[380px]'
+                                : `fixed left-2 right-2 top-[calc(3.5rem+env(safe-area-inset-top,0px))] w-auto
+                                   max-h-[calc(100vh-5rem-env(safe-area-inset-top,0px))] overflow-y-auto overscroll-contain`}`}
                     >
                         <div data-surface="dropdown" className="overflow-hidden transform-gpu">
                             {/* Shimmer superior */}

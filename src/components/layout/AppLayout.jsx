@@ -385,6 +385,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const isExpanded = isSidebarOpen;
     const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : '';
 
+    // ¿Queda menú por debajo del borde visible? El nav esconde su barra de
+    // scroll (`scrollbar-hide`), así que sin esta señal el usuario no tiene
+    // forma de saber que hay más — con este usuario son 47 ítems y en un
+    // iPhone 13 se ven 23.
+    const [navHayMas, setNavHayMas] = useState(false);
+    const actualizarSombraNav = useCallback(() => {
+        const el = navRef.current;
+        if (!el) return;
+        setNavHayMas(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
+    }, []);
+    useEffect(() => {
+        actualizarSombraNav();
+        // También al abrir/cerrar el menú o un grupo: la altura del contenido
+        // cambia y con ella la respuesta a "¿queda algo abajo?".
+    }, [actualizarSombraNav, isSidebarOpen, openGroups, visibleGroups]);
+
     const recomputePill = useCallback(() => {
         const navEl = navRef.current;
         let activeEl = itemRefs.current.get(activeId);
@@ -754,10 +770,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <div className="absolute -inset-10 right-[-4px] rounded-header bg-black/20 blur-[70px] opacity-50" />
                     </div>
 
-                    {/* ── Glass container ── */}
+                    {/* ── Glass container ──
+                        El fondo, el borde y el blur salen de `--sidebar-*`
+                        (ver index.css). Estaban escritos acá como
+                        `bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl`,
+                        y ese `lg:` era un bug real: en un teléfono no había
+                        blur pero el fondo seguía al 95%, así que ese 5% dejaba
+                        ver el texto de la vista NÍTIDO a través del menú. */}
                     <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-base rounded-header overflow-hidden flex flex-col
-                        bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl
-                        border border-white/[0.10]
                         shadow-[var(--shadow-glass-5)]">
 
                         {/* Eco del logo real (public/Logo512.png): verde arriba, magenta abajo —
@@ -816,8 +836,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <Button variant="secondary" size="sm" className={focusRing} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>{isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}</Button>
                         </div>
 
-                        {/* ── Nav ── */}
-                        <nav ref={navRef} aria-label="Navegación principal" className="relative z-base flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {/* ── Nav ──
+                            `navHayMas` pinta un desvanecido abajo cuando queda
+                            lista por debajo del borde. No es decoración: el nav
+                            usa `scrollbar-hide`, así que sin esto no hay NINGUNA
+                            señal de que hay más. Medido en un iPhone 13 con este
+                            usuario: 47 ítems, 23 visibles — la mitad del menú era
+                            invisible y nada sugería desplazarlo. */}
+                        <div className="relative flex-1 min-h-0 flex flex-col">
+                        <nav ref={navRef} aria-label="Navegación principal"
+                            onScroll={actualizarSombraNav}
+                            className="relative z-base flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {/* Buscador (atajo de teclado en SHORTCUT_LABEL, Mac vs Windows/Linux) — es
                                 una ACCIÓN (abre un modal), no un destino de navegación, así que lleva
                                 fondo/borde permanentes (no solo al hover) + un divisor debajo para que
@@ -858,6 +887,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             {visibleGroups.map(g => renderGroup(g))}
                         </nav>
+                        <div aria-hidden="true"
+                            className={`pointer-events-none absolute inset-x-0 bottom-0 h-10 z-content
+                                bg-gradient-to-t from-[var(--sidebar-bg)] to-transparent
+                                transition-opacity duration-200 ${navHayMas ? 'opacity-100' : 'opacity-0'}`} />
+                        </div>
 
                         {/* ── Footer ── */}
                         <div className="relative z-base px-3 pb-4 pt-3 border-t border-white/[0.07] flex flex-col gap-2.5">

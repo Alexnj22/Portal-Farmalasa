@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import Button from '../../components/common/Button';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts';
+import ChartContainer from '../../components/common/ChartContainer';
 
 import { fetchBranchExpensesHistory } from '../../data/branches';
 
@@ -325,7 +326,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         <div className="flex-1 min-h-[180px] w-full relative z-base">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ChartContainer>
                                 <BarChart data={historicalData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -360,7 +361,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                         ))}
                                     </Bar>
                                 </BarChart>
-                            </ResponsiveContainer>
+                            </ChartContainer>
                         </div>
                     </div>
 

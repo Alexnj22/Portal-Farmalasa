@@ -309,7 +309,7 @@ const LiquidDatePicker = ({
         <div className="fixed inset-0 z-confirm flex items-end animate-in fade-in duration-200">
             <button type="button" aria-label="Cerrar" onClick={() => setIsOpen(false)}
                 className="absolute inset-0 bg-scrim backdrop-blur-[2px]" />
-            <div data-surface="dropdown"
+            <div data-surface="sheet"
                 className="relative w-full rounded-t-modal rounded-b-none px-4 pt-3 font-sans
                     animate-in slide-in-from-bottom duration-300
                     pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -334,8 +334,12 @@ const LiquidDatePicker = ({
 
                 {atajos && (
                     <div className="flex flex-wrap gap-1.5 mb-4 pb-4 border-b border-divider">
+                        {/* `key` faltaba (salen de un `.map()`) y todos eran
+                            `primary`: cinco rellenos azules seguidos, cada uno
+                            gritando ser la acción principal. Son atajos —
+                            secundarios y chicos. */}
                         {atajos.map(a => (
-                            <Button  onClick={() => aplicarAtajo(a)}>{a.label}</Button>
+                            <Button key={a.label} size="sm" variant="secondary" onClick={() => aplicarAtajo(a)}>{a.label}</Button>
                         ))}
                     </div>
                 )}
@@ -471,19 +475,62 @@ const LiquidDatePicker = ({
     const IconToRender = CustomIcon || CalendarIcon;
     const hasValue = dVal || mVal || yVal;
 
+    // ── Táctil: el campo NO es un campo ──────────────────────────────────
+    // Reportado por el usuario: "en móvil el selector de fecha no funciona, al
+    // tocar abre el teclado y el selector del portal no se ve bien". Y era
+    // literal: los tres DD/MM/AAAA son `<input>`, así que tocarlos enfoca y el
+    // sistema levanta el teclado numérico — que tapa media pantalla y, con
+    // ella, la hoja del calendario que acababa de abrirse.
+    //
+    // Con el dedo nadie teclea `15/07/2026` teniendo un calendario con días de
+    // 44px al lado. Así que en táctil los tres campos se renderizan como TEXTO
+    // y el control entero es el disparador de la hoja. En escritorio no cambia
+    // nada: ahí escribir la fecha sí es más rápido que navegar el calendario.
+    //
+    // Es la misma regla que ya aprendió `Switch` —sin `onChange` renderiza un
+    // `<span>`, no un `<button>`—: si el control no se va a usar como campo,
+    // no debe SER un campo. Un input de solo lectura seguiría enfocándose.
+    const trioTactil = (
+        <span className={`flex items-center flex-1 font-bold ${compact ? 'text-body-sm' : 'text-body-xl'}
+            ${hasValue ? 'text-content' : 'text-content-3'}`}>
+            {hasValue ? `${dVal || 'DD'}/${mVal || 'MM'}/${yVal || 'AAAA'}` : 'DD/MM/AAAA'}
+        </span>
+    );
+
+    const trioEscritorio = (
+        <div className="flex items-center flex-1">
+            <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[20px] text-body-sm" : "w-[26px] text-body-xl"} ${dVal ? 'text-content' : ''}`} />
+            <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
+            <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[22px] text-body-sm" : "w-[28px] text-body-xl"} ${mVal ? 'text-content' : ''}`} />
+            <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
+            <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[35px] text-body-sm" : "w-[44px] text-body-xl"} ${yVal ? 'text-content' : ''}`} />
+        </div>
+    );
+
     return (
         <>
-            <div ref={containerRef} className={`w-full h-full flex items-center gap-1 rounded-xl transition-all hover:bg-surface-card-hover group/picker cursor-text focus-within:bg-surface-card-hover ${compact ? "px-2.5 min-w-[112px]" : "px-3 md:px-4 min-w-[140px]"}`} onClick={() => { if(!isOpen) openPicker(); if (!dVal) dRef.current?.focus(); else if (!mVal) mRef.current?.focus(); else if (!yVal) yRef.current?.focus(); }}>
+            <div
+                ref={containerRef}
+                // En táctil el contenedor ES el botón: sin esto el foco de
+                // teclado no llegaba a un control que ya no tiene inputs.
+                role={esTactil ? 'button' : undefined}
+                tabIndex={esTactil ? 0 : undefined}
+                aria-haspopup={esTactil ? 'dialog' : undefined}
+                aria-expanded={esTactil ? isOpen : undefined}
+                aria-label={esTactil ? (hasValue ? `Fecha ${dVal}/${mVal}/${yVal}, cambiar` : 'Elegir fecha') : undefined}
+                onKeyDown={esTactil ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } } : undefined}
+                className={`w-full h-full flex items-center gap-1 rounded-xl transition-all hover:bg-surface-card-hover group/picker focus-within:bg-surface-card-hover
+                    ${esTactil ? 'cursor-pointer min-h-[44px]' : 'cursor-text'}
+                    ${compact ? "px-2.5 min-w-[112px]" : "px-3 md:px-4 min-w-[140px]"}`}
+                onClick={() => {
+                    if (!isOpen) openPicker();
+                    if (esTactil) return;
+                    if (!dVal) dRef.current?.focus(); else if (!mVal) mRef.current?.focus(); else if (!yVal) yRef.current?.focus();
+                }}>
                 <IconToRender size={14} className={hasValue ? "text-brand-text" : "text-content-3 group-hover/picker:text-brand-text transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
-                <div className="flex items-center flex-1">
-                    <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[20px] text-body-sm" : "w-[26px] text-body-xl"} ${dVal ? 'text-content' : ''}`} />
-                    <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
-                    <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[22px] text-body-sm" : "w-[28px] text-body-xl"} ${mVal ? 'text-content' : ''}`} />
-                    <span className="text-content-3 font-medium mx-0.5 pointer-events-none">/</span>
-                    <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`bg-transparent border-none outline-none font-bold text-center placeholder:text-content-3 ${compact ? "w-[35px] text-body-sm" : "w-[44px] text-body-xl"} ${yVal ? 'text-content' : ''}`} />
-                </div>
+                {esTactil ? trioTactil : trioEscritorio}
                 {hasValue && (
-                    <div role="button" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-danger/10 text-content-3 hover:text-danger transition-all shrink-0 cursor-pointer" title="Borrar fecha">
+                    <div role="button" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className={`flex items-center justify-center rounded-full hover:bg-danger/10 text-content-3 hover:text-danger transition-all shrink-0 cursor-pointer ${esTactil ? 'w-11 h-11 -mr-2' : 'w-6 h-6'}`} title="Borrar fecha">
                         <X size={14} strokeWidth={3} />
                     </div>
                 )}

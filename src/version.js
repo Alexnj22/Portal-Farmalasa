@@ -5,7 +5,110 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.99.2';
+export const APP_VERSION = '2.100.0';
+
+// v2.100.0 — Movil: el Inicio ya no revienta, y el vidrio sigue al tema.
+//
+// Cuatro cosas reportadas por el usuario, las cuatro reproducidas en un
+// iPhone 13 real (WebKit, no Chromium con el viewport chico — la diferencia
+// importa, ver abajo).
+//
+// ── 1 · El Inicio reventaba en Safari movil ──────────────────────────────
+// "ALGO SALIO MAL" apenas cargaba. El error real:
+//   Maximum update depth exceeded
+//     commitHookPassiveMountEffects → recharts dispatch ×5 → forceStoreRerender
+//
+// Un bucle infinito DENTRO de recharts. Medido en los cuatro entornos ANTES
+// de tocar nada, porque "es el movil" habria sido la conclusion facil y
+// falsa:
+//   WebKit movil ✗ · Chromium movil ✓ · WebKit 1500px ✓ · Chromium 1500px ✓
+// O sea: WebKit midiendo un contenedor angosto. `useReportScale` de recharts
+// hace `getBoundingClientRect().width / offsetWidth` — una medida fraccionaria
+// dividida por una entera— y despacha si el cociente cambia. Con anchos
+// fraccionarios eso no converge.
+//
+// `ChartContainer` nuevo: mide el contenedor, le pasa al grafico PIXELES
+// ENTEROS y no lo monta mientras un ancestro este animando (las tarjetas del
+// Inicio entran con `staggerEnter`, 220ms).
+//
+// TRES intentos, y los dos primeros valen mas que el arreglo:
+//   1. `debounce={80}`, lo que recharts documenta → bajo la frecuencia, dejo
+//      el bug INTERMITENTE.
+//   2. medir yo y pasar enteros → 0/5 pantallas rotas, pero 3/5 seguian con
+//      bucle: redondear el resultado no sirve si el ancestro se sigue
+//      moviendo.
+//   3. esperar a que no haya animacion en curso → **6/6 sin bucle**, con el
+//      grafico montado en las seis.
+//
+// Lo importante del segundo: INTERMITENTE ES PEOR QUE REPRODUCIBLE. Dos
+// corridas seguidas daban resultados distintos y una parecia la confirmacion
+// del arreglo. Por eso esto se verifica con 5-6 corridas, no con una.
+//
+// Y un bug PROPIO encontrado al arreglarlo: la primera version encolaba un
+// `requestAnimationFrame` por llamada sin cancelar el anterior, y como el
+// ResizeObserver tambien llama a medir, los frames se multiplicaban. Un
+// arreglo que se apoya en rAF tiene que traer su propio cancel.
+//
+// ── 2 · El menu en movil ─────────────────────────────────────────────────
+// El sidebar tenia `bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl`.
+// Ese `lg:` era el bug: en un telefono NO habia blur pero el fondo seguia
+// translucido al 95%, asi que ese 5% dejaba ver el texto de la vista NITIDO
+// a traves del menu. Es peor que cualquiera de los dos extremos.
+//
+// Ahora sale de `--sidebar-bg` / `--sidebar-backdrop` / `--sidebar-border`.
+// El sidebar es bespoke en COLOR (oscuro en los 4 temas, como el kiosco) pero
+// eso no lo hace bespoke en MATERIAL: en Solid queda opaco y sin blur, como
+// toda otra superficie de ese tema. Verificado en los 4:
+//   liquid/dark → rgba(7,3,26,.80) + blur(28px)
+//   solid/solid-dark → #0B1020 + none
+//
+// Y el nav: 47 items, 23 visibles en un iPhone 13, con `scrollbar-hide` — o
+// sea que la mitad del menu era invisible y NADA sugeria desplazarlo. Ahora
+// un desvanecido abajo aparece solo cuando queda lista por debajo.
+//
+// ── 3 · El selector de fecha abria el teclado ────────────────────────────
+// Literal: los tres campos DD/MM/AAAA son `<input>`, asi que tocarlos enfoca
+// y el sistema levanta el teclado numerico — que tapa media pantalla y, con
+// ella, la hoja del calendario que acababa de abrirse. Con el dedo nadie
+// teclea una fecha teniendo dias de 44px al lado.
+//
+// En tactil los tres campos se renderizan como TEXTO y el control entero es
+// el disparador de la hoja. Es la misma regla que ya aprendio `Switch`: si
+// algo no se va a usar como campo, no debe SER un campo (un input readOnly
+// se seguiria enfocando). Mismo criterio en `RangeDatePicker`.
+//
+// Y con el teclado fuera del camino se vio el problema de abajo: la hoja del
+// calendario dejaba LEER la hoja de filtros que tenia debajo. Las tres hojas
+// del portal usaban `--surface-dropdown`, al 72% de opacidad — y ahi esta el
+// error de clasificacion: un dropdown de escritorio se apoya sobre UN control
+// y dejar entrever el fondo es parte del material; una hoja tactil TAPA LA APP
+// ENTERA y a veces se apila sobre otra hoja. Son dos superficies distintas con
+// el mismo nombre. `--surface-sheet` + `data-surface="sheet"`: sigue siendo
+// vidrio, pero a una opacidad donde lo de atras es luz, no texto.
+//
+// De paso, los cinco atajos (Hoy · Ayer · Hace 7 dias…) eran cinco rellenos
+// AZULES seguidos, cada uno gritando ser la accion principal, y sin `key`
+// porque salen de un `.map()`. El mismo par de fallos en `RangeDatePicker`.
+//
+// ── 4 · Las notificaciones se cortaban ───────────────────────────────────
+// El panel era `absolute right-0` con ancho `100vw - 2rem`: como la campana
+// no esta pegada al borde derecho, el panel se extendia hacia la izquierda y
+// se salia. Medido en iPhone 13: **x = -36px**, o sea que el titulo se leia
+// "otificaciones". Ahora en movil es `fixed` anclado a los bordes de la
+// PANTALLA, con `max-h` y scroll propio. Verificado: x=8, derecha=382 de 390.
+//
+// Barrido de las 8 rutas principales en WebKit movil: 0 errores de JS, 0
+// scroll horizontal, 0 elementos recortados (los 6 que reporta el escaner son
+// los blobs ambientales decorativos y el `<aside>` cerrado, los dos fuera de
+// pantalla a proposito).
+//
+// ── El gate aprendio algo ────────────────────────────────────────────────
+// Su lista de canonicos estaba ESCRITA A MANO, asi que cuando se crearon
+// `FilterBar`, `PeriodStepper` y `ChartContainer` el gate seguia mirando los
+// 16 viejos — y un `<FilterBar>` sin import volvia a pasar el lint, el build
+// Y el gate. Ahora la lista sale de `readdirSync('components/common')`. Un
+// diccionario a mano siempre termina desactualizado; la carpeta no. Probado
+// quitando un import a proposito: el gate lo pesca.
 
 // v2.99.2 — PeriodStepper adoptado en los 5 usos que quedaban.
 //

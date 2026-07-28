@@ -1117,16 +1117,18 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         </p>
                         <div className="w-full flex items-center gap-2 bg-surface-card-hover border border-divider rounded-2xl pl-4 pr-2 py-2.5 mb-4">
                             <span className="flex-1 text-title font-black tracking-[0.2em] text-content text-center select-all">{resetResult.password}</span>
-                            <button
+                            <Button
+                                iconOnly
+                                icon={copiedPwd ? Check : Copy}
+                                tone={copiedPwd ? 'success' : 'brand'}
+                                className="shrink-0"
+                                aria-label={copiedPwd ? 'Contraseña copiada' : 'Copiar la contraseña'}
                                 onClick={async () => {
                                     try { await navigator.clipboard.writeText(resetResult.password); } catch { /* noop */ }
                                     setCopiedPwd(true);
                                     setTimeout(() => setCopiedPwd(false), 2000);
                                 }}
-                                title="Copiar"
-                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${copiedPwd ? 'bg-success-solid text-white' : 'bg-brand text-white hover:bg-chart-1-solid'}`}>
-                                {copiedPwd ? <Check size={18} strokeWidth={2.5} /> : <Copy size={17} strokeWidth={2.2} />}
-                            </button>
+                            />
                         </div>
                         <Button variant="secondary" onClick={() => setResetResult(null)}>Listo</Button>
                     </div>
@@ -1166,12 +1168,17 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         )}
                     </div>
                     <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-surface-card-hover/50 border-divider flex gap-3 relative z-base">
-                        <button
-                            onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
-                            disabled={isCancelling}
-                            className={`py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest border flex-1 transition-all ${isCancelling ? 'hidden' : 'text-content-2 bg-surface-card border-divider hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'}`}>
-                            Volver
-                        </button>
+                        {/* El `hidden` mientras cancela era un condicional de clase;
+                            ahora el propio condicional decide si se pinta. */}
+                        {!isCancelling && (
+                            <Button
+                                variant="secondary"
+                                className="flex-1"
+                                onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
+                            >
+                                Volver
+                            </Button>
+                        )}
                         <Button variant="destructive" disabled={!cancelReason.trim() || isCancelling} onClick={async () => {
                                 setIsCancelling(true);
                                 const { cancelEmployeeEvent } = useStaffStore.getState();

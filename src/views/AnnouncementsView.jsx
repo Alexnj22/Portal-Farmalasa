@@ -117,25 +117,22 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-4 border-t border-border-card gap-4">
-        <button
-          onClick={() => onViewDetail(ann)}
+        {/* El color codificaba el ESTADO de lectura (urgente sin leer, completo,
+            programado). Con `tone` + `soft` eso sigue dicho por el canónico, sin
+            reescribir el borde y el relleno de cada caso. */}
+        <Button
+          variant="secondary"
+          tone={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'danger'
+              : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 && !isScheduled ? 'success'
+              : isScheduled ? 'chart-3' : null}
+          soft
+          className="w-full sm:w-auto"
           disabled={isScheduled}
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-label font-bold uppercase tracking-widest border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] w-full sm:w-auto bg-surface-card backdrop-blur-sm hover:bg-surface-card-hover shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:-translate-y-0 ${ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled
-            ? 'text-danger border-danger/30'
-            : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 && !isScheduled
-              ? 'text-success border-success/30'
-              : isScheduled
-                ? 'text-chart-3-text border-chart-3/30'
-                : 'text-brand-text border-border-card'
-            }`}
+          icon={isScheduled ? CalendarClock : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 ? CheckCircle2 : Eye}
+          onClick={() => onViewDetail(ann)}
         >
-          {isScheduled ? <CalendarClock size={16} strokeWidth={2.5} /> : ann.readIds.length >= ann.totalExpected && ann.totalExpected > 0 ? (
-            <CheckCircle2 size={16} strokeWidth={2.5} />
-          ) : (
-            <Eye size={16} strokeWidth={2.5} />
-          )}
           {isScheduled ? `0 / ${ann.totalExpected} (En espera)` : `Ver Detalle (${ann.readIds.length}/${ann.totalExpected})`}
-        </button>
+        </Button>
 
         <div className="flex flex-col items-end">
           {isScheduled ? (

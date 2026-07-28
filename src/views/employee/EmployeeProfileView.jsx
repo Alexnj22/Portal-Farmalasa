@@ -443,14 +443,17 @@ const EmployeeProfileView = ({ openModal }) => {
                                     onChange={setSearchQuery}
                                     placeholder="Buscar…"
                                 />
-                                <button
+                                <Button
+                                    size="xs"
+                                    aria-expanded={showTimelineFilter}
+                                    variant={showTimelineFilter ? undefined : 'secondary'}
+                                    tone={showTimelineFilter ? 'chart-8' : null}
+                                    icon={SlidersHorizontal}
                                     onClick={() => setShowTimelineFilter(v => !v)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${showTimelineFilter ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
                                 >
-                                    <SlidersHorizontal size={10} strokeWidth={2.5} />
                                     Filtrar
-                                    {showTimelineFilter ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                                </button>
+                                    {showTimelineFilter ? <ChevronUp size={10} className="inline ml-1" /> : <ChevronDown size={10} className="inline ml-1" />}
+                                </Button>
                             </div>
                         </div>
 

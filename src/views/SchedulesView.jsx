@@ -89,11 +89,16 @@ const HolidaysPanel = ({
                     options={[currentYear - 1, currentYear, currentYear + 1].map(y => ({ value: y, label: String(y) }))}
                 />
                 {canEdit && (
-                    <button onClick={() => setShowForm(v => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-label font-black transition-all border ${showForm ? 'bg-surface-card-hover border-divider text-content-2' : 'bg-warning-solid hover:bg-warning-hover border-warning text-white shadow-[var(--shadow-glow-chart-7)] hover:shadow-[var(--shadow-glow-chart-7)] hover:-translate-y-0.5'}`}>
-                        {showForm ? <X size={13} strokeWidth={2.5} /> : <Plus size={13} strokeWidth={2.5} />}
+                    <Button
+                        size="sm"
+                        aria-expanded={showForm}
+                        variant={showForm ? 'secondary' : undefined}
+                        tone={showForm ? null : 'warning'}
+                        icon={showForm ? X : Plus}
+                        onClick={() => setShowForm(v => !v)}
+                    >
                         {showForm ? 'Cancelar' : 'Agregar feriado'}
-                    </button>
+                    </Button>
                 )}
             </div>
 
@@ -128,10 +133,17 @@ const HolidaysPanel = ({
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
                                 className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-body-xl font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
-                        <button onClick={() => setHRecurring(v => !v)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-caption font-black border transition-all ${hRecurring ? 'bg-success/10 border-success/40 text-success-text' : 'bg-surface-card border-divider text-content-3 hover:border-success/40 hover:text-success'}`}>
-                            <RefreshCw size={11} strokeWidth={2} /> Recurrente
-                        </button>
+                        <Button
+                            size="sm"
+                            aria-pressed={hRecurring}
+                            variant={hRecurring ? undefined : 'secondary'}
+                            tone={hRecurring ? 'success' : null}
+                            soft
+                            icon={RefreshCw}
+                            onClick={() => setHRecurring(v => !v)}
+                        >
+                            Recurrente
+                        </Button>
                     </div>
                     <Button tone="warning" disabled={hSaving || !hDate || !hName.trim()} onClick={onSave}>{hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
                         {hSaving ? 'Guardando...' : 'Guardar feriado'}</Button>

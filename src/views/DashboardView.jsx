@@ -2034,13 +2034,19 @@ const DashboardView = ({ openModal }) => {
       <div className="w-px h-5 bg-divider" />
 
       {/* Personalizar — py-3 en mobile para alcanzar el touch target de 44px (v2.47.4) */}
-      <button onClick={() => setShowConfig(v => !v)} className={`flex items-center gap-2 px-4 ${isMobile ? 'py-3' : 'py-2'} rounded-full text-body-sm font-bold transition-all duration-150 active:scale-[0.97] shadow-sm border ${
-        showConfig
-          ? 'bg-brand text-white border-brand'
-          : 'bg-surface-card text-content-2 border-border-card hover:bg-surface-card-hover backdrop-blur-sm'
-      }`}>
-        <Settings2 size={14} className={`transition-[transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${showConfig ? 'rotate-[60deg]' : 'rotate-0'}`}/> Personalizar
-      </button>
+      {/* El engranaje giraba 60° al abrir: se conserva con `className` en el
+          canónico, porque es la única señal de que el panel quedó abierto
+          además del color. */}
+      <Button
+        aria-expanded={showConfig}
+        variant={showConfig ? undefined : 'secondary'}
+        tone={showConfig ? 'brand' : null}
+        icon={Settings2}
+        className={showConfig ? '[&_svg]:rotate-[60deg] [&_svg]:transition-transform [&_svg]:duration-300' : '[&_svg]:transition-transform [&_svg]:duration-300'}
+        onClick={() => setShowConfig(v => !v)}
+      >
+        Personalizar
+      </Button>
     </div>
   );
 

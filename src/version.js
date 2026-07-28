@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.120.0';
+export const APP_VERSION = '2.121.0';
+
+// v2.121.0 — D3.3: acciones sueltas y la familia "chip que enciende un panel".
+//
+// Ocho botones mas al canonico, en dos familias:
+//
+// ── Acciones planas ─────────────────────────────────────────────────────
+//   · copiar la contrasena generada (EmployeeDetailView) — era un cuadrado de
+//     40px con su propio verde de "copiado"; ahora `tone` lo dice.
+//   · "Volver" del modal de cancelar evento. Traia un `hidden` DENTRO del
+//     className para desaparecer mientras cancela; ahora lo decide el propio
+//     condicional, que es donde va.
+//   · "Ver Detalle" de un aviso. Su color codificaba el ESTADO de lectura
+//     (urgente sin leer / completo / programado) reescribiendo borde y relleno
+//     de cada caso; con `tone` + `soft` eso lo dice el canonico.
+//
+// ── "Chip que enciende un panel" ────────────────────────────────────────
+// Cinco toggles con la misma idea y cinco anatomias distintas: agregar
+// feriado, recurrente, personalizar el Inicio, filtrar la linea de tiempo,
+// ver todos en la red min/max.
+//
+// Lo que ganan no es el borde: es que ahora DICEN su estado. Un panel que se
+// abre lleva `aria-expanded`, un modo que se prende lleva `aria-pressed`.
+// Antes el estado vivia solo en el color de fondo, o sea que no existia para
+// quien no lo ve.
+//
+// Verificado en vivo: Personalizar y Filtrar alternan `aria-expanded`
+// false→true con su cambio de color; "Ver todos" arranca en
+// `aria-pressed=false` y cambia su texto a "Solo alertas"; "Agregar feriado"
+// pasa a "Cancelar".
+//
+// Botones a mano: 105 → 97.
 
 // v2.120.0 — VentasView: sus tres tablas y sus chips de filtro.
 //

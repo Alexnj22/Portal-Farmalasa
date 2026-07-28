@@ -16,7 +16,24 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.106.1';
+export const APP_VERSION = '2.107.0';
+
+// v2.107.0 — Dos filas del Inicio a `ListRow`, y un detalle que solo el
+// canonico arregla.
+//
+// Las listas de "Solicitudes pendientes" y "Avisos" del Inicio eran la
+// anatomia exacta de `ListRow` —caja de icono, titulo, subtitulo y algo al
+// final— escrita a mano.
+//
+// Lo que gana no es solo consistencia: **sin `onClick`, `ListRow` renderiza un
+// `<div>`, no un `<button>`**. Esas filas solo navegan si el usuario tiene
+// permiso (`canManage`), y cuando no lo tiene el codigo pasaba `onClick =
+// undefined` sobre un `<button>`: quedaba una parada de tabulacion que no
+// hacia nada. Ahora, sin permiso, la fila directamente no es enfocable.
+//
+// Es la misma regla que ya trajo `Switch` (sin `onChange`, un `<span>`) y la
+// misma clase de bug que el `<button>` anidado de AttendanceAudit: **un
+// control que no hace nada no debe ser un control.**
 
 // v2.106.1 — El changelog sale de `src/`: 805 KB → 9 KB.
 //

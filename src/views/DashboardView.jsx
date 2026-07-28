@@ -31,6 +31,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 import SegmentedControl from '../components/common/SegmentedControl';
+import ListRow from '../components/common/ListRow';
 import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
     fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
@@ -1475,13 +1476,20 @@ const DashboardView = ({ openModal }) => {
               </div>
             ))
               :displayReqs.length===0?<EmptyState compact icon={ClipboardList} title="Sin solicitudes pendientes" />
+              // §15.7 — caja de ícono + título + subtítulo + algo al final: la
+              // anatomía exacta de `ListRow`. Y sin `onClick` renderiza un
+              // `<div>`, así que la fila deja de ser tabulable cuando el usuario
+              // no tiene permiso para abrirla — antes era un `<button>` sin
+              // acción, una parada de foco que no hacía nada.
               :displayReqs.map(r=>(
-                <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
-                  className={`w-full flex items-center gap-3 px-5 py-3 transition-colors text-left ${canManage('dash_requests')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
-                  <div className="w-7 h-7 rounded-lg bg-warning/10 border border-warning/30 flex items-center justify-center shrink-0"><ClipboardList size={13} className="text-warning"/></div>
-                  <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption text-content-3 font-medium">{REQUEST_TYPE_LABELS[r.type]||r.type}</p></div>
-                  <span className="text-caption text-content-3 shrink-0">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>
-                </button>
+                <ListRow key={r.id} density="sm"
+                  icon={ClipboardList} iconClass="text-warning"
+                  iconBoxClass="bg-warning/10 border-warning/30"
+                  title={getEmpName(r.employee_id)}
+                  subtitle={REQUEST_TYPE_LABELS[r.type]||r.type}
+                  onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
+                  className="rounded-none border-x-0 border-t-0 px-5"
+                  trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>} />
               ))}
           </div>
         </WidgetCard>
@@ -1608,14 +1616,15 @@ const DashboardView = ({ openModal }) => {
               </div>
             )) : recentAnnouncements.length===0?<EmptyState compact icon={Megaphone} title="Sin avisos recientes" />
               :recentAnnouncements.map(a=>(
-                <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
-                  className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-surface-card-hover cursor-pointer':'cursor-default'}`}>
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-danger/10 border border-danger/30':'bg-chart-1/10 border border-chart-1/30'}`}>
-                    {a.priority==='URGENT'?<Flame size={13} className="text-danger"/>:<Megaphone size={13} className="text-chart-1-text"/>}
-                  </div>
-                  <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{a.title}</p><p className="text-caption text-content-3 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
-                  {a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false} className="mt-1 shrink-0">URGENTE</Badge>}
-                </button>
+                <ListRow key={a.id} density="sm"
+                  icon={a.priority==='URGENT'?Flame:Megaphone}
+                  iconClass={a.priority==='URGENT'?'text-danger':'text-chart-1-text'}
+                  iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
+                  title={a.title}
+                  subtitle={new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}
+                  onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
+                  className="rounded-none border-x-0 border-t-0 px-5"
+                  trailing={a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false}>URGENTE</Badge>} />
               ))}
           </div>
         </WidgetCard>

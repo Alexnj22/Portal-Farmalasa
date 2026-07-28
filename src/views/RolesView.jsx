@@ -7,7 +7,7 @@ import {
     ShieldCheck, Plus, Trash2, Award, Users,
     CornerDownRight, Network, Target,
     ArrowUpRight, LayoutTemplate, Maximize, Minimize, Download,
-    PartyPopper, AlertCircle, Loader2, Search, X, ChevronRight, GitMerge, Edit3, Save, ChevronDown, MapPin, Hash, Globe, Building2
+    PartyPopper, AlertCircle, Search, X, ChevronRight, GitMerge, Edit3, Save, ChevronDown, MapPin, Hash, Globe, Building2
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { toPng } from 'html-to-image';
@@ -764,13 +764,10 @@ const RolesView = ({ openModal }) => {
                             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
                         >
                             <div className="flex gap-3 p-4 bg-surface-card backdrop-blur-md border-b border-border-card z-base shrink-0 absolute top-0 left-0 right-0 pointer-events-auto shadow-sm">
-                                <button
-                                    onClick={downloadOrgChart}
-                                    disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-caption font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-surface-card border-border-card text-content-2 cursor-not-allowed' : 'bg-surface-card border-border-card text-content-2 hover:text-brand-text hover:border-border-card'}`}
-                                >
-                                    {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
-                                </button>
+                                <Button variant="secondary" size="sm" onClick={downloadOrgChart} icon={Download}
+                                    disabled={isExporting} loading={isExporting}>
+                                    {isExporting ? 'Procesando…' : 'Exportar PNG'}
+                                </Button>
                                 <Button disabled={isExporting} onClick={toggleFullScreen}>{isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
                                     <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span></Button>
 

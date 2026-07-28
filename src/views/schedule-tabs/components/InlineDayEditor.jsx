@@ -457,16 +457,9 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 </div>
 
                 <div className="p-3 border-t border-border-card bg-surface-card shrink-0 z-tabs">
-                    <button 
-                        onClick={handleSave} 
-                        disabled={isSaveDisabled}
-                        className={`w-full py-3.5 text-body-sm font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
-                        ${isSaveDisabled 
-                            ? 'bg-surface-card-hover text-content-3 border border-divider shadow-[var(--shadow-shine)] cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-brand to-brand-hover text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
-                    >
+                    <Button size="lg" onClick={handleSave} disabled={isSaveDisabled} className="w-full">
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}
-                    </button>
+                    </Button>
                 </div>
             </motion.div>
         </>,

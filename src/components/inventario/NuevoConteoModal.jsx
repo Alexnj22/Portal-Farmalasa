@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Loader2, Building2, FlaskConical, ShieldAlert, ListChecks, Search } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
@@ -177,14 +177,10 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
                 <Button variant="secondary" size="lg" disabled={saving} onClick={onClose}>Cancelar</Button>
-                <button
-                    type="button"
-                    onClick={handleCreate}
-                    disabled={saving || !isValid || !canEdit}
-                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-btn flex items-center gap-2 transition-all duration-300 ${(!isValid || !canEdit) && !saving ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-chart-9-solid text-white shadow-[var(--shadow-glow-chart-2-lg)] hover:bg-chart-9/90 hover:-translate-y-0.5 active:scale-[0.97]'}`}
-                >
-                    {saving ? <><Loader2 size={16} className="animate-spin" /> Generando snapshot...</> : <><Check size={16} strokeWidth={3} /> Iniciar Conteo</>}
-                </button>
+                <Button size="lg" onClick={handleCreate} icon={Check}
+                    disabled={saving || !isValid || !canEdit} loading={saving}>
+                    {saving ? 'Generando snapshot…' : 'Iniciar Conteo'}
+                </Button>
             </div>
         </LiquidModal>
     );

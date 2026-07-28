@@ -4,7 +4,7 @@ import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
-    Loader2, Building2, ClipboardList, CheckCircle2,
+    Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info,
     TriangleAlert, TrendingUp,
     Check, X, Search,
@@ -488,20 +488,12 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                 {/* ── Generar button ─────────────────────────── */}
                 <div className="mt-4 flex flex-col items-center gap-2">
-                    <button
-                        onClick={handleGenerarDirecto}
-                        disabled={confirming || selected.size === 0}
-                        className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-subtitle transition-all duration-200 ${
-                            selected.size === 0
-                                ? 'bg-surface-card-hover text-content-3 cursor-not-allowed'
-                                : 'bg-success-solid text-white hover:bg-success/90 shadow-[var(--shadow-glow-success-lg)] hover:shadow-[var(--shadow-glow-success-lg)] hover:-translate-y-0.5 active:scale-[0.98]'
-                        }`}
-                    >
-                        {confirming ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
+                    <Button tone="success" size="lg" onClick={handleGenerarDirecto} icon={ClipboardList}
+                        disabled={confirming || selected.size === 0} loading={confirming}>
                         {confirming
                             ? 'Confirmando…'
                             : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
-                    </button>
+                    </Button>
                     {error && (
                         <span className="text-body text-danger flex items-center gap-1">
                             <AlertTriangle size={14} /> {error}

@@ -4,8 +4,7 @@ import Badge from '../components/common/Badge';
 import {
     FileText, Plus, Printer, Save, Trash2, X,
     ChevronLeft, User, CreditCard, Building2,
-    Package, Hash, Receipt, Tag, Percent, CheckCircle2,
-    Loader2, AlertCircle, ShoppingCart, Calculator,
+    Package, Hash, Receipt, Tag, Percent, CheckCircle2, AlertCircle, ShoppingCart, Calculator,
     Edit2, Info, AlertTriangle, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -812,11 +811,10 @@ export default function CotizacionesView() {
 
                 <div className="flex items-center justify-end gap-3 pb-4">
                     <Button variant="secondary" onClick={() => { resetForm(); setMode('list'); }}>Cancelar</Button>
-                    <button onClick={isEdit ? handleUpdate : handleSave} disabled={saving || items.length === 0}
-                        className={`flex items-center gap-2 px-7 py-3 text-white text-label font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all ${saving || items.length === 0 ? 'bg-content-3 cursor-not-allowed' : 'bg-brand hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-[var(--shadow-glow-brand)] active:scale-[0.97]'}`}>
-                        {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2.5} />}
-                        {saving ? 'Guardando...' : isEdit ? 'Actualizar Cotización' : 'Guardar Cotización'}
-                    </button>
+                    <Button size="lg" onClick={isEdit ? handleUpdate : handleSave} icon={Save}
+                        disabled={saving || items.length === 0} loading={saving}>
+                        {saving ? 'Guardando…' : (isEdit ? 'Actualizar Cotización' : 'Guardar Cotización')}
+                    </Button>
                 </div>
             </div>
         </GlassViewLayout>

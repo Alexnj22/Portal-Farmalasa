@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
-import { GraduationCap, X, Check, Loader2, Upload, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
+import { GraduationCap, X, Check, Upload, AlertCircle, User, Fingerprint, Building2, Phone, Users, Clock, ShieldAlert } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -344,14 +344,10 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
                 <Button variant="secondary" size="lg" disabled={saving} onClick={handleClose}>Cancelar</Button>
-                <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving || !isValid}
-                    className={`px-8 py-3 h-12 font-black text-label uppercase tracking-[0.2em] rounded-btn flex items-center gap-2 transition-all duration-300 ${(!isValid && !saving) ? 'bg-content-3 text-white shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
-                >
-                    {saving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Check size={16} strokeWidth={3} /> {isEditMode ? 'Guardar Cambios' : 'Registrar Practicante'}</>}
-                </button>
+                <Button size="lg" onClick={handleSave} icon={Check}
+                    disabled={saving || !isValid} loading={saving}>
+                    {saving ? 'Procesando' : (isEditMode ? 'Guardar Cambios' : 'Registrar Practicante')}
+                </Button>
             </div>
         </LiquidModal>
     );

@@ -5,7 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.90.0';
+export const APP_VERSION = '2.90.1';
+
+// v2.90.1 — Primer lote de la migracion de botones: los de "guardar con carga".
+//
+// 8 botones al canonico, todos la misma forma: accion principal con estado de
+// carga y deshabilitado, reconstruida a mano. Incluye los DOS botones Guardar
+// de UnifiedModal, que son los mas usados del portal.
+//
+// El patron que colapsa: `{cargando ? <Loader2/> : <Save/>}` mas un ternario en
+// className que pinta gris cuando esta deshabilitado. En el canonico eso es
+// `loading={...}` y `disabled={...}`, que ya existian. Cada uno perdia ademas
+// `uppercase tracking-[0.2em]` (descartado en T2.3 por leer "dashboard 2016") y
+// su altura a ojo (h-11/h-12 → size="lg").
+//
+// Verificado en vivo: "Guardar Cotizacion" sale con h=48 (lg), el radio del
+// tema y disabled correcto. 7 rutas sin errores de JS.
+//
+// Pendiente y REMEDIDO — la migracion no es de 165+56+80 como dije:
+//   37 estan dentro de un .map() → son uno-de-N, van a SegmentedControl
+//   51 sueltos con condicional de estado → caso por caso (toggle vs disabled)
+//   60 con condicional multiple → a mano
+//   18 con className literal → automatizables
+// El numero que publique en el artefacto salio de un clasificador con dos bugs
+// (contaba ramas de ternario como hermanos, y etiquetas dentro de comentarios
+// JSX). Corregido en PLAN-DISENO-PENDIENTE.md.
 
 // v2.90.0 — `soft` en Button, y el contrato Liquid/Solid hecho real.
 //

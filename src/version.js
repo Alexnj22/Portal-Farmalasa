@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.119.0';
+export const APP_VERSION = '2.120.0';
+
+// v2.120.0 — VentasView: sus tres tablas y sus chips de filtro.
+//
+// `DataTable` quedo arreglado en v2.119.0, pero esta vista tiene TRES tablas y
+// dos son propias:
+//   · `SortTh`  ya usaba `<button>` (por eso se descubrio el defecto del
+//     canonico), pero le faltaban `aria-sort` y un nombre.
+//   · `DH`, el encabezado del drill-down, era un `<th onClick>` pelado —
+//     exactamente el defecto que el canonico acababa de perder.
+//
+// Y los chips de filtro del drill pasan a `FilterBar.Chip`, que YA EXISTIA y
+// tenia 4 usos en todo el proyecto. Es el canonico correcto y no
+// `SegmentedControl`: varios pueden estar prendidos a la vez, asi que un
+// `radiogroup` mentiria diciendo "1 de 3".
+//
+// ── Y una correccion de algo que hice mal en v2.117.0 ────────────────────
+// Al boton de ocultar producto le puse `aria-pressed={!showHidden}` y estaba
+// MAL: `showHidden` filtra la tabla entera, o sea que todas las filas dirian
+// lo mismo. No es un interruptor de dos estados, es una accion cuyo texto ya
+// depende del modo. Se quita; el `aria-label` ya dice que va a pasar.
+//
+// Verificado en vivo en /ventas: 16 encabezados ordenables entre las dos
+// pestañas, los 16 con `<button>` y `aria-sort`, 0 botones sin nombre, 0
+// errores. Los chips del drill quedan verificados POR CODIGO: son un cambio
+// 1:1 a `FilterBar.Chip`, que renderiza en vivo en esa misma vista (los chips
+// "Anuladas" y "Receta Medica"), pero abrir el drill exige un producto con
+// lineas en el rango y no se logro en el arnes.
 
 // v2.119.0 — Ordenar una tabla era solo de raton. En las 12 vistas.
 //

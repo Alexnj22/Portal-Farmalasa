@@ -254,12 +254,18 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     );
 }
 
-// Sortable column header button
+// Encabezado ordenable de las tablas propias de esta vista.
+// El `<button>` ya estaba —de hecho era MÁS accesible que el `DataTable`
+// canónico, que hasta v2.119.0 ponía el onClick en el `<th>` pelado—, pero le
+// faltaban las dos cosas que un lector de pantalla necesita: `aria-sort` en la
+// celda y un nombre que diga qué pasará al pulsar.
 function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
     const active = sortCol === col;
     return (
-        <th className={`px-2 py-3 select-none ${className}`}>
+        <th aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+            className={`px-2 py-3 select-none ${className}`}>
             <button onClick={() => onSort(col)}
+                aria-label={`Ordenar por ${label}${active && sortDir === 'asc' ? ', descendente' : ', ascendente'}`}
                 className={`group flex items-center gap-1 text-caption font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
                         ? 'text-brand-text bg-brand/10'
@@ -1932,8 +1938,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                       </div>
                                                     : 'Ocultar producto (para todos)'
                                             }>
+                                                {/* SIN `aria-pressed` a propósito. Se lo puse en
+                                                    v2.117.0 y estaba mal: esto no es un interruptor de
+                                                    dos estados, es una ACCIÓN cuyo significado depende
+                                                    del modo de la tabla —`showHidden` filtra la lista
+                                                    entera, así que todas las filas dirían lo mismo—.
+                                                    El `aria-label` ya dice qué va a pasar. */}
                                                 <button
-                                                    aria-pressed={!showHidden}
                                                     aria-label={showHidden
                                                         ? `Volver a mostrar ${r.descripcion || 'el producto'}`
                                                         : `Ocultar ${r.descripcion || 'el producto'} para todos`}
@@ -2077,27 +2088,33 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
                                                             const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / drillPageSize));
                                                             const paginatedDrill  = filteredDrill.slice((drillPage - 1) * drillPageSize, drillPage * drillPageSize);
+                                                            // Era un `<th onClick>` pelado — el mismo defecto que
+                                                            // tenía `DataTable` hasta v2.119.0: sin teclado y sin
+                                                            // `aria-sort`. Es la tercera tabla de esta vista, así que
+                                                            // el arreglo del canónico no la alcanzaba.
                                                             const DH = ({ col, label, right }) => {
                                                                 const active = drillSortCol === col;
                                                                 return (
-                                                                    <th onClick={() => handleDrillSort(col)}
-                                                                        className={`px-3 py-2 font-black text-micro uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-chart-1-text' : 'text-content-2'} hover:text-content-2`}>
-                                                                        <span className="inline-flex items-center gap-0.5">
+                                                                    <th aria-sort={active ? (drillSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                                                                        className={`px-3 py-2 font-black text-micro uppercase tracking-wide select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-chart-1-text' : 'text-content-2'} hover:text-content-2`}>
+                                                                        <button type="button" onClick={() => handleDrillSort(col)}
+                                                                            aria-label={`Ordenar por ${label}${active && drillSortDir === 'asc' ? ', descendente' : ', ascendente'}`}
+                                                                            className={`inline-flex items-center gap-0.5 cursor-pointer font-black uppercase tracking-wide ${right ? 'flex-row-reverse' : ''}`}>
                                                                             {label}
                                                                             {active
                                                                                 ? (drillSortDir === 'asc' ? <ArrowUp size={9} /> : <ArrowDown size={9} />)
                                                                                 : <ChevronsUpDown size={9} className="opacity-30" />}
-                                                                        </span>
+                                                                        </button>
                                                                     </th>
                                                                 );
                                                             };
                                                             const pill = (val, field, label) => {
                                                                 const active = drillFilters[field] === val;
                                                                 return (
-                                                                    <button key={val} onClick={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}
-                                                                        className={`px-2 py-0.5 rounded-full text-micro font-black border transition-[background-color,border-color,color] ${active ? 'bg-brand text-white border-brand' : 'bg-surface-card text-content-3 border-border-card hover:border-chart-1/40 hover:text-chart-1-text'}`}>
+                                                                    <FilterBar.Chip key={val} tone="brand" active={active}
+                                                                        onToggle={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}>
                                                                         {label ?? val}
-                                                                    </button>
+                                                                    </FilterBar.Chip>
                                                                 );
                                                             };
                                                             return (
@@ -2112,10 +2129,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                 {changedCount > 0 && (
                                                                                     <>
                                                                                         {docOpts.length > 1 && <span className="text-content-3">|</span>}
-                                                                                        <button onClick={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}
-                                                                                            className={`px-2 py-0.5 rounded-full text-micro font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-warning-solid text-white border-warning' : 'bg-surface-card text-warning border-warning/40 hover:border-warning'}`}>
+                                                                                        <FilterBar.Chip tone="warning" active={drillFilters.changed}
+                                                                                            onToggle={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}>
                                                                                             ⚠ precio cambió ({changedCount})
-                                                                                        </button>
+                                                                                        </FilterBar.Chip>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (

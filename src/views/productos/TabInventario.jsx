@@ -23,14 +23,15 @@ const ERP_NAMES = {
     5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
 const ERP_ORDER  = [1, 2, 3, 4, 5, 7, 6];
-const ERP_COLORS = {
-    1: 'text-chart-1-text bg-chart-1/10 border-chart-1/30',
-    2: 'text-chart-3-text bg-chart-3/10 border-chart-3/20',
-    3: 'text-success bg-success/10 border-success/30',
-    4: 'text-chart-7-text bg-chart-7/10 border-chart-7/20',
-    5: 'text-danger-text bg-danger/10 border-danger/20',
-    6: 'text-warning-text bg-warning/10 border-warning/30',
-    7: 'text-chart-3-text bg-chart-3/10 border-chart-3/30',
+// Guarda el NOMBRE de la variante, no tres clases (2026-07-28, D3.5).
+const ERP_VARIANTE = {
+    1: 'neutral',
+    2: 'neutral',
+    3: 'success',
+    4: 'neutral',
+    5: 'danger',
+    6: 'warning',
+    7: 'neutral',
 };
 
 function parseFactor(detalle) {
@@ -393,9 +394,8 @@ export default function TabInventario({ searchTerm = '' }) {
                                 >
                                     {selectedErp === null && (
                                         <DataCell className="whitespace-nowrap">
-                                            <span className={`text-label font-bold px-2 py-0.5 rounded-full border ${ERP_COLORS[group.erp_sucursal_id] ?? 'text-content-2 bg-surface-card-hover border-divider'}`}>
-                                                {ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
-                                            </span>
+                                            <Badge variant={ERP_VARIANTE[group.erp_sucursal_id] ?? 'neutral'} size="sm" uppercase={false}>{ERP_NAMES[group.erp_sucursal_id] ?? `S${group.erp_sucursal_id}`}
+                                            </Badge>
                                         </DataCell>
                                     )}
 

@@ -51,17 +51,17 @@ const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 // Historial MIN/MAX: label + color por tipo de acción. Todas comparten la misma
 // forma de datos (old_min/old_max/new_min/new_max) — un solo render las cubre.
 const MINMAX_HISTORY_ACTION_META = {
-    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        badge: 'bg-success/10 text-success' },
-    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       badge: 'bg-warning/10 text-warning' },
-    MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  badge: 'bg-chart-3/10 text-chart-3-text' },
-    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     badge: 'bg-success/10 text-success' },
-    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  badge: 'bg-chart-7/10 text-chart-7-text' },
-    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     badge: 'bg-success/10 text-success' },
-    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       badge: 'bg-surface-card-hover text-content-3' },
-    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     badge: 'bg-surface-card-hover text-content-3' },
-    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    badge: 'bg-danger/10 text-danger' },
-    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    badge: 'bg-danger/10 text-danger' },
-    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', badge: 'bg-danger/10 text-danger' },
+    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        variante: 'success' },
+    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       variante: 'warning' },
+    MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  variante: 'neutral' },
+    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     variante: 'success' },
+    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  variante: 'neutral' },
+    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     variante: 'success' },
+    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       variante: 'neutral' },
+    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     variante: 'neutral' },
+    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    variante: 'danger' },
+    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    variante: 'danger' },
+    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', variante: 'danger' },
 };
 
 // STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a ./tabminmax/constants.js (Bloque
@@ -1511,7 +1511,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 <span className="text-micro text-content-3 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                <span className={`text-micro font-black px-1.5 py-0.5 rounded-md shrink-0 ${meta.badge}`}>{meta.label}</span>
+                                                <Badge variant={meta.variante} size="sm" className="shrink-0">{meta.label}</Badge>
                                                 <span className="text-label text-content-2 tabular-nums">
                                                     <span className="text-micro text-content-3 font-bold mr-0.5">MIN</span>
                                                     {d.old_min !== d.new_min && <span className="text-content-3">{fmt(d.old_min)} → </span>}

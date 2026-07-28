@@ -17,9 +17,9 @@ import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 
 const STATUS_CFG = {
-  pending:  { label: 'Pendiente', cls: 'bg-warning/10 text-warning-text border-warning/30' },
-  approved: { label: 'Aprobada',  cls: 'bg-success/10 text-success-text border-success/30' },
-  rejected: { label: 'Rechazada', cls: 'bg-danger/10 text-danger border-danger/30' },
+  pending:  { label: 'Pendiente', variante: 'warning' },
+  approved: { label: 'Aprobada',  variante: 'success' },
+  rejected: { label: 'Rechazada', variante: 'danger' },
 };
 
 function relTime(iso) {
@@ -61,7 +61,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
           <p className="text-body-sm font-black text-content truncate">{name}</p>
           <p className="text-caption text-content-3">{relTime(r.requested_at)}</p>
         </div>
-        <span className={`shrink-0 text-micro font-black px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
+        <Badge variant={st.variante} size="sm" className="shrink-0">{st.label}</Badge>
       </div>
 
       {/* Producto + sucursal */}

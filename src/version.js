@@ -16,7 +16,16 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.148.0';
+export const APP_VERSION = '2.149.0';
+
+// v2.149.0 — D3.5: las cuatro tablas de Producto.
+//
+// `ERP_COLORS` (inventario), `meta.badge` (min/max), `st.cls` (solicitudes) y
+// el resto. Todas guardaban dos o tres clases de Tailwind por fila; ahora el
+// nombre de la variante. Dos de ellas usaban `chart-7` y `chart-5", retirados,
+// asi que al pasar por el mapa quedan en `warning` y `chart-9`.
+//
+// Chips a mano: 39 → 36.
 
 // v2.148.0 — D3.5: `SucPill`, y una tabla que estaba duplicada.
 //

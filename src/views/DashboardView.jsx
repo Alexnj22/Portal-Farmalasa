@@ -2109,7 +2109,10 @@ const DashboardView = ({ openModal }) => {
                   const enabled = isWidgetOn(w.id);
                   const WIcon = w.icon;
                   return (
-                    <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
+                    <button key={w.id}
+                      aria-pressed={enabled && hasAccess}
+                      disabled={!hasAccess}
+                      onClick={() => hasAccess && toggleWidget(w.id)}
                       className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
                       <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                       <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>

@@ -431,6 +431,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {hasCamera && (
                         <button
                             type="button"
+                            aria-pressed={cameraActive}
                             onClick={toggleCamera}
                             title={cameraActive ? 'Cerrar cámara' : 'Escanear con cámara'}
                             className={[

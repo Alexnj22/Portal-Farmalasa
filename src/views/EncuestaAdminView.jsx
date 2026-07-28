@@ -688,6 +688,7 @@ export default function EncuestaAdminView() {
                                                             const fn = `${(e.first_names || '').split(' ')[0]} ${(e.last_names || '').split(' ')[0]}`.trim();
                                                             return (
                                                                 <button key={e.id} type="button"
+                                                                    aria-pressed={sfScopeIds.includes(e.id)}
                                                                     onClick={() => { toggleScopeId(e.id); setSfEmpSearch(''); }}
                                                                     className="w-full px-4 py-2.5 hover:bg-brand/10 text-left flex items-center gap-3 transition-colors border-b border-divider last:border-0">
                                                                     <PersonAvatar src={e.photo_url} name={fn} size={24} />
@@ -897,6 +898,8 @@ export default function EncuestaAdminView() {
                                                                             const oc = n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D;
                                                                             return (
                                                                                 <button key={n}
+                                                                                    aria-pressed={isActive}
+                                                                                    aria-label={`Calificación ${n} de 10`}
                                                                                     onClick={() => setRfAnswer(p.indice, exactMatch ? null : nStr)}
                                                                                     className={`w-6 h-6 rounded-full text-caption font-black transition-all duration-150 ${isActive ? oc.on : oc.off}`}>
                                                                                     {n}

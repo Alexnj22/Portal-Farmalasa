@@ -101,6 +101,9 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                             const intensity = count > 0 ? Math.max(0.07, (count / maxCell) * 0.28) : 0;
                             return (
                                 <button key={xyz}
+                                    aria-pressed={isActive}
+                                    aria-label={`${abc}${xyz}: ${count} producto${count === 1 ? '' : 's'}`}
+                                    disabled={count === 0}
                                     onClick={() => count > 0 && toggle(abc, xyz)}
                                     className={`relative py-1.5 rounded-md text-center
                                         transition-transform duration-150

@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.129.0';
+export const APP_VERSION = '2.130.0';
+
+// v2.130.0 — D3.3 CERRADA. Los ultimos nueve, y por que seis no se tocan.
+//
+// Seis interruptores que aun no decian su estado: la celda de la matriz
+// ABC×XYZ, los widgets del Inicio, la camara del login, la escala 1-10 de una
+// respuesta, el empleado en el alcance de una encuesta y el candidato del SRS.
+// Todos con `aria-pressed`; los que ademas eran mudos (la celda de la matriz,
+// la escala) con nombre: "AX: 42 productos", "Calificacion 7 de 10".
+//
+// Dos ganan `disabled` en vez de un onClick condicional que no hacia nada: la
+// celda con cero productos y el widget sin permiso. Un control que no responde
+// tiene que DECIR que no responde, no simular que si.
+//
+// ── Y seis que NO llevan estado, anotado en el codigo ────────────────────
+// Porque no son interruptores, y confundirlos habria sido peor que no tocarlos:
+//   · las cajas y los items de RecepcionModal ABREN otra pantalla
+//   · el resultado de busqueda de ScheduleCalendar agrega y cierra la lista
+//   · el chevron de AttendanceAuditView es `aria-hidden` a proposito (hay un
+//     abridor real arriba)
+//   · el de ocultar producto en Ventas: su texto ya depende del modo de la
+//     tabla (v2.120.0)
+//
+// ── Un tropiezo que se repitio tres veces hoy ────────────────────────────
+// Un comentario `{/* … */}` NO puede ser lo primero dentro de un `=> (` ni de
+// un `&& (`: queda como SEGUNDO hijo y el build falla con "Expected )". Va
+// como `//` encima del `return`. Me paso en EncuestaAdminView, ScheduleCalendar
+// y RecepcionModal.
 
 // v2.129.0 — La tarjeta de sucursal: cinco bloques que eran dos.
 //

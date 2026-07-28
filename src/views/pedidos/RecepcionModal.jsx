@@ -626,6 +626,10 @@ export default function RecepcionModal({
                                 : pages.length === 1 ? `pág. ${pages[0]}`
                                 : `págs. ${pages[0]}–${pages[pages.length - 1]}`;
 
+                            // SIN `aria-pressed` a propósito: no es un interruptor. Abre la
+                            // pantalla de ítems de esa caja (`setScreen`), o sea que es una
+                            // ACCIÓN de navegación. El estado recibida/faltante ya lo dice
+                            // `disabled` y el texto de la tarjeta.
                             return (
                                 <button key={boxNum}
                                     disabled={isRecibida || isFalta}
@@ -705,6 +709,7 @@ export default function RecepcionModal({
                                     const isDamaged   = especialesLlegadas[label] === 'danada';
                                     const isFaltante  = !!item.falta_caja;
                                     const isConfirmed = confirmedEspecialIds.has(item.id) || item.status === 'recibido';
+                                    // Igual que las cajas: navega, no alterna.
                                     return (
                                         <button key={item.id}
                                             disabled={isConfirmed || isFaltante}

@@ -859,6 +859,9 @@ const ScheduleCalendar = memo(({
                                                 <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
                                                     {coverageSearchResults.map(e => {
                                                         const br = branches.find(b => String(b.id) === String(e.branchId || e.branch_id));
+                                                        // Resultado de búsqueda: al pulsarlo AGREGA al empleado
+                                                        // y cierra la lista. Es una acción de una sola vez, no un
+                                                        // elemento con estado — por eso no lleva `aria-pressed`.
                                                         return (
                                                             <button key={e.id}
                                                                 onClick={() => { onAddCoverageEmployee?.(e.id); setShowCoverageSearch(false); setCoverageSearchTerm(''); }}

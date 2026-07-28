@@ -548,6 +548,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                     const pios = parsePrincipios(cand.srs);
                                                     return (
                                                         <button key={cand.srs.id}
+                                                            aria-pressed={isSelected}
                                                             onClick={() => handlePickCandidate(currentReview, ci)}
                                                             className={`w-full text-left rounded-xl border p-3 transition-all ${
                                                                 isSelected

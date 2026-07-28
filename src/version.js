@@ -5,7 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.97.2';
+export const APP_VERSION = '2.97.3';
+
+// v2.97.3 — DESIGN.md §16.9: las DOS pildoras de una vista, cual es cual.
+//
+// Señalado por el usuario: la del header tambien necesita canonico. Medido:
+//   22 vistas usan ViewTabBar · 12 escriben la pildora del header A MANO
+//
+// Las 12 reconstruyen el contenedor (rounded-header h-[4rem] md:h-[4.5rem],
+// backdrop-blur-2xl, sombra y hover propios) y meten adentro un
+// SegmentedControl y un buscador. Eso no es solo verse distinto: pierden el
+// contrato de buscador toggleable de §24 (Escape cierra Y limpia; clic afuera
+// cierra solo si esta vacio) y el colapso tactil de las acciones en hoja
+// inferior. Dos comportamientos, no dos estilos.
+//
+// Documentada tambien la causa de mi error de v2.97.1: la prop de
+// GlassViewLayout se llama `filtersContent` pero 22 de 34 le pasan un
+// ViewTabBar. Si algun dia se renombra, `headerContent` seria honesto.
 
 // v2.97.2 — Corregido: la barra de filtros va en el CUERPO, no en el header.
 //

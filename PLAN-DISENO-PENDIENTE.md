@@ -1360,6 +1360,22 @@ título. El header es de las pestañas. Las 3 vistas que comentaban *"vive en el
 body, no en el header"* tenían razón desde el principio, y las 4 que migré
 quedaron bien.
 
+### La OTRA píldora: la del header
+
+Señalado por el usuario tras la corrección. Una vista tiene **dos** píldoras y
+las dos necesitan canónico:
+
+| | header | cuerpo |
+|---|---|---|
+| canónico | `ViewTabBar` | `FilterBar` |
+| lleva | pestañas + buscador global | filtros que recortan |
+| estado | 22 lo usan · **12 a mano** | 4 lo usan · 7 a mano · 17 sueltas |
+
+Las 12 reconstruyen el contenedor (`rounded-header h-[4rem]`, blur, sombra) y
+meten adentro un `SegmentedControl` y un buscador. Al hacerlo pierden dos cosas
+que no son cosméticas: el contrato de buscador toggleable de §24 y el colapso
+táctil de las acciones en hoja inferior.
+
 ### Lo que falta, en orden
 
 1. **17 vistas con filtros sueltos** — las de mayor impacto: sin píldora no hay

@@ -1455,6 +1455,40 @@ fondo que tenga detrás. Por eso va del color de la superficie, **no blanco fijo
 
 ---
 
+## 16.9 Las dos píldoras de una vista — cuál es cuál (2026-07-27)
+
+Una vista tiene **dos** contenedores en píldora, y confundirlos fue lo que me
+hizo escribir mal §17. No son intercambiables:
+
+| | píldora del **header** | píldora del **cuerpo** |
+|---|---|---|
+| canónico | **`ViewTabBar`** | **`FilterBar`** |
+| qué lleva | pestañas de la vista + buscador global + acciones | los filtros que recortan los datos |
+| dónde | fila del título, vía `filtersContent` | bajo el título, a la derecha |
+| responde | *¿qué sección estoy viendo?* | *¿qué recorte de esa sección?* |
+
+**La prop está mal nombrada.** `GlassViewLayout` la llama `filtersContent`, pero
+**22 de las 34 vistas que la usan le pasan un `ViewTabBar`** — o sea pestañas,
+no filtros. Ese nombre me hizo concluir que el header era el lugar de los
+filtros, y estaba mal. Si algún día se renombra, `headerContent` sería honesto.
+
+### Estado medido de la píldora del header
+
+| | vistas |
+|---|---|
+| usan `ViewTabBar` | 22 |
+| **escriben la píldora a mano** | **12** |
+
+Las 12 reconstruyen el contenedor —`rounded-header h-[4rem] md:h-[4.5rem]`,
+`backdrop-blur-2xl`, sombra y hover propios— y meten adentro un
+`SegmentedControl` y un buscador. Todo eso ya lo hace `ViewTabBar`, incluido el
+contrato de buscador toggleable de §24 (Escape cierra y limpia; clic afuera
+cierra solo si está vacío) y el colapso táctil de las acciones en hoja inferior.
+Escribirla a mano significa perder esas dos cosas, no solo verse distinto.
+
+**Nunca escribir el contenedor del header a mano.** Si falta algo, se le agrega
+a `ViewTabBar`.
+
 ## 17. Filter Pills — canónico `FilterBar` (2026-07-27)
 
 ```jsx

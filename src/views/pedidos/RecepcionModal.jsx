@@ -602,13 +602,9 @@ export default function RecepcionModal({
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-label font-bold px-2.5 py-1 rounded-full border ${
-                                allAccessibleDone
-                                    ? 'bg-success/10 text-success-text border-success/30'
-                                    : 'bg-surface-card-hover text-content-2 border-divider'
-                            }`}>
+                            <Badge variant={allAccessibleDone ? 'success' : 'warning'} uppercase={false}>
                                 {receivedAccessible}/{accessibleBoxNums.length} recibidas
-                            </span>
+                            </Badge>
                             <Button variant="ghost" icon={X} disabled={saving} iconOnly onClick={onClose} />
                         </div>
                     </div>

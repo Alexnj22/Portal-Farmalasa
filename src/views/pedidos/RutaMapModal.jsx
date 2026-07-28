@@ -490,12 +490,10 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           <div className="flex items-center gap-2">
             {/* Indicador rastreo — admin */}
             {!isConductor && (
-              <span className={`flex items-center gap-1 text-micro font-bold px-2 py-1 rounded-lg border ${
-                driverOnline ? 'bg-success/10 border-success/30 text-success-text' : driverPos ? 'bg-warning/10 border-warning/30 text-warning-text' : 'bg-surface-card-hover border-border-card text-content-3'
-              }`}>
+              <Badge variant={driverOnline ? 'success' : driverPos ? 'warning' : 'neutral'} size="sm" uppercase={false}>
                 <Radio size={8} className={driverOnline ? 'animate-pulse' : ''} />
                 {driverOnline ? 'En vivo' : driverPos ? 'Última posición' : 'Sin señal'}
-              </span>
+              </Badge>
             )}
             {/* Recálculos conductor */}
             {isConductor && recalcCount > 0 && (

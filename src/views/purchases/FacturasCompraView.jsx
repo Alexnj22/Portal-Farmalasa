@@ -847,12 +847,7 @@ function TabDocumentos({
                                     TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}
                                 {!row.json_path && (
                                     <>
-                                        <span
-                                            title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)"
-                                            className="text-micro font-black text-content-3 bg-content-3/10 border border-content-3/25 px-2 py-0.5 rounded-full whitespace-nowrap"
-                                        >
-                                            Sin JSON
-                                        </span>
+                                        <Badge size="sm" title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)">Sin JSON</Badge>
                                         {canEdit && (
                                             <>
                                                 <DetectCodeAction

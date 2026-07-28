@@ -6,6 +6,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { ERP_NAMES as ERP_NAMES_FULL, ERP_ORDER } from './tabminmax/constants';
+import Badge from '../components/common/Badge';
 
 const ERP_SHORT = { 1: 'S.1', 2: 'S.2', 3: 'S.3', 4: 'S.4', 5: 'LaP.', 6: 'Bod.', 7: 'S.5' };
 
@@ -276,12 +277,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             <DataCell align="left" className="!py-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     {row.abc_class && (
-                                        <span className={`shrink-0 text-micro font-black px-1.5 py-0.5 rounded-md border ${
-                                            row.abc_class === 'A' ? 'bg-success/10 text-success-text border-success/30' :
-                                            row.abc_class === 'B' ? 'bg-chart-1/10 text-chart-1-text border-chart-1/30' :
-                                            row.abc_class === 'C' ? 'bg-warning/10 text-warning-text border-warning/30' :
-                                                                    'bg-surface-card-hover text-content-3 border-divider'
-                                        }`}>{row.abc_class}</span>
+                                        <Badge variant={row.abc_class === 'A' ? 'success' : row.abc_class === 'B' ? 'chart-1' : 'neutral'} size="sm" className="shrink-0">{row.abc_class}</Badge>
                                     )}
                                     <span className="text-body-sm font-medium text-content truncate">{row.product_name}</span>
                                 </div>

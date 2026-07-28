@@ -487,6 +487,11 @@ const BranchCard = memo(({
                                 {!scheduleDefined ? 'Falta Horario' : 'Horario (Hoy)'}
                             </span>
                         </div>
+                        {/* NO es un chip: es TEXTO que solo toma forma de chip en
+                            una de sus tres ramas (cuando la sucursal está cerrada
+                            hoy). Pasarlo a `Badge` lo volvería chip siempre, y las
+                            otras dos ramas —el horario y el "Definir" en rojo— son
+                            texto suelto dentro de la fila. */}
                         <span className={`font-bold text-body-sm tracking-tight ${!scheduleDefined ? 'text-danger' : todaySchedule === 'CERRADO' ? 'px-2 py-0.5 bg-surface-card-hover/60 text-content-3 rounded-md text-micro uppercase tracking-widest' : 'text-content'}`}>
                             {!scheduleDefined ? 'Definir' : todaySchedule}
                         </span>

@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.153.0';
+export const APP_VERSION = '2.154.0';
+
+// v2.154.0 — D3.5 CERRADA. 101 → 1.
+//
+// El unico que queda es de BranchesView y NO debe migrar: es TEXTO que solo
+// toma forma de chip en una de sus tres ramas (cuando la sucursal esta cerrada
+// hoy). Pasarlo a `Badge` lo volveria chip siempre, y las otras dos ramas —el
+// horario y el "Definir" en rojo— son texto suelto dentro de la fila. Anotado
+// en sitio.
+//
+// ── Lo que se encontro en el camino ──────────────────────────────────────
+// El patron era SIEMPRE el mismo: una tabla que guardaba dos o tres clases de
+// Tailwind por fila. `SUC_COLORS`, `TIPO_PAGO_COLORS`, `STATUS_META`,
+// `EVENT_THEMES`, `getRoleTheme`, `getStatusInfo`, `getSeverityInfo`,
+// `scoreBg`, `marginLabel`, `getThemeForAction`… veinte tablas distintas
+// reescribiendo la misma paleta SOFT del canonico.
+//
+// Con `variante` en la tabla, agregar un estado es una linea en vez de tres
+// clases. Y el color deja de poder derivar: hoy `chart-2` es `success` en
+// todos lados porque la tabla lo NOMBRA, no porque alguien copio el hex bien.
+//
+// Casos que NO son `Badge` y quedaron documentados:
+//   · los contadores (ancho minimo fijo + numero) → `Contador`
+//   · el `dot` de un estado y el `bg` de un cuadro de icono → son SUPERFICIE
+//   · texto que solo a veces parece chip → texto
+//
+// El baseline de `chip-a-mano` baja de 45 a 8 (el gate cuenta tambien los de
+// `components/common/`, que son los canonicos mismos).
 
 // v2.153.0 — D3.5: cinco chips mas, incluida la severidad de la auditoria.
 //

@@ -904,9 +904,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         </Badge>
                                                                     )}
                                                                     {hasHours && (
-                                                                        <span className={`text-caption font-black px-2.5 py-1 rounded-full border ${cfg.badge}`}>
-                                                                            {meta.hours || meta.hoursOnly}h ausente
-                                                                        </span>
+                                                                        <Badge variant={cfg.variante} uppercase={false}>{meta.hours || meta.hoursOnly}h ausente</Badge>
                                                                     )}
                                                                     {isInsuranceDays && (
                                                                         <Badge variant="chart-3" size="sm" uppercase={false}> {daysNum - 3}d Seguro</Badge>

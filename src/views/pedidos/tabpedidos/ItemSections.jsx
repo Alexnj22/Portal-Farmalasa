@@ -190,7 +190,7 @@ const COLS_REGLA = [
     }},
 ];
 
-function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowExtra }) {
+function ItemSection({ label, count, variante = 'neutral', rows, columns, noteEl, renderRowExtra }) {
     const [open,        setOpen]        = useState(false);
     const [page,        setPage]        = useState(1);
     const [pageSize,    setPageSize]    = useState(MINI_PAGE);
@@ -246,9 +246,9 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
             <div className="flex items-center gap-1 pr-2 hover:bg-surface-card-hover/50 transition-colors">
                 <Button variant="ghost" className="flex-1" onClick={() => setOpen(v => !v)}>
                     <span className="text-label font-semibold text-content-2 flex-1">{label}</span>
-                    <span className={`text-caption font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-brand/10 text-brand-text border-brand/30' : badgeCls}`}>
+                    <Badge variant={search ? 'info' : variante} size="sm" className="shrink-0" uppercase={false}>
                         {search ? `${filteredRows.length}/${count}` : count}
-                    </span>
+                    </Badge>
                 </Button>
                 <AnimatePresence mode="wait">
                     {searchOpen ? (
@@ -506,14 +506,14 @@ export default function ItemSections({ allItems, loading }) {
                 {sinStock.length > 0 && <span className="text-label text-content-3">Sin inventario <strong className="text-warning">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-label text-content-3">Revisar regla <strong className="text-danger-text">{porRegla.length}</strong></span>}
             </div>
-            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-success/10 text-success-text border-success/30" rows={enviados} columns={COLS_ENVIADOS} />
+            <ItemSection label="Productos enviados" count={enviados.length} variante="success" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
-                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={agotamiento} columns={COLS_AGOTAMIENTO}
+                label="Stock insuficiente en bodega" count={agotamiento.length} variante="warning" rows={agotamiento} columns={COLS_AGOTAMIENTO}
                 noteEl={<p className="text-caption text-warning-text/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
-            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-warning/10 text-warning-text border-warning/30" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} variante="warning" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
-                label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-danger/10 text-danger-text border-danger/30" rows={porRegla} columns={COLS_REGLA}
+                label="Revisar regla de despacho" count={porRegla.length} variante="danger" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}
                 noteEl={<div className="flex items-start gap-2 text-caption text-danger-text/80 bg-danger/10 border border-danger/30 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-danger" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
             />

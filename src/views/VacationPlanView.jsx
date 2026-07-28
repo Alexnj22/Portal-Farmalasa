@@ -961,15 +961,15 @@ const VacationPlanView = () => {
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee?.name || '—'}</p>
                                                                     {p.metadata?.original_start_date && (
-                                                                        <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-micro font-black uppercase tracking-widest bg-warning/10 text-warning-text border border-warning/30 cursor-default">
-                                                                            <Edit2 size={7} strokeWidth={3} /> Editado
+                                                                        <Badge variant="warning" size="sm" icon={Edit2} className="group/badge relative">
+                                                                            Editado
                                                                             <span data-surface="tooltip" className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 text-micro font-bold px-3 py-2 whitespace-nowrap z-sidebar pointer-events-none">
                                                                                 <span className="text-content-tooltip-2 font-black uppercase tracking-widest text-micro mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
                                                                                 <span className="text-content-tooltip-2 font-black uppercase tracking-widest text-micro mt-1 mb-0.5">Fecha actual</span>
                                                                                 <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
                                                                             </span>
-                                                                        </span>
+                                                                        </Badge>
                                                                     )}
                                                                 </div>
                                                             </td>

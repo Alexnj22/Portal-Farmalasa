@@ -753,7 +753,7 @@ const AnnouncementsView = ({ openModal }) => {
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-6 mt-2 border-t border-divider shrink-0 px-3 md:px-4">
-                <span className="text-label font-bold text-content-3 uppercase tracking-widest bg-surface-card backdrop-blur-sm shadow-sm px-3 py-1.5 rounded-lg border border-border-card">Pág {currentPage} de {totalPages}</span>
+                <Badge>Pág {currentPage} de {totalPages}</Badge>
                 <div className="flex gap-2">
                   <Button variant="secondary" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
                   <Button variant="secondary" icon={ChevronRight} disabled={currentPage === totalPages} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />

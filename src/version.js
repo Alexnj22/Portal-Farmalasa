@@ -16,7 +16,14 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.152.0';
+export const APP_VERSION = '2.153.0';
+
+// v2.153.0 — D3.5: cinco chips mas, incluida la severidad de la auditoria.
+//
+// `getSeverityInfo` devolvia color/bg/border/icon por severidad. El icono se
+// queda —es un nodo JSX, no una clase— y se le agrega la variante.
+//
+// Chips a mano: 14 → 9.
 
 // v2.152.0 — D3.5: seis chips mas.
 //

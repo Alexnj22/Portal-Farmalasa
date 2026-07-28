@@ -116,15 +116,12 @@ function ExpiryBadge({ date }) {
   const isExpired = days <= 0;
   const isNear    = days > 0 && days <= 60;
   return (
-    <span className={`shrink-0 text-micro font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${
-      isExpired ? 'bg-danger/10 text-danger-text' :
-      isNear    ? 'bg-warning/10 text-warning-text' :
-                  'bg-surface-card-hover text-content-3'
-    }`}>
+    <Badge variant={isExpired ? 'danger' : isNear ? 'warning' : 'neutral'}
+      size="sm" uppercase={false} className="shrink-0 whitespace-nowrap">
       {isExpired
         ? '⚠ Vencido'
         : new Date(date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
-    </span>
+    </Badge>
   );
 }
 

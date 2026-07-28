@@ -36,10 +36,10 @@ const SUPERVISOR_DE_JEFE = {
 
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
 const OPT_COLORS = {
-    A: { on: 'bg-success-solid text-white', off: 'bg-surface-card-hover text-content-3' },
-    B: { on: 'bg-chart-1-solid text-white',    off: 'bg-surface-card-hover text-content-3' },
-    C: { on: 'bg-warning-solid text-white',   off: 'bg-surface-card-hover text-content-3' },
-    D: { on: 'bg-danger-solid text-white',    off: 'bg-surface-card-hover text-content-3' },
+    A: { on: 'bg-success-solid text-white', off: 'bg-surface-card-hover text-content-3', variante: 'success' },
+    B: { on: 'bg-chart-1-solid text-white', off: 'bg-surface-card-hover text-content-3', variante: 'chart-1' },
+    C: { on: 'bg-warning-solid text-white', off: 'bg-surface-card-hover text-content-3', variante: 'warning' },
+    D: { on: 'bg-danger-solid text-white',  off: 'bg-surface-card-hover text-content-3', variante: 'danger'  },
 };
 // Tokenizado T7 — paleta categórica cerrada (--chart-1..9), las claves de
 // nombre de color se conservan (referenciadas por posición en otras partes
@@ -1267,9 +1267,7 @@ export default function EncuestaView() {
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-2.5 text-center w-16 whitespace-nowrap">
-                                                            <span className={`inline-flex items-center justify-center min-w-[44px] text-micro font-black px-2 py-0.5 rounded-full ${row.isJefe ? 'bg-warning/10 text-warning-text' : 'bg-surface-card-hover text-content-3'}`}>
-                                                                {row.isJefe ? 'Jefe/a' : 'Colab.'}
-                                                            </span>
+                                                            <Badge variant={row.isJefe ? 'warning' : 'neutral'} size="sm" uppercase={false}>{row.isJefe ? 'Jefe/a' : 'Colab.'}</Badge>
                                                         </td>
                                                         {BLOQUES.map(b => {
                                                             const s = blockScore([row], b.indices, invertedIndices);
@@ -1336,7 +1334,7 @@ export default function EncuestaView() {
                                                                                                             const n = parseInt(ans, 10);
                                                                                                             const oc = !isNaN(n) ? (n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D) : OPT_COLORS[ans] || OPT_COLORS.D;
                                                                                                             const display = !isNaN(n) ? `${n} / 10` : ({ A: '9–10', B: '7–8', C: '5–6', D: '1–4' }[ans] || ans);
-                                                                                                            return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-label font-black ${oc.on}`}>{display}</span>;
+                                                                                                            return <Badge variant={oc.variante} tone="solid" uppercase={false}>{display}</Badge>;
                                                                                                         })()
                                                                                                     ) : (
                                                                                                         ans ? (

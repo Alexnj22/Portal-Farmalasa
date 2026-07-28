@@ -16,6 +16,7 @@ import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
+import Badge from '../components/common/Badge';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -31,12 +32,12 @@ const ACTION_OPTIONS = [
 const getSeverityInfo = (severity) => {
     switch (severity) {
         case 'CRITICAL':
-            return { color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/30', icon: <AlertCircle size={12} /> };
+            return { color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/30', icon: <AlertCircle size={12} />, variante: 'danger' };
         case 'WARNING':
-            return { color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/30', icon: <AlertTriangle size={12} /> };
+            return { color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/30', icon: <AlertTriangle size={12} />, variante: 'warning' };
         case 'INFO':
         default:
-            return { color: 'text-brand-text', bg: 'bg-brand/10', border: 'border-brand/20', icon: <Info size={12} /> };
+            return { color: 'text-brand-text', bg: 'bg-brand/10', border: 'border-brand/20', icon: <Info size={12} />, variante: 'info' };
     }
 };
 
@@ -94,9 +95,9 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </div>
             </DataCell>
             <DataCell>
-                <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg text-micro md:text-micro font-black uppercase tracking-widest border transition-transform group-hover:scale-[1.02] bg-surface-card backdrop-blur-sm whitespace-nowrap ${severityInfo.color} ${severityInfo.border}`}>
+                <Badge variant={severityInfo.variante || 'neutral'} size="sm">
                     {severityInfo.icon} <span className="hidden sm:inline">{log.action?.replace(/_/g, ' ') || 'ACCIÓN'}</span>
-                </span>
+                </Badge>
             </DataCell>
             <DataCell align="right">
                 <Button variant="secondary" size="sm" icon={Database} title="Ver Detalles" onClick={() => openModal('viewAuditDetail', log)}><span className="hidden md:inline">Detalles</span></Button>

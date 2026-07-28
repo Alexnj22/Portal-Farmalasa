@@ -69,9 +69,7 @@ const FormAuditDetail = ({ data }) => {
                         </div>
                         <div className="min-w-0 pt-0.5">
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
-                            <span className="text-label font-black text-content bg-surface-card backdrop-blur-sm border border-white px-3 py-1.5 rounded-xl shadow-sm">
-                                {data.action}
-                            </span>
+                            <Badge>{data.action}</Badge>
                         </div>
                     </div>
 

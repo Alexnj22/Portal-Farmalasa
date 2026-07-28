@@ -5,7 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.95.0';
+export const APP_VERSION = '2.96.0';
+
+// v2.96.0 — FilterBar estrena adopcion: VentasView, la barra de referencia.
+//
+// Al preguntar el usuario "finalizamos las otras familias o solventamos lo que
+// no cambiaste", la respuesta salio de medir: **FilterBar tenia 0 adopciones**
+// mientras 21 archivos seguian escribiendo la barra a mano. O sea que acababa
+// de cometer exactamente el error que vengo documentando toda la sesion —
+// construir el canonico y no usarlo. Eso es mas urgente que 178 botones.
+//
+// VentasView primero porque ya ordenaba bien (sucursal → laboratorio → periodo
+// → toggles), asi que sirve de referencia para las otras 20.
+//
+// `FilterBar.Chip` agregado: los toggles (Anuladas, Receta Medica) NO son un
+// SegmentedControl — varios pueden estar prendidos a la vez y cada uno es
+// independiente. Meterlos ahi daria un radiogroup donde el lector de pantalla
+// anunciaria "1 de 3" para algo que no es excluyente.
+//
+// `hasActiveFilters` quedo huerfano y se borro: ahora la cuenta la calcula
+// `activeCount`, que ademas es lo que el boton movil muestra. Antes esa misma
+// logica estaba escrita dos veces.
+//
+// Verificado: escritorio 52px fijos, movil colapsado a boton de 90px, sin
+// errores de JS en ninguno.
 
 // v2.95.0 — Familia C: los 5 segmentados que el lint destapo en v2.94.0.
 //

@@ -69,6 +69,35 @@ const Section = memo(({
 ));
 Section.displayName = 'FilterBar.Section';
 
+/**
+ * FilterBar.Chip — un filtro que se prende y se apaga, no una opción de N.
+ *
+ * Es la cuarta ranura del orden (§17): "¿cómo está?" — anuladas, pendientes,
+ * vencidos. NO es `SegmentedControl`: varios pueden estar prendidos a la vez, y
+ * cada uno es independiente. Confundirlos daría un `radiogroup` donde el lector
+ * de pantalla anunciaría "1 de 3" para algo que no es excluyente.
+ *
+ * Cuando está prendido muestra su × adentro, para que apagarlo sea un clic y no
+ * "buscar dónde estaba el filtro".
+ */
+const Chip = memo(({ active, onToggle, tone = 'danger', children, ...rest }) => (
+    <button type="button" onClick={onToggle} aria-pressed={active}
+        className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-btn shrink-0
+            text-caption font-black uppercase tracking-widest border whitespace-nowrap
+            transition-[background-color,border-color,color] duration-200
+            ${active
+                ? (tone === 'danger'  ? 'bg-danger/12 border-danger/30 text-danger-text'
+                 : tone === 'warning' ? 'bg-warning/12 border-warning/30 text-warning-text'
+                 : tone === 'success' ? 'bg-success/12 border-success/30 text-success-text'
+                 :                      'bg-brand/12 border-brand/30 text-brand-text')
+                : 'bg-transparent border-transparent text-content-3 hover:bg-surface-card-hover hover:text-content-2'}`}
+        {...rest}>
+        {children}
+        {active && <X size={9} strokeWidth={3} aria-hidden="true" />}
+    </button>
+));
+Chip.displayName = 'FilterBar.Chip';
+
 const FilterBar = memo(({
     children,
     onClear,
@@ -212,6 +241,7 @@ const FilterBar = memo(({
 });
 
 FilterBar.Section = Section;
+FilterBar.Chip = Chip;
 FilterBar.displayName = 'FilterBar';
 
 export default FilterBar;

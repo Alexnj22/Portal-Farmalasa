@@ -1494,14 +1494,42 @@ Glass y tensa en Solid, como el resto.
 
 ### 17.1 `TablePagination` — paginación
 
-Ya existe y lo usan 17 vistas. **Nunca escribir la paginación a mano**: las
-que quedan sueltas dibujan los números de página como botones con
-`rounded-full` y pierden el salto rápido, el "…" de rango largo y el selector
-de tamaño de página.
+```jsx
+<TablePagination page={pagina} totalPages={paginas} onPageChange={setPagina}
+    pageSize={tam} onPageSizeChange={setTam} total={1284} unit="ventas" />
+```
 
-Y no es un `SegmentedControl`: aunque se comporta como uno-de-N,
-`role="radiogroup"` es incorrecto para un lector de pantalla — paginar es
-navegar, no elegir una opción de un grupo.
+Existe desde antes y lo usan 17 vistas; se **reescribió el 2026-07-27** sobre
+siete problemas medidos:
+
+1. El orden estaba al revés — "¿cuántos hay?" vivía en el extremo derecho.
+2. Eran **tres islas** separadas por `justify-between`: en pantalla ancha leían
+   como tres controles sin relación.
+3. El tamaño de página y la página activa usaban **el mismo `bg-brand`**, así
+   que competían por significar "activo".
+4. **13 paradas de tabulación** para pasar de página.
+5. `framer-motion` (§11 dice "no agregar más"), y su `layoutId="activePage"`
+   hacía que la píldora **volara entre dos paginaciones** si había dos en
+   pantalla.
+6. Sin `<nav>` ni `aria-live`.
+7. En móvil se partía en tres filas y empujaba la tabla fuera de la pantalla.
+
+**Ahora:** una sola píldora de 52px, orden de lectura (rango → navegación →
+tamaño), **4 controles en vez de 13**, `<nav aria-label>` con `aria-live` en el
+rango, y el hover sale de `--lift-hover` — en Solid no se levanta.
+
+- **El rango, no el total.** `1–25 de 1,284` responde "dónde estoy" y "cuánto
+  hay" a la vez; el total solo no decía dónde estabas.
+- **Sin números de página.** En 52 páginas nadie salta a la 37 mirando. El
+  "pág. 1/52" es clickeable y se vuelve un campo — así el viejo "Ir a" deja de
+  ocupar espacio permanente para una acción rara.
+- **Móvil (<720px):** una fila de ancho completo, flechas de 40px pegadas a los
+  bordes donde llega el pulgar, estado al centro en dos líneas. El selector de
+  tamaño desaparece: nadie cambia cuántas filas ve desde un teléfono.
+
+**Nunca escribir la paginación a mano.** Y no es un `SegmentedControl`: aunque
+se comporta como uno-de-N, `role="radiogroup"` es incorrecto para un lector de
+pantalla — paginar es navegar, no elegir una opción de un grupo.
 
 ## 18. Estados de vista — `StateViews`
 

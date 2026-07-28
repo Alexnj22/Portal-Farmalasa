@@ -1,138 +1,50 @@
-import { useState, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import LiquidSelect from './LiquidSelect';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 // eslint-disable-next-line react-refresh/only-export-components -- constante chica usada solo junto a este componente; solo afecta Fast Refresh en dev
 export const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
-const navCls = (disabled) =>
-    `w-8 h-8 flex items-center justify-center text-label font-bold text-content-3 transition-colors duration-150 ${
-        disabled
-            ? 'opacity-45 cursor-not-allowed'
-            : 'hover:text-brand-text hover:bg-surface-card-hover'
-    }`;
+/**
+ * TablePagination — paginación de tabla o lista.
+ *
+ * Reescrito el 2026-07-27 sobre el diseño P1 aprobado. Lo que tenía la versión
+ * anterior, medido antes de tocarla:
+ *
+ *   1 · El orden estaba al revés. Lo primero que uno pregunta es "¿cuántos
+ *       hay?" y eso vivía en el extremo derecho, lo último que se lee.
+ *   2 · Eran TRES islas separadas por `justify-between`: en pantalla ancha
+ *       quedaban tan lejos que leían como tres controles sin relación.
+ *   3 · El tamaño de página y la página activa usaban el MISMO `bg-brand` con
+ *       glow, así que competían por significar "activo".
+ *   4 · 13 paradas de tabulación para pasar de página.
+ *   5 · `framer-motion`, que DESIGN.md §11 marca como "no agregar más" — y su
+ *       `layoutId="activePage"` hacía que la píldora azul VOLARA entre dos
+ *       paginaciones si había dos en pantalla.
+ *   6 · Sin semántica: ni `<nav>` ni `aria-current`. Un lector de pantalla oía
+ *       siete botones sin nombre.
+ *   7 · En móvil se partía en tres filas y empujaba la tabla fuera de pantalla.
+ *
+ * Ahora: una sola píldora, orden de lectura (rango → navegación → tamaño), 3
+ * paradas de tabulación, `<nav>` con `aria-live`, y el hover sale de
+ * `--lift-hover` — o sea que en Solid no se levanta.
+ *
+ * **El rango, no el total.** Dice `1–25 de 1,284`, que responde "¿dónde estoy?"
+ * y "¿cuánto hay?" a la vez. El total solo no decía dónde estabas.
+ *
+ * **Sin números de página.** En 52 páginas nadie salta a la 37 mirando: el
+ * salto real se hace escribiendo el número, y para eso el "pág. 1/52" es
+ * clickeable y se vuelve un campo. Así el "Ir a" deja de ocupar espacio
+ * permanente para una acción que casi no se usa.
+ */
 
-function NavBtn({ disabled, onClick, title, children }) {
-    return (
-        <motion.button
-            data-surface="input"
-            disabled={disabled}
-            onClick={onClick}
-            title={title}
-            whileHover={!disabled ? { scale: 1.1, y: -1.5 } : {}}
-            whileTap={!disabled ? { scale: 0.92 } : {}}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className={navCls(disabled)}
-        >
-            {children}
-        </motion.button>
-    );
-}
+const NAV = `w-9 h-9 rounded-btn flex items-center justify-center shrink-0
+    text-content-3 transition-[background-color,color,transform] duration-150
+    hover:bg-surface-card-hover hover:text-brand-text hover:translate-y-[var(--lift-hover)]
+    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent
+    disabled:hover:text-content-3 disabled:hover:translate-y-0`;
 
-function SmartPagination({ page, total, onChange }) {
-    const [inputVal, setInputVal] = useState('');
-    const inputRef = useRef();
-
-    if (total <= 1) return null;
-
-    const buildPages = () => {
-        if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-        const pages = [1];
-        const left  = Math.max(2, page - 1);
-        const right = Math.min(total - 1, page + 1);
-        if (left > 2)          pages.push('…');
-        for (let i = left; i <= right; i++) pages.push(i);
-        if (right < total - 1) pages.push('…');
-        pages.push(total);
-        return pages;
-    };
-
-    const commit = () => {
-        const n = parseInt(inputVal, 10);
-        if (!isNaN(n) && n >= 1 && n <= total) onChange(n);
-        setInputVal('');
-    };
-
-    return (
-        <div className="flex items-center gap-1.5">
-            <NavBtn disabled={page <= 1} onClick={() => onChange(1)} title="Primera página">
-                <ChevronsLeft size={12} strokeWidth={2.5} />
-            </NavBtn>
-            <NavBtn disabled={page <= 1} onClick={() => onChange(page - 1)} title="Página anterior">
-                <ChevronLeft size={12} strokeWidth={2.5} />
-            </NavBtn>
-
-            {/* Page numbers — sliding blue pill via layoutId */}
-            <div className="flex items-center gap-0.5 mx-1">
-                {buildPages().map((p, i) =>
-                    p === '…'
-                        ? <div key={`e${i}`}
-                            className="w-7 h-8 flex items-center justify-center select-none"
-                          >
-                            <span className="text-body font-black text-content-3 leading-none tracking-[2px]">
-                                ···
-                            </span>
-                          </div>
-                        : <motion.button
-                            key={p}
-                            onClick={() => onChange(p)}
-                            whileHover={p !== page ? { scale: 1.1, y: -1.5 } : {}}
-                            whileTap={p !== page ? { scale: 0.9 } : {}}
-                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                            className="relative w-8 h-8 rounded-xl"
-                          >
-                            {p === page && (
-                                <motion.div
-                                    layoutId="activePage"
-                                    className="absolute inset-0 rounded-xl bg-brand"
-                                    style={{ boxShadow: 'var(--shadow-glow-brand)' }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                                />
-                            )}
-                            <span className={`relative z-base text-body-sm font-black transition-colors duration-150 ${
-                                p === page ? 'text-white' : 'text-content-3'
-                            }`}>
-                                {p}
-                            </span>
-                          </motion.button>
-                )}
-            </div>
-
-            {/* Always-visible Go-to input when many pages */}
-            {total > 7 && (
-                <div className="flex items-center gap-1.5 ml-1 pl-2 border-l border-divider">
-                    <span className="text-micro text-content-3 font-black uppercase tracking-wider whitespace-nowrap">Ir a</span>
-                    <input
-                        ref={inputRef}
-                        type="number"
-                        min={1}
-                        max={total}
-                        value={inputVal}
-                        onChange={e => setInputVal(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter') commit();
-                            if (e.key === 'Escape') setInputVal('');
-                        }}
-                        onBlur={commit}
-                        placeholder="—"
-                        data-surface="input"
- className="w-11 h-7 text-center text-body-xl font-bold text-content focus:border-brand transition-shadow"
-                    />
-                    <span className="text-micro text-content-3 tabular-nums">/ {total}</span>
-                </div>
-            )}
-
-            <NavBtn disabled={page >= total} onClick={() => onChange(page + 1)} title="Página siguiente">
-                <ChevronRight size={12} strokeWidth={2.5} />
-            </NavBtn>
-            <NavBtn disabled={page >= total} onClick={() => onChange(total)} title="Última página">
-                <ChevronsRight size={12} strokeWidth={2.5} />
-            </NavBtn>
-        </div>
-    );
-}
-
-// ── TablePagination ───────────────────────────────────────────────────────────
 export default function TablePagination({
     pageSize,
     onPageSizeChange,
@@ -144,60 +56,153 @@ export default function TablePagination({
     filteredTotal,
 }) {
     const rootRef = useRef();
-    const isFiltered = filteredTotal != null && filteredTotal !== total;
+    const inputRef = useRef();
+    const [editando, setEditando] = useState(false);
+    const [borrador, setBorrador] = useState('');
+    const compacto = useMediaQuery('(max-width: 719px)');
 
-    // After any page/size change, keep pagination visible in the scroll container
-    const navigate = useCallback((fn) => {
+    const mostrado = filteredTotal ?? total ?? 0;
+    const desde = mostrado === 0 ? 0 : (page - 1) * pageSize + 1;
+    const hasta = Math.min(page * pageSize, mostrado);
+
+    // Tras cambiar de página, mantener la paginación a la vista. Si la tabla
+    // era más larga que la ventana, al pasar de página el usuario quedaba
+    // mirando el medio de la lista nueva sin referencia.
+    const navegar = useCallback((fn) => {
         fn();
         requestAnimationFrame(() => {
             rootRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
         });
     }, []);
 
+    useEffect(() => { if (editando) inputRef.current?.select(); }, [editando]);
+
+    const confirmar = () => {
+        const n = parseInt(borrador, 10);
+        if (!isNaN(n) && n >= 1 && n <= totalPages && n !== page) navegar(() => onPageChange(n));
+        setEditando(false);
+        setBorrador('');
+    };
+
+    if (!totalPages || totalPages < 1) return null;
+
+    // ── Móvil: una sola fila, ancho completo ──────────────────────────────
+    // Las flechas van pegadas a los bordes, que es donde llega el pulgar, y
+    // miden 40px de lado. El selector de tamaño de página no aparece: nadie
+    // cambia cuántas filas ve desde un teléfono.
+    if (compacto) {
+        return (
+            <nav ref={rootRef} aria-label="Paginación"
+                className="w-full flex items-center justify-between gap-2 h-14 px-2
+                    rounded-card border border-border-card bg-surface-card">
+                <button type="button" className={`${NAV} w-10 h-10`} disabled={page <= 1}
+                    onClick={() => navegar(() => onPageChange(page - 1))} aria-label="Página anterior">
+                    <ChevronLeft size={18} strokeWidth={2.5} />
+                </button>
+
+                <span className="flex flex-col items-center leading-tight min-w-0" aria-live="polite">
+                    <span className="text-body-sm font-black text-content tabular-nums">
+                        {page} / {totalPages}
+                    </span>
+                    <span className="text-micro text-content-3 tabular-nums truncate">
+                        {desde.toLocaleString()}–{hasta.toLocaleString()} de {mostrado.toLocaleString()}
+                    </span>
+                </span>
+
+                <button type="button" className={`${NAV} w-10 h-10`} disabled={page >= totalPages}
+                    onClick={() => navegar(() => onPageChange(page + 1))} aria-label="Página siguiente">
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </button>
+            </nav>
+        );
+    }
+
+    // ── Escritorio: una sola píldora ──────────────────────────────────────
     return (
-        <div ref={rootRef} className="flex items-center justify-between gap-3 flex-wrap">
+        <nav ref={rootRef} aria-label="Paginación"
+            className="inline-flex items-center h-[52px] px-1 rounded-card border border-border-card
+                bg-surface-card shadow-[var(--shadow-glass-1)] max-w-full">
 
-            {/* Page-size pills */}
-            {onPageSizeChange && (
-            <div data-surface="input" className="flex items-center gap-0.5 p-1">
-                {PAGE_SIZE_OPTIONS.map(size => (
-                    <motion.button
-                        key={size}
-                        onClick={() => navigate(() => { onPageSizeChange(size); onPageChange(1); })}
-                        whileHover={pageSize !== size ? { scale: 1.05 } : {}}
-                        whileTap={pageSize !== size ? { scale: 0.95 } : {}}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className={`px-3 h-7 rounded-xl text-caption font-bold transition-[background-color,color,box-shadow] duration-200 ${
-                            pageSize === size
-                                ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-[1.04]'
-                                : 'text-content-3 hover:text-content hover:bg-surface-card-hover'
-                        }`}
-                    >
-                        {size}
-                    </motion.button>
-                ))}
-            </div>
-            )}
-
-            {/* Navigation */}
-            <SmartPagination page={page} total={totalPages} onChange={(p) => navigate(() => onPageChange(p))} />
-
-            {/* Total badge */}
-            <div data-surface="input" className="flex items-center gap-1 px-3 h-8 min-w-[90px] justify-end">
-                {isFiltered ? (
-                    <>
-                        <span className="text-label font-black text-brand-text tabular-nums">{(filteredTotal ?? 0).toLocaleString()}</span>
-                        <span className="text-micro text-content-3 mx-0.5">/</span>
-                        <span className="text-caption font-semibold text-content-3 tabular-nums">{total.toLocaleString()}</span>
-                        <span className="text-micro text-content-3 ml-0.5">{unit}</span>
-                    </>
-                ) : (
-                    <>
-                        <span className="text-label font-bold text-content tabular-nums">{total.toLocaleString()}</span>
-                        <span className="text-micro text-content-3 ml-0.5">{unit}</span>
-                    </>
+            {/* 1 · el rango, primero: responde "dónde estoy" y "cuánto hay" */}
+            <span className="px-3 text-body-sm text-content-2 whitespace-nowrap tabular-nums" aria-live="polite">
+                <b className="text-content font-black">{desde.toLocaleString()}–{hasta.toLocaleString()}</b>
+                {' de '}
+                <b className="text-content font-black">{mostrado.toLocaleString()}</b>
+                {filteredTotal != null && filteredTotal !== total && (
+                    <span className="text-content-3"> ({total.toLocaleString()} sin filtrar)</span>
                 )}
-            </div>
-        </div>
+                <span className="text-content-3"> {unit}</span>
+            </span>
+
+            <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
+
+            {/* 2 · navegación */}
+            <span className="flex items-center px-1">
+                <button type="button" className={NAV} disabled={page <= 1}
+                    onClick={() => navegar(() => onPageChange(page - 1))}
+                    title="Página anterior" aria-label="Página anterior">
+                    <ChevronLeft size={16} strokeWidth={2.5} />
+                </button>
+
+                {editando ? (
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        inputMode="numeric"
+                        value={borrador}
+                        onChange={e => setBorrador(e.target.value.replace(/\D/g, ''))}
+                        onBlur={confirmar}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') confirmar();
+                            if (e.key === 'Escape') { setEditando(false); setBorrador(''); }
+                        }}
+                        aria-label={`Ir a la página, entre 1 y ${totalPages}`}
+                        className="w-16 h-8 mx-1 text-center bg-transparent text-body-sm font-black
+                            text-content outline-solid outline-1 outline-brand outline-offset-[-1px]
+                            rounded-btn tabular-nums"
+                    />
+                ) : (
+                    // Clickeable: reemplaza al campo "Ir a" que antes ocupaba
+                    // lugar siempre para una acción que casi no se usa.
+                    <button type="button"
+                        onClick={() => { setBorrador(String(page)); setEditando(true); }}
+                        title="Ir a una página"
+                        className="h-8 px-2.5 mx-0.5 rounded-btn text-body-sm text-content-2 tabular-nums
+                            whitespace-nowrap hover:bg-surface-card-hover hover:text-content
+                            transition-colors duration-150">
+                        pág. <b className="text-content font-black">{page}</b>
+                        <span className="text-content-3">/{totalPages}</span>
+                    </button>
+                )}
+
+                <button type="button" className={NAV} disabled={page >= totalPages}
+                    onClick={() => navegar(() => onPageChange(page + 1))}
+                    title="Página siguiente" aria-label="Página siguiente">
+                    <ChevronRight size={16} strokeWidth={2.5} />
+                </button>
+            </span>
+
+            {/* 3 · tamaño de página — un selector, no un segmentado azul: así
+                deja de competir con la página activa por significar "activo" */}
+            {onPageSizeChange && (
+                <>
+                    <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
+                    <span className="flex items-center gap-1.5 pl-2 pr-1">
+                        <span className="text-micro font-black uppercase tracking-widest text-content-3">Ver</span>
+                        <LiquidSelect
+                            value={String(pageSize)}
+                            onChange={v => navegar(() => { onPageSizeChange(Number(v)); onPageChange(1); })}
+                            options={PAGE_SIZE_OPTIONS.map(n => ({ value: String(n), label: String(n) }))}
+                            // `nano` y no `compact bare`: la primera versión
+                            // mostraba lupa y × de limpiar. No se busca entre
+                            // tres opciones, y "limpiar" el tamaño de página no
+                            // significa nada — dejaría la tabla sin saber
+                            // cuántas filas mostrar.
+                            nano clearable={false}
+                        />
+                    </span>
+                </>
+            )}
+        </nav>
     );
 }

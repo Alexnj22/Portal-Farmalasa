@@ -5,7 +5,51 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.91.0';
+export const APP_VERSION = '2.92.0';
+
+// v2.92.0 — Paginacion reescrita (P1) y FilterBar v2, sobre la revision del usuario.
+//
+// ── PAGINACION ──────────────────────────────────────────────────────────
+// Siete problemas medidos en la version anterior:
+//   1 el orden al reves — "cuantos hay?" vivia en el extremo derecho
+//   2 TRES islas separadas por justify-between: leian como controles sueltos
+//   3 el tamano de pagina y la pagina activa usaban el MISMO bg-brand
+//   4 13 paradas de tabulacion para pasar de pagina
+//   5 framer-motion (§11 dice "no agregar mas"), y su layoutId="activePage"
+//     hacia que la pildora VOLARA entre dos paginaciones en pantalla
+//   6 sin <nav> ni aria-live
+//   7 en movil se partia en tres filas y empujaba la tabla fuera de pantalla
+//
+// Ahora: una sola pildora de 52px, orden de lectura, 4 controles en vez de 13.
+// Dice el RANGO (1-25 de 1,284), no solo el total: responde "donde estoy" y
+// "cuanto hay" a la vez. Sin numeros de pagina — en 52 paginas nadie salta a
+// la 37 mirando; el "pag. 1/52" es clickeable y se vuelve campo, asi el viejo
+// "Ir a" deja de ocupar lugar fijo para una accion rara.
+// Movil: una fila de ancho completo, flechas de 40px pegadas a los bordes.
+// Verificado en iPhone 13 real: 56px de alto, 2 controles, ancho completo.
+//
+// Corregido al verificar: el selector de tamano salia con LUPA y × de limpiar
+// (LiquidSelect compact bare). No se busca entre tres opciones, y "limpiar" el
+// tamano de pagina dejaria la tabla sin saber cuantas filas mostrar. → `nano`.
+//
+// ── FILTERBAR v2 ────────────────────────────────────────────────────────
+// · El filtro aplicado era un fondo tenido que llegaba al divisor con la
+//   esquina RECTA: leia como un boton cortado. Ahora es un CHIP completo, con
+//   su radio y su aire — la misma forma que badges, segmentados y botones.
+// · Faltaba limpiar todo. Aparece con 2+ aplicados. A pedido del usuario es
+//   solo el icono ×, pero con title/aria-label "Quitar los 3 filtros": eso es
+//   lo que lo desambigua de las × chicas de cada chip.
+// · El alto NO era fijo — de las 14 barras, 12 automatico, una h-14 y otra
+//   h-[4rem]. Ahora 52px pase lo que pase, asi se alinea con el titulo en
+//   todas las vistas.
+// · Movil <720px: boton con la cuenta + hoja inferior. Bloquea el scroll de
+//   atras: sin eso, arrastrar en la hoja movia la tabla y al cerrar el usuario
+//   quedaba en otra parte de la lista sin haberlo pedido.
+//
+// `useMediaQuery` nuevo, generalizando useCoarsePointer. Ojo: el ancho NO
+// reemplaza al puntero. Para elegir calendario propio vs rueda del sistema
+// decide el PUNTERO; para decidir si una barra entra en la fila del titulo
+// decide el ANCHO. Son dos preguntas distintas.
 
 // v2.91.0 — Infraestructura para canonizar las 5 familias.
 //

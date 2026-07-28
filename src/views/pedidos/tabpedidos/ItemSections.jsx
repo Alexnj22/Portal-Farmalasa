@@ -467,6 +467,7 @@ export default function ItemSections({ allItems, loading }) {
                         <div className="w-px h-4 bg-divider shrink-0 mx-0.5" />
                         <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
                         <input
+                            aria-label="Mínimo"
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
                             onBlur={() => {
@@ -477,6 +478,7 @@ export default function ItemSections({ allItems, loading }) {
                         />
                         <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MAX</span>
                         <input
+                            aria-label="Máximo"
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
                             onBlur={() => {

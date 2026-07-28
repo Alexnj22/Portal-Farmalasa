@@ -849,7 +849,7 @@ export default function RecepcionModal({
                                             </div>
 
                                             <div className="relative">
-                                                <input type="number" min={0} value={e.fQty}
+                                                <input aria-label="Cantidad facturada" type="number" min={0} value={e.fQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
                                                     className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-chart-9-text focus:border-chart-9'}`}
                                                 />
@@ -870,7 +870,7 @@ export default function RecepcionModal({
                                                 />
                                             </div>
 
-                                            <input type="number" min={0} value={e.sQty}
+                                            <input aria-label="Cantidad recibida" type="number" min={0} value={e.sQty}
                                                 onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
                                                 className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-chart-3-text focus:border-chart-3'}`}
                                             />
@@ -1120,7 +1120,7 @@ export default function RecepcionModal({
                                     </div>
 
                                     <div className="relative">
-                                        <input type="number" min={0} value={fQty}
+                                        <input aria-label="Cantidad facturada" type="number" min={0} value={fQty}
                                             data-qty-row={rowIdx} data-qty-col="fqty"
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                             onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
@@ -1143,7 +1143,7 @@ export default function RecepcionModal({
                                         />
                                     </div>
 
-                                    <input type="number" min={0} value={sQty}
+                                    <input aria-label="Cantidad recibida" type="number" min={0} value={sQty}
                                         data-qty-row={rowIdx} data-qty-col="sqty"
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                         onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
@@ -1172,7 +1172,7 @@ export default function RecepcionModal({
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 <span className="text-caption text-content-3">¿Cuántos?</span>
-                                                <input type="number" min={1} max={fQty}
+                                                <input aria-label="Cantidad con problema" type="number" min={1} max={fQty}
                                                     value={cantProblemaVals[r.id] ?? 1}
                                                     onChange={e => setCantProblemaVals(p => ({
                                                         ...p, [r.id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))

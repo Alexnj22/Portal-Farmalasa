@@ -11,7 +11,7 @@ const Field = ({ form, set, label, k, unit, min = 0, max, step = 1 }) => (
     <div className="flex items-center justify-between gap-3">
         <span className="text-label text-content-2 font-medium flex-1">{label}</span>
         <div className="flex items-center gap-1.5">
-            <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
+            <input aria-label="Valor del parámetro" type="number" min={min} max={max} step={step} value={form[k] ?? 0}
                 onChange={e => set(k, e.target.value)}
  className="w-16 text-right text-body-xl font-bold text-content bg-surface-card border border-divider rounded-lg px-2 py-1 focus:border-brand" />
             {unit && <span className="text-caption text-content-3 shrink-0 w-8">{unit}</span>}

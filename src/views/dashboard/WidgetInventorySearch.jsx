@@ -224,6 +224,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
         ) : formOpen ? (
           <div className="shrink-0 flex items-center gap-1">
             <input
+              aria-label="Cantidad a solicitar"
               type="number" min="1"
               value={qty}
               onChange={e => setQty(e.target.value)}

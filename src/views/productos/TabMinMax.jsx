@@ -1070,7 +1070,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isEditMin) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <input autoFocus type="number" min="0"
+                                                        <input aria-label="Nuevo valor" autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}
@@ -1119,7 +1119,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     <div className="flex items-center gap-1.5">
                                                         <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—')}</div>
                                                         {sep}
-                                                        <input autoFocus type="number" min="0"
+                                                        <input aria-label="Nuevo valor" autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}

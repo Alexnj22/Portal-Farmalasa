@@ -192,12 +192,12 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
             <label className="text-caption font-black text-chart-4-text uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
-            <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
+            <input aria-label="Mínimo propuesto" type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
  className="w-full text-right text-body-xl font-bold text-chart-4-text bg-chart-4/10 border border-chart-4/30 rounded-xl px-3 py-2" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-caption font-black text-chart-1-text uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
-            <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
+            <input aria-label="Máximo propuesto" type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
  className="w-full text-right text-body-xl font-bold text-chart-1-text bg-chart-1/10 border border-chart-1/30 rounded-xl px-3 py-2" />
           </div>
         </div>

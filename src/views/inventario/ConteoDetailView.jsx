@@ -340,7 +340,7 @@ function EditLoteModal({ item, onClose, onSave }) {
                 <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
-                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <input aria-label="Lote" type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
                 </div>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>

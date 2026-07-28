@@ -182,6 +182,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             <div className="col-span-2">
                 <InputLabel>Días Trabajados</InputLabel>
                 <input
+                    aria-label="Días trabajados"
                     type="number" step="0.5" min="0" max="16"
                     value={formData.days_worked ?? entry.days_worked ?? 15}
                     onChange={e => setFormData(f => ({ ...f, days_worked: parseFloat(e.target.value) || 0 }))}

@@ -730,6 +730,56 @@ function scanFile(path) {
     });
   }
 
+  // ── `input-label` (2026-07-28) ────────────────────────────────────────
+  // Un `<input>` de texto sin NINGÚN nombre accesible —ni `aria-label`, ni
+  // `aria-labelledby`, ni `id` (que un `<label htmlFor>` pueda referenciar),
+  // ni `placeholder`, ni `title`— se anuncia como "campo de edición" y nada
+  // más (WCAG 4.1.2 y 3.3.2). Medido el 2026-07-28: **73**, y los peores en
+  // los formularios de RRHH y nómina, donde el campo sin nombre es el que
+  // decide cuánto cobra alguien.
+  //
+  // El `placeholder` cuenta a regañadientes: es lo que hoy sostiene la mayoría
+  // de estos campos, y desaparece al escribir. Pedir `aria-label` en los ~200
+  // que ya lo usan sería otra migración; esto ataca el caso en que NO HAY
+  // NADA.
+  if (!hasException(path, 'input-label')) {
+    // Cada `<input …>` completo, aunque abarque varias líneas.
+    // Se blanquean los TRES tipos de comentario, incluido `//`. Sin ese
+    // último, seis menciones de `<input>` en prosa —"reemplaza el <input> que
+    // simulaba tecleo"— se contaban como campos sin nombre. Es la misma trampa
+    // que ya costó dos conteos de botones.
+    const sinComentarios2 = text
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, m => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\*[\s\S]*?\*\//g,     m => m.replace(/[^\n]/g, ' '))
+      .replace(/\/\/[^\n]*/g,             m => m.replace(/[^\n]/g, ' '));
+    // OJO: NO vale `/<input\b[^>]*>/`. La primera `>` de un `<input>` suele ser
+    // la flecha de `onChange={e => …}`, así que la etiqueta queda cortada antes
+    // del `placeholder` y el gate reporta campos que sí tienen nombre. Es el
+    // mismo error que tenía el clasificador de botones, encontrado el mismo día:
+    // hay que buscar el `>` de cierre contando llaves.
+    const finEtiqueta = (txt, desde) => {
+      let prof = 0;
+      for (let k = desde; k < txt.length; k++) {
+        const c = txt[k];
+        if (c === '{') prof++;
+        else if (c === '}') prof--;
+        else if (c === '>' && prof === 0 && txt[k - 1] !== '=') return k + 1;
+      }
+      return txt.length;
+    };
+    const RE_INPUT = /<input\b/g;
+    let mi;
+    while ((mi = RE_INPUT.exec(sinComentarios2))) {
+      const tag = sinComentarios2.slice(mi.index, finEtiqueta(sinComentarios2, mi.index));
+      const tipo = (tag.match(/type=["'{\s]*([a-z]+)/) || [, 'text'])[1];
+      if (['checkbox', 'radio', 'range', 'color', 'hidden', 'file'].includes(tipo)) continue;
+      if (/aria-label|aria-labelledby|\bid=|placeholder=|\btitle=/.test(tag)) continue;
+      const linea = sinComentarios2.slice(0, mi.index).split('\n').length;
+      findings.push({ line: linea, label: 'input de texto sin nombre accesible (WCAG 4.1.2) — falta aria-label',
+        category: 'input-label', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
+    }
+  }
+
   if (!hasException(path, 'small-input')) {
     lines.forEach((line, i) => {
       if (isComment[i]) return;

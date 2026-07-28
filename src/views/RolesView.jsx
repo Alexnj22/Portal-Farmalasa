@@ -571,7 +571,7 @@ const RolesView = ({ openModal }) => {
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 group-focus-within:text-brand-text transition-colors z-base">
                                                     <Hash size={16} />
                                                 </div>
-                                                <input
+                                                <input aria-label="Nivel jerárquico"
                                                     type="number"
                                                     min="1"
                                                     max="99"

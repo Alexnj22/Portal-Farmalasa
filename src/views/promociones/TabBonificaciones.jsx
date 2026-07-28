@@ -78,6 +78,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                     <div>
                         <label className="text-caption font-medium text-content-3 mb-0.5 block">Monto ($)</label>
                         <input
+                            aria-label="Monto a abonar"
                             type="number" step="0.01" min="0.01" max={pending}
                             className="w-full text-body-xl bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:border-chart-1"
                             value={amount}

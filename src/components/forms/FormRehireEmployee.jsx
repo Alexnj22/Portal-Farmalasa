@@ -127,7 +127,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
                         <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3"><Clock size={14} strokeWidth={2.5} /></div>
-                            <input type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
+                            <input aria-label="Horas semanales" type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
                                 className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
                         </div>
                     </div>

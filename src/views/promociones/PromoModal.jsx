@@ -297,7 +297,7 @@ function AddProductInline({ onAdd }) {
                         </div>
                         <div>
                             <label className={lbl}>Und por trigger</label>
-                            <input className={numInp} type="number" min="1" value={g('factor_denominador')} onChange={e => s('factor_denominador', e.target.value)} />
+                            <input aria-label="Factor denominador" className={numInp} type="number" min="1" value={g('factor_denominador')} onChange={e => s('factor_denominador', e.target.value)} />
                         </div>
                         <div>
                             <label className={lbl}>Stock inicial (und)</label>

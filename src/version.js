@@ -5,7 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.105.1';
+export const APP_VERSION = '2.106.0';
+
+// v2.106.0 — 22 campos de texto sin nombre accesible, y el gate que los pesca.
+//
+// Buscando por que empezar D3.4 aparecio algo mas urgente que migrar inputs a
+// `PortalInput`: **campos de texto sin NINGUN nombre accesible** — ni
+// `aria-label`, ni `aria-labelledby`, ni `id` que un `<label htmlFor>` pueda
+// referenciar, ni `placeholder`, ni `title`. Un lector de pantalla anuncia
+// "campo de edicion" y nada mas (WCAG 4.1.2 y 3.3.2).
+//
+// Y los peores estaban donde mas duele: **la nomina** (dias trabajados, horas
+// a pagar/compensar), **la recepcion de pedidos** (cantidad facturada,
+// recibida, con problema) y **Min/Max** (el valor nuevo de un parametro). Son
+// campos que deciden cuanto cobra alguien o cuanto stock se pide, y quien los
+// llena con lector de pantalla no sabia cual estaba llenando.
+//
+// Nota: tienen etiqueta VISUAL al lado; lo que falta es la asociacion
+// programatica. Se ve bien y no se puede usar sin ver — que es exactamente el
+// tipo de bug que ninguna captura de pantalla revela.
+//
+// Categoria `input-label` nueva en el gate, en CERO y bloqueante desde el
+// primer dia. Y el gate mismo tuvo DOS bugs antes de dar un numero confiable,
+// los dos de la misma familia que ya mordieron al clasificador de botones el
+// mismo dia:
+//
+//   80 → 29  `<input\b[^>]*>` cortaba la etiqueta en la flecha de
+//            `onChange={e => …}`, asi que el `placeholder` quedaba fuera y
+//            reportaba campos que SI tienen nombre. Hay que buscar el `>` de
+//            cierre contando llaves.
+//   29 → 22  no blanqueaba los comentarios `//`, asi que seis menciones de
+//            `<input>` EN PROSA ("reemplaza el <input> que simulaba tecleo")
+//            contaban como campos.
+//
+// Tres veces el mismo dia el mismo par de trampas: **una etiqueta JSX no
+// termina en el primer `>`, y un comentario no es codigo.**
 
 // v2.105.1 — EncuestaAdminView: 4 botones que NO eran botones.
 //

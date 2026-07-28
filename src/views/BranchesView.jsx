@@ -6,7 +6,7 @@ import FilterBar from '../components/common/FilterBar';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { AiThinkingState, Skeleton, SkeletonText } from '../components/common/StateViews';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
     Building2, MapPin, Phone, Smartphone, Clock, Edit3, Trash2, Plus,
     Users, Eye, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
@@ -202,7 +202,7 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 // ============================================================================
 const BranchCard = memo(({
     branch, branchEmployees, count, activeKiosks, currentTime,
-    handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
+    handleViewProfile, onActivarSucursal, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
     canEdit = false, staggerIndex = 0
 }) => {
     const [aiMode, setAiMode] = useState(false);
@@ -368,7 +368,11 @@ const BranchCard = memo(({
 
             <div className="p-6 flex-1 flex flex-col gap-4 mt-2 relative">
                 <div className="flex items-start gap-3">
-                    <button onClick={() => handleViewProfile(branch)} className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full pr-[140px]">
+                    {/* Abre la ficha de la sucursal: es un destino, no una acción. Como
+                                        `<button>` no se podía abrir en otra pestaña. El `onClick`
+                                        se queda solo para dejar la sucursal activa en el store. */}
+                                    <Link to={`/branches/${branch.id}`} onClick={() => onActivarSucursal?.(branch)}
+                                        className="flex items-center gap-4 min-w-0 text-left group/header outline-none w-full pr-[140px]">
                         <div className="w-14 h-14 rounded-2xl bg-surface-card border border-border-card text-brand-text shadow-[var(--shadow-glass-2)] flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover/header:scale-105 group-hover/header:shadow-[var(--shadow-elevation-md)]">
                             <Building2 size={26} strokeWidth={1.5} />
                         </div>
@@ -397,7 +401,7 @@ const BranchCard = memo(({
                                 </p>
                             </div>
                         </div>
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="flex flex-col gap-2.5 mt-2">
@@ -799,6 +803,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                                     currentTime={currentTime}
                                                     isMobile={isMobile}
                                                     handleViewProfile={handleViewProfile}
+                                                    onActivarSucursal={setActiveBranch}
                                                     openModal={openModal}
                                                     handleDeleteClick={handleDeleteClick}
                                                     handlePhoneAction={handlePhoneAction}

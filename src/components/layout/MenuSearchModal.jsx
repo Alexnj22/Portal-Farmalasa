@@ -3,6 +3,7 @@ import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { Search, CornerDownLeft, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { smartFilter } from '../../utils/searchUtils';
+import { Link } from 'react-router-dom';
 
 /**
  * Buscador global del menú (Cmd/Ctrl+K). Indexa los módulos visibles para el
@@ -102,11 +103,17 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                         results.map((item, idx) => {
                             const Icon = item.icon;
                             const isSelected = idx === selected;
+                            // Cada resultado es un DESTINO, no una acción: como
+                            // `<button>` no se podía abrir en otra pestaña ni ver a
+                            // dónde lleva. El `onClick` se queda para cerrar el modal,
+                            // y ⌘+clic ahora funciona porque hay `href`. El teclado
+                            // (↑↓ + Enter) sigue igual: lo maneja el contenedor, no
+                            // cada fila.
                             return (
-                                <button
+                                <Link
                                     key={item.key}
+                                    to={item.path}
                                     data-idx={idx}
-                                    type="button"
                                     onMouseEnter={() => setSelected(idx)}
                                     onClick={() => navigate(item)}
                                     className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors ${
@@ -124,7 +131,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                                         </span>
                                         <span className="block text-label text-content-3 truncate">{item.groupLabel}</span>
                                     </span>
-                                </button>
+                                </Link>
                             );
                         })
                     )}

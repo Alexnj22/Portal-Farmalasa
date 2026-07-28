@@ -4,7 +4,7 @@ import PeriodStepper from '../components/common/PeriodStepper';
 import Switch from '../components/common/Switch';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import {
   AreaChart, Area,
@@ -1530,12 +1530,21 @@ const DashboardView = ({ openModal }) => {
               displayBranchAlerts.map(b=>{
                 const issue=getBranchIssue(b);
                 return (
-                  <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${canManage('dash_branches')?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
-                    <AlertTriangle size={13} className="text-warning shrink-0"/>
-                    <div className="flex-1 min-w-0"><p className="text-label font-black text-content-2 truncate">{b.name}</p><p className="text-micro text-warning-text font-semibold">{issue}</p></div>
-                    {canManage('dash_branches')&&<ChevronRight size={11} className="text-content-3 shrink-0"/>}
-                  </button>
+                  // Sin permiso NO es un control: era un `<button>` con `onClick`
+                  // indefinido, o sea una parada de tabulación que no hacía nada.
+                  // Con permiso es un ENLACE, que es lo que de verdad es.
+                  (() => {
+                    const puede = canManage('dash_branches');
+                    const Caja = puede ? Link : 'div';
+                    return (
+                      <Caja key={b.id} {...(puede ? { to: `/branches/${b.id}` } : {})}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${puede?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
+                        <AlertTriangle size={13} className="text-warning shrink-0"/>
+                        <div className="flex-1 min-w-0"><p className="text-label font-black text-content-2 truncate">{b.name}</p><p className="text-micro text-warning-text font-semibold">{issue}</p></div>
+                        {puede&&<ChevronRight size={11} className="text-content-3 shrink-0"/>}
+                      </Caja>
+                    );
+                  })()
                 );
               })
             )}

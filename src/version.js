@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.123.0';
+export const APP_VERSION = '2.124.0';
+
+// v2.124.0 — Los otros tres destinos que eran botones.
+//
+// Despues del menu (v2.123.0), un barrido por todo `src/` buscando
+// `<button onClick={() => navigate(…)}>` dejo tres mas:
+//
+//   · **el buscador ⌘K** — cada resultado es un destino. Como `<button>` no se
+//     podia abrir en otra pestaña. El teclado (↑↓ + Enter) no cambia: siempre
+//     lo manejo el contenedor, no cada fila.
+//   · **la tarjeta de sucursal** — su encabezado abre la ficha. El `onClick` se
+//     queda solo para dejar la sucursal activa en el store, y para eso hizo
+//     falta bajarle el callback a la tarjeta en vez de duplicar el navigate.
+//   · **la alerta de sucursal del Inicio** — esta tenia un problema aparte: sin
+//     permiso era un `<button>` con `onClick` INDEFINIDO, o sea una parada de
+//     tabulacion que no hacia nada. Ahora con permiso es un enlace y sin
+//     permiso es un `<div>`, que es lo que de verdad es.
+//
+// Verificado en vivo: ⌘K da `<a href="/payroll">` y Enter sigue navegando; las
+// 8 tarjetas de /branches son enlaces a su ficha y el clic funciona; 0 botones
+// sin nombre, 0 errores.
+//
+// Botones a mano: 85 → 82.
 
 // v2.123.0 — El menu entero eran botones. Navegar no es una accion.
 //

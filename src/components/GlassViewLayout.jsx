@@ -93,18 +93,30 @@ const GlassViewLayout = ({
                                     </div>
                                 )}
                             </div>
-                            {/* OJO: `filtersContent` se renderiza DOS VECES en este
-                                archivo — acá para escritorio y más abajo para móvil.
-                                Medido el 2026-07-28: no es un bug de accesibilidad,
-                                porque las ramas se ocultan con `hidden lg:block` /
-                                `lg:hidden` y `display:none` SÍ saca del árbol de
-                                accesibilidad (verificado: 2 en el DOM, 1 alcanzable).
-                                Pero son dos INSTANCIAS de React con estado propio: si
-                                se abre el buscador en escritorio y se achica la
-                                ventana, el de móvil arranca cerrado. Y todo el
-                                contenido se renderiza dos veces por cada render de la
-                                vista. Unificarlo es un refactor que toca las 34 vistas
-                                que usan esta prop; queda anotado, no hecho. */}
+                            {/* `filtersContent` se renderiza DOS VECES en este archivo
+                                —acá para escritorio, más abajo para móvil— y eso está
+                                BIEN. Medido entero el 2026-07-28 antes de "arreglarlo":
+
+                                  · accesibilidad — las ramas se ocultan con
+                                    `hidden lg:block` / `lg:hidden`, y `display:none` SÍ
+                                    saca del árbol de accesibilidad. 2 en el DOM, 1
+                                    alcanzable. Sin duplicado para un lector de pantalla.
+                                  · listeners — `useSearchToggle` y `LiquidSelect` los
+                                    registran solo al ABRIR (`if (!active) return`), así
+                                    que la copia oculta no registra ninguno. Contados en
+                                    vivo envolviendo `addEventListener`: cero de más.
+                                  · rAF — el bucle de posicionamiento de `LiquidSelect`
+                                    también depende de `isOpen`. Cero de más.
+                                  · estado — al achicar la ventana con el buscador
+                                    abierto NO se pierde nada: el término vive en la
+                                    vista, el filtro sigue aplicado y la lupa de móvil
+                                    muestra su punto rojo. Verificado con "pedialyte".
+
+                                El costo real es DOM duplicado: 14 nodos en /audit, 42
+                                en /requests, 61 en /productos — sobre vistas de miles
+                                de nodos. Unificarlo tocaría las 34 vistas que usan esta
+                                prop para ganar eso. No vale la pena, y queda escrito
+                                para que nadie lo vuelva a levantar como hallazgo. */}
                             {filtersContent && (
                                 <div className="flex items-center justify-end flex-shrink-0">
                                     {filtersContent}

@@ -1438,17 +1438,31 @@ con el mismo nombre**, y parecía un bug de accesibilidad: `GlassViewLayout`
 renderiza `filtersContent` **dos veces**, una rama para escritorio y otra para
 móvil, en las 34 vistas que usan esa prop.
 
-**Medido antes de "arreglarlo":** las ramas se ocultan con `hidden lg:block` /
-`lg:hidden`, y `display:none` **sí** saca del árbol de accesibilidad — 2 en el
-DOM, 1 alcanzable. No hay duplicado para un lector de pantalla.
+Lo medí entero antes de tocarlo, y **las cuatro sospechas se cayeron**:
 
-Lo que sí es real, y quedó anotado en el propio archivo: son **dos instancias
-de React con estado propio** (abrir el buscador en escritorio y achicar la
-ventana deja el de móvil cerrado), y todo el contenido se renderiza dos veces
-por render. Unificarlo toca las 34 vistas; no se hizo.
+| sospecha | medición |
+|---|---|
+| duplicado para un lector de pantalla | las ramas usan `hidden lg:block` / `lg:hidden`, y `display:none` **sí** saca del árbol: 2 en el DOM, **1 alcanzable** |
+| listeners globales duplicados | `useSearchToggle` y `LiquidSelect` los registran **solo al abrir** (`if (!active) return`). Contados en vivo envolviendo `addEventListener`: **cero de más** |
+| bucles de `requestAnimationFrame` duplicados | el de posicionamiento de `LiquidSelect` también depende de `isOpen`. **Cero de más** |
+| estado perdido al redimensionar | **no se pierde nada.** Con el buscador abierto y "pedialyte" escrito, al achicar a 390px el filtro **sigue aplicado** y la lupa de móvil muestra su punto rojo. El término vive en la vista, no en la barra |
 
-Vale anotarlo igual: **una alarma que se investiga y se descarta también es
-trabajo**, y sin dejarla escrita el próximo la vuelve a levantar.
+**El costo real es DOM duplicado**: 14 nodos en `/audit`, 42 en `/requests`, 61
+en `/productos` — sobre vistas de miles de nodos. Unificarlo tocaría las 34
+vistas que usan la prop para ganar eso.
+
+### Lo que esto enseña sobre cómo estaba reportando
+
+Mi primera anotación decía que *"abrir el buscador en escritorio y achicar la
+ventana deja el de móvil cerrado"*. Es **literalmente cierto y engañoso**: el
+buscador colapsa, sí, pero eso es lo correcto en móvil, el filtro sigue puesto
+y hay una señal visual que lo dice.
+
+Lo había escrito **en el código fuente**, o sea que estaba dejando una
+afirmación falsa donde el próximo la iba a leer como un defecto conocido.
+Corregido con los cuatro números arriba. **Una alarma que se investiga y se
+descarta también es trabajo — pero hay que descartarla del todo, no dejarla a
+medias.**
 
 ## Abiertos sin resolver
 

@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.110.0';
+export const APP_VERSION = '2.110.1';
+
+// v2.110.1 — Medida la duplicacion de `filtersContent`: no vale arreglarla, y
+// mi anotacion anterior era enganosa.
+//
+// Preguntado por el usuario: "¿que ganamos al corregir esto?". La respuesta
+// honesta, medida y no estimada: **casi nada.** Las cuatro sospechas se
+// cayeron una por una:
+//
+//   accesibilidad  `display:none` SI saca del arbol → 2 en el DOM, 1 alcanzable
+//   listeners      `useSearchToggle`/`LiquidSelect` registran solo al ABRIR
+//                  (`if (!active) return`) → contados envolviendo
+//                  `addEventListener`: CERO de mas
+//   rAF            el bucle de posicionamiento depende de `isOpen` → cero de mas
+//   estado         con el buscador abierto y "pedialyte" escrito, al achicar a
+//                  390px el filtro SIGUE aplicado y la lupa movil muestra su
+//                  punto rojo. No se pierde nada
+//
+// Costo real: DOM duplicado — 14 nodos en /audit, 42 en /requests, 61 en
+// /productos, sobre vistas de miles. Unificarlo tocaria las 34 vistas que usan
+// la prop para ganar eso.
+//
+// ── Y lo importante: corrijo lo que YO habia escrito ──────────────────────
+// Mi comentario en `GlassViewLayout` decia que "abrir el buscador en
+// escritorio y achicar la ventana deja el de movil cerrado". Es LITERALMENTE
+// CIERTO Y ENGANOSO: el buscador colapsa, si, pero eso es lo correcto en
+// movil, el filtro sigue puesto y hay senal visual.
+//
+// Lo habia dejado EN EL CODIGO FUENTE, donde el proximo lo iba a leer como un
+// defecto conocido y quizas gastar un dia en "arreglarlo". Reemplazado por los
+// cuatro numeros de arriba. Una alarma que se investiga y se descarta tambien
+// es trabajo — pero hay que descartarla del todo, no dejarla a medias.
 
 // v2.110.0 — Las 5 pestañas de la ficha de empleado, y una alarma que resulto
 // infundada.

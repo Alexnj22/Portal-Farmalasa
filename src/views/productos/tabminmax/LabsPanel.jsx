@@ -4,7 +4,6 @@ import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
-import { motion } from 'framer-motion';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { smartFilter } from '../../../utils/searchUtils';
@@ -86,13 +85,15 @@ export default function LabsPanel({ onClose, onChanged }) {
 
     return (
         <div className="fixed inset-0 z-sidebar flex items-start justify-end p-4 pt-20 pointer-events-none">
-            <motion.div
-                className="pointer-events-auto w-72 rounded-2xl overflow-hidden flex flex-col"
-                style={glass.panel}
-                initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}>
+            {/* §11 — la entrada de un panel es `animate-in`, que Tailwind ya
+                trae y que pasa por los DOS gates de movimiento (tema y
+                prefers-reduced-motion). Con framer-motion no pasaba por
+                ninguno: en Solid, donde el movimiento se apaga, este panel
+                seguía entrando con escala. */}
+            <div
+                className="pointer-events-auto w-72 rounded-2xl overflow-hidden flex flex-col
+                    animate-in fade-in slide-in-from-top-2 zoom-in-95 duration-200"
+                style={glass.panel}>
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b" style={glass.divider}>
@@ -180,7 +181,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                 <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>
                     <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 }

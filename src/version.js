@@ -5,7 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.102.1';
+export const APP_VERSION = '2.103.0';
+
+// v2.103.0 — D3.8: `motion` de 5 a CERO. Los cinco eran @keyframes disfrazados.
+//
+// §11 dice "no agregar mas framer-motion" desde hace tiempo, pero los cinco
+// archivos que quedaban no eran casos dificiles: eran animaciones de bucle
+// —una moto que avanza, ruedas que giran, cajas que saltan, un escaner que
+// baja, un punto que late— escritas con una libreria de 50KB porque estaba a
+// mano.
+//
+// El argumento no es el peso. Es que **framer-motion no pasa por ninguno de
+// los dos gates de movimiento**: las reglas de `[data-theme="solid"]` y de
+// `prefers-reduced-motion` apagan `animation` por selector de CSS, y una
+// animacion imperativa en JS no las ve. O sea que en el tema Solid —donde el
+// movimiento esta deliberadamente apagado— la moto seguia andando, el nodo
+// seguia latiendo y el panel seguia entrando con escala. Con `@keyframes` se
+// apagan solas.
+//
+//   StageAnims        6 ilustraciones → 7 keyframes (`--hop` para la altura
+//                     de cada caja, asi no hay 4 keyframes casi iguales)
+//   LifecycleTimeline parpadeo, pulso y halo → 3 keyframes (`--glow` lleva el
+//                     color de cada etapa, mismo criterio)
+//   ApoioScanModal    aro del escaner → `animate-pulse`; entradas →`animate-in`
+//   LabsPanel         entrada de panel → `animate-in`
+//   AbcXyzMatrix      whileTap/whileHover → `active:scale` + `--lift-hover`
+//
+// Verificado en vivo en /pedidos: 42 nodos con `animationName: tlPulse` y
+// `tlHalo` corriendo, la linea de tiempo identica a antes.
+//
+// Con esto `shadow-literal` y `motion` quedan en CERO y bloqueantes. El
+// baseline pasa de 5 categorias a 1: solo `inline-color` (37).
 
 // v2.102.1 — Arreglo de un error propio del commit anterior.
 //

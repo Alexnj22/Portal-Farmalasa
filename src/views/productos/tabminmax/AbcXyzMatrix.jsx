@@ -1,6 +1,5 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { BarChart2, X } from 'lucide-react';
 import { normXyz } from './helpers';
 
@@ -69,12 +68,11 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
             <div className="flex items-center justify-between gap-2">
                 <span className="text-micro font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                    <motion.button
-                        whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                    <button
                         onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
                         className="text-micro font-bold text-content-3 hover:text-danger-text flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-danger/10">
                         <X size={8} strokeWidth={2.5} /> limpiar
-                    </motion.button>
+                    </button>
                 )}
             </div>
 
@@ -82,33 +80,31 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                 {/* XYZ header */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
-                    <motion.button key={xyz}
-                        whileTap={{ scale: 0.90, transition: { type: 'spring', stiffness: 700, damping: 25 } }}
+                    <button key={xyz}
                         onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
                         className={headerBtnCls(isXyzActive(xyz))}>
                         {xyz}
-                    </motion.button>
+                    </button>
                 ))}
 
                 {/* Rows */}
                 {ABC_KEYS.map(abc => (
                     <React.Fragment key={abc}>
-                        <motion.button
-                            whileTap={{ scale: 0.90, transition: { type: 'spring', stiffness: 700, damping: 25 } }}
+                        <button
                             onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
                             className={headerBtnCls(isAbcActive(abc))}>
                             {abc}
-                        </motion.button>
+                        </button>
                         {XYZ_KEYS.map(xyz => {
                             const count = matrix[`${abc}${xyz}`];
                             const isActive = filterAbc === abc && filterXyz === xyz;
                             const intensity = count > 0 ? Math.max(0.07, (count / maxCell) * 0.28) : 0;
                             return (
-                                <motion.button key={xyz}
+                                <button key={xyz}
                                     onClick={() => count > 0 && toggle(abc, xyz)}
-                                    whileHover={count > 0 && !isActive ? { y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } } : {}}
-                                    whileTap={count > 0 ? { scale: 0.92, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } } : {}}
                                     className={`relative py-1.5 rounded-md text-center
+                                        transition-transform duration-150
+                                        ${count > 0 ? 'active:scale-[0.97] hover:translate-y-[var(--lift-hover)]' : ''}
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer'}
                                         ${isActive ? 'z-base' : ''}`}
                                     style={{
@@ -126,7 +122,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                     disabled={count === 0}>
                                     <span className="text-label font-black text-content-2 tabular-nums leading-none">{count || '—'}</span>
                                     {count > 0 && <span className="text-micro font-semibold text-content-3 block">{abc}{xyz}</span>}
-                                </motion.button>
+                                </button>
                             );
                         })}
                     </React.Fragment>

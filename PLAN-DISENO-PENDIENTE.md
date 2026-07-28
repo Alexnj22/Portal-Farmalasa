@@ -1473,6 +1473,71 @@ para la misma fila; React lo avisa en consola. Se arregla con la anatomía de
 `ListRow` + `trailing`, que es familia B de D3.3 — no de rebote mientras se
 migra la barra de filtros.
 
+## D3.8 — el baseline, de 5 categorías a 1 (v2.101.1 → v2.103.0)
+
+| categoría | antes | ahora |
+|---|---|---|
+| `shadow-literal` | 28 | **0 · bloqueante** |
+| `motion` | 5 | **0 · bloqueante** |
+| `inline-color` | 58 | 37 |
+
+### Ninguna de las tres era deuda de estilo
+
+**`inline-color` era una lista de superficies fuera del tema.** Nueve
+superficies de Min/Max tenían el vidrio en `style` inline con blanco **fijo**
+—`rgba(255,255,255,.55)`, `.52`, `.38`— así que en los dos temas oscuros
+quedaban **blancas**: tarjetas de costo, matriz ABC×XYZ, panel de
+configuración, menú de acciones y sus esqueletos.
+
+Y no lo veía nadie: al ir en `style` se lo salta el barrido de clases, y el
+escáner de contraste no lo pesca porque el texto encima sigue legible sobre
+blanco. Lo único que lo delataba era el `rgba` crudo del gate.
+
+**`shadow-literal` eran cuatro grupos, y dos no pertenecían a la categoría:**
+
+| | |
+|---|---|
+| 13 | glows de estado con el color **quemado** en `rgba`. La escala `--shadow-glow-*` ya existía y ninguno la usaba, así que un cambio de paleta no los alcanzaba |
+| 11 | elevaciones de 2-3 capas que caen exactas en `--shadow-elevation-*` |
+| 3 | **`drop-shadow`, que no es `box-shadow`** — una sigue la silueta alfa y la otra la caja. El gate estaba mal, no el código: ahora lleva `(?<!drop-)` |
+| 1 | excepción real: el filo del ítem activo es el único glow **bicolor** (verde + magenta del logo). La escala es de un color por token |
+
+Y uno escondía otro bug de tema: la línea de tiempo de `TabHistory` tenía un
+halo **blanco opaco** fijo que sobre los temas oscuros dibujaba una raya
+luminosa.
+
+**`motion`: los 5 eran `@keyframes` disfrazados.** Una moto que avanza, ruedas
+que giran, cajas que saltan, un escáner que baja, un punto que late — escritos
+con una librería porque estaba a mano.
+
+El argumento no es el peso. Es que **framer-motion no pasa por ninguno de los
+dos gates de movimiento**: las reglas de `[data-theme="solid"]` y
+`prefers-reduced-motion` apagan `animation` por selector de CSS, y una
+animación imperativa en JS no las ve. En Solid —donde el movimiento está
+deliberadamente apagado— la moto seguía andando. Con `@keyframes` se apagan
+solas. Verificado en vivo: 42 nodos con `animationName: tlPulse` corriendo.
+
+Dos variables de CSS evitaron duplicar keyframes casi iguales: `--hop` para la
+altura de cada caja y `--glow` para el color de cada etapa.
+
+### Un error propio, y lo que dejó
+
+Para comprobar que `shadow-literal` había quedado bloqueante le metí una
+sombra literal a propósito, vi fallar el gate (bien) y la revertí con
+`git checkout -- archivo`. **Ese checkout no deshace la prueba: deshace el
+archivo al último commit**, así que se llevó también las dos sombras migradas
+en esa misma sesión, y comiteé con el gate en rojo.
+
+La lección no es "revisar el gate antes de comitear" —ya estaba en la lista—
+sino que **una prueba destructiva sobre un archivo con cambios sin comitear no
+se deshace con `checkout`**. O se prueba sobre un archivo limpio, o se revierte
+con la edición inversa.
+
+Y de rebote lo agarró `gate:doc`: `DESIGN.md` **enseñaba** dos sombras
+literales en su ejemplo del squircle de ícono — invisibles mientras la
+categoría tenía baseline, imposibles de ignorar con ella en cero. Es
+exactamente para lo que existe ese gate.
+
 ## D3.5 — `StatCard` · ✓ RESUELTA (v2.101.0): se adopta
 
 La pregunta era *"o se adopta, o se elimina si el patrón real resultó ser

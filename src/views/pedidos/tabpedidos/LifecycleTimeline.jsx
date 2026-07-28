@@ -2,7 +2,6 @@
 // timeline (Confirmado → Inicio → Listo → En Ruta → ... → Finalizado) with
 // its pause badge, shown inside each expanded pedido card.
 import React from 'react';
-import { motion } from 'framer-motion';
 import { UserCircle2 } from 'lucide-react';
 import { fmtMin, elapsed } from './helpers';
 
@@ -26,15 +25,16 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     const empName  = (id) => { const e = empMap.get(id); return e ? `${e.first_names} ${e.last_names}`.trim() : null; };
     return (
         <div className="group/pb relative">
-            <motion.span
+            {/* §11 — el parpadeo de "en pausa" es un `@keyframes`, no una
+                librería. Y así se apaga solo en Solid y con
+                `prefers-reduced-motion`, que antes no pasaba. */}
+            <span
                 className={`inline-flex items-center gap-0.5 text-micro font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
-                    isActive ? 'bg-warning-solid text-white' : 'bg-surface-card text-warning border border-warning/40'
+                    isActive ? 'bg-warning-solid text-white anim-tl-blink' : 'bg-surface-card text-warning border border-warning/40'
                 }`}
-                animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
-                transition={isActive ? { duration: 1.2, repeat: Infinity } : undefined}
             >
                 ⏸ {fmtMin(mins) ?? '—'}
-            </motion.span>
+            </span>
             {pause && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-bell-desktop hidden group-hover/pb:block pointer-events-none">
                     <div data-surface="tooltip" className="px-2.5 py-2 flex flex-col gap-0.5 min-w-max">
@@ -134,14 +134,9 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
 
                 // Glow animation for active dot — uses box-shadow (no overflow)
                 const glowColor = tlGlow(idx);
-                const activeAnimate = isActive && !isPausedDot ? {
-                    scale: 1, opacity: 1,
-                    boxShadow: [
-                        `0 0 0 0px ${glowColor},0.5)`,
-                        `0 0 0 7px ${glowColor},0)`,
-                        `0 0 0 0px ${glowColor},0.5)`,
-                    ],
-                } : { scale: 1, opacity: 1, boxShadow: '0 0 0 0px rgba(0,0,0,0)' };
+                // El halo late con `@keyframes tlHalo`; el color de cada etapa
+                // entra por `--glow` para no duplicar el keyframe por color.
+                const haloActivo = isActive && !isPausedDot;
 
                 return (
                     <React.Fragment key={node.key}>
@@ -149,20 +144,15 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                         <div className="flex flex-col items-center shrink-0" style={{ width: 48 }}>
                             {/* Dot */}
                             <div className="flex items-center justify-center w-6 h-6">
-                                <motion.div
-                                    className={`w-4 h-4 rounded-full flex items-center justify-center z-base ${
+                                <div
+                                    className={`w-4 h-4 rounded-full flex items-center justify-center z-base
+                                        animate-in zoom-in-50 fade-in duration-300 ${haloActivo ? 'anim-tl-halo' : ''} ${
                                         isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-warning shadow-md' :
                                         isActive    ? `bg-surface-card border-2 ${tlBorder(idx)}` :
                                                       'bg-surface-card-hover border border-divider'
                                     }`}
-                                    initial={{ scale: 0.5, opacity: 0 }}
-                                    animate={activeAnimate}
-                                    transition={isActive && !isPausedDot ? {
-                                        scale:      { type: 'spring', stiffness: 350, damping: 24, delay: idx * 0.06 },
-                                        opacity:    { delay: idx * 0.06, duration: 0.3 },
-                                        boxShadow:  { duration: 2, repeat: Infinity, ease: 'easeOut' },
-                                    } : { type: 'spring', stiffness: 350, damping: 24, delay: idx * 0.06 }}
+                                    style={{ animationDelay: `${idx * 60}ms`, '--glow': `${glowColor},0.5)` }}
                                 >
                                     {isDone && (
                                         <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
@@ -170,11 +160,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         </svg>
                                     )}
                                     {isActive && !isPausedDot && (
-                                        <motion.div
-                                            className={`w-2 h-2 rounded-full ${tlDot(idx)}`}
-                                            animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
-                                            transition={{ duration: 1.4, repeat: Infinity }}
-                                        />
+                                        <div className={`w-2 h-2 rounded-full anim-tl-pulse ${tlDot(idx)}`} />
                                     )}
                                     {isPausedDot && (
                                         <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
@@ -182,7 +168,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                             <rect x="5" y="1.5" width="2.5" height="6" rx="0.6" fill="white" />
                                         </svg>
                                     )}
-                                </motion.div>
+                                </div>
                             </div>
 
                             {/* Label */}
@@ -234,11 +220,12 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                 <div className="h-0.5 w-full bg-surface-card-hover rounded-full" />
                                 {/* Fill */}
                                 {(isDone || (isActive && node.time)) && (
-                                    <motion.div
-                                        className={`absolute top-0 left-0 h-0.5 rounded-full ${tlLine(idx)}`}
-                                        initial={{ width: '0%' }}
-                                        animate={{ width: isDone && nextNode?.time ? '100%' : isDone ? '100%' : '50%' }}
-                                        transition={{ duration: 0.6, ease: 'easeOut', delay: idx * 0.08 }}
+                                    // El relleno crece con una transición de CSS:
+                                    // el ancho final va en `style` y `transition-[width]`
+                                    // se encarga del recorrido.
+                                    <div
+                                        className={`absolute top-0 left-0 h-0.5 rounded-full transition-[width] duration-500 ease-out ${tlLine(idx)}`}
+                                        style={{ width: isDone ? '100%' : '50%', transitionDelay: `${idx * 80}ms` }}
                                     />
                                 )}
                                 {/* Pause badges — above the line */}

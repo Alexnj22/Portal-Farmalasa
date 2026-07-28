@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Button from '../../../components/common/Button';
 import { SkeletonText } from '../../../components/common/StateViews';
-import { motion } from 'framer-motion';
 import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, CheckCheck } from 'lucide-react';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
@@ -132,11 +131,11 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                     {!employee && (
                         <div className="flex flex-col items-center gap-3 py-3">
                             <div className="relative w-16 h-16 rounded-2xl bg-chart-1/10 border-2 border-chart-1/30 flex items-center justify-center">
-                                <motion.div
-                                    className="absolute inset-0 rounded-2xl border-2 border-chart-1 pointer-events-none"
-                                    animate={{ opacity: [0.3, 1, 0.3] }}
-                                    transition={{ duration: 1.6, repeat: Infinity }}
-                                />
+                                {/* §11 — el latido del aro del escáner es
+                                    `animate-pulse` de Tailwind, que además se apaga
+                                    solo en Solid y con `prefers-reduced-motion`. Con
+                                    framer-motion latía en los cuatro temas. */}
+                                <div className="absolute inset-0 rounded-2xl border-2 border-chart-1 pointer-events-none animate-pulse" />
                                 <ScanLine size={28} className="text-chart-1-text" />
                                 {loading && (
                                     <div className="absolute inset-0 rounded-2xl bg-surface-card flex items-center justify-center"><SkeletonText lines={4} className="w-full max-w-md" /></div>
@@ -146,11 +145,9 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             {displayDots > 0 && (
                                 <div className="flex gap-1.5 h-3 items-center">
                                     {Array.from({ length: Math.min(displayDots, 10) }).map((_, i) => (
-                                        <motion.div key={i}
-                                            className="w-2 h-2 rounded-full bg-chart-1"
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ type: 'spring', stiffness: 600, delay: i * 0.02 }}
+                                        <div key={i}
+                                            className="w-2 h-2 rounded-full bg-chart-1 animate-in zoom-in duration-200"
+                                            style={{ animationDelay: `${i * 20}ms` }}
                                         />
                                     ))}
                                     {displayDots > 10 && <span className="text-caption text-chart-1-text">+{displayDots - 10}</span>}
@@ -164,10 +161,8 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                     )}
 
                     {employee && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30"
-                        >
+                        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
+                            animate-in fade-in slide-in-from-bottom-2 duration-200">
                             {employee.photo_url
                                 ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-border-card shadow" alt="" />
                                 : <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-success" /></div>
@@ -176,7 +171,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 <p className="font-bold text-success-text text-body-lg">{employee.name}</p>
                                 <p className="text-label text-success mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
-                        </motion.div>
+                        </div>
                     )}
 
                     {manualWarn && (

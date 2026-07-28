@@ -16,7 +16,15 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.137.0';
+export const APP_VERSION = '2.138.0';
+
+// v2.138.0 — D3.5: tres chips mas, ya con la paleta cerrada como regla.
+//
+// Los dos contadores con/sin bodega de TabGenerar y el tipo de sucursal del
+// catalogo. Ninguno estrena color: `success`, `danger`, `warning` y `chart-1`
+// son los que esos mismos chips ya usaban escritos a mano.
+//
+// Chips a mano: 73 → 70.
 
 // v2.137.0 — La paleta es CERRADA, y ahora el gate lo verifica.
 //

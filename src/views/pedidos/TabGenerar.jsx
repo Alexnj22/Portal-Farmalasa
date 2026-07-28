@@ -450,14 +450,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {stat && !dashLoading ? (
                                     <>
                                         <div className="flex items-center gap-1.5 mt-0.5 relative z-base">
-                                            <span className="inline-flex items-center gap-0.5 text-caption font-bold px-1.5 py-0.5 rounded-full bg-success/10 text-success-text">
-                                                <span className="text-micro">✓</span>
-                                                {(stat.con_bodega_productos ?? 0)}
-                                            </span>
-                                            <span className="inline-flex items-center gap-0.5 text-caption font-bold px-1.5 py-0.5 rounded-full bg-danger/10 text-danger">
-                                                <span className="text-micro">✗</span>
-                                                {(stat.sin_bodega_productos ?? 0)}
-                                            </span>
+                                            <Badge variant="success" size="sm" uppercase={false}>
+                                                ✓ {(stat.con_bodega_productos ?? 0)}
+                                            </Badge>
+                                            <Badge variant="danger" size="sm" uppercase={false}>
+                                                ✗ {(stat.sin_bodega_productos ?? 0)}
+                                            </Badge>
                                         </div>
                                         {/* Último pedido */}
                                         {(() => {

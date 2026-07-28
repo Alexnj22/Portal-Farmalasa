@@ -531,11 +531,9 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                                 <span className={`text-label font-black ${'text-content-2'}`}>{loc.branch_name}</span>
-                                <span className={`text-micro font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${
-                                    loc.branch_type === 'BODEGA'
-                                        ? 'bg-warning/10 text-warning-text'
-                                        : 'bg-chart-1/10 text-chart-1-text'
-                                }`}>{loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}</span>
+                                <Badge variant={loc.branch_type === 'BODEGA' ? 'warning' : 'chart-1'} size="sm">
+                                    {loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}
+                                </Badge>
                                 {hasSala && !hasBodega && <span className={`text-micro ${'text-chart-1-text'}`}>Sala</span>}
                                 {hasBodega && !hasSala && <span className={`text-micro ${'text-warning'}`}>Bodega int.</span>}
                                 {hasSala && hasBodega && <span className={`text-micro ${'text-success'}`}>Sala + Bodega</span>}

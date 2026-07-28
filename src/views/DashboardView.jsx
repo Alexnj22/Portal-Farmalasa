@@ -1152,23 +1152,20 @@ const DashboardView = ({ openModal }) => {
                     de 24px a ~32px sin que las zonas de toque de números
                     vecinos se solapen (gap-1.5=6px era insuficiente, v2.47.4) */}
                 <div className={`bg-surface-card backdrop-blur-sm border border-divider rounded-2xl px-3 py-2.5 shadow-xl flex items-center whitespace-nowrap ${isMobile ? 'gap-2.5' : 'gap-1.5'}`}>
+                  {/* Ancho y alto: dos uno-de-N de números. Con
+                      `SegmentedControl` cada grupo se anuncia como "3 de 4" en
+                      vez de ocho botones sueltos sin relación, y el toque de
+                      44px lo pone el canónico (antes lo parchaba un
+                      `before:-inset-1` solo en móvil). */}
                   <span className="text-micro font-black text-content-2 uppercase tracking-widest mr-0.5">W</span>
-                  {Array.from({length: activeCols}, (_, i) => i + 1).map(n => (
-                    <button key={n}
-                      onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
-                      className={`relative w-6 h-6 rounded-full text-caption font-black transition-[background-color,color] active:scale-[0.97] ${n === eCols ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:bg-surface-card-hover hover:text-content'} ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}>
-                      {n}
-                    </button>
-                  ))}
+                  <SegmentedControl size="sm" label="Ancho del widget"
+                    value={eCols} onChange={n => updateWidgetSize(id, 'cols', n)}
+                    options={Array.from({length: activeCols}, (_, i) => ({ value: i + 1, label: String(i + 1) }))} />
                   <div className="w-px h-3 bg-divider mx-0.5" />
                   <span className="text-micro font-black text-content-2 uppercase tracking-widest mr-0.5">H</span>
-                  {[1,2,3,4].map(n => (
-                    <button key={n}
-                      onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'rows', n); }}
-                      className={`relative w-6 h-6 rounded-full text-caption font-black transition-[background-color,color] active:scale-[0.97] ${n === eRows ? 'bg-brand text-white shadow-sm' : 'text-content-3 hover:bg-surface-card-hover hover:text-content'} ${isMobile ? "before:absolute before:content-[''] before:-inset-1" : ''}`}>
-                      {n}
-                    </button>
-                  ))}
+                  <SegmentedControl size="sm" label="Alto del widget"
+                    value={eRows} onChange={n => updateWidgetSize(id, 'rows', n)}
+                    options={[1,2,3,4].map(n => ({ value: n, label: String(n) }))} />
                 </div>
               </div>
             )}
@@ -1290,10 +1287,13 @@ const DashboardView = ({ openModal }) => {
                               onClick={()=>openModal('viewWfmAnalytics')}
                           />}
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
-              <div className="flex items-center bg-surface-card-hover p-0.5 rounded-full h-7">
-                {typeof salesView==='number'&&<Button variant="secondary" icon={ChevronLeft} onClick={()=>setSalesView('DAYS')}>Días</Button>}
-                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-surface-tab-active text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Horas</button>
-                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-surface-tab-active text-brand-text shadow-sm':'text-content-2 hover:text-content-2'}`}>Días</button>
+              <div className="flex items-center gap-1">
+                {typeof salesView==='number'&&<Button variant="secondary" size="xs" icon={ChevronLeft} onClick={()=>setSalesView('DAYS')}>Días</Button>}
+                {/* Horas · Días es un uno-de-N, no dos botones sueltos. */}
+                <SegmentedControl size="sm" label="Escala del gráfico"
+                  value={salesView==='HOURS'?'HOURS':'DAYS'}
+                  onChange={v=>setSalesView(v)}
+                  options={[{ value:'HOURS', label:'Horas' },{ value:'DAYS', label:'Días' }]} />
               </div>
             </div>
           }>

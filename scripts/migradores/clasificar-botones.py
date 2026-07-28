@@ -33,6 +33,26 @@ def bloques(txt):
 
 BESPOKE = ('LoginView', 'timeclock', 'TimeClockView')
 
+def fin_apertura(b):
+    """Índice del `>` que cierra la etiqueta de apertura.
+
+    NO vale `b.find('>')`: la primera `>` suele ser la flecha de una arrow
+    function (`onClick={e => …}`), así que la etiqueta quedaba cortada y todo
+    lo que decidía por el `className` fallaba en silencio. Detectado el
+    2026-07-28 al ver botones uno-de-N clasificados como "acción".
+    """
+    prof = 0
+    i = 0
+    while i < len(b):
+        c = b[i]
+        if c == '{': prof += 1
+        elif c == '}': prof -= 1
+        elif c == '>' and prof == 0 and b[i-1] not in '=/':
+            return i + 1
+        i += 1
+    return len(b)
+
+
 def limpiar(b):
     """Quita comentarios JSX y de bloque — la trampa que ya costó dos conteos."""
     b = re.sub(r'\{/\*.*?\*/\}', '', b, flags=re.S)
@@ -41,8 +61,8 @@ def limpiar(b):
 
 def clasificar(b):
     b = limpiar(b)
-    abre = b[:b.find('>') + 1] if '>' in b else b
-    cuerpo = b[len(abre):]
+    corte = fin_apertura(b)
+    abre, cuerpo = b[:corte], b[corte:]
 
     ndiv  = len(re.findall(r'<div[\s>]', cuerpo))
     nspan = len(re.findall(r'<span[\s>]', cuerpo))

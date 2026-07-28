@@ -26,17 +26,17 @@ const DAYS = [
 ];
 
 const EVENT_BADGE = {
-    VACATION:   { label: 'Vacaciones',  color: 'bg-warning/10 text-warning-text border-warning/30' },
-    DISABILITY: { label: 'Incapacidad', color: 'bg-danger/10 text-danger-text border-danger/30' },
-    PERMIT:     { label: 'Permiso',     color: 'bg-chart-3/10 text-chart-3-text border-chart-3/30' },
+    VACATION:   { label: 'Vacaciones',  variante: 'warning' },
+    DISABILITY: { label: 'Incapacidad', variante: 'danger' },
+    PERMIT:     { label: 'Permiso',     variante: 'neutral' },
 };
 
 const VACATION_STATUS = {
-    DRAFT:            { label: 'Borrador',      color: 'bg-surface-card-hover text-content-3 border-divider' },
-    PRE_APPROVED:     { label: 'Pre-aprobado',  color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30' },
-    CHANGE_REQUESTED: { label: 'Cambio solicitado', color: 'bg-warning/10 text-warning-text border-warning/30' },
-    APPROVED:         { label: 'Aprobado',      color: 'bg-success/10 text-success-text border-success/30' },
-    CONFIRMED:        { label: 'Confirmado',    color: 'bg-success/10 text-success-text border-success/30' },
+    DRAFT:            { label: 'Borrador',      variante: 'neutral' },
+    PRE_APPROVED:     { label: 'Pre-aprobado',  variante: 'neutral' },
+    CHANGE_REQUESTED: { label: 'Cambio solicitado', variante: 'warning' },
+    APPROVED:         { label: 'Aprobado',      variante: 'success' },
+    CONFIRMED:        { label: 'Confirmado',    variante: 'success' },
 };
 
 const fmtDate = (d) => d
@@ -275,9 +275,7 @@ const EmployeeScheduleView = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     {d.event ? (
-                                        <span className={`text-caption font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${EVENT_BADGE[d.event.type]?.color || 'bg-surface-card-hover text-content-2 border-divider'}`}>
-                                            {EVENT_BADGE[d.event.type]?.label || d.event.type}
-                                        </span>
+                                        <Badge variant={EVENT_BADGE[d.event.type]?.variante || 'neutral'} size="sm">{EVENT_BADGE[d.event.type]?.label || d.event.type}</Badge>
                                     ) : d.shift ? (
                                         <div className="flex items-center gap-3">
                                             <div>
@@ -339,9 +337,7 @@ const EmployeeScheduleView = () => {
                                                 <p className="text-micro text-content-3 font-medium">{vp.days} días · {vp.year}</p>
                                             </div>
                                         </div>
-                                        <span className={`text-micro font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${meta.color}`}>
-                                            {meta.label}
-                                        </span>
+                                        <Badge variant={meta.variante || 'neutral'} size="sm">{meta.label}</Badge>
                                     </div>
 
                                     {/* Requested change info */}

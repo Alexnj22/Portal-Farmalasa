@@ -16,7 +16,19 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.151.0';
+export const APP_VERSION = '2.152.0';
+
+// v2.152.0 — D3.5: seis chips mas.
+//
+// `EVENT_BADGE` y `VACATION_STATUS` (mi horario), el estado del conteo, el
+// puntaje del SRS y los dos deltas de la recepcion.
+//
+// Los deltas son un caso bonito: un chip flotante en la esquina de un input,
+// verde o rojo segun el signo. `Badge` con `tone=solid` y el
+// posicionamiento por `className` hace exactamente eso — no hizo falta nada
+// nuevo.
+//
+// Chips a mano: 20 → 14.
 
 // v2.151.0 — D3.5: siete chips mas, y dos que eran contadores.
 //

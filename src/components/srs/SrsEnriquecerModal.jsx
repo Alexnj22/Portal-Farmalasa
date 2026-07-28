@@ -7,6 +7,7 @@ import {
     ChevronRight, AlertTriangle, Zap, Search, Package, Plus,
 } from 'lucide-react';
 import SrsBuscadorWidget from './SrsBuscadorWidget';
+import Badge from '../common/Badge';
 import {
     deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
     updateProductSinPrincipioActivo, fetchProductsWithoutPrincipioActivo,
@@ -185,15 +186,11 @@ async function applyPrincipios(productId, principios) {
 
 function ConfBadge({ score }) {
     const pct = Math.round(score * 100);
-    const cls = score >= AUTO_MIN
-        ? 'bg-success/10 text-success-text'
-        : score >= REVIEW_MIN
-            ? 'bg-warning/10 text-warning-text'
-            : 'bg-danger/10 text-danger';
+    const variante = score >= AUTO_MIN ? 'success' : score >= REVIEW_MIN ? 'warning' : 'danger';
     return (
-        <span className={`text-micro font-black px-2 py-0.5 rounded-full tabular-nums ${cls}`}>
+        <Badge variant={variante} size="sm" className="tabular-nums" uppercase={false}>
             {pct}%
-        </span>
+        </Badge>
     );
 }
 

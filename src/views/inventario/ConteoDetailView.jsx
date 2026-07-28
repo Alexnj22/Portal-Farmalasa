@@ -548,7 +548,7 @@ export default function ConteoDetailView() {
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
                                     <h2 className="text-body-xl font-black text-content">{conteo.branches?.name}</h2>
-                                    <span className={`text-micro font-bold px-2 py-0.5 rounded-full ${es.bg} ${es.text}`}>{es.label}</span>
+                                    <Badge variant={es.variante} size="sm" uppercase={false}>{es.label}</Badge>
                                 </div>
                                 <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                             </div>

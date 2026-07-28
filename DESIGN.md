@@ -526,6 +526,37 @@ Card hover (desktop only, `@media (hover: hover)`):
 
 ## 6. Color System
 
+> ### ⛔ La paleta es CERRADA (regla del usuario, 2026-07-28)
+>
+> **No se agregan colores ni variantes de color. Se usan los definidos.**
+>
+> Cuando algo necesita un color que "todavía no existe", la respuesta correcta
+> es **elegir uno de los que ya están**, no crear el número siguiente. Un color
+> nuevo por concepto es cómo se llega a tener nueve categóricos donde cuatro
+> alcanzan.
+>
+> El estado medido el 2026-07-28 muestra por qué la regla hace falta —
+> el uso está muy desparejo:
+>
+> | variante | usos | |
+> |---|---|---|
+> | `chart-3` | 76 | en uso real |
+> | `chart-1` | 43 | en uso real |
+> | `chart-4` | 21 | en uso real |
+> | `chart-9` | 18 | en uso real |
+> | `chart-6` | 12 | en uso real |
+> | `chart-2` · `chart-5` · `chart-7` · `chart-8` | 7 · 7 · 6 · 4 | **un color por caso** |
+>
+> Los cuatro de abajo no son categorías del negocio: son "hacía falta otro
+> color" resuelto agregando uno. No se borran acá —eso cambiaría el aspecto de
+> varias vistas y es decisión aparte— pero **no se usan para nada nuevo**.
+>
+> **Qué hacer en su lugar:** severidad → `success`/`warning`/`danger`;
+> jerarquía → `primary`/`secondary`/`ghost`; sin categoría → `neutral`. Solo
+> si el color de verdad distingue una CATEGORÍA que el usuario reconoce
+> (forma de pago, tipo de solicitud) se usa un `chart-N`, y de los que ya
+> están arriba.
+
 ### Brand
 | Name | Value | Usage |
 |---|---|---|

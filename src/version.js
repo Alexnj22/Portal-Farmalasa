@@ -16,7 +16,21 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.143.0';
+export const APP_VERSION = '2.144.0';
+
+// v2.144.0 — D3.5: el tipo de documento, por cuarta vez.
+//
+// `CCF ? danger : neutral` estaba escrito en cuatro archivos distintos —
+// Ventas, Facturacion, WidgetAnnulmentRequest y RequestsView— cada uno con su
+// propio ternario y su propio padding. Es el mismo dato del negocio en los
+// cuatro. Ahora los cuatro salen de `Badge`.
+//
+// Y `getThemeForAction` (historial de sucursal): siete ramas devolviendo
+// bg/text/border/dot/shadow. El `dot` y el resto se quedan —pintan el punto de
+// la linea de tiempo y su halo, que son superficies— y se les agrega la
+// variante para el chip.
+//
+// Chips a mano: 45 → 42.
 
 // v2.143.0 — D3.5: el chip ACTIVO/INACTIVO, tres veces, y cuatro tablas mas.
 //

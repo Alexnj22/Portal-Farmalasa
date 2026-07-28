@@ -73,9 +73,7 @@ function DocBadge({ tipo }) {
   if (!tipo) return null;
   const isCCF = tipo === 'CCF';
   return (
-    <span className={`shrink-0 text-micro font-black uppercase px-1.5 py-0.5 rounded-md ${
-      isCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'
-    }`}>{tipo}</span>
+    <Badge variant={isCCF ? 'danger' : 'neutral'} size="sm" className="shrink-0">{tipo}</Badge>
   );
 }
 function PayBadge({ tipo }) {

@@ -16,31 +16,31 @@ import { supabase } from '../../supabaseClient';
 // 🎨 MOTOR DE TEMAS (Colores e Iconos dinámicos)
 // ============================================================================
 const getThemeForAction = (action, isDoc, isSynthetic) => {
-    if (isSynthetic) return { icon: Building2, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30', dot: 'bg-chart-4', shadow: 'shadow-[var(--shadow-glow-chart-4)]' };
-    if (isDoc) return { icon: FileText, bg: 'bg-chart-1/10', text: 'text-brand-text', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[var(--shadow-glow-brand)]' };
+    if (isSynthetic) return { icon: Building2, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30', dot: 'bg-chart-4', shadow: 'shadow-[var(--shadow-glow-chart-4)]' , variante: 'chart-4' };
+    if (isDoc) return { icon: FileText, bg: 'bg-chart-1/10', text: 'text-brand-text', border: 'border-brand/20', dot: 'bg-brand', shadow: 'shadow-[var(--shadow-glow-brand)]' , variante: 'chart-1' };
 
     switch (action) {
         case 'PAGO_REGISTRADO':
-            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[var(--shadow-glow-success)]' };
+            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[var(--shadow-glow-success)]' , variante: 'success' };
         case 'ALERTA_SISTEMA':
         case 'INSPECTION_RECORDED':
-            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[var(--shadow-glow-danger)]' };
+            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[var(--shadow-glow-danger)]' , variante: 'danger' };
         case 'EDITAR_SUCURSAL':
         case 'APERTURA_OFICIAL':
         case 'VINCULAR_KIOSCO':
         case 'REVOCAR_KIOSCO':
         case 'CREAR_TURNO_CATALOGO':
         case 'ELIMINAR_TURNO':
-            return { icon: Settings, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3-lg)]' };
+            return { icon: Settings, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3-lg)]' , variante: 'chart-3' };
         case 'PERSONAL_ASIGNADO':
         case 'EDITAR_EMPLEADO':
         case 'ELIMINAR_EMPLEADO':
         case 'ACCION_RRHH':
         case 'ASIGNAR_TURNO_SEMANAL':
         case 'REGISTRO_ASISTENCIA':
-            return { icon: Users, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3)]' };
+            return { icon: Users, bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'bg-chart-3', shadow: 'shadow-[var(--shadow-glow-chart-3)]' , variante: 'chart-3' };
         default:
-            return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-divider', dot: 'bg-content-3', shadow: 'shadow-sm' };
+            return { icon: CheckCircle2, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-divider', dot: 'bg-content-3', shadow: 'shadow-sm' , variante: 'neutral' };
     }
 };
 
@@ -573,9 +573,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                             <div className="relative z-base">
                                                                                                 <div className="mb-3">
-                                                                                                    <span className={`px-2.5 py-1 rounded-md text-micro font-black uppercase tracking-widest border shadow-[var(--shadow-elevation-sm)] ${theme.bg} ${theme.text} ${theme.border}`}>
-                                                                                                        {actionLabel}
-                                                                                                    </span>
+                                                                                                    <Badge variant={theme.variante || 'neutral'}>{actionLabel}</Badge>
                                                                                                 </div>
 
                                                                                                 <h4 className="text-body-lg md:text-subtitle font-black text-content leading-tight mb-2">

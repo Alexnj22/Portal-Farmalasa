@@ -284,7 +284,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     {meta.fecha && <p className="text-caption text-warning-text">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
                                 </div>
                                 {meta.tipo_documento && (
-                                    <span className={`shrink-0 text-micro font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text border border-danger/30' : 'bg-surface-card-hover text-content-2 border border-border-card'}`}>{meta.tipo_documento}</span>
+                                    <Badge variant={meta.tipo_documento === 'CCF' ? 'danger' : 'neutral'} size="sm" className="shrink-0">{meta.tipo_documento}</Badge>
                                 )}
                             </div>
                             {meta.reason && (

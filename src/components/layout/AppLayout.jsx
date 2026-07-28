@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import Button from '../../components/common/Button';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity,
@@ -543,13 +543,23 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         }
 
         return (
-            <button
+            // ── Es un ENLACE, no un botón (2026-07-28, D3.3) ────────────────
+            // Navegar no es una acción: es ir a otra dirección. Como `<button>`
+            // esto perdía tres cosas que la gente usa todos los días —abrir en
+            // otra pestaña con ⌘/Ctrl+clic o con el botón del medio, y ver a
+            // dónde lleva antes de pulsar— y un lector de pantalla anunciaba
+            // "botón" para los NUEVE ítems del menú principal.
+            //
+            // `<Link>` lo arregla sin tocar el aspecto: el `onClick` se queda
+            // para lo que sí es un efecto secundario (cerrar el panel en móvil
+            // y el flyout), y react-router ya evita la recarga.
+            <Link
                 key={key}
+                to={path}
                 ref={(!indent || isExpanded) ? (el => { if (el) itemRefs.current.set(pathSeg, el); else itemRefs.current.delete(pathSeg); }) : null}
-                onClick={() => { navigate(path); if (isMobile) setIsSidebarOpen(false); setFlyout(null); }}
+                onClick={() => { if (isMobile) setIsSidebarOpen(false); setFlyout(null); }}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
-                type="button"
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}
                 title={(!isExpanded && !isMobile) ? label : undefined}
@@ -604,7 +614,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         )}
                     </>
                 )}
-            </button>
+            </Link>
         );
     };
 
@@ -811,7 +821,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
 
                             <div className="flex items-center gap-3 relative z-base">
-                                <button type="button" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`} onClick={() => navigate('/')}>
+                                <Link to="/" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`}>
                                     <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
                                         transition-all duration-300 group-hover/logo:scale-105
@@ -823,7 +833,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <img src="/Logo192.png" alt="FLS"
                                             className={`object-contain relative z-base transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>
-                                </button>
+                                </Link>
 
                                 {isExpanded && (
                                     <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
@@ -929,9 +939,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
-                                        <button onClick={() => navigate('/profile')}
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}
-                                            type="button">
+                                        <Link to="/profile"
+                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
                                                 <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
                                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
@@ -945,7 +954,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             <div className="flex-1 overflow-hidden">
                                                 <p className="text-body font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}{myBirthday ? ' 🎂' : ''}</p>
                                             </div>
-                                        </button>
+                                        </Link>
                                         <Button variant="destructive" icon={LogOut} iconOnly className={focusRing} onClick={handleLogout} />
                                     </div>
 
@@ -967,7 +976,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         onCopySuPin={handleCopySuPin}
                                     />
                                     <div className="relative w-11 h-11">
-                                        <button onClick={() => navigate('/profile')} type="button"
+                                        <Link to="/profile"
                                             onMouseEnter={(e) => {
                                                 const rect = e.currentTarget.getBoundingClientRect();
                                                 const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
@@ -979,7 +988,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 shadow-[var(--shadow-glass-1)]
                                                 hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--shadow-glass-2)] ${focusRing}`}>
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
-                                        </button>
+                                        </Link>
                                         {myBirthday && (
                                             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                 <Cake size={9} className="text-white" />
@@ -1043,11 +1052,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     en el menú lateral, que es su lugar. */}
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
-                                    <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
+                                    <Link to="/profile" aria-label="Mi Perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
-                                    </button>
+                                    </Link>
                                     {myBirthday && (
                                         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                             <Cake size={9} className="text-white" />
@@ -1084,7 +1093,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     const isActive = activeId === pathSeg;
                                     const badge = getBadge(key);
                                     return (
-                                        <button key={key} onClick={() => navigate(path)} type="button" aria-current={isActive ? 'page' : undefined}
+                                        <Link key={key} to={path} aria-current={isActive ? 'page' : undefined}
  className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-200 flex-1 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
                                             <div className="relative">
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
@@ -1096,7 +1105,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 )}
                                             </div>
                                             <span className={`text-micro font-black uppercase tracking-widest leading-none ${isActive ? 'text-brand-text' : 'text-slate-600'}`}>{label}</span>
-                                        </button>
+                                        </Link>
                                     );
                                 })}
                             </div>
@@ -1113,8 +1122,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     >
                         {flyout.type === 'item' ? (
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
-                                <button
-                                    onClick={() => { navigate(flyout.path); setFlyout(null); }}
+                                <Link
+                                    to={flyout.path}
+                                    onClick={() => setFlyout(null)}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         backdrop-blur-2xl backdrop-saturate-150 border shadow-[var(--shadow-glass-3)]
                                         transition-all duration-150 active:scale-[0.97] group/fi ${focusRing}
@@ -1144,7 +1154,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         </span>
                                     )}
                                     {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
-                                </button>
+                                </Link>
                             </div>
                         ) : flyout.type === 'group' ? (
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-150 min-w-[220px]">
@@ -1173,10 +1183,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 </div>
                                             );
                                             return (
-                                                <button
+                                                <Link
                                                     key={m.key}
-                                                    onClick={() => { navigate(m.path); setFlyout(null); }}
-                                                    type="button"
+                                                    to={m.path}
+                                                    onClick={() => setFlyout(null)}
                                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left group/fi active:scale-[0.97] ${focusRing}
                                                         ${m.isActive
                                                             ? 'bg-[#1A3560] text-white border border-[#2D5499]/50'
@@ -1205,7 +1215,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                                                         </span>
                                                     )}
-                                                </button>
+                                                </Link>
                                             );
                                         })}
                                     </div>
@@ -1213,8 +1223,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
                         ) : flyout.type === 'user' ? (
                             <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
-                                <button
-                                    onClick={() => { navigate('/profile'); setFlyout(null); }}
+                                <Link
+                                    to="/profile"
+                                    onClick={() => setFlyout(null)}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         bg-[#0D2040]/80 backdrop-blur-2xl backdrop-saturate-150 border border-[#1E3A6E]/60
                                         shadow-[var(--shadow-glass-3)]
@@ -1228,7 +1239,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
                                         <span className="text-label text-[#7DB8FF]/60 whitespace-nowrap max-w-[140px] truncate leading-tight mt-0.5">{cargoLabel}</span>
                                     </div>
-                                </button>
+                                </Link>
                             </div>
                         ) : null}
                     </div>

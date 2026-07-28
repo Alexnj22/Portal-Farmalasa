@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.122.0';
+export const APP_VERSION = '2.123.0';
+
+// v2.123.0 — El menu entero eran botones. Navegar no es una accion.
+//
+// Los 9 `<button>` a mano de `AppLayout` resultaron ser TODOS lo mismo:
+// `<button onClick={() => navigate(path)}>`. Y ese es el elemento equivocado
+// —un enlace no es un boton— con tres consecuencias que la gente encuentra
+// todos los dias:
+//
+//   · ⌘/Ctrl+clic y el boton del medio NO abrian en otra pestaña
+//   · el navegador no mostraba a donde lleva antes de pulsar
+//   · un lector de pantalla anunciaba "boton" para los 36 enlaces del menu
+//
+// Convertidos a `<Link>` de react-router: el item del menu, el submenu, los
+// tres accesos al perfil, la barra inferior de movil, los tres flyouts y el
+// logo. El aspecto no cambia una linea; el `onClick` se queda solo para lo que
+// SI es un efecto secundario (cerrar el panel en movil y el flyout).
+//
+// Verificado en vivo, escritorio y WebKit movil:
+//   · 36 enlaces con `href` real apuntando a su ruta
+//   · `aria-current="page"` en el activo
+//   · el clic normal sigue siendo SPA — no recarga la pagina
+//   · **⌘+clic abre una pestaña nueva**, que es exactamente lo que antes era
+//     imposible
+//   · en movil el panel se cierra al tocar un item (x pasa de 8 a -288)
+//
+// Botones a mano: 94 → 85.
 
 // v2.122.0 — D3.3: el caso mas claro de por que existe esta fase.
 //

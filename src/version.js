@@ -5,7 +5,68 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.98.1';
+export const APP_VERSION = '2.99.0';
+
+// v2.99.0 — §17: cuatro vistas de filtros sueltos + el canonico que faltaba.
+//
+// PeriodStepper. Aparecio midiendo, no de una idea previa: el control
+// «‹ etiqueta ›» estaba escrito a mano SIETE veces con CINCO anatomias
+// distintas — quincena (AttendanceAudit), semana (Schedules,
+// EmployeeSchedule), año (VacationPlan) y en Dashboard la tendencia, el
+// calendario y los cumpleaños. Cada copia con su tamaño de flecha, su ancho
+// de etiqueta y su forma de contenedor. No es paginacion (TablePagination) ni
+// un rango (PeriodPicker): el periodo dura lo mismo siempre y solo se corre.
+//
+// La regla que agrega: la etiqueta ES el atajo de vuelta. En las tres vistas
+// donde uno podia alejarse del periodo actual habia tres formas distintas de
+// volver (un boton aparte, una × de reset, nada). Y `unit` es obligatorio
+// porque sin el un lector de pantalla anuncia "boton, boton".
+//
+// Vistas migradas (§17: los filtros van en el CUERPO, el header es de las
+// pestañas):
+//
+//   AttendanceAuditView — filtros SUELTOS, sin contenedor de ningun tipo: un
+//     `<div flex flex-wrap>` con buscador, quincena, sucursal y las acciones
+//     de cierre mezcladas. El selector de sucursal era un dropdown escrito a
+//     mano, con su estado abierto/cerrado, su ref y su listener de clic
+//     afuera — tres cosas que LiquidSelect ya resuelve y que la regla del
+//     proyecto manda desde siempre. Header → ViewTabBar (buscador + cerrar
+//     quincena). Cuerpo → FilterBar (sucursal, quincena).
+//
+//   SchedulesView — pildora a mano y encima `hidden lg:flex`: bajo 1024px la
+//     vista se quedaba SIN selector de sucursal y SIN navegador de semana.
+//     Desde una tablet no habia forma de mirar otra semana. Las flechas
+//     ademas solo aparecian al pasar el mouse (`w-0 group-hover/week:w-8`):
+//     con dedo o con teclado, invisibles. "Publicar" vivia DENTRO de la
+//     pildora de filtros, donde leia como un filtro mas — movido al header.
+//
+//   VacationPlanView — reimplementaba el buscador toggleable entero (su
+//     useSearchToggle, su ref, su inert, su punto rojo). Al migrarlo el ref
+//     quedo huerfano: la prueba de que era duplicado, no personalizacion.
+//
+//   EmployeeDocumentsView — los filtros vivian en un panel desplegable propio
+//     detras de un boton "Filtrar", empujando la lista hacia abajo al
+//     abrirse. FilterBar ya trae ese colapso, y en movil lo hace mejor (hoja
+//     inferior), asi que el toggle sobraba.
+//
+// Bug encontrado al VERIFICAR EN VIVO, no leyendo el codigo: en VacationPlan
+// el valor "sin filtrar" de la sucursal es la cadena 'ALL', no ''. Con
+// `!!branchFilter` la ranura se pintaba como filtrada SIEMPRE — chip azul y
+// × sobre un select que dice "Todas las sucursales". Es exactamente el error
+// que ya se cometio en StaffManagementView (v2.97.0) y contra el que advierte
+// el comentario de `FilterBar.Section`: solo la vista sabe cual es su valor
+// neutro. Dos veces el mismo error = no es despiste, es que el canonico no
+// puede deducirlo y hay que mirarlo en cada migracion.
+//
+// Hallazgo abierto (NO tocado, es familia B de D3.3): la fila de empleado de
+// AttendanceAuditView es un `<button>` que contiene el `<Button>` de
+// "Aprobar todo" — HTML invalido y una segunda parada de tabulacion para la
+// misma fila. React lo avisa en consola. Se arregla con la anatomia de
+// `ListRow` + `trailing`, no de rebote aca.
+//
+// Verificado en vivo con sesion real: las 4 rutas sin errores de JS, el chip
+// de filtro activo aparece solo cuando corresponde, y en iPhone 13 la barra
+// colapsa al boton "Filtros".
 
 // v2.98.1 — PayrollView y EncuestaAdminView: header al canonico.
 //

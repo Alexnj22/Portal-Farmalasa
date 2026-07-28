@@ -1384,6 +1384,56 @@ táctil de las acciones en hoja inferior.
 3. Revisar si las 4 ya migradas deben volver a `filtersContent` o quedarse en
    el cuerpo por ancho (medir, no suponer).
 
+### Tanda 1 · cuatro vistas (v2.99.0)
+
+`AttendanceAuditView` · `SchedulesView` · `VacationPlanView` ·
+`EmployeeDocumentsView`. **`FilterBar` pasa de 6 a 10 adopciones.**
+
+Lo que apareció al abrirlas —ninguno era un problema de estilo—:
+
+| vista | lo que estaba roto de verdad |
+|---|---|
+| `AttendanceAuditView` | filtros en un `<div flex flex-wrap>` sin contenedor de ningún tipo, y el selector de sucursal era **un dropdown escrito a mano** (estado abierto/cerrado + ref + listener de clic afuera) donde la regla del proyecto manda `LiquidSelect` desde siempre |
+| `SchedulesView` | la píldora era `hidden lg:flex`: **bajo 1024px no había ni sucursal ni navegador de semana**. Y las flechas solo aparecían al pasar el mouse (`w-0 group-hover/week:w-8`) — con dedo o teclado, invisibles. "Publicar" vivía dentro de la píldora, leyéndose como un filtro |
+| `VacationPlanView` | reimplementaba el buscador toggleable entero; al migrarlo el `ref` quedó huérfano — la prueba de que era duplicado, no personalización |
+| `EmployeeDocumentsView` | filtros en un panel desplegable propio tras un botón "Filtrar", que empujaba la lista al abrirse. `FilterBar` ya trae ese colapso, y en móvil lo hace mejor |
+
+#### El canónico que faltaba: `PeriodStepper`
+
+Otra vez el patrón de la semana. El control «‹ etiqueta ›» estaba **escrito a
+mano 7 veces con 5 anatomías**: quincena (`AttendanceAudit`), semana
+(`Schedules`, `EmployeeSchedule`), año (`VacationPlan`), y en `Dashboard` la
+tendencia, el calendario y los cumpleaños. No es `TablePagination` (paginar es
+navegar una lista) ni `PeriodPicker` (elegir un rango): el período dura siempre
+lo mismo y solo se corre.
+
+La regla que agrega: **la etiqueta ES el atajo de vuelta**. En las tres vistas
+donde uno podía alejarse del período actual había tres formas distintas de
+volver —un botón aparte, una × de reset, nada—. Y `unit` es obligatorio: sin él
+las dos flechas se anuncian como "botón, botón".
+
+Quedan **4 usos sin migrar en `Dashboard`** (cabeceras de widget) y 1 en
+`EmployeeScheduleView` — mecánicos, con `size="sm"`.
+
+#### El bug lo encontró el navegador, no la lectura
+
+En `VacationPlanView` el valor "sin filtrar" de la sucursal es la cadena
+`'ALL'`, no `''`. Con `!!branchFilter` la ranura se pintaba **filtrada
+siempre**: chip azul y × sobre un select que dice *Todas las sucursales*.
+
+Es el mismo error de `StaffManagementView` en v2.97.0. Dos veces seguidas ya no
+es despiste: **`FilterBar` no puede deducir el valor neutro** —a veces es `''`,
+a veces `'ALL'`, a veces el mes en curso— y eso hay que mirarlo *en cada*
+migración, no confiar en que el `!!` alcanza.
+
+#### Hallazgo abierto — familia B, no se tocó
+
+`AttendanceAuditView`: la fila de empleado es un `<button>` que **contiene** el
+`<Button>` de "Aprobar todo". HTML inválido y una segunda parada de tabulación
+para la misma fila; React lo avisa en consola. Se arregla con la anatomía de
+`ListRow` + `trailing`, que es familia B de D3.3 — no de rebote mientras se
+migra la barra de filtros.
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

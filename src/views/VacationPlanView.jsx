@@ -12,9 +12,11 @@ import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
+import ViewTabBar from '../components/common/ViewTabBar';
+import FilterBar from '../components/common/FilterBar';
+import PeriodStepper from '../components/common/PeriodStepper';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import { smartFilter } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import PortalTextarea from '../components/common/PortalTextarea';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -320,19 +322,8 @@ const VacationPlanView = () => {
     const [endDate, setEndDate]     = useState('');
     const [notes, setNotes]         = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const searchInputRef = useRef(null);
     const panelRef = useRef(null);
-
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchMode,
-        value: searchTerm,
-        onClear: () => setSearchTerm(''),
-        onClose: () => setIsSearchMode(false),
-    });
 
     // Panel edit state — when set, left panel is in edit mode
     const [editingPlan, setEditingPlan] = useState(null); // { id, employee_id, start_date, end_date, notes, employee_obj }
@@ -644,58 +635,61 @@ const VacationPlanView = () => {
         return { results: results.slice().sort(sortFn), isFuzzy };
     }, [vacStatusFiltered, searchTerm]);
 
+    // ── Header: solo el buscador (§16.9) ─────────────────────────────────────
+    // Esta vista REIMPLEMENTABA el buscador toggleable entero —su propio
+    // `useSearchToggle`, su ref, su `inert`, sus dos mitades colapsables y el
+    // punto rojo de "hay búsqueda activa"—. Todo eso ya lo da `ViewTabBar`
+    // con el contrato de §24. Al migrarlo el ref quedó huérfano, que es la
+    // prueba de que era duplicado y no personalización.
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[200%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
+        <ViewTabBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            placeholder="Buscar empleado o sucursal…"
+        />
+    );
 
-            {/* Search mode */}
-            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-[800px] opacity-100' : 'max-w-0 opacity-0 pointer-events-none'}`}>
-                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full px-4 h-10 gap-2 min-w-[260px] border border-border-card shadow-sm">
-                    <Search size={14} className="text-content-3 shrink-0" strokeWidth={2.5} />
-                    <input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Buscar empleado o sucursal…"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-body-xl font-semibold text-content-2 placeholder-content-3 w-full"
-                    />
-                    {searchTerm && (
-                        <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchTerm('')} />
-                    )}
-                </div>
-                <Button variant="secondary" onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}>Cancelar</Button>
-            </div>
+    // ── Cuerpo: la barra de filtros (§17) ────────────────────────────────────
+    // Año, sucursal y estado RECORTAN el plan; estaban en el header solo porque
+    // ahí estaba el contenedor. El orden es el de §17: ámbito (sucursal),
+    // tiempo (año), estado.
+    const filtrosCuerpo = (
+        <FilterBar
+            // El valor "sin filtrar" de esta vista es la cadena 'ALL', no ''.
+            // Con `!!branchFilter` la ranura se habría marcado como filtrada
+            // SIEMPRE — el mismo error que ya se cometió en StaffManagementView.
+            onClear={() => { setYear(currentYear); setBranchFilter('ALL'); setStatusFilter('ALL'); }}
+            activeCount={[year !== currentYear, branchFilter !== 'ALL', statusFilter !== 'ALL'].filter(Boolean).length}
+        >
+            {getScope('vacation_plan') !== 'BRANCH' && (
+                <FilterBar.Section active={branchFilter !== 'ALL'} onClear={() => setBranchFilter('ALL')} label="sucursal">
+                    <div className="w-[190px]">
+                        <LiquidSelect
+                            value={branchFilter}
+                            onChange={val => setBranchFilter(val || 'ALL')}
+                            options={branchOptions}
+                            placeholder="Todas las sucursales"
+                            compact clearable={false} icon={Building2} bare
+                        />
+                    </div>
+                </FilterBar.Section>
+            )}
 
-            {/* Normal mode */}
-            <div inert={isSearchMode ? true : undefined} className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
+            <FilterBar.Section active={year !== currentYear} onClear={() => setYear(currentYear)} label="año">
+                <PeriodStepper
+                    unit="año"
+                    label={String(year)}
+                    isCurrent={year === currentYear}
+                    resetLabel="Año actual"
+                    onPrev={() => setYear(y => y - 1)}
+                    onNext={() => setYear(y => y + 1)}
+                    onReset={() => setYear(currentYear)}
+                    nextDisabled={year >= currentYear + 1}
+                />
+            </FilterBar.Section>
 
-                {/* Year selector */}
-                <div className="flex items-center bg-surface-card backdrop-blur-md rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-2)] hover:bg-surface-card h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <Button variant="secondary" icon={ChevronLeft} iconOnly onClick={() => setYear(y => y - 1)} />
-                    <span className="text-body-sm font-black text-content-2 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <Button variant="secondary" icon={ChevronRight} disabled={year >= currentYear + 1} iconOnly onClick={() => setYear(y => y + 1)} />
-                </div>
-
-                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-
-                {/* Branch filter */}
-                {getScope('vacation_plan') !== 'BRANCH' && <div className="w-[190px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-                    <LiquidSelect
-                        value={branchFilter}
-                        onChange={val => setBranchFilter(val)}
-                        options={branchOptions}
-                        placeholder="Todas las sucursales"
-                        compact
-                        clearable={false}
-                        icon={Building2}
-                        bare
-                    />
-                </div>}
-
-                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-
-                {/* Status filter */}
-                <div className="w-[180px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+            <FilterBar.Section active={statusFilter !== 'ALL'} onClear={() => setStatusFilter('ALL')} label="estado">
+                <div className="w-[180px]">
                     <LiquidSelect
                         value={statusFilter}
                         onChange={val => setStatusFilter(val || 'ALL')}
@@ -707,25 +701,19 @@ const VacationPlanView = () => {
                             { value: 'APPROVED',         label: 'Aprobado'          },
                             { value: 'TAKEN',            label: 'Tomado'            },
                         ]}
-                        compact
-                        clearable={false}
-                        icon={ListFilter}
-                        bare
+                        compact clearable={false} icon={ListFilter} bare
                     />
                 </div>
-
-                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-
-                {/* Search button — blue pill standard */}
-                <Button icon={Search} title="Buscar" onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 50); }}>{searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-danger border-2 border-surface-card rounded-full" />}</Button>
-            </div>
-        </div>
+            </FilterBar.Section>
+        </FilterBar>
     );
 
     return (
         <>
 
             <GlassViewLayout icon={Palmtree} title="Plan Anual de Vacaciones" filtersContent={filtersContent} transparentBody={true} fixedScrollMode={true}>
+                {/* Barra de filtros: cuerpo, a la derecha (§17) */}
+                <div className="flex justify-end px-2 md:px-0 pb-4">{filtrosCuerpo}</div>
                 <div className="flex flex-col lg:flex-row items-start gap-6 px-2 md:px-0 w-full h-full lg:h-[calc(100vh-230px)]">
 
                     {/* ── Panel izquierdo: Formulario (crear / editar) ── */}

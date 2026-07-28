@@ -19,6 +19,9 @@ import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import ViewTabBar from '../components/common/ViewTabBar';
+import TabBarAction from '../components/common/TabBarAction';
+import FilterBar from '../components/common/FilterBar';
+import PeriodStepper from '../components/common/PeriodStepper';
 
 import { getLocalMonday, formatDateLocal, DAY_NAMES, calculateEmployeeWeeklyHoursLocal, timeToMins, formatHourAMPM } from '../utils/scheduleHelpers';
 
@@ -682,6 +685,19 @@ const SchedulesView = ({ openModal, setView }) => {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={searchPlaceholder}
+            // "Publicar" vivía DENTRO de la píldora de filtros, donde leía como
+            // un filtro más (§17: la barra es para filtrar; las acciones van al
+            // otro lado). Es la acción principal de la vista, así que va acá.
+            trailingActions={viewMode === 'calendar' && canEdit && getScope('schedules') !== 'BRANCH' && (
+                <TabBarAction
+                    icon={isPublishing ? Loader2 : weekIsPublished ? CheckCircle : Save}
+                    variant={weekIsPublished ? 'quiet' : 'primary'}
+                    tone="success"
+                    disabled={isPublishing || weekIsPublished || employeesInView.length === 0 || isPastWeek}
+                    onClick={weekIsPublished ? undefined : triggerPublishAudit}>
+                    {isPublishing ? 'Publicando…' : weekIsPublished ? 'Publicado' : 'Publicar'}
+                </TabBarAction>
+            )}
         />
     );
 
@@ -697,79 +713,40 @@ const SchedulesView = ({ openModal, setView }) => {
         chartTitle = `Tx por hora · ${DAY_NAMES[chartView]}`;
     }
 
-    // ── Filter pill ────────────────────────────────────────────────────────────
-    const filterPill = (
-        <div className="relative flex items-center gap-0 rounded-2xl overflow-hidden
-            bg-surface-card backdrop-blur-2xl
-            border border-border-card
-            shadow-[var(--shadow-glass-1)]
-            transition-all duration-300
-            hover:bg-surface-card hover:shadow-[var(--shadow-glass-2)]
-            hover:-translate-y-0.5 shrink-0">
-
-            {/* Shimmer */}
-            <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none z-base">
-                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent animate-shimmer"
-                    style={{ animationDuration: '4s' }} />
-            </div>
-
-            {/* Branch */}
-            <div className="px-2 py-2 overflow-visible relative z-base">
-                <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                    options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
-                    compact clearable={false} icon={Building2} bare />
-            </div>
-
-            <div className="h-5 w-px bg-divider shrink-0" />
-
-            {/* Week navigator — hover-reveal arrows */}
-            <div className="group/week flex items-center overflow-visible cursor-default relative z-base">
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 focus-within:opacity-100 group-hover/week:ml-1 transition-all duration-500">
-                    <Button variant="secondary" size="xs" icon={ChevronLeft} iconOnly onClick={() => changeWeek(-7)} />
+    // ── Barra de filtros (§17) ────────────────────────────────────────────────
+    // Era una píldora escrita a mano, y encima `hidden lg:flex`: bajo 1024px la
+    // vista se quedaba SIN selector de sucursal y SIN navegador de semana —
+    // desde una tablet no había forma de ver otra semana. `FilterBar` colapsa a
+    // hoja inferior en vez de desaparecer, así que el filtro existe siempre.
+    //
+    // Las flechas de semana también se revelaban al pasar el mouse
+    // (`w-0 opacity-0 group-hover/week:w-8`): con dedo o con teclado no había
+    // forma de descubrirlas. `PeriodStepper` las muestra siempre.
+    const filtrosCuerpo = (
+        <FilterBar
+            onClear={handleResetFilters}
+            activeCount={[!isDefaultWeek].filter(Boolean).length}
+        >
+            <FilterBar.Section label="sucursal">
+                <div className="w-[175px]">
+                    <LiquidSelect value={filterBranch} onChange={setFilterBranch}
+                        options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
+                        compact clearable={false} icon={Building2} bare />
                 </div>
-                <div className="flex flex-col justify-center items-center px-4 py-2 whitespace-nowrap">
-                    <span className={`text-micro font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-warning' : 'text-content-3'}`}>
-                        {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
-                    </span>
-                    <span className={`text-label md:text-body-sm font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-warning' : 'text-content'}`}>
-                        {formatWeekRange(startDate)}
-                    </span>
-                </div>
-                <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 focus-within:opacity-100 group-hover/week:mr-1 transition-all duration-500">
-                    <Button variant="secondary" size="xs" icon={ArrowRight} iconOnly onClick={() => changeWeek(7)} />
-                </div>
-            </div>
+            </FilterBar.Section>
 
-            {/* Reset X */}
-            {!isDefaultWeek && (
-                <>
-                    <div className="h-5 w-px bg-divider shrink-0" />
-                    <Button variant="destructive" size="xs" icon={X} title="Volver a semana actual" iconOnly onClick={handleResetFilters} />
-                </>
-            )}
-
-            {/* Publish */}
-            {canEdit && getScope('schedules') !== 'BRANCH' && (
-                <>
-                    <div className="h-5 w-px bg-divider shrink-0" />
-                    <button
-                        onClick={weekIsPublished ? undefined : triggerPublishAudit}
-                        disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        className={`mx-2 flex items-center gap-1.5 px-3 py-1.5 rounded-btn text-caption font-black uppercase tracking-widest transition-all duration-200 shrink-0 relative z-base border
-                            ${weekIsPublished
-                                ? 'bg-success/20 border-success/50 text-success-text cursor-default'
-                                : 'bg-brand border-brand-hover/60 text-white shadow-[var(--shadow-glow-brand)] hover:bg-brand-hover hover:shadow-[var(--shadow-glow-brand)] hover:scale-105 active:scale-[0.97]'}
-                            ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                        {isPublishing ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
-                            : weekIsPublished ? <CheckCircle size={11} strokeWidth={2.5} />
-                            : <Save size={11} strokeWidth={2.5} />}
-                        <span className="hidden md:inline">
-                            {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                        </span>
-                    </button>
-                </>
-            )}
-        </div>
+            <FilterBar.Section active={!isDefaultWeek} onClear={handleResetFilters} label="semana">
+                <PeriodStepper
+                    unit="semana"
+                    label={formatWeekRange(startDate)}
+                    isCurrent={isDefaultWeek}
+                    resetLabel="Semana actual"
+                    onPrev={() => changeWeek(-7)}
+                    onNext={() => changeWeek(7)}
+                    onReset={handleResetFilters}
+                />
+            </FilterBar.Section>
+        </FilterBar>
     );
 
     return (
@@ -844,8 +821,8 @@ const SchedulesView = ({ openModal, setView }) => {
                                 openModal={openModal}
                             />
                         </div>
-                        <div className="hidden lg:flex shrink-0">
-                            {filterPill}
+                        <div className="flex items-center shrink-0">
+                            {filtrosCuerpo}
                         </div>
                     </div>
 

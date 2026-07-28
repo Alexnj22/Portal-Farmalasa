@@ -3,11 +3,11 @@ import Badge from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
-import TabBarAction from '../../components/common/TabBarAction';
+import FilterBar from '../../components/common/FilterBar';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
     FolderOpen, Search, X, ExternalLink, FileCheck, Stethoscope,
-    FileText, Palmtree, RefreshCw, Filter, Calendar, ChevronDown, ChevronRight,
+    FileText, Palmtree, RefreshCw, Calendar, ChevronDown, ChevronRight,
     Download, Eye, AlertCircle, CheckCircle2, Clock, XCircle, Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -182,7 +182,6 @@ const EmployeeDocumentsView = () => {
     const [loading, setLoading]       = useState(true);
     const [tab, setTab]               = useState('ALL');
     const [search, setSearch]         = useState('');
-    const [filterOpen, setFilterOpen] = useState(false);
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo]     = useState('');
     const [filterStatus, setFilterStatus] = useState('');
@@ -247,13 +246,41 @@ const EmployeeDocumentsView = () => {
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar documento..."
-            trailingActions={
-                <TabBarAction icon={Filter} onClick={() => setFilterOpen(v => !v)}
-                    className={hasFilters ? 'text-brand-text' : ''}>
-                    Filtrar
-                </TabBarAction>
-            }
         />
+    );
+
+    // ── Cuerpo: la barra de filtros (§17) ─────────────────────────────────
+    // Los filtros vivían sueltos en un panel desplegable propio, detrás de un
+    // botón "Filtrar": sin orden de ranuras, sin limpiar-todo en el lugar
+    // canónico y con el panel empujando la lista hacia abajo al abrirse.
+    // `FilterBar` ya trae el colapso —y en móvil lo hace mejor, como hoja
+    // inferior—, así que el toggle sobraba.
+    const filtrosCuerpo = (
+        <FilterBar
+            onClear={clearFilters}
+            activeCount={[!!filterStatus, !!filterFrom, !!filterTo].filter(Boolean).length}
+        >
+            <FilterBar.Section active={!!filterFrom || !!filterTo}
+                onClear={() => { setFilterFrom(''); setFilterTo(''); }} label="período">
+                <div className="flex items-center gap-2">
+                    <div className="w-[130px]">
+                        <LiquidDatePicker compact shortcuts value={filterFrom} onChange={setFilterFrom} placeholder="Desde" />
+                    </div>
+                    <span className="text-content-3 text-body-sm font-bold shrink-0">→</span>
+                    <div className="w-[130px]">
+                        <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} placeholder="Hasta" />
+                    </div>
+                </div>
+            </FilterBar.Section>
+
+            <FilterBar.Section active={!!filterStatus} onClear={() => setFilterStatus('')} label="estado">
+                <SegmentedControl
+                    size="sm"
+                    options={[{ value: '', label: 'Todos' },
+                        ...Object.entries(STATUS_CFG).map(([k, v]) => ({ value: k, label: v.label }))]}
+                    value={filterStatus} onChange={setFilterStatus} label="Estado" />
+            </FilterBar.Section>
+        </FilterBar>
     );
 
     return (
@@ -266,45 +293,8 @@ const EmployeeDocumentsView = () => {
         >
             <div className="px-2 md:px-0 pb-10 space-y-4">
 
-                {/* Panel filtros avanzados */}
-                {filterOpen && (
-                    <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal p-5 shadow-[var(--shadow-elevation-xs)] animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1.5">
-                                <Filter size={10} /> Filtros avanzados
-                            </p>
-                            {hasFilters && (
-                                <Button variant="ghost" icon={X} onClick={clearFilters}>Limpiar</Button>
-                            )}
-                        </div>
-
-                        {/* Rango de fechas */}
-                        <div>
-                            <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-2">Período de solicitud</p>
-                            <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                                    <LiquidDatePicker compact shortcuts value={filterFrom} onChange={setFilterFrom} />
-                                </div>
-                                <span className="text-content-3 text-body-sm font-bold shrink-0">→</span>
-                                <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
-                                    <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Estado */}
-                        <div>
-                            <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-2">Estado</p>
-                            <div className="flex flex-wrap gap-1.5">
-                                <SegmentedControl
-                                    size="sm"
-                                    options={[{ value: '', label: 'Todos' },
-                                        ...Object.entries(STATUS_CFG).map(([k, v]) => ({ value: k, label: v.label }))]}
-                                    value={filterStatus} onChange={setFilterStatus} label="Estado" />
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Barra de filtros: cuerpo, a la derecha (§17) */}
+                <div className="flex justify-end">{filtrosCuerpo}</div>
 
                 {/* Stats rápidos */}
                 {!loading && allDocs.length > 0 && (

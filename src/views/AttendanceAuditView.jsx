@@ -1,10 +1,10 @@
-import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ChevronLeft, ChevronRight, ChevronDown,
+  AlertTriangle, ChevronDown, ArrowRight,
   Bot, ShieldAlert, Edit3, Building2, X, Plus, ArrowRightLeft,
   Palmtree, CheckCircle, LogIn, LogOut, Clock, Calendar, Check,
   Baby, Coffee, Loader2, ShieldCheck, LockKeyhole, CalendarRange,
@@ -16,7 +16,10 @@ import { useToastStore } from "../store/toastStore";
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
-import SearchInput from '../components/common/SearchInput';
+import ViewTabBar from '../components/common/ViewTabBar';
+import TabBarAction from '../components/common/TabBarAction';
+import FilterBar from '../components/common/FilterBar';
+import PeriodStepper from '../components/common/PeriodStepper';
 import TimePicker12 from '../components/common/TimePicker12';
 import { smartFilter } from '../utils/searchUtils';
 import {
@@ -891,8 +894,6 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   const [editingExId,       setEditingExId]       = useState(null);
   const [editStart,         setEditStart]         = useState('');
   const [editEnd,           setEditEnd]           = useState('');
-  const [branchDropOpen,    setBranchDropOpen]    = useState(false);
-  const branchDropRef = useRef(null);
 
   useEffect(() => {
     if (setOverlayActive) setOverlayActive(!!correctionTarget);
@@ -1161,93 +1162,69 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     return [{ value: '', label: 'Todas' }, ...opts];
   }, [branches]);
 
-  const currentBranchLabel = filterBranch
-    ? (branches.find(b => String(b.id) === filterBranch)?.name || 'Sucursal')
-    : 'Todas';
-
-  // Close branch dropdown on outside click
-  useEffect(() => {
-    if (!branchDropOpen) return;
-    const handler = (e) => {
-      if (branchDropRef.current && !branchDropRef.current.contains(e.target)) {
-        setBranchDropOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [branchDropOpen]);
-
-  // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
-  const pillWrap    = 'flex items-center border border-border-card bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] rounded-header h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[var(--shadow-glass-sm)] hover:-translate-y-[2px] transition-all duration-300';
-  const pillDivider = 'h-5 w-px bg-divider mx-1';
-  const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-content-3 hover:bg-surface-card-hover hover:text-content hover:shadow-sm transition-all duration-300 shrink-0';
-  const pillLabelText = 'text-content';
-  const pillSubText   = (ok) => ok ? 'text-success' : 'text-brand-text';
-
-  // ── filtersContent ────────────────────────────────────────────────────────
+  // ── Header: pestañas/buscador + acciones (§16.9) ─────────────────────────
+  // Antes esto era un `<div className="flex items-center gap-2 flex-wrap">` con
+  // TODO adentro: buscador, navegador de quincena, sucursal y las acciones de
+  // cierre. Sin contenedor no había orden de ranuras, ni limpiar-todo, ni
+  // colapso en móvil — los filtros simplemente se envolvían a otra fila.
   const filtersContent = (
-    <div className="flex items-center gap-2 flex-wrap">
-
-      {/* Buscador expandible — Tipo 2b (DESIGN.md §24) */}
-      <SearchInput expandable accentColor="#0052CC" value={search} onChange={setSearch} placeholder="Buscar empleado..." />
-
-      {/* Period nav pill — quincena */}
-      <div className={pillWrap}>
-        <Button variant="ghost" icon={ChevronLeft} iconOnly className={pillIconBtn} onClick={() => setSelectedQuincena(prevQuincena(selectedQuincena))} />
-        <div className={pillDivider} />
-        <Button
-            size="sm"
-            variant="ghost"
-            type="button"
-            onClick={() => setSelectedQuincena(getCurrentQuincenaStart())}
-        >
-            <span className={`text-body-sm font-black leading-none whitespace-nowrap ${pillLabelText}`}>{quincenaLabel}</span>
-          <span className={`text-micro font-black uppercase tracking-widest mt-0.5 ${pillSubText(isCurrentQuincena)}`}>
-            {isCurrentQuincena ? 'Actual' : '← Ir a hoy'}
-          </span>
-        </Button>
-        <div className={pillDivider} />
-        <Button variant="ghost" icon={ChevronRight} disabled={isCurrentQuincena} iconOnly className={pillIconBtn} onClick={() => setSelectedQuincena(nextQuincena(selectedQuincena))} />
-      </div>
-
-      {/* Branch dropdown pill */}
-      {getScope('time_audit') !== 'BRANCH' && <div className="relative shrink-0" ref={branchDropRef}>
-        <Button variant="ghost" icon={Building2} className={pillWrap} onClick={() => setBranchDropOpen(v => !v)}><span className={`text-caption font-black tracking-widest uppercase whitespace-nowrap mx-1 ${pillLabelText}`}>
-            {currentBranchLabel}
-          </span>
-          <ChevronDown size={12} className={`opacity-50 transition-transform duration-200 shrink-0 ${branchDropOpen ? 'rotate-180' : ''}`} /></Button>
-        {branchDropOpen && (
-          <div className="absolute left-0 top-full mt-2 z-sidebar min-w-[190px] rounded-2xl border border-black/[0.08] bg-surface-card backdrop-blur-xl shadow-[var(--shadow-elevation-lg)] overflow-hidden py-1">
-            {sortedBranchOptions.map(opt => (
-              <Button
-                  variant="primary"
-                  className="w-full"
-                  key={opt.value}
-                  type="button"
-                  onClick={() => { setFilterBranch(opt.value); setBranchDropOpen(false); }}
-              >{opt.label}</Button>
-            ))}
-          </div>
-        )}
-      </div>}
-
-      {/* Close quincena / Ver planilla */}
-      {!isDemoMode && isQuincenaPast && (
+    <ViewTabBar
+      searchValue={search}
+      onSearchChange={setSearch}
+      placeholder="Buscar empleado…"
+      trailingActions={!isDemoMode && isQuincenaPast && (
         quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="flex items-center gap-1.5 text-caption font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full">
+          <>
+            <span className="flex items-center gap-1.5 text-caption font-black text-success-text bg-success/10 border border-success/30 px-3 py-1.5 rounded-full whitespace-nowrap">
               <ShieldCheck size={12} strokeWidth={2.5} /> Quincena cerrada
             </span>
-            <Button onClick={() => navigate('/payroll')}>Ver planilla →</Button>
-          </div>
+            <TabBarAction icon={ArrowRight} tone="success" onClick={() => navigate('/payroll')}>
+              Ver planilla
+            </TabBarAction>
+          </>
         ) : quincenaTS.length > 0 ? (
-          <Button disabled={isClosingQuincena} onClick={handleCloseQuincena}>{isClosingQuincena
-              ? <Loader2 size={11} strokeWidth={3} className="animate-spin" />
-              : <LockKeyhole size={11} strokeWidth={2.5} />}
-            {isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena'}</Button>
+          <TabBarAction icon={isClosingQuincena ? Loader2 : LockKeyhole} variant="primary"
+            disabled={isClosingQuincena} onClick={handleCloseQuincena}>
+            {isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena'}
+          </TabBarAction>
         ) : null
       )}
-    </div>
+    />
+  );
+
+  // ── Cuerpo: la barra de filtros (§17) ────────────────────────────────────
+  // Quincena y sucursal RECORTAN los datos: son filtros, no navegación. El
+  // selector de sucursal era un dropdown escrito a mano —con su propio estado
+  // abierto/cerrado, su ref y su listener de clic afuera—; con `LiquidSelect`
+  // esas tres cosas desaparecen, que es la regla del proyecto desde siempre.
+  const filtrosCuerpo = (
+    <FilterBar
+      onClear={() => { setFilterBranch(''); setSelectedQuincena(getCurrentQuincenaStart()); }}
+      activeCount={[!!filterBranch, !isCurrentQuincena].filter(Boolean).length}
+    >
+      {getScope('time_audit') !== 'BRANCH' && (
+        <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
+          <div className="w-[185px]">
+            <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
+              options={sortedBranchOptions} placeholder="Todas las sucursales"
+              compact clearable={false} icon={Building2} bare />
+          </div>
+        </FilterBar.Section>
+      )}
+
+      <FilterBar.Section active={!isCurrentQuincena}
+        onClear={() => setSelectedQuincena(getCurrentQuincenaStart())} label="quincena">
+        <PeriodStepper
+          unit="quincena"
+          label={quincenaLabel}
+          isCurrent={isCurrentQuincena}
+          onPrev={() => setSelectedQuincena(prevQuincena(selectedQuincena))}
+          onNext={() => setSelectedQuincena(nextQuincena(selectedQuincena))}
+          onReset={() => setSelectedQuincena(getCurrentQuincenaStart())}
+          nextDisabled={isCurrentQuincena}
+        />
+      </FilterBar.Section>
+    </FilterBar>
   );
 
   return (
@@ -1268,6 +1245,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       />
 
       <div className="px-4 md:px-6 pt-5 pb-8 space-y-4">
+
+        {/* Barra de filtros: cuerpo, a la derecha (§17) */}
+        <div className="flex justify-end">{filtrosCuerpo}</div>
 
         {/* SHIFT_EXCEPTION review panel */}
         {shiftExceptions.length > 0 && (

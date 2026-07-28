@@ -30,7 +30,8 @@
 | aviso inline | `Notice` | §15.6 |
 | fila de lista | `ListRow` | §15.7 |
 | barra de filtros de la vista | `FilterBar` | §17 |
-| paginación de tabla | `TablePagination` | §17.1 |
+| correr el período (‹ etiqueta ›) | `PeriodStepper` | §17.1 |
+| paginación de tabla | `TablePagination` | §17.2 |
 | adjuntar archivo | `FileField` | §15.8 |
 | nota al pasar el puntero | `LiquidTooltip` | §15.9 |
 | etiqueta de estado | `Badge` | §16.1 |
@@ -1535,7 +1536,33 @@ El divisor también tenía dos escrituras —`h-5 w-px bg-divider` y `w-px h-6
 bg-divider`— y por eso una auditoría por grep veía la mitad. Con `FilterBar` el
 divisor lo pone el contenedor y esa divergencia deja de ser posible.
 
-### 17.1 `TablePagination` — paginación
+### 17.1 `PeriodStepper` — correr el período
+
+```jsx
+<PeriodStepper
+    unit="quincena" label="16 – 31 julio de 2026"
+    isCurrent={esActual} nextDisabled={esActual}
+    onPrev={anterior} onNext={siguiente} onReset={irAHoy} />
+```
+
+Va **dentro de una `FilterBar.Section`** cuando filtra la vista, o en la
+cabecera de un widget con `size="sm"`.
+
+Salió de medir, no de una idea previa: el mismo control estaba escrito a mano
+**siete veces con cinco anatomías distintas** —quincena, semana (×2), año, y
+tres variantes en el Inicio—, cada una con su tamaño de flecha, su ancho de
+etiqueta y su forma de contenedor.
+
+| | |
+|---|---|
+| `unit` | **obligatorio**. Arma el nombre accesible de las dos flechas; sin él un lector de pantalla anuncia "botón, botón". |
+| `onReset` + `isCurrent` | **la etiqueta ES el atajo de vuelta**. En las tres vistas donde uno podía alejarse del período actual había tres formas distintas de volver: un botón aparte, una × de reset, y nada. Sin `onReset` el rótulo es un `<span>`, no un botón muerto. |
+
+**No confundir con:** `TablePagination` (paginar es navegar una lista, no
+correr el tiempo) ni `PeriodPicker` (elegir un rango arbitrario). Acá el
+período dura siempre lo mismo y solo se mueve hacia atrás o hacia adelante.
+
+### 17.2 `TablePagination` — paginación
 
 ```jsx
 <TablePagination page={pagina} totalPages={paginas} onPageChange={setPagina}

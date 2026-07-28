@@ -1,12 +1,13 @@
 import React, { useMemo, useState, memo, useRef, useCallback, useEffect } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import ViewTabBar from '../../components/common/ViewTabBar';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight, Pencil } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { smartFilter } from '../../utils/searchUtils';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 
 const TABS = [
@@ -602,19 +603,11 @@ const EmployeeAnnouncementsView = () => {
 
     const [tab, setTab]                   = useState('UNREAD');
     const [typeFilter, setTypeFilter]     = useState('ALL');
-    const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchQuery, setSearchQuery]   = useState('');
     const [showOldRead, setShowOldRead]   = useState(false);
-    const searchInputRef                  = useRef(null);
-
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchMode,
-        value: searchQuery,
-        onClear: () => setSearchQuery(''),
-        onClose: () => setIsSearchMode(false),
-    });
+    // Acá vivían `isSearchMode`, `searchInputRef` y un `useSearchToggle`
+    // propio. Al pasar la barra a `ViewTabBar` quedaron los tres huérfanos —
+    // que es la prueba de que eran duplicado del canónico, no personalización.
     const isStoreLoading = employees.length === 0 && announcements.length === 0;
     const currentYM = new Date().toISOString().slice(0, 7);
 
@@ -691,73 +684,35 @@ const EmployeeAnnouncementsView = () => {
         if (user?.id) markAnnouncementAsRead(id, user.id);
     };
 
+    // §16.9 — la barra estaba REESCRITA A MANO, como en otras doce vistas: su
+    // propio `useSearchToggle`, sus dos mitades colapsables con `inert`, su
+    // punto rojo de "hay búsqueda activa" y su botón de lupa. Todo eso lo da
+    // `ViewTabBar` con el contrato de §24 (Escape cierra Y limpia; clic afuera
+    // cierra solo si está vacío) y, de regalo, el colapso táctil en hoja
+    // inferior que esta copia no tenía.
+    //
+    // Los subfiltros de "Leídos" —que se deslizaban dentro de la misma barra—
+    // son un uno-de-N: van en `trailingActions` como `SegmentedControl`, que
+    // los anuncia como grupo. Antes eran botones sueltos con `inert` y un
+    // `max-w-0` que los escondía a medias.
     const filtersContent = (
-        <div {...searchContainerRef} className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 overflow-hidden w-max max-w-full transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
-            {/* Search mode */}
-            <div inert={!(isSearchMode) ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-3 gap-2' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0'}`}>
-                <Search size={16} className="text-brand-text shrink-0" strokeWidth={2.5} />
-                <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Buscar avisos..."
-                    className="bg-transparent border-none outline-none text-body-xl font-bold text-content-2 w-[200px] sm:w-[280px] placeholder:text-content-3"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
+        <ViewTabBar
+            tabs={TABS.map(t => ({ key: t.key, label: t.label }))}
+            activeTab={tab}
+            onTabChange={k => { setTab(k); setTypeFilter('ALL'); }}
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            placeholder="Buscar avisos…"
+            trailingActions={tab === 'READ' && readFilters.length > 1 && (
+                <SegmentedControl
+                    size="sm"
+                    label="Filtrar por tipo"
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    options={readFilters.map(({ key, label, icon }) => ({ value: key, label, icon }))}
                 />
-                {searchQuery && (
-                    <Button variant="ghost" icon={X} iconOnly onClick={() => setSearchQuery('')} />
-                )}
-                <Button variant="secondary" size="sm" icon={ChevronRight} iconOnly onClick={() => { setIsSearchMode(false); setSearchQuery(''); }} />
-            </div>
-            {/* Tab mode */}
-            <div inert={isSearchMode ? true : undefined} className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0' : 'max-w-[700px] opacity-100 pl-2 pr-2 md:pr-3 gap-1 md:gap-1.5'}`}>
-                {TABS.map(t => {
-                    const isActive = tab === t.key;
-                    return (
-                        <button key={t.key} onClick={() => { setTab(t.key); setTypeFilter('ALL'); }}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-caption font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border shrink-0 ${
-                                isActive ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
-                            }`}
-                        >
-                            {t.label}
-                        </button>
-                    );
-                })}
-
-                {/* Subfiltros READ — aparecen deslizándose cuando tab === 'READ' y hay opciones */}
-                <div inert={!(tab === 'READ' && readFilters.length > 1) ? true : undefined} className={`flex items-center gap-1 shrink-0 transform-gpu transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
-                    tab === 'READ' && readFilters.length > 1
-                        ? 'max-w-[360px] opacity-100'
-                        : 'max-w-0 opacity-0 pointer-events-none'
-                }`}>
-                    <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-                    {readFilters.map(({ key, label, icon: Icon }) => {
-                        const isActive = typeFilter === key;
-                        return (
-                            <button
-                                key={key}
-                                onClick={() => setTypeFilter(key)}
-                                className={`flex items-center gap-1 px-2.5 h-8 rounded-full text-micro font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap border shrink-0 ${
-                                    key === 'URGENT'
-                                        ? isActive
-                                            ? 'bg-danger-solid text-white border-danger shadow-[var(--shadow-glow-danger)] scale-[1.02]'
-                                            : 'bg-transparent text-danger border-danger/30 hover:bg-danger/10 hover:-translate-y-0.5'
-                                        : isActive
-                                        ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
-                                        : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card hover:text-content-2 hover:-translate-y-0.5'
-                                }`}
-                            >
-                                {Icon && <Icon size={10} strokeWidth={2.5} />}
-                                {label}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                <div className="w-px h-6 bg-divider mx-1 shrink-0" />
-                <Button icon={Search} onClick={() => { setIsSearchMode(true); setTimeout(() => searchInputRef.current?.focus(), 100); }}>{searchQuery && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-danger border-2 border-surface-card rounded-full" />}</Button>
-            </div>
-        </div>
+            )}
+        />
     );
 
     return (

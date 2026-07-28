@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.107.1';
+export const APP_VERSION = '2.108.0';
+
+// v2.108.0 — La barra numero 13, y una opcion que estaba fuera de su grupo.
+//
+// `EmployeeAnnouncementsView` tenia la barra de vista REESCRITA A MANO — la
+// treceava. Su propio `useSearchToggle`, sus dos mitades colapsables con
+// `inert`, su punto rojo de "hay busqueda activa" y su boton de lupa. Al
+// migrarla a `ViewTabBar` quedaron **tres refs huerfanos**, que es la prueba
+// de que era duplicado y no personalizacion. Y de regalo gana el colapso
+// tactil en hoja inferior, que esta copia no tenia.
+//
+// Sus subfiltros de "Leidos" —que se deslizaban DENTRO de la misma barra con
+// un `max-w-0` que los escondia a medias— son un uno-de-N: ahora van en
+// `trailingActions` como `SegmentedControl`.
+//
+// ── Y en `EmployeeProfileView`, una opcion fuera de su propio grupo ────────
+// El filtro de tipo de evento tenia un `<button>Todos</button>` SUELTO al lado
+// de un `SegmentedControl` con el resto. Visualmente parecia una opcion mas;
+// para un lector de pantalla el grupo decia "1 de 4" cuando hay 5 opciones, y
+// "Todos" ni siquiera figuraba como parte del conjunto.
+//
+// Es un error facil de cometer —la opcion "todos" se siente distinta de las
+// demas— y solo se ve preguntando que anuncia el grupo, no mirandolo.
 
 // v2.107.1 — Los 8 bloques de encuesta a `ListRow`.
 //

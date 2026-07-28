@@ -470,25 +470,26 @@ const EmployeeProfileView = ({ openModal }) => {
                                         <Button variant="secondary" size="sm" icon={X} title="Limpiar filtros" iconOnly onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }} />
                                     )}
                                 </div>
-                                {/* Type pills */}
+                                {/* "Todos" estaba FUERA del `SegmentedControl` al que
+                                    pertenece: un `<button>` suelto al lado del grupo.
+                                    Visualmente parecía una opción más, pero para un
+                                    lector de pantalla el grupo decía "1 de 4" cuando en
+                                    realidad hay 5 opciones, y "Todos" ni siquiera
+                                    figuraba como parte del conjunto. Es la primera
+                                    opción del grupo, no un botón. */}
                                 {availableTypes.length > 1 && (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        <button
-                                            onClick={() => setFilterType('')}
-                                            className={`px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${!filterType ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
-                                        >
-                                            Todos
-                                        </button>
-                                        <SegmentedControl
-                                            size="sm"
-                                            options={availableTypes.map(type => ({
+                                    <SegmentedControl
+                                        size="sm"
+                                        options={[
+                                            { value: '', label: 'Todos' },
+                                            ...availableTypes.map(type => ({
                                                 value: type,
                                                 label: type === 'HIRING' ? 'Contratación' : (EVENT_TYPES[type]?.label || type),
-                                            }))}
-                                            value={filterType}
-                                            onChange={t => setFilterType(filterType === t ? '' : t)}
-                                            label="Tipo de evento" />
-                                    </div>
+                                            })),
+                                        ]}
+                                        value={filterType}
+                                        onChange={t => setFilterType(filterType === t ? '' : t)}
+                                        label="Tipo de evento" />
                                 )}
                             </div>
                         )}

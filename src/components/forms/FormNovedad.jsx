@@ -15,6 +15,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useNowTick } from '../../hooks/useNowTick';
 import FileField from '../common/FileField';
+import PortalTextarea from '../common/PortalTextarea';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -681,7 +682,13 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-content-3" size={14} strokeWidth={2.5}/>
- <textarea rows="3" className="w-full bg-surface-card border border-border-card rounded-2xl p-3 pl-9 text-body-xl font-bold text-content-2 transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:border-brand/50 placeholder:text-content-3 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+ <PortalTextarea
+     rows="3"
+     textareaClassName="hide-scrollbar"
+     placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."}
+     value={formData?.note || ''}
+     onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
+ />
                         </div>
                     </div>
 

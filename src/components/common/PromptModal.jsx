@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import { createPortal } from 'react-dom';
 import { MessageSquarePlus, Loader2 } from 'lucide-react';
+import PortalTextarea from './PortalTextarea';
 
 // Mismo shell visual que ConfirmModal/AlertModal (glass modal, glow, footer
 // con 2 botones) — extendido con un textarea para pedir una nota corta antes
@@ -70,14 +71,13 @@ const PromptModal = ({
                         </p>
                     )}
 
-                    <textarea
+                    <PortalTextarea
                         autoFocus
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         placeholder={placeholder}
-                        disabled={isProcessing}
+                        readOnly={isProcessing}
                         rows={3}
- className="w-full text-body-lg font-medium text-content bg-surface-card border border-border-input rounded-2xl px-4 py-3 focus:border-brand/50 transition-all resize-none placeholder-content-3"
                     />
                 </div>
 

@@ -4,6 +4,7 @@ import { Building2, ShieldCheck, Briefcase, Clock, DollarSign } from 'lucide-rea
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidAvatar from '../common/LiquidAvatar';
+import PortalTextarea from '../common/PortalTextarea';
 
 const CONTRACT_TYPE_OPTIONS = [
     { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },
@@ -144,10 +145,9 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Motivo */}
                     <div className="md:col-span-2">
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Motivo / Notas</label>
-                        <textarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
+                        <PortalTextarea value={formData.rehire_notes || ''} onChange={e => set('rehire_notes', e.target.value)}
                             rows={2}
-                            placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..."
-                            className={`w-full bg-surface-card rounded-2xl border border-divider shadow-sm text-body-xl font-medium text-content-2 outline-none px-4 py-2.5 resize-none ${inputHover}`} />
+                            placeholder="Ej. Regresa tras cierre de proyecto externo, aplica para período de prueba..." />
                     </div>
 
                 </div>

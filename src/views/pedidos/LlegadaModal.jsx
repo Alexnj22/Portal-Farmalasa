@@ -8,6 +8,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import { getPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -203,10 +204,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 {hayProblemas && (
                     <div>
                         <label className="text-caption font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
-                        <textarea
-                            value={nota} onChange={e => setNota(e.target.value)} rows={2}
+                        <PortalTextarea
+                            value={nota}
+                            onChange={e => setNota(e.target.value)}
+                            rows={2}
                             placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
- className="mt-1 w-full text-body-xl rounded-xl border border-divider px-3 py-2 resize-none"
+                            textareaClassName="mt-1"
                         />
                     </div>
                 )}

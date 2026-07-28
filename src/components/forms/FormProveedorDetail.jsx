@@ -7,6 +7,7 @@ import { useToastStore } from '../../store/toastStore';
 import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier } from '../../data/proveedores';
 import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
+import PortalTextarea from '../common/PortalTextarea';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -299,12 +300,11 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                     </div>
                     <div className="sm:col-span-2">
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Notas</label>
-                        <textarea
+                        <PortalTextarea
                             value={form.notas}
                             onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
                             rows={3}
                             placeholder="Notas internas"
- className="w-full px-3.5 py-2.5 bg-surface-card border border-divider rounded-2xl text-body font-medium text-content-2 transition-all hover:border-brand/30 focus:border-brand/50 resize-none"
                         />
                     </div>
                 </div>

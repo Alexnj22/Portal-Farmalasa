@@ -33,6 +33,7 @@
 | nota al pasar el puntero | `LiquidTooltip` | §15.9 |
 | etiqueta de estado | `Badge` | §16.1 |
 | campo de formulario | `PortalInput` | §29.1 |
+| campo de varias líneas | `PortalTextarea` | §29.2 |
 | desplegable | `LiquidSelect` | §14 |
 | fecha / rango | `LiquidDatePicker` · `RangeDatePicker` | §14 |
 | barra de vista con buscador | `ViewTabBar` | §24 |
@@ -2054,6 +2055,40 @@ className="… outline-none focus:ring-4 focus:ring-brand/10"
 
 `focus:outline-none` está **prohibido**: apaga el aro canónico y deja el campo
 sin foco visible (WCAG 2.4.7).
+
+
+### 29.2 `PortalTextarea` — campo de varias líneas
+
+```jsx
+<PortalTextarea label="Motivo" name="motivo" rows={3} required
+    value={motivo} onChange={e => setMotivo(e.target.value)}
+    placeholder="Describe la solicitud…" />
+```
+
+Era **el último control de formulario sin canónico** (2026-07-27). `<select>` ya
+iba a `LiquidSelect`, la casilla a `Checkbox`, el archivo a `FileField`, la fecha
+a `LiquidDatePicker` — y quedaban **37 `<textarea>` nativos** que nadie había
+mirado, con cuatro radios (`rounded-xl` 4 · `lg` 4 · `2xl` 3 · `3xl` 1).
+
+El efecto se veía en pantalla: en el mismo formulario, el campo de una línea y el
+de varias no compartían ni borde ni radio, porque uno pasaba por `PortalInput` y
+el otro no pasaba por nada.
+
+Comparte con `PortalInput` la etiqueta, el badge "Requerido", el borde rojo de
+error, el glow de marca y `data-surface="input"` — no está reimplementado, es la
+misma superficie. Lo único distinto es que crece en alto.
+
+- **`rows`, no una altura en píxeles.** El alto de un campo de texto se mide en
+  líneas, que es lo que el usuario ve; un `h-24` deja de calzar apenas cambia el
+  tamaño de fuente del tema.
+- **`resize-none` a propósito.** El tirador de la esquina es el mismo elemento
+  nativo que ya sacamos de todos los demás controles: no sigue el tema y al
+  arrastrarlo se sale de la caja del formulario.
+- **La etiqueta es opcional.** Muchos de los 37 ya tenían su `<label>` afuera;
+  obligar a moverla habría encimado dos cambios en la misma pasada.
+
+`<textarea>` nativo es ahora **bloqueante en el gate** (categoría `native`, cero
+absoluto), igual que `<select>` y `window.confirm`.
 
 ### 29.2 Casillas y opciones
 

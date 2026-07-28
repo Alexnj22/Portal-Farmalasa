@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../../components/common/Button';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
+import PortalTextarea from '../common/PortalTextarea';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',
@@ -97,12 +98,12 @@ function EarlyExitForm({
             <label className="text-white/50 text-micro sm:text-micro font-semibold uppercase tracking-widest ml-2">
               Justificación (Opcional)
             </label>
-            <textarea
-              className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-chart-4/50 transition-all font-medium text-body-xl resize-none h-16 sm:h-20 shadow-[var(--shadow-shine-lg)] placeholder:text-white/20"
-              placeholder="Detalle brevemente el motivo..."
-              value={exitNotes}
-              onChange={(e) => onChangeNotes?.(e.target.value)}
-              disabled={isProcessing}
+            <PortalTextarea
+                textareaClassName="sm:p-3.5 sm:h-20"
+                placeholder="Detalle brevemente el motivo..."
+                value={exitNotes}
+                onChange={(e) => onChangeNotes?.(e.target.value)}
+                readOnly={isProcessing}
             />
           </div>
 

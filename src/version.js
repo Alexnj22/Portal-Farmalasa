@@ -5,7 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.88.1';
+export const APP_VERSION = '2.89.0';
+
+// v2.89.0 — `PortalTextarea`: el ultimo control de formulario sin canonico.
+//
+// Al medir que faltaba aparecieron dos cosas que el plan NO tenia anotadas:
+//
+// · 37 `<textarea>` NATIVOS, con cuatro radios distintos (xl 4 · lg 4 · 2xl 3 ·
+//   3xl 1). El <select> ya iba a LiquidSelect, la casilla a Checkbox, el archivo
+//   a FileField, la fecha a LiquidDatePicker — y este nadie lo habia mirado. El
+//   efecto se veia: en el MISMO formulario, el campo de una linea y el de varias
+//   no compartian ni borde ni radio, porque uno pasaba por PortalInput y el otro
+//   no pasaba por nada.
+//   Migrados los 37. `<textarea>` nativo pasa a ser bloqueante en el gate
+//   (categoria `native`, cero absoluto) — verificado que la regla dispara.
+//
+// · Un `window.confirm` NATIVO vivo en TabStaff.jsx. Y el archivo YA importaba
+//   ConfirmModal y lo usaba 500 lineas mas abajo: no faltaba el canonico,
+//   faltaba haberlo usado.
+//
+// Del migrador: la primera version emitia todo en columna 4 (dejaba el archivo
+// ilegible) y copiaba `className={inputClass}` al canonico, o sea la superficie
+// vieja encima de la nueva. Se corrigio a preservar sangria y a SALTEAR los 12
+// con className dinamica, que se migraron a mano. Probado en un archivo y
+// revisado a ojo ANTES de correrlo sobre los 26 — que es lo que fallo las dos
+// veces anteriores que un migrador rompio archivos.
+//
+// `rows` en vez de altura en px: el alto de un campo de texto se mide en lineas.
+// `resize-none`: el tirador de la esquina es el mismo elemento nativo que ya
+// sacamos de los demas controles, no sigue el tema y se sale de la caja.
 
 // v2.88.1 — Repaso de los hallazgos de v2.88.0: lo que quedaba a medias.
 //

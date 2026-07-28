@@ -164,6 +164,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 // ============================================================================
 const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     const [isSyncing, setIsSyncing] = useState(false);
+    const [syncConfirm, setSyncConfirm] = useState(false);
     const [progress, setProgress] = useState(0);
     const [log, setLog] = useState('');
 
@@ -188,10 +189,14 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
         return chunks;
     };
 
-    const startHistoricalSync = async () => {
-        const confirmSync = window.confirm(`¿Iniciar descarga histórica para ${liveBranch?.name}?\nEl sistema descargará los datos en bloques mensuales para mayor velocidad.`);
-        if (!confirmSync) return;
+    // El `window.confirm` nativo que había acá era el último del portal: bloquea
+    // el hilo, ignora el tema y en móvil apenas se lee. Este archivo YA importaba
+    // `ConfirmModal` y lo usaba 500 líneas más abajo — el nativo quedó por
+    // olvido, no por falta de canónico.
+    const startHistoricalSync = () => setSyncConfirm(true);
 
+    const runHistoricalSync = async () => {
+        setSyncConfirm(false);
         setIsSyncing(true);
         setProgress(0);
         setLog('Calculando bloques mensuales...');
@@ -255,6 +260,17 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner">
                     <div className="bg-gradient-to-r from-blue-500 to-brand h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                 </div>
+            )}
+
+            {syncConfirm && (
+                <ConfirmModal
+                    isOpen={syncConfirm}
+                    title="Iniciar descarga histórica"
+                    message={`Se descargarán las ventas de ${liveBranch?.name ?? 'la sucursal'} desde enero de 2025, en bloques mensuales para mayor velocidad. Puede tardar varios minutos.`}
+                    onClose={() => setSyncConfirm(false)}
+                    onConfirm={runHistoricalSync}
+                    confirmText="Descargar"
+                />
             )}
 
             {log && (

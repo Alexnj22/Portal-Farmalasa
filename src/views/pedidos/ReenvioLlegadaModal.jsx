@@ -3,6 +3,7 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package } from 'lucide-react';
 import PedidoModal from './PedidoModal';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 const TOGGLE_CFG = {
     ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success-solid text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
@@ -197,10 +198,12 @@ export default function ReenvioLlegadaModal({
                 {hayProblemas && (
                     <div>
                         <label className="text-caption font-semibold text-content-3 uppercase tracking-wide">Nota (opcional)</label>
-                        <textarea
-                            value={nota} onChange={e => setNota(e.target.value)} rows={2}
+                        <PortalTextarea
+                            value={nota}
+                            onChange={e => setNota(e.target.value)}
+                            rows={2}
                             placeholder="Ej. caja dañada en el fondo, caja 4 nunca llegó…"
- className="mt-1 w-full text-body-xl rounded-xl border border-divider px-3 py-2 resize-none"
+                            textareaClassName="mt-1"
                         />
                     </div>
                 )}

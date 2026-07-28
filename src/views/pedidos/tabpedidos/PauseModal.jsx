@@ -4,6 +4,7 @@ import Button from '../../../components/common/Button';
 import PedidoModal from '../PedidoModal';
 import { ERP_NAMES } from '../../../constants/erp';
 import { PAUSE_REASONS } from './constants';
+import PortalTextarea from '../../../components/common/PortalTextarea';
 
 export default function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
     const alreadyHadAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
@@ -68,12 +69,11 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                         <label className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
                             {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
                         </label>
-                        <textarea
+                        <PortalTextarea
                             value={comment}
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-body-xl border border-divider rounded-xl px-3 py-2 focus:border-warning bg-surface-card resize-none transition-colors text-content-2"
                         />
                     </div>
                 </PedidoModal.Body>

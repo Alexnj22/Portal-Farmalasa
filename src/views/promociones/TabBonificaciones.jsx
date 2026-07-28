@@ -4,6 +4,7 @@ import { Gift, Loader2, DollarSign, Check, User, Wallet } from 'lucide-react';
 import { useAuth }       from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     fetchPromotionBonifications, insertPromotionPayment, updatePromotionBonificationPaid,
 } from '../../data/promotions';
@@ -85,8 +86,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                     </div>
                     <div>
                         <label className="text-caption font-medium text-content-3 mb-0.5 block">Notas (opcional)</label>
-                        <textarea
-                            className="w-full text-body-xl bg-surface-card-hover border border-divider rounded-lg px-3 py-2 focus:border-chart-1 h-16 resize-none"
+                        <PortalTextarea
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             placeholder="Ej: Pago quincenal, efectivo..."

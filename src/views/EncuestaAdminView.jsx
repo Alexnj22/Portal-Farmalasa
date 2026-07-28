@@ -17,6 +17,7 @@ import { signPhotosDeep } from '../utils/storageFiles';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
+import PortalTextarea from '../components/common/PortalTextarea';
 import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
     fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
@@ -560,9 +561,12 @@ export default function EncuestaAdminView() {
                                 {/* Descripción */}
                                 <div>
                                     <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1">Descripción <span className="normal-case font-semibold">(opcional)</span></label>
-                                    <textarea value={sfDescripcion} onChange={e => setSfDescripcion(e.target.value)}
-                                        rows={2} placeholder="Objetivo específico de esta encuesta…"
-                                        className="w-full py-2.5 px-3.5 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal leading-relaxed" />
+                                    <PortalTextarea
+                                        value={sfDescripcion}
+                                        onChange={e => setSfDescripcion(e.target.value)}
+                                        rows={2}
+                                        placeholder="Objetivo específico de esta encuesta…"
+                                    />
                                 </div>
 
                                 {/* Fechas */}
@@ -933,9 +937,12 @@ export default function EncuestaAdminView() {
                                 {/* Comentario */}
                                 <div>
                                     <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Comentario (opcional)</label>
-                                    <textarea value={rfComentario} onChange={e => setRfComentario(e.target.value)} rows={3}
+                                    <PortalTextarea
+                                        value={rfComentario}
+                                        onChange={e => setRfComentario(e.target.value)}
+                                        rows={3}
                                         placeholder="¿Qué mejorarías del ambiente de trabajo?"
-                                        className="w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-medium text-content-2 resize-none transition-all duration-300 placeholder-content-3 placeholder:font-normal" />
+                                    />
                                 </div>
 
                                 {/* Submit */}

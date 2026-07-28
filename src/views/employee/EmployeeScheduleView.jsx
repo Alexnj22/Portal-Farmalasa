@@ -12,6 +12,7 @@ import {
 } from '../../data/employeeSelfService';
 import { updateVacationPlan } from '../../data/vacationPlans';
 import { insertApprovalRequest } from '../../data/requests';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -392,12 +393,11 @@ const EmployeeScheduleView = () => {
 
                         <div>
                             <p className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">Motivo (opcional)</p>
-                            <textarea
+                            <PortalTextarea
                                 value={reqNote}
                                 onChange={e => setReqNote(e.target.value)}
                                 placeholder="Explica el motivo del cambio…"
                                 rows={2}
-                                className="w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all placeholder-content-3 placeholder:font-normal resize-none"
                             />
                         </div>
 

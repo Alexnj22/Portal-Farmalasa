@@ -20,6 +20,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import SearchInput from '../components/common/SearchInput';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
+import PortalTextarea from '../components/common/PortalTextarea';
 
 
 // ============================================================================
@@ -603,7 +604,9 @@ const AnnouncementsView = ({ openModal }) => {
 
                 <div>
                   <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
- <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-warning/40' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
+ <PortalTextarea
+     placeholder="Escribe los detalles de tu anuncio aquí..." value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting}
+ />
                 </div>
 
                 <div className="pt-3 border-t border-border-card">

@@ -22,6 +22,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
+import PortalTextarea from '../components/common/PortalTextarea';
 
 const CREATABLE_TYPES = [
     { key: 'VACATION',     icon: Palmtree },
@@ -717,10 +718,14 @@ const RequestsView = () => {
                             {actionModal.mode === 'reject' ? 'Motivo de rechazo' : 'Nota para el empleado'}
                             {actionModal.mode === 'reject' && <span className="text-danger ml-1">*</span>}
                         </label>
-                        <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
+                        <PortalTextarea
+                            value={actionNote}
+                            onChange={e => setActionNote(e.target.value)}
+                            rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
-                            disabled={isActioning}
- className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:border-brand/40 resize-none transition-all disabled:opacity-50" />
+                            readOnly={isActioning}
+                            textareaClassName="disabled:opacity-50"
+                        />
                         <div className="flex items-center gap-2 mt-4">
                             <Button variant="secondary" disabled={isActioning} onClick={() => !isActioning && setActionModal(null)}>Cancelar</Button>
                             <button onClick={handleConfirmAction}
@@ -817,13 +822,13 @@ const RequestsView = () => {
 
                         <div>
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">Motivo / Descripción <span className="text-danger">*</span></p>
-                            <textarea
+                            <PortalTextarea
                                 value={createNote}
                                 onChange={e => setCreateNote(e.target.value)}
                                 rows={3}
                                 placeholder="Describe la solicitud..."
-                                disabled={isCreatingReq}
- className="w-full px-4 py-3 rounded-3xl border border-border-card bg-surface-card backdrop-blur-md text-body-xl text-content-2 placeholder-content-3 focus:border-brand/40 resize-none transition-all disabled:opacity-50"
+                                readOnly={isCreatingReq}
+                                textareaClassName="disabled:opacity-50"
                             />
                         </div>
 

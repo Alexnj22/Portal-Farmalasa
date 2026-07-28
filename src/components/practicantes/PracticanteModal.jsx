@@ -16,6 +16,7 @@ import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import FileField from '../common/FileField';
+import PortalTextarea from '../common/PortalTextarea';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },
@@ -330,11 +331,10 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
                         <div className="mt-4">
                             <label className={fieldLabel}>Notas</label>
-                            <textarea
+                            <PortalTextarea
                                 value={form.notas}
                                 onChange={(e) => set('notas', e.target.value)}
                                 placeholder="Contexto adicional..."
-                                className={`w-full h-20 resize-none bg-surface-card rounded-2xl border border-divider shadow-sm px-4 py-2.5 text-body-xl font-bold text-content-2 outline-none ${inputHoverClass}`}
                             />
                         </div>
                     </div>

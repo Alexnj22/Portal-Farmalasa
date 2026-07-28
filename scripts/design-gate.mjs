@@ -114,6 +114,7 @@ const EXCEPTIONS = {
   'src/components/common/LiquidDatePicker.jsx': ['native'],
   'src/components/common/RangeDatePicker.jsx': ['native'],
   'src/components/common/TimePicker12.jsx': ['native'],
+  'src/components/common/PortalTextarea.jsx': ['native'],
   'src/components/common/ConfirmModal.jsx': ['native'],
   'src/components/common/AlertModal.jsx': ['native'],
   'src/components/common/PeriodPicker.jsx': ['native'], // fn local `confirm(s,e)`, no window.confirm
@@ -244,6 +245,12 @@ const NATIVE_PATTERNS = [
   { re: /\bwindow\.confirm\s*\(/g, label: 'window.confirm() nativo' },
   { re: /\bwindow\.prompt\s*\(|(?<!\w)prompt\s*\(/g, label: 'prompt() nativo' },
   { re: /<select(\s|>)/g, label: '<select> nativo' },
+  // Agregado 2026-07-27. Era el ÚLTIMO control de formulario nativo del portal
+  // y nadie lo había mirado: 37 `<textarea>` con cuatro radios distintos, en
+  // formularios donde el campo de una línea sí pasaba por `PortalInput`. Ahora
+  // que están todos migrados, la categoría vuelve a cero absoluto y esto lo
+  // deja cerrado — que es la única forma de que no se vuelva a acumular.
+  { re: /<textarea(\s|>)/g, label: '<textarea> nativo — usar PortalTextarea' },
 ];
 // `type="date|time|..."` solo es una violación real si el atributo pertenece
 // a un <input> HTML nativo (tag en minúscula) — el mismo string en un prop de

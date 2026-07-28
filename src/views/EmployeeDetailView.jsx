@@ -28,6 +28,7 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
 import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
+import PortalTextarea from '../components/common/PortalTextarea';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -1164,12 +1165,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         {!isCancelling && (
                             <>
                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 self-start">Motivo de cancelación *</label>
-                                <textarea
+                                <PortalTextarea
                                     value={cancelReason}
                                     onChange={e => setCancelReason(e.target.value)}
                                     placeholder="Explica el motivo de la cancelación..."
                                     rows={3}
- className="w-full bg-surface-card border border-border-card rounded-2xl p-3 text-body-xl text-content-2 resize-none"
                                 />
                             </>
                         )}

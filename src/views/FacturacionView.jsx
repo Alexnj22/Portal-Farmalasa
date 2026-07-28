@@ -21,6 +21,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
 import FileField from '../components/common/FileField';
+import PortalTextarea from '../components/common/PortalTextarea';
 import {
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, updateInvoiceReceivedMh,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
@@ -109,11 +110,13 @@ function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, p
         <tr>
             <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
                 <div className="flex items-start gap-3 max-w-2xl">
-                    <textarea
- className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none"
-                        rows={2} autoFocus
+                    <PortalTextarea
+                        textareaClassName="flex-1"
+                        rows={2}
+                        autoFocus
                         placeholder={placeholder || 'Comentario (opcional)'}
-                        value={comment} onChange={e => setComment(e.target.value)}
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
                     />
                     <div className="flex flex-col gap-2 shrink-0">
                         <Button tone="success" disabled={saving} onClick={onConfirm}>{saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
@@ -514,9 +517,14 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
- <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none"
-                                                                    rows={2} autoFocus placeholder="Comentario opcional…"
-                                                                    value={comment} onChange={e => setComment(e.target.value)} />
+ <PortalTextarea
+     textareaClassName="flex-1"
+     rows={2}
+     autoFocus
+     placeholder="Comentario opcional…"
+     value={comment}
+     onChange={e => setComment(e.target.value)}
+ />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                     <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
@@ -986,10 +994,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
-                                                                <textarea
- className="flex-1 bg-surface-card border border-success/30 rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none"
-                                                                    rows={2} autoFocus placeholder="Comentario opcional…"
-                                                                    value={comment} onChange={e => setComment(e.target.value)}
+                                                                <PortalTextarea
+                                                                    textareaClassName="flex-1"
+                                                                    rows={2}
+                                                                    autoFocus
+                                                                    placeholder="Comentario opcional…"
+                                                                    value={comment}
+                                                                    onChange={e => setComment(e.target.value)}
                                                                 />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
                                                                     <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
@@ -1300,9 +1311,14 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-label font-black text-content-2 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-chart-4-text">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
- <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none"
-                                                                rows={2} autoFocus placeholder="Comentario opcional…"
-                                                                value={comment} onChange={e => setComment(e.target.value)} />
+ <PortalTextarea
+     textareaClassName="flex-1"
+     rows={2}
+     autoFocus
+     placeholder="Comentario opcional…"
+     value={comment}
+     onChange={e => setComment(e.target.value)}
+ />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <Button tone="success" disabled={saving} onClick={() => handleSolveGap(g)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                 <Button variant="destructive" icon={X} onClick={() => { setSolvingGap(null); setComment(''); }}>Cancelar</Button>
@@ -1400,9 +1416,14 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                                                         <p className="font-mono text-label font-black text-content-2 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
- <textarea className="flex-1 bg-surface-card border border-success/30 rounded-lg px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none"
-                                                                rows={2} autoFocus placeholder="Comentario opcional…"
-                                                                value={nullComment} onChange={e => setNullComment(e.target.value)} />
+ <PortalTextarea
+     textareaClassName="flex-1"
+     rows={2}
+     autoFocus
+     placeholder="Comentario opcional…"
+     value={nullComment}
+     onChange={e => setNullComment(e.target.value)}
+ />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
                                                                 <Button tone="success" disabled={nullSaving} onClick={() => handleSolveNull(n)}>{nullSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
                                                                 <Button variant="destructive" icon={X} onClick={() => { setSolvingNull(null); setNullComment(''); }}>Cancelar</Button>
@@ -1767,8 +1788,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                         <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
                                                             <div className="flex items-start gap-3 max-w-3xl">
                                                                 <div className="flex-1 space-y-2">
-                                                                    <textarea
- className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none ${theme.input}`}
+                                                                    <PortalTextarea
                                                                         rows={2} autoFocus
                                                                         placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
                                                                         value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
@@ -1862,8 +1882,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
                                                                     <div className="flex items-start gap-3 max-w-3xl">
                                                                         <div className="flex-1 space-y-2">
-                                                                            <textarea
- className={`w-full bg-surface-card border rounded-xl px-3 py-2 text-body-xl text-content-2 placeholder:text-content-3 resize-none ${theme.input}`}
+                                                                            <PortalTextarea
                                                                                 rows={2} autoFocus
                                                                                 placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
                                                                                 value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}

@@ -11,6 +11,7 @@ import { notifyEmployees } from '../../utils/notify';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 const STATUS_CFG = {
   pending:  { label: 'Pendiente', cls: 'bg-warning/10 text-warning-text border-warning/30' },
@@ -108,9 +109,13 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
       {/* Rechazo con razón */}
       {isPending && rejecting && (
         <div className="flex flex-col gap-2 mt-auto">
-          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} autoFocus
-            placeholder="Motivo del rechazo (opcional)…"
- className="w-full px-3 py-2 rounded-xl border border-divider bg-surface-card text-body-xl text-content-2 placeholder-content-3 focus:border-danger/40 resize-none" />
+          <PortalTextarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows={2}
+              autoFocus
+              placeholder="Motivo del rechazo (opcional)…"
+          />
           <div className="flex items-center gap-2">
             <Button variant="destructive" size="sm" disabled={busy} onClick={() => onReject(r, note.trim() || null)}>{busy ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />} Confirmar rechazo</Button>
             <Button variant="secondary" size="sm" disabled={busy} onClick={() => { setRejecting(false); setNote(''); }}>Cancelar</Button>

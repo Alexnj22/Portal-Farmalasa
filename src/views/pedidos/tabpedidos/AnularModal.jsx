@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Button from '../../../components/common/Button';
 import { Ban, AlertTriangle, Loader2 } from 'lucide-react';
 import PedidoModal from '../PedidoModal';
+import PortalTextarea from '../../../components/common/PortalTextarea';
 
 export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
     const [motivo, setMotivo] = useState('');
@@ -35,12 +36,11 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                             <label className="text-label font-semibold text-content-2 uppercase tracking-wide mb-1.5 block">
                                 Motivo de anulación *
                             </label>
-                            <textarea
+                            <PortalTextarea
                                 value={motivo}
                                 onChange={e => setMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-body-xl border border-divider rounded-xl px-3 py-2 focus:border-danger bg-surface-card resize-none transition-colors text-content-2"
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
                                 <p className="text-caption text-danger mt-1">Mínimo 5 caracteres.</p>

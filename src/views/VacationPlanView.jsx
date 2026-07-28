@@ -15,6 +15,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import { smartFilter } from '../utils/searchUtils';
 import { useSearchToggle } from '../hooks/useSearchToggle';
+import PortalTextarea from '../components/common/PortalTextarea';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -51,7 +52,6 @@ const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -807,12 +807,11 @@ const VacationPlanView = () => {
                                 {/* Notas */}
                                 <div>
                                     <InputLabel>Notas (opcional)</InputLabel>
-                                    <textarea
+                                    <PortalTextarea
                                         value={notes}
                                         onChange={e => setNotes(e.target.value)}
                                         placeholder="Observaciones adicionales…"
                                         rows={2}
-                                        className={`${glassInput} resize-none leading-relaxed`}
                                     />
                                 </div>
 

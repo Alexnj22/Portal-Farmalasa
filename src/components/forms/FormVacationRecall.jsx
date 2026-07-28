@@ -5,6 +5,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidAvatar from '../common/LiquidAvatar';
 import { useStaffStore } from '../../store/staffStore';
 import { formatDate } from '../../utils/helpers';
+import PortalTextarea from '../common/PortalTextarea';
 
 const FormVacationRecall = ({ formData, setFormData }) => {
     const { shifts } = useStaffStore();
@@ -32,7 +33,6 @@ const FormVacationRecall = ({ formData, setFormData }) => {
 
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
- const inputClass = "w-full bg-surface-card border border-divider rounded-2xl px-4 py-2.5 text-body-xl font-semibold text-content-2 focus:border-brand/50 resize-none";
     const labelClass = "text-caption font-black uppercase tracking-widest text-content-3 mb-1.5 block";
 
     return (
@@ -99,9 +99,8 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             {/* Motivo */}
             <div>
                 <label className={labelClass}>Motivo / Autorización</label>
-                <textarea
+                <PortalTextarea
                     rows={3}
-                    className={inputClass}
                     placeholder="Ej: Urgencia operativa, cobertura de sucursal, evento especial..."
                     value={formData?.recall_reason || ''}
                     onChange={e => set('recall_reason', e.target.value)}

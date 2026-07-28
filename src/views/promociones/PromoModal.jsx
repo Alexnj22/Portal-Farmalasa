@@ -12,6 +12,7 @@ import { useAuth }       from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import LiquidSelect      from '../../components/common/LiquidSelect';
 import LiquidDatePicker  from '../../components/common/LiquidDatePicker';
+import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     searchActiveProductsByName, fetchProductPreciosForPromo, fetchSalesBranches,
     insertPromotion, insertPromotionBranches, insertPromotionProducts,
@@ -111,8 +112,7 @@ function StepInfo({ form, set, branches }) {
 
             <div>
                 <label className={lbl}>Notas internas</label>
-                <textarea
-                    className={`${inp} h-16 resize-none`}
+                <PortalTextarea
                     value={form.notas}
                     onChange={e => set('notas', e.target.value)}
                     placeholder="Contexto adicional, condiciones del laboratorio, etc."

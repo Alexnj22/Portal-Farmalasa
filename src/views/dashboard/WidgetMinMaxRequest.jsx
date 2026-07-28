@@ -15,6 +15,7 @@ import {
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMax } from '../../data/stockParams';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
 function dominantPres(pres) {
@@ -204,9 +205,12 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         {/* Motivo */}
         <div className="flex flex-col gap-1.5">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
-          <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
-            placeholder="¿Por qué este ajuste? (opcional)"
- className="w-full px-3.5 py-2.5 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 focus:border-brand resize-none" />
+          <PortalTextarea
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              rows={2}
+              placeholder="¿Por qué este ajuste? (opcional)"
+          />
         </div>
 
         {err && <p className="text-label text-danger-text font-semibold px-1">{err}</p>}

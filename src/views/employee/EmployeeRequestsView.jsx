@@ -22,6 +22,7 @@ import {
 } from '../../data/employeeSelfService';
 import { updateApprovalRequest } from '../../data/requests';
 import FileField from '../../components/common/FileField';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -1140,12 +1141,11 @@ const EmployeeRequestsView = () => {
                                 <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                     Motivo / Descripción <span className="text-danger">*</span>
                                 </label>
-                                <textarea
+                                <PortalTextarea
                                     value={formNote}
                                     onChange={e => { setFormNote(e.target.value); if (error) setError(''); }}
                                     rows={4}
                                     placeholder="Describe tu solicitud..."
-                                    className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-medium text-content-2 resize-none h-24 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal leading-relaxed ${error && !formNote.trim() ? 'border-warning/40' : ''}`}
                                     disabled={isSubmitting}
                                 />
                             </div>

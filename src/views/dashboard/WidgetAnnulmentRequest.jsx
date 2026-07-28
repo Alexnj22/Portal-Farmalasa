@@ -18,6 +18,7 @@ import { notifyEmployees } from '../../utils/notify';
 import { insertApprovalRequestSilent } from '../../data/requests';
 import { fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth } from '../../data/facturacion';
 import { searchCustomersByTokens } from '../../data/customers';
+import PortalTextarea from '../../components/common/PortalTextarea';
 
 const GRACE_DAYS = 3;
 
@@ -424,11 +425,9 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">
             Comentarios {commentRequired && <span className="text-danger-text">*</span>}
           </label>
-          <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
-            placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
- className={`w-full px-3.5 py-2 rounded-2xl border bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 transition-all resize-none ${
- commentRequired && !comment.trim() ? 'border-danger/40 focus:border-danger' : 'border-divider focus:border-brand'
-            }`}
+          <PortalTextarea
+              value={comment} onChange={e => setComment(e.target.value)} rows={3}
+              placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
@@ -513,9 +512,11 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
 
         <div className="flex flex-col gap-1">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
-          <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
-            placeholder="Explica el motivo del cambio..."
- className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 focus:border-brand transition-all resize-none"
+          <PortalTextarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={2}
+              placeholder="Explica el motivo del cambio..."
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
@@ -629,9 +630,11 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
         <div className="flex flex-col gap-1">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
-          <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
-            placeholder="Explica por qué se debe reasignar esta venta..."
- className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 focus:border-brand transition-all resize-none"
+          <PortalTextarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={2}
+              placeholder="Explica por qué se debe reasignar esta venta..."
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
@@ -787,9 +790,11 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
         <div className="flex flex-col gap-1">
           <label className="text-caption font-black text-content-3 uppercase tracking-widest px-1">Motivo</label>
-          <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
-            placeholder="Explica por qué se debe cambiar el cliente..."
- className="w-full px-3.5 py-2 rounded-2xl border border-divider bg-surface-card text-body-xl font-medium text-content-2 placeholder-content-3 focus:border-brand transition-all resize-none"
+          <PortalTextarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              rows={2}
+              placeholder="Explica por qué se debe cambiar el cliente..."
           />
         </div>
         {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}

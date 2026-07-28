@@ -287,7 +287,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                 {multiLot ? (
                   <div
                     className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
-                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-card)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                    style={{ background: 'var(--surface-card)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
                     onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
                     <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-surface-card transition-colors">
@@ -317,7 +317,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                 ) : (
                   <button
                     className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-surface-card transition-colors group text-left"
-                    style={{ background: 'var(--surface-card-hover)', border: '1px solid var(--border-card)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                    style={{ background: 'var(--surface-card-hover)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
                     onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                   >
                     {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}
@@ -540,7 +540,7 @@ export default function WidgetInventorySearch() {
                   <div
                     className="rounded-xl overflow-hidden backdrop-blur-sm shadow-sm"
                     style={{
-                      background: branch.isVencidos ? 'var(--danger-soft, rgba(240,68,56,.08))' : 'var(--surface-card-hover)',
+                      background: branch.isVencidos ? 'color-mix(in srgb, var(--danger) 8%, transparent)' : 'var(--surface-card-hover)',
                       border: branch.isVencidos ? '1px solid var(--danger)' : '1px solid var(--border-card)',
                     }}
                   >
@@ -643,7 +643,7 @@ export default function WidgetInventorySearch() {
                   <div
                     key={`${prod.descripcion}||${prod.presentacion}`}
                     className="flex items-center gap-2 px-2.5 py-2.5 rounded-xl text-left"
-                    style={{ background: 'var(--danger-soft, rgba(240,68,56,.08))', border: '1px solid var(--danger)', boxShadow: '0 2px 8px rgba(225,29,72,0.05)', animationDelay: `${pi * 25}ms` }}
+                    style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid var(--danger)', boxShadow: 'var(--shadow-elevation-xs)', animationDelay: `${pi * 25}ms` }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-label font-bold text-content-2 truncate leading-tight">{prod.descripcion}</p>

@@ -157,7 +157,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             {/* ── Oportunidades de traslado ── */}
             {!loading && transferOps.length > 0 && (
                 <div className="rounded-2xl border border-warning/30 bg-warning/10 backdrop-blur-sm p-4 flex flex-col gap-3"
-                    style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+                    style={{ boxShadow: 'var(--shadow-glass-1)' }}>
                     <div className="flex items-center gap-2">
                         <span className="text-micro font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>
                         <span className="text-micro text-warning font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>

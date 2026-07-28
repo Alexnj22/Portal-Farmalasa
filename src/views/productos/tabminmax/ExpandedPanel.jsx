@@ -112,7 +112,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
     }, [branchData, row._erp_sucursal_id, pedir]);
 
     const glassSection = {
-        borderTop: '1px solid rgba(255,255,255,0.50)',
+        // Era `rgba(255,255,255,.50)`: un divisor BLANCO fijo, invisible
+        // sobre tema claro y una raya luminosa sobre los oscuros.
+        borderTop: '1px solid var(--border-card)',
     };
 
     return (
@@ -261,7 +263,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
 
             {/* ── Traslado sugerido ── */}
             {transferSuggestions.length > 0 && (
-                <div className="px-4 py-2.5 flex flex-col gap-1.5" style={{ borderTop: '1px solid rgba(251,191,36,0.3)', background: 'rgba(255,251,235,0.40)' }}>
+                <div className="px-4 py-2.5 flex flex-col gap-1.5" // Amarillo y naranja quemados: en tema oscuro estos avisos quedaban
+                        // en un beige claro. Los tokens de estado ya llevan su tinte.
+                        style={{ borderTop: '1px solid color-mix(in srgb, var(--warning) 30%, transparent)', background: 'color-mix(in srgb, var(--warning) 8%, transparent)' }}>
                     <span className="text-micro font-black uppercase tracking-widest text-warning">Traslado sugerido</span>
                     <div className="flex flex-wrap gap-2">
                         {transferSuggestions.map(s => (
@@ -297,7 +301,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                 <>
                     {/* ── Vencimientos próximos (60 días) ── */}
                     {expiryData.length > 0 && (
-                        <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(251,146,60,0.25)', background: 'rgba(255,247,237,0.35)' }}>
+                        <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--chart-4) 25%, transparent)', background: 'color-mix(in srgb, var(--chart-4) 7%, transparent)' }}>
                             <div className="flex items-center justify-between flex-wrap gap-1.5">
                                 <span className="text-micro font-black uppercase tracking-widest text-chart-4-text">Vencimientos próximos (60 días)</span>
                                 {policyData && (
@@ -354,7 +358,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 /* Bodega: 3 columnas — compras + ventas red + MIN·MAX por sucursal */
                                 <div className="grid grid-cols-3">
                                     {/* Compras */}
-                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Últimas compras (Bodega)</span>
                                         {!canSeeCosts
                                             ? <span className="text-caption text-content-3 italic">Sin permiso para ver costos de compra</span>
@@ -380,7 +384,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                         }
                                     </div>
                                     {/* Ventas — todas las sucursales con badge */}
-                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
                                         <span className="text-micro font-black uppercase tracking-widest text-success">Últimas ventas</span>
                                         {!canSeeCosts
                                             ? <span className="text-caption text-content-3 italic">Sin permiso para ver costos de compra</span>
@@ -452,9 +456,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 </div>
                             ) : (
                                 /* Sucursales: 2 columnas — compras + ventas de la sucursal */
-                                <div className="grid grid-cols-2" style={{ divideX: '1px solid rgba(255,255,255,0.50)' }}>
+                                <div className="grid grid-cols-2" style={{ divideX: '1px solid var(--border-card)' }}>
                                     {/* Compras */}
-                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Últimas compras (Bodega)</span>
                                         {!canSeeCosts
                                             ? <span className="text-caption text-content-3 italic">Sin permiso para ver costos de compra</span>
@@ -516,7 +520,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         <div style={glassSection}>
                             <div className="grid grid-cols-2">
                                 {/* Proyección de stock */}
-                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid var(--border-card)' }}>
                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Proyección de stock</span>
                                     {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) ? (
                                         <div className="flex items-center gap-6 flex-wrap">

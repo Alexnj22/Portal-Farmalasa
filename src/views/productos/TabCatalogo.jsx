@@ -639,7 +639,7 @@ function PhotoLightbox({ src, onClose }) {
     return createPortal(
         <div
             className="fixed inset-0 z-flyout flex items-center justify-center"
-            style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'rgba(0,0,0,0.65)' }}
+            style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'var(--scrim)' }}
             onClick={onClose}>
             <div
                 className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-xl)] ring-1 ring-[var(--border-card)]"

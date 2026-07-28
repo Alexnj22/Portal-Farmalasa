@@ -1537,7 +1537,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {/* ── Photo zoom overlay ── */}
             {zoomPhoto && createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center"
-                    style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+                    style={{ background: 'var(--scrim)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
                     onClick={() => setZoomPhoto(null)}>
                     <motion.img
                         src={zoomPhoto}

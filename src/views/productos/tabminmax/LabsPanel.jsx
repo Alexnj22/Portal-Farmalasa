@@ -79,7 +79,7 @@ export default function LabsPanel({ onClose, onChanged }) {
         divider:{ borderColor: 'var(--divider)' },
         search: { background: 'var(--surface-input)', backdropFilter: 'blur(8px)', border: '1px solid var(--border-input)', boxShadow: 'var(--shadow-shine)' },
         row:    { background: 'var(--surface-card)', border: '1px solid var(--divider)' },
-        rowOff: { background: 'rgba(254,242,242,0.6)',  border: '1px solid rgba(252,165,165,0.4)' },
+        rowOff: { background: 'color-mix(in srgb, var(--danger) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 25%, transparent)' },
         footer: { background: 'var(--surface-card)', border: '1px solid var(--divider)' },
     };
 

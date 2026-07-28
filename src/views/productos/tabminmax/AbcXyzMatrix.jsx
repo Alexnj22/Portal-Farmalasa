@@ -60,7 +60,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
         `py-1 px-2 rounded-md text-caption font-black text-center
          transition-[background-color,box-shadow,color] duration-75
          ${active
-             ? 'text-brand-text bg-[rgba(0,82,204,0.11)] shadow-[var(--shadow-glass-1)]'
+             ? 'text-brand-text bg-brand/[0.11] shadow-[var(--shadow-glass-1)]'
              : 'text-content-3 hover:text-content-2 hover:bg-surface-card'}`;
 
     return (
@@ -109,14 +109,18 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                                         ${isActive ? 'z-base' : ''}`}
                                     style={{
                                         background: isActive
-                                            ? `rgba(0,82,204,${Math.min(0.22, intensity + 0.10)})`
-                                            : count > 0 ? `rgba(0,82,204,${intensity})` : 'rgba(0,0,0,0.02)',
+                                            // La intensidad de cada celda sale del token de marca,
+                                            // no del azul quemado: `color-mix` mantiene la escala y
+                                            // sigue al tema.
+                                            ? `color-mix(in srgb, var(--brand) ${Math.round(Math.min(0.22, intensity + 0.10) * 100)}%, transparent)`
+                                            : count > 0 ? `color-mix(in srgb, var(--brand) ${Math.round(intensity * 100)}%, transparent)`
+                                                        : 'var(--surface-card-hover)',
                                         backdropFilter: isActive ? 'blur(10px) saturate(180%)' : undefined,
                                         WebkitBackdropFilter: isActive ? 'blur(10px) saturate(180%)' : undefined,
                                         boxShadow: isActive
-                                            ? '0 4px 14px rgba(0,82,204,0.24), inset 0 1px 0 rgba(255,255,255,0.85)'
-                                            : count > 0 ? '0 1px 4px rgba(0,82,204,0.07)' : undefined,
-                                        outline: isActive ? '1.5px solid rgba(0,82,204,0.55)' : undefined,
+                                            ? 'var(--shadow-glow-brand-md)'
+                                            : count > 0 ? 'var(--shadow-elevation-xs)' : undefined,
+                                        outline: isActive ? '1.5px solid var(--brand)' : undefined,
                                         outlineOffset: isActive ? '1.5px' : undefined,
                                     }}
                                     disabled={count === 0}>

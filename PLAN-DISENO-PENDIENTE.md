@@ -1473,13 +1473,26 @@ para la misma fila; React lo avisa en consola. Se arregla con la anatomía de
 `ListRow` + `trailing`, que es familia B de D3.3 — no de rebote mientras se
 migra la barra de filtros.
 
-## D3.8 — el baseline, de 5 categorías a 1 (v2.101.1 → v2.103.0)
+## D3.8 · ✓ CERRADA — el baseline del gate en CERO (v2.101.1 → v2.104.0)
+
+**`scripts/design-gate-baseline.json` quedó vacío.** Las once categorías son
+cero absoluto y bloqueante: un hallazgo nuevo lo frena el gate, no la memoria
+de alguien.
 
 | categoría | antes | ahora |
 |---|---|---|
+| `inline-color` | 58 | **0 · bloqueante** |
 | `shadow-literal` | 28 | **0 · bloqueante** |
 | `motion` | 5 | **0 · bloqueante** |
-| `inline-color` | 58 | 37 |
+
+### La conclusión de las tres
+
+Ninguna era deuda de estilo. **Las tres eran código fuera del sistema
+escondido donde el barrido de clases no llega** — en `style` inline, en una
+librería de animación, en un `rgba` dentro de una cadena de configuración. El
+gate no las reportaba porque fueran feas: las reportaba porque eran el único
+rastro visible de superficies que no seguían el tema y animaciones que no
+pasaban por sus gates.
 
 ### Ninguna de las tres era deuda de estilo
 
@@ -1537,6 +1550,19 @@ Y de rebote lo agarró `gate:doc`: `DESIGN.md` **enseñaba** dos sombras
 literales en su ejemplo del squircle de ícono — invisibles mientras la
 categoría tenía baseline, imposibles de ignorar con ella en cero. Es
 exactamente para lo que existe ese gate.
+
+### El último grupo de `inline-color`, y el más revelador
+
+| | |
+|---|---|
+| 18 | divisores `rgba(255,255,255,.50)` —blancos fijos: invisibles en claro, una raya luminosa en oscuro—, fondos de aviso en amarillo/naranja quemados y la escala de intensidad de la matriz ABC×XYZ en azul literal. Todo a `color-mix()` sobre el token: mantiene la escala **y** sigue al tema |
+| 10 | brillos interiores `inset 0 1px 0 rgba(255,255,255,.9)` → `--shadow-glass-1` |
+| 2 | scrims de modal `rgba(0,0,0,.45)` y `.65` → `--scrim`, que ya existía |
+| **3** | **código muerto**: el fallback de `var(--state-selected-overlay, rgba(0,82,204,.08))` en `LiquidDatePicker`. El token está definido en `:root`, así que el fallback **nunca se usaba** — y era exactamente el `rgba` que el token vino a reemplazar. Falseaba el barrido sin pintar nada. |
+
+Ese último es el más instructivo: un `var(--token, fallback)` donde el token
+existe deja el valor viejo escrito para siempre, invisible para el navegador y
+visible para cualquier auditoría, que lo cuenta como deuda real.
 
 ## D3.5 — `StatCard` · ✓ RESUELTA (v2.101.0): se adopta
 

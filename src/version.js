@@ -5,7 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.103.0';
+export const APP_VERSION = '2.104.0';
+
+// v2.104.0 — D3.8 CERRADA: el baseline del gate en CERO. Las 11 categorias
+// quedan bloqueantes.
+//
+// `inline-color` de 37 a 0. Y como con las otras dos, casi ninguno era deuda
+// de estilo — era **codigo que no seguia el tema**, escondido en `style`
+// inline donde el barrido de clases no llega:
+//
+//   18  Min/Max: divisores `rgba(255,255,255,.50)` (blancos fijos: invisibles
+//       en claro, una raya luminosa en oscuro), los dos fondos de aviso en
+//       amarillo y naranja quemados, y la escala de intensidad de la matriz
+//       ABC×XYZ en azul literal. Todo a `color-mix()` sobre el token, que
+//       mantiene la escala Y sigue al tema.
+//   10  brillos interiores `inset 0 1px 0 rgba(255,255,255,.9)` — blanco fijo
+//       otra vez— y sombras sueltas → `--shadow-glass-1` / `--shadow-elevation-*`.
+//    2  scrims de modal `rgba(0,0,0,.45)` y `.65` → `--scrim`, que ya existia.
+//    3  el fallback de `var(--state-selected-overlay, rgba(0,82,204,.08))` en
+//       LiquidDatePicker: **codigo muerto**. El token esta definido en `:root`,
+//       asi que el fallback nunca se usaba — y era exactamente el rgba que el
+//       token vino a reemplazar. Falseaba el barrido sin pintar nada.
+//
+// Verificado: 0 superficies casi-blancas en `dark` y `solid-dark` donde antes
+// estaban todas, y las 5 rutas tocadas sin errores.
+//
+// Con esto el gate deja de tener baseline. Las once categorias son cero
+// absoluto y bloqueante: cualquier hallazgo nuevo lo frena el gate, no la
+// memoria de alguien.
 
 // v2.103.0 — D3.8: `motion` de 5 a CERO. Los cinco eran @keyframes disfrazados.
 //

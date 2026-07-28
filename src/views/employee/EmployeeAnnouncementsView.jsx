@@ -391,8 +391,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 inset: 0,
                                 borderRadius: '2.5rem',
                                 background: 'white',
-                                border: '1px solid rgba(203,213,225,0.65)',
-                                boxShadow: `0 ${4 + idx * 3}px ${20 + idx * 8}px rgba(0,0,0,${0.04 + idx * 0.015})`,
+                                border: '1px solid var(--border-card)',
+                                boxShadow: idx === 0 ? 'var(--shadow-elevation-sm)' : idx === 1 ? 'var(--shadow-elevation-md)' : 'var(--shadow-elevation-lg)',
                                 opacity: exiting ? 0 : cfg.opacity,
                                 transform: `translateY(${cfg.dy}px) rotate(${cfg.rot}deg) scale(${cfg.scale})`,
                                 transition: exiting

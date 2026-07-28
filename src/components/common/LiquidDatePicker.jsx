@@ -398,12 +398,15 @@ const LiquidDatePicker = ({
                                 // 🚨 DETECCIÓN DE ASUETO
                                 const holiday = getHolidayInfo(day, currentMonth, currentYear);
 
+                                // El fallback del `var()` era el mismo rgba que el token
+                                // vino a reemplazar: nunca se usaba (el token está
+                                // definido en `:root`) y falseaba el barrido de color.
                                 let wrapperStyle = {};
                                 if (inBetween) {
-                                    wrapperStyle.backgroundColor = 'var(--state-selected-overlay, rgba(0,82,204,.08))';
+                                    wrapperStyle.backgroundColor = 'var(--state-selected-overlay)';
                                 } else if (drawStart && drawEnd && drawStart.getTime() !== drawEnd.getTime()) {
-                                    if (isStartBoundary) wrapperStyle.background = 'linear-gradient(90deg, transparent 50%, var(--state-selected-overlay, rgba(0,82,204,.08)) 50%)';
-                                    if (isEndBoundary) wrapperStyle.background = 'linear-gradient(90deg, var(--state-selected-overlay, rgba(0,82,204,.08)) 50%, transparent 50%)';
+                                    if (isStartBoundary) wrapperStyle.background = 'linear-gradient(90deg, transparent 50%, var(--state-selected-overlay) 50%)';
+                                    if (isEndBoundary) wrapperStyle.background = 'linear-gradient(90deg, var(--state-selected-overlay) 50%, transparent 50%)';
                                 }
 
                                 // 🎨 APLICACIÓN DE ESTILOS (Prioridad: Seleccionado > Rango > Asueto)

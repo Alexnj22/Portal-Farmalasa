@@ -1089,7 +1089,7 @@ const EmployeeRequestsView = () => {
                                         return (
                                             <Button
                                                 variant="secondary"
-                                                tone={REQUEST_TYPES[formType]?.color.match(/bg-(chart-\d)/)?.[1] ?? 'brand'}
+                                                tone={REQUEST_TYPES[formType]?.variante ?? 'brand'}
                                                 soft
                                                 size="lg"
                                                 className="w-full justify-start"
@@ -1127,7 +1127,7 @@ const EmployeeRequestsView = () => {
                                                 value: key,
                                                 label,
                                                 icon,
-                                                tone: REQUEST_TYPES[key]?.color.match(/bg-(chart-\d)/)?.[1] ?? 'brand',
+                                                tone: REQUEST_TYPES[key]?.variante ?? 'brand',
                                             }))}
                                         />
                                     </>

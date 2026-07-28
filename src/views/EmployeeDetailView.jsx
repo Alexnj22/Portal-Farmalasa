@@ -593,34 +593,44 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             {timeline.length > 0 ? timeline.map((ev, idx) => {
                                                 const label = ev.category || EVENT_TYPES[ev.type]?.label || ev.type;
                                                 const isHiring = ev.type === 'HIRE' || ev.type === 'HIRING';
-                                                let evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider' };
-
-                                                // Tokenizado T7 — mismo criterio en toda la app: hitos claramente
-                                                // buenos/malos usan success/warning/danger; el resto (transferencias,
-                                                // categorías de puesto, etc.) es categórico puro sin severidad, mapeado
-                                                // a los mismos chart-N que EmployeeProfileView.jsx para el tipo compartido.
-                                                if (isHiring) {
-                                                    evTheme = { label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' };
-                                                } else if (ev.type === 'ROSTER_PUBLISHED') {
-                                                    evTheme = { label, bg: 'bg-surface-card-hover', text: 'text-content-3', border: 'border-border-card' };
-                                                } else if (ev.type === 'EMPLEADO_ASIGNADO' || ev.type === 'REASSIGNMENT') {
-                                                    evTheme = { label, bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' };
-                                                } else if (ev.type === 'EMPLEADO_RELEVADO') {
-                                                    evTheme = { label, bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30' };
-                                                } else if (ev.type === 'EMPLEADO_DESVINCULADO_SUCURSAL' || ev.type === 'UNASSIGNED') {
-                                                    evTheme = { label, bg: 'bg-danger/10', text: 'text-danger-text', border: 'border-danger/30' };
-                                                } else if (EVENT_TYPES[ev.type]) {
-                                                    if (ev.type.includes('TRANSFER'))   evTheme = { label, bg: 'bg-chart-1/10',   text: 'text-chart-1-text',   border: 'border-chart-1/30' };
-                                                    else if (ev.type.includes('PROMOTION')) evTheme = { label, bg: 'bg-success/10',  text: 'text-success-text',  border: 'border-success/30' };
-                                                    else if (ev.type.includes('SALARY'))    evTheme = { label, bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' };
-                                                    else if (ev.type.includes('TERMINATION')) evTheme = { label, bg: 'bg-danger/10', text: 'text-danger-text',   border: 'border-danger/30' };
-                                                    else if (ev.type === 'REHIRE')          evTheme = { label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' };
-                                                    else if (ev.type === 'VACATION_RECALL') evTheme = { label, bg: 'bg-warning/10', text: 'text-warning-text',  border: 'border-warning/30' };
-                                                    else if (ev.type === 'DISABILITY')      evTheme = { label, bg: 'bg-danger/10',   text: 'text-danger-text',   border: 'border-danger/30' };
-                                                    else if (ev.type === 'VACATION')        evTheme = { label, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' };
-                                                    else if (ev.type === 'PERMIT')          evTheme = { label, bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' };
-                                                    else if (ev.type === 'SUPPORT')         evTheme = { label, bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30' };
-                                                    else if (ev.type === 'INDUCTION')       evTheme = { label, bg: 'bg-chart-9/10',  text: 'text-chart-9-text',  border: 'border-chart-9/30' };
+                                                // Era una cascada de QUINCE ramas, cada una escribiendo
+                                                // `bg-X/10 text-X-text border-X/30` a mano — la paleta SOFT de
+                                                // `Badge` copiada quince veces. Ahora es una tabla que devuelve
+                                                // el NOMBRE de la variante y el color lo pone el canónico.
+                                                // Mismo cambio que `SUC_COLORS` en TabSinVenta (v2.114.0).
+                                                //
+                                                // El criterio no cambia (T7): los hitos claramente buenos o malos
+                                                // usan success/warning/danger; el resto —transferencias,
+                                                // categorías de puesto— es categórico puro sin severidad, con los
+                                                // mismos chart-N que usa EmployeeProfileView.
+                                                const VARIANTE_EVENTO = {
+                                                    ROSTER_PUBLISHED:               'neutral',
+                                                    EMPLEADO_ASIGNADO:              'chart-1',
+                                                    REASSIGNMENT:                   'chart-1',
+                                                    EMPLEADO_RELEVADO:              'warning',
+                                                    EMPLEADO_DESVINCULADO_SUCURSAL: 'danger',
+                                                    UNASSIGNED:                     'danger',
+                                                    REHIRE:                         'success',
+                                                    VACATION_RECALL:                'warning',
+                                                    DISABILITY:                     'danger',
+                                                    VACATION:                       'success',
+                                                    PERMIT:                         'chart-2',
+                                                    SUPPORT:                        'chart-4',
+                                                    INDUCTION:                      'chart-9',
+                                                };
+                                                // Los que se identifican por SUBCADENA y no por igualdad.
+                                                const VARIANTE_POR_PARTE = [
+                                                    ['TRANSFER',    'chart-1'],
+                                                    ['PROMOTION',   'success'],
+                                                    ['SALARY',      'chart-6'],
+                                                    ['TERMINATION', 'danger'],
+                                                ];
+                                                let evVariante = 'neutral';
+                                                if (isHiring) evVariante = 'success';
+                                                else if (VARIANTE_EVENTO[ev.type]) evVariante = VARIANTE_EVENTO[ev.type];
+                                                else if (EVENT_TYPES[ev.type]) {
+                                                    const parte = VARIANTE_POR_PARTE.find(([k]) => ev.type.includes(k));
+                                                    if (parte) evVariante = parte[1];
                                                 }
 
                                                 return (
@@ -629,9 +639,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         
                                                         <div className={`bg-surface-card hover:bg-surface-card rounded-3xl p-5 border border-border-card transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-xs)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-micro font-black uppercase tracking-widest border shadow-sm ${evTheme.bg} ${evTheme.text} ${evTheme.border}`}>
-                                                                    {evTheme.label}
-                                                                </span>
+                                                                <Badge variant={evVariante} size="sm">{label}</Badge>
                                                                 <Badge>{formatDate(ev.date)}</Badge>
                                                             </div>
                                                             
@@ -867,12 +875,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     const isInsuranceDays = isDisability && daysNum > 3;
 
                                                     const cfg = isDisability
-                                                        ? { bg: 'bg-danger/10',    border: 'border-danger/30',    text: 'text-danger-text',    badge: 'bg-danger/10 text-danger-text border-danger/30',       leftBorder: 'border-danger/40',    Icon: Stethoscope, label: 'Incapacidad',
+                                                        ? { bg: 'bg-danger/10',    border: 'border-danger/30',    text: 'text-danger-text',    variante: 'danger',       leftBorder: 'border-danger/40',    Icon: Stethoscope, label: 'Incapacidad',
                                                             hover: 'hover:bg-danger/10 hover:border-danger/40 hover:shadow-[var(--shadow-glow-danger)]' }
                                                         : hasHours
-                                                        ? { bg: 'bg-chart-4/10', border: 'border-chart-4/30', text: 'text-chart-4-text', badge: 'bg-chart-4/10 text-chart-4-text border-chart-4/30', leftBorder: 'border-chart-4/40', Icon: Clock,       label: 'Permiso por Horas',
+                                                        ? { bg: 'bg-chart-4/10', border: 'border-chart-4/30', text: 'text-chart-4-text', variante: 'chart-4', leftBorder: 'border-chart-4/40', Icon: Clock,       label: 'Permiso por Horas',
                                                             hover: 'hover:bg-chart-4/10 hover:border-chart-4/40 hover:shadow-[var(--shadow-glow-chart-4)]' }
-                                                        : { bg: 'bg-warning/10',  border: 'border-warning/30',  text: 'text-warning-text',  badge: 'bg-warning/10 text-warning-text border-warning/30',  leftBorder: 'border-warning/40',  Icon: FileText,    label: 'Permiso',
+                                                        : { bg: 'bg-warning/10',  border: 'border-warning/30',  text: 'text-warning-text',  variante: 'warning',  leftBorder: 'border-warning/40',  Icon: FileText,    label: 'Permiso',
                                                             hover: 'hover:bg-warning/10 hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)]' };
 
                                                     return (
@@ -891,9 +899,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 </div>
                                                                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                                                                     {daysNum > 0 && (
-                                                                        <span className={`text-caption font-black px-2.5 py-1 rounded-full border ${cfg.badge}`}>
+                                                                        <Badge variant={cfg.variante} uppercase={false}>
                                                                             {daysNum} día{daysNum !== 1 ? 's' : ''}
-                                                                        </span>
+                                                                        </Badge>
                                                                     )}
                                                                     {hasHours && (
                                                                         <span className={`text-caption font-black px-2.5 py-1 rounded-full border ${cfg.badge}`}>
@@ -913,7 +921,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             {meta.permissionDates?.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1.5">
                                                                     {meta.permissionDates.map((d, i) => (
-                                                                        <span key={i} className={`text-caption font-bold px-2.5 py-0.5 rounded-full border ${cfg.badge}`}>{formatDate(d)}</span>
+                                                                        <Badge key={i} variant={cfg.variante} size="sm" uppercase={false}>{formatDate(d)}</Badge>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -1008,7 +1016,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     </div>
                                                                 ) : (
                                                                     <div className="flex-1">
-                                                                        <span className="text-label font-black text-content-2 uppercase tracking-widest bg-surface-card-hover/50 px-3 py-1.5 rounded-xl">Día Libre / Descanso</span>
+                                                                        <Badge>Día Libre / Descanso</Badge>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1062,10 +1070,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                                    <span className={`text-caption font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${typeConf.color} ${typeConf.border}`}>{typeConf.label}</span>
-                                                                    <span className={`flex items-center gap-1 text-caption font-bold px-2 py-0.5 rounded-md border ${statConf.color} ${statConf.border}`}>
-                                                                        <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />{statConf.label}
-                                                                    </span>
+                                                                    <Badge variant={typeConf.variante} size="sm">{typeConf.label}</Badge>
+                                                                    <Badge variant={statConf.variante} size="sm" dot>{statConf.label}</Badge>
                                                                 </div>
                                                                 {req.note && <p className="text-body-sm text-content-2 line-clamp-2">{req.note}</p>}
                                                                 {req.approver_note && <p className="text-label text-content-3 mt-1 italic">Nota: {req.approver_note}</p>}

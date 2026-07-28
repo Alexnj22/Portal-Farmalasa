@@ -16,7 +16,28 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.130.0';
+export const APP_VERSION = '2.131.0';
+
+// v2.131.0 — D3.5 arranca: la paleta del canonico escrita QUINCE veces.
+//
+// `EmployeeDetailView` tenia una cascada de quince ramas para el color del
+// chip de cada evento del historial, y cada rama escribia
+// `bg-X/10 text-X-text border-X/30` a mano. Es la paleta SOFT de `Badge`
+// copiada quince veces. Ahora es una tabla que devuelve el NOMBRE de la
+// variante y el color lo pone el canonico — mismo cambio que `SUC_COLORS`
+// en TabSinVenta.
+//
+// El criterio de T7 no cambia: los hitos claramente buenos o malos usan
+// success/warning/danger; el resto —transferencias, categorias de puesto— es
+// categorico puro sin severidad.
+//
+// ── Y el dato que faltaba, en la fuente ──────────────────────────────────
+// `REQUEST_TYPES` y `REQUEST_STATUS` (requestsSlice) ahora llevan `variante`.
+// Sin eso, cada vista sacaba el `chart-N` con un REGEX sobre la clase de
+// Tailwind — que es adivinar el dato en vez de tenerlo. Yo mismo escribi ese
+// regex ayer en EmployeeRequestsView; se va con esto.
+//
+// Chips a mano: 101 → 96.
 
 // v2.130.0 — D3.3 CERRADA. Los ultimos nueve, y por que seis no se tocan.
 //

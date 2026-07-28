@@ -20,27 +20,32 @@ import { upsertWeeklyRoster } from '../../data/system';
 // entre tipos de solicitud. chart-1..9 asignados por hue más cercano al
 // crudo original; 3 pares reusan token (mismo criterio que el crudo
 // original, que ya repetía 'purple' entre PERMIT/VENDOR_CHANGE_REQUEST).
+// `variante` es el nombre de la variante de `Badge`/`SegmentedControl`; el
+// `color`/`border` de al lado es la MISMA paleta escrita a mano y queda solo
+// para los sitios que aún no migraron. Se agregó el 2026-07-28 al migrar los
+// chips (D3.5): sin él, cada vista sacaba el `chart-N` con un regex sobre la
+// clase de Tailwind — que es adivinar el dato en vez de tenerlo.
 export const REQUEST_TYPES = {
-    VACATION:     { label: 'Vacaciones',         color: 'bg-chart-7/10 text-chart-7-text', border: 'border-chart-7/30' },
-    PERMIT:       { label: 'Permiso / Licencia', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30' },
-    SHIFT_CHANGE: { label: 'Cambio de Turno',    color: 'bg-chart-5/10 text-chart-5-text', border: 'border-chart-5/30' },
-    OVERTIME:     { label: 'Horas Extra',        color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30' },
-    ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-chart-2/10 text-chart-2-text', border: 'border-chart-2/30' },
-    CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30' },
-    DISABILITY:             { label: 'Incapacidad',             color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30' },
-    SHIFT_EXCEPTION:        { label: 'Excepción Turno (Kiosk)', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30' },
-    ANNULMENT_REQUEST:      { label: 'Anulación de Factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30' },
-    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-chart-5/10 text-chart-5-text', border: 'border-chart-5/30' },
-    VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30' },
-    CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30' },
+    VACATION:     { label: 'Vacaciones',         color: 'bg-chart-7/10 text-chart-7-text', border: 'border-chart-7/30', variante: 'chart-7' },
+    PERMIT:       { label: 'Permiso / Licencia', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    SHIFT_CHANGE: { label: 'Cambio de Turno',    color: 'bg-chart-5/10 text-chart-5-text', border: 'border-chart-5/30', variante: 'chart-5' },
+    OVERTIME:     { label: 'Horas Extra',        color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
+    ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-chart-2/10 text-chart-2-text', border: 'border-chart-2/30', variante: 'chart-2' },
+    CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
+    DISABILITY:             { label: 'Incapacidad',             color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
+    SHIFT_EXCEPTION:        { label: 'Excepción Turno (Kiosk)', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    ANNULMENT_REQUEST:      { label: 'Anulación de Factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
+    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-chart-5/10 text-chart-5-text', border: 'border-chart-5/30', variante: 'chart-5' },
+    VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
+    CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };
 
 // Bucket A — severidad real del estado de la solicitud.
 export const REQUEST_STATUS = {
-    PENDING:   { label: 'Pendiente',  color: 'bg-warning/10 text-warning-text',  border: 'border-warning/30',  dot: 'bg-warning' },
-    APPROVED:  { label: 'Aprobada',   color: 'bg-success/10 text-success-text', border: 'border-success/30', dot: 'bg-success' },
-    REJECTED:  { label: 'Rechazada',  color: 'bg-danger/10 text-danger-text',   border: 'border-danger/30',  dot: 'bg-danger' },
-    CANCELLED: { label: 'Cancelada',  color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' },
+    PENDING:   { label: 'Pendiente',  color: 'bg-warning/10 text-warning-text',  border: 'border-warning/30',  dot: 'bg-warning', variante: 'warning' },
+    APPROVED:  { label: 'Aprobada',   color: 'bg-success/10 text-success-text', border: 'border-success/30', dot: 'bg-success', variante: 'success' },
+    REJECTED:  { label: 'Rechazada',  color: 'bg-danger/10 text-danger-text',   border: 'border-danger/30',  dot: 'bg-danger', variante: 'danger' },
+    CANCELLED: { label: 'Cancelada',  color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3', variante: 'neutral' },
 };
 
 // ── Helpers internos ────────────────────────────────────────────────────────

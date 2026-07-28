@@ -1,6 +1,7 @@
 import React from 'react';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
+import StatCard from '../../components/common/StatCard';
 import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -212,25 +213,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                     {!isBranch && sucursalCounts.map(({ id, name, total }) => {
                         const active = filterSuc === String(id);
                         return (
-                            <button
+                            <StatCard
                                 key={id}
+                                icon={Building2} iconBg={active ? 'bg-surface-card' : 'bg-chart-3/10'} iconCls="text-chart-3-text"
+                                label={name} sub="pedidos este mes"
+                                value={total} valueCls={active ? 'text-chart-3-text' : 'text-content-2'}
+                                active={active}
+                                activeBg="bg-chart-3/10 border-chart-3/40 shadow-md"
                                 onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
-                                className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
-                                    active
-                                        ? 'bg-chart-3/10 border-chart-3/40 shadow-md shadow-chart-3/20 -translate-y-px'
-                                        : 'bg-surface-card border-border-card hover:border-chart-3/30 hover:bg-chart-3/10'
-                                }`}
-                            >
-                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-surface-card' : 'bg-chart-3/10'}`}>
-                                    <Building2 size={15} className="text-chart-3-text" />
-                                </div>
-                                <div className="text-left">
-                                    <div className={`text-title-lg font-black leading-none tabular-nums ${active ? 'text-chart-3-text' : 'text-content-2'}`}>{total}</div>
-                                    <div className="text-caption font-bold text-content-2">{name}</div>
-                                    <div className="text-micro text-content-3">pedidos este mes</div>
-                                </div>
-                                {active && <X size={11} className="text-content-3 ml-auto shrink-0" />}
-                            </button>
+                            />
                         );
                     })}
                     {/* Sucursal (BRANCH): card propia, solo informativa */}

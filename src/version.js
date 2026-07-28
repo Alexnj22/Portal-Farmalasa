@@ -5,7 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.104.0';
+export const APP_VERSION = '2.105.0';
+
+// v2.105.0 — `StatCard`: las 12 tarjetas de metrica del portal, migradas.
+//
+// Y una correccion de mi propio conteo. Habia dicho "17 tarjetas de metrica
+// escritas a mano"; al abrir las 5 restantes una por una, **ninguna lo era**:
+//   · BranchesView ×3 → la cabecera de la tarjeta de sucursal (avatar +
+//     nombre) y dos filas de contacto (telefono/celular). Son `ListRow`.
+//   · LoginView ×2 → el boton de "ir al kiosco", una fila de accion.
+//   · NotificationBell → una fila de notificacion.
+//   · DashboardView → un FALSO POSITIVO: mi heuristica leyo un `<button>`
+//     que esta dentro de un COMENTARIO JSX. Es exactamente el bug del
+//     clasificador de v2.76.0, otra vez.
+//
+// O sea que eran 12, no 17, y las 12 estan migradas. El patron sigue siendo
+// real —12 copias de la misma anatomia justifican el canonico de sobra— pero
+// el numero que publique estaba inflado por una heuristica de forma
+// ("caja de icono + numero") que no distingue una tarjeta de una fila.
+//
+// Migradas en esta tanda: TabSinVenta ×2 (los dos grupos de filtro),
+// StaffManagementView (su `StaffStatCard` era el canonico con otro nombre —
+// queda como envoltorio finito que solo traduce su paleta local) y TabPedidos.
+//
+// `StatCard` gano `className` y `style`: TabSinVenta escalona la aparicion de
+// sus tarjetas con `animationDelay`, y sin eso la migracion habria tenido que
+// elegir entre el canonico y la animacion.
 
 // v2.104.0 — D3.8 CERRADA: el baseline del gate en CERO. Las 11 categorias
 // quedan bloqueantes.

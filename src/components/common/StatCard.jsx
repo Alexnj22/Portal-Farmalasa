@@ -45,6 +45,11 @@ export default function StatCard({
     // ganaría por cascade layers y taparía ese tinte custom.
     inactiveBg,
     loading    = false,
+    // `className` y `style` existen por el stagger de entrada de TabSinVenta:
+    // sus tarjetas escalonan la aparición con `animationDelay`. Sin esto la
+    // migración habría tenido que elegir entre el canónico y la animación.
+    className  = '',
+    style,
 }) {
     const isClickable = !!onClick;
     const Tag = isClickable ? 'button' : 'div';
@@ -74,7 +79,9 @@ export default function StatCard({
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
                 ${colorCls}
                 ${hoverCls}
+                ${className}
             `.replace(/\s+/g, ' ').trim()}
+            style={style}
         >
             {/* Squircle de icono */}
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>

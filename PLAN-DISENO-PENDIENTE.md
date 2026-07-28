@@ -1596,9 +1596,31 @@ Los tres pasan a `whitespace-nowrap`: la tarjeta crece, que es lo que hacían la
 10 versiones a mano. Ninguno se ve leyendo el código — el `truncate` está desde
 que se escribió el canónico y parece correcto ahí.
 
-**Migradas 8** (`TabInventario` 4, `TabCatalogo` 4), verificadas con datos
-reales. Quedan 9 en `BranchesView`, `TabSinVenta`, `StaffManagementView`,
-`TabPedidos`, `DashboardView`, `LoginView` y `NotificationBell`.
+**Migradas las 12**, verificadas con datos reales: `TabInventario` 4,
+`TabCatalogo` 4, `TabSinVenta` 2, `StaffManagementView` 1, `TabPedidos` 1.
+
+#### Corrección de mi propio conteo: eran 12, no 17
+
+Al abrir las 5 restantes una por una, **ninguna era una tarjeta de métrica**:
+
+| | |
+|---|---|
+| `BranchesView` ×3 | la cabecera de la tarjeta de sucursal (avatar + nombre) y dos filas de contacto — son `ListRow` |
+| `LoginView` ×2 | el botón de "ir al kiosco", una fila de acción |
+| `NotificationBell` | una fila de notificación |
+| `DashboardView` | **falso positivo**: mi heurística leyó un `<button>` que está dentro de un **comentario JSX**. Es exactamente el bug del clasificador de v2.76.0, otra vez |
+
+El patrón sigue siendo real —12 copias de la misma anatomía justifican el
+canónico de sobra— pero el número que publiqué estaba inflado por una
+heurística de forma ("caja de ícono + número") que no distingue una tarjeta de
+una fila. La lección se repite: **contar por forma da un número; hay que abrir
+cada caso para saber qué es.**
+
+`StaffManagementView` tenía un `StaffStatCard` propio que era el canónico con
+otro nombre; queda como envoltorio finito que solo traduce su paleta local.
+`StatCard` ganó `className` y `style` porque `TabSinVenta` escalona la
+aparición de sus tarjetas — sin eso había que elegir entre el canónico y la
+animación.
 
 ### Lo que NO se migró, y por qué
 

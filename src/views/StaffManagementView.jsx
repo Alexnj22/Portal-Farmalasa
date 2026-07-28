@@ -53,6 +53,7 @@ import { calcAge, MINOR_AGE } from '../utils/ageUtils';
 import PracticanteModal from '../components/practicantes/PracticanteModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import FilterBar from '../components/common/FilterBar';
+import StatCard from '../components/common/StatCard';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -486,25 +487,20 @@ const STAT_CARD_COLORS = {
   violet:  { activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-md shadow-chart-3/20 -translate-y-px',   inactiveBg: 'bg-surface-card border-border-card hover:border-chart-3/30 hover:bg-chart-3/10',   iconBg: 'bg-chart-3/10',  iconColor: 'text-chart-3-text', textColor: 'text-chart-3-text'  },
 };
 
-function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loading }) {
+// `StaffStatCard` era el canónico `StatCard` con otro nombre: misma caja de
+// ícono, mismo número, misma etiqueta, misma × al estar activa. Queda como un
+// envoltorio finito que solo traduce `color` a la paleta local — el resto lo
+// pone el canónico.
+function StaffStatCard({ icon, label, value, active, onClick, color, loading }) {
   const c = STAT_CARD_COLORS[color];
   return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}
-    >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-surface-card' : c.iconBg}`}>
-        <Icon size={15} strokeWidth={1.5} className={c.iconColor} />
-      </div>
-      <div className="text-left">
-        <div className={`text-title-lg font-black leading-none tabular-nums ${c.textColor}`}>
-          {loading ? <span className="text-content-3">–</span> : value.toLocaleString()}
-        </div>
-        <div className="text-caption font-bold text-content-2">{label}</div>
-      </div>
-      {active && <X size={11} className="text-content-3 ml-auto shrink-0" />}
-    </button>
+    <StatCard
+      icon={icon} iconBg={active ? 'bg-surface-card' : c.iconBg} iconCls={c.iconColor}
+      label={label}
+      value={loading ? '–' : value.toLocaleString()} valueCls={c.textColor}
+      active={active} activeBg={c.activeBg} inactiveBg={c.inactiveBg}
+      loading={loading} onClick={onClick}
+    />
   );
 }
 

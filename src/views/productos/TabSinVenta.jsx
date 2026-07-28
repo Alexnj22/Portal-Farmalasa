@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
+import StatCard from '../../components/common/StatCard';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
@@ -292,25 +293,18 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
             {CARDS.map((c, i) => {
                 const active = filterMode === c.id;
                 return (
-                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
-                        style={{ animationDelay: `${i * 45}ms` }}
-                        className={`filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-300 min-w-[150px] disabled:opacity-40 backdrop-blur-sm
-                            ${active ? c.activeBg : GLASS_CARD}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-surface-card'}`}>
-                            <c.Icon size={15} className={c.iconColor} />
-                        </div>
-                        <div className="text-left min-w-0 flex-1">
-                            <div className={`text-title-lg font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-content-3 text-body-xl">–</span> : counts[c.id].toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
-                        </div>
-                        {active && (
-                            <div className="shrink-0 w-5 h-5 rounded-full bg-surface-card flex items-center justify-center">
-                                <X size={10} className="text-content-3" />
-                            </div>
-                        )}
-                    </button>
+                    // §16.x — la misma tarjeta de métrica del resto del portal.
+                    // `StatCard` ya trae la × al estar activa y el estado de carga.
+                    <StatCard key={c.id}
+                        className="filter-card-anim" style={{ animationDelay: `${i * 45}ms` }}
+                        icon={c.Icon} iconBg={active ? c.iconBgActive : 'bg-surface-card'} iconCls={c.iconColor}
+                        label={c.label}
+                        value={loading ? '–' : counts[c.id].toLocaleString()}
+                        valueCls={c.numColor(counts[c.id])}
+                        active={active} activeBg={c.activeBg} inactiveBg={GLASS_CARD}
+                        loading={loading}
+                        onClick={() => onFilter(c.id)}
+                    />
                 );
             })}
         </>
@@ -344,25 +338,18 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
             {CARDS.map((c, i) => {
                 const active = filterMode === c.id;
                 return (
-                    <button key={c.id} onClick={() => onFilter(c.id)} disabled={loading}
-                        style={{ animationDelay: `${i * 45}ms` }}
-                        className={`filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-300 min-w-[150px] disabled:opacity-40 backdrop-blur-sm
-                            ${active ? c.activeBg : GLASS_CARD}`}>
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200 ${active ? c.iconBgActive : 'bg-surface-card'}`}>
-                            <c.Icon size={15} className={c.iconColor} />
-                        </div>
-                        <div className="text-left min-w-0 flex-1">
-                            <div className={`text-title-lg font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
-                                {loading ? <span className="text-content-3 text-body-xl">–</span> : counts[c.id].toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">{c.label}</div>
-                        </div>
-                        {active && (
-                            <div className="shrink-0 w-5 h-5 rounded-full bg-surface-card flex items-center justify-center">
-                                <X size={10} className="text-content-3" />
-                            </div>
-                        )}
-                    </button>
+                    // §16.x — la misma tarjeta de métrica del resto del portal.
+                    // `StatCard` ya trae la × al estar activa y el estado de carga.
+                    <StatCard key={c.id}
+                        className="filter-card-anim" style={{ animationDelay: `${i * 45}ms` }}
+                        icon={c.Icon} iconBg={active ? c.iconBgActive : 'bg-surface-card'} iconCls={c.iconColor}
+                        label={c.label}
+                        value={loading ? '–' : counts[c.id].toLocaleString()}
+                        valueCls={c.numColor(counts[c.id])}
+                        active={active} activeBg={c.activeBg} inactiveBg={GLASS_CARD}
+                        loading={loading}
+                        onClick={() => onFilter(c.id)}
+                    />
                 );
             })}
         </>

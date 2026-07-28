@@ -5,13 +5,14 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import {
     Clock, ShieldCheck, Search, Globe,
-    Database, Trash2, AlertCircle,
-    ListFilter, ChevronLeft, ChevronRight, Hash,
-    Radio, Power, Check, Download, X,
+    Database, AlertCircle, ListFilter, Hash,
+    Radio, Power, Check, Download,
     MonitorSmartphone, AlertTriangle, Info
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import FilterBar from '../components/common/FilterBar';
+import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
@@ -130,25 +131,18 @@ const AuditView = ({ openModal }) => {
 
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(15);
+    // 25 y no 15: es el primer valor de `PAGE_SIZE_OPTIONS`, la escala del
+    // canónico. Con 15 el selector de tamaño quedaba sin opción que coincidiera
+    // y se veía vacío — un tamaño de página propio por vista es justo la
+    // divergencia que `TablePagination` vino a cerrar.
+    const [itemsPerPage, setItemsPerPage] = useState(25);
     const [isLive, setIsLive] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                // El buscador lo cierra ViewTabBar; acá solo queda el datepicker.
-                if (isDatePickerOpen) setIsDatePickerOpen(false);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isDatePickerOpen]);
+    // Acá vivía un `isDatePickerOpen` con su listener global de Escape. Era
+    // mecanismo fingido: cerrar ese estado no cerraba el calendario, porque el
+    // calendario es dueño de su propio abierto/cerrado — `onOpenChange` solo
+    // avisa. Se fue con los datepickers al cuerpo.
 
     useEffect(() => {
         // 🚨 FIX: Disparamos el fetch SIEMPRE al montar la vista para asegurar datos frescos de Supabase, ignorando la caché local.
@@ -263,7 +257,6 @@ const AuditView = ({ openModal }) => {
         return processedLogs.slice(startIndex, startIndex + itemsPerPage);
     }, [processedLogs, currentPage, itemsPerPage]);
 
-    const hasActiveFilters = debouncedSearchTerm !== '' || startDate !== '' || endDate !== '' || actionFilter !== 'ALL';
 
 // D3.9 (2026-07-27): barra reescrita a mano → canónico.
 // El "selector de acciones" era una píldora que se expandía EN LÍNEA en una fila
@@ -272,6 +265,11 @@ const AuditView = ({ openModal }) => {
 // (feedback_liquid_select: nunca un dropdown nuevo). Con 5 opciones eso es un
 // LiquidSelect, que es lo que ya usan Facturación y Monitor en su barra. Al
 // cambiarlo desaparece el tercer estado y la vista queda como las otras doce.
+//
+// §17 (v2.99.1): los tres filtros que vivían acá —acciones y el rango de
+// fechas— bajaron al CUERPO. El header es de las pestañas y el buscador; acá
+// solo quedan las dos ACCIONES de la vista, que antes eran `<button>` crudos
+// dentro de la tabla, cada uno con su propio relleno, su glow y su forma.
 const filtersContent = (
     <ViewTabBar
         searchValue={rawSearchTerm}
@@ -279,29 +277,55 @@ const filtersContent = (
         placeholder="Buscar por usuario, acción o detalle..."
         trailingActions={
             <>
-                <div className="w-[150px] md:w-[180px] shrink-0">
-                    <LiquidSelect
-                        value={actionFilter}
-                        onChange={setActionFilter}
-                        options={ACTION_OPTIONS}
-                        icon={ListFilter}
-                        placeholder="Acciones"
-                        compact bare clearable={false}
-                    />
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                    <LiquidDatePicker compact shortcuts value={startDate} onChange={setStartDate}
-                        placeholder="Inicio" onOpenChange={setIsDatePickerOpen} />
-                    <span className="text-content-3 font-bold mx-0.5">-</span>
-                    <LiquidDatePicker compact shortcuts value={endDate} onChange={setEndDate}
-                        placeholder="Fin" onOpenChange={setIsDatePickerOpen} />
-                </div>
-                {hasActiveFilters && (
-                    <TabBarAction icon={Trash2} tone="danger" onClick={clearFilters} label="Limpiar todos los filtros" />
-                )}
+                <TabBarAction
+                    icon={isLive ? Radio : Power}
+                    tone={isLive ? 'danger' : 'brand'}
+                    variant={isLive ? 'primary' : 'quiet'}
+                    onClick={() => setIsLive(!isLive)}>
+                    {isLive ? 'En vivo' : 'En vivo (off)'}
+                </TabBarAction>
+                <TabBarAction
+                    icon={isExporting ? Check : Download}
+                    tone={isExporting ? 'success' : 'brand'}
+                    disabled={processedLogs.length === 0 || isExporting}
+                    onClick={exportToCSV}>
+                    {isExporting ? 'Listo' : 'Exportar'}
+                </TabBarAction>
             </>
         }
     />
+);
+
+// ── Cuerpo: la barra de filtros (§17) ────────────────────────────────────
+// Orden de ranuras: entidad (acción) → tiempo (rango). No hay ámbito acá: la
+// auditoría es del sistema entero, no de una sucursal.
+const filtrosCuerpo = (
+    <FilterBar
+        onClear={clearFilters}
+        activeCount={[actionFilter !== 'ALL', !!startDate, !!endDate].filter(Boolean).length}
+    >
+        <FilterBar.Section active={actionFilter !== 'ALL'} onClear={() => setActionFilter('ALL')} label="acción">
+            <div className="w-[170px]">
+                <LiquidSelect
+                    value={actionFilter}
+                    onChange={val => setActionFilter(val || 'ALL')}
+                    options={ACTION_OPTIONS}
+                    icon={ListFilter}
+                    placeholder="Acciones"
+                    compact bare clearable={false}
+                />
+            </div>
+        </FilterBar.Section>
+
+        <FilterBar.Section active={!!startDate || !!endDate}
+            onClear={() => { setStartDate(''); setEndDate(''); }} label="fecha">
+            <div className="flex items-center gap-1">
+                <LiquidDatePicker compact shortcuts value={startDate} onChange={setStartDate} placeholder="Inicio" />
+                <span className="text-content-3 font-bold mx-0.5">-</span>
+                <LiquidDatePicker compact shortcuts value={endDate} onChange={setEndDate} placeholder="Fin" />
+            </div>
+        </FilterBar.Section>
+    </FilterBar>
 );
     return (
         <GlassViewLayout
@@ -310,30 +334,13 @@ const filtersContent = (
             liveIndicator={isLive}
             filtersContent={filtersContent}
         >
-            <div className="px-4 md:px-8 py-4 md:py-5 bg-surface-card border-b border-border-card flex justify-between items-center">
+            {/* Cuenta a la izquierda, barra de filtros a la derecha (§17) */}
+            <div className="px-4 md:px-8 py-4 bg-surface-card border-b border-border-card flex justify-between items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2 text-caption md:text-label font-bold uppercase text-content-2 tracking-widest">
                     <Hash size={12} className="text-brand-text md:w-3 md:h-3" />
                     {totalItems} <span className="hidden sm:inline">Registros</span>
                 </div>
-
-                <div className="flex items-center gap-2 md:gap-3">
-                    <button
-                        onClick={() => setIsLive(!isLive)}
-                        className={`hidden md:flex items-center gap-2 px-4 py-2 font-bold text-caption uppercase tracking-widest rounded-full border transition-all shadow-sm hover:shadow hover:-translate-y-0.5 active:scale-[0.97] ${isLive ? 'bg-danger-solid text-white border-danger hover:bg-danger-hover shadow-[var(--shadow-glow-danger-md)]' : 'bg-surface-card text-content-3 border-divider hover:bg-surface-card-hover hover:text-brand-text'}`}
-                    >
-                        {isLive ? <Radio size={12} className="animate-pulse" /> : <Power size={12} />}
-                        <span>{isLive ? 'En Vivo' : 'En Vivo (OFF)'}</span>
-                    </button>
-
-                    <button
-                        onClick={exportToCSV}
-                        disabled={processedLogs.length === 0 || isExporting}
-                        className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 font-bold text-micro md:text-caption uppercase tracking-widest rounded-btn border shadow-sm transition-all hover:shadow hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.97] ${isExporting ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card hover:bg-surface-card-hover text-content-2 border-divider hover:text-brand-text'}`}
-                    >
-                        {isExporting ? <Check size={12} className="text-success" /> : <Download size={12} className="group-hover:-translate-y-0.5 transition-transform" />}
-                        <span>{isExporting ? 'Ok' : 'Exportar'}</span>
-                    </button>
-                </div>
+                {filtrosCuerpo}
             </div>
 
             <DataTable
@@ -353,33 +360,21 @@ const filtersContent = (
                     subtext: 'Limpia los filtros o cambia la búsqueda.',
                     action: { label: 'Limpiar Filtros', onClick: clearFilters },
                 }}
+                // §17.2 — la paginación NUNCA se escribe a mano. Esta era tres
+                // islas separadas por `justify-between`, con "Pág 1 de 52" pero
+                // sin decir cuántos registros se están viendo, y en móvil se
+                // partía en dos filas. El canónico dice el RANGO (`1–15 de 320`),
+                // que responde "dónde estoy" y "cuánto hay" a la vez.
                 footer={totalItems > 0 ? (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
-                        <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                            <span className="text-micro md:text-caption font-bold text-content-3 uppercase tracking-widest">Mostrar</span>
-                            <div className="w-[110px]">
-                                <LiquidSelect
-                                    value={itemsPerPage}
-                                    onChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}
-                                    options={[
-                                        { value: 15, label: '15 Filas' },
-                                        { value: 30, label: '30 Filas' },
-                                        { value: 50, label: '50 Filas' },
-                                        { value: 100, label: '100 Filas' },
-                                    ]}
-                                    clearable={false}
-                                    compact
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                            <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>
-                            <div className="flex gap-2">
-                                <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
-                                <Button variant="secondary" size="sm" icon={ChevronRight} disabled={currentPage === totalPages || totalPages === 0} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
-                            </div>
-                        </div>
-                    </div>
+                    <TablePagination
+                        page={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        pageSize={itemsPerPage}
+                        onPageSizeChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}
+                        total={totalItems}
+                        unit="registros"
+                    />
                 ) : null}
             >
                 {isLogSearchFuzzy && debouncedSearchTerm && (

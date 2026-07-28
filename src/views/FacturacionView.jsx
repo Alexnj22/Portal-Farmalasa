@@ -17,6 +17,8 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
+import FilterBar from '../components/common/FilterBar';
+import TabBarAction from '../components/common/TabBarAction';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
@@ -2048,8 +2050,13 @@ export default function FacturacionView() {
 
     // D3.9 (2026-07-27): barra reescrita a mano → canónico. Los tabs pasan por la
     // prop `tabs` (y de paso ganan el dropdown de móvil, que esta vista no tenía:
-    // con 4 tabs de label largo la fila competía por ancho). El filtro de sucursal
-    // y el enlace a Admin Facturas van en `trailingActions`.
+    // con 4 tabs de label largo la fila competía por ancho).
+    //
+    // §17 (v2.99.1): el filtro de sucursal bajó al CUERPO; en el header queda el
+    // enlace a Admin Facturas, que es una acción. Ese enlace además estaba
+    // reconstruyendo `TabBarAction` clase por clase —los mismos 9 tokens— porque
+    // el canónico renderiza `<button>` y esto tiene que ser un `<a>`. Ahora el
+    // canónico acepta `as`, que es lo que faltaba.
     const filtersContent = (
         <ViewTabBar
             tabs={allowedTabs.map(t => ({ key: t.key, label: t.label }))}
@@ -2060,29 +2067,25 @@ export default function FacturacionView() {
             onSearchChange={setRawSearch}
             placeholder={searchPlaceholder}
             trailingActions={
-                <>
-                    {getScope('facturacion') !== 'BRANCH' && (
-                        <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
-                            <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                                options={branchOptions} placeholder="Todas" icon={Building2}
-                                compact bare clearable={false} />
-                        </div>
-                    )}
-                    <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php"
-                        target="_blank" rel="noopener noreferrer"
-                        className="h-11 px-4 md:px-[18px] rounded-full shrink-0 whitespace-nowrap
-                            inline-flex items-center justify-center gap-2 border
-                            text-micro md:text-caption font-black uppercase tracking-widest
-                            bg-[var(--tabaction-bg)] border-[var(--tabaction-border)] text-content-2
-                            hover:bg-[var(--tabaction-hover)] hover:text-content
-                            transition-[background-color,border-color,color,transform] duration-200
-                            hover:-translate-y-px">
-                        <ExternalLink size={14} className="text-brand-text" />
-                        <span className="hidden sm:inline">Admin Facturas</span>
-                    </a>
-                </>
+                <TabBarAction as="a" icon={ExternalLink}
+                    href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php"
+                    target="_blank" rel="noopener noreferrer">
+                    Admin Facturas
+                </TabBarAction>
             }
         />
+    );
+
+    const filtrosCuerpo = getScope('facturacion') !== 'BRANCH' && (
+        <FilterBar onClear={() => setFilterBranch('')} activeCount={filterBranch ? 1 : 0}>
+            <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
+                <div className="w-[200px]">
+                    <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
+                        options={branchOptions} placeholder="Todas las sucursales" icon={Building2}
+                        compact bare clearable={false} />
+                </div>
+            </FilterBar.Section>
+        </FilterBar>
     );
 
     return (
@@ -2093,6 +2096,8 @@ export default function FacturacionView() {
             filtersContent={filtersContent}
             transparentBody={true}
         >
+            {/* Barra de filtros: cuerpo, a la derecha (§17) */}
+            {filtrosCuerpo && <div className="flex justify-end pb-4">{filtrosCuerpo}</div>}
             <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-3xl lg:rounded-header border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
                     <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />

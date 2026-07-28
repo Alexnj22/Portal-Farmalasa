@@ -13,6 +13,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import StatCard from '../../components/common/StatCard';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
+import FilterBar from '../../components/common/FilterBar';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -768,50 +769,35 @@ function TabDocumentos({
                 </div>
                 )}
 
-            {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
-            <div className="flex items-start justify-end gap-3 flex-wrap shrink-0">
-                <div className="group flex items-center gap-0 flex-wrap rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-glass-3)] hover:-translate-y-0.5 hover:border-divider shrink-0 overflow-visible max-w-full flex-wrap">
+            {/* §17 — la barra FILTRA; las acciones van fuera de ella.
+                Acá estaban las dos adentro ("Descargar" y "Sincronizar"), así
+                que leían como un filtro más: en la misma píldora, separadas por
+                el mismo divisor, con la misma forma. Es el hallazgo que ya se
+                corrigió en Staff en v2.97.0 y que a esta vista no llegó. */}
+            <div className="flex items-center justify-end gap-2 flex-wrap shrink-0">
+                {filtered.length > 0 && (
+                    <Button variant="secondary" size="sm" icon={Download} disabled={bulkDownloading}
+                        title="Descargar todos los filtrados en un ZIP" onClick={downloadBulk}>
+                        {bulkProgress?.total > 0
+                            ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
+                            : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
+                    </Button>
+                )}
+                {canEdit && (
+                    <Button variant="secondary" size="sm" icon={RefreshCw} loading={syncing}
+                        disabled={syncing} onClick={runSyncNow}>
+                        {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
+                    </Button>
+                )}
 
-                    {/* Período + clear individual */}
-                    <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible">
-                            <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
-                        </div>
-                        {dateDirty && (
-                            <Button variant="destructive" icon={X} title="Quitar fecha" iconOnly onClick={() => setDateRange(defaultDateRange())} />
-                        )}
-                    </div>
-
-                    {/* Descargar (ZIP de filtrados) — incorporado al pill */}
-                    {filtered.length > 0 && (
-                        <>
-                            <div className="h-5 w-px bg-divider shrink-0" />
-                            <div className="flex items-center gap-1.5 px-2">
-                                <Button variant="secondary" size="sm" icon={Download} disabled={bulkDownloading} title="Descargar todos los filtrados en un ZIP" onClick={downloadBulk}>{bulkProgress?.total > 0
-                                        ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
-                                        : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}</Button>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Sincronizar ahora — incorporado al pill (antes vivía suelto a la izquierda) */}
-                    {canEdit && (
-                        <>
-                            <div className="h-5 w-px bg-divider shrink-0" />
-                            <div className="flex items-center gap-1.5 px-2">
-                                <button onClick={runSyncNow} disabled={syncing}
-                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-btn text-caption font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
-                                        syncing
-                                            ? 'bg-chart-1/10 border-chart-1/30 text-chart-1-text'
-                                            : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:border-divider hover:text-content-2'
-                                    } disabled:opacity-60`}>
-                                    <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
-                                    {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+                <FilterBar
+                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); }}
+                    activeCount={[dateDirty, filterSinProveedor].filter(Boolean).length}
+                >
+                    <FilterBar.Section active={dateDirty} onClear={() => setDateRange(defaultDateRange())} label="período">
+                        <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
+                    </FilterBar.Section>
+                </FilterBar>
             </div>
             </div>
 

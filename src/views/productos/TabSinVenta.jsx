@@ -10,6 +10,8 @@ import {
     EyeOff, Eye, Calendar,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -420,19 +422,6 @@ export default function TabGestionStock({ searchTerm = '' }) {
         setPage(1);
     }, [mode]);
 
-    const tk = {
-        card:             'bg-surface-card border-divider shadow-[var(--shadow-glow-brand)] backdrop-blur-sm',
-        thead:            'bg-gradient-to-r from-brand/[0.07] to-brand/[0.03] border-b border-brand/[0.12]',
-        rowBorder:        'border-t border-divider',
-        rowHover:         'hover:bg-brand/[0.03]',
-        skeleton:         'bg-surface-card-hover/70',
-        emptyBg:          'bg-surface-card border-divider backdrop-blur-sm',
-        filterPill:       'bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]',
-        filterBtn:        'text-content-3 hover:text-content-2 hover:bg-surface-card',
-        filterDivider:    'bg-surface-card-hover',
-        totalText:        'text-content-3',
-    };
-
     const loadMode = useCallback(async (erpId, m) => {
         const rid = ++loadRefs.current[m];
         setErrorMap(prev => ({ ...prev, [m]: null }));
@@ -628,49 +617,37 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     </React.Fragment>}
                 </div>
 
-                {/* Right: filter pill — mode selector + sucursal */}
-                <div className={`flex items-center flex-wrap rounded-2xl border transition-all duration-300 shrink-0 overflow-visible max-w-full ${tk.filterPill}`}>
-
-                    {/* Mode pills */}
-                    <div className="flex items-center gap-1 px-2.5 py-2">
-                        {MODES.map(m => {
-                            const active = mode === m.key;
-                            const count  = m.key === 'sin_gestion' ? sinGestion.length : stockRet.length;
-                            return (
-                                <button key={m.key}
-                                    onClick={() => { setMode(m.key); setFilterMode(m.key === 'sin_gestion' ? 'agregar' : 'todos'); }}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-label font-bold transition-all duration-200 whitespace-nowrap ${
-                                        active
-                                            ? 'bg-brand/[0.12] text-brand-text shadow-[var(--shadow-shine)]'
-                                            : tk.filterBtn
-                                    }`}>
-                                    {m.label}
-                                    <span className={`text-caption font-black tabular-nums px-1.5 py-0.5 rounded-full min-w-[22px] text-center leading-tight transition-all duration-200 ${
-                                        active ? 'bg-brand text-white shadow-sm' : 'bg-surface-card-hover/80 text-content-3'
-                                    }`}>
-                                        {loadingMap[m.key] ? '…' : count.toLocaleString()}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-
-                    {/* Sucursal */}
-                    {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-content-3" /></div>}
-                    <div className="px-2 py-2 overflow-visible" style={{ width: '170px' }}>
-                        <LiquidSelect
-                            value={String(selectedErp)}
-                            onChange={v => setSelectedErp(Number(v))}
-                            options={erpOptions}
-                            icon={Building2}
-                            clearable={false}
-                            compact
-                            bare
+                {/* §17 — píldora a mano. Las "mode pills" eran un uno-de-N
+                    escrito a mano con su propio badge de conteo: es
+                    `SegmentedControl`, y la cuenta viaja en el label como en el
+                    resto del portal. */}
+                <FilterBar>
+                    <FilterBar.Section label="vista">
+                        <SegmentedControl
+                            size="sm"
+                            label="Qué lista se ve"
+                            value={mode}
+                            onChange={k => { setMode(k); setFilterMode(k === 'sin_gestion' ? 'agregar' : 'todos'); }}
+                            options={MODES.map(m => ({
+                                value: m.key,
+                                label: `${m.label} · ${loadingMap[m.key] ? '…' : (m.key === 'sin_gestion' ? sinGestion.length : stockRet.length).toLocaleString()}`,
+                            }))}
                         />
-                    </div>
-                </div>
+                    </FilterBar.Section>
+
+                    <FilterBar.Section label="sucursal">
+                        {activeRefreshing && <Loader2 size={13} className="animate-spin text-content-3 shrink-0" />}
+                        <div className="w-[170px]">
+                            <LiquidSelect
+                                value={String(selectedErp)}
+                                onChange={v => setSelectedErp(Number(v))}
+                                options={erpOptions}
+                                icon={Building2}
+                                clearable={false} compact bare
+                            />
+                        </div>
+                    </FilterBar.Section>
+                </FilterBar>
             </div>
 
             {/* ── Error ── */}

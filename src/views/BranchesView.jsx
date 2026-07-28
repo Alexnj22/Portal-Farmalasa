@@ -2,6 +2,7 @@ import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import LiquidSelect from '../components/common/LiquidSelect';
+import FilterBar from '../components/common/FilterBar';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { AiThinkingState, Skeleton, SkeletonText } from '../components/common/StateViews';
@@ -673,31 +674,41 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     // dropdown escrito a mano, que es lo que la regla del proyecto prohíbe
     // (feedback_liquid_select). Pasa a LiquidSelect, igual que Facturación,
     // Monitor y Auditoría — y con eso desaparece el tercer estado.
+    //
+    // §17 (v2.99.1): el filtro de estado bajó al CUERPO. El header queda con lo
+    // que le corresponde: buscador y la acción principal.
     const renderFiltersContent = () => (
         <ViewTabBar
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             placeholder="Buscar sucursal o dirección..."
-            trailingActions={
-                <>
-                    <div className="w-[150px] md:w-[180px] shrink-0">
-                        <LiquidSelect
-                            value={filterStatus}
-                            onChange={setFilterStatus}
-                            options={FILTER_OPTIONS}
-                            icon={Filter}
-                            placeholder="Todas"
-                            compact bare clearable={false}
-                        />
-                    </div>
-                    {canEdit && (
-                        <TabBarAction icon={Plus} variant="primary" onClick={() => openModal?.("newBranch")}>
-                            Nueva Sucursal
-                        </TabBarAction>
-                    )}
-                </>
-            }
+            trailingActions={canEdit && (
+                <TabBarAction icon={Plus} variant="primary" onClick={() => openModal?.("newBranch")}>
+                    Nueva Sucursal
+                </TabBarAction>
+            )}
         />
+    );
+
+    const filtrosCuerpo = (
+        <FilterBar
+            onClear={() => setFilterStatus('ALL')}
+            activeCount={filterStatus !== 'ALL' ? 1 : 0}
+        >
+            {/* Valor "sin filtrar": la cadena 'ALL' */}
+            <FilterBar.Section active={filterStatus !== 'ALL'} onClear={() => setFilterStatus('ALL')} label="estado">
+                <div className="w-[180px]">
+                    <LiquidSelect
+                        value={filterStatus}
+                        onChange={val => setFilterStatus(val || 'ALL')}
+                        options={FILTER_OPTIONS}
+                        icon={Filter}
+                        placeholder="Todas"
+                        compact bare clearable={false}
+                    />
+                </div>
+            </FilterBar.Section>
+        </FilterBar>
     );
 
     return (
@@ -707,6 +718,8 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
 
             <GlassViewLayout icon={Building2} title="Sucursales" filtersContent={renderFiltersContent()} transparentBody={true}>
                 <div className="w-full flex-1 pb-12">
+                    {/* Barra de filtros: cuerpo, a la derecha (§17) */}
+                    <div className="flex justify-end px-2 pt-4">{filtrosCuerpo}</div>
                     {isLoadingKiosks ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max pt-4 px-2">
                             {/* BUG REAL (2026-07-27): acá se llamaba a

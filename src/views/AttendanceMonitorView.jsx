@@ -32,6 +32,7 @@ import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
 import { tokenMatch } from '../utils/searchUtils';
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from "../components/common/LiquidSelect";
+import FilterBar from "../components/common/FilterBar";
 import { toLocalISODate } from "../utils/timeClock.helpers";
 import { useAuth } from '../context/AuthContext';
 
@@ -550,38 +551,47 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     </div>
   );
 
-  // Header Estándar "Floating Header Search" (mismo patrón que StaffManagementView/
-  // RequestsView: un solo pill que alterna entre [buscador expandido + cierre]
-  // y [controles inactivos]) — el filtro de sucursal vive acá (pedido explícito
-  // del usuario, reemplaza al reloj) en vez de un botón chip a medida.
-  // D3.9 (2026-07-27): barra reescrita a mano → canónico. El filtro de sucursal
-  // sigue viviendo acá (pedido explícito del usuario, reemplazó al reloj), ahora
-  // como `trailingActions`.
+  // D3.9 (2026-07-27): barra reescrita a mano → canónico.
+  //
+  // §17 (v2.99.1): el filtro de sucursal bajó al CUERPO. Vivía en el header
+  // por un pedido de cuando ahí estaba el contenedor —"que reemplace al
+  // reloj"—, antes de que existiera `FilterBar`; la regla posterior separa las
+  // dos píldoras y ésta recorta datos, no navega. Encima era `hidden md:block`:
+  // en un teléfono el filtro de sucursal simplemente no existía.
   const filtersContent = (
     <ViewTabBar
       searchValue={searchTerm}
       onSearchChange={setSearchTerm}
       placeholder="Buscar por nombre o código..."
-      trailingActions={getScope('monitor') !== 'BRANCH' && (
-        <div className="hidden md:block md:w-[190px] shrink-0">
+    />
+  );
+
+  const filtrosCuerpo = getScope('monitor') !== 'BRANCH' && (
+    <FilterBar
+      onClear={() => setFilterBranch('ALL')}
+      activeCount={filterBranch !== 'ALL' ? 1 : 0}
+    >
+      {/* El valor "sin filtrar" acá es la cadena 'ALL', no '' */}
+      <FilterBar.Section active={filterBranch !== 'ALL'} onClear={() => setFilterBranch('ALL')} label="sucursal">
+        <div className="w-[190px]">
           <LiquidSelect
             value={filterBranch}
-            onChange={setFilterBranch}
+            onChange={val => setFilterBranch(val || 'ALL')}
             options={branchOptions}
             placeholder="Todas"
             icon={Building2}
-            compact
-            bare
-            clearable={false}
+            compact bare clearable={false}
           />
         </div>
-      )}
-    />
+      </FilterBar.Section>
+    </FilterBar>
   );
 
   return (
     <GlassViewLayout icon={Clock} title="Monitor en Tiempo Real" liveIndicator filtersContent={filtersContent} transparentBody>
       <div className="p-4 md:p-6 lg:p-8 space-y-5">
+
+      {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}
 
       {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">

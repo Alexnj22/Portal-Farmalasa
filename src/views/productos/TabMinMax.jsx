@@ -12,6 +12,7 @@ import {
     TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, FlaskConical, Search, MoreHorizontal,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
@@ -39,21 +40,10 @@ import { useMinMaxData } from './tabminmax/useMinMaxData';
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 
-// Chip / pill — instant color via CSS, scale muy sutil y rápido
-const chipAnim = {
-    whileHover: { scale: 1.025, transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
-    whileTap:   { scale: 0.96,  transition: { duration: 0.05 } },
-};
-// CTA button (Calcular, Publicar)
-const ctaAnim = {
-    whileHover: { scale: 1.02,  transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
-    whileTap:   { scale: 0.97,  transition: { duration: 0.05 } },
-};
-// Icon button — easeOut consistente (sin spring underdamped que rebotaba)
-const iconAnim = {
-    whileHover: { scale: 1.07, transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
-    whileTap:   { scale: 0.88, transition: { duration: 0.05 } },
-};
+// Acá vivían `chipAnim`, `ctaAnim` e `iconAnim`: tres escalas de hover/tap con
+// framer-motion para los botones de la barra. Se fueron con ellos al migrar al
+// `Button` canónico, que resuelve hover y tap con CSS y —a diferencia de estos—
+// respeta los dos gates de movimiento (tema y `prefers-reduced-motion`).
 // ─── Constants ────────────────────────────────────────────────────────────────
 // ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS: extraídos a
 // ./tabminmax/constants.js (Bloque 6.C, continuación) — importados arriba.
@@ -376,46 +366,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {!loading && draftCost && <DraftCostCard draftCost={draftCost} isBodega={isBodega} />}
                 </div>
 
-                <div className="flex-1" />
+                {/* §17 — esto era UNA píldora con un filtro (sucursal) y cinco
+                    ACCIONES adentro (CSV, config, labs, recalcular ×2), todas
+                    `motion.button` escritas a mano. Separado en lo que cada cosa
+                    es: la barra filtra, los botones actúan. De paso se van cinco
+                    usos de framer-motion, que §11 marca como "no agregar más". */}
+                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end ml-auto">
 
-                {/* RIGHT: pill — glassmorphism, siempre rounded-2xl completo */}
-                <div className="flex items-center shrink-0 rounded-2xl shadow-[var(--shadow-glass-2)] hover:shadow-[var(--shadow-glass-3)] transition-shadow duration-300"
-                     style={{
-                         // D1.2 — era rgba(255,255,255,0.70) + borde blanco fijo. Al ir
-                         // en `style` inline no lo veía el gate (que lee clases), pero sí
-                         // el escáner en vivo: era la única superficie blanca que quedaba
-                         // sobre el tema oscuro tras el barrido.
-                         background: 'var(--surface-card)',
-                         backdropFilter: 'var(--backdrop-card)',
-                         WebkitBackdropFilter: 'var(--backdrop-card)',
-                         border: '1px solid var(--border-card)',
-                     }}>
-
-                    {/* Buttons section — sin bg propio, el glass del outer cubre */}
-                    <div className="flex items-center overflow-visible">
-
-                        {/* Branch selector */}
-                        {!lockedErpId && <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
-                            <LiquidSelect
-                                value={String(selectedErp)}
-                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setFilterHidden(false); } }}
-                                options={erpOptions} icon={Building2} clearable={false} compact
-                            />
-                        </div>}
-
-                        {/* Active ABC/XYZ filter badge + clear */}
-                        {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                            <>
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <Button variant="destructive" onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}>{filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
-                                    <X size={9} strokeWidth={3} /></Button>
-                            </>
-                        )}
-
-                        <div className="h-5 w-px bg-divider shrink-0" />
-
-                        {/* CSV */}
-                        <motion.button onClick={async () => {
+                    <Button variant="ghost" size="sm" icon={Download}
+                        disabled={data.length === 0 || loading} title="Exportar CSV"
+                        onClick={async () => {
                             let netStockMap = {};
                             let supplierMap = {};
                             if (isBodega && filtered.length > 0) {
@@ -432,66 +392,72 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 spResults.forEach(r => { if (r.data) r.data.forEach(row => { supplierMap[row.erp_product_id] = row.proveedor; }); });
                             }
                             exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap, supplierMap);
-                        }}
-                            disabled={data.length === 0 || loading}
-                            title="Exportar CSV"
-                            {...chipAnim}
-                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-label font-bold text-content-3 hover:text-content-2 transition-colors disabled:opacity-30">
-                            <Download size={12} /> CSV
-                        </motion.button>
+                        }}>
+                        CSV
+                    </Button>
 
-                        <div className="h-5 w-px bg-divider shrink-0" />
+                    <Button variant="ghost" size="sm" icon={Settings2} iconOnly
+                        disabled={!canManage}
+                        className={configOpen ? 'text-brand-text' : ''}
+                        title={canManage ? 'Configurar parámetros' : 'Necesitás permiso de edición en Min/Max'}
+                        onClick={() => setConfigOpen(o => !o)} />
 
-                        {/* Config — solo can_edit (guardar hace RLS raw error si no) */}
-                        <motion.button onClick={() => setConfigOpen(o => !o)}
-                            disabled={!canManage}
-                            title={canManage ? 'Configurar parámetros' : 'Necesitás permiso de edición en Min/Max'}
-                            {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${configOpen ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                            <Settings2 size={13} />
-                        </motion.button>
+                    <Button variant="ghost" size="sm" icon={FlaskConical} iconOnly
+                        disabled={!canManage}
+                        className={labsOpen ? 'text-brand-text' : ''}
+                        title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitás permiso de edición en Min/Max'}
+                        onClick={() => setLabsOpen(o => !o)} />
 
-                        <div className="h-5 w-px bg-divider shrink-0" />
-
-                        {/* Labs visibility — solo can_edit (guardar hace RLS raw error si no) */}
-                        <motion.button onClick={() => setLabsOpen(o => !o)}
-                            disabled={!canManage}
-                            title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitás permiso de edición en Min/Max'}
-                            {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${labsOpen ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                            <FlaskConical size={13} />
-                        </motion.button>
-
-                        {!isBodega && (
-                            <>
-                                <div className="h-5 w-px bg-divider shrink-0" />
-
-                                {/* Todas las sucursales — oculto en Bodega (se actualiza sola vía trigger) */}
-                                <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'all' })} disabled={!canManage || calculating || loading}
-                                    title="Recalcular todas las sucursales (Bodega se actualiza sola)"
-                                    {...chipAnim}
-                                    className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-label font-bold text-content-3 hover:text-content-2 transition-colors disabled:opacity-40 disabled:pointer-events-none">
-                                    {calculating && calcMode === 'all'
-                                        ? <><Loader2 size={11} className="animate-spin" /> {calcProgress ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}` : 'Calculando…'}</>
-                                        : <><Layers size={11} /> Todas las sucursales</>}
-                                </motion.button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Calcular — blue right cap (oculto para Bodega: se actualiza sola) */}
+                    {/* Recalcular — oculto en Bodega (se actualiza sola vía trigger) */}
                     {!isBodega && (
                         <>
-                            <div className="self-stretch w-px bg-divider shrink-0" />
-                            <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })} disabled={!canManage || calculating || loading}
-                                {...ctaAnim}
-                                className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-body-sm font-bold text-white bg-brand hover:bg-brand-hover transition-colors rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
-                                {calculating && calcMode === 'single'
-                                    ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
-                                    : <><RefreshCw size={12} /> Calcular</>}
-                            </motion.button>
+                            <Button variant="secondary" size="sm" icon={Layers}
+                                loading={calculating && calcMode === 'all'}
+                                disabled={!canManage || calculating || loading}
+                                title="Recalcular todas las sucursales (Bodega se actualiza sola)"
+                                onClick={() => setCalcularConfirm({ open: true, mode: 'all' })}>
+                                {calculating && calcMode === 'all' && calcProgress
+                                    ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}`
+                                    : 'Todas las sucursales'}
+                            </Button>
+
+                            <Button size="sm" icon={RefreshCw}
+                                loading={calculating && calcMode === 'single'}
+                                disabled={!canManage || calculating || loading}
+                                onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}>
+                                {calculating && calcMode === 'single' ? 'Calculando…' : 'Calcular'}
+                            </Button>
                         </>
                     )}
+
+                    <FilterBar
+                        onClear={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
+                        activeCount={[filterAbc !== 'all', filterXyz !== 'all'].filter(Boolean).length}
+                    >
+                        {!lockedErpId && (
+                            <FilterBar.Section label="sucursal">
+                                <div className="w-[175px]">
+                                    <LiquidSelect
+                                        value={String(selectedErp)}
+                                        onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setFilterHidden(false); } }}
+                                        options={erpOptions} icon={Building2} clearable={false} compact bare
+                                    />
+                                </div>
+                            </FilterBar.Section>
+                        )}
+
+                        {/* El filtro ABC/XYZ se aplica desde la matriz de abajo;
+                            acá se muestra que está puesto y se puede soltar. */}
+                        {(filterAbc !== 'all' || filterXyz !== 'all') && (
+                            <FilterBar.Section active
+                                onClear={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
+                                label="clasificación">
+                                <span className="px-2 text-body-sm font-black text-brand-text tabular-nums whitespace-nowrap">
+                                    {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
+                                </span>
+                            </FilterBar.Section>
+                        )}
+                    </FilterBar>
                 </div>
             </div>
 

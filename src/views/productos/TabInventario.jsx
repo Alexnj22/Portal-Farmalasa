@@ -7,6 +7,7 @@ import {
     Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { normSearch } from '../../utils/searchUtils';
@@ -328,77 +329,54 @@ export default function TabInventario({ searchTerm = '' }) {
 
                 </div>
 
-                {(() => {
-                    const anyFilter = selectedErp !== null || filterLab !== null || filterCat !== null;
-                    return (
-                        <div className="hidden lg:flex group items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-glass-3)] hover:-translate-y-0.5 shrink-0 overflow-visible">
-
-                            {/* Sucursal */}
-                            <div className="flex items-center">
-                                <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
-                                    <LiquidSelect
-                                        value={selectedErp !== null ? String(selectedErp) : ''}
-                                        onChange={v => setSelectedErp(v ? parseInt(v) : null)}
-                                        options={erpOptions}
-                                        placeholder="Todas las sucursales"
-                                        icon={Building2}
-                                        clearable={false}
-                                        compact
-                                        bare
-                                    />
-                                </div>
-                                {selectedErp !== null && (
-                                    <Button variant="destructive" icon={X} iconOnly onClick={() => setSelectedErp(null)} />
-                                )}
-                            </div>
-
-                            {labOptions.length > 0 && <>
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <div className="flex items-center">
-                                    <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
-                                        <LiquidSelect
-                                            value={filterLab !== null ? String(filterLab) : ''}
-                                            onChange={v => setFilterLab(v ? parseInt(v) : null)}
-                                            options={labOptions}
-                                            placeholder="Laboratorio"
-                                            clearable={false}
-                                            compact
-                                            bare
-                                        />
-                                    </div>
-                                    {filterLab !== null && (
-                                        <Button variant="destructive" icon={X} iconOnly onClick={() => setFilterLab(null)} />
-                                    )}
-                                </div>
-                            </>}
-
-                            {catOptions.length > 0 && <>
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <div className="flex items-center">
-                                    <div className="px-2 py-2 overflow-visible" style={{ width: '155px' }}>
-                                        <LiquidSelect
-                                            value={filterCat || ''}
-                                            onChange={v => setFilterCat(v || null)}
-                                            options={catOptions}
-                                            placeholder="Categoría"
-                                            clearable={false}
-                                            compact
-                                            bare
-                                        />
-                                    </div>
-                                    {filterCat !== null && (
-                                        <Button variant="destructive" icon={X} iconOnly onClick={() => setFilterCat(null)} />
-                                    )}
-                                </div>
-                            </>}
-
-                            {anyFilter && <>
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <Button variant="destructive" size="xs" icon={X} iconOnly onClick={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }} />
-                            </>}
+                {/* §17 — píldora escrita a mano, y encima `hidden lg:flex`:
+                    bajo 1024px esta pestaña no tenía NINGÚN filtro. `FilterBar`
+                    colapsa a hoja inferior en vez de desaparecer. */}
+                <FilterBar
+                    onClear={() => { setSelectedErp(null); setFilterLab(null); setFilterCat(null); }}
+                    activeCount={[selectedErp !== null, filterLab !== null, filterCat !== null].filter(Boolean).length}
+                >
+                    <FilterBar.Section active={selectedErp !== null} onClear={() => setSelectedErp(null)} label="sucursal">
+                        <div className="w-[175px]">
+                            <LiquidSelect
+                                value={selectedErp !== null ? String(selectedErp) : ''}
+                                onChange={v => setSelectedErp(v ? parseInt(v) : null)}
+                                options={erpOptions}
+                                placeholder="Todas las sucursales"
+                                icon={Building2}
+                                clearable={false} compact bare
+                            />
                         </div>
-                    );
-                })()}
+                    </FilterBar.Section>
+
+                    {labOptions.length > 0 && (
+                        <FilterBar.Section active={filterLab !== null} onClear={() => setFilterLab(null)} label="laboratorio">
+                            <div className="w-[175px]">
+                                <LiquidSelect
+                                    value={filterLab !== null ? String(filterLab) : ''}
+                                    onChange={v => setFilterLab(v ? parseInt(v) : null)}
+                                    options={labOptions}
+                                    placeholder="Laboratorio"
+                                    clearable={false} compact bare
+                                />
+                            </div>
+                        </FilterBar.Section>
+                    )}
+
+                    {catOptions.length > 0 && (
+                        <FilterBar.Section active={filterCat !== null} onClear={() => setFilterCat(null)} label="categoría">
+                            <div className="w-[155px]">
+                                <LiquidSelect
+                                    value={filterCat || ''}
+                                    onChange={v => setFilterCat(v || null)}
+                                    options={catOptions}
+                                    placeholder="Categoría"
+                                    clearable={false} compact bare
+                                />
+                            </div>
+                        </FilterBar.Section>
+                    )}
+                </FilterBar>
             </div>
 
             {/* ── Table ── */}

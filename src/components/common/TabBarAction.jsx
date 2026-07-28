@@ -53,13 +53,21 @@ const TabBarAction = memo(({
     tone = 'brand',
     label,
     className = '',
+    // `as="a"` para las acciones que NAVEGAN fuera del portal. Agregado el
+    // 2026-07-27 al encontrar en FacturacionView un `<a>` que reconstruía las 9
+    // clases de `BASE` a mano, solo porque el canónico estaba clavado a
+    // `<button>`. Un enlace que se ve como botón tiene que seguir siendo un
+    // enlace: es lo que permite abrirlo en otra pestaña y lo que un lector de
+    // pantalla anuncia como "enlace", no como "botón".
+    as: Tag = 'button',
     ...rest
 }) => {
     const isPrimary = variant === 'primary';
+    const esBoton = Tag === 'button';
 
     return (
-        <button
-            type="button"
+        <Tag
+            type={esBoton ? 'button' : undefined}
             aria-label={label || (typeof children === 'string' ? children : undefined)}
             className={`${BASE} ${className}
                 ${isPrimary
@@ -73,7 +81,7 @@ const TabBarAction = memo(({
             {Icon && <Icon size={14} strokeWidth={2.75}
                 className={isPrimary ? '' : (TONE_ICON[tone] || TONE_ICON.brand)} />}
             {children && <span className="hidden sm:inline">{children}</span>}
-        </button>
+        </Tag>
     );
 });
 

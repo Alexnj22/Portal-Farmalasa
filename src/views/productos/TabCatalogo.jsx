@@ -13,6 +13,7 @@ import {
     Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
@@ -1698,7 +1699,6 @@ export default function TabCatalogo({
     const selectedLab = labOptions.find(o => o.value === String(filterLab));
     const labW = selectedLab ? Math.max(185, Math.min(260, 90 + selectedLab.label.length * 7)) : 185;
     const catW = filterCategoria ? Math.max(165, Math.min(220, 90 + filterCategoria.length * 7)) : 165;
-    const hasActiveFilters = filterLab !== null || filterCategoria !== null || filterActivo === 'todos';
     const resetFilters = () => {
         setFilterLab?.(null); setFilterCategoria?.(null); setFilterActivo?.('activos');
     };
@@ -1739,62 +1739,58 @@ export default function TabCatalogo({
                     />
                 </div>
 
-                {/* Filter pill + Enriquecer SRS stacked — desktop only */}
-                <div className="hidden lg:flex flex-col items-end gap-2 shrink-0">
-                    <div className={`flex group items-center gap-0 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 overflow-visible ${tk.filterPill}`}>
-
-                        {/* Activos / Todos */}
-                        <div className="flex items-center gap-0.5 px-2.5 py-2">
-                            {[['activos', 'Activos'], ['todos', 'Todos']].map(([v, label]) => (
-                                <button key={v} onClick={() => setFilterActivo?.(v)}
-                                    className={`px-3 py-1.5 rounded-full text-label font-bold transition-all ${
-                                        filterActivo === v
-                                            ? 'bg-success/10 text-success-text shadow-sm'
-                                            : tk.filterBtn
-                                    }`}>{label}</button>
-                            ))}
-                        </div>
-
-                        <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-
-                        {/* Laboratorio */}
-                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
-                            <LiquidSelect
-                                value={filterLab ? String(filterLab) : ''}
-                                onChange={v => setFilterLab?.(v ? parseInt(v) : null)}
-                                options={labOptions}
-                                placeholder="Laboratorio"
-                                icon={Building2}
-                                compact
-                                bare
+                {/* §17 — píldora escrita a mano y `hidden lg:flex`: bajo 1024px
+                    esta pestaña no tenía ningún filtro ni el botón de SRS.
+                    "Activos / Todos" era un uno-de-N escrito a mano dentro de la
+                    píldora: es `SegmentedControl`.
+                    `ml-auto` y no un espaciador `flex-1`: con el espaciador, al
+                    envolver a otra línea se quedaba en la primera y el grupo
+                    aparecía a la izquierda. */}
+                <div className="flex flex-col items-end gap-2 shrink-0 ml-auto">
+                    <FilterBar
+                        onClear={resetFilters}
+                        activeCount={[filterLab !== null, filterCategoria !== null, filterActivo === 'todos'].filter(Boolean).length}
+                    >
+                        <FilterBar.Section active={filterActivo === 'todos'}
+                            onClear={() => setFilterActivo?.('activos')} label="estado">
+                            <SegmentedControl
+                                size="sm"
+                                tone="success"
+                                label="Estado del producto"
+                                value={filterActivo}
+                                onChange={v => setFilterActivo?.(v)}
+                                options={[{ value: 'activos', label: 'Activos' }, { value: 'todos', label: 'Todos' }]}
                             />
-                        </div>
+                        </FilterBar.Section>
 
-                        <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
+                        <FilterBar.Section active={filterLab !== null} onClear={() => setFilterLab?.(null)} label="laboratorio">
+                            <div style={{ width: labW + 'px' }} className="transition-all duration-200">
+                                <LiquidSelect
+                                    value={filterLab ? String(filterLab) : ''}
+                                    onChange={v => setFilterLab?.(v ? parseInt(v) : null)}
+                                    options={labOptions}
+                                    placeholder="Laboratorio"
+                                    icon={Building2}
+                                    compact bare
+                                />
+                            </div>
+                        </FilterBar.Section>
 
-                        {/* Categoría */}
-                        <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: catW + 'px' }}>
-                            <LiquidSelect
-                                value={filterCategoria || ''}
-                                onChange={v => setFilterCategoria?.(v || null)}
-                                options={catOptions}
-                                placeholder="Categoría"
-                                icon={Tag}
-                                compact
-                                bare
-                            />
-                        </div>
+                        <FilterBar.Section active={filterCategoria !== null} onClear={() => setFilterCategoria?.(null)} label="categoría">
+                            <div style={{ width: catW + 'px' }} className="transition-all duration-200">
+                                <LiquidSelect
+                                    value={filterCategoria || ''}
+                                    onChange={v => setFilterCategoria?.(v || null)}
+                                    options={catOptions}
+                                    placeholder="Categoría"
+                                    icon={Tag}
+                                    compact bare
+                                />
+                            </div>
+                        </FilterBar.Section>
+                    </FilterBar>
 
-                        {/* Clear all */}
-                        {hasActiveFilters && (
-                            <>
-                                <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
-                                <Button variant="destructive" size="xs" icon={X} title="Limpiar todos los filtros" iconOnly onClick={resetFilters} />
-                            </>
-                        )}
-                    </div>
-
-                    {/* Enriquecer SRS — below filter pill */}
+                    {/* Acción, fuera de la barra de filtros (§17) */}
                     <Button tone="chart-3" icon={FlaskConical} onClick={() => setShowEnriquecer(true)}>Enriquecer SRS</Button>
                 </div>
             </div>

@@ -5,7 +5,68 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.99.0';
+export const APP_VERSION = '2.99.1';
+
+// v2.99.1 — §17, tanda 2: ocho vistas mas. FilterBar de 10 a 18 adopciones.
+//
+// Dos formas distintas del mismo incumplimiento:
+//
+//   FILTROS EN EL HEADER (§16.9: el header es de las pestañas)
+//   AuditView, AttendanceMonitorView, BranchesView, FacturacionView bajaron
+//   sus filtros al cuerpo. En Monitor el filtro de sucursal ademas era
+//   `hidden md:block`: en un telefono simplemente no existia.
+//
+//   ACCIONES DENTRO DE LA PILDORA (§17: la barra filtra, no actua)
+//   FacturasCompraView ("Descargar" y "Sincronizar"), TabMinMaxRequests
+//   ("Aprobar todas"), TabCatalogo ("Enriquecer SRS") y TabMinMax (CSV,
+//   config, labs y los dos recalcular). Todas vivian en el mismo contenedor
+//   que los filtros, separadas por el mismo divisor: leian como un filtro
+//   mas. Es el hallazgo que se corrigio en Staff en v2.97.0 y que a estas
+//   vistas no habia llegado.
+//
+// Tres pildoras eran `hidden lg:flex` — TabInventario, TabCatalogo y (en la
+// tanda anterior) SchedulesView. Bajo 1024px esas pestañas no tenian NINGUN
+// filtro: no es que se vieran apretados, es que no estaban. FilterBar colapsa
+// a hoja inferior en vez de desaparecer.
+//
+// Canonicos que ganaron lo que les faltaba:
+//   · `TabBarAction` acepta `as`. En FacturacionView habia un `<a>` que
+//     reconstruia las 9 clases de `BASE` a mano solo porque el canonico
+//     estaba clavado a `<button>`. Un enlace que se ve como boton tiene que
+//     seguir siendo un enlace.
+//
+// Deuda que cayo de rebote, toda medida:
+//   · AuditView: paginacion escrita a mano → `TablePagination` (§17.2 dice
+//     "nunca a mano"). Tenia "Pag 1 de 52" sin decir cuantos registros se
+//     ven, tres islas separadas y en movil se partia en dos filas. Su tamaño
+//     de pagina era 15, que no existe en `PAGE_SIZE_OPTIONS`: el selector del
+//     canonico se veia vacio. Ahora 25.
+//   · AuditView: un `isDatePickerOpen` con listener global de Escape que era
+//     MECANISMO FINGIDO — cerrar ese estado no cerraba el calendario, porque
+//     el calendario es dueño de su propio abierto/cerrado y `onOpenChange`
+//     solo avisa.
+//   · TabMinMax: cinco `motion.button` con tres escalas de hover/tap propias
+//     (`chipAnim`, `ctaAnim`, `iconAnim`) → `Button`. §11 marca framer-motion
+//     como "no agregar mas", y el canonico ademas respeta los dos gates de
+//     movimiento (tema y prefers-reduced-motion), cosa que esas escalas no
+//     hacian.
+//   · TabSinVenta: un objeto `tk` de 11 clases literales que ya no usaba
+//     nadie.
+//   · Dos uno-de-N escritos a mano → `SegmentedControl` (Activos/Todos en
+//     Catalogo, Sin Min/Max · Stock Retenido en Sin Venta).
+//
+// Bug de layout encontrado en la captura, no leyendo: con `flex-wrap`, un
+// espaciador `flex-1` se queda en la PRIMERA linea, asi que al envolver el
+// grupo de filtros aparecia pegado a la izquierda — lo contrario de §17. Se
+// resuelve con `ml-auto` en el grupo, no con el espaciador.
+//
+// Nota de eslint: los imports de lucide y los COMPONENTES en JSX no los marca
+// como no usados ni como no definidos (solo pesca identificadores en
+// expresiones, como `icon={X}`). O sea que un `<FilterBar>` sin import pasa
+// el lint Y el build, y revienta al abrir la vista. Es exactamente el fallo
+// de "4 vistas con <SegmentedControl> sin import" de v2.76.0 — por eso el
+// gate de diseño tiene su categoria `import`, y por eso cada tanda se abre en
+// el navegador antes de comitear.
 
 // v2.99.0 — §17: cuatro vistas de filtros sueltos + el canonico que faltaba.
 //

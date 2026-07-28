@@ -9,6 +9,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { notifyEmployees } from '../../utils/notify';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import FilterBar from '../../components/common/FilterBar';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -326,23 +327,27 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
               value={tab} onChange={k => { setTab(k); setSucFilter('all'); }} label="Vista" />
         </div>
 
-        {/* Filter pill estándar */}
-        <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] shrink-0">
-          <div className="px-2 py-1.5" style={{ minWidth: 150 }}>
-            <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
-              onChange={v => setSucFilter(v || 'all')}
-              options={sucOptions} placeholder="Todas las sucursales" icon={Building2} compact bare />
-          </div>
-          {sucFilter !== 'all' && (
-            <Button variant="destructive" icon={X} title="Quitar sucursal" iconOnly onClick={() => setSucFilter('all')} />
-          )}
+        {/* §17 — "Aprobar todas" era una ACCIÓN dentro de la píldora de
+            filtros: mismo contenedor, mismo divisor, así que leía como un
+            filtro más. Va fuera. */}
+        <div className="flex items-center gap-2 shrink-0">
           {tab === 'pending' && pendingInView > 0 && (
-            <>
-              <div className="h-5 w-px bg-divider shrink-0" />
-              <Button tone="success" size="sm" disabled={bulkBusy} onClick={approveAll}>{bulkBusy ? <Loader2 size={12} className="animate-spin" /> : <CheckCheck size={13} />}
-                Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})</Button>
-            </>
+            <Button tone="success" size="sm" icon={CheckCheck} loading={bulkBusy}
+              disabled={bulkBusy} onClick={approveAll}>
+              Aprobar {sucFilter !== 'all' ? `${ERP_NAMES[Number(sucFilter)]}` : 'todas'} ({pendingInView})
+            </Button>
           )}
+
+          <FilterBar onClear={() => setSucFilter('all')} activeCount={sucFilter !== 'all' ? 1 : 0}>
+            {/* Valor "sin filtrar": la cadena 'all' */}
+            <FilterBar.Section active={sucFilter !== 'all'} onClear={() => setSucFilter('all')} label="sucursal">
+              <div className="w-[170px]">
+                <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
+                  onChange={v => setSucFilter(v || 'all')}
+                  options={sucOptions} placeholder="Todas las sucursales" icon={Building2} compact bare />
+              </div>
+            </FilterBar.Section>
+          </FilterBar>
         </div>
       </div>
 

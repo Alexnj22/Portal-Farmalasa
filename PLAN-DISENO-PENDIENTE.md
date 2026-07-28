@@ -1426,6 +1426,45 @@ es despiste: **`FilterBar` no puede deducir el valor neutro** —a veces es `''`
 a veces `'ALL'`, a veces el mes en curso— y eso hay que mirarlo *en cada*
 migración, no confiar en que el `!!` alcanza.
 
+### Tanda 2 · ocho vistas (v2.99.1) — `FilterBar` 10 → 18
+
+Dos formas del mismo incumplimiento, y ninguna era cosmética:
+
+| forma | vistas |
+|---|---|
+| **filtros en el header** (§16.9: el header es de las pestañas) | `AuditView` · `AttendanceMonitorView` · `BranchesView` · `FacturacionView` |
+| **acciones dentro de la píldora** (§17: la barra filtra, no actúa) | `FacturasCompraView` · `TabMinMaxRequests` · `TabCatalogo` · `TabMinMax` |
+
+**Tres píldoras eran `hidden lg:flex`.** `TabInventario`, `TabCatalogo` y
+`SchedulesView`: bajo 1024px esas pestañas no tenían **ningún** filtro. No es
+que se vieran apretados — no estaban. Es el argumento más fuerte a favor del
+canónico: `FilterBar` colapsa a hoja inferior, no desaparece.
+
+#### Deuda que cayó de rebote
+
+| | |
+|---|---|
+| `AuditView` | paginación a mano → `TablePagination`. Su tamaño de página era **15**, que no existe en `PAGE_SIZE_OPTIONS`: el selector del canónico se veía vacío. |
+| `AuditView` | un `isDatePickerOpen` con listener global de Escape que era **mecanismo fingido**: cerrar ese estado no cierra el calendario, porque el calendario es dueño de su propio abierto/cerrado y `onOpenChange` solo avisa. |
+| `TabMinMax` | 5 `motion.button` con tres escalas de hover/tap propias → `Button`. §11 marca framer-motion como "no agregar más", y esas escalas **no pasaban por los dos gates de movimiento**. |
+| `TabSinVenta` | un objeto `tk` de 11 clases literales que ya no usaba nadie |
+| 2 vistas | uno-de-N a mano → `SegmentedControl` |
+
+`TabBarAction` ganó `as`: en `FacturacionView` había un `<a>` que reconstruía
+las 9 clases de `BASE` a mano, solo porque el canónico estaba clavado a
+`<button>`. Un enlace que se ve como botón tiene que seguir siendo un enlace.
+
+#### Dos trampas nuevas, las dos vistas en la captura y no leyendo
+
+- **`flex-1` como espaciador se queda en la primera línea al envolver.** El
+  grupo de filtros aparecía pegado a la **izquierda** — lo contrario de §17.
+  Se resuelve con `ml-auto` en el grupo, no con el espaciador.
+- **eslint no ve un componente JSX sin import.** Solo pesca identificadores en
+  expresiones (`icon={X}`), así que `<FilterBar>` sin su `import` pasa el lint
+  **y el build**, y revienta al abrir la vista. Es el fallo de "4 vistas con
+  `<SegmentedControl>` sin import" de v2.76.0. Por eso existe la categoría
+  `import` del gate, y por eso cada tanda se abre en el navegador.
+
 #### Hallazgo abierto — familia B, no se tocó
 
 `AttendanceAuditView`: la fila de empleado es un `<button>` que **contiene** el

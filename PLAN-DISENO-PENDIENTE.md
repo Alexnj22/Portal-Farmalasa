@@ -1229,6 +1229,40 @@ bloqueantes.
 - **`useThemeSync`** tiene un `set-state-in-effect` que el lint marca desde antes
   de esta sesión.
 
+## D3.3 — los botones, reclasificados bien (2026-07-27)
+
+La tabla que publiqué en el artefacto decía **"31 se quedan: composición rica y
+posicionados"**. Era falso, y salió a la luz cuando el usuario preguntó
+simplemente *"esos 31 ¿por qué son excepción?"*.
+
+Mi clasificador tenía dos bugs:
+
+1. **Contaba las ramas de un ternario como hermanos.** `{cargando ? <Loader2/> :
+   guardado ? <Check/> : <Save/>}` son tres etiquetas en el archivo y **una sola
+   en pantalla**. Los conté como "composición rica de 3+ hijos" cuando son
+   exactamente `<Button loading>` — que el canónico ya tiene.
+2. **Contaba etiquetas dentro de comentarios JSX.** En `DashboardView:2051` el
+   comentario dice *"un `<button>` anidado sería HTML inválido"*, y el regex
+   leyó ese `<button>` como un hijo real.
+
+Reclasificado sobre el mismo universo, resolviendo ternarios y limpiando
+comentarios:
+
+| | cuántos | destino |
+|---|---|---|
+| ícono + texto | 127 | `Button icon` |
+| solo ícono | 22 | `Button iconOnly` |
+| con estado de carga | 16 | `Button loading` |
+| composición real | 1 | resultó ser `ListRow` (`MenuSearchModal:106`) |
+| anida un control | 1 | `ListRow` con `trailing` (`DashboardView:2051`) |
+
+**Excepciones que sobreviven: cero.** Los dos que parecían irreducibles son
+filas —ícono en caja, título, subtítulo—, o sea el canónico que ya existe.
+
+Que un elemento esté `absolute` tampoco lo hacía excepción: la posición es
+layout, y `Button` acepta `className`. Un `<Button iconOnly icon={ChevronLeft}
+className="absolute left-2 top-1/2" />` es perfectamente válido.
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

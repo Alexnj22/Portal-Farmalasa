@@ -3,7 +3,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { tokenMatch } from '../../utils/searchUtils';
 import {
-    X, Loader2, Archive, Target, Edit3, Copy,
+    X, Archive, Target, Edit3, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
     CheckCircle2, Sparkles, Bot, Zap
 } from 'lucide-react';
@@ -496,17 +496,17 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                             </div>
                         )}
 
-                        <button
+                        <Button
                             type="submit"
-                            disabled={isLoading || hasBlockingError || !currentForm.start || !currentForm.end}
-                            className={`w-full py-4 mt-auto active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-body-sm transition-all duration-500 flex items-center justify-center gap-2 border-none disabled:opacity-50 disabled:cursor-not-allowed ${editingGroup ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]' : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'}`}
+                            size="lg"
+                            className="w-full mt-auto"
+                            loading={isLoading}
+                            disabled={hasBlockingError || !currentForm.start || !currentForm.end}
+                            tone={editingGroup ? 'warning' : null}
+                            icon={editingGroup ? Save : Send}
                         >
-                            {isLoading
-                                ? <><Loader2 size={18} className="animate-spin" /> Procesando...</>
-                                : editingGroup
-                                    ? <><Save size={18} strokeWidth={2.5} /> Guardar Cambios</>
-                                    : <><Send size={18} strokeWidth={2.5} /> Registrar Turno</>}
-                        </button>
+                            {isLoading ? 'Procesando...' : editingGroup ? 'Guardar Cambios' : 'Registrar Turno'}
+                        </Button>
                     </form>
                 </div>
             </div>

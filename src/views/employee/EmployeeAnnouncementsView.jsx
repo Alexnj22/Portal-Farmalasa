@@ -534,19 +534,17 @@ const UnreadStack = memo(({ list, onRead }) => {
 
                         {/* Botón confirmar */}
                         <div className="px-7 pb-7">
-                            <button
+                            <Button
                                 onClick={handleConfirm}
                                 disabled={phase !== 'idle'}
-                                className={`w-full py-4 rounded-2xl font-black text-body-lg uppercase tracking-[0.14em] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 hover:-translate-y-0.5 hover:scale-[1.01] active:scale-[0.98] group/btn ${
-                                    isUrgent
-                                        ? 'bg-gradient-to-r from-danger to-chart-4 text-white shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)]'
-                                        : 'bg-gradient-to-r from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)]'
-                                }`}
+                                size="lg"
+                                className="w-full"
+                                variant={isUrgent ? 'destructive' : 'primary'}
+                                icon={CheckCircle2}
                             >
-                                <CheckCircle2 size={19} strokeWidth={2.5} className="group-hover/btn:scale-110 transition-transform duration-200"/>
                                 {active.length === 1 ? '¡Listo, estoy al día!' : 'Entendido · Siguiente'}
-                                {active.length > 1 && <ChevronsRight size={17} strokeWidth={2.5} className="group-hover/btn:translate-x-1 transition-transform duration-200"/>}
-                            </button>
+                                {active.length > 1 && <ChevronsRight size={17} strokeWidth={2.5} className="inline ml-2 -mt-0.5"/>}
+                            </Button>
                         </div>
                     </div>
 

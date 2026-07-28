@@ -16,7 +16,43 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.111.0';
+export const APP_VERSION = '2.112.0';
+
+// v2.112.0 — Los 9 "guardar" del formulario lateral, y una familia que no era.
+//
+// El clasificador los marcaba como "uno de N" y NO lo eran: el ternario que
+// leia como estado seleccionado era el del MODO (crear azul / editar ambar /
+// confirmar verde). Nueve botones, una sola anatomia repetida a mano:
+//
+//     w-full py-4 rounded-2xl font-black uppercase tracking-widest
+//     + un Loader2 propio + el color segun el modo
+//
+// El canonico ya cubre las cuatro cosas: `size="lg"` son exactamente los 48px
+// que tenian, `tone` da ambar y verde, `loading` reemplaza al Loader2 escrito a
+// mano, y `icon` a los <Save/> sueltos. Lo unico que PIERDEN es el
+// `uppercase tracking-widest`, que es justo la decision aprobada en T2.3
+// ("las mayusculas leian 'dashboard 2016'") — eran los ultimos nueve que
+// seguian sin aplicarla.
+//
+// ── Lo que aparecio al migrarlos ──────────────────────────────────────────
+// En RequestsView el "Cancelar" de al lado YA era canonico, asi que los dos
+// botones del pie del modal tenian ALTURAS DISTINTAS (40px contra ~44px).
+// Ahora los dos miden 40 y comparten linea base. No se veia hasta medirlo.
+//
+// ── Hallazgo aparte: FormTurnos es inalcanzable ───────────────────────────
+// `manageShifts` esta definido en UnifiedModal (titulo, ancho, icono, render)
+// y NADA en todo el codigo lo abre. Son 365 lineas que ademas duplican la
+// pestana "Catalogo" de Horarios, que si esta viva y es mas completa. El
+// CHANGELOG ya lo habia anotado dos veces (v2.17.28 y antes) sin que nadie
+// actuara. NO lo borro: `updateShiftFlags` solo existe ahi, o sea que borrarlo
+// se lleva la unica UI de esas banderas. Queda migrado y anotado — la decision
+// de borrar es del usuario, no mia.
+//
+// Verificado en vivo 8 de 9 (avisos, cargos, vacaciones, encuestas, turnos y
+// los dos del modal de solicitudes, estos con una fila sintetica interceptada
+// en red). El CTA "estoy al dia" de Mis Avisos quedo verificado por codigo: sus
+// datos vienen en el payload de boot, no en un GET propio que se pueda
+// interceptar.
 
 // v2.111.0 — Una casilla simulada con `<button>` y un grupo partido en dos.
 //

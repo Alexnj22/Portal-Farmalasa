@@ -8,7 +8,7 @@ import Badge from '../components/common/Badge';
 import {
   Megaphone, Send, Trash2, Globe, Building2,
   Users, User, Target, X, Search, Plus, CheckCircle2,
-  Archive, Eye, AlertCircle, PartyPopper, ChevronLeft, ChevronRight, Loader2, Clock, Flame, Edit3, Save, CalendarClock, Power, Timer
+  Archive, Eye, AlertCircle, PartyPopper, ChevronLeft, ChevronRight, Clock, Flame, Edit3, Save, CalendarClock, Power, Timer
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -704,9 +704,17 @@ const AnnouncementsView = ({ openModal }) => {
                    )}
                 </div>
 
-                <button type="submit" disabled={isSubmitting || !canEdit} className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] ${editingAnnId ? 'bg-warning hover:bg-warning-hover shadow-amber-500/30' : 'bg-brand hover:bg-brand-hover'}`}>
-                  {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Procesando...</> : editingAnnId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : publishImmediately ? <><Send size={16} strokeWidth={2.5} /> Publicar Aviso</> : <><CalendarClock size={16} strokeWidth={2.5} /> Programar Aviso</>}
-                </button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full mt-2"
+                  loading={isSubmitting}
+                  disabled={!canEdit}
+                  tone={editingAnnId ? 'warning' : null}
+                  icon={editingAnnId ? Save : publishImmediately ? Send : CalendarClock}
+                >
+                  {isSubmitting ? 'Procesando...' : editingAnnId ? 'Guardar Cambios' : publishImmediately ? 'Publicar Aviso' : 'Programar Aviso'}
+                </Button>
               </form>
             </div>
           </div>

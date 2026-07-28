@@ -812,26 +812,23 @@ const VacationPlanView = () => {
                                     </div>
                                 )}
 
-                                <button
+                                <Button
                                     type="submit"
-                                    disabled={!canEdit || isSubmitting || !empId || !startDate || !endDate}
-                                    className={`w-full h-[48px] disabled:bg-content-3 text-white rounded-2xl font-black text-label uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-500 active:scale-[0.98] disabled:shadow-none ${
-                                        confirmingEdit
-                                            ? 'bg-success hover:bg-success-hover shadow-[var(--shadow-glow-success-md)]'
-                                            : editingPlan
-                                                ? 'bg-warning hover:bg-warning-hover shadow-[var(--shadow-glow-warning)]'
-                                                : 'bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)]'
-                                    }`}
+                                    size="lg"
+                                    className="w-full"
+                                    loading={isSubmitting}
+                                    disabled={!canEdit || !empId || !startDate || !endDate}
+                                    tone={confirmingEdit ? 'success' : editingPlan ? 'warning' : null}
+                                    icon={confirmingEdit ? Check : editingPlan ? Edit3 : Palmtree}
                                 >
                                     {isSubmitting
-                                        ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
+                                        ? 'Guardando…'
                                         : confirmingEdit
-                                            ? <><Check size={15} strokeWidth={3} /> Sí, guardar cambios</>
+                                            ? 'Sí, guardar cambios'
                                             : editingPlan
-                                                ? <><Edit3 size={15} strokeWidth={2} /> Guardar Cambios</>
-                                                : <><Palmtree size={15} strokeWidth={2} /> Asignar Vacaciones</>
-                                    }
-                                </button>
+                                                ? 'Guardar Cambios'
+                                                : 'Asignar Vacaciones'}
+                                </Button>
                             </form>
                         </div>
                     </div>

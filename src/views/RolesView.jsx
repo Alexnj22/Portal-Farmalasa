@@ -617,14 +617,16 @@ const RolesView = ({ openModal }) => {
                                         </div>
                                     </div>
 
-                                    <button
-                                        type="button"
+                                    <Button
                                         onClick={handleSubmit}
                                         disabled={!canEdit}
-                                        className={`w-full py-4 mt-2 active:scale-[0.97] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-50 disabled:cursor-not-allowed ${editingRoleId ? 'bg-warning hover:bg-warning-hover shadow-warning/30 hover:shadow-warning/40' : 'bg-brand hover:bg-brand-hover'}`}
+                                        size="lg"
+                                        className="w-full mt-2"
+                                        tone={editingRoleId ? 'warning' : null}
+                                        icon={editingRoleId ? Save : Plus}
                                     >
-                                        {editingRoleId ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</> : <><Plus size={16} strokeWidth={2.5} /> Crear Cargo</>}
-                                    </button>
+                                        {editingRoleId ? 'Guardar Cambios' : 'Crear Cargo'}
+                                    </Button>
                                 </form>
                             </div>
                         </div>

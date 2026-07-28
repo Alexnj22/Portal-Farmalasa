@@ -728,16 +728,16 @@ const RequestsView = () => {
                         />
                         <div className="flex items-center gap-2 mt-4">
                             <Button variant="secondary" disabled={isActioning} onClick={() => !isActioning && setActionModal(null)}>Cancelar</Button>
-                            <button onClick={handleConfirmAction}
-                                disabled={!canApprove || isActioning || (actionModal.mode === 'reject' && !actionNote.trim())}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-body font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 ${
-                                    actionModal.mode === 'approve'
-                                        ? 'bg-success hover:bg-success-hover shadow-[var(--shadow-glow-success)]'
-                                        : 'bg-danger hover:bg-danger-hover shadow-[var(--shadow-glow-danger)]'
-                                }`}>
-                                {isActioning ? <Loader2 size={14} className="animate-spin" />
-                                    : actionModal.mode === 'approve' ? <><Check size={14} strokeWidth={2.5} /> Aprobar</> : <><X size={14} strokeWidth={2.5} /> Rechazar</>}
-                            </button>
+                            <Button
+                                onClick={handleConfirmAction}
+                                loading={isActioning}
+                                disabled={!canApprove || (actionModal.mode === 'reject' && !actionNote.trim())}
+                                className="flex-1"
+                                tone={actionModal.mode === 'approve' ? 'success' : 'danger'}
+                                icon={actionModal.mode === 'approve' ? Check : X}
+                            >
+                                {actionModal.mode === 'approve' ? 'Aprobar' : 'Rechazar'}
+                            </Button>
                         </div>
                     </div>
                 </div>,

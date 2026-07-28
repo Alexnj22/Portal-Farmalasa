@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
-    Check, X, Building2, Loader2, BarChart2, ClipboardList,
+    Check, X, Building2, BarChart2, ClipboardList,
     CalendarRange, Eye, EyeOff, Globe, Lock, Edit3, Search,
     AlertCircle, TrendingUp
 } from 'lucide-react';
@@ -721,18 +721,21 @@ export default function EncuestaAdminView() {
                                 </div>
 
                                 {/* Submit */}
-                                <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
-                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
-                                        editingSurvey
-                                            ? 'bg-warning hover:bg-warning-hover shadow-warning/30'
-                                            : 'bg-brand hover:bg-brand-hover'
-                                    }`}>
+                                <Button
+                                    onClick={handleSaveSurvey}
+                                    loading={savingSurvey}
+                                    disabled={!canManage}
+                                    size="lg"
+                                    className="w-full"
+                                    tone={editingSurvey ? 'warning' : null}
+                                    icon={editingSurvey ? Save : Plus}
+                                >
                                     {savingSurvey
-                                        ? <><Loader2 size={15} className="animate-spin" /> Procesando…</>
+                                        ? 'Procesando…'
                                         : editingSurvey
-                                            ? <><Save size={15} strokeWidth={2.5} /> Guardar Cambios</>
-                                            : <><Plus size={15} strokeWidth={2.5} /> Crear Encuesta</>}
-                                </button>
+                                            ? 'Guardar Cambios'
+                                            : 'Crear Encuesta'}
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -936,17 +939,19 @@ export default function EncuestaAdminView() {
                                 </div>
 
                                 {/* Submit */}
-                                <button type="button" onClick={handleSaveResponse}
-                                    disabled={(!editingResponse && !rfEmployeeId) || savingResponse || !canManage}
-                                    className={`w-full py-4 mt-2 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-40 disabled:cursor-not-allowed ${
-                                        editingResponse ? 'bg-warning hover:bg-warning-hover shadow-warning/30' : 'bg-brand hover:bg-brand-hover'
-                                    }`}>
+                                <Button
+                                    onClick={handleSaveResponse}
+                                    loading={savingResponse}
+                                    disabled={(!editingResponse && !rfEmployeeId) || !canManage}
+                                    size="lg"
+                                    className="w-full mt-2"
+                                    tone={editingResponse ? 'warning' : null}
+                                    icon={editingResponse ? Save : ClipboardList}
+                                >
                                     {savingResponse
-                                        ? <><Loader2 size={16} className="animate-spin" /> Procesando…</>
-                                        : editingResponse
-                                            ? <><Save size={16} strokeWidth={2.5} /> Guardar Cambios</>
-                                            : <><ClipboardList size={16} strokeWidth={2.5} /> Registrar Respuesta</>}
-                                </button>
+                                        ? 'Procesando…'
+                                        : editingResponse ? 'Guardar Cambios' : 'Registrar Respuesta'}
+                                </Button>
                             </div>
                         </div>
                     )}

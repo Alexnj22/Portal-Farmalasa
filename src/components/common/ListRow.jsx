@@ -54,6 +54,16 @@ const ListRow = memo(forwardRef(({
     subtitle,
     trailing,
     density = 'md',
+    // `surface` — la misma anatomía, dos superficies distintas (2026-07-27).
+    //   'row'  (default) es una fila DENTRO de un contenedor: menú, flyout,
+    //          lista. Toma el radio del botón, que en Liquid Glass es píldora.
+    //   'card' es una tarjeta suelta en una grilla. Toma el radio, el fondo y
+    //          la sombra de `data-surface="card"`.
+    // Salió de verificar, antes de migrar las 78 "tarjetas clickeables", que el
+    // canónico se viera igual que una tarjeta. NO se veía: en Liquid Glass la
+    // tarjeta usa `--card-radius` (1.75rem) y `ListRow` usaba `--btn-radius`
+    // (9999px). Migrarlas de una habría convertido 78 tarjetas en píldoras.
+    surface = 'row',
     active = false,
     // `selected` NO es lo mismo que `active`, y confundirlos era el problema
     // real de las 9 "tarjetas seleccionables" (decisión 3b, 2026-07-27).
@@ -82,7 +92,9 @@ const ListRow = memo(forwardRef(({
             {...(Tag === 'a' ? { href } : {})}
             {...(active && interactiva ? { 'aria-current': 'true' } : {})}
             {...(selected && interactiva ? { 'aria-pressed': true } : {})}
-            className={`w-full flex items-center text-left rounded-btn border
+            {...(surface === 'card' && !onDark ? { 'data-surface': 'card' } : {})}
+            className={`w-full flex items-center text-left border
+                ${surface === 'card' ? 'rounded-card' : 'rounded-btn'}
                 transition-[background-color,border-color,color] duration-200
                 ${d.fila}
                 ${onDark
@@ -93,13 +105,15 @@ const ListRow = memo(forwardRef(({
                         ? 'bg-brand/8 border-brand/45 text-content'
                         : active
                             ? 'bg-surface-tab-active border-border-card text-content'
-                            : `border-transparent text-content-2 ${interactiva ? 'hover:bg-surface-card-hover' : ''}`)}
+                            : surface === 'card'
+                                ? `text-content-2 ${interactiva ? 'hover:border-brand/40' : ''}`
+                                : `border-transparent text-content-2 ${interactiva ? 'hover:bg-surface-card-hover' : ''}`)}
                 ${disabled ? 'opacity-45 cursor-not-allowed' : (interactiva ? 'cursor-pointer' : '')}
                 ${className}`}
             {...rest}
         >
             {(Icono || leading) && (
-                <span className={`${d.caja} shrink-0 rounded-btn border flex items-center justify-center
+                <span className={`${d.caja} shrink-0 ${surface === 'card' ? 'rounded-input' : 'rounded-btn'} border flex items-center justify-center
                     ${iconBoxClass ?? (onDark ? 'bg-white/10 border-white/[0.08]' : 'bg-surface-card-hover border-border-card')}
                     ${onDark ? 'text-white/70' : iconClass}`}>
                     {Icono ? <Icono size={d.icono} strokeWidth={2.25} /> : leading}

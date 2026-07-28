@@ -111,6 +111,36 @@ Iconos: Layers (Liquid Glass) · Monitor (Solid) para Estilo; Sun (Claro) · Moo
 
 ---
 
+
+### 2.1 Qué separa a Liquid Glass de Solid — el contrato (2026-07-27)
+
+No son dos paletas del mismo diseño. Son **dos materiales**, y la diferencia
+tiene que verse en cinco ejes. Escrito acá porque al medirlo el 2026-07-27
+resultó que **75 de los 93 tokens de sombra/brillo eran idénticos entre los
+dos**: Solid solo apagaba animaciones y blur, y seguía pintando halos de 40px y
+`inset 0 1px 0 rgba(255,255,255,.85)` — un brillo blanco interior, que es
+literalmente el artefacto que hace que algo lea como vidrio.
+
+| eje | Liquid Glass | Solid | dónde vive |
+|---|---|---|---|
+| transparencia | superficies translúcidas + `backdrop-filter` | opaco, `backdrop-filter: none` | `--surface-*`, `--backdrop-*` |
+| forma | píldora (`9999px`), tarjeta muy redondeada | rectángulo tenso (8–12px) | `--btn-radius`, `--card-radius` |
+| sombra | doble eje: elevación **+ brillo interior** | solo elevación, y más corta | `--shadow-glass-*`, `--shadow-shine*` |
+| color de acento | halo difuso de 8–40px | **aro nítido** de 1–3px | `--shadow-glow-*` |
+| hover | el control **se levanta** (`--lift-hover: -1px`) | no se mueve; solo cambia de color | `--lift-hover` |
+| movimiento | entradas, deriva ambiental, barrido | apagado | reglas `[data-theme="solid"] .animate-*` |
+
+**Consecuencias para escribir código nuevo**
+
+- Nunca clavar `hover:-translate-y-px` — usar `hover:translate-y-[var(--lift-hover)]`.
+  Los 176 que ya estaban escritos así se neutralizan con una regla de tema
+  (`index.css`), pero eso es un parche, no el patrón.
+- Nunca clavar un radio. `rounded-btn` / `rounded-card` ya cambian solos.
+- `transition-all` en Solid se acota por regla de tema a color/fondo/borde/
+  opacidad. Si necesitás animar geometría, nombrá las propiedades.
+- Un `shadow-[var(--shadow-glow-*)]` da halo en vidrio y aro en sólido, sin que
+  el componente sepa en qué tema está. Ese es el punto.
+
 ## 3. Design Tokens (CSS Custom Properties)
 
 All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme]` blocks. Every surface and backdrop value is consumed via `var()` — no component should hardcode backdrop-filter or surface background values.
@@ -1131,6 +1161,46 @@ import Button from '@/components/common/Button';
 `variant` y `tone` son ejes distintos a propósito: *primary* dice **cuán
 importante es**, *success* dice **de qué se trata**. Mezclarlos en un solo eje
 fue el error que se corrigió al medir los 115 botones coloreados.
+
+
+#### `soft` — el relleno tenue (2026-07-27)
+
+```jsx
+<Button tone="success" soft size="sm">Aprobar</Button>
+<Button tone="danger"  soft size="sm">Rechazar</Button>
+```
+
+Salió de medir 37 botones a mano con `bg-success/10`, `bg-danger/10`,
+`bg-warning/10`. No eran capricho: los `tone` del canónico son todos **sólidos**,
+y un relleno sólido grita. Dos sólidos juntos compiten por ser el principal; el
+tenue dice *"esta acción es de esta categoría, pero no es la acción principal de
+la pantalla"*. Migrarlos a sólido habría perdido ese dato.
+
+**Cuándo usarlo**
+
+- Hay **dos o más acciones de categoría juntas y ninguna manda**. Aprobar /
+  Rechazar en una fila de solicitud: las dos importan igual, ninguna es "la"
+  acción.
+- La acción es de categoría pero **secundaria a un primario que ya está en la
+  misma vista**. Un `primary` azul y un `soft success` conviven; un `primary` y
+  un `tone success` sólido pelean.
+- Va **dentro de una tarjeta o una fila**, no en la barra de acciones principal.
+
+**Cuándo NO**
+
+- Es *la* acción de la pantalla → `variant="primary"`.
+- Es **destructiva y definitiva** (borrar de verdad) → `variant="destructive"`
+  sólido. Atenuar una acción irreversible es mentirle al usuario sobre su peso.
+- No tiene categoría, solo jerarquía → `secondary` o `ghost`.
+
+`soft` **solo funciona junto a `tone`**: es la misma categoría con menos peso, no
+una categoría distinta. Sin `tone` se ignora. Y **no lleva barrido**: el fondo es
+un tinte translúcido, no hay superficie que refleje la luz — misma regla que ya
+dejaba fuera a `ghost` y `secondary`.
+
+Se combina con `iconOnly`: un botón de ícono puede ser `tone="success" soft`
+para confirmar o `tone="danger" soft` para cerrar. `tone`, `soft`, `size` e
+`iconOnly` son ejes independientes.
 
 ### 15.3 `SegmentedControl` — una de N opciones
 

@@ -258,6 +258,13 @@
      en Solid opaco y rectangular.
      Reemplaza los cuatro grises crudos que había a mano (slate-900/800/950,
      que ignoraban el tema por completo) por el navy del portal. */
+  /* Cuánto se levanta un control al hover. Liquid Glass es un material que
+     reacciona: el control flota. Solid es una superficie impresa: no flota,
+     solo cambia de color. Antes esto estaba clavado como `hover:-translate-y-px`
+     en el canónico y en 200 botones a mano, así que el tema sólido levantaba
+     igual que el de vidrio — contradiciendo su propia promesa de ser liviano. */
+  --lift-hover:  -1px;
+
   --tooltip-bg:      rgba(13,20,48,0.86);
   --tooltip-border:  rgba(255,255,255,0.14);
   --tooltip-text:    rgba(255,255,255,0.95);
@@ -718,6 +725,8 @@
      forma. Sin sheen: en Solid el brillo interior no existe en ninguna
      superficie, y ponerlo solo acá sería el mismo error que los 54
      `rounded-full` fijos peleando contra su propio tema. */
+  --lift-hover:  0px;
+
   --tooltip-bg:      #16203D;
   --tooltip-border:  rgba(255,255,255,0.10);
   --tooltip-radius:  0.5rem;
@@ -815,6 +824,8 @@
   /* Tooltip — opaco y rectangular como en Solid claro, pero levantado un
      escalón sobre la tarjeta (#1e293b) por el mismo motivo que en Liquid
      oscuro: dos oscuros iguales no se separan. */
+  --lift-hover:  0px;
+
   --tooltip-bg:      #33415C;
   --tooltip-border:  rgba(255,255,255,0.14);
   --tooltip-radius:  0.5rem;
@@ -1046,6 +1057,155 @@
   .animate-ambient-drift-reverse {
     filter: blur(16px) !important;
   }
+}
+
+
+/* ═══ Solid Modern: la contraparte LIVIANA de las sombras (2026-07-27) ═══
+   Encontrado midiendo: de los 93 tokens de sombra/glow/sheen, **75 eran
+   idénticos** entre Liquid Glass y Solid. El tema sólido solo apagaba
+   animaciones y blur — seguía pintando halos de color de 40px de radio y,
+   peor, `inset 0 1px 0 rgba(255,255,255,.85)`: un brillo blanco interior,
+   que es literalmente el artefacto que hace que una superficie lea como
+   vidrio. Solid prometía ser la versión eficiente y no lo era.
+
+   Las tres reglas que se aplican acá:
+     1. CERO brillo interior. El inset blanco se va: una superficie opaca no
+        tiene un canto que atrape la luz.
+     2. La sombra se acorta. Mismo escalón de elevación, menos radio de blur
+        — además de leerse "impreso" en vez de "flotando", un blur chico
+        cuesta menos de componer.
+     3. El halo de color pasa a ser un ARO. Un glow de 40px es difuso por
+        definición; en Solid el color se comunica con un borde nítido de
+        1-3px, que es la misma información sin el costo.
+
+   No se tocan --shadow-elevation-*: esos ya eran sombras planas sin brillo,
+   que es justo lo que Solid necesita. */
+[data-theme="solid"], [data-theme="solid-dark"] {
+  /* 0 · la elevación también se acorta. El comentario original decía que
+     estas cinco servían igual en los 4 temas "porque una sombra suave sigue
+     funcionando en dark" — cierto para el color, falso para el PESO: 64px de
+     blur en un modal opaco es caro de componer y lee como algo flotando, que
+     es justo lo contrario de lo que promete Solid. */
+  --shadow-elevation-xs: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-elevation-sm: 0 1px 3px rgba(0,0,0,.07);
+  --shadow-elevation-md: 0 2px 6px rgba(0,0,0,.09);
+  --shadow-elevation-lg: 0 6px 16px rgba(0,0,0,.12);
+  --shadow-elevation-xl: 0 10px 28px rgba(0,0,0,.16);
+
+  /* El hover del botón de marca dejaba un halo azul de 20px. En Solid el
+     realce es un aro, igual que los demás glows. */
+  --btn-brand-shadow-hover: 0 0 0 2px color-mix(in srgb, var(--brand) 30%, transparent);
+
+  /* 1 · sin brillo interior */
+  --shadow-shine:    none;
+  --shadow-shine-lg: none;
+
+  /* 2 · misma elevación, blur más corto y sin inset */
+  --shadow-glass-sm: 0 1px 2px rgba(0,0,0,.06);
+  --shadow-glass-1:  0 1px 2px rgba(0,0,0,.06);
+  --shadow-glass-2:  0 2px 5px rgba(0,0,0,.07);
+  --shadow-glass-3:  0 4px 10px rgba(0,0,0,.08);
+  --shadow-glass-4:  0 8px 20px rgba(0,0,0,.10);
+  --shadow-glass-5:  0 12px 28px rgba(0,0,0,.13);
+  --shadow-glass-md: 0 3px 8px rgba(0,0,0,.08);
+  --shadow-glass-lg: 0 6px 16px rgba(0,0,0,.09);
+
+  /* 3 · el halo difuso pasa a aro nítido */
+  --shadow-glow-brand: 0 1px 3px color-mix(in srgb, rgba(0,82,204,.4) 30%, transparent);
+  --shadow-glow-chart-1: 0 1px 3px color-mix(in srgb, rgba(59,130,246,.35) 30%, transparent);
+  --shadow-glow-chart-3: 0 1px 3px color-mix(in srgb, rgba(139,92,246,.35) 30%, transparent);
+  --shadow-glow-chart-4: 0 1px 3px color-mix(in srgb, rgba(249,115,22,.35) 30%, transparent);
+  --shadow-glow-chart-7: 0 1px 3px color-mix(in srgb, rgba(234,179,8,.35) 30%, transparent);
+  --shadow-glow-chart-8: 0 1px 3px color-mix(in srgb, rgba(100,116,139,.3) 30%, transparent);
+  --shadow-glow-danger: 0 1px 3px color-mix(in srgb, rgba(240,68,56,.35) 30%, transparent);
+  --shadow-glow-success: 0 1px 3px color-mix(in srgb, rgba(18,183,106,.35) 30%, transparent);
+  --shadow-glow-warning: 0 1px 3px color-mix(in srgb, rgba(247,144,9,.35) 30%, transparent);
+  --shadow-glow-brand-sm: 0 0 0 1px color-mix(in srgb, var(--brand) 34%, transparent);
+  --shadow-glow-brand-md: 0 0 0 2px color-mix(in srgb, var(--brand) 26%, transparent);
+  --shadow-glow-brand-lg: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent);
+  --shadow-glow-success-sm: 0 0 0 1px color-mix(in srgb, var(--success) 34%, transparent);
+  --shadow-glow-success-md: 0 0 0 2px color-mix(in srgb, var(--success) 26%, transparent);
+  --shadow-glow-success-lg: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent);
+  --shadow-glow-warning-sm: 0 0 0 1px color-mix(in srgb, var(--warning) 34%, transparent);
+  --shadow-glow-warning-md: 0 0 0 2px color-mix(in srgb, var(--warning) 26%, transparent);
+  --shadow-glow-warning-lg: 0 0 0 3px color-mix(in srgb, var(--warning) 18%, transparent);
+  --shadow-glow-danger-sm: 0 0 0 1px color-mix(in srgb, var(--danger) 34%, transparent);
+  --shadow-glow-danger-md: 0 0 0 2px color-mix(in srgb, var(--danger) 26%, transparent);
+  --shadow-glow-danger-lg: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent);
+  --shadow-glow-chart-1-sm: 0 0 0 1px color-mix(in srgb, var(--chart-1) 34%, transparent);
+  --shadow-glow-chart-1-md: 0 0 0 2px color-mix(in srgb, var(--chart-1) 26%, transparent);
+  --shadow-glow-chart-1-lg: 0 0 0 3px color-mix(in srgb, var(--chart-1) 18%, transparent);
+  --shadow-glow-chart-2-sm: 0 0 0 1px color-mix(in srgb, var(--chart-2) 34%, transparent);
+  --shadow-glow-chart-2-md: 0 0 0 2px color-mix(in srgb, var(--chart-2) 26%, transparent);
+  --shadow-glow-chart-2-lg: 0 0 0 3px color-mix(in srgb, var(--chart-2) 18%, transparent);
+  --shadow-glow-chart-3-sm: 0 0 0 1px color-mix(in srgb, var(--chart-3) 34%, transparent);
+  --shadow-glow-chart-3-md: 0 0 0 2px color-mix(in srgb, var(--chart-3) 26%, transparent);
+  --shadow-glow-chart-3-lg: 0 0 0 3px color-mix(in srgb, var(--chart-3) 18%, transparent);
+  --shadow-glow-chart-4-sm: 0 0 0 1px color-mix(in srgb, var(--chart-4) 34%, transparent);
+  --shadow-glow-chart-4-md: 0 0 0 2px color-mix(in srgb, var(--chart-4) 26%, transparent);
+  --shadow-glow-chart-4-lg: 0 0 0 3px color-mix(in srgb, var(--chart-4) 18%, transparent);
+  --shadow-glow-chart-5-sm: 0 0 0 1px color-mix(in srgb, var(--chart-5) 34%, transparent);
+  --shadow-glow-chart-5-md: 0 0 0 2px color-mix(in srgb, var(--chart-5) 26%, transparent);
+  --shadow-glow-chart-5-lg: 0 0 0 3px color-mix(in srgb, var(--chart-5) 18%, transparent);
+  --shadow-glow-chart-6-sm: 0 0 0 1px color-mix(in srgb, var(--chart-6) 34%, transparent);
+  --shadow-glow-chart-6-md: 0 0 0 2px color-mix(in srgb, var(--chart-6) 26%, transparent);
+  --shadow-glow-chart-6-lg: 0 0 0 3px color-mix(in srgb, var(--chart-6) 18%, transparent);
+  --shadow-glow-chart-7-sm: 0 0 0 1px color-mix(in srgb, var(--chart-7) 34%, transparent);
+  --shadow-glow-chart-7-md: 0 0 0 2px color-mix(in srgb, var(--chart-7) 26%, transparent);
+  --shadow-glow-chart-7-lg: 0 0 0 3px color-mix(in srgb, var(--chart-7) 18%, transparent);
+  --shadow-glow-chart-8-sm: 0 0 0 1px color-mix(in srgb, var(--chart-8) 34%, transparent);
+  --shadow-glow-chart-8-md: 0 0 0 2px color-mix(in srgb, var(--chart-8) 26%, transparent);
+  --shadow-glow-chart-8-lg: 0 0 0 3px color-mix(in srgb, var(--chart-8) 18%, transparent);
+  --shadow-glow-chart-9-sm: 0 0 0 1px color-mix(in srgb, var(--chart-9) 34%, transparent);
+  --shadow-glow-chart-9-md: 0 0 0 2px color-mix(in srgb, var(--chart-9) 26%, transparent);
+  --shadow-glow-chart-9-lg: 0 0 0 3px color-mix(in srgb, var(--chart-9) 18%, transparent);
+  --shadow-glow-logo-green-sm: 0 0 0 1px color-mix(in srgb, var(--logo-green) 34%, transparent);
+  --shadow-glow-logo-green-md: 0 0 0 2px color-mix(in srgb, var(--logo-green) 26%, transparent);
+  --shadow-glow-logo-green-lg: 0 0 0 3px color-mix(in srgb, var(--logo-green) 18%, transparent);
+  --shadow-glow-logo-magenta-sm: 0 0 0 1px color-mix(in srgb, var(--logo-magenta) 34%, transparent);
+  --shadow-glow-logo-magenta-md: 0 0 0 2px color-mix(in srgb, var(--logo-magenta) 26%, transparent);
+  --shadow-glow-logo-magenta-lg: 0 0 0 3px color-mix(in srgb, var(--logo-magenta) 18%, transparent);
+}
+
+[data-theme="solid-dark"] {
+  --shadow-glass-dark: 0 8px 20px rgba(0,0,0,.45);
+  --shadow-glass-4:  0 8px 20px rgba(0,0,0,.40);
+  --shadow-glass-5:  0 12px 28px rgba(0,0,0,.50);
+}
+
+/* ═══ Solid Modern: el hover tampoco levanta (2026-07-27) ═══════════════
+   Segundo eje del mismo hallazgo. El canónico ya toma la elevación de
+   `--lift-hover`, pero hay **176 `hover:-translate-y-*` y 51 `hover:scale-*`
+   escritos a mano** fuera de él: en Solid, todo eso seguía flotando.
+
+   Se corrige acá y no en los 227 sitios porque es una decisión de TEMA, no de
+   cada componente — la misma razón por la que el radio vive en `--btn-radius`.
+
+   Se neutraliza SOLO la variable del delta, nunca `translate`/`scale` enteros:
+   Tailwind v4 compone `translate: var(--tw-translate-x) var(--tw-translate-y)`,
+   así que poner `translate:none` habría roto todo `-translate-x-1/2` que centra
+   un popover — justo mientras el puntero está encima. */
+[data-theme="solid"] [class*="hover:-translate-y"]:hover,
+[data-theme="solid-dark"] [class*="hover:-translate-y"]:hover,
+[data-theme="solid"] [class*="hover:translate-y"]:hover,
+[data-theme="solid-dark"] [class*="hover:translate-y"]:hover {
+  --tw-translate-y: 0px;
+}
+[data-theme="solid"] [class*="hover:scale-"]:hover,
+[data-theme="solid-dark"] [class*="hover:scale-"]:hover {
+  --tw-scale-x: 100%;
+  --tw-scale-y: 100%;
+  --tw-scale-z: 100%;
+}
+
+/* `transition-all` anima TODAS las propiedades, incluidas las que fuerzan
+   recálculo de layout. Hay 624 usos. En Liquid Glass es parte del material —
+   el control responde a todo. En Solid se acota a lo que cambia de verdad al
+   interactuar: color y opacidad. Es la misma sensación de respuesta sin pagar
+   la composición de sombras y geometría en cada hover. */
+[data-theme="solid"] .transition-all,
+[data-theme="solid-dark"] .transition-all {
+  transition-property: color, background-color, border-color, fill, stroke, opacity;
 }
 
 /* Fase T5: la promesa "cero backdrop-filter" de Solid Modern (arriba) solo

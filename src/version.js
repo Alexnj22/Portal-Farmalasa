@@ -5,7 +5,48 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.89.0';
+export const APP_VERSION = '2.90.0';
+
+// v2.90.0 — `soft` en Button, y el contrato Liquid/Solid hecho real.
+//
+// Aprobado del artefacto de botones: 3a migrar, 3b crear `soft`, 3c verificar
+// que el canonico de tarjetas se vea como tarjeta, 3d de acuerdo.
+//
+// `soft` (3b) — el relleno tenue. Salio de 37 botones a mano con bg-success/10
+// y compania. Los `tone` del canonico eran todos SOLIDOS, y un relleno solido
+// grita: dos solidos juntos compiten por ser el principal. Reglas de uso
+// escritas en DESIGN.md §15.2, no libradas al gusto. No lleva barrido (un
+// tinte translucido no refleja luz) y solo funciona junto a `tone`.
+// Se combina con iconOnly: sirve para el "confirmar" verde y el "cerrar" rojo.
+//
+// 3c — verificado ANTES de migrar, y NO coincidian: en Liquid la tarjeta usa
+// --card-radius (1.75rem) y ListRow usaba --btn-radius (9999px). Migrar las 78
+// "tarjetas clickeables" tal cual las habria convertido en pildoras. ListRow
+// gana `surface="card"`, que toma radio/fondo/sombra de data-surface="card".
+//
+// ── Y el hallazgo grande, del recordatorio del usuario ──────────────────
+// "la version solida debe ser distinta: sin sombras pesadas, sin
+// transparencias, sin efectos hover pesados, mas liviana."
+// Medido: de los 93 tokens de sombra/glow/sheen, **75 eran IDENTICOS** entre
+// Liquid y Solid. Solid solo apagaba animaciones y blur. Seguia pintando halos
+// de color de 40px y `inset 0 1px 0 rgba(255,255,255,.85)` — un brillo blanco
+// interior, que es literalmente el artefacto que hace que algo lea como vidrio.
+// Solid prometia ser la version eficiente y no lo era.
+//
+//   · sin brillo interior: --shadow-shine/-lg → none, y la escala glass-1..5
+//     pierde el inset y acorta el blur.
+//   · la elevacion se acorta: xl pasa de 64px de blur a 28px.
+//   · los 54 glows pasan de halo difuso (8-40px) a ARO nitido (1-3px).
+//   · el hover no levanta: --lift-hover 0px, mas una regla de tema que
+//     neutraliza los 176 `hover:-translate-y` y 51 `hover:scale` escritos a
+//     mano. Se toca SOLO la variable del delta (--tw-translate-y), nunca
+//     `translate` entero: hacerlo habria roto todo -translate-x-1/2 que centra
+//     un popover, justo mientras el puntero esta encima.
+//   · `transition-all` (624 usos) se acota en Solid a color/fondo/borde/opacidad.
+//
+// Resultado medido en vivo: 75 tokens identicos → 11. Liquid levanta -1px con
+// transition:all; Solid no se mueve y solo transiciona color.
+// El contrato de los 5 ejes queda escrito en DESIGN.md §2.1.
 
 // v2.89.0 — `PortalTextarea`: el ultimo control de formulario sin canonico.
 //

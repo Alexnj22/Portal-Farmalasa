@@ -49,6 +49,42 @@ const HAS_SWEEP = new Set(['primary', 'destructive']);
 // el código no eran seis decisiones: eran seis formas de ignorar el token.
 const SHAPE_CLASSES = { box: 'rounded-btn', pill: 'rounded-btn' };
 
+// ── `soft`: el relleno tenue (2026-07-27) ────────────────────────────────
+// Aprobado tras medir 37 botones a mano con `bg-success/10`, `bg-danger/10`,
+// `bg-warning/10`. No eran capricho: los tonos del canónico eran TODOS sólidos,
+// y un relleno sólido grita. Dos botones sólidos juntos compiten por ser el
+// principal; el tenue dice "esta acción es de esta categoría, pero no es la
+// acción principal de la pantalla". Migrarlos a sólido habría perdido ese dato.
+//
+// CUÁNDO USARLO (regla, no gusto — ver DESIGN.md §15.2):
+//   · Hay DOS O MÁS acciones de categoría juntas y ninguna manda.
+//     Aprobar/Rechazar en una fila de solicitud: las dos importan igual.
+//   · La acción es de categoría pero secundaria a un primario que ya está
+//     en la misma vista. Un `primary` azul y un `soft success` conviven;
+//     un `primary` y un `tone success` sólido pelean.
+//   · Va dentro de una tarjeta o fila, no en la barra de acciones principal.
+//
+// CUÁNDO NO:
+//   · Es LA acción de la pantalla → `variant="primary"`.
+//   · Es destructiva y definitiva (borrar de verdad) → `variant="destructive"`
+//     sólido. Atenuar una acción irreversible es mentirle al usuario.
+//   · No tiene categoría, solo jerarquía → `secondary` o `ghost`.
+//
+// El borde va por `inset ring` y no por `border`, para que el alto no cambie
+// respecto de las demás variantes (un `border` suma 2px a la caja).
+const SOFT_CLASSES = {
+    success: 'text-success-text bg-success/12 ring-1 ring-inset ring-success/30 hover:bg-success/20',
+    warning: 'text-warning-text bg-warning/12 ring-1 ring-inset ring-warning/30 hover:bg-warning/20',
+    danger:  'text-danger-text bg-danger/12 ring-1 ring-inset ring-danger/30 hover:bg-danger/20',
+    brand:   'text-brand-text bg-brand/10 ring-1 ring-inset ring-brand/30 hover:bg-brand/18',
+    'chart-1': 'text-chart-1-text bg-chart-1/12 ring-1 ring-inset ring-chart-1/30 hover:bg-chart-1/20',
+    'chart-3': 'text-chart-3-text bg-chart-3/12 ring-1 ring-inset ring-chart-3/30 hover:bg-chart-3/20',
+    'chart-4': 'text-chart-4-text bg-chart-4/12 ring-1 ring-inset ring-chart-4/30 hover:bg-chart-4/20',
+    'chart-6': 'text-chart-6-text bg-chart-6/12 ring-1 ring-inset ring-chart-6/30 hover:bg-chart-6/20',
+    'chart-8': 'text-chart-8-text bg-chart-8/12 ring-1 ring-inset ring-chart-8/30 hover:bg-chart-8/20',
+    'chart-9': 'text-chart-9-text bg-chart-9/12 ring-1 ring-inset ring-chart-9/30 hover:bg-chart-9/20',
+};
+
 // Literales, NO plantilla: Tailwind escanea texto (ver la nota de Badge/Switch).
 const TONE_CLASSES = {
     success: 'text-white bg-success-solid hover:brightness-110',
@@ -59,6 +95,8 @@ const TONE_CLASSES = {
     'chart-6': 'text-white bg-chart-6 hover:brightness-110',
     'chart-8': 'text-white bg-chart-8 hover:brightness-110',
     'chart-9': 'text-white bg-chart-9 hover:brightness-110',
+    danger:  'text-white bg-danger-solid hover:brightness-110',
+    brand:   'text-white bg-brand hover:brightness-110',
 };
 
 const VARIANT_CLASSES = {
@@ -66,15 +104,15 @@ const VARIANT_CLASSES = {
         shadow-[var(--shadow-glass-1)]
         hover:from-brand hover:to-brand-dark
         hover:shadow-[var(--shadow-glass-1)]
-        hover:-translate-y-px active:translate-y-0 active:scale-[0.98]`,
+        hover:translate-y-[var(--lift-hover)] active:translate-y-0 active:scale-[0.98]`,
     secondary: `text-content bg-gradient-to-b from-surface-card to-surface-card-hover
         border border-border-card shadow-sm
-        hover:shadow-md hover:-translate-y-px`,
+        hover:shadow-md hover:translate-y-[var(--lift-hover)]`,
     ghost: `text-content-2 bg-transparent hover:bg-surface-card-hover hover:text-content`,
     destructive: `text-white bg-gradient-to-b from-danger-light to-danger
         shadow-[var(--shadow-glass-1)]
         hover:shadow-[var(--shadow-glass-1)]
-        hover:-translate-y-px active:translate-y-0 active:scale-[0.98]`,
+        hover:translate-y-[var(--lift-hover)] active:translate-y-0 active:scale-[0.98]`,
 };
 
 // ── Tamaños canónicos (D2.5, 2026-07-26) ─────────────────────────────────
@@ -113,6 +151,9 @@ const Button = memo(({
     variant = 'primary',
     shape = 'box',
     tone = null,
+    // `soft` solo tiene sentido junto a `tone`: es la MISMA categoría con menos
+    // peso, no una categoría distinta. Sin `tone` se ignora.
+    soft = false,
     size = 'md',
     icon: Icon,
     iconOnly = false,
@@ -132,13 +173,20 @@ const Button = memo(({
                 transition-[transform,box-shadow,background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap
                 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none
                 ${SHAPE_CLASSES[shape] || SHAPE_CLASSES.box}
-                ${tone ? (TONE_CLASSES[tone] || VARIANT_CLASSES.primary)
-                       : (VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary)}
+                ${tone
+                    ? (soft ? (SOFT_CLASSES[tone] || SOFT_CLASSES.brand)
+                            : (TONE_CLASSES[tone] || VARIANT_CLASSES.primary))
+                    : (VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary)}
+                ${tone && !soft ? 'hover:translate-y-[var(--lift-hover)]' : ''}
                 ${iconOnly ? (ICON_ONLY_SIZE[size] || ICON_ONLY_SIZE.md) : (SIZE_CLASSES[size] || SIZE_CLASSES.md)}
                 ${className}`}
             {...rest}
         >
-            {(tone || HAS_SWEEP.has(variant)) && !isDisabled && <span className="sweep" aria-hidden="true" />}
+            {/* El barrido va solo en superficies RELLENAS. En `soft` el fondo
+                es un tinte translúcido: no hay nada que refleje la luz, y el
+                barrido se vería como una mancha cruzando. Misma regla que ya
+                dejaba fuera a `ghost` y `secondary`. */}
+            {((tone && !soft) || HAS_SWEEP.has(variant)) && !isDisabled && <span className="sweep" aria-hidden="true" />}
             {loading ? (
                 <Loader2 size={ICON_PX[size] ?? 15} className="relative animate-spin" />
             ) : (

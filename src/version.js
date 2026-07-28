@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.139.0';
+export const APP_VERSION = '2.140.0';
+
+// v2.140.0 — D3.5: tres tablas mas, y la consolidacion bajando sola.
+//
+//   · `BRANCH_TYPE_META` (Sucursales) — cuatro tipos con su trio
+//     bg/text/border.
+//   · `STATUS_CONFIG` (Inicio, actividad en tiempo real) — seis estados. El
+//     `dot` se queda: se usa aparte para el punto.
+//   · `ABSENCE_COLORS` (Inicio, ausencias) — el `bg`/`border` se queda porque
+//     pinta tambien el cuadro del icono, que es una SUPERFICIE y no un chip.
+//
+// Dos de ellas usaban `chart-2` para "en labores" y "permiso". Como chart-2 ya
+// es `success` desde v2.139.0, pasan a nombrarlo por lo que es. El baseline de
+// `chart-retirado` baja **452 → 445 sin tocar un solo color**: es la
+// consolidacion resolviendose sola a medida que los sitios se migran.
+//
+// El gate atrapo un `<Badge>` sin importar en BranchesView — el mismo fallo
+// que me tumbo dos vistas ayer. Esta vez lo corri ANTES de la captura.
+//
+// Chips a mano: 70 → 63.
 
 // v2.139.0 — La paleta: de trece a nueve, y los colores de marca con un rol.
 //

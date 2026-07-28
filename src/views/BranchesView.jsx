@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback, useState, useEffect, memo } from "react";
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
+import Badge from '../components/common/Badge';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
 import TabBarAction from '../components/common/TabBarAction';
@@ -32,11 +33,13 @@ const FILTER_OPTIONS = [
     { value: "OWNED", label: "Propias" },
 ];
 
+// `color` era la paleta SOFT de `Badge` escrita a mano; ahora es el nombre de
+// la variante y el color lo pone el canónico (2026-07-28, D3.5).
 const BRANCH_TYPE_META = {
-    FARMACIA:      { label: 'Farmacia',       color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30',         sectionLabel: 'Farmacias' },
-    BODEGA:        { label: 'Bodega',          color: 'bg-warning/10 text-warning border-warning/30',       sectionLabel: 'Bodega' },
-    ADMINISTRATIVA:{ label: 'Administración',  color: 'bg-chart-3/10 text-chart-3-text border-chart-3/30',    sectionLabel: 'Administración' },
-    EXTERNA:       { label: 'Externos',        color: 'bg-chart-9/10 text-chart-9-text border-chart-9/30',          sectionLabel: 'Personal Externo' },
+    FARMACIA:      { label: 'Farmacia',      variante: 'chart-1', sectionLabel: 'Farmacias' },
+    BODEGA:        { label: 'Bodega',        variante: 'warning', sectionLabel: 'Bodega' },
+    ADMINISTRATIVA:{ label: 'Administración', variante: 'chart-3', sectionLabel: 'Administración' },
+    EXTERNA:       { label: 'Externos',      variante: 'chart-9', sectionLabel: 'Personal Externo' },
 };
 const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
 
@@ -441,9 +444,9 @@ const BranchCard = memo(({
 
                             <div className="flex items-center gap-2 mt-1">
                                 {branch.type && branch.type !== 'FARMACIA' && (
-                                    <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${BRANCH_TYPE_META[branch.type]?.color || 'bg-surface-card-hover text-content-3 border-divider'}`}>
+                                    <Badge variant={BRANCH_TYPE_META[branch.type]?.variante || 'neutral'} size="sm">
                                         {BRANCH_TYPE_META[branch.type]?.label}
-                                    </span>
+                                    </Badge>
                                 )}
                                 <p className="text-caption text-content-2 font-bold uppercase tracking-widest flex items-center gap-1">
                                     {branch.openingDate || branch.opening_date
@@ -801,9 +804,9 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                     <div key={type}>
                                         {grouped.length > 1 && (
                                             <div className="flex items-center gap-3 mb-4">
-                                                <span className={`text-micro font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${BRANCH_TYPE_META[type]?.color}`}>
+                                                <Badge variant={BRANCH_TYPE_META[type]?.variante || 'neutral'}>
                                                     {BRANCH_TYPE_META[type]?.sectionLabel}
-                                                </span>
+                                                </Badge>
                                                 <div className="flex-1 h-px bg-divider" />
                                                 <span className="text-caption font-bold text-content-3">{groupBranches.length}</span>
                                             </div>

@@ -180,21 +180,27 @@ const REQUEST_TYPE_LABELS = {
 
 // Tokenizado T7 — mismo criterio de PERMIT=cat-2 que RequestsView/
 // EmployeeProfileView (mismo enum de tipo de ausencia en toda la app).
+// El `bg`/`border` se queda porque pinta también el cuadro del ícono, que es
+// una SUPERFICIE y no un chip. `variante` es para el chip. PERMIT pasa de
+// chart-2 a success — mismo verde desde v2.139.0.
 const ABSENCE_COLORS = {
-  VACATION:   { bg: 'bg-warning/10',  text: 'text-warning-text',  border: 'border-warning/30'  },
-  DISABILITY: { bg: 'bg-danger/10',    text: 'text-danger-text',    border: 'border-danger/30'    },
-  PERMIT:     { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' },
+  VACATION:   { bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30', variante: 'warning' },
+  DISABILITY: { bg: 'bg-danger/10',  text: 'text-danger-text',  border: 'border-danger/30',  variante: 'danger'  },
+  PERMIT:     { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', variante: 'success' },
 };
 
 // Actividad en tiempo real — categórico puro salvo ABSENT (falta de marca,
 // sí necesita leerse como "requiere seguimiento" → warning).
+// `variante` reemplaza al trío bg/text/border, que era la paleta SOFT de
+// `Badge` a mano. `dot` se queda: se usa aparte para el punto de estado.
+// WORKING pasa de chart-2 a success — es el mismo verde desde v2.139.0.
 const STATUS_CONFIG = {
-  WORKING:   { label: 'En labores',    dot: 'bg-chart-2',  bg: 'bg-chart-2/10',  text: 'text-chart-2-text',  border: 'border-chart-2/30'  },
-  LUNCH:     { label: 'Almuerzo',      dot: 'bg-chart-4', bg: 'bg-chart-4/10', text: 'text-chart-4-text', border: 'border-chart-4/30' },
-  LACTATION: { label: 'Lactancia',     dot: 'bg-chart-6',   bg: 'bg-chart-6/10',   text: 'text-chart-6-text',   border: 'border-chart-6/30'   },
-  BUSINESS:  { label: 'Gest. externa', dot: 'bg-chart-1',   bg: 'bg-chart-1/10',   text: 'text-chart-1-text',   border: 'border-chart-1/30'   },
-  OUT:       { label: 'Salida',        dot: 'bg-content-3',  bg: 'bg-surface-card-hover',  text: 'text-content-3',  border: 'border-border-card'  },
-  ABSENT:    { label: 'Sin marcar',    dot: 'bg-warning',   bg: 'bg-warning/10',   text: 'text-warning-text',   border: 'border-warning/30'   },
+  WORKING:   { label: 'En labores',    dot: 'bg-success',   variante: 'success' },
+  LUNCH:     { label: 'Almuerzo',      dot: 'bg-chart-4',   variante: 'chart-4' },
+  LACTATION: { label: 'Lactancia',     dot: 'bg-chart-6',   variante: 'chart-6' },
+  BUSINESS:  { label: 'Gest. externa', dot: 'bg-chart-1',   variante: 'chart-1' },
+  OUT:       { label: 'Salida',        dot: 'bg-content-3', variante: 'neutral' },
+  ABSENT:    { label: 'Sin marcar',    dot: 'bg-warning',   variante: 'warning' },
 };
 
 const CATEGORY_META = {
@@ -1278,8 +1284,8 @@ const DashboardView = ({ openModal }) => {
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
                 return (
                   <div key={status} className="px-4 py-3">
-                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-wide text-content-2">{cfg.label}</span><span className={`text-caption font-black px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>{group.length}</span></div>
-                    <div className="flex flex-wrap gap-1">{group.map(e=><span key={e.id} className={`text-caption font-semibold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{e.name?.split(' ')[0]}</span>)}</div>
+                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-wide text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
+                    <div className="flex flex-wrap gap-1">{group.map(e=><Badge key={e.id} variant={cfg.variante} size="sm" uppercase={false}>{e.name?.split(' ')[0]}</Badge>)}</div>
                   </div>
                 );
               })
@@ -1461,7 +1467,7 @@ const DashboardView = ({ openModal }) => {
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
                     <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
-                    <span className={`text-micro font-black px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</span>
+                    <Badge variant={cfg.variante} size="sm">{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</Badge>
                   </div>
                 );
               })}

@@ -254,6 +254,11 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     );
 }
 
+// El color por tipo de documento, como nombre de variante de `Badge`. Estaba
+// escrito dos veces en el archivo, cada una con su propia cascada de ternarios
+// (y una usaba `text-danger` donde la otra usa `text-danger-text`).
+const VARIANTE_DOC = { CCF: 'danger', FCF: 'chart-1' };
+
 // Encabezado ordenable de las tablas propias de esta vista.
 // El `<button>` ya estaba —de hecho era MÁS accesible que el `DataTable`
 // canónico, que hasta v2.119.0 ponía el onClick en el `<th>` pelado—, pero le
@@ -647,11 +652,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const emp         = empMap.get(r.cod_vendedor);
                     const changes     = changelogCache[r.id] ?? [];
                     const relevantChanges = changes.filter(c => RELEVANT_CAMPOS.has(c.campo));
-                    const tipoBadgeColor = r.tipo_documento === 'CCF'
-                        ? 'bg-danger/10 text-danger'
-                        : r.tipo_documento === 'FCF'
-                        ? 'bg-chart-1/10 text-chart-1-text'
-                        : 'bg-surface-card-hover text-content-3';
+                    // El tipo de documento se pinta en DOS tablas de esta vista con la
+                    // misma cascada. `VARIANTE_DOC` está arriba, junto al resto.
+                    const tipoVariante = VARIANTE_DOC[r.tipo_documento] || 'neutral';
                     return (
                         <React.Fragment key={r.id}>
                             <DataRow
@@ -672,7 +675,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 </DataCell>
                                 <DataCell hideBelow="sm">
                                     {r.tipo_documento
-                                        ? <span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
+                                        ? <Badge variant={tipoVariante} size="sm">{r.tipo_documento}</Badge>
                                         : <span className="text-content-3">—</span>}
                                 </DataCell>
                                 <DataCell hideBelow="lg">
@@ -815,10 +818,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                         <td className="py-1 text-right text-caption whitespace-nowrap hidden sm:table-cell text-content-3">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
-                                                                                <span className={`text-micro font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
+                                                                                <Badge variant={tier.variante} size="sm">
                                                                                     {tier.label}
                                                                                     {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
-                                                                                </span>
+                                                                                </Badge>
                                                                             ) : noPrice ? (
                                                                                 <span className="text-micro text-content-3">—</span>
                                                                             ) : null}
@@ -1203,14 +1206,15 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 }
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
+// `color` pasa a ser el NOMBRE de la variante de `Badge` (2026-07-28, D3.5).
 const DRILL_TIERS = [
-    { key: 'vip',         label: 'VIP',     color: 'bg-chart-3/10 text-chart-3-text',   num: 3 },
-    { key: 'clinica',     label: 'Clínica', color: 'bg-chart-7/10 text-chart-7-text',         num: 4 },
-    { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-chart-4/10 text-chart-4-text',   num: 5 },
-    { key: 'premium',     label: 'Premium', color: 'bg-warning/10 text-warning-text',     num: 6 },
-    { key: 'descuento_1', label: 'Desc.',   color: 'bg-success/10 text-success-text', num: 2 },
-    { key: 'precio_7',    label: 'P7',      color: 'bg-chart-9/10 text-chart-9-text',       num: 7 },
-    { key: 'vineta',      label: 'Viñeta',  color: 'bg-surface-card-hover text-content-2',     num: 1 },
+    { key: 'vip',         label: 'VIP',     variante: 'chart-3', num: 3 },
+    { key: 'clinica',     label: 'Clínica', variante: 'chart-7', num: 4 },
+    { key: 'mayoreo',     label: 'Mayoreo', variante: 'chart-4', num: 5 },
+    { key: 'premium',     label: 'Premium', variante: 'warning', num: 6 },
+    { key: 'descuento_1', label: 'Desc.',   variante: 'success', num: 2 },
+    { key: 'precio_7',    label: 'P7',      variante: 'chart-9', num: 7 },
+    { key: 'vineta',      label: 'Viñeta',  variante: 'neutral', num: 1 },
 ];
 const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PAGO_STYLE = {
@@ -2180,7 +2184,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
                                                                                     const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
                                                                                     const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-surface-card-hover text-content-3';
-                                                                                    const docStyle   = line.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-2';
+                                                                                    const docVariante = VARIANTE_DOC[line.tipo_documento] || 'neutral';
                                                                                     return (
                                                                                         <tr key={li} className="hover:bg-chart-1/10 transition-colors">
                                                                                             <td className="px-3 py-2 font-mono text-content-2 whitespace-nowrap">{fmtShort(line.fecha)}</td>
@@ -2193,7 +2197,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 </div>
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
-                                                                                                {line.tipo_documento && <span className={`text-micro font-black px-1.5 py-[2px] rounded-md ${docStyle}`}>{line.tipo_documento}</span>}
+                                                                                                {line.tipo_documento && <Badge variant={docVariante} size="sm">{line.tipo_documento}</Badge>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.tipo_pago && <span className={`text-micro font-semibold px-1.5 py-[2px] rounded-md ${pagoStyle}`}>{line.tipo_pago}</span>}
@@ -2222,10 +2226,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                     <span className="text-label font-semibold text-content-2">{fmt(line.precio_display)}</span>
                                                                                                     {line.tier && (
                                                                                                         <div className="relative group/tier inline-flex items-center gap-1">
-                                                                                                            <span className={`text-micro font-black px-1.5 py-[2px] rounded-md inline-flex items-center gap-1 ${line.tier.color}`}>
+                                                                                                            <Badge variant={line.tier.variante} size="sm">
                                                                                                                 {line.tier.label}
                                                                                                                 {line.tier.num != null && <span className="opacity-50 font-bold">{line.tier.num}</span>}
-                                                                                                            </span>
+                                                                                                            </Badge>
                                                                                                             {line.tierChanged && (
                                                                                                                 <>
                                                                                                                     <span className="text-warning text-label cursor-help leading-none">⚠</span>

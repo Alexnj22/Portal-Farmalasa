@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.135.0';
+export const APP_VERSION = '2.136.0';
+
+// v2.136.0 — D3.5 en VentasView, y dos fallos de verificacion mios.
+//
+// El tipo de documento se pintaba en DOS tablas de la vista, cada una con su
+// propia cascada de ternarios — y una usaba `text-danger` donde la otra usa
+// `text-danger-text`. Los siete niveles de precio (`DRILL_TIERS`) igual: un
+// `color` con dos clases por fila. Todo pasa a nombre de variante.
+//
+// ── Fallo 1: inserte una constante con un ancla que ya no existia ────────
+// El `s.replace()` buscaba un comentario que YO MISMO habia reescrito en
+// v2.120.0. No inserto nada, y mi `print` conto 3 ocurrencias de
+// `VARIANTE_DOC` —el comentario mas los dos usos— y lo lei como exito.
+// La vista entera cayo en el ErrorBoundary.
+//
+// Regla: al insertar por ancla, **afirmar que la insercion ocurrio**
+// (`assert 'const X = {' in s`), no contar menciones.
+//
+// ── Fallo 2: `eslint | tail -1` me ocultaba el resumen ───────────────────
+// ESLint SI reportaba `'VARIANTE_DOC' is not defined  no-undef`. Pero su
+// salida termina en linea vacia, asi que `tail -1` mostraba el vacio en vez
+// del "✖ 2 problems". Llevaba varios lotes leyendo mal ese comando.
+// Correcto: `npx eslint src/ | grep -E "problems|✖"`.
+//
+// Chips a mano: 77 → 73.
 
 // v2.135.0 — D3.5: cuatro paletas mas, dos de ellas compartidas.
 //

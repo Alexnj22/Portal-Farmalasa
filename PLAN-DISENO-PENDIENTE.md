@@ -1473,6 +1473,37 @@ para la misma fila; React lo avisa en consola. Se arregla con la anatomía de
 `ListRow` + `trailing`, que es familia B de D3.3 — no de rebote mientras se
 migra la barra de filtros.
 
+## D3.3 — el conteo real (2026-07-28)
+
+El número que este plan venía dando (**276 → 178**) no medía lo que decía.
+Volví a contar abriendo cada bloque `<button>` balanceado, quitándole los
+comentarios JSX y decidiendo por lo que **contiene**, no por su forma:
+
+| familia | cuántos | destino |
+|---|---|---|
+| **A · acción** | 86 | `Button` |
+| **B · fila o tarjeta** | 61 | `ListRow` o composición real |
+| **C · uno de N** | 9 | `SegmentedControl` |
+| **F · superficie bespoke** | 6 | no migran (login, kiosco) |
+| **E · composición real** | 4 | se quedan |
+| | **166** | |
+
+### El clasificador anterior se equivocaba en tres cosas
+
+Y las tres ya habían costado un conteo mal publicado:
+
+1. **Contaba `<button>` dentro de comentarios JSX.** El mismo bug de v2.76.0,
+   otra vez. Ahora se descartan antes de clasificar.
+2. **"Ícono suelto" daba 54; los reales son 1.** El resto tenía el texto en una
+   variable (`{label}`), que el regex de "¿hay letras?" no ve.
+3. **Ponía en "acción" cosas que son uno-de-N**, porque miraba si había `<div>`
+   adentro en vez de si el `className` codifica un estado seleccionado.
+
+**La lección, por tercera vez en esta auditoría: contar por forma da un
+número; hay que abrir cada caso para saber qué es.** Pasó con los 31 "botones
+irreducibles" (v2.76.0), con las 17 "tarjetas de métrica" (eran 12) y ahora
+con esto.
+
 ## D3.8 · ✓ CERRADA — el baseline del gate en CERO (v2.101.1 → v2.104.0)
 
 **`scripts/design-gate-baseline.json` quedó vacío.** Las once categorías son

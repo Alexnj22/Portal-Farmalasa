@@ -11,6 +11,22 @@ de un caso real que rompió.
 | `migA.py` | familia A — botones de acción → `Button` |
 | `seg.py` | familia C — colapsa un `.map()` entero en un `SegmentedControl` |
 | `correr-iconos.sh` · `correr-accion.sh` | corredores **con red de seguridad** |
+| `clasificar-botones.py` | **cuenta y clasifica** los `<button>` que faltan (2026-07-28) |
+
+## `clasificar-botones.py` — por qué existe
+
+Porque el conteo publicado en el plan estaba mal **tres veces seguidas**, y
+siempre por lo mismo: contar por FORMA en vez de abrir cada caso.
+
+| lo que se contó | lo que era |
+|---|---|
+| 31 "botones irreducibles" (v2.76.0) | ternarios contados como hermanos, y `<button>` dentro de **comentarios JSX** |
+| 17 "tarjetas de métrica" (v2.105.0) | 12 — el resto eran filas de lista, el botón del kiosco y otra vez un comentario |
+| 54 "íconos sueltos" | **1** — el resto tenía el texto en una variable, que el regex de "¿hay letras?" no ve |
+
+Este script descarta los comentarios antes de clasificar y decide por lo que el
+botón **contiene**, no por su silueta. Sigue siendo una heurística: úsalo para
+priorizar, no para declarar terminado.
 
 ## Las reglas que costaron caro
 

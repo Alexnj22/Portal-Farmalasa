@@ -2206,7 +2206,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {extraDocs.map(doc => (
                                     <div key={doc.category} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
                                         <div className="flex items-center justify-between mb-2 gap-2">
-                                            <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
+                                            <input aria-label="Nombre del documento" type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
                                                 className="flex-1 bg-transparent text-body-xl font-bold text-content-2 outline-none border-b border-divider pb-1" />
                                             <Button variant="ghost" icon={X} title="Quitar documento" iconOnly onClick={() => removeExtraDoc(doc.category)} />
                                         </div>

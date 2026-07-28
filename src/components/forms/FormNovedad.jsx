@@ -562,7 +562,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <label className={labelClasses}>Nuevo Código</label>
                                 <div className="relative">
                                     <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-text/50" size={14} strokeWidth={2.5}/>
-                                    <input type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-brand-text text-center focus:!ring-brand/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                    <input aria-label="Nuevo código de empleado" type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-brand-text text-center focus:!ring-brand/20`} value={formData?.newCode || ''} onChange={(e) => {
                                         // El código es SOLO numérico (regla de negocio + trigger en BD)
                                         const cleanVal = e.target.value.replace(/\D/g, '');
                                         setFormData(prev => ({ ...prev, newCode: cleanVal }));

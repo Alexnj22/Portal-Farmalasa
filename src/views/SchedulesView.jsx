@@ -109,7 +109,7 @@ const HolidaysPanel = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest block mb-1">Nombre</label>
-                            <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
+                            <input aria-label="Nombre del feriado" value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
  className="w-full bg-surface-card border border-divider rounded-xl px-3 py-2.5 text-body-xl font-bold text-content focus:border-warning transition-all" />
                         </div>
                         <div>
@@ -130,7 +130,7 @@ const HolidaysPanel = ({
                             ]}
                         />
                         {hType === 'MUNICIPAL' && (
-                            <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
+                            <input aria-label="Municipio del feriado" value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
                                 className="flex-1 min-w-[140px] bg-surface-card border border-divider rounded-full px-3 py-2 text-body-xl font-bold text-content outline-none focus:border-chart-1 transition-all" />
                         )}
                         <Button

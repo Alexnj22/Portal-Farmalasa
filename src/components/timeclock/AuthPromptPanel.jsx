@@ -72,7 +72,7 @@ const AuthPromptPanel = ({
 
           <div className="relative w-full group/input cursor-text">
             {/* 🚨 INPUT BLINDADO */}
-<input
+<input aria-label="Código de autorización"
   ref={inputRef}
   type="password"
   onChange={inputChangeHandler}

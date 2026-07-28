@@ -25,10 +25,11 @@ export const CatalogSelect = ({ value, onChange, options, portalSelectProps, has
 
 // Input de texto libre para cuando se elige "Otra..." — value llega en
 // OTRA_ESPECIALIDAD (sentinel) hasta que el usuario teclea algo real.
-export const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, placeholder }) => (
+export const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, placeholder, ariaLabel }) => (
     <input
         type="text"
         data-surface="input"
+        aria-label={ariaLabel ?? placeholder}
         value={value === OTRA_ESPECIALIDAD ? '' : (value || '')}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
         placeholder={placeholder}

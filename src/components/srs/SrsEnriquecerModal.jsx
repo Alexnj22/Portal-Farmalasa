@@ -635,14 +635,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                     {manualItems.map((item, idx) => (
                                                         <div key={item._key} className="flex items-center gap-1.5">
                                                             <span className="text-micro text-content-3 font-bold w-3 text-right shrink-0">{idx + 1}</span>
-                                                            <input
+                                                            <input aria-label="Nombre del principio activo"
                                                                 value={item.nombre}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
  className="flex-1 min-w-0 px-2 py-1.5 border border-divider rounded-lg text-body-xl text-content-2 bg-surface-card placeholder:text-content-3"
                                                             />
-                                                            <input
+                                                            <input aria-label="Concentración del principio activo"
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."

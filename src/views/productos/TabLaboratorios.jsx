@@ -525,7 +525,7 @@ function GlassInput({ label, value, onChange, placeholder, accent }) {
     return (
         <div className="flex items-center gap-2.5">
             <span className="text-label font-bold text-content-3 w-12 flex-shrink-0 text-right">{label}</span>
-            <input
+            <input aria-label={label}
                 value={value}
                 onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}

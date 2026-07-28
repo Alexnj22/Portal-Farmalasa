@@ -386,7 +386,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-brand-text" />
                             </div>
-                            <input
+                            <input aria-label="Buscar un documento"
                                 ref={searchInputRef}
                                 type="text"
                                 value={searchTerm}

@@ -129,12 +129,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-micro font-black text-warning mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
-                                    <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
+                                    <input aria-label="Horas diurnas a pagar" type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
                                         className="w-full h-8 px-2.5 bg-surface-card border border-warning/30 focus:border-warning rounded-lg text-body-xl font-black text-warning-text outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-micro font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
-                                    <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dCompInput} onChange={e => setDCompInput(e.target.value)} placeholder="0"
+                                    <input aria-label="Horas diurnas a compensar" type="number" step="0.5" min="0" max={otBank.diurnal} value={dCompInput} onChange={e => setDCompInput(e.target.value)} placeholder="0"
                                         className="w-full h-8 px-2.5 bg-surface-card border border-chart-1/30 focus:border-chart-1 rounded-lg text-body-xl font-black text-chart-1-text outline-none" />
                                 </div>
                             </div>
@@ -156,12 +156,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
                                     <p className="text-micro font-black text-chart-3-text mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
-                                    <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nPayInput} onChange={e => setNPayInput(e.target.value)} placeholder="0"
+                                    <input aria-label="Horas nocturnas a pagar" type="number" step="0.5" min="0" max={otBank.nocturnal} value={nPayInput} onChange={e => setNPayInput(e.target.value)} placeholder="0"
                                         className="w-full h-8 px-2.5 bg-surface-card border border-chart-3/30 focus:border-chart-3 rounded-lg text-body-xl font-black text-chart-3-text outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-micro font-black text-chart-1-text mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
-                                    <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nCompInput} onChange={e => setNCompInput(e.target.value)} placeholder="0"
+                                    <input aria-label="Horas nocturnas a compensar" type="number" step="0.5" min="0" max={otBank.nocturnal} value={nCompInput} onChange={e => setNCompInput(e.target.value)} placeholder="0"
                                         className="w-full h-8 px-2.5 bg-surface-card border border-chart-1/30 focus:border-chart-1 rounded-lg text-body-xl font-black text-chart-1-text outline-none" />
                                 </div>
                             </div>

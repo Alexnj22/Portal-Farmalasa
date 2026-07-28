@@ -182,7 +182,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 </div>
             </DataCell>
             <DataCell align="center">
-                <input
+                <input aria-label="Cantidad física contada"
                     type="number"
                     data-fisico-input="true"
                     value={fisico}
@@ -198,7 +198,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
             </DataCell>
             <DataCell hideBelow="lg">
-                <input
+                <input aria-label="Nota del conteo"
                     type="text"
                     value={nota}
                     disabled={!editable}
@@ -789,7 +789,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                     clearable={false}
                 />
                 {lote === '__OTRO__' && (
-                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <input aria-label="Número de lote nuevo" value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
                 )}
             </div>
             <div className="flex items-center gap-2">

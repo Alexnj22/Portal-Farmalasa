@@ -454,7 +454,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                     onChange={t => setCurrentForm(f => ({ ...f, name: t }))}
                                     label="Tipo de turno" className="mb-2" />
                             </div>
-                            <input
+                            <input aria-label="Nombre personalizado del turno"
                                 type="text"
                                 value={currentForm.name}
                                 onChange={e => setCurrentForm(f => ({ ...f, name: e.target.value }))}

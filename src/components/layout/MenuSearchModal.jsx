@@ -81,7 +81,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 {/* Input */}
                 <div className="relative z-base flex items-center gap-3 px-5 py-4 border-b border-divider">
                     <Search size={18} strokeWidth={2.5} className="text-brand-text shrink-0" />
-                    <input
+                    <input aria-label="Buscar en el portal"
                         ref={inputRef}
                         type="text"
                         value={query}

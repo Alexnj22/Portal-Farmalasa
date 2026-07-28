@@ -491,7 +491,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                 </div>
 
                 <div className={`flex items-center gap-1 shrink-0 ${draft.devolutivo ? '' : 'opacity-40 pointer-events-none'}`}>
-                    <input
+                    <input aria-label="Meses para devolución"
                         type="number"
                         min="0"
                         value={draft.meses_devolucion}
@@ -507,7 +507,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                    <input
+                    <input aria-label="Viñeta del proveedor"
                         type="number"
                         step="0.01"
                         min="0"
@@ -533,7 +533,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     onClick={() => setDraft(d => ({ ...d, devolutivo: !d.devolutivo, meses_devolucion: d.devolutivo ? '' : d.meses_devolucion }))}
                 />
 
-                <input
+                <input aria-label="Notas de la política"
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
@@ -552,7 +552,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
             </div>
 
             {isOtro && (
-                <input
+                <input aria-label="Nombre del proveedor o droguería"
                     autoFocus
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}

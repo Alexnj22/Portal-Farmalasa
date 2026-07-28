@@ -178,7 +178,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                             ¿Cuántas cajas salen?
                         </label>
                         <div className="relative">
-                            <input
+                            <input aria-label="Total de cajas recibidas"
                                 type="number" min={1} max={99}
                                 value={totalCajasInput}
                                 onChange={e => setTotalCajasInput(e.target.value)}

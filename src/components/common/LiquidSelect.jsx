@@ -497,6 +497,7 @@ const LiquidSelect = ({
                     <input
                         ref={inputRef}
                         type="text"
+                        aria-label={ariaLabel ?? placeholder}
                         className={`absolute inset-0 w-full bg-transparent border-none outline-none ${nano ? 'text-center' : ''} ${textStyle} ${paddingStyle} text-content placeholder:text-content-3`}
                         onChange={(e) => {
                             const val = e.target.value;

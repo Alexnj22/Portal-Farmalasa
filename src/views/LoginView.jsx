@@ -471,7 +471,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }) => (
                     <div key={id} className="relative group flex items-center">
                         <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
-                        <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
+                        <input aria-label={placeholder} ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
                             className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-body-xl':'pl-12 pr-5 py-4 text-body-xl'} rounded-3xl`} />
@@ -515,7 +515,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
                                     <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-content-3 group-focus-within:text-brand-text transition-colors pointer-events-none z-base" />
-                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-2xl`} />
+                                    <input aria-label={f.ph} type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-body-xl rounded-2xl`} />
                                 </div>
                             ))}
                             {changePassError && <div className="flex items-center gap-3 text-danger-text bg-danger/10 backdrop-blur-sm px-4 py-3 rounded-2xl border border-danger/30 shadow-[var(--shadow-glow-danger)] animate-in fade-in slide-in-from-top-2"><AlertCircle size={18} className="text-danger shrink-0" strokeWidth={2.5}/><span className="text-body-sm font-bold leading-relaxed">{changePassError}</span></div>}

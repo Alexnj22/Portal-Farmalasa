@@ -123,7 +123,7 @@ const KioskConfigModal = ({
                 </label>
                 <div className="relative">
                   <Laptop size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" strokeWidth={2} />
-                  <input
+                  <input aria-label="Identificador del equipo"
                     className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-body-xl shadow-[var(--shadow-shine-lg)] placeholder:text-white/20"
                     placeholder="Ej: Tablet Entrada"
                     value={deviceNameInput}

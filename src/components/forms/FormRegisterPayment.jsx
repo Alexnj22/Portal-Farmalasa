@@ -145,7 +145,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <span className="text-content-3 font-black text-lg">$</span>
                             </div>
-                            <input
+                            <input aria-label="Monto del pago"
                                 required
                                 type="number"
                                 min="0.01"
@@ -190,7 +190,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                         <FileText size={12} className="text-content-3" /> Notas / Observaciones (Opcional)
                     </label>
-                    <input
+                    <input aria-label="Notas del pago"
                         type="text"
                         className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-body-xl shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
                         placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."

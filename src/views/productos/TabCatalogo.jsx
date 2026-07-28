@@ -349,13 +349,13 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                     {items.map((item, idx) => (
                         <div key={item._key} className="flex items-center gap-1.5">
                             <span className={`text-micro font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
-                            <input
+                            <input aria-label="Nombre del principio activo"
                                 value={item.nombre}
                                 onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                                 placeholder="Nombre del principio"
  className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-body-xl transition-colors ${inp}`}
                             />
-                            <input
+                            <input aria-label="Concentración del principio activo"
                                 value={item.concentracion || ''}
                                 onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                                 placeholder="Cant."
@@ -567,7 +567,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                             <div className="flex gap-2 flex-1">
                                 <div className="flex-1">
                                     <p className={`text-micro font-semibold mb-1 ${labelCls}`}>N°</p>
-                                    <input
+                                    <input aria-label={isSala ? "N° de ubicación en sala" : "N° de ubicación en bodega"}
                                         value={isSala ? loc.numero : loc.bodega_numero}
                                         onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
                                         maxLength={4}
@@ -577,7 +577,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 </div>
                                 <div className="flex-1">
                                     <p className={`text-micro font-semibold mb-1 ${labelCls}`}>Peldaño</p>
-                                    <input
+                                    <input aria-label={isSala ? "Peldaño en sala" : "Peldaño en bodega"}
                                         value={isSala ? loc.peldano : loc.bodega_peldano}
                                         onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
                                         maxLength={4}

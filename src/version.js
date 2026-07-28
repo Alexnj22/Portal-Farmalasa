@@ -16,7 +16,28 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.159.0';
+export const APP_VERSION = '2.160.0';
+
+// v2.160.0 — D3.4 cierra: los 45 campos que no tenian nombre accesible.
+//
+// De los 61 `<input>` que quedaban a mano, **45 no tenian NI `aria-label` NI
+// un `<label for>` asociado**: para un lector de pantalla eran "cuadro de
+// edicion, en blanco". Las horas a pagar de nomina, la cantidad fisica de un
+// conteo, el numero de caja de una llegada, las notas de un renglon, la
+// ubicacion de un producto en sala y en bodega, el multiplo de despacho.
+//
+// La mayoria NO debe migrar a `PortalInput` y por eso seguian a mano: son
+// celdas de una grilla densa, no campos de formulario. No tienen etiqueta
+// visible porque el encabezado de su columna ya dice que son, y `PortalInput`
+// siempre dibuja un `<label>` arriba. Lo que les faltaba no era el canonico:
+// era el nombre. Ahora lo llevan en `aria-label`.
+//
+// Otros dos canonicos tampoco daban nombre a su campo interno: el buscador de
+// `LiquidSelect` (el que se superpone al abrirse) y `CatalogOtherInput`.
+//
+// Verificado en vivo sobre 12 vistas + el login: **0 campos anonimos**.
+//
+// D3.4 CERRADO. Quedan 61 inputs a mano, todos deliberados y con nombre.
 
 // v2.159.0 — cuatro buscadores a mano, y tres canonicos que dejaban campos
 // sin nombre.

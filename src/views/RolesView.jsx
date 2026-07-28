@@ -536,7 +536,7 @@ const RolesView = ({ openModal }) => {
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand-text group-focus-within:bg-brand/10">
                                                 <Award size={16} />
                                             </div>
-                                            <input
+                                            <input aria-label="Nombre del rol nuevo"
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
                                                 className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"

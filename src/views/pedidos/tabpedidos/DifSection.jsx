@@ -141,7 +141,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         clearable={false}
                                     />
                                     <div className="flex gap-2">
-                                        <input
+                                        <input aria-label="Nota de lo seleccionado"
                                             type="text" placeholder="Nota (opcional)…"
                                             value={notaSel[item.id] ?? ''}
                                             onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
@@ -173,7 +173,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                     {isBranch && (
                                         rejectOpen[item.id] ? (
                                             <div className="flex gap-2">
-                                                <input
+                                                <input aria-label="Razón del rechazo"
                                                     type="text" placeholder="Razón del rechazo…" autoFocus
                                                     value={notaRec[item.id] ?? ''}
                                                     onChange={e => setNotaRec(p => ({ ...p, [item.id]: e.target.value }))}
@@ -234,7 +234,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <div className="space-y-2">
                                     <p className="text-caption text-content-2 font-semibold">Todas las diferencias fueron resueltas — marca la corrección como completa</p>
                                     <div className="flex gap-2">
-                                        <input
+                                        <input aria-label="Nota de la corrección"
                                             type="text" placeholder="Nota (opcional)…"
                                             value={corrNota}
                                             onChange={e => setCorrNota(e.target.value)}

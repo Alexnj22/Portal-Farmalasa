@@ -736,7 +736,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <div {...ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-surface-card border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
                                                     <Button variant="ghost" onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}>{ausenciasSearchOpen ? <X size={11} strokeWidth={2.5}/> : <Search size={12} strokeWidth={2.5}/>}</Button>
                                                     {ausenciasSearchOpen && (
-                                                        <input autoFocus type="text" value={ausenciasSearch}
+                                                        <input aria-label="Buscar en las ausencias" autoFocus type="text" value={ausenciasSearch}
                                                             onChange={e => setAusenciasSearch(e.target.value)}
                                                             placeholder="Buscar..."
                                                             className="flex-1 min-w-0 text-body-xl font-medium text-content-2 placeholder-content-3 outline-none bg-transparent" />

@@ -888,7 +888,7 @@ export default function RecepcionModal({
                                         </div>
                                         {(eDiff || e.nota) && (
                                             <div className="px-5 pb-2">
-                                                <input type="text" placeholder="Nota (opcional)…" value={e.nota}
+                                                <input aria-label="Nota del renglón" type="text" placeholder="Nota (opcional)…" value={e.nota}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
                                                     className="w-full text-body-xl border border-brand/30 rounded-lg px-3 py-1.5 bg-surface-card focus:border-brand placeholder-content-3"
                                                 />
@@ -1190,7 +1190,7 @@ export default function RecepcionModal({
                                                 <span className="text-caption text-content-3">de {fQty}</span>
                                             </div>
                                         )}
-                                        <input type="text" placeholder="Nota…"
+                                        <input aria-label="Nota del renglón" type="text" placeholder="Nota…"
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
                                             onKeyDown={e => e.key === 'Enter' && confirmProblema()}

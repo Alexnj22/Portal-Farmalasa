@@ -282,7 +282,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         onClick={() => selectMultiplo(n)}
                                     >×{n}</Button>
                                 ))}
-                                <input type="number" min={1} placeholder="Otro…"
+                                <input aria-label="Otro múltiplo de despacho" type="number" min={1} placeholder="Otro…"
                                     value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
                                     onChange={e => {
                                         const n = parseInt(e.target.value);
@@ -344,7 +344,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     Notas internas
                     <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir del campo</span>
                 </p>
-                <input type="text"
+                <input aria-label="Notas de la regla" type="text"
                     placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
                     value={vals.notes}
                     disabled={!vals.dispatch_id_presentacion}

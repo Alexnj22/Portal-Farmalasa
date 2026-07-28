@@ -327,7 +327,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                         placeholder="¿De qué sucursal?"
                                                     />
                                                 </div>
-                                                <input
+                                                <input aria-label="Número de caja"
                                                     value={d.cajaNum ?? ''}
                                                     onChange={e => { setExtraField(i, 'cajaNum', e.target.value); setExtraError(null); }}
                                                     placeholder="# de caja"

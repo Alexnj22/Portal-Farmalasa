@@ -137,7 +137,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Salario Base</label>
                         <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
                             <div className="absolute left-3 text-content-3 font-black text-body">$</div>
-                            <input type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
+                            <input aria-label="Salario base al recontratar" type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
                                 placeholder="0.00" className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-8 pr-4" />
                         </div>
                     </div>

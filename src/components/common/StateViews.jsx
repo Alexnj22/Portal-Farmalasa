@@ -60,7 +60,10 @@ export const EmptyState = memo(({
     subtitle,
     action,
     iconClass = 'text-content-3',
-    glowClass = 'bg-brand/30',
+    // El halo del estado vacío es el VERDE DEL LOGO, no el azul funcional:
+    // un vacío es un momento en que la app habla de sí misma, no un estado
+    // del dato. Se puede sobreescribir cuando la vista tiene una razón.
+    glowClass = 'bg-logo-green/30',
     compact = false,
     className = '',
 }) => (
@@ -156,11 +159,11 @@ export const AiThinkingState = memo(({
             animate-in fade-in duration-500 ${size === 'sm' ? 'py-10' : 'py-20'} px-6 ${className}`}>
             <div className={`relative ${box} flex items-center justify-center mb-6`}>
                 <div className="absolute inset-0 border-2 border-chart-3/30 rounded-full animate-ping [animation-duration:2s]" />
-                <div className="absolute inset-1 border-t-2 border-b-2 border-chart-3 rounded-full animate-spin [animation-duration:1.5s]" />
-                <div className="absolute inset-3 border-l-2 border-r-2 border-chart-5 rounded-full animate-spin [animation-duration:2.5s]" />
-                <Sparkles size={icon} strokeWidth={2.5} className="text-chart-3-text relative z-base" />
+                <div className="absolute inset-1 border-t-2 border-b-2 border-logo-green rounded-full animate-spin [animation-duration:1.5s]" />
+                <div className="absolute inset-3 border-l-2 border-r-2 border-logo-magenta rounded-full animate-spin [animation-duration:2.5s]" />
+                <Sparkles size={icon} strokeWidth={2.5} className="text-logo-magenta relative z-base" />
             </div>
-            <h3 className={`font-black uppercase tracking-widest text-chart-3-text
+            <h3 className={`font-black uppercase tracking-widest text-logo-magenta
                 ${size === 'sm' ? 'text-body-sm' : 'text-title-sm'}`}>{title}</h3>
             {steps && (
                 <p className="text-caption font-bold text-content-3 mt-1.5 opacity-80">{steps}</p>

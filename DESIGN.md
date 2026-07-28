@@ -557,6 +557,66 @@ Card hover (desktop only, `@media (hover: hover)`):
 > (forma de pago, tipo de solicitud) se usa un `chart-N`, y de los que ya
 > están arriba.
 
+### 6.0 La paleta, consolidada (2026-07-28)
+
+Eran trece tokens. Se midió la distancia perceptual (ΔE, CIELAB) entre los 78
+pares posibles y **cuatro no eran categorías: eran el mismo color con otro
+nombre**. Quedan **nueve**, en tres niveles con reglas distintas.
+
+#### Nivel 1 — Marca
+
+| token | valor | dónde |
+|---|---|---|
+| `--brand` | `#0052CC` | El azul **funcional**: botones, enlaces, foco, CTA. |
+| `--logo-green` | `#8ec30f` | Identidad. |
+| `--logo-magenta` | `#981d97` | Identidad. |
+
+Los dos del logo aparecen **donde la app habla de sí misma** — la navegación
+activa, el brillo del logo, un estado vacío, la pantalla de espera de la IA.
+**Nunca en un dato ni en un estado**: eso es severidad o categoría. Confundirlos
+es lo que hace que un color deje de significar.
+
+> El verde es **lima**: con texto blanco da 2.11:1 y no pasa AA. Para un
+> relleno sólido existe `--logo-green-solid` `#5c7f0a` (4.67:1). El magenta sí
+> sirve tal cual (7.10:1).
+
+#### Nivel 2 — Severidad
+
+`success` · `warning` · `danger`. Dicen **qué tan grave es**. Nunca se usan
+para identidad ni para distinguir categorías.
+
+#### Nivel 3 — Categoría (cinco)
+
+`chart-1` azul · `chart-3` violeta · `chart-4` naranja · `chart-6` rosa ·
+`chart-9` verde azulado. Solo cuando el color distingue una categoría que el
+usuario reconoce. **No hay un sexto.**
+
+#### Los cuatro retirados
+
+Siguen **definidos como alias** — 343 referencias en 88 archivos los usan hoy,
+y apuntando al destino el color queda unificado sin reescribir nada. El gate
+(`chart-retirado`) bloquea usos nuevos.
+
+| retirado | → | por qué |
+|---|---|---|
+| `chart-2` | `success` | ΔE 11.6 y su `-solid` era **el mismo hex** (`#047857`) |
+| `chart-8` | `neutral` | `Badge` ya usaba `chart-8-solid` como su neutro |
+| `chart-5` | `chart-9` | cian y verde azulado; nunca aparecen juntos |
+| `chart-7` | `warning` | dorado y ámbar; los dos leen "atención" |
+
+#### Por qué NO todos los tokens necesitan variante por tema
+
+Es la pregunta correcta y la respuesta tiene tres capas:
+
+| capa | ¿varía por tema? | por qué |
+|---|---|---|
+| base (el tinte al 12%) | **no** | Se **compone** sobre la superficie, y la superficie sí cambia: el mismo hex da `#f3e4f3` sobre blanco y `#21193b` sobre oscuro. |
+| `-text` | **sí** | Es lo único que depende del fondo ya compuesto. Tiene su par claro/oscuro. |
+| `-solid` | **no** | Es autocontenido: trae su propio fondo y texto blanco, así que no depende de la superficie. |
+
+Medidas las 32 combinaciones (8 colores × 4 temas) contra AA: **31 pasaban, 1
+no** — `chart-4` en liquid, 4.32:1. Su `-text` bajó de `#c2410c` a `#9a3412`.
+
 ### Brand
 | Name | Value | Usage |
 |---|---|---|

@@ -70,6 +70,16 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 //             hoy), 'left-border' (border-l decorativo permitido — ninguno
 //             hoy).
 const EXCEPTIONS = {
+  // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
+  // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
+  // 343 referencias vivas no se rompan mientras migran.
+  'src/index.css': ['chart-retirado'],
+  'src/components/common/Badge.jsx': ['chart-retirado'],
+  'src/components/common/Button.jsx': ['chart-retirado'],
+  'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
+  'src/components/common/Switch.jsx': ['chart-retirado'],
+  'src/components/common/TabBarAction.jsx': ['chart-retirado'],
+  'src/components/common/Contador.jsx': ['chart-retirado'],
   // Superficies fijas-oscuras (no siguen el tema activo, confirmado en DESIGN.md §6)
   // sidebar + blobs ambientales ('color'); 'search-toggle': searchOpen es el
   // modal ⌘K de navegación global — ya tiene su propio Escape + click en el
@@ -293,8 +303,14 @@ const COLOR_PREFIXES = [
   'bg', 'text', 'border', 'from', 'via', 'to', 'ring', 'divide',
   'placeholder', 'decoration', 'outline', 'accent', 'caret', 'fill', 'stroke',
 ];
-// `chart-N` con N fuera de 1..9 = un color que no existe en el tema.
+// Un color que no existe en el tema: `chart-N` con N fuera de 1..9…
 const RE_CHART_FUERA = /\bchart-(?:[1-9]\d+|0)\b/g;
+// …y los CUATRO retirados el 2026-07-28. Siguen definidos como alias para que
+// las 343 referencias existentes no se rompan, pero un uso NUEVO es volver a
+// abrir la paleta. El mensaje dice a cuál apunta cada uno.
+const CHART_RETIRADOS = { 'chart-2': 'success', 'chart-5': 'chart-9',
+                          'chart-7': 'warning', 'chart-8': 'neutral' };
+const RE_CHART_RETIRADO = /\bchart-[2578]\b/g;
 
 const GRAY_RE = new RegExp(
   `\\b(${COLOR_PREFIXES.join('|')})-(${GRAY_PALETTES.join('|')})-\\d{2,3}\\b`,
@@ -544,6 +560,12 @@ function scanFile(path) {
         findings.push({ line: i + 1,
           label: `color fuera de la paleta: ${m[0]} — la paleta es CERRADA (DESIGN.md §6)`,
           category: 'paleta-cerrada', text: line.trim().slice(0, 120) });
+      }
+      RE_CHART_RETIRADO.lastIndex = 0;
+      while ((m = RE_CHART_RETIRADO.exec(line))) {
+        findings.push({ line: i + 1,
+          label: `${m[0]} está retirado — usar \`${CHART_RETIRADOS[m[0]]}\` (DESIGN.md §6)`,
+          category: 'chart-retirado', text: line.trim().slice(0, 120) });
       }
     });
   }

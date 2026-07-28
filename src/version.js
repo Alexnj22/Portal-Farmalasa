@@ -16,7 +16,56 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.138.0';
+export const APP_VERSION = '2.139.0';
+
+// v2.139.0 — La paleta: de trece a nueve, y los colores de marca con un rol.
+//
+// Se midio la distancia perceptual (ΔE, CIELAB) entre los 78 pares posibles y
+// CUATRO no eran categorias: eran el mismo color con otro nombre.
+//
+//   chart-2 → success   ΔE 11.6, y su `-solid` era EL MISMO HEX (#047857)
+//   chart-8 → neutral   `Badge` ya usaba chart-8-solid como su neutro
+//   chart-5 → chart-9   cian y verde azulado, nunca aparecen juntos
+//   chart-7 → warning   dorado y ambar, los dos leen "atencion"
+//
+// ── Como se hizo, y por que asi ──────────────────────────────────────────
+// Mi conteo anterior decia "19 usos". Estaba mal: contaba solo variantes de
+// componente. El recuento real es **343 referencias en 88 archivos**, porque
+// los tokens tambien se usan en clases crudas (`bg-chart-2/10`, `var(--chart-2)`).
+//
+// Reescribir 343 sitios habria sido un cambio riesgoso para un resultado
+// visual identico. En vez de eso los cuatro se redefinen como ALIAS del
+// destino. Los `@theme` de Tailwind ya iban indirectos
+// (`--color-chart-2: var(--chart-2)`), asi que el color queda unificado YA,
+// ninguna referencia se rompe, y el gate (`chart-retirado`) bloquea usos
+// nuevos. Los sitios migran cuando toque tocarlos.
+//
+// ── Los colores de marca dejan de ser decoracion suelta ──────────────────
+// Vivian solo en AppLayout. Ahora tienen un ROL declarado: aparecen donde la
+// app habla DE SI MISMA — navegacion activa, brillo del logo, el aro del
+// estado vacio y los dos anillos de la espera de la IA, que son literalmente
+// los dos arcos del logo (verde arriba, magenta abajo; antes eran chart-3 y
+// chart-5, dos categoricos prestados para decorar).
+//
+// NUNCA en un dato ni en un estado: eso es severidad o categoria. Confundirlos
+// es lo que hace que un color deje de significar.
+//
+// Y un dato que hacia falta: el verde del logo es LIMA — con texto blanco da
+// 2.11:1 y no pasa AA. Se agrega `--logo-green-solid` #5c7f0a (4.67:1) para
+// cuando haga falta relleno. El magenta si sirve tal cual (7.10:1).
+//
+// ── Un bug de contraste, encontrado midiendo ────────────────────────────
+// De las 32 combinaciones color×tema, 31 pasaban AA y UNA no: `chart-4`
+// (naranja) en liquid, 4.32:1. Su `-text` baja de #c2410c a #9a3412.
+//
+// ── Y la respuesta a "no deberian tener variante por tema" ───────────────
+// Solo una de las tres capas la necesita, y ya la tenia:
+//   base (tinte 12%) — NO: se compone sobre la superficie, que si cambia
+//   `-text`          — SI, y ya tiene su par claro/oscuro
+//   `-solid`         — NO: es autocontenido (fondo propio + blanco)
+//
+// Verificado en vivo en los CUATRO temas: los alias resuelven al mismo valor
+// que su destino, el `-text` conserva su par, cero errores.
 
 // v2.138.0 — D3.5: tres chips mas, ya con la paleta cerrada como regla.
 //

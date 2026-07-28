@@ -36,6 +36,22 @@
   --logo-magenta:      #981d97;
   --logo-green-soft:   #b9e05a;
   --logo-magenta-soft: #e2a3e0;
+  /* El verde del logo es LIMA: con texto blanco da 2.11:1 y no pasa AA.
+     Para un relleno sólido hay que usar esta versión. El magenta sí sirve
+     tal cual (7.10:1). Medido el 2026-07-28. */
+  --logo-green-solid:  #5c7f0a;
+
+  /* ── EL ROL de los colores de marca (2026-07-28) ───────────────────────
+     Aparecen donde la app habla DE SÍ MISMA — el logo, la navegación
+     activa, un estado vacío, la pantalla de espera. NUNCA en un dato ni en
+     un estado: eso es severidad (success/warning/danger) o categoría
+     (chart-N). Confundirlos es lo que hace que un color deje de significar.
+
+     Elementos donde vive hoy:
+       · barra y ícono del ítem activo del menú     (AppLayout)
+       · brillo del logo en el encabezado           (AppLayout)
+       · aro del estado vacío                       (StateViews.EmptyState)
+       · anillos de la pantalla de espera de la IA  (StateViews.AiThinkingState) */
 
   /* Semantic */
   --success: #12B76A;
@@ -351,15 +367,32 @@
      danger en Badge.jsx): oscuro en temas claros, claro en temas oscuros —
      con --chart-N solo (sin -text) el par bg/texto se ve invertido y falla
      contraste, el bug real que tenía Badge.jsx antes de este pase. */
+  /* ── Los CINCO categóricos (consolidado 2026-07-28) ────────────────────
+     Eran nueve. Se midió la distancia perceptual entre todos los pares y
+     cuatro no eran categorías: eran el mismo color con otro nombre.
+     Ver DESIGN.md §6. La paleta es CERRADA: no se agrega el siguiente número. */
   --chart-1: #3b82f6; --chart-1-text: #1d4ed8; /* azul */
-  --chart-2: #10b981; --chart-2-text: #047857; /* esmeralda */
   --chart-3: #8b5cf6; --chart-3-text: #6d28d9; /* violeta */
-  --chart-4: #f97316; --chart-4-text: #c2410c; /* naranja */
-  --chart-5: #06b6d4; --chart-5-text: #0e7490; /* cian */
+  /* naranja — el `-text` baja de #c2410c a #9a3412: sobre el chip claro
+     (base al 12% sobre blanco) el anterior daba 4.32:1 y NO pasaba AA. Era
+     el único de las 32 combinaciones color×tema que fallaba. */
+  --chart-4: #f97316; --chart-4-text: #9a3412; /* naranja */
   --chart-6: #ec4899; --chart-6-text: #be185d; /* rosa */
-  --chart-7: #eab308; --chart-7-text: #854d0e; /* dorado, nuevo T7 */
-  --chart-8: #64748b; --chart-8-text: #334155; /* pizarra, nuevo T7 */
-  --chart-9: #14b8a6; --chart-9-text: #0f766e;
+  --chart-9: #14b8a6; --chart-9-text: #0f766e; /* verde azulado */
+
+  /* ── Retirados: ALIAS, no valores ─────────────────────────────────────
+     No se borran las variables porque 343 referencias en 88 archivos las
+     usan hoy. Apuntando al destino, el color queda unificado YA y los
+     sitios migran sin riesgo. El gate bloquea usos NUEVOS de estos nombres.
+
+       chart-2 → success   ΔE 11.6 y su `-solid` era el mismo hex (#047857)
+       chart-8 → neutral   `Badge` ya usaba chart-8-solid como su neutro
+       chart-5 → chart-9   cian y verde azulado, nunca aparecen juntos
+       chart-7 → warning   dorado y ámbar, los dos leen "atención"      */
+  --chart-2: var(--success);  --chart-2-text: var(--success-text);
+  --chart-5: var(--chart-9);  --chart-5-text: var(--chart-9-text);
+  --chart-7: var(--warning);  --chart-7-text: var(--warning-text);
+  --chart-8: var(--content-3); --chart-8-text: var(--content-2);
 
   /* A5 (2026-07-26) — el sistema tiene paletas CATEGÓRICAS (un color por
      categoría, sin orden) pero ninguna rampa ORDINAL. ABC/XYZ de MinMax sí
@@ -392,13 +425,13 @@
   --danger-solid:  #dc2626; /* 4.83:1 */
   --warning-solid: #b45309; /* 5.02:1 */
   --chart-1-solid: #2563eb; /* 5.17:1 */
-  --chart-2-solid: #047857; /* 5.48:1 */
+  --chart-2-solid: var(--success-solid);
   --chart-3-solid: #7c3aed; /* 5.70:1 */
   --chart-4-solid: #c2410c; /* 5.18:1 */
-  --chart-5-solid: #0e7490; /* 5.36:1 */
+  --chart-5-solid: var(--chart-9-solid);
   --chart-6-solid: #db2777; /* 4.60:1 */
-  --chart-7-solid: #a16207; /* 4.92:1 */
-  --chart-8-solid: #64748b; /* 4.76:1 — ya pasaba, se nombra para simetría */
+  --chart-7-solid: var(--warning-solid);
+  --chart-8-solid: #64748b; /* el gris del neutro sólido; se conserva el valor */
   --chart-9-solid: #0f766e; /* 5.47:1 */
 
   /* Semáforo real de riesgo de stock (7 estados, src/views/productos/tabminmax/constants.js STAT_CFGS) */
@@ -662,10 +695,17 @@
      misma tarjeta (T7) — el par bg/texto de :root está pensado para
      tarjeta clara, invertido aquí. Mismo motivo para success/warning/
      danger-text (fix del bug real de Badge.jsx). */
-  --chart-1-text: #60a5fa; --chart-2-text: #34d399; --chart-3-text: #a78bfa;
-  --chart-4-text: #fb923c; --chart-5-text: #22d3ee; --chart-6-text: #f472b6;
-  --chart-7-text: #facc15; --chart-8-text: #94a3b8; --chart-9-text: #2dd4bf;
   --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
+  /* Los CINCO categóricos, aclarados para fondo oscuro. */
+  --chart-1-text: #60a5fa; --chart-3-text: #a78bfa; --chart-4-text: #fb923c;
+  --chart-6-text: #f472b6; --chart-9-text: #2dd4bf;
+  /* Los retirados siguen el mismo alias que en claro — si acá se les diera un
+     valor propio volverían a ser cuatro colores distintos, justo lo que se
+     está quitando. */
+  --chart-2-text: var(--success-text);
+  --chart-5-text: var(--chart-9-text);
+  --chart-7-text: var(--warning-text);
+  --chart-8-text: var(--content-2);
 }
 
 /* Fase T5: degrada el costo de blur de liquid/dark en móvil (blur(44px)→
@@ -805,9 +845,12 @@
      (T7) — mismos valores que [data-theme="dark"], la tarjeta oscura de
      ambos temas es igual de oscura para este propósito. Mismo motivo
      para success/warning/danger-text (fix del bug real de Badge.jsx). */
-  --chart-1-text: #60a5fa; --chart-2-text: #34d399; --chart-3-text: #a78bfa;
-  --chart-4-text: #fb923c; --chart-5-text: #22d3ee; --chart-6-text: #f472b6;
-  --chart-7-text: #facc15; --chart-8-text: #94a3b8; --chart-9-text: #2dd4bf;
+  /* Los CINCO categóricos, aclarados para fondo oscuro; los retirados
+     siguen su alias (ver :root y [data-theme="dark"]). */
+  --chart-1-text: #60a5fa; --chart-3-text: #a78bfa; --chart-4-text: #fb923c;
+  --chart-6-text: #f472b6; --chart-9-text: #2dd4bf;
+  --chart-2-text: var(--success-text); --chart-5-text: var(--chart-9-text);
+  --chart-7-text: var(--warning-text); --chart-8-text: var(--content-2);
   --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
   --brand-text:   #60A5FA; /* D1.1 — 5.75:1 sobre la tarjeta #1e293b */
 
@@ -1362,6 +1405,7 @@
   --color-logo-green:        var(--logo-green);
   --color-logo-magenta:      var(--logo-magenta);
   --color-logo-green-soft:   var(--logo-green-soft);
+  --color-logo-green-solid:  var(--logo-green-solid);
   --color-logo-magenta-soft: var(--logo-magenta-soft);
   --color-success:      var(--success);
   --color-warning:      var(--warning);

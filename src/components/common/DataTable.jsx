@@ -222,14 +222,40 @@ export function DataTable({
 }
 
 // ── DataRow ───────────────────────────────────────────────────────────────────
+// La fila clickeable era SOLO DE RATÓN (hallado el 2026-07-28 al migrar los
+// botones de ComprasView). Un `<tr onClick>` sin `tabIndex` no recibe foco y no
+// responde a Enter: el teclado no podía abrir NINGUNA fila. Se midieron las 11
+// filas clickeables del proyecto y 9 no tenían ni un solo elemento interactivo
+// adentro — o sea que la acción entera era inalcanzable, no "incómoda".
+//
+// El arreglo va acá y no vista por vista porque el defecto es del componente.
+// El aro de foco no hace falta declararlo: `[tabindex]:focus-visible` ya lo
+// pinta desde el canónico de index.css.
+//
+// El costo honesto: una parada de tabulación por fila. Es asumible porque estas
+// tablas paginan (TablePagination es canónico), así que son ~15-50 filas, no
+// 200 — y la alternativa es que la función no exista para el teclado.
 export function DataRow({ children, index = 0, onClick, className = '', style, ...props }) {
   const tk = useTable() || {};
   const clickable = !!onClick;
+
+  // Enter y Espacio SOLO cuando el foco está en la fila misma. Sin esta guarda,
+  // el Espacio sobre un botón de adentro dispararía las dos cosas.
+  const handleKeyDown = clickable
+    ? (e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        onClick(e);
+      }
+    : undefined;
 
   return (
     <tr
       {...props}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={clickable ? 0 : undefined}
       style={{ '--stagger-delay': `${Math.min(index, 14) * 25}ms`, ...style }}
       className={[
         'animate-stagger-child group',

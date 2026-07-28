@@ -229,7 +229,7 @@ function TabFacturas({
             <DataTable columns={FACTURA_COLS} loading={loading} empty={{ icon: ShoppingCart, message: 'Sin facturas en el período.' }}>
                 {rows.map((row, i) => (
                     <React.Fragment key={row.id}>
-                        <DataRow index={i} onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
+                        <DataRow index={i} aria-expanded={expandedId === row.id} onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
                             <DataCell>
                                 <span className="font-semibold text-content-2 tabular-nums">{fmtDate(row.fecha)}</span>
                             </DataCell>
@@ -258,12 +258,16 @@ function TabFacturas({
                                 <span className="tabular-nums font-bold text-content">{fmt$(row.total)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <button className="text-content-3 hover:text-brand-text transition-colors p-1 rounded-lg hover:bg-chart-1/10">
+                                {/* Era un `<button>` SIN onClick: recibía el foco, se anunciaba
+                                    como botón y no hacía nada al pulsar Enter. Ahora es lo que
+                                    siempre fue —el indicador de la fila— y quien abre es la
+                                    fila, que ya responde al teclado. */}
+                                <span aria-hidden="true" className="inline-flex text-content-3 group-hover:text-brand-text transition-colors p-1 rounded-lg">
                                     {expandedId === row.id
                                         ? <ChevronDown size={14} strokeWidth={2.5} />
                                         : <ChevronRight size={14} strokeWidth={2.5} />
                                     }
-                                </button>
+                                </span>
                             </DataCell>
                         </DataRow>
                         {expandedId === row.id && (

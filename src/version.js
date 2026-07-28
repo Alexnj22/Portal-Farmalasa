@@ -16,7 +16,42 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.112.0';
+export const APP_VERSION = '2.113.0';
+
+// v2.113.0 — La fila clickeable no existia para el teclado.
+//
+// Salio de migrar los botones de ComprasView: habia un `<button>` SIN onClick.
+// Recibia el foco, se anunciaba como boton y al pulsar Enter no pasaba nada.
+// Mirando por que, aparecio lo de fondo: `DataRow` es un `<tr onClick>` sin
+// `tabIndex` ni manejador de teclas, o sea que la fila clickeable NUNCA fue
+// alcanzable por teclado — en ninguna tabla del portal.
+//
+// Medido antes de tocar nada: 11 filas clickeables en 8 vistas, y **9 no tienen
+// un solo elemento interactivo adentro**. No es que fuera incomodo: la accion
+// entera (abrir el detalle de una compra, de un conteo, de una promocion) no
+// existia sin mouse. WCAG 2.1.1.
+//
+// El arreglo va en `DataRow` y no vista por vista porque el defecto es del
+// componente: `tabIndex={0}` cuando hay onClick, mas Enter/Espacio. El aro de
+// foco no hay que declararlo — `[tabindex]:focus-visible` ya lo pinta desde el
+// canonico de index.css.
+//
+// Dos detalles que importan:
+//   · La guarda `e.target !== e.currentTarget` — sin ella, el Espacio sobre un
+//     boton de adentro dispararia tambien el click de la fila.
+//   · NO se le pone `role="button"` al `<tr>`: eso lo sacaria de la estructura
+//     de la tabla para un lector de pantalla. Se queda como fila, activable.
+//
+// El costo honesto es una parada de tabulacion por fila. Es asumible porque
+// estas tablas paginan (TablePagination es canonico): son ~15-50 filas, no 200.
+// Y la alternativa era que la funcion no existiera.
+//
+// El chevron de ComprasView vuelve a ser lo que siempre fue: un `<span
+// aria-hidden>` que indica el estado. Quien abre es la fila.
+//
+// Verificado en vivo en /compras: 50 filas enfocables, aro de 2px, Enter
+// expande (aria-expanded=true y el detalle se renderiza), el click del raton
+// sigue igual y no queda ningun boton muerto en el tbody.
 
 // v2.112.0 — Los 9 "guardar" del formulario lateral, y una familia que no era.
 //

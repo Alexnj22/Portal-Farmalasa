@@ -621,12 +621,12 @@ const AnnouncementsView = ({ openModal }) => {
                     <>
                       <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
                       <div className="flex items-center gap-1 bg-surface-card-hover/40 p-1.5 rounded-full border border-divider shadow-[var(--shadow-shine)] mb-4">
-                        {targetTypes.map((type) => {
-                          const isActive = targetType === type.id;
-                          return (
-                            <button key={type.id} type="button" disabled={isSubmitting} onClick={() => { setTargetType(type.id); setTargetValue(''); setSelectedEmployees([]); setEmpSearch(''); }} className={`flex-1 h-9 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border ${isActive ? 'bg-surface-card text-brand-text border-border-card shadow-sm scale-[1.02]' : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-sm hover:border-border-card'}`}>{type.label}</button>
-                          );
-                        })}
+                        <SegmentedControl
+                            disabled={isSubmitting}
+                            options={targetTypes.map(t => ({ value: t.id, label: t.label, icon: t.icon }))}
+                            value={targetType}
+                            onChange={id => { setTargetType(id); setTargetValue(''); }}
+                            label="Destinatarios" />
                       </div>
                       {targetType === 'BRANCH' && (
                         <LiquidSelect

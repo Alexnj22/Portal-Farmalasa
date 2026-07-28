@@ -945,22 +945,12 @@ const PermissionsView = () => {
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {PRICE_OPTS.map(opt => {
-                                            const isActive = currentLevel === opt.value;
-                                            const OptIcon = opt.icon;
-                                            return (
-                                                <button key={opt.value ?? '_null'} type="button" disabled={!canEdit}
-                                                    onClick={() => canEdit && handlePriceLevelChange(opt.value)}
-                                                    className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-caption font-black uppercase tracking-widest transition-all duration-200 border ${
-                                                        isActive
-                                                            ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[var(--shadow-elevation-xl)]`
-                                                            : 'bg-surface-card border-border-card text-content-3 hover:border-content-3 hover:text-content-2'
-                                                    } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                                                    <OptIcon size={9} strokeWidth={2.5} />
-                                                    {opt.label}
-                                                </button>
-                                            );
-                                        })}
+                                        <SegmentedControl
+                                            size="sm" disabled={!canEdit}
+                                            options={PRICE_OPTS.map(opt => ({ value: opt.value ?? '_null', label: opt.label, icon: opt.icon }))}
+                                            value={currentLevel ?? '_null'}
+                                            onChange={v => canEdit && handlePriceLevelChange(v === '_null' ? null : v)}
+                                            label="Nivel de precio" />
                                     </div>
                                 </div>
                                 );

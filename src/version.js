@@ -5,7 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.94.0';
+export const APP_VERSION = '2.95.0';
+
+// v2.95.0 — Familia C: los 5 segmentados que el lint destapo en v2.94.0.
+//
+// Los 12 archivos que revertí en el lote anterior por tener `isActive`
+// huerfano no eran botones planos: eran segmentados disfrazados. Migrados los
+// 5 que lo eran de verdad — NuevoConteoModal (alcance del conteo, layout
+// block), PermissionsView (nivel de precio), AnnouncementsView (destinatarios),
+// EmployeeProfileView (tipo de evento) y TabCatalogo (Sala / Bodega interna).
+//
+// TabCatalogo tenia TRES constantes —salaActiveBtn, inactivBtn,
+// bodegaActiveBtn— que existian solo para pintar el activo a mano. Al pasar al
+// canonico quedaron huerfanas y se borraron: esa era exactamente la deuda.
+//
+// 16 rutas verificadas en navegador, sin errores de JS.
 
 // v2.94.0 — Familia A, primer lote: 24 archivos de botones de accion al canonico.
 //

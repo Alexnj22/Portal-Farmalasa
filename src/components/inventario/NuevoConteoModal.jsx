@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import { searchActiveProductsForConteo } from '../../data/conteoInventario';
+import SegmentedControl from '../common/SegmentedControl';
 
 const SCOPE_OPTIONS = [
     { value: 'TOTAL', label: 'Todo el inventario', icon: ListChecks },
@@ -127,20 +128,10 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
 
                         <label className={`${fieldLabel} mt-4`}>Alcance del conteo</label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {SCOPE_OPTIONS.map((opt) => {
-                                const Icon = opt.icon;
-                                const active = scopeType === opt.value;
-                                return (
-                                    <button
-                                        key={opt.value}
-                                        type="button"
-                                        onClick={() => setScopeType(opt.value)}
-                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-label font-bold text-left transition-all ${active ? 'bg-chart-9-solid border-chart-9 text-white shadow-sm' : 'bg-surface-card border-divider text-content-2 hover:border-chart-9/50'}`}
-                                    >
-                                        <Icon size={14} className="shrink-0" /> {opt.label}
-                                    </button>
-                                );
-                            })}
+                            <SegmentedControl
+                                layout="block" columns={2} tone="chart-9"
+                                options={SCOPE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label, icon: opt.icon }))}
+                                value={scopeType} onChange={setScopeType} label="Alcance del conteo" />
                         </div>
 
                         {scopeType === 'LABORATORIO' && (

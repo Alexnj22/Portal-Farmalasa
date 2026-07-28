@@ -542,9 +542,6 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     const labelCls = 'text-content-3';
 
-    const salaActiveBtn  = 'bg-surface-card text-brand-text shadow-sm';
-    const inactivBtn     = 'text-content-3 hover:text-content-2';
-    const bodegaActiveBtn = 'bg-surface-card text-warning shadow-sm';
 
     const inp = (sala) =>
  `bg-surface-card-hover text-content-2 font-bold ${sala ? 'border-divider' : 'border-warning/30'}`;
@@ -577,12 +574,11 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 {hasSala && hasBodega && <span className={`text-micro ${'text-success'}`}>Sala + Bodega</span>}
                             </div>
                             {!isMainBodega && (
-                                <div className={`flex rounded-lg p-0.5 gap-0.5 ${'bg-surface-card-hover'}`}>
-                                    <button onClick={() => setField(i, 'view', 'sala')}
-                                        className={`px-2.5 py-1 rounded-md text-micro font-bold uppercase tracking-wide transition-all ${isSala ? salaActiveBtn : inactivBtn}`}>Sala</button>
-                                    <button onClick={() => setField(i, 'view', 'bodega')}
-                                        className={`px-2.5 py-1 rounded-md text-micro font-bold uppercase tracking-wide transition-all ${!isSala ? bodegaActiveBtn : inactivBtn}`}>Bodega int.</button>
-                                </div>
+                                <SegmentedControl
+                                    size="sm" tone="chart-9"
+                                    options={[{ value: 'sala', label: 'Sala' }, { value: 'bodega', label: 'Bodega int.', tone: 'warning' }]}
+                                    value={isSala ? 'sala' : 'bodega'}
+                                    onChange={v => setField(i, 'view', v)} label="Vista de ubicación" />
                             )}
                         </div>
 

@@ -20,6 +20,7 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import { formatTime12h } from '../../utils/helpers';
 import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 const formatDate = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -478,19 +479,15 @@ const EmployeeProfileView = ({ openModal }) => {
                                         >
                                             Todos
                                         </button>
-                                        {availableTypes.map(type => {
-                                            const label = type === 'HIRING' ? 'Contratación' : (EVENT_TYPES[type]?.label || type);
-                                            const theme = EVENT_THEMES[type];
-                                            return (
-                                                <button
-                                                    key={type}
-                                                    onClick={() => setFilterType(filterType === type ? '' : type)}
-                                                    className={`px-2.5 py-1 rounded-full text-micro font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterType === type ? `${theme?.bg || 'bg-surface-card-hover'} ${theme?.text || 'text-content-2'} ${theme?.border || 'border-divider'}` : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
-                                                >
-                                                    {label}
-                                                </button>
-                                            );
-                                        })}
+                                        <SegmentedControl
+                                            size="sm"
+                                            options={availableTypes.map(type => ({
+                                                value: type,
+                                                label: type === 'HIRING' ? 'Contratación' : (EVENT_TYPES[type]?.label || type),
+                                            }))}
+                                            value={filterType}
+                                            onChange={t => setFilterType(filterType === t ? '' : t)}
+                                            label="Tipo de evento" />
                                     </div>
                                 )}
                             </div>

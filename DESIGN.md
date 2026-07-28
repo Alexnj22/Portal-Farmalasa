@@ -1578,6 +1578,80 @@ quedan como hover card: los 3 de `FacturacionView`, `EncuestaView`,
 pintarlos de navy quitaría información. Un tooltip puede llevar color semántico;
 lo que no puede es llevar un gris crudo elegido a ojo.
 
+### 15.11 `PortalInput` — el campo de formulario (cierre de D3.4, 2026-07-28)
+
+Un campo con etiqueta se escribe **siempre** con `PortalInput`. Él pone el
+`<label htmlFor>` asociado, el badge "Requerido", el borde de error,
+`aria-required`/`aria-invalid`/`aria-describedby`, y la superficie del tema.
+Escrito a mano, en la práctica, nunca sale con todo eso: de los ~20 campos con
+etiqueta que quedaban en julio, **ninguno asociaba su `<label>` con el campo** —
+hacer clic en la etiqueta no enfocaba nada.
+
+```jsx
+// ❌ el patrón que apareció ~20 veces
+<div>
+    <label className="text-caption font-black uppercase …">Monto</label>
+    <div className="relative">
+        <span className="absolute left-4 …">$</span>
+        <input type="number" className="w-full pl-8 …" />
+    </div>
+</div>
+
+// ✅
+<PortalInput label="Monto solicitado" name="sol-monto" prefix="$"
+             type="number" value={monto} onChange={…} />
+```
+
+**Ranuras, para que no haya que salirse:** `icon` (ícono a la izquierda),
+`prefix` (un `$`, un `#`), `labelAction` (una acción a la derecha de la
+etiqueta), `helperText`, `compact` (32px, para grillas densas),
+`inputClassName`, y `...rest` para todo lo demás (`min`, `max`, `step`,
+`inputMode`, `ref`).
+
+**`tono` — el campo tintado.** Cuando el campo lleva un color semántico o de
+categoría (el salario nuevo en verde, el MIN propuesto en naranja y el MAX en
+azul, las cantidades recibidas en el color de su fila):
+
+```jsx
+<PortalInput label="Nuevo Salario Base Mensual" tono="success" icon={DollarSign} … />
+```
+
+Valores: `brand`, `success`, `danger`, `warning`, `chart-1`, `chart-3`,
+`chart-4`, `chart-6`, `chart-9` — **la paleta cerrada de §6.0, sin excepciones**.
+Con `tono`, el contenedor NO emite `data-surface="input"`: esa regla de
+`index.css` va sin `@layer` y le ganaría a las utilidades de Tailwind, así que
+el borde tintado no se vería.
+
+**La acción va AFUERA del campo, no encima.** El ojo de ver/ocultar contraseña
+y el botón de regenerar código estaban posicionados en absoluto sobre el
+`<input>`. Van como hermanos, en una fila:
+
+```jsx
+<div className="flex items-end gap-2">
+    <div className="flex-1"><PortalInput label="Cod. Empleado" … /></div>
+    <Button iconOnly icon={RefreshCw} aria-label="Generar un código nuevo" … />
+</div>
+```
+
+### 15.12 Cuándo un `<input>` a mano es correcto
+
+Quedan 61 y son deliberados. El caso legítimo es uno solo: **la celda de una
+grilla densa**, que no es un campo de formulario.
+
+No lleva etiqueta visible porque el encabezado de su columna ya dice qué es, y
+`PortalInput` siempre dibuja un `<label>` arriba. Varias además llevan
+`data-qty-row`/`data-qty-col` y un `onKeyDown` propio para moverse con las
+flechas entre celdas, como una hoja de cálculo (`RecepcionModal`, el banco de
+horas extra de nómina, `FormEditPayrollEntry`).
+
+**Eso no las exime del nombre accesible** — ver §25.1. `aria-label` obligatorio,
+y el gate lo verifica en cero absoluto.
+
+Los buscadores tampoco son la excepción: hay tres canónicos y uno de ellos
+aplica siempre — `ViewTabBar` (buscador del header de vista), `SearchInput`
+(widgets, modales, tabs internos) y `SearchInput expandable` (toolbar de
+widget). Ver §24.
+
 ---
 
 ## 16. Badges, avisos e indicadores
@@ -1612,22 +1686,38 @@ tokens, así que responden a los cuatro temas.
 **Nunca** `bg-red-500`, `bg-emerald-500/10` ni un hex. El color de un badge dice
 *qué significa*, y eso vive en el token semántico.
 
-### 16.2 Contador sobre un ícono
+### 16.2 `Contador` — la burbuja con un número
 
-El único caso que se escribe inline, porque es **posición**, no estilo: el
-contador vive pegado a la esquina de su ícono.
+> Reescrito el 2026-07-28 (D3.5). Antes decía *"el único caso que se escribe
+> inline"* y mostraba el `<span>` a copiar. Se copió nueve veces, y **cuatro de
+> ellas dentro de componentes canónicos** (`NotificationBell` ×2, `FilterBar`,
+> el del menú lateral). Ahora tiene su propio canónico.
 
 ```jsx
-<span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
-    bg-danger-solid text-white text-micro font-black
-    rounded-full flex items-center justify-center border-2 border-surface-card">
-  {n > 9 ? '9+' : n}
-</span>
+// rojo y chico, los defaults
+<Contador valor={sinLeer} aria-label={`${sinLeer} sin leer`} />
+
+// "99+" al pasarse, en azul de marca
+<Contador valor={n} max={99} tono="brand" aria-label={`${n} filtros aplicados`} />
+
+// pegado a la esquina de un ícono: la POSICIÓN la pone el llamador
+<Contador valor={n} className="absolute -top-1.5 -right-1.5 z-content"
+          aria-label={`${n} sin leer`} />
 ```
 
-El `border-2 border-surface-card` no es decorativo: recorta el contador del
-fondo que tenga detrás. Por eso va del color de la superficie, **no blanco fijo**
-—en oscuro un borde blanco dibuja un halo—.
+Devuelve `null` cuando `valor <= 0` — no hace falta envolverlo en `{n > 0 && …}`.
+
+**`aria-label` no es opcional.** Sin él, un lector anuncia "3" suelto y no se
+sabe 3 de qué. El componente no lo puede adivinar: solo el llamador sabe si son
+avisos, filtros o pedidos.
+
+**Por qué no es un `Badge`:** un chip crece con su texto; un contador tiene que
+ser **circular con un dígito y ovalado con dos**, o sea ancho mínimo fijo y alto
+fijo. Metido en `Badge` habría dado burbujas de anchos distintos según el número.
+
+El borde del componente va del color de la superficie (`border-surface-card`),
+no blanco fijo: recorta el contador del fondo que tenga detrás, y en tema oscuro
+un borde blanco dibujaría un halo.
 
 ### 16.3 Punto de estado en vivo
 
@@ -2236,13 +2326,91 @@ The 44px minimum follows WCAG 2.5.8 (AA, WCAG 2.2). Nav indented items do not me
 **Implemented:**
 - `ModalShell` (`src/components/common/ModalShell.jsx`): `role="dialog"`, `aria-modal="true"`, `aria-label={ariaLabel}` ✅. **2026-07-15 update**: the `ariaLabel` prop existed but nothing ever passed it — every modal in the app announced as the generic default ("Ventana modal"), including `UnifiedModal` (the app's highest-traffic modal system, ~40 form types). Wired through `LiquidModal`'s new `ariaLabel` prop and set on all 9 real `<LiquidModal>`/`<ModalShell>` call sites with each modal's real title (`UnifiedModal` uses its existing `getModalTitle()`).
 - `BranchHelpers` toggle (`src/components/forms/BranchHelpers.jsx:54`): `aria-pressed={on}` ✅
-- `LiquidSelect` (`src/components/common/LiquidSelect.jsx`) — **2026-07-15**: full combobox/listbox pattern added — trigger gets `role="combobox"`, `aria-haspopup="listbox"`, `aria-expanded`, `aria-controls` (pointing to the open dropdown's `id`, via `useId()`), and `aria-activedescendant` (pointing to the keyboard-highlighted option); the dropdown gets `role="listbox"` + matching `id`; each option gets `role="option"` + `id` + `aria-selected`. One component, ~30+ usages across the app get this for free.
+- `LiquidSelect` (`src/components/common/LiquidSelect.jsx`) — **2026-07-15**: patrón combobox/listbox — el disparador lleva `role="combobox"`, `aria-haspopup="listbox"`, `aria-expanded`, `aria-controls` (el `id` del desplegable abierto, vía `useId()`) y `aria-activedescendant` (la opción resaltada); el desplegable lleva `role="listbox"` + el `id` que coincide; cada opción lleva `role="option"` + `id` + `aria-selected`.
+
+  **Corrección 2026-07-28 — los roles estaban, el teclado no.** El disparador
+  es un `<div>` (tiene que serlo: al abrirse se le superpone el input de
+  búsqueda, y un `<button>` no puede contener un `<input>`), y no llevaba
+  `tabIndex` ni `onKeyDown`. Medido en `/staff`: **2 combobox en la vista, 0
+  alcanzables con Tab.** Como `LiquidSelect` reemplaza a todo `<select>` nativo
+  del portal (70 archivos), ningún desplegable — filtros, formularios, modales
+  — se podía abrir sin mouse. Los atributos ARIA describían un widget que no
+  funcionaba.
+
+  La lección es la que se repitió toda la auditoría: **poner el `role` es la
+  mitad fácil.** Un `role` promete un contrato de teclado que el navegador solo
+  cumple gratis con el elemento nativo. Cuando el elemento es un `<div>`, hay
+  que implementarlo entero: foco (`tabIndex`), apertura (`Enter`/`Espacio`/
+  `Flecha-abajo`), y devolver el foco al disparador al cerrar — si no, cae al
+  `<body>` y el siguiente Tab arranca desde el principio de la página.
+
+  Dos trampas al implementarlo:
+  - El `Enter` del input de búsqueda **burbujea** hasta el disparador y lo
+    reabre. Guardia: `if (e.target !== e.currentTarget) return;` (el mismo de
+    `DataRow`).
+  - El anillo de foco necesita `outline-solid` explícito: en Tailwind v4 un
+    `focus-visible:outline-2` sin él no pinta nada.
 - Sidebar collapsible groups (`AppLayout.jsx`) — **2026-07-15**: group header button gets `aria-expanded`/`aria-controls`; submenu container gets the matching `id` (`nav-group-{key}`).
 - `PortalInput` (`src/components/common/PortalInput.jsx`) — **2026-07-15**: the canonical shared text-input component (see house rule above the component) now sets `id`/`<label htmlFor>` association, `aria-required`, `aria-invalid`, and `aria-describedby` pointing to the inline "Requerido"/error badge. Only 4 files use it today (`EmployeeFormModal`, `PracticanteModal`) — fixing the shared component is what makes this correct by default for any future form that reuses it, per the existing house rule.
 
-**Still missing** (out of scope for the 2026-07-15 pass — see `PLAN-EJECUCION-2026-07.md` Bloque 5.6):
-- The large majority of the app's inputs are hand-rolled per-view (not `PortalInput`) and still lack `aria-invalid`/`aria-describedby` — fixing all of them individually is a much larger, view-by-view effort, not a single shared-component fix like the ones above.
-- Glass inputs with `outline-none` still fall outside the global `focus-visible` rule (§ Focus visible above) — they have their own visible ring, but it isn't `focus-visible`-gated.
+### 25.1 Nombre accesible: la regla que ahora vigila el gate (2026-07-28)
+
+**Todo control interactivo necesita un nombre.** Sin él, un lector de pantalla
+anuncia "botón" o "cuadro de edición, en blanco" y no hay forma de saber qué
+hace. Dos categorías del `design-gate` lo vigilan, ambas en **cero absoluto**:
+
+| categoría | qué marca |
+|---|---|
+| `button-name` | `<button>` cuyo contenido son solo íconos, sin `aria-label` ni `title` |
+| `input-sin-nombre` | `<input>` sin `aria-label` y sin un `<label htmlFor>` que lo apunte |
+
+**El `placeholder` no es un nombre accesible** y la regla no lo mira. Desaparece
+apenas el campo tiene contenido — justo cuando alguien vuelve a revisar lo que
+escribió — y varios lectores no lo exponen. Por eso `SearchInput`, `ViewTabBar`
+y `CatalogOtherInput` ponen `aria-label={ariaLabel ?? placeholder}`: el
+placeholder sirve de default razonable, pero como atributo de verdad.
+
+Medido al cerrar D3.4: **45 campos anónimos en 30 archivos**, más uno que el
+barrido manual no vio y el gate sí (`LazyInput`, un helper compartido).
+
+**Un campo artesanal no está exento.** Son dos cosas distintas:
+`input-a-mano` tolera por ratchet los campos que legítimamente no son
+`PortalInput` — celdas de una grilla densa, que no llevan etiqueta visible
+porque el encabezado de su columna ya dice qué son, y `PortalInput` siempre
+dibuja un `<label>` arriba. `input-sin-nombre` no tolera nada: esa celda igual
+necesita su `aria-label`.
+
+### 25.2 Cuál atributo de estado, y cuándo
+
+| atributo | cuándo | cuándo NO |
+|---|---|---|
+| `aria-pressed` | interruptor de dos estados que se queda puesto (modo privacidad, mostrar ocultos) | una acción que se ejecuta y ya (ocultar ESTE producto) — el estado no vive en el botón |
+| `aria-expanded` | algo que se despliega y se repliega (grupo del menú, combobox) | — |
+| `aria-current` | dónde estás (`"page"` en el nav, `"step"` en un asistente) | selección dentro de un control — eso es `aria-pressed`/`aria-selected` |
+| `aria-sort` | el `<th>` por el que la tabla está ordenada, `"ascending"`/`"descending"` | los demás `<th>`: se omite, no se pone `"none"` en todos |
+| `aria-busy` | contenedor mientras recarga sin desmontarse | — |
+
+El error propio que vale documentar: le puse `aria-pressed={!showHidden}` al
+botón de ocultar un producto en `/ventas`. `showHidden` filtra la tabla entera,
+así que **todas** las filas habrían anunciado el mismo estado. Un botón que
+actúa sobre una fila no tiene estado propio: es una acción.
+
+### 25.3 Teclado en tablas (`DataTable`)
+
+- **Fila clicable** (`DataRow` con `onClick`): lleva `tabIndex={0}` y responde a
+  `Enter`/`Espacio`. Con la guardia `if (e.target !== e.currentTarget) return;`
+  — si no, la tecla de un botón interno de la fila dispara también la fila.
+- **Columna ordenable**: el rótulo del `<th>` va dentro de un `<button>` real
+  (no un `<th onClick>`), con `aria-label` que dice qué va a pasar
+  ("Ordenar por Sucursal, ascendente"), y el `<th>` lleva `aria-sort`. Con
+  `flex-row-reverse` cuando la columna es de alineación derecha, para que la
+  flechita quede del lado del número. Arreglado en el canónico: **62 columnas
+  en 12 vistas** de una sola vez.
+
+**Still missing:**
+- Glass inputs with `outline-none` still fall outside the global `focus-visible`
+  rule (§ Focus visible above) — they have their own visible ring, but it isn't
+  `focus-visible`-gated.
 
 ### prefers-reduced-motion
 
@@ -2534,13 +2702,36 @@ Before creating a new component, verify:
 | Any view wrapper | `GlassViewLayout` + `ViewTabBar` |
 | Any avatar | `LiquidAvatar` |
 | Any toast | `useToastStore` (via `LiquidToast`) |
+| Un campo de formulario | `PortalInput` / `PortalTextarea` (§15.11) |
+| Un buscador | `ViewTabBar` (header de vista) · `SearchInput` (widget/modal/tab) · `SearchInput expandable` (toolbar de widget) — §24 |
+| Un botón, de cualquier forma | `Button` (§15.2) · `TabBarAction` dentro de `ViewTabBar` (§15.5) |
+| Una de N opciones | `SegmentedControl` (§15.3) · `FilterBar.Chip` si es un filtro (§17) |
+| Una etiqueta de estado | `Badge` (§16.1) |
+| Un contador sobre un ícono | `Contador` (§16.2) |
+| Una fecha | `LiquidDatePicker` — nunca `<input type="date">` |
 
 Creating a parallel component that duplicates functionality is prohibited. Extend the existing one or open a design discussion first.
+
+**El hueco casi siempre está en el canónico, no en la vista.** Es el hallazgo
+que más se repitió en la auditoría de julio: cuando alguien escribió un control
+a mano, en la enorme mayoría de los casos fue porque al canónico le faltaba una
+ranura. Nueve encontrados y tapados en D3: `Badge` y `PortalInput` tiraban en
+silencio todo prop que no estuviera en su lista fija (`title`, `min`/`max`/
+`step`, 22 `aria-label`); `Button`/`TabBarAction` no daban nombre accesible a
+los `iconOnly` (102 de 194 no tenían); `SegmentedControl` no sabía apilar ícono
+sobre etiqueta; `PortalInput` no sabía tintarse; `DataRow` y el `<th>` ordenable
+de `DataTable` no respondían al teclado; `LiquidSelect` no era enfocable.
+
+**Antes de migrar una vista al canónico, leé las props del canónico.** Tres de
+los cuatro hallazgos del 2026-07-28 estaban ahí y no en la vista. Migrar sin
+mirar habría borrado atributos reales sin que fallara el build, ni el lint, ni
+el gate.
 
 ### Changelog
 
 | Version | Date | Notes |
 |---|---|---|
+| v2.1 | 2026-07-28 | **D3/D4** — cierre de `AUDITORIA-DISENO-2026-07-26.md`. Reescritos §15 (agrega §15.8 "cuándo NO es un botón", §15.11 `PortalInput` con `tono`, §15.12 cuándo un `<input>` a mano es correcto), §6.0 (paleta consolidada de 13→9 categóricos, los retirados quedan como ALIAS y no como valores, más los colores del logo integrados), §25 (agrega §25.1 nombre accesible, §25.2 qué atributo de estado y cuándo, §25.3 teclado en tablas; corrige la afirmación de que `LiquidSelect` tenía el patrón combobox completo — tenía los roles, no el teclado) y §30 (tabla extend-vs-create ampliada + la regla de leer las props del canónico antes de migrar). Migrado: 276→60 botones a mano (137 abiertos en D3.3, 77 migrados y 60 que eran el canónico equivocado — §15.8), 101→8 chips, 99→61 inputs, 4 buscadores. Arreglado en el canónico, que es donde estaba el hueco 9 de cada 10 veces: `Badge`/`PortalInput` que tiraban props, 102 `iconOnly` sin nombre, `DataRow` y 62 columnas ordenables sin teclado, `LiquidSelect` inalcanzable con Tab en los 70 archivos que lo usan. Gate: 5 categorías nuevas, 3 de ellas en cero absoluto (`button-name`, `paleta-cerrada`, `input-sin-nombre`). |
 | v2.0 | 2026-07-24 | **T7.4** — cierre de `AUDITORIA-TEMA-2026-07.md` T7. Reescribe §3 (paleta dataviz: 6→9 chart-N, regla de 3 buckets, excepciones documentadas; escala canónica de sombras nueva, 542/967 usos consolidados en 19 tokens) y §6 (tabla "Semantic" de clases crudas reemplazada por los tokens reales de severidad — esa tabla vieja era literalmente la causa del problema que T7.1 cerró). Corrige §2 (default cambió a Solid Modern en T6, ya no es Liquid). Migración de color: 119 archivos, ~1,400+ usos de color crudo → tokens. Decisión de si Liquid Glass sobrevive como tema sigue diferida — ver §2. |
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
 | v1.1 | 2026-07-10 | Fase 4 design/UX audit (`AUDITORIA-2026-07.md`). Added §32 Mobile & Responsive Standard (did not exist before). Fixed project-wide: `active:scale-90/95` → `active:scale-[0.97]` (§31 compliance, ~300 sites), input font-size floor 16px (~170 inputs, iOS zoom fix), touch targets in `ViewTabBar`/`AppLayout` header to 44px, 9 native `<select>` → `LiquidSelect` swaps. Found but NOT fixed (documented only, too large/risky for a mechanical pass): ~1,288 `text-slate-300/400`-on-light-surface contrast violations across 127 files. |

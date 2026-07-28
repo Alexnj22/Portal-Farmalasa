@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.161.0';
+export const APP_VERSION = '2.162.0';
+
+// v2.162.0 — D4: DESIGN.md se pone al dia con lo que la auditoria encontro.
+//
+// Un documento de diseno desactualizado no es neutral: ENSENA la deuda. Dos
+// secciones estaban diciendo activamente que se escribiera a mano lo que ya
+// tiene canonico, y una tercera afirmaba algo que no era cierto.
+//
+//   §16.2  decia "el unico caso que se escribe inline" y mostraba el <span>
+//          del contador para copiar. Se copio nueve veces — cuatro de ellas
+//          DENTRO de componentes canonicos. Ahora documenta `Contador`.
+//   §25    afirmaba que `LiquidSelect` tenia el patron combobox completo.
+//          Tenia los roles; el teclado no. Corregido, con la leccion: poner
+//          el `role` es la mitad facil — promete un contrato de teclado que
+//          el navegador solo cumple gratis con el elemento nativo.
+//   §30    la tabla extend-vs-create no listaba campo, buscador, boton,
+//          badge ni fecha. Justo las cinco familias que mas se reescribieron.
+//
+// Secciones nuevas: §15.11 `PortalInput` (con `tono` y la regla de que la
+// accion va AFUERA del campo), §15.12 cuando un `<input>` a mano es correcto,
+// §25.1 nombre accesible, §25.2 que atributo de estado y cuando, §25.3 teclado
+// en tablas.
+//
+// Verificado: las 9 reglas del gate que el doc menciona disparan de verdad
+// (probadas con un archivo sonda), y las cifras que el doc afirma se
+// re-midieron — dos estaban mal y se corrigieron (botones 276→60, no →178;
+// LiquidSelect en 70 archivos, no 74).
+//
+// CLAUDE.md tambien: describia el gate como "cinco categorias arrancan con
+// deuda". Las cinco llegaron a 0 en D1/D2. Hoy son 20 de 23 en cero absoluto
+// y tres con ratchet, las tres deliberadas.
 
 // v2.161.0 — el gate blinda el resultado: `input-sin-nombre`, cero absoluto.
 //

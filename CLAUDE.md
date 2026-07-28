@@ -191,14 +191,25 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
   memoria `project_theme_audit_2026_07_22`).
 
   **Desde D0 de la auditoría de diseño (2026-07-26) el gate funciona por
-  ratchet, no por cero absoluto** (`AUDITORIA-DISENO-2026-07-26.md`). Seis
-  categorías siguen siendo de cero absoluto: `native`, `color`,
-  `search-toggle`, `small-input`, `scale-tap`, `left-border`. Las cinco
-  agregadas en D0 arrancan con la deuda existente registrada en
-  `scripts/design-gate-baseline.json` (`white` 1094, `typography` 4490,
-  `z-index` 552, `hex` 32, `motion` 30): **el gate falla si una categoría
-  SUBE**, no por tenerlas en rojo. Un gate permanentemente rojo no lo mira
-  nadie — que es exactamente cómo se acumuló esta deuda.
+  ratchet, no por cero absoluto** (`AUDITORIA-DISENO-2026-07-26.md`): falla si
+  una categoría SUBE respecto a `scripts/design-gate-baseline.json`, no por
+  tenerla en rojo. Un gate permanentemente rojo no lo mira nadie — que es
+  exactamente cómo se acumuló esta deuda.
+
+  **Estado al 2026-07-28 (cierre de D4): 20 de las 23 categorías están en cero
+  absoluto** — las cinco que arrancaron con deuda en D0 (`white` 1094,
+  `typography` 4490, `z-index` 552, `hex` 32, `motion` 30) se cerraron en D1/D2.
+  Quedan tres con ratchet, y las tres son deuda deliberada, no pendiente:
+
+  | categoría | baseline | por qué no es 0 |
+  |---|---|---|
+  | `chart-retirado` | 430 | referencias a los 4 categóricos retirados en la consolidación de paleta; son ALIAS, se ven idénticos, y el número baja solo al tocar cada archivo por otro motivo |
+  | `input-a-mano` | 61 | celdas de grilla densa, que NO deben ser `PortalInput` (DESIGN.md §15.12) |
+  | `chip-a-mano` | 8 | texto que a veces parece chip, documentado caso por caso |
+
+  Las tres bloqueantes agregadas en D3/D4 — `button-name`, `paleta-cerrada`,
+  `input-sin-nombre` — no van al baseline: una categoría que no figura en el
+  JSON arranca bloqueante sola (`baseline[c] ?? 0`).
 
   Al BAJAR deuda (cada fase del plan baja la suya), regenerar con
   `npm run gate:design -- --update-baseline` y commitear el JSON. **Nunca

@@ -21,6 +21,7 @@ import SearchInput from '../components/common/SearchInput';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
+import PortalInput from '../components/common/PortalInput';
 
 
 // ============================================================================
@@ -596,10 +597,13 @@ const AnnouncementsView = ({ openModal }) => {
                   />
                 </div>
 
-                <div>
-                  <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
- <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl font-bold text-content-2 transition-all duration-300 placeholder-content-3 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-warning/40' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
-                </div>
+                <PortalInput
+                      label="Título del Mensaje" name="aviso-titulo"
+                      placeholder="Ej: Mantenimiento de servidores..."
+                      value={title} onChange={(e) => setTitle(e.target.value)}
+                      readOnly={isSubmitting}
+                      hasError={!!error && !title.trim()}
+                  />
 
                 <div>
                   <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>

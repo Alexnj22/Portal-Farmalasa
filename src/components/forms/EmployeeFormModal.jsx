@@ -2090,12 +2090,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text">Seguridad Kiosko</h4>
                                 </div>
                                 <div>
-                                    <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cod. Empleado <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
-                                    <div className="relative">
-                                        <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
-                                            onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
-                                            className={`w-full bg-surface-card border border-divider rounded-2xl px-4 h-[40px] text-body-xl font-black text-content-2 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-brand/10 focus-within:border-brand/50 hover:shadow-md ${!formData.code?.trim() ? '!border-danger !bg-danger/10' : ''}`} />
-                                        <Button tone="chart-1" icon={RefreshCw} iconOnly onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} />
+                                    {/* El botón de regenerar iba DENTRO del campo, encimado
+                                        en absoluto. Va afuera, al lado — misma decisión que
+                                        con el ojo de ver/ocultar contraseña (v2.156.0): el
+                                        canónico dibuja el campo, la acción es su hermana. */}
+                                    <div className="flex items-end gap-2">
+                                        <div className="flex-1">
+                                            <PortalInput
+                                                label="Cod. Empleado" name="code" required
+                                                value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
+                                                inputClassName="font-black"
+                                                onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
+                                            />
+                                        </div>
+                                        <Button tone="chart-1" icon={RefreshCw} iconOnly aria-label="Generar un código nuevo" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} />
                                     </div>
                                     <p className="text-micro font-bold text-brand-text mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
 

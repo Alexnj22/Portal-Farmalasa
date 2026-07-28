@@ -24,6 +24,7 @@ import { updateApprovalRequest } from '../../data/requests';
 import FileField from '../../components/common/FileField';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -888,23 +889,13 @@ const EmployeeRequestsView = () => {
 
         if (formType === 'ADVANCE') {
             return (
-                <div>
-                    <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
-                        Monto solicitado
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 font-black text-body-lg">$</span>
-                        <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={payload.amount || ''}
-                            onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
-                            placeholder="0.00"
-                            className="w-full pl-8 pr-4 py-3 bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-medium text-content-2 transition-all duration-300 placeholder-content-3"
-                        />
-                    </div>
-                </div>
+                <PortalInput
+                    label="Monto solicitado" name="sol-monto" prefix="$"
+                    type="number" min="1" step="1"
+                    value={payload.amount || ''}
+                    onChange={e => setPayload(prev => ({ ...prev, amount: e.target.value }))}
+                    placeholder="0.00"
+                />
             );
         }
 
@@ -955,18 +946,13 @@ const EmployeeRequestsView = () => {
                         </div>
 
                         {/* Cantidad de días */}
-                        <div>
-                            <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
-                                Cantidad de días
-                            </label>
-                            <input
+                        <PortalInput
+                                label="Cantidad de días" name="sol-dias"
                                 type="number" min="1" max="365"
                                 value={payload.days || ''}
                                 onChange={e => setPayload(prev => ({ ...prev, days: e.target.value }))}
                                 placeholder="Ej. 3"
-                                className="w-full py-2.5 px-4 bg-surface-card border border-divider focus:bg-surface-card focus:border-danger/40 focus:shadow-[var(--shadow-glow-danger-sm)] rounded-xl text-body-xl font-black outline-none text-content-2 transition-all duration-300 placeholder-content-3 h-10"
                             />
-                        </div>
                     </div>
 
                     {/* Fecha fin calculada — chip compacto */}

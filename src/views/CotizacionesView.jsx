@@ -741,12 +741,11 @@ export default function CotizacionesView() {
                         </div>
 
                         {/* Notas */}
-                        <div>
-                            <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
-                            <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
+                        <PortalInput
+                                label="Notas (opcional)" name="cotiz-notas"
+                                value={notes} onChange={e => setNotes(e.target.value)}
                                 placeholder="Observaciones..."
- className="w-full bg-surface-card border border-border-card rounded-2xl px-4 py-3 text-body-xl font-bold text-content-2 placeholder-content-3 focus:border-brand transition-all" />
-                        </div>
+                            />
                     </div>
                 </div>
 

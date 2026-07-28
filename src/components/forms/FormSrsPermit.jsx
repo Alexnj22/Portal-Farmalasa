@@ -1,5 +1,6 @@
 import React from 'react';
 import FileField from '../common/FileField';
+import PortalInput from '../../components/common/PortalInput';
 
 const FormSrsPermit = ({ formData, setFormData }) => {
     const legalData = formData?.settings?.legal || {};
@@ -16,18 +17,13 @@ const FormSrsPermit = ({ formData, setFormData }) => {
 
     return (
         <div className="space-y-5">
-            <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">
-                    N° Correlativo SRS
-                </label>
-                <input 
-                    type="text" 
-                    placeholder="Ej: F025-2024"
- className="w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider focus:border-brand transition-all font-mono text-body-xl text-content font-semibold placeholder:text-content-3"
-                    value={legalData.srsPermit || ""} 
-                    onChange={(e) => updateLegalField('srsPermit', e.target.value)} 
-                />
-            </div>
+            <PortalInput
+                label="N° Correlativo SRS" name="srs-correlativo"
+                placeholder="Ej: F025-2024"
+                inputClassName="font-mono"
+                value={legalData.srsPermit || ""}
+                onChange={(e) => updateLegalField('srsPermit', e.target.value)}
+            />
             
             <FileField
                 label="Documento de Permiso Escaneado (PDF/IMG)"

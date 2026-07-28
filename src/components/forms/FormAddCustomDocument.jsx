@@ -4,6 +4,7 @@ import { FilePlus, Tag } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
+import PortalInput from '../common/PortalInput';
 
 const CATEGORIES = [
     { value: 'Permisos y Licencias', label: 'Permisos y Licencias' },
@@ -83,20 +84,12 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
         <div className="space-y-6">
             
             {/* 1. Nombre del Documento */}
-            <div>
-                <label className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 mb-2 ml-1">
-                    <FilePlus size={12} className="text-brand-text"/> Nombre del Documento
-                </label>
-                <div className="relative">
-                    <input 
-                        type="text"
-                        value={data.title}
-                        onChange={(e) => updateField('title', e.target.value)}
-                        placeholder="Ej. Permiso de Rótulos Luminosos"
- className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-2xl px-4 py-3.5 text-body-xl font-bold text-content-2 focus:border-brand focus:bg-surface-card transition-all shadow-sm placeholder:text-content-3/70"
-                    />
-                </div>
-            </div>
+            <PortalInput
+                label="Nombre del Documento" name="doc-titulo" icon={FilePlus}
+                value={data.title}
+                onChange={(e) => updateField('title', e.target.value)}
+                placeholder="Ej. Permiso de Rótulos Luminosos"
+            />
 
             {/* 2. Categoría */}
             <div>

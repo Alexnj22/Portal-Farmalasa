@@ -11,6 +11,7 @@ import { formatTime12h } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { upsertShift, updateShiftFlags } from '../../data/system';
+import PortalInput from '../../components/common/PortalInput';
 
 const FormTurnos = ({ branches }) => {
     // 1. Conexión directa con Supabase para acciones de persistencia
@@ -268,17 +269,13 @@ const FormTurnos = ({ branches }) => {
                         </div>
                     </div>
                     
-                    <div>
-                        <label className="text-caption font-black text-content-3 uppercase tracking-widest">Nombre Identificador del Turno</label>
-                        <input 
-                            required 
-                            type="text"
-                            placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-divider outline-none focus:border-brand shadow-sm text-body-xl md:text-body-xl font-bold text-content-2 placeholder:text-content-3" 
-                            value={currentForm.name} 
-                            onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
+                    <PortalInput
+                            label="Nombre Identificador del Turno" name="turno-nombre"
+                            required
+                            placeholder="Ej: Mañana 8am-4pm"
+                            value={currentForm.name}
+                            onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })}
                         />
-                    </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div>

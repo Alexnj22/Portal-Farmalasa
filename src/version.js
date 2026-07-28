@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.157.0';
+export const APP_VERSION = '2.158.0';
+
+// v2.158.0 — D3.4: los ocho campos de formulario que quedaban con etiqueta.
+//
+// SRS, turnos, avisos, cotizaciones, documento personalizado, monto y dias de
+// solicitud, y el codigo de empleado. Todos eran `PortalInput` reescrito a
+// mano; ninguno asociaba su `<label>` con el campo (`<label>` suelto, sin
+// `htmlFor`), asi que hacer clic en la etiqueta no enfocaba nada y el lector
+// de pantalla anunciaba el campo sin nombre.
+//
+// Dos cosas dejan de estar encimadas sobre el campo y pasan a ser hermanas
+// suyas, como el ojo de contraseña en v2.156.0: el `$` del monto (ahora
+// `prefix` del canonico) y el boton de regenerar codigo, que ademas gana
+// nombre accesible ("Generar un codigo nuevo").
+//
+// `EmployeeRequestsView` tenia DOS `<PortalInput>` sin importar — el build no
+// lo detecta (solo revienta en runtime dentro del ErrorBoundary). Es el mismo
+// tropiezo del `<Badge>` de v2.14x; la unica red que lo agarra es el lint.
+//
+// Inputs a mano: 72 → 65.
 
 // v2.157.0 — el canonico aprende a tintarse, y NINGUN desplegable se podia
 // abrir con el teclado.

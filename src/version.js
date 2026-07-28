@@ -5,7 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.90.4';
+export const APP_VERSION = '2.90.5';
+
+// v2.90.5 — Quinto lote: primeras 2 "tarjetas clickeables" a ListRow.
+//
+// WidgetAnnulmentRequest (cliente: letra en caja + nombre + NIT/DUI) y
+// PayrollView (periodo: nombre + fecha de pago + badge de estado, con
+// surface="card" y selected). Estrena la variante `surface="card"` creada en
+// v2.90.0 para que la fila se vea como tarjeta y no como pildora.
+//
+// Las 78 tampoco son homogeneas. Medido:
+//   36 estructura profunda (3+ div anidados) — a mano
+//   26 fila/tarjeta con icono y dos lineas → ListRow
+//    5 dos lineas sin icono → ListRow
+//   12 a revisar
+// Y dos que NO van: AppLayout:530 (el item de navegacion del sidebar, con
+// flyouts, refs e indentacion) y AppLayout:1042 (la barra inferior movil,
+// icono arriba y etiqueta abajo). Migrar la navegacion del portal por
+// uniformidad es un riesgo que no paga.
 
 // v2.90.4 — Cuarto lote: 6 botones de className literal, dos con `soft`.
 //

@@ -17,6 +17,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import ListRow from '../components/common/ListRow';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -535,19 +536,20 @@ const PayrollView = ({ openModal }) => {
                                     subtitle="Creá el primero con el botón de arriba." />
                             ) : (
                                 <div className="space-y-2">
-                                    {filteredPeriods.map((p, i) => {
+                                    {filteredPeriods.map(p => {
                                         const meta   = STATUS_META[p.status] || STATUS_META.DRAFT;
                                         const active = activePeriod?.id === p.id;
                                         return (
-                                            <button key={p.id} onClick={() => setActivePeriod(p)}
-                                                className="w-full text-left p-3.5 rounded-2xl border transition-all duration-300 animate-in fade-in"
-                                                style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,82,204,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,82,204,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,82,204,0.12)':'none' }}>
-                                                <p className={`text-label font-black leading-tight ${active?'text-brand-text':'text-content'}`}>{p.name}</p>
-                                                <div className="flex items-center justify-between mt-1.5">
-                                                    <p className="text-micro text-content-3">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
-                                                    <span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
-                                                </div>
-                                            </button>
+                                            <ListRow
+                                                key={p.id}
+                                                surface="card"
+                                                density="lg"
+                                                selected={active}
+                                                onClick={() => setActivePeriod(p)}
+                                                title={p.name}
+                                                subtitle={p.pay_date ? `Pago: ${new Date(p.pay_date + 'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}
+                                                trailing={<span className={`text-micro font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>}
+                                            />
                                         );
                                     })}
                                 </div>

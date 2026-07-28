@@ -19,6 +19,7 @@ import { insertApprovalRequestSilent } from '../../data/requests';
 import { fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth } from '../../data/facturacion';
 import { searchCustomersByTokens } from '../../data/customers';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import ListRow from '../../components/common/ListRow';
 
 const GRACE_DAYS = 3;
 
@@ -769,18 +770,13 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           {!newClient && results.length > 0 && (
             <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {results.map(c => (
-                <button key={c.id} onClick={() => setNewClient(c)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-surface-card border-divider hover:border-brand/40">
-                  <div className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
-                    <span className="text-content-3 font-black text-caption leading-none">{c.name?.charAt(0)}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-body-sm font-bold text-content-2 truncate leading-tight">{c.name}</p>
-                    <p className="text-micro text-content-3 font-mono truncate">
-                      {[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`, c.phone].filter(Boolean).join(' · ') || `#${c.erp_id || c.id}`}
-                    </p>
-                  </div>
-                </button>
+                <ListRow
+                    key={c.id}
+                    onClick={() => setNewClient(c)}
+                    leading={<span className="font-black text-caption leading-none">{c.name?.charAt(0)}</span>}
+                    title={c.name}
+                    subtitle={[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`, c.phone].filter(Boolean).join(' · ') || `#${c.erp_id || c.id}`}
+                />
               ))}
             </div>
           )}

@@ -16,7 +16,19 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.109.1';
+export const APP_VERSION = '2.109.2';
+
+// v2.109.2 — Tres enlaces de accion de TabCatalogo al canonico.
+//
+// "Cambiar foto", "Mostrar N inactivas" y "Ver N cambios anteriores" eran
+// `<button>` con la MISMA cadena de clases —`text-caption font-bold
+// transition-colors text-content-3 hover:text-content-2`— y encima envuelta
+// en un template literal con una interpolacion CONSTANTE
+// (`${'text-content-3 hover:text-content-2'}`), que es lo que hizo que el
+// migrador automatico de v2.76.0 los saltara: veia `${` y se detenia.
+//
+// Son `Button variant="ghost" size="xs"`. Verificado en vivo expandiendo una
+// fila del catalogo.
 
 // v2.109.1 — Los pares OK/Falta de los dos modales de llegada.
 //

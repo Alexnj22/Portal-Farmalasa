@@ -1139,7 +1139,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 )}
                             </button>
                             {localFoto && (
-                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-micro font-semibold transition-colors ${'text-content-3 hover:text-content-2'}`}>Cambiar foto</button>
+                                <Button variant="ghost" size="xs" className="mt-1.5" onClick={() => fileRef.current?.click()}>Cambiar foto</Button>
                             )}
                         </div>
 
@@ -1229,14 +1229,10 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 </div>
                             )}
                             {inactiveCount > 0 && (
-                                <button
-                                    onClick={() => setShowInactive(v => !v)}
-                                    className={`mt-2 flex items-center gap-1.5 text-caption font-bold transition-colors ${
-                                        'text-content-3 hover:text-content-2'
-                                    }`}>
-                                    <Eye size={11} />
+                                <Button variant="ghost" size="xs" icon={Eye} className="mt-2"
+                                    onClick={() => setShowInactive(v => !v)}>
                                     {showInactive ? 'Ocultar inactivas' : `Mostrar ${inactiveCount} inactiva${inactiveCount !== 1 ? 's' : ''}`}
-                                </button>
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -1279,10 +1275,10 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                         </div>
                                     ))}
                                     {olderLog1.length > 0 && (
-                                        <button onClick={() => setShowAllLog(v => !v)}
-                                            className={`mt-1.5 text-caption font-bold transition-colors ${'text-content-3 hover:text-content-2'}`}>
+                                        <Button variant="ghost" size="xs" className="mt-1.5"
+                                            onClick={() => setShowAllLog(v => !v)}>
                                             {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog1.length} cambio${olderLog1.length !== 1 ? 's' : ''} anterior${olderLog1.length !== 1 ? 'es' : ''}`}
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             )}

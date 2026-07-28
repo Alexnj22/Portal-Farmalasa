@@ -5,7 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.90.1';
+export const APP_VERSION = '2.90.2';
+
+// v2.90.2 — Segundo lote: 12 grupos "uno de N" a SegmentedControl.
+//
+// Cada `.map()` entero colapsa en UN control, no en N botones: TabMetricas,
+// TabLaboratorios, LlegadaModal, ReenvioLlegadaModal, RecepcionModal,
+// EncuestaView, EncuestaAdminView (×2), TabCatalogo, EmployeeDocumentsView,
+// TabMinMaxRequests, TabShifts.
+//
+// Antes de migrar hubo que separar tres cosas que mi clasificador metia juntas:
+//   21 segmentados de verdad
+//    3 dentro del contenedor de FILTER PILL (§17) — se quedan, tienen su
+//      propio estandar con divisores y contadores
+//   12 acordeones y toggles — no son uno-de-N
+//
+// Dos trampas del migrador, ambas del mismo matcher de llaves:
+//   · agarro el `.map()` INTERNO en EmployeeDocumentsView
+//     (`Object.entries(...).map(...)` anidado dentro del array de opciones)
+//   · conto el `${}` de un template literal como bloque en TabMinMaxRequests
+// Los dos archivos se revirtieron y se hicieron por rango de lineas exacto.
+// El build habria pasado el primero en silencio; lo atrapo eslint.
+//
+// Verificado en vivo: el de EncuestaView renderiza 5 opciones con icono,
+// "Resumen" marcada, role=radiogroup con aria-checked correcto. 10 rutas sin
+// errores de JS.
 
 // v2.90.1 — Primer lote de la migracion de botones: los de "guardar con carga".
 //

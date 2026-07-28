@@ -12,6 +12,7 @@ import { formatTime12h } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatHourAMPM, timeToMins } from '../../utils/scheduleHelpers';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -440,17 +441,12 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                             <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
                             <div className="flex gap-2 mb-2">
-                                {['Apertura', 'Enlace', 'Cierre'].map(tipo => (
-                                    <button key={tipo} type="button"
-                                        onClick={() => setCurrentForm(f => ({ ...f, name: tipo }))}
-                                        className={`flex-1 py-2 rounded-xl text-caption font-black uppercase tracking-wider transition-all border active:scale-[0.97] ${
-                                            currentForm.name === tipo
-                                                ? 'bg-brand text-white border-brand shadow-[var(--shadow-glow-brand)]'
-                                                : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card hover:text-content-2 hover:border-divider'
-                                        }`}>
-                                        {tipo}
-                                    </button>
-                                ))}
+                                <SegmentedControl
+                                    layout="block" columns={3}
+                                    options={['Apertura','Enlace','Cierre'].map(t => ({ value: t, label: t }))}
+                                    value={currentForm.name}
+                                    onChange={t => setCurrentForm(f => ({ ...f, name: t }))}
+                                    label="Tipo de turno" className="mb-2" />
                             </div>
                             <input
                                 type="text"

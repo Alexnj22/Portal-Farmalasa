@@ -15,6 +15,7 @@ import { fetchOwnApprovalRequests } from '../../data/employeeSelfService';
 import { openStoredFile } from '../../utils/storageFiles';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 const DOC_CFG = {
@@ -295,15 +296,11 @@ const EmployeeDocumentsView = () => {
                         <div>
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-2">Estado</p>
                             <div className="flex flex-wrap gap-1.5">
-                                {[{ key: '', label: 'Todos' }, ...Object.entries(STATUS_CFG).map(([k, v]) => ({ key: k, label: v.label }))].map(s => (
-                                    <button
-                                        key={s.key}
-                                        onClick={() => setFilterStatus(s.key)}
-                                        className={`px-3 py-1.5 rounded-full text-micro font-black uppercase tracking-widest border transition-all active:scale-[0.97] ${filterStatus === s.key ? 'bg-chart-8-solid text-white border-chart-8' : 'bg-surface-card text-content-3 border-divider hover:border-divider'}`}
-                                    >
-                                        {s.label}
-                                    </button>
-                                ))}
+                                <SegmentedControl
+                                    size="sm"
+                                    options={[{ value: '', label: 'Todos' },
+                                        ...Object.entries(STATUS_CFG).map(([k, v]) => ({ value: k, label: v.label }))]}
+                                    value={filterStatus} onChange={setFilterStatus} label="Estado" />
                             </div>
                         </div>
                     </div>

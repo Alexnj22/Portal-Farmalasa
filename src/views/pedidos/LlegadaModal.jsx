@@ -9,6 +9,7 @@ import { getPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -185,16 +186,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                     <p className="text-caption font-medium text-content-3 mt-0.5">{c.hint}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                    {(['ok', 'danada', 'faltante']).map(e => {
-                                        const { Icon, label, active, idle } = TOGGLE_CFG[e];
-                                        return (
-                                            <button key={e} onClick={() => setEst(c.num, e)}
-                                                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${est === e ? active : idle}`}>
-                                                <Icon size={14} />
-                                                <span className="text-micro font-bold leading-none">{label}</span>
-                                            </button>
-                                        );
-                                    })}
+                                    <SegmentedControl
+                                        size="sm"
+                                        options={['ok','danada','faltante'].map(e => ({
+                                            value: e, label: TOGGLE_CFG[e].label, icon: TOGGLE_CFG[e].Icon,
+                                            tone: e === 'ok' ? 'success' : e === 'danada' ? 'warning' : 'danger',
+                                        }))}
+                                        value={est} onChange={v => setEst(c.num, v)} label="Estado de la caja" />
                                 </div>
                             </div>
                         );

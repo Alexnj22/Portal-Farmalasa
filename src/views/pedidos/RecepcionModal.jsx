@@ -22,6 +22,7 @@ import {
     searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
 } from '../../data/recepcion';
 import { updatePedidoSucursalStatus } from '../../data/pedidos';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
@@ -1162,16 +1163,12 @@ export default function RecepcionModal({
 
                                 {panelOpen && (
                                     <div className="px-5 pb-2.5 flex items-center gap-2 flex-wrap">
-                                        {ERROR_TIPOS.map(t => (
-                                            <button key={t.value}
-                                                onClick={() => setErrorVals(p => ({ ...p, [r.id]: (p[r.id] === t.value ? '' : t.value) }))}
-                                                className={`text-caption font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
-                                                    (errorVals[r.id] || '') === t.value
-                                                        ? 'bg-chart-4-solid text-white border-chart-4 shadow-sm'
-                                                        : 'bg-surface-card text-content-3 border-divider hover:border-chart-4/40 hover:text-chart-4-text'
-                                                }`}
-                                            >{t.label}</button>
-                                        ))}
+                                        <SegmentedControl
+                                            size="sm" tone="chart-4"
+                                            options={ERROR_TIPOS.map(t => ({ value: t.value, label: t.label }))}
+                                            value={errorVals[r.id] || ''}
+                                            onChange={v => setErrorVals(p => ({ ...p, [r.id]: ((p[r.id] || '') === v ? '' : v) }))}
+                                            label="Tipo de error" />
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 <span className="text-caption text-content-3">¿Cuántos?</span>

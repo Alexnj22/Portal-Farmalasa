@@ -4,6 +4,7 @@ import Badge from '../../components/common/Badge';
 import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 const TOGGLE_CFG = {
     ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success-solid text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
@@ -110,16 +111,13 @@ export default function ReenvioLlegadaModal({
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-1.5 shrink-0">
-                                        {(['ok', 'danada', 'faltante']).map(e => {
-                                            const { Icon, label, active, idle } = TOGGLE_CFG[e];
-                                            return (
-                                                <button key={e} onClick={() => setEst(num, e)}
-                                                    className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${est === e ? active : idle}`}>
-                                                    <Icon size={14} />
-                                                    <span className="text-micro font-bold leading-none">{label}</span>
-                                                </button>
-                                            );
-                                        })}
+                                        <SegmentedControl
+                                            size="sm"
+                                            options={['ok','danada','faltante'].map(e => ({
+                                                value: e, label: TOGGLE_CFG[e].label, icon: TOGGLE_CFG[e].Icon,
+                                                tone: e === 'ok' ? 'success' : e === 'danada' ? 'warning' : 'danger',
+                                            }))}
+                                            value={est} onChange={v => setEst(num, v)} label="Estado de la caja" />
                                     </div>
                                 </div>
                             );

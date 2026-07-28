@@ -10,6 +10,7 @@ import {
     ChevronDown, Building2, Package, ShoppingBag,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
@@ -421,7 +422,13 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                 <div className="flex p-0.5 bg-surface-card-hover/80 rounded-xl mb-3 gap-0.5">
                                     {[
                                         { key: 'sala',   label: 'Sala de ventas',  active: 'text-chart-9-text  bg-surface-card shadow-sm shadow-chart-9/20'  },
-                                        { key: 'bodega', label: 'Bodega interna',  active: 'text-warning-text bg-surface-card shadow-sm shadow-warning/20' },
+                                        <SegmentedControl
+                                            size="sm" tone="chart-9"
+                                            options={[
+                                                { value: 'sala',   label: 'Sala de ventas' },
+                                                { value: 'bodega', label: 'Bodega interna', tone: 'warning' },
+                                            ]}
+                                            value={section} onChange={setSection} label="Sección" className="flex-1" />,
                                     ].map(t => (
                                         <button
                                             key={t.key}

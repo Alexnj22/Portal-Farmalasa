@@ -8,6 +8,7 @@ import {
     Pause, TrendingUp, Building2, RefreshCw,
 } from 'lucide-react';
 import { ERP_NAMES } from '../../constants/erp';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 const GLASS = 'rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glow-brand)]';
 
@@ -150,19 +151,10 @@ export default function TabMetricas({ searchTerm = '' }) {
 
             {/* Selector de rango */}
             <div className="flex gap-1.5">
-                {RANGES.map(r => (
-                    <button
-                        key={r.key}
-                        onClick={() => setRange(r.key)}
-                        className={`text-label px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                            range === r.key
-                                ? 'bg-chart-1-solid text-white border-chart-1'
-                                : 'bg-surface-card text-content-3 border-divider hover:border-divider hover:text-content-2'
-                        }`}
-                    >
-                        {r.label}
-                    </button>
-                ))}
+                <SegmentedControl
+                    size="sm" tone="chart-1"
+                    options={RANGES.map(r => ({ value: r.key, label: r.label }))}
+                    value={range} onChange={setRange} label="Rango" />
             </div>
 
             {kpis.length === 0 ? (

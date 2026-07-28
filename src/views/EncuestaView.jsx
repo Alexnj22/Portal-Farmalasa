@@ -13,6 +13,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
+import SegmentedControl from '../components/common/SegmentedControl';
 import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
     fetchSurveyAiSummaries, updateSurvey,
@@ -575,17 +576,9 @@ export default function EncuestaView() {
     const filtersContent = (
         <div className="relative flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
-                {TABS.map(({ key, label, Icon }) => (
-                    <button key={key} onClick={() => setTab(key)}
-                        className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
-                            tab === key
-                                ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
-                                : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
-                        }`}>
-                        <Icon size={12} strokeWidth={2.5} />
-                        <span className="hidden sm:inline">{label}</span>
-                    </button>
-                ))}
+                <SegmentedControl
+                    options={TABS.map(({ key, label, Icon }) => ({ value: key, label, icon: Icon }))}
+                    value={tab} onChange={setTab} tone="neutro" label="Sección" />
                 <div className="h-6 w-px bg-divider mx-1 shrink-0" />
                 <div className="py-1.5 overflow-visible" style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
                     <LiquidSelect

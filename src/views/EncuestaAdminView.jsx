@@ -18,6 +18,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
+import SegmentedControl from '../components/common/SegmentedControl';
 import {
     fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
     fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
@@ -841,16 +842,11 @@ export default function EncuestaAdminView() {
                                                                 </span>
                                                                 <p className="flex-1 text-label text-content-2 leading-snug pt-0.5 min-w-0">{p.texto}</p>
                                                                 <div className="shrink-0 flex items-center gap-1 mt-0.5">
-                                                                    {['A','B','C','D'].map(opt => {
-                                                                        const oc = OPT_COLORS[opt];
-                                                                        return (
-                                                                            <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
-                                                                                className={`w-7 h-7 rounded-full text-label font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
-                                                                                {opt}
-                                                                            </button>
-                                                                        );
-                                                                    })}
+                                                                    <SegmentedControl
+                                                                        size="sm" tone="chart-1"
+                                                                        options={['A','B','C','D'].map(opt => ({ value: opt, label: opt }))}
+                                                                        value={val} onChange={v => setRfAnswer(p.indice, val === v ? null : v)}
+                                                                        label="Respuesta" />
                                                                 </div>
                                                             </div>
                                                         );
@@ -913,16 +909,11 @@ export default function EncuestaAdminView() {
                                                                     </div>
                                                                 ) : (
                                                                     <div className="shrink-0 flex items-center gap-1 mt-0.5">
-                                                                        {['A','B','C','D'].map(opt => {
-                                                                            const oc = OPT_COLORS[opt];
-                                                                            return (
-                                                                                <button key={opt} title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                    onClick={() => setRfAnswer(p.indice, val === opt ? null : opt)}
-                                                                                    className={`w-7 h-7 rounded-full text-label font-black transition-all duration-150 ${val === opt ? oc.on : oc.off}`}>
-                                                                                    {opt}
-                                                                                </button>
-                                                                            );
-                                                                        })}
+                                                                        <SegmentedControl
+                                                                            size="sm" tone="chart-1"
+                                                                            options={['A','B','C','D'].map(opt => ({ value: opt, label: opt }))}
+                                                                            value={val} onChange={v => setRfAnswer(p.indice, val === v ? null : v)}
+                                                                            label="Respuesta" />
                                                                     </div>
                                                                 )}
                                                             </div>

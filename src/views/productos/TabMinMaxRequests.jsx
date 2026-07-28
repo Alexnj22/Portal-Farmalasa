@@ -12,6 +12,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 const STATUS_CFG = {
   pending:  { label: 'Pendiente', cls: 'bg-warning/10 text-warning-text border-warning/30' },
@@ -317,14 +318,12 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Segmented estado */}
         <div className="flex items-center gap-1.5">
-          {[['pending', `Pendientes${pendingCount ? ` · ${pendingCount}` : ''}`], ['history', 'Historial']].map(([k, label]) => (
-            <button key={k} onClick={() => { setTab(k); setSucFilter('all'); }}
-              className={`px-4 py-2 rounded-full text-body-sm font-bold transition-colors ${
-                tab === k ? 'bg-brand text-white shadow-sm' : 'bg-surface-card text-content-3 border border-divider hover:border-brand/40'
-              }`}>
-              {label}
-            </button>
-          ))}
+          <SegmentedControl
+              options={[
+                  { value: 'pending', label: `Pendientes${pendingCount ? ` · ${pendingCount}` : ''}` },
+                  { value: 'history', label: 'Historial' },
+              ]}
+              value={tab} onChange={k => { setTab(k); setSucFilter('all'); }} label="Vista" />
         </div>
 
         {/* Filter pill estándar */}

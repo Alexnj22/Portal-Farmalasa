@@ -19,6 +19,7 @@ import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 import { normSearch } from '../../utils/searchUtils';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import {
     deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
     updateProductCategoria, insertProductCategory, upsertProductLocations, deleteProductLocations,
@@ -589,12 +590,11 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                         <div className="flex items-end gap-3">
                             {isSala && (
                                 <div className={`flex rounded-lg p-0.5 gap-0.5 self-start mt-0.5 ${'bg-surface-card-hover'}`}>
-                                    {['vitrina', 'estante'].map(t => (
-                                        <button key={t} onClick={() => setField(i, 'tipo', t)}
-                                            className={`px-2 py-1 rounded-md text-micro font-bold uppercase transition-all ${loc.tipo === t ? salaActiveBtn : inactivBtn}`}>
-                                            {t === 'vitrina' ? 'Vit.' : 'Est.'}
-                                        </button>
-                                    ))}
+                                    <SegmentedControl
+                                        size="sm" tone="chart-9"
+                                        options={[{ value: 'vitrina', label: 'Vit.' }, { value: 'estante', label: 'Est.' }]}
+                                        value={loc.tipo} onChange={v => setField(i, 'tipo', v)}
+                                        label="Tipo de ubicación" className="self-start mt-0.5" />
                                 </div>
                             )}
                             {!isSala && !isMainBodega && (

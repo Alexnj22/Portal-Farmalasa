@@ -2,6 +2,7 @@
 import React, { useMemo } from 'react';
 import { BarChart2, X } from 'lucide-react';
 import { normXyz } from './helpers';
+import Button from '../../../components/common/Button';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
 const ABC_KEYS = ['A', 'B', 'C'];
@@ -68,11 +69,10 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
             <div className="flex items-center justify-between gap-2">
                 <span className="text-micro font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                    <button
-                        onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-micro font-bold text-content-3 hover:text-danger-text flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-danger/10">
-                        <X size={8} strokeWidth={2.5} /> limpiar
-                    </button>
+                    <Button variant="ghost" size="xs" icon={X}
+                        onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}>
+                        limpiar
+                    </Button>
                 )}
             </div>
 

@@ -868,9 +868,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 fondo/borde permanentes (no solo al hover) + un divisor debajo para que
                                 se lea como un campo separado del resto del menú, no como un ítem más
                                 de la lista (hallazgo de la auditoría UI/UX del menú). */}
+                            {/* NO pasa por `Button`: es un campo de búsqueda simulado
+                                —ancho completo, alineado a la izquierda, con el atajo a la
+                                derecha— y el canónico lo centraría y le pondría su altura.
+                                Es la misma razón por la que el comentario de arriba dice
+                                que debe leerse como un campo, no como un ítem del menú. */}
                             <button
                                 type="button"
                                 onClick={() => setSearchOpen(true)}
+                                aria-haspopup="dialog"
                                 aria-label="Buscar en el menú"
                                 title={`Buscar en el menú (${SHORTCUT_LABEL})`}
                                 className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden

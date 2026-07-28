@@ -497,7 +497,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             </p>
                                                         )}
                                                     </div>
-                                                    <button
+                                                    <Button
+                                                        size="xs"
+                                                        iconOnly
+                                                        variant="secondary"
+                                                        tone={rejected ? 'success' : 'danger'}
+                                                        soft
+                                                        icon={rejected ? Check : X}
+                                                        className="shrink-0"
                                                         aria-pressed={rejected}
                                                         aria-label={rejected
                                                             ? `Aceptar de nuevo ${entry.product.descripcion}`
@@ -506,13 +513,8 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         const n = new Set(s);
                                                         n.has(entry.product.id) ? n.delete(entry.product.id) : n.add(entry.product.id);
                                                         return n;
-                                                    })} className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-full border transition-all ${
-                                                        rejected
-                                                            ? 'border-success/30 text-success bg-success/10 hover:bg-success/10'
-                                                            : 'border-danger/30 text-danger hover:bg-danger/10 hover:border-danger/30'
-                                                    }`}>
-                                                        {rejected ? <Check size={10} strokeWidth={3}/> : <X size={10} strokeWidth={2.5}/>}
-                                                    </button>
+                                                    })}
+                                                    />
                                                 </div>
                                             );
                                         })}
@@ -589,15 +591,24 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* Toggle panel buttons */}
                                         <div className="flex items-center gap-3 pt-1 border-t border-divider">
-                                            <button onClick={() => setReviewPanel(p => p === 'srs' ? null : 'srs')}
-                                                className={`flex items-center gap-1.5 text-label font-bold transition-colors ${reviewPanel === 'srs' ? 'text-brand-text' : 'text-content-3 hover:text-brand-text'}`}>
-                                                <Search size={12} /> Buscar en SRS
-                                            </button>
+                                            {/* Dos paneles que se encienden y se apagan de forma
+                                                independiente (volver a pulsar el activo lo cierra),
+                                                así que NO son un `SegmentedControl`: son dos
+                                                interruptores. `aria-expanded` dice cuál está
+                                                abierto — antes lo decía solo el color del texto. */}
+                                            <Button variant="ghost" size="xs" icon={Search}
+                                                aria-expanded={reviewPanel === 'srs'}
+                                                className={reviewPanel === 'srs' ? 'text-brand-text' : ''}
+                                                onClick={() => setReviewPanel(p => p === 'srs' ? null : 'srs')}>
+                                                Buscar en SRS
+                                            </Button>
                                             <span className="text-content-3">|</span>
-                                            <button onClick={() => setReviewPanel(p => p === 'manual' ? null : 'manual')}
-                                                className={`flex items-center gap-1.5 text-label font-bold transition-colors ${reviewPanel === 'manual' ? 'text-brand-text' : 'text-content-3 hover:text-brand-text'}`}>
-                                                <FlaskConical size={12} /> Ingresar manualmente
-                                            </button>
+                                            <Button variant="ghost" size="xs" icon={FlaskConical}
+                                                aria-expanded={reviewPanel === 'manual'}
+                                                className={reviewPanel === 'manual' ? 'text-brand-text' : ''}
+                                                onClick={() => setReviewPanel(p => p === 'manual' ? null : 'manual')}>
+                                                Ingresar manualmente
+                                            </Button>
                                         </div>
 
                                         {/* SRS search panel */}

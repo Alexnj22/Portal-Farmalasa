@@ -379,7 +379,15 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                                 title="Con/Sin Almuerzo"
                                                             />
                                                             <div className="w-px bg-divider"></div>
-                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-chart-6 bg-chart-6/10' : 'text-content-3 hover:text-chart-6 hover:bg-surface-card-hover'}`} title="Con/Sin Lactancia">
+                                                            {/* Segmento PEGADO a su hermano dentro de un mismo borde (los separa
+                                                                un `w-px`), así que no pasa por `Button`: el canónico
+                                                                le daría su propio radio y rompería la unión. Lo que sí
+                                                                le faltaba era decir su estado. */}
+                                                            <button
+                                                                aria-pressed={!!dayData.lactationTime}
+                                                                onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')}
+                                                                className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-chart-6 bg-chart-6/10' : 'text-content-3 hover:text-chart-6 hover:bg-surface-card-hover'}`}
+                                                                title="Con/Sin Lactancia">
                                                                 <Baby size={11} strokeWidth={2.5}/>
                                                             </button>
                                                         </div>

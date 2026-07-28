@@ -224,6 +224,9 @@ const WIDGET_DEFS = [
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+// Los nombres completos son SOLO para el nombre accesible de la rejilla: la
+// celda muestra "Ene" pero un lector de pantalla debe oír "Enero de 2026".
+const MONTH_NAMES_LONG = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -330,9 +333,16 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
     <>
       {/* py-2.5 en mobile: sube la altura del touch target de ~24px a ~40px
           (el ancho ya es generoso, min-w-[120px], v2.47.4) */}
-      <button ref={btnRef} onClick={openPicker} className={`text-label font-black text-content-2 capitalize hover:text-brand-text transition-colors px-2 ${isMobile ? 'py-2.5' : 'py-1'} rounded-xl hover:bg-surface-card-hover min-w-[120px] text-center`}>
+      <Button
+        ref={btnRef}
+        variant="ghost"
+        size={isMobile ? 'md' : 'sm'}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="capitalize min-w-[120px]"
+        onClick={openPicker}>
         {value.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
-      </button>
+      </Button>
       {open && createPortal(
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
           <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
@@ -345,12 +355,21 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
                   onNext={() => setViewYear(y => y + 1)}
               />
             </div>
-            <div className="grid grid-cols-3 gap-1">
+            {/* Rejilla de meses de un selector de fecha. NO pasa por
+                `SegmentedControl` porque tiene TRES estados, no dos: elegido,
+                "el mes de hoy" (el aro) y el resto — y el canónico solo
+                distingue activo/inactivo, así que perdería el aro, que es la
+                referencia para saber dónde estás parado.
+                Lo que sí le faltaba: cada celda decía solo "ene", sin el año,
+                y nada indicaba cuál es hoy. */}
+            <div role="group" aria-label="Elegir el mes" className="grid grid-cols-3 gap-1">
               {MONTH_NAMES_SHORT.map((m, i) => {
                 const isSel = value.getMonth() === i && value.getFullYear() === viewYear;
                 const isCur = new Date().getMonth() === i && new Date().getFullYear() === viewYear;
                 return (
                   <button key={i} onClick={() => { onChange(new Date(viewYear, i, 1)); setOpen(false); }}
+                    aria-current={isSel ? 'date' : isCur ? 'true' : undefined}
+                    aria-label={`${MONTH_NAMES_LONG[i]} de ${viewYear}${isCur ? ' (mes actual)' : ''}`}
                     className={`text-label font-bold py-1.5 rounded-xl transition-[background-color,color,box-shadow] active:scale-[0.97] ${isSel ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)]' : isCur ? 'text-brand-text font-black ring-1 ring-brand/30 hover:bg-brand/10' : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
                     {m}
                   </button>

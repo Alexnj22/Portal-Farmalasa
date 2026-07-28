@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.126.0';
+export const APP_VERSION = '2.127.0';
+
+// v2.127.0 — D3.3: los dos paneles del SRS, la matriz y el selector de mes.
+//
+//   · SrsEnriquecerModal: "Buscar en SRS" e "Ingresar manualmente" son dos
+//     interruptores INDEPENDIENTES (volver a pulsar el activo lo cierra), no
+//     un `SegmentedControl`. Llevan `aria-expanded`: antes cual estaba abierto
+//     lo decia solo el color del texto. Y el toggle de rechazo de la fila pasa
+//     a `Button size="xs" iconOnly`.
+//   · AbcXyzMatrix: el "limpiar" → `Button variant="ghost" size="xs"`.
+//   · FormAiSchedulerPreview: el toggle de lactancia NO pasa por `Button` —es
+//     un segmento pegado a su hermano dentro de un borde comun, separados por
+//     un `w-px`— pero le faltaba `aria-pressed`.
+//   · El selector de mes del Inicio: el disparador pasa a `Button` con
+//     `aria-haspopup="dialog"` y `aria-expanded`.
+//
+// ── La rejilla de meses NO pasa al canonico, y la razon importa ──────────
+// Tiene TRES estados, no dos: el mes elegido, "el mes de hoy" (el aro) y el
+// resto. `SegmentedControl` solo distingue activo/inactivo, asi que migrarla
+// habria borrado el aro — que es justo la referencia para saber donde estas
+// parado cuando navegas hacia atras en el año.
+//
+// Lo que si le faltaba: cada celda decia solo "Ene", sin el año, y nada
+// indicaba cual es hoy. Ahora `aria-label` dice "Enero de 2026" y el mes
+// actual lleva `aria-current`.
+//
+// Verificado en vivo: el disparador dice "julio de 2026" con
+// `aria-expanded=false`, la rejilla tiene sus 12 celdas con nombre completo y
+// Jul marcado con `aria-current="date"`.
+//
+// Botones a mano: 67 → 62.
 
 // v2.126.0 — D3.3: cuatro acciones mas.
 //

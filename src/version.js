@@ -16,7 +16,13 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.117.0';
+export const APP_VERSION = '2.117.1';
+
+// v2.117.1 — El mapa de nombres se muda a `common/iconNames.js`. Exportar una
+// constante desde un archivo de componente rompe el Fast Refresh de React
+// (`react-refresh/only-export-components`): al editar el mapa, Vite recargaba
+// la pagina entera en vez de sustituir el componente. Sin cambio de conducta —
+// reverificado en vivo, 265 botones, 0 sin nombre.
 
 // v2.117.0 — D3.3, capa de accesibilidad: 109 botones que no decian nada.
 //

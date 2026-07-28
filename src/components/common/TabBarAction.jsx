@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { NOMBRE_POR_ICONO } from './Button';
+import { NOMBRE_POR_ICONO } from './iconNames';
 
 /**
  * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).

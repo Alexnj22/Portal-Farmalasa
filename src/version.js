@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.146.0';
+export const APP_VERSION = '2.147.0';
+
+// v2.147.0 — D3.4: los ocho campos del modal de promocion.
+//
+// Se fueron con ellos `inp` y `numInp`: el campo de `PortalInput` reescrito
+// clase por clase, y su variante centrada para las celdas numericas.
+//
+// Todos conservan `type="number"`, `min` y `step` — que es exactamente lo que
+// el `...rest` de v2.115.0 vino a permitir. Sin ese arreglo, migrar los bonos
+// les habria quitado el `min="0"` y se habrian podido escribir negativos.
+//
+// Una perdida deliberada: las tres etiquetas de bonificacion tenian color
+// propio (verde vendedor, azul admin, ambar bodega). `PortalInput` no tiene
+// eje de color en la etiqueta, y el color no aportaba dato: los tres son el
+// mismo tipo de campo dentro de un bloque que ya es verde. Anotado en sitio.
+//
+// Verificado en vivo el primer paso del asistente; los otros siete viven en
+// pasos que exigen elegir un producto y quedan verificados por codigo.
+//
+// Inputs a mano: 93 → 85.
 
 // v2.146.0 — D3.4 arranca: los cuatro campos del proveedor.
 //

@@ -14,6 +14,7 @@ import LiquidSelect      from '../../components/common/LiquidSelect';
 import LiquidDatePicker  from '../../components/common/LiquidDatePicker';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
 import {
     searchActiveProductsByName, fetchProductPreciosForPromo, fetchSalesBranches,
     insertPromotion, insertPromotionBranches, insertPromotionProducts,
@@ -28,7 +29,9 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const inp = 'w-full text-body-sm bg-surface-card border border-border-card rounded-xl px-3 py-2.5 focus:border-chart-1 transition-all placeholder:text-content-3 text-content-2';
+// `inp` y `numInp` vivían acá: el campo de `PortalInput` reescrito clase por
+// clase, y su variante centrada para las celdas numéricas. Se fueron con los
+// ocho inputs de este modal (2026-07-28, D3.4).
 const lbl = 'text-caption font-bold text-content-2 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
@@ -36,16 +39,14 @@ const lbl = 'text-caption font-bold text-content-2 uppercase tracking-widest mb-
 function StepInfo({ form, set, branches }) {
     return (
         <div className="space-y-4">
-            <div>
-                <label className={lbl}>Nombre de la promoción</label>
-                <input
-                    className={inp}
-                    value={form.nombre}
-                    onChange={e => set('nombre', e.target.value)}
-                    placeholder="Opcional — se genera del primer producto si se deja vacío"
-                    autoFocus
-                />
-            </div>
+            <PortalInput
+                name="promo-nombre"
+                label="Nombre de la promoción"
+                placeholder="Opcional — se genera del primer producto si se deja vacío"
+                autoFocus
+                value={form.nombre}
+                onChange={e => set('nombre', e.target.value)}
+            />
 
             <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -254,8 +255,8 @@ function AddProductInline({ onAdd }) {
         setF({ factor_descripcion: '', factor_denominador: 1, stock_inicial: '', precio_promo: '', bono_vendedor: '', bono_admin_pool: '', bono_bodega_pool: '' });
         setShow(false);
     };
-
-    const numInp = `${inp} text-center`;
+    // `numInp` vivía acá: el campo de `PortalInput` reescrito clase por clase
+    // para las celdas numéricas. Se fue con el último input migrado.
 
     return (
         <div className="bg-gradient-to-br from-chart-1/10 to-chart-1/5 border border-chart-1/30 rounded-2xl p-4 space-y-3.5 shadow-sm">
@@ -291,41 +292,67 @@ function AddProductInline({ onAdd }) {
             {pid && (
                 <>
                     <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <label className={lbl}>Factor (ej: "1+1")</label>
-                            <input className={inp} placeholder="1+1, 2+1…" value={g('factor_descripcion')} onChange={e => s('factor_descripcion', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className={lbl}>Und por trigger</label>
-                            <input aria-label="Factor denominador" className={numInp} type="number" min="1" value={g('factor_denominador')} onChange={e => s('factor_denominador', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className={lbl}>Stock inicial (und)</label>
-                            <input className={numInp} type="number" min="0" placeholder="—" value={g('stock_inicial')} onChange={e => s('stock_inicial', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className={lbl}>Precio promo ($)</label>
-                            <input className={numInp} type="number" step="0.01" min="0" placeholder="—" value={g('precio_promo')} onChange={e => s('precio_promo', e.target.value)} />
-                        </div>
+                        <PortalInput
+                                name="promo-factor_descripcion"
+                                label={'Factor (ej: "1+1")'}
+                                placeholder="1+1, 2+1…"
+                                value={g('factor_descripcion')}
+                                onChange={e => s('factor_descripcion', e.target.value)}
+                            />
+                        <PortalInput
+                                name="promo-factor_denominador"
+                                label={"Und por trigger"}
+                                type="number" min="1"
+                                value={g('factor_denominador')}
+                                onChange={e => s('factor_denominador', e.target.value)}
+                            />
+                        <PortalInput
+                                name="promo-stock_inicial"
+                                label={"Stock inicial (und)"}
+                                type="number" min="0" placeholder="—"
+                                value={g('stock_inicial')}
+                                onChange={e => s('stock_inicial', e.target.value)}
+                            />
+                        <PortalInput
+                                name="promo-precio_promo"
+                                label={"Precio promo ($)"}
+                                type="number" step="0.01" min="0" placeholder="—"
+                                value={g('precio_promo')}
+                                onChange={e => s('precio_promo', e.target.value)}
+                            />
                     </div>
 
                     <div className="bg-gradient-to-br from-success/10 to-chart-9/5 border border-success/30 rounded-xl p-3 space-y-2.5">
                         <p className="text-caption font-bold text-success-text uppercase tracking-wider flex items-center gap-1.5">
                             <Gift size={10} /> Bonificaciones por trigger
                         </p>
+                        {/* Las tres etiquetas tenían color propio (verde el
+                            vendedor, azul admin, ámbar bodega). `PortalInput` no
+                            tiene eje de color en la etiqueta y el color no
+                            aportaba dato: los tres son el mismo tipo de campo
+                            dentro de un bloque que ya es verde. */}
                         <div className="grid grid-cols-3 gap-2">
-                            <div>
-                                <label className="text-caption font-bold text-success uppercase tracking-widest mb-1.5 block">Vendedor ($)</label>
-                                <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_vendedor')} onChange={e => s('bono_vendedor', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-caption font-bold text-chart-1-text uppercase tracking-widest mb-1.5 block">Admin pool ($)</label>
-                                <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_admin_pool')} onChange={e => s('bono_admin_pool', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-caption font-bold text-warning uppercase tracking-widest mb-1.5 block">Bodega pool ($)</label>
-                                <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_bodega_pool')} onChange={e => s('bono_bodega_pool', e.target.value)} />
-                            </div>
+                            <PortalInput
+                                name="promo-bono_vendedor"
+                                label="Vendedor ($)"
+                                type="number" step="0.01" min="0" placeholder="0.00"
+                                value={g('bono_vendedor')}
+                                onChange={e => s('bono_vendedor', e.target.value)}
+                            />
+                            <PortalInput
+                                name="promo-bono_admin_pool"
+                                label="Admin pool ($)"
+                                type="number" step="0.01" min="0" placeholder="0.00"
+                                value={g('bono_admin_pool')}
+                                onChange={e => s('bono_admin_pool', e.target.value)}
+                            />
+                            <PortalInput
+                                name="promo-bono_bodega_pool"
+                                label="Bodega pool ($)"
+                                type="number" step="0.01" min="0" placeholder="0.00"
+                                value={g('bono_bodega_pool')}
+                                onChange={e => s('bono_bodega_pool', e.target.value)}
+                            />
                         </div>
                         <p className="text-micro text-success/60 font-medium">
                             Pool = repartido entre todos del área. Vendedor = quien hizo la venta.

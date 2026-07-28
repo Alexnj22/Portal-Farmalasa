@@ -126,6 +126,10 @@ const ChipDoc = memo(({
 
 // Era la paleta SOFT de `Badge` escrita a mano, una fila por forma de pago.
 // Ahora guarda el NOMBRE de la variante y el color lo pone el canónico.
+// El color por tipo de documento. Mismo criterio que en VentasView, pero cada
+// vista tiene el suyo: son dos archivos sin nada compartido entre ellos.
+const VARIANTE_DOC = { CCF: 'danger', FCF: 'chart-1' };
+
 const TIPO_PAGO_VARIANTE = {
     tarjeta: 'chart-1', credito: 'chart-3', transferencia: 'chart-5',
     bitcoin: 'chart-4', cheque:  'chart-9',
@@ -531,7 +535,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                             <div key={fecha} className="px-4 py-3">
                                                 <div className="flex items-center gap-2 mb-2.5">
                                                     <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${isToday ? 'bg-brand/10 text-brand-text' : hasCCF ? 'bg-danger/10 text-danger-text' : 'bg-surface-card-hover text-content-3'}`}>{dLabel}</span>
+                                                    <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : 'neutral'} size="sm">{dLabel}</Badge>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {fechaRows.map(r => {
@@ -970,11 +974,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                 {/* Date label */}
                                                 <div className="flex items-center gap-2 mb-2.5">
                                                     <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <span className={`text-micro font-black px-1.5 py-0.5 rounded-full ${
-                                                        isToday ? 'bg-brand/10 text-brand-text' :
-                                                        hasCCF  ? 'bg-danger/10 text-danger-text' :
-                                                                  'bg-surface-card-hover text-content-3'
-                                                    }`}>{dLabel}</span>
+                                                    <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : 'neutral'} size="sm">{dLabel}</Badge>
                                                 </div>
 
                                                 {/* Pills row */}
@@ -1094,7 +1094,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                         }
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                <span className={`text-caption font-black uppercase px-1.5 py-0.5 rounded-md ${r.tipo_documento === 'CCF' ? 'bg-danger/10 text-danger-text' : 'bg-success/10 text-success-text'}`}>{r.tipo_documento}</span>
+                                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento}</Badge>
                                                 {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
                                                 <span className="font-mono text-label text-content-3">{r.correlativo}</span>
                                                 <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>

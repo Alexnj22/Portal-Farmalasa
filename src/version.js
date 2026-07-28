@@ -16,7 +16,24 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.140.0';
+export const APP_VERSION = '2.141.0';
+
+// v2.141.0 — D3.5: Facturacion y Catalogo cerrados.
+//
+// Facturacion: los dos chips de dia (mismo ternario escrito dos veces) y el
+// tipo de documento. Catalogo: `CLASIF_STYLE`, `marginLabel().cls`,
+// `xk.changesBadge` y el estado activo/inactivo — cuatro paletas mas.
+//
+// `marginLabel` es un buen ejemplo de por que esto vale: devolvia un `cls` con
+// tres clases de Tailwind para decir "Perdida" o "Margen bajo". Ahora devuelve
+// el nombre de la severidad, que es lo que la funcion realmente sabe.
+//
+// Un error mio que atrapo el lint: use `VARIANTE_DOC` en Facturacion, pero esa
+// constante vive en VentasView. Son dos archivos sin nada compartido. Cada uno
+// tiene el suyo ahora. Lo detecto `eslint | grep problems` — con el `tail -1`
+// que usaba antes se me habria pasado, igual que la vez anterior.
+//
+// Chips a mano: 66 → 59.
 
 // v2.140.0 — D3.5: tres tablas mas, y la consolidacion bajando sola.
 //

@@ -93,8 +93,8 @@ function specialLossLabel(key) {
 
 function marginLabel(m) {
     if (m === null) return null;
-    if (m < 0)  return { label: 'Pérdida',     cls: 'bg-danger/10 text-danger-text border-danger/30'      };
-    if (m < 15) return { label: 'Margen bajo',  cls: 'bg-warning/10 text-warning-text border-warning/30' };
+    if (m < 0)  return { label: 'Pérdida',    variante: 'danger'  };
+    if (m < 15) return { label: 'Margen bajo', variante: 'warning' };
     return null;
 }
 
@@ -717,9 +717,9 @@ function classifyFromPurchases(purchases) {
 }
 
 const CLASIF_STYLE = {
-    Nuevo:     { bg: 'bg-success/10 border-success/30 text-success-text', Icon: Sparkles   },
-    Reentrada: { bg: 'bg-chart-3/10 border-chart-3/30 text-chart-3-text',   Icon: RotateCcw  },
-    Regular:   { bg: 'bg-chart-1/10 border-chart-1/30 text-chart-1-text',         Icon: Package    },
+    Nuevo:     { variante: 'success', Icon: Sparkles  },
+    Reentrada: { variante: 'chart-3', Icon: RotateCcw },
+    Regular:   { variante: 'chart-1', Icon: Package   },
 };
 
 function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
@@ -751,9 +751,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             {/* Classification badge + summary */}
             <div className="flex items-center gap-3 flex-wrap">
                 {cs && (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label font-bold border ${cs.bg}`}>
-                        <cs.Icon size={10} /> {clasificacion}
-                    </span>
+                    <Badge variant={cs.variante} icon={cs.Icon} uppercase={false}>{clasificacion}</Badge>
                 )}
                 <span className="text-caption text-content-3">
                     Primera compra: <span className="font-semibold text-content-2">{fmtDate(firstDate)}</span>
@@ -886,7 +884,6 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         photoSubText: 'text-content-3',
         photoUploadIcon: 'text-content-3 group-hover:text-brand-text',
         photoUploadLabel: 'text-content-3 group-hover:text-brand-text',
-        changesBadge: 'bg-warning/10 text-warning-text border-warning/30',
         emptyPresentaciones: 'bg-surface-card-hover border-divider text-content-3',
         pricingWrapper: 'bg-surface-card border-divider shadow-sm',
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
@@ -1142,9 +1139,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-2`}>
                                 Presentaciones y precios
                                 {hasChanges && (
-                                    <span className={`inline-flex items-center gap-1 text-micro font-bold border px-1.5 py-0.5 rounded-full ${xk.changesBadge}`}>
-                                        <AlertTriangle size={8} /> cambios
-                                    </span>
+                                    <Badge variant="warning" size="sm" icon={AlertTriangle} uppercase={false}>cambios</Badge>
                                 )}
                             </p>
 
@@ -1808,7 +1803,8 @@ export default function TabCatalogo({
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                     <span className={`text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
-                                                    {mInfo && <span className={`inline-flex items-center gap-0.5 text-micro font-bold border px-1.5 py-0.5 rounded-full shrink-0 ${mInfo.cls}`}>{worstM < 0 ? <ShieldAlert size={7} /> : <TrendingDown size={7} />}{mInfo.label}</span>}
+                                                    {mInfo && <Badge variant={mInfo.variante} size="sm" className="shrink-0" uppercase={false}
+                                                        icon={worstM < 0 ? ShieldAlert : TrendingDown}>{mInfo.label}</Badge>}
                                                     {specLoss && [...specLoss].map(k => (
                                                         <Badge key={k} variant="chart-4" size="sm" icon={TrendingDown} uppercase={false}>Pérd. {specialLossLabel(k)}</Badge>
                                                     ))}
@@ -1829,9 +1825,9 @@ export default function TabCatalogo({
                                         </div>
                                     </DataCell>
                                     <DataCell hideBelow="sm">
-                                        <span className={`text-micro font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-success/10 text-success border-success/30' : 'bg-surface-card-hover text-content-2 border-divider'}`}>
+                                        <Badge variant={p.activo ? 'success' : 'neutral'} size="sm">
                                             {p.activo ? 'Activo' : 'Inactivo'}
-                                        </span>
+                                        </Badge>
                                     </DataCell>
                                     <DataCell className="w-10 text-center">
                                         {isLoadingThis

@@ -93,6 +93,18 @@ const GlassViewLayout = ({
                                     </div>
                                 )}
                             </div>
+                            {/* OJO: `filtersContent` se renderiza DOS VECES en este
+                                archivo — acá para escritorio y más abajo para móvil.
+                                Medido el 2026-07-28: no es un bug de accesibilidad,
+                                porque las ramas se ocultan con `hidden lg:block` /
+                                `lg:hidden` y `display:none` SÍ saca del árbol de
+                                accesibilidad (verificado: 2 en el DOM, 1 alcanzable).
+                                Pero son dos INSTANCIAS de React con estado propio: si
+                                se abre el buscador en escritorio y se achica la
+                                ventana, el de móvil arranca cerrado. Y todo el
+                                contenido se renderiza dos veces por cada render de la
+                                vista. Unificarlo es un refactor que toca las 34 vistas
+                                que usan esta prop; queda anotado, no hecho. */}
                             {filtersContent && (
                                 <div className="flex items-center justify-end flex-shrink-0">
                                     {filtersContent}

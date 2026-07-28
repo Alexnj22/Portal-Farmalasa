@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Button from '../components/common/Button';
+import SegmentedControl from '../components/common/SegmentedControl';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
 import { createPortal } from 'react-dom';
@@ -352,34 +353,26 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const headerControls = (
         <div className="flex items-center gap-2 md:gap-3 bg-surface-card backdrop-blur-2xl border border-border-card p-2 md:p-2.5 rounded-header shadow-sm w-max max-w-full overflow-x-auto hide-scrollbar">
             
-            <div className="flex items-center relative bg-surface-card border border-border-card rounded-full p-1 shrink-0 shadow-[var(--shadow-shine)]">
-                <div
-                    className="absolute top-1 bottom-1 w-[calc(20%-2px)] bg-white rounded-full shadow-[var(--shadow-elevation-md)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                    style={{
-                        transform: currentTab === 'history'     ? 'translateX(0%)' :
-                                   currentTab === 'documents'   ? 'translateX(100%)' :
-                                   currentTab === 'permissions' ? 'translateX(200%)' :
-                                   currentTab === 'payroll'     ? 'translateX(300%)' :
-                                   'translateX(400%)'
-                    }}
-                ></div>
-
-                <button onClick={() => setCurrentTab('history')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'history' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                    <Clock size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Historial</span>
-                </button>
-                <button onClick={() => setCurrentTab('documents')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'documents' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                    <FileText size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Archivo</span>
-                </button>
-                <button onClick={() => setCurrentTab('permissions')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'permissions' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                    <Stethoscope size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Ausencias</span>
-                </button>
-                <button onClick={() => setCurrentTab('payroll')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'payroll' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                    <Wallet size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Horarios</span>
-                </button>
-                <button onClick={() => setCurrentTab('requests')} className={`relative z-base px-4 md:px-5 py-2 text-caption font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
-                    <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
-                </button>
-            </div>
+            {/* Cinco pestañas escritas a mano, con una píldora deslizante
+                propia: un `<div absolute>` cuyo `translateX` se calculaba con
+                una cadena de cinco ternarios y `w-[calc(20%-2px)]` — o sea que
+                agregar una sexta pestaña rompía la aritmética en silencio. Y su
+                fondo era `bg-white` FIJO, que en los dos temas oscuros dejaba
+                una píldora blanca.
+                `SegmentedControl` ya modela esto, y de paso trae el
+                `role="radiogroup"` que decía "1 de 5". */}
+            <SegmentedControl
+                label="Sección de la ficha"
+                value={currentTab}
+                onChange={setCurrentTab}
+                options={[
+                    { value: 'history',     label: 'Historial',   icon: Clock },
+                    { value: 'documents',   label: 'Archivo',     icon: FileText },
+                    { value: 'permissions', label: 'Ausencias',   icon: Stethoscope },
+                    { value: 'payroll',     label: 'Horarios',    icon: Wallet },
+                    { value: 'requests',    label: 'Solicitudes', icon: ClipboardList },
+                ]}
+            />
 
             {canEdit && <div className="w-px h-6 bg-divider mx-1 shrink-0"></div>}
 

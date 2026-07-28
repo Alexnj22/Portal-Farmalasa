@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.109.2';
+export const APP_VERSION = '2.110.0';
+
+// v2.110.0 — Las 5 pestañas de la ficha de empleado, y una alarma que resulto
+// infundada.
+//
+// `EmployeeDetailView` tenia sus 5 pestañas escritas a mano con una PILDORA
+// DESLIZANTE propia: un `<div absolute>` cuyo `translateX` salia de una cadena
+// de cinco ternarios y cuyo ancho era `w-[calc(20%-2px)]`. O sea que agregar
+// una sexta pestaña rompia la aritmetica **en silencio** — el indicador
+// quedaria corrido y nadie lo veria hasta mirarlo. Y su fondo era `bg-white`
+// FIJO: en los dos temas oscuros, una pildora blanca.
+//
+// `SegmentedControl` ya modela esto y trae el `role="radiogroup"` que faltaba.
+//
+// ── Y una alarma que investigue y resulto infundada ───────────────────────
+// Al verificar aparecieron DOS `radiogroup` con el mismo nombre, y pense que
+// era un bug de accesibilidad: `GlassViewLayout` renderiza `filtersContent`
+// dos veces, una rama para escritorio y otra para movil.
+//
+// Medido antes de "arreglarlo": las ramas se ocultan con `hidden lg:block` /
+// `lg:hidden`, y **`display:none` SI saca del arbol de accesibilidad** — 2 en
+// el DOM, 1 alcanzable. No hay duplicado para un lector de pantalla.
+//
+// Lo que si es real, y queda anotado en el propio archivo: son dos INSTANCIAS
+// de React con estado propio (abrir el buscador en escritorio y achicar la
+// ventana deja el de movil cerrado), y todo el contenido se renderiza dos
+// veces por render. Unificarlo toca las 34 vistas que usan la prop.
 
 // v2.109.2 — Tres enlaces de accion de TabCatalogo al canonico.
 //

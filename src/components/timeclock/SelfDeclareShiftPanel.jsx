@@ -55,12 +55,10 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                         </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        className="relative z-content pointer-events-auto w-full py-4 rounded-3xl bg-warning/20 border border-warning/40 text-warning font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-warning/30 hover:border-warning/60 hover:shadow-[var(--shadow-glow-warning-lg)] active:scale-[0.97] transition-all duration-300"
-                    >
-                        <CheckCircle size={14} /> Confirmar Horario
-                    </button>
+                    <Button type="submit" tone="warning" soft size="lg" icon={CheckCircle}
+                        className="w-full relative z-content pointer-events-auto">
+                        Confirmar Horario
+                    </Button>
                 </form>
 
                 <div className="mt-3">

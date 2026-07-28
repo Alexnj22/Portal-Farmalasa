@@ -668,9 +668,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     ) : ev.metadata?.status === 'SUPERSEDED' ? (
                                                                         <Badge size="sm">EDITADO</Badge>
                                                                     ) : ev.documentId ? (
-                                                                        <button className="flex items-center gap-1.5 text-brand-text bg-chart-1/10 hover:bg-chart-1/10 px-3 py-1.5 rounded-lg font-black text-micro uppercase tracking-widest transition-colors shadow-sm">
-                                                                            <FileText size={12} strokeWidth={2.5}/> Ver Respaldo Legal
-                                                                        </button>
+                                                                        <Button tone="chart-1" soft size="xs" icon={FileText}>Ver Respaldo Legal</Button>
                                                                     ) : (
                                                                         <Button tone="chart-4" icon={Paperclip} disabled={!canEdit} onClick={() => openModal('uploadDocument', {}, ev.id)}>Adjuntar Soporte</Button>
                                                                     )}

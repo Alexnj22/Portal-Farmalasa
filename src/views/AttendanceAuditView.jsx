@@ -293,10 +293,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Corrección de marcaje</p>
             <p className="text-body-xl font-black text-content">{fmtDia}</p>
           </div>
-          <button onClick={onClose}
-            className="p-2 rounded-xl hover:bg-black/[0.06] text-content-3 hover:text-content-2 transition-all active:scale-[0.94]">
-            <X size={18} strokeWidth={2.5} />
-          </button>
+          <Button variant="ghost" size="sm" iconOnly icon={X} title="Cerrar" onClick={onClose} />
         </div>
 
         <div className="px-6 py-5 space-y-4">

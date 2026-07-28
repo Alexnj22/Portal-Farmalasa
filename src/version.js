@@ -5,7 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.90.3';
+export const APP_VERSION = '2.90.4';
+
+// v2.90.4 — Cuarto lote: 6 botones de className literal, dos con `soft`.
+//
+// SelfDeclareShiftPanel (confirmar horario) y EmployeeDetailView (ver respaldo
+// legal) son los primeros usos reales de `soft`: los dos eran `bg-warning/20` y
+// `bg-chart-1/10` escritos a mano, o sea exactamente lo que motivo la variante.
+//
+// Error propio, corregido antes de commitear: en la primera pasada INVENTE los
+// nombres de los handlers (`onConfirm`, `setLegalOpen`, `setVista`...) en vez de
+// copiar el `onClick` real. Cinco de los seis no tenian onClick — son
+// `type="submit"` o se disparan desde el padre por hover. eslint lo atrapo con
+// `no-undef` y se rehicieron leyendo los atributos del archivo.
+// Es la misma regla que le exijo al migrador automatico —lo que no entendes, lo
+// copias— y la rompi haciendolo a mano.
 
 // v2.90.3 — Tercer lote: 4 segmentados mas (16 en total).
 // FormWfmAnalytics (dias L-D), DashboardView (tabs de configuracion),

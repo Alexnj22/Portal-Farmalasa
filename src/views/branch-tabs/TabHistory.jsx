@@ -322,9 +322,9 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 )}
                             </button>
                             <div className="relative z-toast" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-                                <button className="h-9 px-3 flex items-center gap-2 text-content-3 hover:bg-surface-card-hover hover:text-brand-text rounded-btn transition-all font-black text-caption uppercase tracking-widest shrink-0">
-                                    <Download size={14} strokeWidth={2.5} /> <span className="hidden sm:inline">Exportar</span>
-                                </button>
+                                <Button variant="ghost" size="sm" icon={Download}>
+                                    <span className="hidden sm:inline">Exportar</span>
+                                </Button>
                                 <div className={`absolute top-[100%] left-0 pt-2 transition-all duration-300 ${isDownloadMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
                                     <div className="w-[160px] bg-surface-card backdrop-blur-xl border border-border-card shadow-xl rounded-2xl p-1.5 flex flex-col gap-1">
                                         <Button icon={Printer} onClick={() => { handlePrintVisualReport(); setIsDownloadMenuOpen(false); }}>Reporte PDF</Button>

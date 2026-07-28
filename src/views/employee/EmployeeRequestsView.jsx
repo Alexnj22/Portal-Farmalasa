@@ -1150,16 +1150,10 @@ const EmployeeRequestsView = () => {
                                 />
                             </div>
 
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || formDisabilityBlocked}
-                                className="w-full py-4 mt-2 active:scale-[0.98] text-white rounded-2xl font-black uppercase tracking-widest text-label transition-all flex items-center justify-center gap-2 border-none bg-brand hover:bg-brand-hover shadow-[var(--shadow-glow-brand)] hover:shadow-[var(--shadow-glow-brand)] disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none"
-                            >
-                                {isSubmitting
-                                    ? <><Loader2 size={16} className="animate-spin" /> Enviando...</>
-                                    : <><Send size={16} strokeWidth={2.5} /> Enviar Solicitud</>
-                                }
-                            </button>
+                            <Button type="submit" size="lg" icon={Send} loading={isSubmitting}
+                                disabled={isSubmitting || formDisabilityBlocked} className="w-full mt-2">
+                                {isSubmitting ? 'Enviando…' : 'Enviar solicitud'}
+                            </Button>
                         </form>
                     </div>
                 </div>

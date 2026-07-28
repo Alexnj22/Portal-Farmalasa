@@ -593,25 +593,30 @@ export default function EncuestaAdminView() {
                                     <label className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-1 block ml-1 flex items-center gap-1">
                                         <Lock size={10} strokeWidth={2.5} /> Privacidad
                                     </label>
+                                    {/* Cada uno alterna entre DOS estados con nombre
+                                        propio ("Anónima"/"No anónima"), así que es un
+                                        uno-de-N de dos opciones y no un interruptor:
+                                        con `Switch` la opción apagada se quedaría sin
+                                        nombre. */}
                                     <div className="grid grid-cols-2 gap-3">
-                                        <button type="button" onClick={() => setSfAnonima(v => !v)}
-                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-label transition-all duration-300 ${
-                                                sfAnonima
-                                                    ? 'bg-chart-3/10 border-chart-3/40 text-chart-3-text shadow-[var(--shadow-glow-chart-3)]'
-                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
-                                            }`}>
-                                            {sfAnonima ? <EyeOff size={13} strokeWidth={2.5} /> : <Eye size={13} strokeWidth={2.5} />}
-                                            {sfAnonima ? 'Anónima' : 'No anónima'}
-                                        </button>
-                                        <button type="button" onClick={() => setSfCompartir(v => !v)}
-                                            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border font-bold text-label transition-all duration-300 ${
-                                                sfCompartir
-                                                    ? 'bg-success/10 border-success/40 text-success-text shadow-[var(--shadow-glow-success)]'
-                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
-                                            }`}>
-                                            <Globe size={13} strokeWidth={2.5} />
-                                            {sfCompartir ? 'Resultados públicos' : 'Privado'}
-                                        </button>
+                                        <SegmentedControl
+                                            size="sm" tone="chart-3" label="Privacidad de las respuestas"
+                                            value={sfAnonima ? 'si' : 'no'}
+                                            onChange={v => setSfAnonima(v === 'si')}
+                                            options={[
+                                                { value: 'no', label: 'No anónima', icon: Eye },
+                                                { value: 'si', label: 'Anónima',    icon: EyeOff },
+                                            ]}
+                                        />
+                                        <SegmentedControl
+                                            size="sm" tone="success" label="Visibilidad de los resultados"
+                                            value={sfCompartir ? 'si' : 'no'}
+                                            onChange={v => setSfCompartir(v === 'si')}
+                                            options={[
+                                                { value: 'no', label: 'Privado',  icon: Lock },
+                                                { value: 'si', label: 'Públicos', icon: Globe },
+                                            ]}
+                                        />
                                     </div>
                                     <p className={`text-caption mt-1.5 ml-1 flex items-start gap-1.5 leading-snug ${sfAnonima ? 'text-chart-3-text' : 'text-content-3'}`}>
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
@@ -774,24 +779,19 @@ export default function EncuestaAdminView() {
                                 {/* Rol */}
                                 <div>
                                     <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Rol en encuesta</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button type="button" onClick={() => setRfIsJefe(false)}
-                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
-                                                !rfIsJefe
-                                                    ? 'bg-surface-card border-brand/30 text-brand-text shadow-[var(--shadow-glow-brand)]'
-                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
-                                            }`}>
-                                            <Users size={14} strokeWidth={2.5} /> Empleado/a
-                                        </button>
-                                        <button type="button" onClick={() => setRfIsJefe(true)}
-                                            className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
-                                                rfIsJefe
-                                                    ? 'bg-warning/10 border-warning/40 text-warning-text shadow-[var(--shadow-glow-warning)]'
-                                                    : 'bg-surface-card border-border-card text-content-3 hover:bg-surface-card hover:shadow-sm hover:-translate-y-0.5'
-                                            }`}>
-                                            <UserCheck size={14} strokeWidth={2.5} /> Jefe/a de sala
-                                        </button>
-                                    </div>
+                                    {/* Dos opciones excluyentes: es un uno-de-N, no dos
+                                        botones. Con `SegmentedControl` gana el
+                                        `role="radiogroup"` que un lector de pantalla
+                                        necesita para anunciar "1 de 2". */}
+                                    <SegmentedControl
+                                        label="Rol en encuesta"
+                                        value={rfIsJefe ? 'jefe' : 'empleado'}
+                                        onChange={v => setRfIsJefe(v === 'jefe')}
+                                        options={[
+                                            { value: 'empleado', label: 'Empleado/a',     icon: Users },
+                                            { value: 'jefe',     label: 'Jefe/a de sala', icon: UserCheck },
+                                        ]}
+                                    />
                                 </div>
 
                                 {/* Progress */}

@@ -5,7 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.105.0';
+export const APP_VERSION = '2.105.1';
+
+// v2.105.1 — EncuestaAdminView: 4 botones que NO eran botones.
+//
+// "Rol en encuesta" (Empleado/a · Jefe/a de sala) y los dos pares de
+// privacidad (Anónima/No anónima, Privado/Públicos) estaban escritos como
+// pares de `<button>` con `X ? activo : inactivo` en el className. Son
+// uno-de-N: `SegmentedControl`, que agrega el `role="radiogroup"` que un
+// lector de pantalla necesita para anunciar "1 de 2" — antes eran dos botones
+// sueltos sin relación declarada.
+//
+// Los dos de privacidad podrían haber sido `Switch`, y no lo son a propósito:
+// cada estado tiene NOMBRE PROPIO ("Anónima" vs "No anónima"), y con un
+// interruptor la opción apagada se queda sin etiqueta. Un switch dice
+// "encendido/apagado"; acá las dos caras son opciones con nombre.
+//
+// Verificado en vivo: los dos `radiogroup` con sus opciones y el estado
+// marcado correcto, y visualmente iguales a los tres segmentados que la vista
+// ya tenía (Estado, Tipo de encuesta, Dirigida a).
 
 // v2.105.0 — `StatCard`: las 12 tarjetas de metrica del portal, migradas.
 //

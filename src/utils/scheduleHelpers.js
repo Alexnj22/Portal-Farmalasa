@@ -139,14 +139,17 @@ export const calculateEmployeeWeeklyHoursLocal = (schedule, shifts, history, cal
 };
 
 // Bucket B (DESIGN.md §6) — categórico por jerarquía de rol, sin severidad.
+// `variante` es el nombre de la variante de `Badge`; `bg`/`text`/`border` son
+// la MISMA paleta escrita a mano y siguen ahí para los sitios que aún pintan
+// una superficie (no un chip). Agregado el 2026-07-28 (D3.5).
 export const getRoleTheme = (roleName) => {
     const role = (roleName || '').toUpperCase();
-    if (role.includes('GERENTE') || (role.includes('JEFE') && !role.includes('SUB'))) return { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' };
-    if (role.includes('SUBJEFE')) return { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' };
-    if (role.includes('REGENTE')) return { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30' };
-    if (role.includes('SUPERVISOR')) return { bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' };
-    if (role.includes('ADMINISTRADOR')) return { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30' };
-    return { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider' };
+    if (role.includes('GERENTE') || (role.includes('JEFE') && !role.includes('SUB'))) return { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' };
+    if (role.includes('SUBJEFE')) return { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' };
+    if (role.includes('REGENTE')) return { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' };
+    if (role.includes('SUPERVISOR')) return { bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' };
+    if (role.includes('ADMINISTRADOR')) return { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30', variante: 'chart-2' };
+    return { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider', variante: 'neutral' };
 };
 
 export const getDayConflictLocal = (dateStr, history) => {

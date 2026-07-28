@@ -31,15 +31,15 @@ const formatDate = (d) => d
 // son severidad real (positivo/negativo), el resto es categórico puro,
 // mapeado a los MISMOS chart-N que RequestsView para el tipo compartido.
 const EVENT_THEMES = {
-    VACATION:    { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]' },
-    PERMIT:      { bg: 'bg-chart-2/10',  text: 'text-chart-2-text', border: 'border-chart-2/30', dot: 'border-chart-2',  glow: 'hover:shadow-[var(--shadow-glow-success)]'  },
-    DISABILITY:  { bg: 'bg-danger/10',   text: 'text-danger-text',  border: 'border-danger/30',  dot: 'border-danger',   glow: 'hover:shadow-[var(--shadow-glow-danger)]'   },
-    SHIFT_CHANGE:{ bg: 'bg-chart-3/10',  text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'border-chart-3',  glow: 'hover:shadow-[var(--shadow-glow-chart-3)]'   },
-    SALARY:      { bg: 'bg-chart-6/10',  text: 'text-chart-6-text', border: 'border-chart-6/30', dot: 'border-chart-6',  glow: 'hover:shadow-[var(--shadow-glow-chart-6-lg)]'  },
-    TRANSFER:    { bg: 'bg-chart-1/10',  text: 'text-chart-1-text', border: 'border-chart-1/30', dot: 'border-chart-1',  glow: 'hover:shadow-[var(--shadow-glow-chart-1)]'  },
-    HIRING:      { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]' },
+    VACATION:    { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]', variante: 'success' },
+    PERMIT:      { bg: 'bg-chart-2/10',  text: 'text-chart-2-text', border: 'border-chart-2/30', dot: 'border-chart-2',  glow: 'hover:shadow-[var(--shadow-glow-success)]', variante: 'chart-2'  },
+    DISABILITY:  { bg: 'bg-danger/10',   text: 'text-danger-text',  border: 'border-danger/30',  dot: 'border-danger',   glow: 'hover:shadow-[var(--shadow-glow-danger)]', variante: 'danger'   },
+    SHIFT_CHANGE:{ bg: 'bg-chart-3/10',  text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'border-chart-3',  glow: 'hover:shadow-[var(--shadow-glow-chart-3)]', variante: 'chart-3'   },
+    SALARY:      { bg: 'bg-chart-6/10',  text: 'text-chart-6-text', border: 'border-chart-6/30', dot: 'border-chart-6',  glow: 'hover:shadow-[var(--shadow-glow-chart-6-lg)]', variante: 'chart-6'  },
+    TRANSFER:    { bg: 'bg-chart-1/10',  text: 'text-chart-1-text', border: 'border-chart-1/30', dot: 'border-chart-1',  glow: 'hover:shadow-[var(--shadow-glow-chart-1)]', variante: 'chart-1'  },
+    HIRING:      { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]', variante: 'success' },
 };
-const DEFAULT_THEME = { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-border-card', dot: 'border-brand', glow: 'hover:shadow-[var(--shadow-glow-brand)]' };
+const DEFAULT_THEME = { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-border-card', dot: 'border-brand', glow: 'hover:shadow-[var(--shadow-glow-brand)]', variante: 'neutral' };
 
 const WEEK_DAYS = [
     { id: 1, short: 'Lu' }, { id: 2, short: 'Ma' }, { id: 3, short: 'Mi' },
@@ -215,9 +215,9 @@ const EmployeeProfileView = ({ openModal }) => {
     );
 
     const VAC_STATUS = {
-        PLANNED:   { label: 'Planificado', bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30'    },
-        CONFIRMED: { label: 'Confirmado',  bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' },
-        TAKEN:     { label: 'Completado',  bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider'   },
+        PLANNED:   { label: 'Planificado', bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    border: 'border-chart-1/30'    , variante: 'chart-1' },
+        CONFIRMED: { label: 'Confirmado',  bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' , variante: 'success' },
+        TAKEN:     { label: 'Completado',  bg: 'bg-surface-card-hover',  text: 'text-content-3',   border: 'border-divider'   , variante: 'neutral' },
     };
 
     const headerLeft = (
@@ -367,7 +367,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                 <p className="text-body-sm font-black text-content-2 truncate">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
                                                 <p className="text-caption text-content-3 font-medium">{vp.days} días · {vp.year}</p>
                                             </div>
-                                            <span className={`text-micro font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md border flex-shrink-0 ${s.bg} ${s.text} ${s.border}`}>{s.label}</span>
+                                            <Badge variant={s.variante} size="sm" className="flex-shrink-0">{s.label}</Badge>
                                         </div>
                                     );
                                 })}
@@ -522,7 +522,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                             <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-300 z-base ${theme.dot}`} />
                                             <div className={`bg-surface-card backdrop-blur-xl rounded-2xl p-4 border border-border-card transition-all duration-300 shadow-sm hover:-translate-y-0.5 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-micro font-black uppercase tracking-widest border ${theme.bg} ${theme.text} ${theme.border}`}>{label}</span>
+                                                    <Badge variant={theme.variante} size="sm">{label}</Badge>
                                                     <span className="text-caption font-bold text-content-3">{formatDate(ev.date)}</span>
                                                 </div>
                                                 <p className="text-body-sm text-content-2 leading-relaxed font-medium">{ev.note || 'Evento registrado.'}</p>
@@ -546,9 +546,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                                     </p>
                                                 )}
                                                 {(isCancelled || isEdited) && (
-                                                    <span className={`mt-2 inline-block px-2 py-0.5 rounded-full text-micro font-black uppercase tracking-widest ${isCancelled ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
-                                                        {isCancelled ? 'Cancelado' : 'Editado'}
-                                                    </span>
+                                                    <Badge variant={isCancelled ? 'danger' : 'neutral'} size="sm" className="mt-2">{isCancelled ? 'Cancelado' : 'Editado'}</Badge>
                                                 )}
                                             </div>
                                         </div>

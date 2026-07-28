@@ -16,7 +16,27 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.134.0';
+export const APP_VERSION = '2.135.0';
+
+// v2.135.0 — D3.5: cuatro paletas mas, dos de ellas compartidas.
+//
+//   · `getRoleTheme` (utils/scheduleHelpers) — la usan TRES vistas. Devolvia
+//     `bg`/`text`/`border` por rol; ahora tambien el nombre de la variante.
+//   · `getStatusInfo` (Personal) — nueve ramas devolviendo un `className` con
+//     las tres clases juntas.
+//   · `PRACTICANTE_ESTADO_CFG`, `EVENT_THEMES`, `VAC_STATUS` — lo mismo, una
+//     fila por estado.
+//
+// El `bg`/`text`/`border` NO se borra de ninguna: hay sitios que pintan una
+// SUPERFICIE con esos mismos colores (la tarjeta del evento, el punto de la
+// linea de tiempo), y eso no es un chip. Lo que se agrega es el nombre para
+// los que si lo son.
+//
+// Verificado en vivo: /dashboard muestra 54 badges y 6 colores — los roles
+// (JEFE, SUBJEFE, REG. DE ENF., DEPENDIENTE) y el estado (Activo) con su
+// color de categoria.
+//
+// Chips a mano: 83 → 77.
 
 // v2.134.0 — D3.5: dos paletas mas, y una leccion sobre mi propio proceso.
 //

@@ -77,16 +77,16 @@ const searchEmployees = (query, list, branchMap) => {
 const getStatusInfo = (rawStatus) => {
   const status = String(rawStatus || '').toUpperCase().trim();
 
-  if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/10 border-success/30' };
-  if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-chart-5-text bg-chart-5/10 border-chart-5/30' };
-  if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/10 border-warning/30' };
-  if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-danger-text bg-danger/10 border-danger/30' };
-  if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-chart-6-text bg-chart-6/10 border-chart-6/30' };
-  if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-chart-2-text bg-chart-2/10 border-chart-2/30' };
-  if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30' };
-  if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-divider' };
+  if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/10 border-success/30', variante: 'success' };
+  if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', variante: 'chart-5' };
+  if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/10 border-warning/30', variante: 'warning' };
+  if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-danger-text bg-danger/10 border-danger/30', variante: 'danger' };
+  if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-chart-6-text bg-chart-6/10 border-chart-6/30', variante: 'chart-6' };
+  if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-chart-2-text bg-chart-2/10 border-chart-2/30', variante: 'chart-2' };
+  if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30', variante: 'danger' };
+  if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-divider', variante: 'neutral' };
 
-  return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-content-2 bg-surface-card-hover/80 border-divider' };
+  return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-content-2 bg-surface-card-hover/80 border-divider', variante: 'neutral' };
 };
 
 // calcAgeYears decide si el documento de identidad esperado es DUI (adulto)
@@ -382,19 +382,14 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {rolesArray.map((roleObj, idx) => {
             const theme = getRoleTheme(roleObj.original);
             return (
-              <span key={idx} className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-micro md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${theme.bg} ${theme.text} ${theme.border}`}>
-                {roleObj.display}
-              </span>
+              <Badge key={idx} variant={theme.variante} size="sm">{roleObj.display}</Badge>
             );
           })}
         </div>
       </DataCell>
 
       <DataCell>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-micro font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${statusInfo.className}`}>
-          <statusInfo.icon size={12} strokeWidth={2.5} className="shrink-0" />
-          {statusInfo.text}
-        </span>
+        <Badge variant={statusInfo.variante} size="sm" icon={statusInfo.icon}>{statusInfo.text}</Badge>
       </DataCell>
 
       <DataCell align="right" className="w-[180px]">
@@ -417,9 +412,9 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 // employee_documents...) no existen en un practicante y generarían badges de
 // "Información Pendiente" falsos si se reutilizara ese componente tal cual.
 const PRACTICANTE_ESTADO_CFG = {
-  ACTIVO:     { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', icon: CheckCircle2, label: 'Activo' },
-  FINALIZADO: { bg: 'bg-surface-card-hover',  text: 'text-content-2',   border: 'border-divider',   icon: UserMinus,    label: 'Finalizado' },
-  CANCELADO:  { bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',      icon: UserX,        label: 'Cancelado' },
+  ACTIVO:     { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', icon: CheckCircle2, label: 'Activo', variante: 'success' },
+  FINALIZADO: { bg: 'bg-surface-card-hover',  text: 'text-content-2',   border: 'border-divider',   icon: UserMinus,    label: 'Finalizado', variante: 'neutral' },
+  CANCELADO:  { bg: 'bg-danger/10',     text: 'text-danger',     border: 'border-danger/30',      icon: UserX,        label: 'Cancelado', variante: 'danger' },
 };
 
 const fmtShortDate = (d) => {
@@ -463,10 +458,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
       </DataCell>
 
       <DataCell>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-micro font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${es.bg} ${es.text} ${es.border}`}>
-          <es.icon size={12} strokeWidth={2.5} className="shrink-0" />
-          {es.label}
-        </span>
+        <Badge variant={es.variante} size="sm" icon={es.icon}>{es.label}</Badge>
       </DataCell>
 
       <DataCell align="right" className="w-[180px]">

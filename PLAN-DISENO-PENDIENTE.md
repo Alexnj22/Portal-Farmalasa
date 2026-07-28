@@ -14,7 +14,8 @@ hallazgo nuevo se documenta siempre, se resuelva o no.
 | **D3.8 baseline del gate** | ✓ **cerrada** — las 11 categorías en **0 y bloqueantes**, sin baseline |
 | **§17 barra de filtros** | 18 vistas con `FilterBar` (eran 4) |
 | **Móvil** | ✓ los 4 reportes del usuario, reproducidos y resueltos |
-| D3.3 botones | **166** — 61 fila/tarjeta · 48 acción · 47 uno-de-N · 6 bespoke · 4 composición |
+| D3.3 botones | **156** — 58 fila/tarjeta · 48 acción · 40 uno-de-N · 6 bespoke · 4 composición |
+| **D3.4 accesibilidad de campos** | ✓ **cerrada** — 22 campos sin nombre accesible corregidos; `input-label` nace en 0 y bloqueante |
 | D3.4 inputs de texto | ~100 fuera de `PortalInput` (los nativos ya son **0**) |
 | D3.5 `Badge` | abierta — el conteo no se re-midió |
 | D4 reescribir `DESIGN.md` | abierta |
@@ -1047,12 +1048,55 @@ comentarios JSX y decidiendo por lo que **contiene**, no por su forma:
    `86 A / 9 C` a **`48 A / 47 C`** — o sea que la mitad de lo que iba a migrar
    a `Button` es en realidad `SegmentedControl`.
 
+### Migrados en esta pasada (166 → 156)
+
+| | |
+|---|---|
+| 4 uno-de-N de `EncuestaAdminView` | rol en encuesta + los dos pares de privacidad |
+| 4 uno-de-N de `DashboardView` | Horas/Días del gráfico, ancho y alto del widget |
+| 2 filas del Inicio → `ListRow` | y ahí apareció que **sin `onClick` el canónico renderiza un `<div>`**: esas filas solo navegan con permiso, y sin él quedaba un `<button>` que era una parada de foco sin acción |
+| 8 bloques de encuesta → `ListRow` | con la letra en la ranura `leading` |
+| la **13ª barra de vista** a mano | `EmployeeAnnouncementsView` → `ViewTabBar`; quedaron 3 refs huérfanos |
+| **una opción fuera de su grupo** | `EmployeeProfileView` tenía `<button>Todos</button>` **suelto** al lado del `SegmentedControl` con el resto: el grupo anunciaba "1 de 4" cuando hay 5 |
+
 **La lección, por cuarta vez: contar por forma da un número; hay que abrir cada
 caso para saber qué es.** Y el clasificador corregido tampoco alcanza: al
 revisar sus candidatos a uno-de-N aparecieron un botón de guardar, un
 encabezado de tabla ordenable y un toggle de privacidad. Sirve para
 **priorizar**, no para declarar terminado. Vive en
 `scripts/migradores/clasificar-botones.py` con esa advertencia escrita.
+
+## D3.4 · accesibilidad de campos · ✓ CERRADA (v2.106.0)
+
+Buscando por dónde empezar D3.4 apareció algo más urgente que migrar inputs a
+`PortalInput`: **22 campos de texto sin ningún nombre accesible** — ni
+`aria-label`, ni `aria-labelledby`, ni `id` que un `<label htmlFor>` pueda
+referenciar, ni `placeholder`, ni `title`. Un lector de pantalla anuncia
+*"campo de edición"* y nada más (WCAG 4.1.2 y 3.3.2).
+
+Y los peores estaban donde más duele: **la nómina** (días trabajados, horas a
+pagar o compensar), **la recepción de pedidos** (cantidad facturada, recibida,
+con problema) y **Min/Max** (el valor nuevo de un parámetro). Campos que
+deciden cuánto cobra alguien o cuánto stock se pide.
+
+Todos tienen etiqueta **visual** al lado; lo que falta es la asociación
+programática. **Se ve bien y no se puede usar sin ver** — exactamente el tipo
+de bug que ninguna captura de pantalla revela.
+
+Categoría `input-label` nueva, en cero y bloqueante desde el primer día.
+
+### El gate tuvo dos bugs antes de dar un número confiable
+
+Y los dos son de la misma familia que mordió al clasificador de botones **el
+mismo día**:
+
+| | |
+|---|---|
+| 80 → 29 | `<input\b[^>]*>` cortaba la etiqueta en la flecha de `onChange={e => …}`, dejando el `placeholder` fuera: reportaba campos que **sí** tienen nombre |
+| 29 → 22 | no blanqueaba los comentarios `//`, así que seis menciones de `<input>` **en prosa** contaban como campos |
+
+**Tres veces el mismo día el mismo par de trampas: una etiqueta JSX no termina
+en el primer `>`, y un comentario no es código.**
 
 ## D3.8 · ✓ CERRADA — el baseline del gate en CERO (v2.101.1 → v2.104.0)
 

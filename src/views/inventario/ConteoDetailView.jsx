@@ -24,6 +24,7 @@ import {
     searchActiveProductsForConteo, fetchProductPresentacionesForConteo, fetchErpSucursalIdsForBranch,
     fetchInventoryLotesForProduct, fetchProductCostoActivo,
 } from '../../data/conteoInventario';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 const PAGE_SIZE = 25;
 
@@ -589,16 +590,14 @@ export default function ConteoDetailView() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center rounded-2xl border border-divider bg-surface-card overflow-hidden">
-                        {FILTRO_PILLS.map((f, idx) => (
-                            <React.Fragment key={f.key}>
-                                {idx > 0 && <div className="h-5 w-px bg-divider" />}
-                                <button onClick={() => setFiltro(f.key)} className={`px-3 py-2 text-label font-semibold transition-all ${filtro === f.key ? 'bg-chart-9-solid text-white' : 'text-content-3 hover:bg-surface-card-hover'}`}>
-                                    {f.label}
-                                </button>
-                            </React.Fragment>
-                        ))}
-                    </div>
+                    <SegmentedControl
+                        label="Filtrar los renglones"
+                        size="sm"
+                        tone="chart-9"
+                        value={filtro}
+                        onChange={setFiltro}
+                        options={FILTRO_PILLS.map(f => ({ value: f.key, label: f.label }))}
+                    />
                     {editable && canEdit && (
                         <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm((v) => !v)}>Agregar Producto/Lote</Button>
                     )}

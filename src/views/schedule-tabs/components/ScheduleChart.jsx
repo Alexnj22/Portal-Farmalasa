@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import Button from '../../../components/common/Button';
 import { TrendingUp, ChevronLeft, BarChart2, Maximize2 } from 'lucide-react';
+import SegmentedControl from '../../../components/common/SegmentedControl';
 
 const ScheduleChart = ({
     chartTitle,
@@ -35,14 +36,14 @@ const ScheduleChart = ({
                         {typeof chartView === 'number' && (
                             <Button variant="secondary" icon={ChevronLeft} onClick={() => setChartView('DAYS')}>Días</Button>
                         )}
-                        <button onClick={() => setChartView('HOURS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-surface-tab-active text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
-                            Horas
-                        </button>
-                        <button onClick={() => setChartView('DAYS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-surface-tab-active text-brand-text shadow-sm' : 'text-content-2 hover:text-content-2 hover:bg-surface-card'}`}>
-                            Días
-                        </button>
+                        <SegmentedControl
+                            label="Escala del gráfico"
+                            size="sm"
+                            tone="neutro"
+                            value={chartView}
+                            onChange={setChartView}
+                            options={[{ value: 'HOURS', label: 'Horas' }, { value: 'DAYS', label: 'Días' }]}
+                        />
                     </div>
                     <div className="opacity-0 group-hover/chart:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                         <Button tone="chart-1" size="xs" icon={Maximize2} title="Expandir Análisis" iconOnly onClick={() => openModal && openModal('viewWfmAnalytics')} />

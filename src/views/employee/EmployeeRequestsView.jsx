@@ -23,6 +23,7 @@ import {
 import { updateApprovalRequest } from '../../data/requests';
 import FileField from '../../components/common/FileField';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import SegmentedControl from '../../components/common/SegmentedControl';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -1009,22 +1010,13 @@ const EmployeeRequestsView = () => {
     const renderFiltersContent = () => (
         <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
             <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
-                {TABS.map(tab => {
-                    const isActive = statusFilter === tab.key;
-                    return (
-                        <button
-                            key={tab.key}
-                            onClick={() => setStatusFilter(tab.key)}
-                            className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-micro md:text-caption font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 ${
-                                isActive
-                                    ? 'bg-surface-card text-content border-border-card shadow-md scale-[1.02]'
-                                    : 'bg-transparent text-content-3 border-transparent hover:bg-surface-card-hover hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-border-card'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    );
-                })}
+                <SegmentedControl
+                    label="Estado de las solicitudes"
+                    tone="neutro"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={TABS.map(t => ({ value: t.key, label: t.label }))}
+                />
             </div>
         </div>
     );

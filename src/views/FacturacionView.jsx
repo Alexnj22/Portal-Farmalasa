@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -42,6 +42,88 @@ const PAGE_SIZE = 10;
 
 // Categórico puro (T7, paleta cerrada cat-1..9) — 5 métodos de pago sin
 // severidad, solo necesitan distinguirse entre sí en la tabla.
+// ── ChipDoc (2026-07-28, D3.3) ───────────────────────────────────────────
+// Este control estaba escrito TRES VECES en este archivo: las facturas
+// pendientes, los saltos de correlativo y las anuladas con campos nulos. Las
+// tres copias tenían la misma anatomía —copiar el id │ etiqueta del medio │
+// resolver— y la misma cascada de ternarios de color, cada una con un estado
+// de más o de menos. Siete de los nueve `<button>` a mano del archivo eran
+// esto.
+//
+// No pasa por `Button` a propósito: son tres segmentos PEGADOS dentro de un
+// borde común (`items-stretch` + `border-r`), y el canónico les daría a cada
+// uno su propio radio y su propia sombra, rompiendo la unión. Lo que sí se
+// arregla es que exista una sola definición.
+//
+// El color deja de ser una cascada de ternarios y pasa a ser una tabla. Es el
+// mismo cambio que se le hizo a `SUC_COLORS` en TabSinVenta: si el estado tiene
+// nombre, el color se busca; si no, se vuelve a escribir en cada copia.
+const CHIP_TONO = {
+    visitado: { copia: 'bg-warning/10 text-warning-text border-warning/30',
+                medio: 'bg-warning/10', medioTxt: 'text-warning-text',
+                borde: 'border-warning/40' },
+    nulos:    { copia: 'bg-chart-3/10 text-chart-3-text border-chart-3/30 hover:bg-chart-3/20',
+                medio: 'bg-chart-3/10', medioTxt: 'text-chart-3-text',
+                borde: 'border-chart-3/40 hover:border-chart-3/60' },
+    salto:    { copia: 'bg-chart-4/10 text-chart-4-text border-chart-4/30',
+                medio: 'bg-surface-card', medioTxt: 'text-content-3',
+                borde: 'border-chart-4/30 hover:border-chart-4/40' },
+    ccf:      { copia: 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10',
+                medio: 'bg-danger/10', medioTxt: 'text-danger-text',
+                borde: 'border-danger/30 hover:border-danger/40' },
+    normal:   { copia: 'bg-surface-card-hover text-content-2 border-divider hover:bg-surface-card-hover',
+                medio: 'bg-surface-card', medioTxt: 'text-content-3',
+                borde: 'border-divider hover:border-divider' },
+};
+
+const ChipDoc = memo(({
+    estado = 'normal',      // visitado · nulos · ccf · normal
+    copiado = false,
+    resuelto = false,
+    onCopiar,
+    onResolver,
+    etiquetaCopia,
+    nombreResolver,         // qué dice el lector de pantalla en el botón de resolver
+    children,               // el segmento del medio
+}) => {
+    const t = CHIP_TONO[estado] || CHIP_TONO.normal;
+    return (
+        <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
+            resuelto ? 'border-success shadow-emerald-100' : t.borde}`}>
+            {/* Sin `onCopiar` el primer segmento NO es un botón. El de los
+                saltos de correlativo muestra un rango que no se copia, y
+                tenerlo como `<button>` le habría dado foco y voz de control
+                a un dato de solo lectura. */}
+            {onCopiar ? (
+                <button
+                    aria-label={copiado ? 'Copiado' : `Copiar ${etiquetaCopia}`}
+                    onClick={onCopiar}
+                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
+                        copiado ? 'bg-success/10 text-success-text border-success/30' : t.copia}`}>
+                    {copiado || estado === 'visitado' ? <Check size={8} /> : <Copy size={8} />}
+                    {etiquetaCopia}
+                </button>
+            ) : (
+                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-caption font-black ${t.copia}`}>
+                    {etiquetaCopia}
+                </div>
+            )}
+            <div className={`flex items-center gap-1 px-2 py-1.5 border-r border-divider ${t.medio} ${t.medioTxt}`}>
+                {children}
+            </div>
+            <button
+                aria-pressed={resuelto}
+                aria-label={resuelto ? `Cancelar la resolución de ${nombreResolver}` : `Marcar ${nombreResolver} como resuelta`}
+                onClick={onResolver}
+                className={`flex items-center px-2 py-1.5 transition-all ${
+                    resuelto ? 'bg-danger/10 text-danger hover:bg-danger/10'
+                             : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
+                {resuelto ? <X size={10} /> : <Check size={10} />}
+            </button>
+        </div>
+    );
+});
+
 const TIPO_PAGO_COLORS = {
     tarjeta:       'bg-chart-1/10 text-chart-1-text border-chart-1/30',
     credito:       'bg-chart-3/10 text-chart-3-text border-chart-3/30',
@@ -457,32 +539,17 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                         const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         return (
                                                             <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
-                                                                <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
-                                                                    isSolving   ? 'border-success shadow-emerald-100' :
-                                                                    isVisited   ? 'border-warning/40' :
-                                                                    isCCF       ? 'border-danger/30 hover:border-danger/40' :
-                                                                                  'border-divider hover:border-divider'
-                                                                }`}>
-                                                                    <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
-                                                                            isCopied  ? 'bg-success/10 text-success-text border-success/30' :
-                                                                            isVisited ? 'bg-warning/10 text-warning-text border-warning/30' :
-                                                                            isCCF     ? 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10' :
-                                                                                        'bg-surface-card-hover text-content-2 border-divider hover:bg-surface-card-hover'
-                                                                        }`}>
-                                                                        {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
-                                                                        {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                                    </button>
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
-                                                                        <span className={`text-micro font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
-                                                                    </div>
-                                                                    <button aria-pressed={isSolving}
-                                                                        aria-label={isSolving ? 'Cancelar la resolución de esta factura' : 'Marcar esta factura como resuelta'}
-                                                                        onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
-                                                                        className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
-                                                                        {isSolving ? <X size={10} /> : <Check size={10} />}
-                                                                    </button>
-                                                                </div>
+                                                                <ChipDoc
+                                                                    estado={isVisited ? 'visitado' : isCCF ? 'ccf' : 'normal'}
+                                                                    copiado={isCopied}
+                                                                    resuelto={isSolving}
+                                                                    onCopiar={() => copyErpId(r.erp_invoice_id)}
+                                                                    etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                                    nombreResolver="esta factura"
+                                                                    onResolver={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                >
+                                                                    <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
+                                                                </ChipDoc>
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
                                                                     <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                         <div>
@@ -916,39 +983,17 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                         return (
                                                             <div key={r.id} className={`relative group/tip transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 {/* Pill */}
-                                                                <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
-                                                                    isSolving    ? 'border-success shadow-sm shadow-emerald-100' :
-                                                                    isVisited    ? 'border-warning/40' :
-                                                                    hasNullCampos ? 'border-chart-3/40 hover:border-chart-3/60' :
-                                                                    isCCF        ? 'border-danger/30 hover:border-danger/40' :
-                                                                                   'border-divider hover:border-divider'
-                                                                }`}>
-                                                                    {/* Copy zone */}
-                                                                    <button onClick={() => copyErpId(r.erp_invoice_id)}
-                                                                        className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
-                                                                            isCopied      ? 'bg-success/10 text-success-text border-success/30' :
-                                                                            isVisited     ? 'bg-warning/10 text-warning-text border-warning/30' :
-                                                                            hasNullCampos ? 'bg-chart-3/10 text-chart-3-text border-chart-3/30 hover:bg-chart-3/20' :
-                                                                            isCCF         ? 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10' :
-                                                                                            'bg-surface-card-hover text-content-2 border-divider hover:bg-surface-card-hover'
-                                                                        }`}>
-                                                                        {isCopied ? <Check size={8} /> : isVisited ? <Check size={8} /> : <Copy size={8} />}
-                                                                        {r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
-                                                                    </button>
-                                                                    {/* Tipo label (tooltip trigger) */}
-                                                                    <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : hasNullCampos ? 'bg-chart-3/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
-                                                                        <span className={`text-micro font-black uppercase select-none ${isVisited ? 'text-warning-text' : hasNullCampos ? 'text-chart-3-text' : isCCF ? 'text-danger-text' : 'text-content-3'}`}>{r.tipo_documento}</span>
-                                                                    </div>
-                                                                    {/* Solventar / cancel button */}
-                                                                    <button aria-pressed={isSolving}
-                                                                        aria-label={isSolving ? 'Cancelar la resolución de esta factura' : 'Marcar esta factura como resuelta'}
-                                                                        onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
-                                                                        className={`flex items-center px-2 py-1.5 transition-all ${
-                                                                            isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'
-                                                                        }`}>
-                                                                        {isSolving ? <X size={10} /> : <Check size={10} />}
-                                                                    </button>
-                                                                </div>
+                                                                <ChipDoc
+                                                                    estado={isVisited ? 'visitado' : hasNullCampos ? 'nulos' : isCCF ? 'ccf' : 'normal'}
+                                                                    copiado={isCopied}
+                                                                    resuelto={isSolving}
+                                                                    onCopiar={() => copyErpId(r.erp_invoice_id)}
+                                                                    etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                                    nombreResolver="esta factura"
+                                                                    onResolver={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                >
+                                                                    <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
+                                                                </ChipDoc>
 
                                                                 {/* Tooltip */}
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none
@@ -1264,20 +1309,15 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     const isCCF = g.tipo_documento === 'CCF';
                                                     return (
                                                         <div key={i} className="relative group/tip">
-                                                            <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-success shadow-emerald-100' : isCCF ? 'border-danger/30 hover:border-danger/40' : 'border-chart-4/30 hover:border-chart-4/40'}`}>
-                                                                <div className={`flex items-center px-2 py-1.5 border-r font-mono text-caption font-black ${isCCF ? 'bg-danger/10 text-danger-text border-danger/30' : 'bg-chart-4/10 text-chart-4-text border-chart-4/30'}`}>
-                                                                    {pad7(g.gap_from)}–{pad7(g.gap_to)}
-                                                                </div>
-                                                                <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
-                                                                    <span className={`text-micro font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
-                                                                </div>
-                                                                <button aria-pressed={isSolving}
-                                                                        aria-label={isSolving ? 'Cancelar la resolución de este salto' : 'Marcar este salto de correlativo como resuelto'}
-                                                                        onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
-                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
-                                                                    {isSolving ? <X size={10} /> : <Check size={10} />}
-                                                                </button>
-                                                            </div>
+                                                            <ChipDoc
+                                                                estado={isCCF ? 'ccf' : 'salto'}
+                                                                resuelto={isSolving}
+                                                                etiquetaCopia={`${pad7(g.gap_from)}–${pad7(g.gap_to)}`}
+                                                                nombreResolver="este salto de correlativo"
+                                                                onResolver={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
+                                                            >
+                                                                <span className="text-micro font-black uppercase select-none">{g.tipo_documento}</span>
+                                                            </ChipDoc>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     <div>
@@ -1362,25 +1402,20 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     const isCopied = copiedNullId === copyVal;
                                                     return (
                                                         <div key={n.id} className="relative group/tip">
-                                                            <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${isSolving ? 'border-success shadow-emerald-100' : 'border-danger/30 hover:border-danger/40'}`}>
-                                                                <button onClick={() => copyNullId(copyVal)}
-                                                                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${isCopied ? 'bg-success/10 text-success-text border-success/30' : 'bg-danger/10 text-danger-text border-danger/30 hover:bg-danger/10'}`}>
-                                                                    {isCopied ? <Check size={8} /> : <Copy size={8} />}
-                                                                    {n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
-                                                                </button>
-                                                                <div className="flex items-center gap-1 px-2 py-1.5 border-r border-divider bg-danger/10">
-                                                                    {(n.campos_nulos || []).slice(0, 2).map(c => (
-                                                                        <span key={c} className="text-micro font-black text-danger uppercase">{c}</span>
-                                                                    ))}
-                                                                    {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black text-danger">+{n.campos_nulos.length - 2}</span>}
-                                                                </div>
-                                                                <button aria-pressed={isSolving}
-                                                                        aria-label={isSolving ? 'Cancelar la resolución de esta anulada' : 'Marcar esta anulada como resuelta'}
-                                                                        onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
-                                                                    className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
-                                                                    {isSolving ? <X size={10} /> : <Check size={10} />}
-                                                                </button>
-                                                            </div>
+                                                            <ChipDoc
+                                                                estado="ccf"
+                                                                copiado={isCopied}
+                                                                resuelto={isSolving}
+                                                                onCopiar={() => copyNullId(copyVal)}
+                                                                etiquetaCopia={n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
+                                                                nombreResolver="esta anulada"
+                                                                onResolver={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
+                                                            >
+                                                                {(n.campos_nulos || []).slice(0, 2).map(c => (
+                                                                    <span key={c} className="text-micro font-black uppercase">{c}</span>
+                                                                ))}
+                                                                {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black">+{n.campos_nulos.length - 2}</span>}
+                                                            </ChipDoc>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
                                                                 <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>

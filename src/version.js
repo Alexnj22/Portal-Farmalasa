@@ -16,7 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.117.1';
+export const APP_VERSION = '2.118.0';
+
+// v2.118.0 — D3.3: el control unido de Facturacion y cinco grupos uno-de-N.
+//
+// ── ChipDoc: el mismo control escrito CUATRO veces ────────────────────────
+// FacturacionView tenia 9 `<button>` a mano y siete eran el mismo control
+// repetido: facturas pendientes, pendientes-MH, saltos de correlativo y
+// anuladas con campos nulos. Los cuatro con la misma anatomia —copiar el id │
+// etiqueta del medio │ resolver— y la misma cascada de ternarios de color,
+// cada copia con un estado de mas o de menos.
+//
+// NO pasa por `Button` a proposito: son tres segmentos PEGADOS dentro de un
+// borde comun (`items-stretch` + `border-r`), y el canonico le daria a cada uno
+// su radio y su sombra, rompiendo la union. Lo que se arregla es que exista una
+// sola definicion, y que el color deje de ser una cascada de ternarios y pase a
+// ser una TABLA. Mismo cambio que `SUC_COLORS` en TabSinVenta: si el estado
+// tiene nombre, el color se busca; si no, se reescribe en cada copia.
+//
+// Un hallazgo al unificar: el chip de los saltos NO tiene boton de copiar —su
+// primer segmento es un rango de solo lectura— y estaba igual escrito como
+// `<div>`. Ahora `ChipDoc` lo contempla: sin `onCopiar` ese segmento no es un
+// boton, asi que un dato de solo lectura no recibe foco ni voz de control.
+//
+// ── Cinco grupos uno-de-N al canonico ────────────────────────────────────
+//   · TabShifts            Activos / Archivo
+//   · ScheduleChart        Horas / Dias
+//   · FormPurchaseDteViewer Detalle / PDF
+//   · EmployeeRequestsView  las 4 pestanas de estado
+//   · ConteoDetailView      Todos / Pendientes / Con diferencia
+//
+// Lo que ganan no es solo la forma: `SegmentedControl` es un `radiogroup` con
+// `aria-checked`, asi que un lector de pantalla dice "Estado de las
+// solicitudes, Pendientes, seleccionado, 1 de 4". Antes decia "boton" cuatro
+// veces y el estado solo existia en el color de fondo.
+//
+// Verificado en vivo los cinco riel por riel, y las cuatro pestanas de
+// Facturacion con sus chips: 0 botones sin nombre, 0 errores.
+//
+// Botones a mano: 119 → 106.
 
 // v2.117.1 — El mapa de nombres se muda a `common/iconNames.js`. Exportar una
 // constante desde un archivo de componente rompe el Fast Refresh de React

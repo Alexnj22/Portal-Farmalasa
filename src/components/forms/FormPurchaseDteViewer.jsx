@@ -4,6 +4,7 @@ import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Rece
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
+import SegmentedControl from '../common/SegmentedControl';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -229,22 +230,14 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         {document?.pdf_path && (
-                            <div className="flex rounded-2xl bg-surface-card-hover p-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setTab('detalle')}
-                                    className={`px-3 py-1.5 rounded-xl text-label font-bold transition-colors ${tab === 'detalle' ? 'bg-surface-card shadow-sm text-content' : 'text-content-3'}`}
-                                >
-                                    Detalle
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setTab('pdf')}
-                                    className={`px-3 py-1.5 rounded-xl text-label font-bold transition-colors ${tab === 'pdf' ? 'bg-surface-card shadow-sm text-content' : 'text-content-3'}`}
-                                >
-                                    PDF
-                                </button>
-                            </div>
+                            <SegmentedControl
+                                label="Vista del documento"
+                                size="sm"
+                                tone="neutro"
+                                value={tab}
+                                onChange={setTab}
+                                options={[{ value: 'detalle', label: 'Detalle' }, { value: 'pdf', label: 'PDF' }]}
+                            />
                         )}
                         {document?.pdf_path && (
                             <Button variant="secondary" icon={Archive} disabled={downloadingAll} title="Descargar PDF + JSON en un ZIP" onClick={downloadAll}>{downloadingAll ? 'Armando ZIP…' : 'Todo'}</Button>

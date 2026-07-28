@@ -516,16 +516,12 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                 {/* Sub-tabs: Activos / Archivo */}
                 <div className="flex items-center px-3 md:px-4 pt-4 pb-2">
-                    <div className="flex items-center bg-surface-card rounded-full p-0.5 border border-border-card shadow-[var(--shadow-shine)]">
-                        <button onClick={() => setShiftTab('ACTIVE')}
-                            className={`px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ACTIVE' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
-                            Activos
-                        </button>
-                        <button onClick={() => setShiftTab('ARCHIVED')}
-                            className={`px-5 h-9 rounded-full text-caption md:text-label font-black uppercase tracking-wider transition-all duration-300 border ${shiftTab === 'ARCHIVED' ? 'bg-surface-card text-content border-white shadow-md scale-[1.02]' : 'text-content-3 hover:text-content hover:bg-surface-card border-transparent hover:-translate-y-0.5 hover:shadow-md'}`}>
-                            Archivo
-                        </button>
-                    </div>
+                    <SegmentedControl
+                        label="Turnos a mostrar"
+                        value={shiftTab}
+                        onChange={setShiftTab}
+                        options={[{ value: 'ACTIVE', label: 'Activos' }, { value: 'ARCHIVED', label: 'Archivo' }]}
+                    />
                 </div>
 
                 <div className="space-y-5 flex-1 px-3 md:px-4 pb-4">

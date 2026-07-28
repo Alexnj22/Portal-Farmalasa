@@ -16,7 +16,19 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.150.0';
+export const APP_VERSION = '2.151.0';
+
+// v2.151.0 — D3.5: siete chips mas, y dos que eran contadores.
+//
+// El del submenu de AppLayout y el ranking de urgencia de TabGenerar tienen
+// ancho minimo fijo y numero adentro: eso es `Contador`, no `Badge`. El % de
+// urgencia de al lado si es un chip y va a `Badge`. Dos componentes distintos
+// pegados, cada uno con el suyo.
+//
+// Y `TabShifts` usaba `chart-5` para el chip de Saly — retirado; pasa a
+// `chart-9`, que es a donde apunta su alias.
+//
+// Chips a mano: 27 → 20.
 
 // v2.150.0 — D3.5: ocho chips sueltos, y una funcion que devolvia clases.
 //

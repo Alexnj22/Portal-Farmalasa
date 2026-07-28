@@ -12,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
+import Badge from '../../components/common/Badge';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
@@ -340,7 +341,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
 
     // Accent colours based on branch type
     const accent = isBodegaBranch
-        ? { bar: 'from-warning to-warning/70', badge: 'bg-warning/10 text-warning-text', dot: 'bg-warning' }
+        ? { bar: 'from-warning to-warning/70', variante: 'warning', dot: 'bg-warning' }
         : { bar: 'from-chart-9 to-chart-5',   badge: 'bg-chart-9/10 text-chart-9-text',   dot: 'bg-chart-9'  };
 
     return (
@@ -364,10 +365,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
             <div className="px-3.5 pt-4 pb-3.5">
                 {/* Branch header */}
                 <div className="flex items-center gap-2 mb-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-caption font-bold uppercase tracking-wide ${accent.badge}`}>
-                        {isBodegaBranch ? <Package className="w-2.5 h-2.5" /> : <ShoppingBag className="w-2.5 h-2.5" />}
-                        {isBodegaBranch ? 'Bodega' : 'Sala'}
-                    </span>
+                    <Badge variant={accent.variante} size="sm">{isBodegaBranch ? <Package className="w-2.5 h-2.5" /> : <ShoppingBag className="w-2.5 h-2.5" />}{isBodegaBranch ? 'Bodega' : 'Sala'}</Badge>
                     <span className="text-label font-bold text-content-2 truncate flex-1">{branch.name}</span>
                     {!editing && (
                         <Pencil className="w-3 h-3 text-content-3 group-hover:text-content-3 transition-opacity opacity-0 hover:opacity-100 flex-shrink-0" />

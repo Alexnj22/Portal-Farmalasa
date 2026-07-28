@@ -5,15 +5,16 @@ import Button from '../../../components/common/Button';
 import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
+import Badge from '../../../components/common/Badge';
 
 const ERROR_TIPO_LABEL = {
-    faltante:     { label: 'Faltante',        color: 'bg-danger/10 text-danger-text border-danger/30'           },
-    sobrante:     { label: 'Sobrante',        color: 'bg-success/10 text-success-text border-success/30' },
-    danado:       { label: 'Dañado',          color: 'bg-chart-4/10 text-chart-4-text border-chart-4/30'   },
-    vencido:      { label: 'Vencido',         color: 'bg-chart-6/10 text-chart-6-text border-chart-6/30'   },
-    presentacion: { label: 'Pres. distinta',  color: 'bg-chart-1/10 text-chart-1-text border-chart-1/30'         },
-    otro:         { label: 'Otro',            color: 'bg-surface-card-hover text-content-2 border-border-card'      },
-    diferencia:   { label: 'Diferencia',      color: 'bg-warning/10 text-warning-text border-warning/30'      },
+    faltante:     { label: 'Faltante',        variante: 'danger'           },
+    sobrante:     { label: 'Sobrante',        variante: 'success' },
+    danado:       { label: 'Dañado',          variante: 'neutral'   },
+    vencido:      { label: 'Vencido',         variante: 'neutral'   },
+    presentacion: { label: 'Pres. distinta',  variante: 'neutral'         },
+    otro:         { label: 'Otro',            variante: 'neutral'      },
+    diferencia:   { label: 'Diferencia',      variante: 'warning'      },
 };
 
 const RESOLUCION_OPTS = {
@@ -100,7 +101,7 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                         {/* Item header */}
                         <div className="flex items-center gap-2 px-3 py-2">
                             <span className="flex-1 text-label font-semibold text-content-2 truncate">{item.products?.nombre}</span>
-                            {et && <span className={`text-micro font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${et.color}`}>{et.label}</span>}
+                            {et && <Badge variant={et.variante} size="sm" className="shrink-0" uppercase={false}>{et.label}</Badge>}
                             {res === 'confirmada' && <CheckCircle2 size={13} className="text-success shrink-0" />}
                             {res === 'rechazada'  && <X size={13} className="text-danger shrink-0" />}
                         </div>

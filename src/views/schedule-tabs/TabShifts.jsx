@@ -44,10 +44,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
             </div>
 
             <div className="flex items-center justify-between relative z-base pr-8">
-                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-caption font-black uppercase tracking-widest border
-                    ${isError ? 'text-danger bg-danger/10 border-danger/20' : 'text-chart-5 bg-chart-5/10 border-chart-5/20'}`}>
-                    <Bot size={12} strokeWidth={2} /> {isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}
-                </span>
+                <Badge variant={isError ? 'danger' : 'chart-9'} icon={Bot}>{isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}</Badge>
                 {isError
                     ? <AlertTriangle size={16} className="text-danger-text animate-pulse" />
                     : <Sparkles size={16} className="text-chart-5 animate-pulse" />}

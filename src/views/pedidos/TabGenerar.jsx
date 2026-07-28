@@ -16,6 +16,7 @@ import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
+import Contador from '../../components/common/Contador';
 import {
     fetchActiveEmployeesBasic, fetchPedidoNumero, fetchPedidoIdsSinceExcluding,
     fetchPedidoSucursalStatusForPedidos, fetchPedidoItemsForPrintCapture, updatePedidoSucursalStatus,
@@ -403,12 +404,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     ? 'hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)] transition-all duration-200'
                                     : 'hover:border-divider hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200';
 
-                        // Urgency badge color
-                        const urgBadgeCls = urgLevel === 'high'
-                            ? 'bg-danger/10 text-danger border-danger/30'
-                            : urgLevel === 'mid'
-                                ? 'bg-warning/10 text-warning-text border-warning/30'
-                                : 'bg-success/10 text-success-text border-success/30';
+                        // El nivel de urgencia, como nombre de variante.
+                        const urgVariante = urgLevel === 'high' ? 'danger'
+                            : urgLevel === 'mid' ? 'warning' : 'success';
 
                         return (
                             <button
@@ -423,12 +421,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (
                                     <span className="absolute top-2 left-2 flex items-center gap-1 z-base">
-                                        <span className="min-w-[18px] h-5 px-1.5 rounded-full flex items-center justify-center text-caption font-black leading-none bg-chart-8-solid text-white">
-                                            {urgRankMap[id]}
-                                        </span>
-                                        <span className={`min-w-[34px] h-5 px-1.5 rounded-full flex items-center justify-center text-caption font-black leading-none border ${urgBadgeCls}`}>
-                                            {urgPct}%
-                                        </span>
+                                        <Contador valor={urgRankMap[id]} tono="neutral" size="md"
+                                            aria-label={`Puesto ${urgRankMap[id]} por urgencia`} />
+                                        <Badge variant={urgVariante} size="sm" uppercase={false}>{urgPct}%</Badge>
                                     </span>
                                 )}
 

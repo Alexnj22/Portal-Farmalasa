@@ -824,9 +824,7 @@ function TabDocumentos({
                         </DataCell>
                         <DataCell>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-caption font-bold text-content-2 bg-content-3/10 border border-content-3/25 px-2.5 py-0.5 rounded-full">
-                                    {dteTypeLabel(row.tipo_dte)}
-                                </span>
+                                <Badge size="sm" uppercase={false}>{dteTypeLabel(row.tipo_dte)}</Badge>
                                 {row.invalidado && (
                                     <Badge title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`} variant="danger" size="sm" icon={XCircle} uppercase={false}>Invalidado</Badge>
                                 )}

@@ -16,7 +16,53 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.116.0';
+export const APP_VERSION = '2.117.0';
+
+// v2.117.0 — D3.3, capa de accesibilidad: 109 botones que no decian nada.
+//
+// Empezo buscando `<button>` de solo icono sin `aria-label`. Contarlos costo
+// TRES intentos, y los tres errores son la misma familia de trampa de siempre:
+//
+//   1º  borrar `{…}` a ciegas → un boton cuyo texto sale de una variable
+//       (`{tab.label}`) parecia vacio: 44 falsos positivos.
+//   2º  conservar identificadores → la CONDICION de un ternario
+//       (`{isSolving ? <X/> : <Check/>}`) parecia contenido: daba 1.
+//   3º  quitar condiciones y guardas antes de mirar el residuo → 8, de los
+//       cuales 7 son defecto real y 1 es un chevron `aria-hidden` deliberado.
+//
+// Los 7 eran INTERRUPTORES (resolver una factura, ocultar un producto, el modo
+// privacidad). Ademas del nombre les faltaba `aria-pressed`: sin el, el estado
+// solo existe en el color del icono.
+//
+// ── Y entonces el gate encontro lo grande ────────────────────────────────
+// Al volverlo categoria del gate aparecieron 7 mas en `components/common/`,
+// que mi clasificador excluia. Son los CANONICOS — ViewTabBar (buscar, cerrar
+// el buscador, borrar, cerrar filtros), SearchInput (borrar ×2), LiquidSelect.
+// Un nombre que falta ahi se multiplica por cada vista del portal.
+//
+// Y midiendo eso salio lo de verdad grande: **102 de los 194 `iconOnly` del
+// proyecto no tenian nombre**. La distribucion decidio el arreglo:
+//
+//     56 × X   ·   12 × ChevronLeft   ·   9 × ChevronRight   ·   5 × Trash2
+//
+// 77 de 102 son cuatro iconos cuyo significado no admite duda. Con eso, el
+// arreglo correcto es UNO —que `Button` derive el nombre del icono cuando no
+// se lo dieron— y no 102 ediciones. No es pereza: un boton cuyo unico
+// contenido es una `X` significa "cerrar" en todas partes, y que cada llamador
+// tenga que repetirlo es justamente por lo que 102 se lo saltaron. Quien tenga
+// algo mas especifico que decir pasa su `aria-label` y gana: es el piso.
+//
+// Dos casos que el mapa no cubria y se arreglaron a mano:
+//   · El boton de contraer el menu pasaba el icono como CHILDREN, no por
+//     `icon`, asi que el canonico no lo veia. Ahora dice "Contraer el menu" /
+//     "Expandir el menu" / "Cerrar el menu", que es mejor que el automatico.
+//   · `StatCard` ponia `aria-label={loading ? undefined : …}` — mientras carga
+//     el contenido es un spinner, o sea que se anunciaba como "boton" y nada.
+//     Ahora dice "<etiqueta>: cargando" y lleva `aria-busy`.
+//
+// `button-name` nace en **0 y bloqueante**, igual que `input-label`.
+//
+// Verificado en vivo: **1,340 botones en 14 vistas, 0 sin nombre accesible.**
 
 // v2.116.0 — D3.4 en el formulario de nomina, que es el de mas riesgo.
 //

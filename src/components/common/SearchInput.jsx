@@ -111,6 +111,7 @@ const SearchInput = forwardRef(function SearchInput({
                 {open && value && (
                     <button
                         type="button"
+                        aria-label="Borrar la búsqueda"
                         onClick={e => { e.stopPropagation(); onChange?.(''); inputRef.current?.focus(); }}
                         className="w-5 h-5 mr-1.5 shrink-0 flex items-center justify-center rounded-full text-content-3 hover:text-danger hover:bg-danger/10 transition-colors"
                     >
@@ -144,6 +145,7 @@ const SearchInput = forwardRef(function SearchInput({
             />
             {value && (
                 <button
+                    aria-label="Borrar la búsqueda"
                     onClick={() => { onChange?.(''); inputRef.current?.focus(); }}
                     className={`absolute ${s.clearRight} top-1/2 -translate-y-1/2
                         p-0.5 text-content-3 hover:text-danger transition-colors`}

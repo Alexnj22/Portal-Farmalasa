@@ -476,7 +476,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isVisited ? 'bg-warning/10' : isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
                                                                         <span className={`text-micro font-black uppercase select-none ${isVisited ? 'text-warning' : isCCF ? 'text-danger' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
-                                                                    <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                    <button aria-pressed={isSolving}
+                                                                        aria-label={isSolving ? 'Cancelar la resolución de esta factura' : 'Marcar esta factura como resuelta'}
+                                                                        onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
                                                                         className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                                                                         {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                     </button>
@@ -938,7 +940,9 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                         <span className={`text-micro font-black uppercase select-none ${isVisited ? 'text-warning-text' : hasNullCampos ? 'text-chart-3-text' : isCCF ? 'text-danger-text' : 'text-content-3'}`}>{r.tipo_documento}</span>
                                                                     </div>
                                                                     {/* Solventar / cancel button */}
-                                                                    <button onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                    <button aria-pressed={isSolving}
+                                                                        aria-label={isSolving ? 'Cancelar la resolución de esta factura' : 'Marcar esta factura como resuelta'}
+                                                                        onClick={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
                                                                         className={`flex items-center px-2 py-1.5 transition-all ${
                                                                             isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'
                                                                         }`}>
@@ -1267,7 +1271,9 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 <div className={`flex items-center px-2 py-1.5 border-r border-divider ${isCCF ? 'bg-danger/10' : 'bg-surface-card'}`}>
                                                                     <span className={`text-micro font-black uppercase select-none ${isCCF ? 'text-danger' : 'text-content-3'}`}>{g.tipo_documento}</span>
                                                                 </div>
-                                                                <button onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
+                                                                <button aria-pressed={isSolving}
+                                                                        aria-label={isSolving ? 'Cancelar la resolución de este salto' : 'Marcar este salto de correlativo como resuelto'}
+                                                                        onClick={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
                                                                     className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                                                                     {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>
@@ -1368,7 +1374,9 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                     ))}
                                                                     {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black text-danger">+{n.campos_nulos.length - 2}</span>}
                                                                 </div>
-                                                                <button onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
+                                                                <button aria-pressed={isSolving}
+                                                                        aria-label={isSolving ? 'Cancelar la resolución de esta anulada' : 'Marcar esta anulada como resuelta'}
+                                                                        onClick={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
                                                                     className={`flex items-center px-2 py-1.5 transition-all ${isSolving ? 'bg-danger/10 text-danger hover:bg-danger/10' : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                                                                     {isSolving ? <X size={10} /> : <Check size={10} />}
                                                                 </button>

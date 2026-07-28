@@ -99,12 +99,12 @@ export default function ViewTabBar({
           onChange={e => onSearchChange?.(e.target.value)}
         />
         {searchValue && (
-          <button onClick={() => onSearchChange?.('')}
+          <button aria-label="Borrar la búsqueda" onClick={() => onSearchChange?.('')}
             className={`p-1 transition-all shrink-0 ${clearBtnCls}`}>
             <X size={16} strokeWidth={2.5} />
           </button>
         )}
-        <button onClick={closeSearch}
+        <button aria-label="Cerrar el buscador" onClick={closeSearch}
           className={`w-11 h-11 rounded-btn flex items-center justify-center
             shrink-0 transition-all hover:shadow-md hover:-translate-y-0.5 ml-2 ${closeBtnCls}`}>
           <ChevronRight size={18} strokeWidth={2.5} />
@@ -180,7 +180,7 @@ export default function ViewTabBar({
             14px chocaba con las píldoras del resto de la barra. Ahora es
             relleno plano y píldora, igual que `TabBarAction variant="primary"`. */}
         {showSearch && (
-          <button onClick={openSearch}
+          <button aria-label="Buscar" onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
               transition-[background-color,transform] duration-200 hover:-translate-y-px active:scale-[0.97] transform-gpu relative
               bg-brand text-white hover:bg-brand-hover">
@@ -207,7 +207,7 @@ export default function ViewTabBar({
             <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
             <div className="flex items-center justify-between mb-4">
               <p className="text-body-sm font-black uppercase tracking-widest text-content-2">Filtros</p>
-              <button type="button" onClick={() => setHojaFiltros(false)}
+              <button type="button" aria-label="Cerrar los filtros" onClick={() => setHojaFiltros(false)}
                 className="w-9 h-9 rounded-full flex items-center justify-center text-content-3 hover:text-content">
                 <X size={16} strokeWidth={2.5} />
               </button>

@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { NOMBRE_POR_ICONO } from './Button';
 
 /**
  * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).
@@ -68,7 +69,11 @@ const TabBarAction = memo(({
     return (
         <Tag
             type={esBoton ? 'button' : undefined}
-            aria-label={label || (typeof children === 'string' ? children : undefined)}
+            aria-label={label
+                || (typeof children === 'string' ? children : undefined)
+                // Mismo piso que `Button` (v2.117.0): si no hay etiqueta ni texto,
+                // el nombre sale del ícono en vez de quedar en nada.
+                || NOMBRE_POR_ICONO[Icon?.displayName ?? Icon?.name]}
             className={`${BASE} ${className}
                 ${isPrimary
                     ? 'bg-brand border-brand text-white hover:bg-brand-hover hover:border-brand-hover'

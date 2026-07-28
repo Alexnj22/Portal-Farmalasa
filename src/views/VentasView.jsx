@@ -1933,6 +1933,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     : 'Ocultar producto (para todos)'
                                             }>
                                                 <button
+                                                    aria-pressed={!showHidden}
+                                                    aria-label={showHidden
+                                                        ? `Volver a mostrar ${r.descripcion || 'el producto'}`
+                                                        : `Ocultar ${r.descripcion || 'el producto'} para todos`}
                                                     onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
                                                     className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
                                                         showHidden
@@ -2347,7 +2351,10 @@ export default function VentasView() {
             onSearchChange={setRawSearch}
             placeholder={searchPlaceholder}
             trailingActions={
-                <button type="button" onClick={() => setPrivacyMode(v => !v)}
+                <button type="button"
+                    aria-pressed={privacyMode}
+                    aria-label={privacyMode ? 'Mostrar los montos' : 'Ocultar los montos'}
+                    onClick={() => setPrivacyMode(v => !v)}
                     className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
                         privacyMode
                             ? 'bg-chart-8-solid text-white border-chart-8 shadow-[var(--shadow-elevation-xl)]'

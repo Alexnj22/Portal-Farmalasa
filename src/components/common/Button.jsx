@@ -147,6 +147,40 @@ const ICON_ONLY_SIZE = {
 
 const ICON_PX = { xs: 12, sm: 14, md: 15, lg: 17 };
 
+// ── Nombre accesible automático para `iconOnly` (2026-07-28) ─────────────
+// Un botón que solo tiene un ícono no tiene texto, y un lector de pantalla lo
+// anuncia como "botón" y nada más (WCAG 4.1.2). Medido: **102 de los 194
+// `iconOnly` del proyecto no tenían `aria-label` ni `title`.**
+//
+// Lo llamativo fue la distribución: 56 son una `X`, 21 son un chevron. O sea
+// que 77 de los 102 son cuatro íconos con un significado que no admite duda.
+// Eso hace que el arreglo correcto sea UNO solo, acá, y no 102 ediciones:
+// si no le dieron nombre, el componente lo deriva del ícono.
+//
+// No es un parche por pereza — es la regla correcta. Un botón cuyo único
+// contenido es una `X` significa "cerrar" en todas partes; que cada llamador
+// tenga que repetirlo es justamente por lo que 102 se lo saltaron.
+//
+// Quien tenga algo más específico que decir ("Quitar el filtro de sucursal")
+// pasa su `aria-label` y gana el suyo: esto es el piso, no el techo.
+export const NOMBRE_POR_ICONO = {
+    X: 'Cerrar', XIcon: 'Cerrar', XCircle: 'Cerrar',
+    ChevronLeft: 'Anterior', ChevronRight: 'Siguiente',
+    ChevronUp: 'Contraer', ChevronDown: 'Expandir',
+    ArrowLeft: 'Volver', ArrowRight: 'Continuar',
+    Trash2: 'Eliminar', Trash: 'Eliminar',
+    Plus: 'Agregar', Minus: 'Quitar',
+    Check: 'Confirmar', CheckCircle2: 'Confirmar',
+    Edit2: 'Editar', Edit3: 'Editar', Pencil: 'Editar', SquarePen: 'Editar',
+    RefreshCw: 'Actualizar', RotateCcw: 'Deshacer',
+    LogOut: 'Cerrar sesión', Menu: 'Abrir el menú',
+    Maximize2: 'Ampliar', Minimize2: 'Reducir',
+    ZoomIn: 'Acercar', ZoomOut: 'Alejar',
+    Search: 'Buscar', Filter: 'Filtrar', Download: 'Descargar',
+    Printer: 'Imprimir', Copy: 'Copiar', Save: 'Guardar',
+    Eye: 'Ver', EyeOff: 'Ocultar', Info: 'Más información',
+};
+
 const Button = memo(({
     variant = 'primary',
     shape = 'box',
@@ -165,9 +199,15 @@ const Button = memo(({
     ...rest
 }) => {
     const isDisabled = disabled || loading;
+    // Solo cuando NO hay texto y nadie dio nombre. Si el llamador pasó
+    // `aria-label` o `title`, el suyo manda — este es el piso.
+    const nombreAuto = iconOnly && !rest['aria-label'] && !rest.title
+        ? NOMBRE_POR_ICONO[Icon?.displayName ?? Icon?.name]
+        : undefined;
     return (
         <button
             type={type}
+            aria-label={nombreAuto}
             disabled={isDisabled}
             className={`group relative overflow-hidden inline-flex items-center justify-center font-bold tracking-[-0.005em]
                 transition-[transform,box-shadow,background-color,color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] whitespace-nowrap

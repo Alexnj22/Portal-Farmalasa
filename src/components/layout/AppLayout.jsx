@@ -833,7 +833,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 )}
                             </div>
 
-                            <Button variant="secondary" size="sm" className={focusRing} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>{isMobile ? <X size={16} strokeWidth={2} /> : isExpanded ? <ChevronLeft size={16} strokeWidth={2} /> : <ChevronRight size={16} strokeWidth={2} />}</Button>
+                            <Button
+                                variant="secondary" size="sm" className={focusRing}
+                                iconOnly
+                                icon={isMobile ? X : isExpanded ? ChevronLeft : ChevronRight}
+                                aria-label={isMobile ? 'Cerrar el menú' : isExpanded ? 'Contraer el menú' : 'Expandir el menú'}
+                                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            />
                         </div>
 
                         {/* ── Nav ──

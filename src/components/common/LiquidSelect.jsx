@@ -498,8 +498,15 @@ const LiquidSelect = ({
                     </div>
                 </button>
             ) : (
+                // El chevron abre lo MISMO que el disparador principal, que ya
+                // lleva `aria-haspopup="listbox"` y `aria-expanded`. Sin
+                // `aria-hidden`, un lector de pantalla anunciaría dos controles
+                // para una sola acción y el teclado pararía dos veces. Mismo
+                // criterio que el chevron de AttendanceAuditView.
                 <button
                     type="button"
+                    aria-hidden="true"
+                    tabIndex={-1}
                     onClick={handleToggle}
                     className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center`}
                 >

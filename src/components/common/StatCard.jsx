@@ -68,7 +68,12 @@ export default function StatCard({
             onClick={onClick}
             // El DOM dice "12, Vencidos" porque el valor va primero; esto lo
             // devuelve al orden en que una persona lo diría.
-            aria-label={loading ? undefined : `${label}: ${value ?? 0}${sub ? `, ${sub}` : ''}`}
+            // Mientras carga NO puede quedarse sin nombre: el contenido es un
+            // spinner, así que el botón se anunciaba como "botón" a secas
+            // (encontrado el 2026-07-28 barriendo nombres accesibles en vivo).
+            // `aria-busy` es lo que hace que el lector avise que está cargando.
+            aria-label={loading ? `${label}: cargando` : `${label}: ${value ?? 0}${sub ? `, ${sub}` : ''}`}
+            aria-busy={loading || undefined}
             disabled={isClickable && loading ? true : undefined}
             {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
             className={`

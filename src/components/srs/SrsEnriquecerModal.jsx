@@ -497,7 +497,12 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                             </p>
                                                         )}
                                                     </div>
-                                                    <button onClick={() => setAutoRejected(s => {
+                                                    <button
+                                                        aria-pressed={rejected}
+                                                        aria-label={rejected
+                                                            ? `Aceptar de nuevo ${entry.product.descripcion}`
+                                                            : `Rechazar ${entry.product.descripcion}`}
+                                                        onClick={() => setAutoRejected(s => {
                                                         const n = new Set(s);
                                                         n.has(entry.product.id) ? n.delete(entry.product.id) : n.add(entry.product.id);
                                                         return n;

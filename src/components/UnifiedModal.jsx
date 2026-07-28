@@ -833,6 +833,26 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 
                                 {type === "uploadDocument" && <FormUploadOnly formData={formData} setFormData={setFormData} />}
                                 {type === "planSchedule" && <FormPlanificador formData={formData} setFormData={setFormData} shifts={shifts} saveWeeklyRoster={saveWeeklyRoster} onClose={onClose} />}
+                                {/* ⚠️ INALCANZABLE — `manageShifts` no lo abre NADA.
+                                    Verificado el 2026-07-28 con un grep de todo el
+                                    repo: este `type` solo aparece en este archivo
+                                    (acá, en el título, en el ancho y en el ícono).
+                                    Ningún `openModal('manageShifts')` en `src/`.
+
+                                    Lo reemplazó la pestaña "Catálogo" de Horarios
+                                    (`views/schedule-tabs/TabShifts.jsx`), que está
+                                    viva, es más completa y hace lo mismo.
+
+                                    NO se borra porque `updateShiftFlags` solo existe
+                                    en `FormTurnos`: sacarlo se lleva la única UI de
+                                    esas banderas. Si se decide que esas banderas ya
+                                    no se usan, se pueden borrar los dos juntos —
+                                    `forms/FormTurnos.jsx` (365 líneas) y las cuatro
+                                    menciones de `manageShifts` de este archivo.
+
+                                    Anotado en el CHANGELOG desde v2.17.28 sin que
+                                    nadie actuara; queda acá para que se vea al
+                                    tocar el modal, no solo al buscar en el historial. */}
                                 {type === "manageShifts" && <FormTurnos branches={branches} />}
                                 {type === "viewRoleEmployees" && <FormRoleEmployees formData={formData} />}
                                 {type === "viewAnnouncementReaders" && <FormAnnouncements data={formData} onClose={onClose} />}

@@ -778,6 +778,51 @@ function scanFile(path) {
       findings.push({ line: linea, label: 'input de texto sin nombre accesible (WCAG 4.1.2) — falta aria-label',
         category: 'input-label', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
     }
+
+    // ── `button-name` (2026-07-28) ──────────────────────────────────────
+    // Hermano del anterior, para el otro lado del formulario: un `<button>`
+    // cuyo contenido son SOLO íconos, sin `aria-label` ni `title`. Un lector
+    // de pantalla dice "botón" y se acabó — no hay forma de saber qué hace.
+    //
+    // Medido el 2026-07-28: **7 reales**, y los siete eran interruptores
+    // (resolver una factura, ocultar un producto, el modo privacidad). Los
+    // interruptores además necesitan `aria-pressed`, porque sin él el estado
+    // solo existe en el color del ícono.
+    //
+    // Contar esto costó TRES intentos, y vale anotarlos porque son la misma
+    // familia de trampa de siempre:
+    //   1º  borrar `{…}` a ciegas → un botón cuyo texto sale de una variable
+    //       (`{tab.label}`) parecía vacío: 44 falsos positivos.
+    //   2º  conservar identificadores → la CONDICIÓN de un ternario
+    //       (`{isSolving ? <X/> : <Check/>}`) parecía contenido: 1, se
+    //       escapaban 7.
+    //   3º  quitar condiciones y guardas antes de mirar el residuo → 8, de
+    //       los cuales 7 son defecto y 1 es el chevron `aria-hidden`
+    //       deliberado de AttendanceAuditView.
+    const RE_BOTON = /<button\b/g;
+    let mb;
+    while ((mb = RE_BOTON.exec(sinComentarios2))) {
+      const finAbre = finEtiqueta(sinComentarios2, mb.index);
+      const abre = sinComentarios2.slice(mb.index, finAbre);
+      if (/aria-label|aria-labelledby|\btitle=|aria-hidden/.test(abre)) continue;
+      // el cuerpo, hasta su `</button>` (sin anidados: basta el primero)
+      const cierre = sinComentarios2.indexOf('</button>', finAbre);
+      if (cierre === -1) continue;
+      let cuerpo = sinComentarios2.slice(finAbre, cierre);
+      cuerpo = cuerpo
+        .replace(/<[A-Z]\w*(\s[^>]*?)?\/>/g, '')      // <Check size={8} />
+        .replace(/<svg[\s\S]*?<\/svg>/g, '')
+        .replace(/<\/?[a-z]\w*[^>]*>/g, '')            // etiquetas html sueltas
+        .replace(/className=(\{[^{}]*\}|"[^"]*")/g, '')
+        // condiciones y guardas NO son contenido
+        .replace(/[\w.$[\]'"]+\s*(===?|!==?|>=|<=|>|<)\s*[\w.$[\]'"]+/g, '')
+        .replace(/[\w.$[\]]+\s*(\?|&&)/g, '')
+        .replace(/[{}?:()[\]&|!=<>,;.\s]|null|undefined/g, '');
+      if (cuerpo) continue;                            // queda texto → tiene nombre
+      const linea = sinComentarios2.slice(0, mb.index).split('\n').length;
+      findings.push({ line: linea, label: 'botón de solo ícono sin nombre accesible (WCAG 4.1.2) — falta aria-label',
+        category: 'button-name', text: abre.replace(/\s+/g, ' ').slice(0, 120) });
+    }
   }
 
   if (!hasException(path, 'small-input')) {

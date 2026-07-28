@@ -137,12 +137,12 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                             padding: '6px',
                             borderRadius: '14px',
                             minWidth: '108px',
-                            background: 'rgba(252,253,255,0.95)',
-                            backdropFilter: 'blur(24px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                            border: '1px solid var(--border-card)',
-                            boxShadow: '0 12px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1)',
-                        }}>
+                            // El fondo, el borde y el vidrio salen de
+                            // `data-surface="dropdown"`: eran
+                            // `rgba(252,253,255,.95)` fijo — blanco sobre los
+                            // dos temas oscuros.
+                        }}
+                        data-surface="dropdown">
                         {dropdownBtns.map((item) => (
                             <motion.button key={item.key}
                                 whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 1200, damping: 40 } }}

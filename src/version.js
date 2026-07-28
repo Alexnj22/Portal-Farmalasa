@@ -5,7 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.101.0';
+export const APP_VERSION = '2.101.1';
+
+// v2.101.1 — D3.8: el modulo Min/Max no seguia el tema. `inline-color` 58 → 37.
+//
+// Lo que parecia deuda de token era un BUG DE TEMA. Nueve superficies del
+// modulo Min/Max tenian el vidrio escrito a mano en `style` inline con blanco
+// FIJO — `rgba(255,255,255,.55)`, `.52`, `.38`, `rgba(252,253,255,.95)` — asi
+// que en los dos temas oscuros quedaban BLANCAS: las tarjetas de costo, la
+// matriz ABC×XYZ, el panel de configuracion, el menu de acciones de fila y sus
+// esqueletos de carga.
+//
+// Y no lo veia nadie: al ir en `style` inline se lo salta el barrido de clases
+// (que lee className), y el escaner de contraste no lo pesca porque el texto
+// encima sigue siendo legible sobre blanco. Lo unico que lo delataba era el
+// `rgba` crudo que reporta el gate — o sea que la categoria `inline-color` no
+// era una lista de estilo, era una lista de superficies fuera del tema.
+//
+// Las nueve pasan a `data-surface="card"` / `"dropdown"`, que dan fondo,
+// borde y vidrio del tema activo. Verificado en `dark` y `solid-dark`: **0
+// superficies casi-blancas** donde antes estaban todas.
+//
+// El `glassStyle` compartido de `useMinMaxData` se fue entero: era un objeto
+// exportado a TabMinMax solo para pintar ese blanco.
 
 // v2.101.0 — D3.5: `StatCard` adoptado, y corregido contra la medicion.
 //

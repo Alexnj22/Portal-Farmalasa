@@ -29,18 +29,17 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
         setFilterXyz(px => px === xyz ? 'all' : xyz);
     };
 
-    const glassBox = {
-        background: 'rgba(255,255,255,0.52)',
-        backdropFilter: 'blur(4px)',
-        boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.03)',
-    };
+    // Era `background: rgba(255,255,255,.52)` con su propio brillo interior:
+    // blanco FIJO, así que la matriz quedaba clara sobre los dos temas
+    // oscuros. La superficie sale de `data-surface="card"` y el vidrio de la
+    // escala `--shadow-glass-*`, que ya modela elevación + brillo (D3.8).
 
     const isAbcActive = (abc) => filterAbc === abc;
     const isXyzActive = (xyz) => filterXyz === xyz;
 
     if (loading || data.length === 0) {
         return (
-            <div className="rounded-2xl border border-border-card p-2.5 flex flex-col gap-1.5" style={glassBox}>
+            <div className="rounded-2xl border border-border-card p-2.5 flex flex-col gap-1.5" data-surface="card">
                 <span className="text-micro font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {loading ? (
                     <div className="grid gap-[3px] animate-pulse" style={{ gridTemplateColumns: '20px repeat(3, 1fr)' }}>
@@ -66,7 +65,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
              : 'text-content-3 hover:text-content-2 hover:bg-surface-card'}`;
 
     return (
-        <div className="rounded-2xl border border-border-card p-2 flex flex-col gap-1" style={glassBox}>
+        <div className="rounded-2xl border border-border-card p-2 flex flex-col gap-1" data-surface="card">
             <div className="flex items-center justify-between gap-2">
                 <span className="text-micro font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (

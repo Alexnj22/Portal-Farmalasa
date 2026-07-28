@@ -24,9 +24,8 @@ export default function CostCards({ summary, isBodega }) {
     return (
         <div className="flex items-center gap-2.5 flex-wrap">
             {STATS.map(({ label, value, color, icon: Icon, iconCls, tooltip }) => (
-                <div key={label}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-border-card backdrop-blur-sm"
-                    style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                <div key={label} data-surface="card"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl"
                     title={tooltip}>
                     <Icon size={13} className={`shrink-0 ${iconCls}`} />
                     <div className="flex flex-col leading-snug gap-0.5">

@@ -949,8 +949,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
 
-    const glass = 'rounded-2xl border border-border-card backdrop-blur-sm';
-    const glassStyle = { background: 'rgba(255,255,255,0.38)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' };
+    // `glassStyle` era `background: rgba(255,255,255,.38)` — blanco FIJO, así
+    // que en los dos temas oscuros estas superficies quedaban blancas. Y al ir
+    // en `style` inline no lo veía el barrido de clases: solo lo pescó el gate
+    // por el `rgba` crudo. Ahora el vidrio sale de `data-surface="card"`, que
+    // sigue al tema; queda solo el radio.
+    const glass = 'rounded-2xl';
 
     // ── Bodega: editar celda (consolidado — antes `_openBodegaEdit`, definida
     // inline dentro de cada fila renderizada en el JSX) ──────────────────────
@@ -1074,7 +1078,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         totalPages, pageRows,
         erpOptions,
         COLS,
-        glass, glassStyle,
+        glass,
         openBodegaEdit,
         openBodegaTooltip,
         closeBodegaTooltip,

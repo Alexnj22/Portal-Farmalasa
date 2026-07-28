@@ -326,7 +326,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         totalPages, pageRows,
         erpOptions,
         COLS,
-        glass, glassStyle,
+        glass,
         openBodegaEdit,
         openBodegaTooltip,
         closeBodegaTooltip,
@@ -470,7 +470,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         filterXyz={filterXyz} setFilterXyz={setFilterXyz}
                         loading={loading}
                     />
-                    {config && <div className={`${glass} px-4 py-3 flex flex-col gap-2 text-caption text-content-3 min-w-[200px]`} style={glassStyle}>
+                    {config && <div data-surface="card" className={`${glass} px-4 py-3 flex flex-col gap-2 text-caption text-content-3 min-w-[200px]`}>
                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Fórmula actual</span>
                         <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-4">
@@ -515,7 +515,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
 
             {!loading && neverCalc && (
-                <div className={`${glass} py-16 text-center`} style={glassStyle}>
+                <div data-surface="card" className={`${glass} py-16 text-center`}>
                     <Package size={36} className="opacity-30 mx-auto mb-4 text-content-3" />
                     <p className="text-subtitle font-bold text-content-2 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
                     <p className="text-body-sm text-content-3 mb-6 max-w-sm mx-auto leading-relaxed">

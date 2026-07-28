@@ -65,8 +65,10 @@ export default function ConfigPanel({ config, onSave, onClose }) {
 
     return (
         <div className="fixed inset-0 z-sidebar flex items-start justify-end p-4 pt-20 pointer-events-none">
-            <div className="pointer-events-auto w-80 rounded-2xl border border-border-card shadow-[var(--shadow-elevation-lg)] overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(24px)' }}>
+            {/* Era `rgba(255,255,255,.88)` fijo: un panel blanco sobre tema
+                oscuro. `data-surface="dropdown"` da fondo, borde y vidrio del
+                tema — es lo que este panel es. */}
+            <div data-surface="dropdown" className="pointer-events-auto w-80 rounded-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                     <div className="flex items-center gap-2">

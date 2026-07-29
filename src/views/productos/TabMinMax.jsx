@@ -1134,6 +1134,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}
+                                                            onBlur={() => {
+                                                            if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
+                                                            const errB = validateEditForRow(inlineDraftEdit, row);
+                                                            if (errB) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, errB, 'error'); setInlineDraftEdit(null); return; }
+                                                            if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; skipBlurSave.current = true; setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); } else { saveDraftCell(inlineDraftEdit); }
+                                                            }}
                                                             onKeyDown={e => {
                                                                 if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                                 if (e.key === 'ArrowLeft') {

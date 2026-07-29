@@ -109,8 +109,8 @@ const SearchInput = forwardRef(function SearchInput({
                     onBlur={() => setIsFocused(false)}
                     onKeyDown={onKeyDown}
                     placeholder={placeholder}
-                aria-label={ariaLabel ?? placeholder}
                     aria-label={ariaLabel ?? placeholder}
+                    autoComplete="off"
                     autoFocus={autoFocus}
                     disabled={disabled}
                     tabIndex={open ? 0 : -1}
@@ -145,6 +145,7 @@ const SearchInput = forwardRef(function SearchInput({
                 onChange={e => onChange?.(e.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder={placeholder}
+                autoComplete="off"
                 autoFocus={autoFocus}
                 disabled={disabled}
                 className={`w-full ${s.px} ${s.text} font-semibold

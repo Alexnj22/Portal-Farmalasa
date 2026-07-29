@@ -176,6 +176,11 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                                 <PortalInput
                                             aria-label="Razón del rechazo" className="flex-1" tono="danger" compact
                                             value={notaRec[item.id] ?? ''} onChange={e => setNotaRec(p => ({ ...p, [item.id]: e.target.value }))}
+                                                                           autoFocus
+                                                                           onKeyDown={e => {
+                                                                               if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
+                                                                               if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
+                                                                           }}
                                             placeholder="Razón del rechazo…"
                                         />
                                                 <Button variant="destructive" disabled={isBusy} onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}</Button>

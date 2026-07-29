@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.181.0';
+export const APP_VERSION = '2.182.0';
+
+// v2.182.0 — el mismo regex se habia comido cuatro props mas.
+//
+// Tras la regresion de min/max, barri TODAS las migraciones de la auditoria
+// comparando el conjunto de props de comportamiento antes/despues, commit por
+// commit. Aparecieron cuatro perdidas mas, todas silenciosas:
+//
+//   · RecepcionModal — la navegacion ^/v entre filas de cantidad. Perdio el
+//     `onKeyDown` Y los `data-qty-row`/`data-qty-col` que el selector busca,
+//     asi que quedo solo el comentario describiendo un mecanismo inexistente.
+//   · TabMinMax — el `onBlur` de la celda MAX (guardar el par al salir).
+//   · DifSection — `onKeyDown` (Enter rechaza / Esc cierra) + `autoFocus` del
+//     campo "Razon del rechazo".
+//   · SrsBuscadorWidget — `autoComplete="off"`. Resuelto en el CANONICO: es el
+//     default correcto de todo buscador de app, no algo que cada llamador pase.
+//
+// De paso, `SearchInput` tenia `aria-label` DUPLICADO (dos veces la misma
+// linea, mal indentada) de una insercion automatica anterior.
+//
+// Verificado que no queda nada mas: arbol actual vs. 7055b4c4 (anterior a D0)
+// por conteo de props de comportamiento. Los 3 hallazgos restantes son falsos
+// positivos — `autoFocus` que hoy provee el canonico al expandirse
+// (SearchInput expandable, ViewTabBar) y texto del changelog.
+
 
 // v2.181.0 — auditoria, pasada B: teclado en controles que no son <button>.
 //

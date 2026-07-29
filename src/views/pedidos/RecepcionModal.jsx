@@ -1084,7 +1084,7 @@ export default function RecepcionModal({
                 )}
 
                 <div className="divide-y divide-divider">
-                    {visibleRows.map((r) => {
+                    {visibleRows.map((r, rowIdx) => {
                         const erpFactor  = Number(r.factor) || 1;
                         const dispFactor = Number(r.dispatch_factor) || erpFactor;
                         const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
@@ -1147,6 +1147,8 @@ export default function RecepcionModal({
                                             tono={hasDiff ? 'warning' : 'chart-9'}
                                             type="number" min={0} value={fQty}
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                            data-qty-row={rowIdx} data-qty-col="fqty"
+                                            onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
                                             inputClassName="text-center font-bold tabular-nums"
                                         />
                                         {hasDiff && (
@@ -1170,6 +1172,8 @@ export default function RecepcionModal({
                                         tono={hasDiff ? 'warning' : 'chart-9'}
                                         type="number" min={0} value={sQty}
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                        data-qty-row={rowIdx} data-qty-col="sqty"
+                                        onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
                                         inputClassName="text-center font-bold tabular-nums"
                                     />
 

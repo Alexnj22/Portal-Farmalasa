@@ -20,7 +20,9 @@ import {
     getBirthdayAnnouncement,
 } from '../utils/timeClock.audit';
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
-import { getHourlyCode, getSuPinSuffix, toLocalISO } from '../utils/helpers';
+import { getHourlyCode, toLocalISO } from '../utils/helpers';
+import { verifyKioskAuthorization } from '../data/kioskAuth';
+import { hasRecentKioskVerification, recordKioskVerification } from '../utils/kioskGrace';
 import { playFeedbackTone } from '../utils/kioskSound';
 import { enqueueAttendancePunch, flushAttendanceQueue } from '../utils/attendanceQueue';
 import useKioskDevice from './useKioskDevice';
@@ -721,44 +723,62 @@ const submitEarlyExit = useCallback((e) => {
         if (authPrompt) {
             const empRole = String(authPrompt.employee?.role || '').toUpperCase();
             const requiresSuPin = SU_ROLES.some(r => empRole.includes(r));
-            const suSuffix = requiresSuPin ? getSuPinSuffix() : '';
-            const expectedPin = `${hourlyPin || ''}${suSuffix}`.toUpperCase();
 
-            // Alternative auth: supervisor's personal kiosk_pin
-            const AUTHORIZER_ROLE_TERMS = ['JEFE', 'SUBJEFE', 'ADMIN', 'SUPERVISOR', 'GERENTE'];
-            let kioskPinAuthorizerName = null;
-            const authorizerEmp = (employees || []).find(emp => {
-                if (!emp?.kiosk_pin) return false;
-                const empR  = String(emp?.role || '').toUpperCase();
-                const empSR = String(emp?.secondary_role || '').toUpperCase();
-                return AUTHORIZER_ROLE_TERMS.some(r => empR.includes(r) || empSR.includes(r))
-                    && String(emp.kiosk_pin).toUpperCase() === codeToFind;
+            // Verificación SERVER-SIDE — auditoría 2026-07-29 (S1-ter).
+            //
+            // Antes el código esperado se calculaba ACÁ con getHourlyCode() +
+            // getSuPinSuffix() —`Math.sin()` del reloj, sin ningún secreto— y se
+            // comparaba contra lo tecleado. Cualquiera que abriera el bundle JS,
+            // que es público por definición, calculaba el código de la hora y se
+            // autorizaba sus propias horas extra. La vía alternativa tampoco
+            // servía: el kiosk_pin del supervisor era SHA-256(code), derivable
+            // de un identificador visible en todo el portal, y encima se cacheaba
+            // en claro en localStorage para que funcionara offline.
+            //
+            // Ahora el código sale de un HMAC con pepper en Vault y la comparación
+            // ocurre en el servidor, con rate limit por dispositivo.
+            const auth = await verifyKioskAuthorization({
+                deviceId:    kioskConfig?.deviceId    || kiosk.kioskConfig?.deviceId,
+                deviceToken: kioskConfig?.deviceToken || kiosk.kioskConfig?.deviceToken,
+                employeeId:  authPrompt.employee?.id,
+                code:        codeToFind,
             });
-            if (authorizerEmp) {
-                kioskPinAuthorizerName = authorizerEmp.name;
-            } else {
-                try {
-                    const pinCache = JSON.parse(localStorage.getItem('kiosk_supervisor_pins') || '{}');
-                    const cacheEntry = Object.values(pinCache).find(e => String(e.pin).toUpperCase() === codeToFind);
-                    if (cacheEntry) kioskPinAuthorizerName = cacheEntry.name;
-                } catch { /* ignore */ }
-            }
 
-            if (codeToFind === expectedPin || kioskPinAuthorizerName) {
-                if (kioskPinAuthorizerName) {
+            // Sin red no hay forma de verificar. Híbrido decidido en la auditoría:
+            // quien ya se autorizó en ESTE kiosco dentro de la ventana de gracia
+            // pasa normal; el resto se acepta como PENDIENTE —nunca como OK— y
+            // queda marcado para revisión. No se guarda el código tecleado: una
+            // credencial que no se puede verificar tampoco se debe almacenar.
+            const offline = auth.networkError;
+            const graced  = offline && hasRecentKioskVerification(authPrompt.employee?.id);
+            const pendingVerification = offline && !graced;
+            const kioskPinAuthorizerName = auth.authorizerName;
+
+            if (auth.ok) recordKioskVerification(authPrompt.employee?.id);
+
+            if (auth.ok || offline) {
+                // Marca que viaja con el marcaje hasta la BD: un marcaje aceptado
+                // sin haber podido verificar NO es lo mismo que uno autorizado.
+                const authMetadata = pendingVerification
+                    ? { pendingVerification: true, authOfflineAt: new Date().toISOString() }
+                    : null;
+
+                if (kioskPinAuthorizerName || pendingVerification) {
                     appendAuditLog?.(
-                        'AUTORIZACION_KIOSK_PIN',
+                        pendingVerification ? 'AUTORIZACION_OFFLINE_PENDIENTE' : 'AUTORIZACION_KIOSK_PIN',
                         authPrompt.employee?.id || 'KIOSCO',
                         {
                             empleado:          authPrompt.employee?.name || 'Desconocido',
-                            autorizador:       kioskPinAuthorizerName,
+                            autorizador:       kioskPinAuthorizerName || (graced ? 'VENTANA_DE_GRACIA' : 'SIN_VERIFICAR'),
                             accion_autorizada: authPrompt.type,
+                            metodo:            auth.method || (offline ? 'OFFLINE' : null),
                             source:            'KIOSK',
+                            severity:          pendingVerification ? 'WARNING' : undefined,
                             branch_id:         kioskConfig.branchId,
                             branch_name:       kioskConfig.branchName,
                             device_name:       kioskConfig.deviceName,
                         },
-                        kioskPinAuthorizerName
+                        kioskPinAuthorizerName || 'KIOSCO'
                     );
                 }
                 if (authPrompt.type === 'SPECIAL_OUT_REQUEST') {
@@ -775,6 +795,7 @@ const submitEarlyExit = useCallback((e) => {
                         earlyMins: earlyPendingData?.earlyMins,
                         extraTimeAuthorized: true,
                         actualPunchTime: earlyPendingData?.actualTime?.toISOString() || time.toISOString(),
+                        ...(authMetadata || {}),
                     };
                     registerAttendance(
                         authPrompt.employee.id,
@@ -784,9 +805,11 @@ const submitEarlyExit = useCallback((e) => {
                     setFeedback({
                         status: 'success',
                         employee: authPrompt.employee,
-                        message: 'Tiempo extra registrado',
-                        subtext: `Entrada con hora real — ${earlyPendingData?.earlyMins || 0} min antes del turno`,
-                        color: 'purple',
+                        message: pendingVerification ? 'Aceptado — pendiente' : 'Tiempo extra registrado',
+                        subtext: pendingVerification
+                            ? 'Sin conexión: se verificará y te avisaremos cuando quede confirmado.'
+                            : `Entrada con hora real — ${earlyPendingData?.earlyMins || 0} min antes del turno`,
+                        color: pendingVerification ? 'orange' : 'purple',
                         icon: ShieldAlert,
                         time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                         shiftName: authPrompt.customConfig?.config?.shift?.name || 'General',
@@ -814,7 +837,7 @@ const submitEarlyExit = useCallback((e) => {
                         authPrompt.employee,
                         authPrompt.type,
                         authPrompt.customConfig,
-                        null,
+                        authMetadata,
                         authPrompt.kioskData || kioskConfig,
                         time
                     );
@@ -826,10 +849,15 @@ const submitEarlyExit = useCallback((e) => {
                     {
                         empleado: authPrompt.employee?.name || 'Desconocido',
                         codigo_empleado: authPrompt.employee?.code || 'N/A',
-                        pin_ingresado: codeToFind,
+                        // El valor tecleado NO se registra: audit_logs es legible
+                        // por cualquier autenticado, y un dedazo puede meter ahí
+                        // el PIN real de quien lo escribió. Se guarda su longitud,
+                        // que es lo único útil para investigar.
+                        largo_ingresado: codeToFind.length,
                         accion_intentada: authPrompt.type,
                         metodo_ingreso: inputMethod,
                         requiere_su_pin: requiresSuPin,
+                        motivo: auth.rateLimited ? 'RATE_LIMIT' : 'CODIGO_INVALIDO',
                         alerta: 'Posible intento de manipulación del sistema / evasión de seguridad',
                         source: 'KIOSK',
                         severity: 'WARNING',
@@ -843,8 +871,10 @@ const submitEarlyExit = useCallback((e) => {
 
                 setFeedback({
                     status: 'error',
-                    message: 'CÓDIGO INCORRECTO',
-                    subtext: 'Autorización Denegada',
+                    message: auth.rateLimited ? 'DEMASIADOS INTENTOS' : 'CÓDIGO INCORRECTO',
+                    subtext: auth.rateLimited
+                        ? 'Esperá unos minutos antes de volver a intentar.'
+                        : 'Autorización Denegada',
                     color: 'red',
                     icon: XCircle,
                 });

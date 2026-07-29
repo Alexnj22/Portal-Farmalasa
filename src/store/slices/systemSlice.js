@@ -1374,18 +1374,17 @@ export const createSystemSlice = (set, get) => ({
                 });
                 localStorage.setItem(CACHE_KEYS.EMPLOYEES, JSON.stringify(safeKioskEmployees));
 
-                // Supervisor kiosk_pins stored separately so auth still works after page reload
-                const SUPERVISOR_ROLE_TERMS = ['JEFE', 'SUBJEFE', 'ADMIN', 'SUPERVISOR', 'GERENTE'];
-                const supervisorPins = {};
-                for (const emp of mappedEmployees) {
-                    if (!emp.kiosk_pin) continue;
-                    const empRole = String(emp.role || '').toUpperCase();
-                    const empSecRole = String(emp.secondary_role || '').toUpperCase();
-                    if (SUPERVISOR_ROLE_TERMS.some(r => empRole.includes(r) || empSecRole.includes(r))) {
-                        supervisorPins[emp.id] = { pin: emp.kiosk_pin, name: emp.name };
-                    }
-                }
-                localStorage.setItem('kiosk_supervisor_pins', JSON.stringify(supervisorPins));
+                // Auditoría 2026-07-29 (S1-ter): acá se guardaban los PIN de los
+                // supervisores EN CLARO en el disco de cada tablet, para que la
+                // autorización siguiera funcionando sin conexión. Sumado a que
+                // get_kiosk_boot_payload los repartía al rol `anon`, cada kiosco
+                // tenía las credenciales de su sucursal en memoria y en disco.
+                //
+                // La verificación es server-side (verify_kiosk_authorization) y
+                // el caso offline lo cubre la ventana de gracia de
+                // utils/kioskGrace.js, que solo guarda ids y fechas — nunca
+                // material de la credencial.
+                localStorage.removeItem('kiosk_supervisor_pins');
 
                 if (data.branches) {
                     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(data.branches));

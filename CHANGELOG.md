@@ -12,6 +12,65 @@ retomar; acá está todo.
 
 ---
 
+## v2.185.0 — la autorización del kiosco se movió al servidor.
+
+Cierra las fases 1, 2 y 4 del rediseño de credenciales abierto en v2.184.0.
+
+**El problema.** Los tres caminos de autorización del kiosco se resolvían en el
+navegador y ninguno tenía un secreto detrás:
+
+```js
+getHourlyCode  = () => Math.sin((año*365)+(día*31)+(mes*12)+(hora*60))  // 4 díg.
+getSuPinSuffix = () => Math.sin(seed + 1337)                            // 2 díg.
+// y el tercero: kiosk_pin del supervisor = SHA-256(code)
+```
+
+La comparación también era client-side (`useTimeClockEngine.js:745`). Cualquiera
+que abriera el bundle público —que es público por definición— calculaba el código
+de la hora y **se autorizaba sus propias horas extra**. Encima
+`get_kiosk_boot_payload` repartía los PIN en claro al rol `anon`, y `systemSlice`
+cacheaba los de supervisores en `localStorage`: cada tablet tenía las
+credenciales de marcaje de su sucursal en memoria y en disco.
+
+Las reglas que esto protege están bien definidas y no se tocaron
+(`timeClock.helpers.js:130-259`): el PIN se pide solo en los 6 casos que afectan
+planilla — salida especial, entrada en día libre, entrada >30 min antes, entrada
+post-turno, salida >15 min tarde, y entrada extra tras `OUT`.
+
+**Ahora.** El código sale de un HMAC con un pepper de 32 bytes en Vault, rota
+cada hora, **es distinto por sucursal** (uno de La Popular no autoriza en La
+Salud) y lo verifica `verify_kiosk_authorization` con rate limit de 10 fallos /
+5 min por dispositivo. Acepta también el bucket de la hora anterior: el jefe
+puede leer el código a las 10:59 y el empleado teclearlo a las 11:01 — borde que
+el esquema viejo tenía igual y no contemplaba. El boot payload pasó de 2
+referencias a `kiosk_pin` a **0**.
+
+**Offline.** Sin red no hay forma de verificar. Híbrido: quien ya se autorizó en
+*ese* kiosco dentro de la ventana de gracia pasa normal; el resto se acepta como
+`PENDIENTE` —nunca como OK— y la marca viaja hasta la BD en el metadata del
+marcaje. No se guarda el código tecleado: una credencial que no se puede
+verificar tampoco se debe almacenar. La ventana de gracia
+(`utils/kioskGrace.js`) reemplaza al caché de PINs y solo persiste ids y fechas.
+
+De paso: `audit_logs` ya no registra el valor tecleado en un intento fallido. Era
+legible por cualquier autenticado, y un dedazo metía ahí el PIN real de quien lo
+escribió; ahora guarda su longitud y el motivo (`RATE_LIMIT` / `CODIGO_INVALIDO`).
+
+**La prueba encontró un bug real.** Contra un kiosco de test creado y borrado en
+el mismo statement: `record "r" is not assigned yet` — la variable de bucle
+`r RECORD` colisionaba con un alias de tabla `roles r`, y PL/pgSQL resuelve
+contra la variable. Habría hecho fallar **toda** autorización de excepción en
+producción. Corregido en una migración aparte, no editando la ya aplicada.
+
+**Bloqueado: la rotación a PIN aleatorio.** `EmployeeFormModal.jsx:2125` dice que
+el `kiosk_pin` es *"el valor del código de barras del carné"*. Si es literal,
+rotar no cuesta avisarle a 46 personas: cuesta **reimprimir 46 carnés**. Pero
+contradice al kiosco, que identifica por `employees.code` y nunca por el PIN
+(`useTimeClockEngine.js:890`) — si el barcode fuera el PIN, ningún carné haría
+match y el marcaje no funcionaría. Hay que mirar un carné físico.
+
+---
+
 ## v2.184.0 — `employees` se leía sin autenticación.
 
 Auditoría completa de Supabase (`AUDITORIA-SUPABASE-2026-07-29.md`): 106 tablas,

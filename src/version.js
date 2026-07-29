@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.184.0';
+export const APP_VERSION = '2.185.0';
+
+// v2.185.0 — la autorizacion del kiosco se movio al servidor.
+//
+// Cierra las fases 1, 2 y 4 del rediseno de credenciales abierto en v2.184.0.
+//
+// **El problema.** Los tres caminos de autorizacion del kiosco se resolvian en
+// el navegador y ninguno tenia un secreto detras: getHourlyCode() y
+// getSuPinSuffix() eran Math.sin() del reloj, y el kiosk_pin del supervisor era
+// SHA-256(code). La comparacion tambien era client-side. Cualquiera con el
+// bundle publico —que es publico por definicion— calculaba el codigo de la hora
+// y se autorizaba sus propias horas extra. Y get_kiosk_boot_payload repartia los
+// PIN en claro al rol anon, con systemSlice cacheando los de supervisores en
+// localStorage: cada tablet tenia las credenciales de su sucursal en disco.
+//
+// **Ahora.** El codigo sale de un HMAC con pepper en Vault, rota cada hora, es
+// distinto por sucursal, y lo verifica verify_kiosk_authorization con rate limit
+// de 10 fallos / 5 min por dispositivo. El boot payload paso de 2 referencias a
+// kiosk_pin a 0. localStorage ya no guarda credenciales: la ventana de gracia de
+// utils/kioskGrace.js solo persiste ids y fechas.
+//
+// **Offline.** Sin red no se puede verificar, asi que quien ya se autorizo en
+// ESE kiosco dentro de la ventana pasa normal, y el resto se acepta como
+// PENDIENTE —nunca como OK— con la marca viajando hasta la BD en el metadata del
+// marcaje. No se guarda el codigo tecleado: una credencial que no se puede
+// verificar tampoco se debe almacenar.
+//
+// De paso: audit_logs ya no registra el valor tecleado en un intento fallido
+// (era legible por cualquier autenticado, y un dedazo metia ahi el PIN real de
+// quien lo escribio); guarda su longitud y el motivo.
+//
+// La prueba contra un kiosco de test encontro un bug real de shadowing en
+// PL/pgSQL —`record "r" is not assigned yet`, la variable de bucle colisionaba
+// con un alias de tabla— que habria hecho fallar TODA autorizacion de excepcion
+// en produccion.
+//
+// **Bloqueado**: la rotacion a PIN aleatorio. EmployeeFormModal dice que el
+// kiosk_pin es "el valor del codigo de barras del carne", pero el kiosco
+// identifica por employees.code y nunca por el PIN. Si la leyenda es literal,
+// rotar cuesta reimprimir 46 carnes. Hay que mirar un carne fisico.
 
 // v2.184.0 — auditoria de Supabase: `employees` se leia SIN autenticacion.
 //

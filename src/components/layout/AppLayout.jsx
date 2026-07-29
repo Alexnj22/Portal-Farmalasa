@@ -14,7 +14,7 @@ import {
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
 import { useAuth } from '../../context/AuthContext';
-import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
+import { fetchKioskAuthCode } from '../../data/kioskAuth';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { useToastStore } from '../../store/toastStore';
@@ -195,8 +195,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [openGroups, setOpenGroups] = useState({});
 
 
-    const [authPin, setAuthPin] = useState(getHourlyCode());
-    const [suSuffix, setSuSuffix] = useState(getSuPinSuffix());
+    // Auditoría 2026-07-29 (S1-ter): antes estos dos se calculaban acá con
+    // Math.sin() del reloj, así que cualquiera con el bundle público sacaba el
+    // código de la hora y se autorizaba sus propias horas extra. Ahora vienen
+    // del servidor (HMAC con pepper en Vault), gated por kiosk_pin/can_view.
+    const [authPin, setAuthPin] = useState('····');
+    const [suSuffix, setSuSuffix] = useState('··');
     const [isCopied, setIsCopied] = useState(false);
     const [isSuCopied, setIsSuCopied] = useState(false);
 
@@ -244,12 +248,29 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return () => window.removeEventListener('set-sidebar', handler);
     }, []);
 
+    // El código rota cada hora en el servidor. Se refresca cada 5 min —antes era
+    // cada 10 s contra una función local, que ahora sería una llamada de red
+    // inútil— y además justo al cruzar la hora, para no mostrar uno vencido.
     useEffect(() => {
-        const timer = setInterval(() => {
-            setAuthPin(getHourlyCode());
-            setSuSuffix(getSuPinSuffix());
-        }, 10000);
-        return () => clearInterval(timer);
+        let cancelled = false;
+
+        const refresh = async () => {
+            const { data, error } = await fetchKioskAuthCode();
+            if (cancelled) return;
+            if (error || !data) {
+                // Sin permiso (kiosk_pin/can_view) o sin red: no se inventa un
+                // código, se muestra que no hay.
+                setAuthPin('····');
+                setSuSuffix('··');
+                return;
+            }
+            setAuthPin(data.code || '····');
+            setSuSuffix(data.su_suffix || '··');
+        };
+
+        refresh();
+        const timer = setInterval(refresh, 5 * 60 * 1000);
+        return () => { cancelled = true; clearInterval(timer); };
     }, []);
 
     const visibleGroups = useMemo(() => {

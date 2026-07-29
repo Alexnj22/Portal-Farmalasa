@@ -177,19 +177,25 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
 
 
 
+// ⚠️ NO ES UNA CREDENCIAL. Es `Math.sin()` del reloj: determinista, sin ningún
+// secreto, y se ejecuta en el navegador. Cualquiera que abra el bundle público
+// calcula su valor para cualquier hora.
+//
+// Hasta la auditoría del 2026-07-29 esto autorizaba las excepciones de marcaje
+// que afectan planilla —horas extra incluidas—, lo que permitía a un empleado
+// autorizarse a sí mismo. Esa función se movió al servidor: ahora es un HMAC
+// con un pepper de Vault, verificado en `verify_kiosk_authorization`.
+//
+// Queda vivo SOLO para la llave maestra que abre el configurador del kiosco
+// (useTimeClockEngine.js), porque ese flujo corre en tablets todavía sin
+// vincular, donde no hay device_token contra el cual validar. Es deuda
+// conocida y está anotada en AUDITORIA-SUPABASE-2026-07-29.md: no agregarle
+// usos nuevos ni tratarlo como frontera de seguridad.
 export const getHourlyCode = () => {
     const d = new Date();
     const seed = (d.getFullYear() * 365) + (d.getDate() * 31) + (d.getMonth() * 12) + (d.getHours() * 60);
     const rawNumber = Math.floor(Math.abs(Math.sin(seed) * 10000));
     return rawNumber.toString().padStart(4, '0').substring(0, 4);
-};
-
-// Sufijo de 2 dígitos para el SU PIN — algoritmo independiente, no derivable del PIN normal
-export const getSuPinSuffix = () => {
-    const d = new Date();
-    const seed = (d.getFullYear() * 613) + (d.getMonth() * 127) + (d.getDate() * 89) + (d.getHours() * 43);
-    const raw = Math.floor(Math.abs(Math.sin(seed + 1337) * 100));
-    return raw.toString().padStart(2, '0');
 };
 
 // ============================================================================

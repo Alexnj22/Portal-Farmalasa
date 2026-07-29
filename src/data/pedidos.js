@@ -62,8 +62,27 @@ export function fetchApoyoForPedido(pedidoId, sucId) {
 }
 
 // ApoioScanModal.jsx (2 sitios)
+//
+// Busca por código de carné O por kiosk_pin. Antes solo miraba `kiosk_pin`, lo
+// que contradice al kiosco: ambos escanean el mismo carné físico, pero el
+// kiosco matchea contra `employees.code` (useTimeClockEngine) y esto contra el
+// PIN. El mensaje de error de ApoioScanModal habla de "carnet", así que lo más
+// probable es que el correcto sea `code`.
+//
+// No se resuelve la ambigüedad a ciegas: aceptar los dos es estrictamente más
+// permisivo que hoy, así que no puede romper el flujo en uso. Queda por
+// confirmar cuál usa el carné real ANTES de la fase que borra la columna
+// `kiosk_pin` — a partir de ahí el PIN será aleatorio y solo existirá como
+// hash, con lo que esta búsqueda dejará de encontrar nada por esa vía.
+// Ver AUDITORIA-SUPABASE-2026-07-29.md.
 export function fetchEmployeeByKioskPin(code) {
-    return supabase.from('employees').select('id, name, photo_url').eq('kiosk_pin', code).maybeSingle();
+    const v = String(code || '').trim();
+    return supabase
+        .from('employees')
+        .select('id, name, photo_url')
+        .or(`code.eq.${v},kiosk_pin.eq.${v}`)
+        .limit(1)
+        .maybeSingle();
 }
 
 export function upsertPedidoApoyo(payload) {

@@ -137,11 +137,70 @@ supervisor consulte desde el portal — así se preserva el flujo operativo de
 
 | fase | qué | estado |
 |---|---|---|
-| 1 | `kiosk_credentials` (hash bcrypt) + `kiosk_pin_attempts` (rate limit) + RPC `verify_kiosk_pin` / `set_kiosk_pin` + revoke de grants | ✅ **aplicado 2026-07-29** |
-| 2 | Cutover del frontend: identidad por carné, PIN vía RPC, quitar `kiosk_pin` del boot payload y del `localStorage` | pendiente |
-| 3 | Rotación: PIN aleatorio real, mostrado una vez, repartido a los 46 | pendiente |
-| 4 | Código horario server-side (reemplazo de `getHourlyCode`) | pendiente |
-| 5 | `DROP COLUMN employees.kiosk_pin` una vez que nada lo lea | pendiente |
+| 1 | `kiosk_credentials` (hash bcrypt) + `kiosk_pin_attempts` (rate limit) + RPC `verify_kiosk_pin` / `set_kiosk_pin` + revoke de grants | ✅ **aplicado** |
+| 4 | Código horario server-side: pepper en Vault, `get_kiosk_auth_code`, `verify_kiosk_authorization` | ✅ **aplicado** |
+| 2 | Cutover del frontend: verificación por RPC, ventana de gracia offline, `kiosk_pin` fuera del boot payload y del `localStorage` | ✅ **aplicado** |
+| 3 | Rotación: PIN aleatorio real, mostrado una vez, repartido a los 46 | 🚫 **bloqueado** — ver abajo |
+| 5 | `DROP COLUMN employees.kiosk_pin` una vez que nada lo lea | bloqueado por la 3 |
+
+### 🚫 Por qué la Fase 3 está bloqueada
+
+`EmployeeFormModal.jsx:2125` dice, debajo del PIN:
+
+> *"Este es el valor del código de barras del carné."*
+
+Si eso es literal, el `kiosk_pin` **va impreso como código de barras en el carné
+físico**, y entonces rotar los PIN no cuesta "avisarle a 46 personas": cuesta
+**reimprimir 46 carnés**.
+
+Pero contradice al propio kiosco, que identifica al empleado comparando el
+escaneo contra `employees.code` y **nunca** contra `kiosk_pin`
+(`useTimeClockEngine.js:890`). Si el código de barras fuera el PIN, ningún carné
+haría match y el marcaje no funcionaría — y funciona en producción todos los
+días. Así que lo más probable es que el barcode lleve el `code` y esa leyenda
+esté vieja.
+
+`ApoioScanModal` agrega ruido: su mensaje de error habla de "carnet" pero busca
+por `kiosk_pin` (`data/pedidos.js`). Se dejó aceptando **ambos** —estrictamente
+más permisivo, no puede romper lo que hoy anda— justamente porque no se pudo
+resolver la ambigüedad leyendo el código.
+
+**Qué hace falta para desbloquear**: mirar un carné físico y confirmar qué
+número lleva el código de barras. Es un dato del mundo real, no del repositorio,
+y de él dependen tanto el costo de la rotación como si se puede borrar la
+columna.
+
+### Lo que ya NO puede pasar (verificado)
+
+- El boot payload no reparte PIN: `get_kiosk_boot_payload` pasó de 2 referencias
+  a `kiosk_pin` a **0**.
+- Las tablets no guardan credenciales: `kiosk_supervisor_pins` se borra del
+  `localStorage`; la ventana de gracia (`utils/kioskGrace.js`) solo persiste ids
+  y fechas.
+- La autorización no se puede falsificar desde el cliente: se verifica en
+  `verify_kiosk_authorization`, con rate limit de 10 fallos / 5 min por
+  dispositivo.
+- El código de autorización ya no es adivinable: HMAC con pepper de Vault, rota
+  cada hora, y **es distinto por sucursal** — uno de La Popular no autoriza en
+  La Salud.
+- `audit_logs` ya no guarda el valor tecleado en un intento fallido (era legible
+  por cualquier autenticado); guarda solo su longitud y el motivo.
+
+Probado contra un dispositivo de kiosco de prueba creado y borrado en el mismo
+statement: código correcto → `ok=true HOURLY_CODE`; código de la hora anterior →
+aceptado (tolerancia de borde); código inventado → rechazado; código de otra
+sucursal → rechazado; token inválido → excepción. La primera corrida encontró un
+bug real de shadowing en PL/pgSQL (`record "r" is not assigned yet`) que habría
+hecho fallar **toda** autorización de excepción en producción.
+
+### Deuda conocida que queda
+
+`getHourlyCode()` sigue vivo en `helpers.js`, pero **solo** para la llave maestra
+que abre el configurador del kiosco (`${código}geofls`). Ese flujo corre en
+tablets todavía sin vincular, donde no hay `device_token` contra el cual
+validar, así que no se puede mover al servidor con el mismo mecanismo. Sigue
+siendo derivable desde el bundle público. Está acotado y anotado en el propio
+`helpers.js`; hay que resolverlo aparte.
 
 **Fase 1 verificada**: 46 hashes generados, los 46 validan contra su PIN actual
 (round-trip bcrypt OK), device falso rechazado con `KIOSK_DEVICE_INVALID`, y la

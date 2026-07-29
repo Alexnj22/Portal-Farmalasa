@@ -1,8 +1,73 @@
 # Plan — Candado de mantenimiento + cierre de la auditoría MIN·MAX
 
-**Fecha:** 2026-07-29 · **Estado:** propuesto, sin aplicar
+**Fecha:** 2026-07-29 · **Estado: APLICADO** (F0–F4) — v2.218.0, v2.221.0, v2.222.0, v2.223.0
 **Origen:** auditoría del módulo MIN·MAX (2026-07-29), 20 hallazgos
 **Entrega:** por fases, con validación y confirmación entre cada una
+
+---
+
+## Cierre — 2026-07-29
+
+Todo aplicado y verificado contra prod. Lo que se movió:
+
+| | antes | después |
+|---|---|---|
+| `get_stock_analysis` Salud 1 | 472 ms | 186 ms |
+| `get_stock_analysis` Bodega | 932 ms | 287 ms |
+| Polling de Bodega (cada 5 s) | 245 buffers + Sort | 10 buffers |
+| Publicación sin cambios reales | ~3,385 filas escritas | 0 |
+| Historial por recálculo | 2,913 filas, 509 pares duplicados | 1,056 filas, 0 duplicados |
+| Residuo de borrador | 7,605 filas | 4,456 (el resto es portante) |
+| Bodega desfasada de la Σ | 20 productos | 0 |
+| Escritura de MIN/MAX por API fuera de tu sucursal | 27 empleados podían | 0 |
+
+**Nueve cosas que el plan tenía mal o de menos** (detalle en `src/version.js`):
+
+1. F1.2a — "hoy 0 filas violarían el CHECK": eran **4**.
+2. F2.1 — quitar los `INSERT` de las RPCs **no alcanzó**: el doble UPDATE de
+   `calculate_stock_params` seguía generando 509 pares. Hubo que acotar la
+   condición del trigger al par MIN/MAX.
+3. F2.3 — la premisa era falsa: hay **454 días** de ventas, así que subir
+   `analysis_days` no se queda sin datos. Y el divisor por producto hay que
+   tomarlo de la primera venta **histórica**: con la de dentro de la ventana
+   inflaba 1,418 de 1,765 productos (+17.4%) en vez de 45 (+2.4%).
+4. F2.4 — el backfill **no podía** anular las 9 columnas a ciegas:
+   `get_stock_analysis` las usa como fallback de lectura, así que habría
+   blanqueado 1,325 filas nunca publicadas.
+5. F2.8 — **hallazgo nuevo:** 20 filas de Bodega desfasadas de la Σ, y la causa
+   (el `pending_upsert` creaba la fila sin `min_units`).
+6. F3.2 — `activo = true` en `pres_factors` **sería un bug**: es la tabla de
+   conversión de unidades, no un catálogo de opciones.
+7. F3.2 — excluir `is_catalog_only` rompe la búsqueda instantánea (el cliente sí
+   usa esas filas al buscar y con el filtro "no_data").
+8. F4.1 — no era 1 empleado, eran **27** (roles 19 y 30 entran por `pedidos`), y
+   el scope obligaba a volver `SECURITY DEFINER` el trigger de Bodega.
+9. F4.4 — el recálculo manual **no hace falta**: el cron del 1-ago lo hace solo,
+   ya en horario tranquilo. Correrlo a mano dejaría ~7,200 borradores y volvería
+   a bloquear el cron, que es exactamente cómo se llegó al atraso de 6 semanas.
+
+**Desviación deliberada:** F2.6 se resolvió con `.select()` de vuelta en el upsert
+de Bodega en vez de agregarle `manual_min`/`manual_max` al `RETURNS TABLE` de
+`get_stock_analysis` (200 líneas, 4 ramas UNION, 1.5 s por llamada) — mismo efecto
+en el log de auditoría, sin tocar el RPC.
+
+### Pendientes chicos, anotados a propósito
+
+- **Verificar la corrida del cron del 1-ago 2026 a las 09:00 UTC** (decisión de
+  Alex): es lo que pone al día las 4 sucursales congeladas. El aviso a los
+  Supervisores y `minmax_sync_log` registran el resultado.
+- **Limpiar las firmas** de `p_decided_by` (approve/reject) y `p_published_by`
+  (publish, zero_out): hoy se reciben e ignoran. Se pueden borrar en cuanto el
+  frontend de v2.223.0 esté desplegado en todos los clientes.
+- **`calculate_stock_params` sin el guard de scope** de F4.1. Es inerte hoy (los 6
+  roles con `can_edit` en minmax resuelven a ALL) y ya tiene lo que sí importaba,
+  el candado de mantenimiento.
+- **`presentations` no desempata** el `ORDER BY factor DESC`: con dos
+  presentaciones del mismo factor el orden depende del orden de lectura (8
+  productos de Bodega). Preexistente y cosmético.
+- **El rol 12 tiene `pedidos = ALL`**, así que a nivel de base sigue pudiendo
+  escribir todas las sucursales aunque su `minmax` sea BRANCH. Si el negocio lo
+  quiere encerrado en Bodega, se cambia en `role_permissions`, no en el código.
 
 ---
 

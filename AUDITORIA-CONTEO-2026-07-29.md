@@ -159,6 +159,11 @@ necesita.
   minuto, contar con la sucursal abierta mete ruido irreducible en la
   diferencia. La solución real es operativa (contar cerrado) o un registro de
   movimientos entre el corte y el guardado.
-- **Recuento de variaciones** por segunda persona sobre un umbral de
-  materialidad.
+- ~~**Recuento de variaciones**~~ — **aplicado 2026-07-29 en v2.190.0**
+  (`20260729_conteo_r1*`). Vive entre finalizar y aprobar, gated por
+  `can_approve` (asignable por rol desde la pantalla de permisos), ciego también
+  al primer conteo, y bloqueado para quien contó esa línea. Con el filtro "Con
+  diferencia" los productos vienen ordenados por el valor del desvío, no
+  alfabéticos. No se implementó un **umbral de materialidad** automático: el
+  supervisor decide qué recontar, y el orden por dinero le pone lo caro primero.
 - **Conteos cíclicos por ABC**, reusando la clasificación que MinMax ya calcula.

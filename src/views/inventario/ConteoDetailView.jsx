@@ -109,9 +109,13 @@ function LiveBadge() {
 // dos columnas sería un ciego de mentira.
 const OCULTO = '•••';
 
-function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLote, currentUserName }) {
+function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, onShowHistory, onEditLote, currentUserName }) {
     const { showToast } = useToastStore();
-    const [fisico, setFisico] = useState(item.fisico_cantidad ?? '');
+    // En recuento el campo arranca VACÍO: precargarlo con el primer conteo
+    // sería mostrarle al supervisor justo el número que viene a verificar.
+    const [fisico, setFisico] = useState(recuento ? '' : (item.fisico_cantidad ?? ''));
+    // Se revela solo lo que este supervisor ya recontó en esta sesión.
+    const [revelado, setRevelado] = useState(false);
     const [nota, setNota] = useState(item.nota ?? '');
     const [sistema, setSistema] = useState(item.sistema_cantidad);
     const [contadoPorNombre, setContadoPorNombre] = useState(item.contado_por_nombre ?? null);
@@ -123,20 +127,26 @@ function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLo
     const lastSaved = useRef({ fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item });
 
     useEffect(() => {
-        setFisico(item.fisico_cantidad ?? '');
+        setFisico(recuento ? '' : (item.fisico_cantidad ?? ''));
+        setRevelado(false);
         setNota(item.nota ?? '');
         setSistema(item.sistema_cantidad);
         setContadoPorNombre(item.contado_por_nombre ?? null);
         setContadoAt(item.contado_at ?? null);
         setEstadoItem(item.estado_item);
         lastSaved.current = { fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item };
-    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre, item.estado_item, item.nota]);
+    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre, item.estado_item, item.nota, recuento]);
 
     // Estimado inmediato con el "sistema" ya visible (en vivo si aún no se ha
     // contado) — el valor definitivo llega en la respuesta de guardar_conteo_item,
     // que releyó inventory en el instante exacto del guardado.
     const dif = fisico !== '' ? Number(fisico) - sistema : null;
     const isLive = item.fisico_cantidad == null && !item.es_agregado_manual;
+
+    // Un recuento también es ciego, y además al primer conteo: si el supervisor
+    // ve que decía 12, escribe 12. Se destapa recién cuando registró el suyo.
+    const tapado = ciego || (recuento && !revelado);
+    const puedeEscribir = editable || (recuento && !revelado);
 
     // Devuelve la celda al último valor confirmado por el servidor. Se usa en
     // todo camino de fallo: dejar el número tecleado en pantalla haría que el
@@ -147,7 +157,32 @@ function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLo
         setNota(prev.nota ?? '');
     };
 
+    // Recuento: se guarda por su propia RPC, que exige can_approve, rechaza que
+    // lo haga quien contó la línea y preserva el primer conteo.
+    const commitRecuento = async () => {
+        const valor = fisico === '' ? null : Number(fisico);
+        if (valor === null) return;
+        if (!Number.isInteger(valor) || valor < 0) {
+            showToast('Cantidad inválida', 'El recuento debe ser un número entero de 0 o más.', 'error');
+            setFisico('');
+            return;
+        }
+        setSaving(true);
+        try {
+            const result = await onRecount(item.id, { fisicoCantidad: valor, nota: nota.trim() || null });
+            setSistema(result.sistema_cantidad);
+            setEstadoItem(valor === 0 && result.sistema_cantidad > 0 ? 'SIN_UBICAR' : 'CONTADO');
+            setRevelado(true);
+        } catch (err) {
+            setFisico('');
+            showToast('No se guardó el recuento', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const commit = async () => {
+        if (recuento) return commitRecuento();
         if (!editable) return;
         const nextFisico = fisico === '' ? null : Number(fisico);
         const nextNota = nota.trim() || null;
@@ -240,8 +275,8 @@ function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLo
                 </div>
             </DataCell>
             <DataCell align="center">
-                {ciego ? (
-                    <span className="text-body-sm font-bold text-content-3 tabular-nums" title="Oculto: conteo ciego">{OCULTO}</span>
+                {tapado ? (
+                    <span className="text-body-sm font-bold text-content-3 tabular-nums" title={recuento ? 'Oculto: recuento a ciegas' : 'Oculto: conteo ciego'}>{OCULTO}</span>
                 ) : (
                     <div className="flex items-center justify-center gap-1.5">
                         <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema}</span>
@@ -250,31 +285,40 @@ function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLo
                 )}
             </DataCell>
             <DataCell align="center">
-                <div className="flex items-center justify-center gap-1">
-                    <PortalInput
-                        aria-label="Cantidad física contada"
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={fisico}
-                        onChange={(e) => setFisico(e.target.value)}
-                        placeholder="—"
-                        onKeyDown={handleFisicoKeyDown}
-                        onBlur={commit}
-                        readOnly={!editable}
-                        compact
-                        inputClassName="text-center text-body-xl font-bold"
-                        className="w-16"
-                    />
-                    {editable && (
-                        <Button variant="ghost" icon={PackageX} disabled={saving}
-                            title="No ubicado — lo busqué y no está en el anaquel"
-                            iconOnly onClick={marcarNoUbicado} />
+                <div className="flex flex-col items-center gap-0.5">
+                    <div className="flex items-center justify-center gap-1">
+                        <PortalInput
+                            aria-label={recuento ? 'Cantidad del recuento' : 'Cantidad física contada'}
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={fisico}
+                            onChange={(e) => setFisico(e.target.value)}
+                            placeholder={recuento && !revelado ? 'Recontar' : '—'}
+                            onKeyDown={handleFisicoKeyDown}
+                            onBlur={commit}
+                            readOnly={!puedeEscribir}
+                            compact
+                            inputClassName="text-center text-body-xl font-bold"
+                            className="w-16"
+                        />
+                        {editable && (
+                            <Button variant="ghost" icon={PackageX} disabled={saving}
+                                title="No ubicado — lo busqué y no está en el anaquel"
+                                iconOnly onClick={marcarNoUbicado} />
+                        )}
+                    </div>
+                    {/* Solo después de registrar el recuento: ver si coincidió con
+                        el primer conteo es la métrica de calidad de ese conteo. */}
+                    {!tapado && item.fisico_primer_conteo != null && (
+                        <span className={`text-micro font-bold tabular-nums ${item.fisico_primer_conteo === Number(fisico) ? 'text-success' : 'text-warning-text'}`}>
+                            1er conteo: {item.fisico_primer_conteo}
+                        </span>
                     )}
                 </div>
             </DataCell>
             <DataCell align="center">
-                {ciego ? (
+                {tapado ? (
                     <span className="text-body-sm font-black text-content-3 tabular-nums">{OCULTO}</span>
                 ) : (
                     <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
@@ -300,6 +344,12 @@ function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLo
                         : estadoItem === 'CONTADO'
                             ? <CheckCircle2 size={14} className="text-success" />
                             : <span className="text-content-3 text-micro">Pendiente</span>}
+                    {(item.recontado_at || revelado) && (
+                        <Badge variant="chart-1" size="sm" icon={ShieldCheck}
+                            title={item.recontado_por_nombre ? `Recontado por ${item.recontado_por_nombre}` : 'Recontado'}>
+                            Recontada
+                        </Badge>
+                    )}
                     {contadoPorNombre && (
                         <Button variant="ghost" icon={History} title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`} onClick={() => onShowHistory(item)}>{contadoPorNombre}</Button>
                     )}
@@ -550,6 +600,7 @@ export default function ConteoDetailView() {
     const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
     const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
     const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
+    const recontarConteoItem = useStaffStore((s) => s.recontarConteoItem);
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
@@ -578,6 +629,9 @@ export default function ConteoDetailView() {
     // para revisar, no al revés. printHojaConteo ya sabía imprimir ciego desde
     // el día uno, pero la vista siempre le pasaba { ciego: false }.
     const [ciego, setCiego] = useState(true);
+    // Recuento de supervisor: vive entre finalizar y aprobar. Antes es el
+    // conteo normal; después ya está firmado y el ajuste salió al ERP.
+    const [recuento, setRecuento] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -604,6 +658,7 @@ export default function ConteoDetailView() {
     const editable = conteo && ['BORRADOR', 'EN_PROGRESO'].includes(conteo.status);
     const canFinalize = editable && canEdit;
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove;
+    const puedeRecontar = conteo?.status === 'FINALIZADO' && canApprove;
     const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
 
     const toggleExpand = async (product) => {
@@ -650,6 +705,24 @@ export default function ConteoDetailView() {
                 diferencia: result.diferencia,
                 contado_por_nombre: user?.name || it.contado_por_nombre,
                 contado_at: new Date().toISOString(),
+            } : it));
+            recomputeProductTotals(erpProductId, lines);
+            return { ...prev, [erpProductId]: lines };
+        });
+        return result;
+    };
+
+    const handleRecountItem = async (itemId, payload, erpProductId) => {
+        const result = await recontarConteoItem(itemId, payload);
+        setItemsByProduct((prev) => {
+            const lines = (prev[erpProductId] || []).map((it) => (it.id === itemId ? {
+                ...it,
+                fisico_primer_conteo: result.fisico_primer_conteo,
+                fisico_cantidad: payload.fisicoCantidad,
+                sistema_cantidad: result.sistema_cantidad,
+                diferencia: result.diferencia,
+                recontado_at: new Date().toISOString(),
+                recontado_por_nombre: user?.name || it.recontado_por_nombre,
             } : it));
             recomputeProductTotals(erpProductId, lines);
             return { ...prev, [erpProductId]: lines };
@@ -836,7 +909,9 @@ export default function ConteoDetailView() {
                                 </div>
                                 <div className="bg-warning/10 rounded-xl px-3 py-2 text-center">
                                     <p className="text-body-xl font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
-                                    <p className="text-micro uppercase tracking-widest text-warning font-bold">Diferencias</p>
+                                    <p className="text-micro uppercase tracking-widest text-warning font-bold">
+                                        Diferencias{conteo.total_recontados > 0 ? ` · ${conteo.total_recontados} recontadas` : ''}
+                                    </p>
                                 </div>
                                 <div className="bg-danger/10 rounded-xl px-3 py-2 text-center">
                                     <p className="text-body-lg font-black text-danger tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
@@ -860,12 +935,22 @@ export default function ConteoDetailView() {
                         onChange={setFiltro}
                         options={FILTRO_PILLS.map(f => ({ value: f.key, label: f.label }))}
                     />
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <Switch checked={ciego} onChange={setCiego} size="sm" variant="chart-9" label="Conteo ciego" />
-                        <span className="text-label font-bold text-content-2 flex items-center gap-1">
-                            <EyeOff size={12} strokeWidth={2.5} /> Conteo ciego
-                        </span>
-                    </label>
+                    {editable && (
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <Switch checked={ciego} onChange={setCiego} size="sm" variant="chart-9" label="Conteo ciego" />
+                            <span className="text-label font-bold text-content-2 flex items-center gap-1">
+                                <EyeOff size={12} strokeWidth={2.5} /> Conteo ciego
+                            </span>
+                        </label>
+                    )}
+                    {puedeRecontar && (
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <Switch checked={recuento} onChange={setRecuento} size="sm" variant="chart-1" label="Modo recuento" />
+                            <span className="text-label font-bold text-content-2 flex items-center gap-1">
+                                <ShieldCheck size={12} strokeWidth={2.5} /> Modo recuento
+                            </span>
+                        </label>
+                    )}
                     {editable && canEdit && (
                         <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm((v) => !v)}>Agregar Producto/Lote</Button>
                     )}
@@ -874,6 +959,14 @@ export default function ConteoDetailView() {
                 {ciego && editable && (
                     <Notice variant="info" icon={EyeOff}>
                         Sistema y diferencia están ocultos: el contador anota lo que ve en el anaquel, no lo que el sistema espera. Apagalo para revisar los resultados.
+                    </Notice>
+                )}
+
+                {recuento && (
+                    <Notice variant="info" icon={ShieldCheck}>
+                        Recuento a ciegas: el campo arranca vacío y no ves el primer conteo ni el sistema hasta registrar el tuyo.
+                        Filtrá por <strong>Con diferencia</strong> — vienen ordenados por el valor del desvío, lo caro primero.
+                        No podés recontar una línea que vos mismo contaste.
                     </Notice>
                 )}
 
@@ -896,7 +989,7 @@ export default function ConteoDetailView() {
                         const lines = itemsByProduct[key];
                         return (
                             <React.Fragment key={key}>
-                                <ProductGroupRow product={product} index={i} expanded={isExpanded} ciego={ciego} onToggle={() => toggleExpand(product)} />
+                                <ProductGroupRow product={product} index={i} expanded={isExpanded} ciego={(ciego && editable) || recuento} onToggle={() => toggleExpand(product)} />
                                 {isExpanded && loadingExpand[key] && (
                                     <tr><td colSpan={COLUMNS.length} className="py-4 px-6"><SkeletonText lines={3} /></td></tr>
                                 )}
@@ -906,8 +999,10 @@ export default function ConteoDetailView() {
                                         item={item}
                                         index={j}
                                         editable={editable}
-                                        ciego={ciego}
+                                        ciego={ciego && editable}
+                                        recuento={recuento}
                                         onSave={(itemId, payload) => handleSaveItem(itemId, payload, key)}
+                                        onRecount={(itemId, payload) => handleRecountItem(itemId, payload, key)}
                                         onShowHistory={setHistoryItem}
                                         onEditLote={setEditLoteItem}
                                         currentUserName={user?.name}

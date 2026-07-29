@@ -217,6 +217,38 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.190.0 — recuento de variaciones por supervisor.
+
+La causa más común de una diferencia grande no es robo ni merma: es **un error
+de conteo** — se saltó una caja, contó blísters en vez de unidades, leyó mal el
+lote. Ajustar el ERP con eso mete el error en el sistema y encima "explica" una
+merma que nunca ocurrió.
+
+El recuento vive **entre finalizar y aprobar**: antes es el conteo normal,
+después ya está firmado y el ajuste salió al ERP.
+
+- Gated por **`can_approve`**, que es el nivel de supervisor del módulo y se
+  asigna por rol desde la pantalla de permisos. Sin columna nueva en
+  `role_permissions`.
+- **No puede recontar quien contó esa línea.** Un recuento hecho por la misma
+  persona no es un recuento.
+- **Ciego también al primer conteo.** El campo arranca vacío y no se ve ni el
+  sistema ni lo que contó el primero hasta registrar el propio: si el supervisor
+  ve que decía 12, escribe 12.
+- `fisico_primer_conteo` preserva el original. Al destapar, la línea muestra si
+  el recuento coincidió o no — que es la métrica de calidad del conteo de base.
+- Con el filtro **"Con diferencia"** los productos salen ordenados por el **valor
+  absoluto del desvío**, no alfabéticos: se recuenta la plata primero. Verificado
+  contra datos reales — FORXIGA con −3 unidades sale antes que ASMONT con −1.
+- `recalcular_totales_conteo()` extraído: finalizar lo calculaba inline, y un
+  recuento cambia cantidades *después* de finalizar, así que la cabecera del
+  conteo quedaba mintiendo respecto de sus propias líneas.
+
+Sigue abierto: el corte de movimientos (es operativo, no de software) y los
+conteos cíclicos por ABC.
+
+---
+
 ## v2.188.0 — el conteo termina en un ajuste, no en un número.
 
 Decisión del usuario: mientras el portal no sea el sistema completo, los ajustes

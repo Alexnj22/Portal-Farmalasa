@@ -23,6 +23,10 @@ const ERRORES = {
     LINEA_YA_EXISTE: 'Ese producto ya está en el conteo con esa presentación y lote.',
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
     AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado en el ERP.',
+    CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
+    SIN_PERMISO_RECUENTO: 'El recuento lo hace un supervisor: hace falta permiso de aprobación en este módulo.',
+    RECUENTO_MISMO_CONTADOR: 'No podés recontar una línea que vos mismo contaste: el recuento lo hace otra persona.',
+    CANTIDAD_INVALIDA: 'La cantidad del recuento debe ser un número entero de 0 o más.',
 };
 
 function traducirError(err) {
@@ -150,6 +154,20 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_fisico_cantidad: fisicoCantidad,
             p_nota: nota ?? null,
             p_estado_item: estadoItem,
+        });
+        if (error) throw traducirError(error);
+        return data;
+    },
+
+    // Recuento de supervisor, entre finalizar y aprobar. La RPC exige
+    // can_approve y rechaza que lo haga quien contó esa misma línea. No lleva
+    // appendAuditLog por la misma razón que guardarConteoItem: la bitácora del
+    // renglón es conteo_inventario_item_history, y ahí queda con nombre y hora.
+    recontarConteoItem: async (itemId, { fisicoCantidad, nota }) => {
+        const { data, error } = await supabase.rpc('recontar_conteo_item', {
+            p_item_id: itemId,
+            p_fisico_cantidad: fisicoCantidad,
+            p_nota: nota ?? null,
         });
         if (error) throw traducirError(error);
         return data;

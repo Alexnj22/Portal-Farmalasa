@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.189.0';
+export const APP_VERSION = '2.190.0';
+
+// v2.190.0 — recuento de variaciones por supervisor.
+//
+// La causa mas comun de una diferencia grande no es robo ni merma: es un error
+// de conteo (se salto una caja, conto blisters en vez de unidades, leyo mal el
+// lote). Ajustar el ERP con eso mete el error en el sistema y encima "explica"
+// una merma que nunca ocurrio.
+//
+// El recuento vive **entre finalizar y aprobar**: antes es el conteo normal,
+// despues ya esta firmado y el ajuste salio al ERP.
+//
+// - Gated por `can_approve`, que es el nivel de supervisor del modulo y se
+//   asigna por rol desde la pantalla de permisos. Sin columna nueva en
+//   role_permissions.
+// - **No puede recontar quien conto esa linea** — un recuento hecho por la misma
+//   persona no es un recuento (RECUENTO_MISMO_CONTADOR).
+// - **Ciego al primer conteo**: el campo arranca vacio y no se ve ni el sistema
+//   ni lo que conto el primero hasta registrar el propio. Si el supervisor ve
+//   que decia 12, escribe 12.
+// - `fisico_primer_conteo` preserva el original; al destapar se muestra si
+//   coincidio o no, que es la metrica de calidad del conteo de base.
+// - Con el filtro "Con diferencia" los productos salen ordenados por el VALOR
+//   absoluto del desvio, no alfabeticos: se recuenta la plata primero.
+// - `recalcular_totales_conteo()` extraido: finalizar lo calculaba inline y un
+//   recuento cambia cantidades despues, asi que la cabecera quedaba mintiendo
+//   respecto de sus propias lineas.
+//
+// Sigue abierto: el corte de movimientos (es operativo, no de software) y los
+// conteos ciclicos por ABC.
 
 // v2.189.0 — el 26.5% del CPU de la base era un INSERT que no insertaba nada.
 //

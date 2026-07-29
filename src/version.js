@@ -16,8 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.204.0';
+export const APP_VERSION = '2.205.0';
 
+// v2.205.0 — C3 y C4 del plan de cierre Supabase: 11 funciones SECURITY DEFINER
+// dejaron de saltarse el RLS, y el 18% de rollbacks resulto ser historico.
+//
+// C3 — De las 69 funciones SECURITY DEFINER que `authenticated` podia llamar,
+// 24 no tenian ningun gate `auth_*`. Clasificadas una por una:
+//   * 8 RPCs de pedidos → pasadas a SECURITY INVOKER. La policy de `pedidos`
+//     exige modulo `pedidos.can_view` + scope de sucursal, y estas la saltaban
+//     entera. Probado en prod dentro de BEGIN..ROLLBACK con un empleado real
+//     (Regente de Enfermeria, SIN permiso de pedidos): get_pedidos_en_curso()
+//     devolvia 46 filas y get_pausa_razones_stats() 7 — ahora 0 y 0. Con
+//     permiso: Bodega (ALL) 46 y sucursal (BRANCH) 8, que es el scoping
+//     funcionando. Afecta a 26 empleados con scope=BRANCH, que pasan a ver
+//     solo su sucursal; los 12 con ALL no cambian.
+//   * 3 revocadas de authenticated (solo cron/edge las llaman):
+//     notify_missing_roster, upsert_proveedor_from_dte, validate_role_headcount.
+//   * BUG encontrado de paso: notify_missing_roster filtraba empleados por
+//     status='ACTIVE', valor que no existe en la tabla (los 50 son 'ACTIVO'),
+//     asi que el aviso de horario sin configurar iba a target_type='ALL' — a
+//     toda la empresa — en vez de solo a Talento Humano.
+//   * Las 13 que quedan sin gate estan justificadas: 5 del kiosco (validan
+//     device_token), 3 triggers (Postgres no deja invocarlos directo) y 5 que
+//     solo leen tablas con policy USING(true), asi que no saltan nada.
+//   Resultado medido: definer-para-authenticated 69 → 58; sin gate 24 → 13.
+//
+// C4 — El "18% de rollbacks" no es un problema activo. La tasa actual es
+// 3 rollbacks / 1,941 commits = 0.15%. El 17.4% es acumulado de toda la vida
+// del cluster (stats_reset nunca se corrio) y esta dominado por incidentes ya
+// cerrados, como el outage del 2026-07-08. Los crons tampoco son la causa:
+// 375 fallos sobre 108,895 corridas = 0.34%.
+//
 // v2.204.0 — cierre del sistema de diseno: los 4 residuos, y uno que nadie
 // habia visto.
 //

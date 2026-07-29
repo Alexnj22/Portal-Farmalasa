@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.199.0';
+export const APP_VERSION = '2.200.0';
+
+// v2.200.0 — 17 cuentas auth duplicadas borradas, FK sin indice, bucket sin limites.
+//
+// La auditoria decia "42 cuentas huerfanas". Eran 10: tanto el informe como la
+// primera consulta ignoraron que auth_employee_id resuelve tambien por `code`
+// del user_metadata. Actuar sobre el numero del informe habria revocado 32
+// cuentas de empleados ACTIVOS, una de ellas con login del dia anterior.
+//
+// Lo que si habia es duplicacion sistemica: casi todo empleado tenia 2-3 cuentas,
+// en tres oleadas — nombre.apellido@farmalasa.app (marzo), <codigo>@staff.local
+// (1-2 de julio) y <random>@staff.local (las del escaneo de carne, que son las
+// que se usan). Se borraron 17, todas de la oleada de julio y todas sin ningun
+// login, con dos guardas: nunca borrar la ultima cuenta de una clave, y nunca
+// borrar una cuyo id sea el de un empleado. La segunda guarda importo: filtro
+// varias nombre.apellido@ que nunca entraron pero cuyo id ES employees.id.
+// 92 -> 76 cuentas.
+//
+// Ademas: indice para sales_invoices.customer_id (unica FK sin indice que no es
+// columna de auditoria, 336K filas) creado CONCURRENTLY para no bloquear los
+// inserts del sync; y el bucket `backups` gano file_size_limit y
+// allowed_mime_types, que le faltaban contra la regla #10.
+//
+// HIBP (proteccion de contraseñas filtradas) queda DESACTIVADO por decision
+// explicita del usuario, no por olvido.
 
 // v2.199.0 — se cerro a anon toda la superficie de funciones de negocio.
 //

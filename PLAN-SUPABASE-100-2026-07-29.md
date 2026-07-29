@@ -158,20 +158,42 @@ el wrapper `(SELECT ...)` obligatorio, que es la lección del outage del
 
 ## F4 — Higiene (S5)
 
-- **F4.1** — **42 cuentas `auth` huérfanas**: 92 usuarios para 50 empleados, solo
-  22 con login en 30 días. Cuentas de ex-empleados sin revocar es la vía de
-  acceso indebido más común que hay. Hay que cruzar contra `employees` y revocar,
-  con lista previa para que la apruebes.
-- **F4.2** — Protección de contraseñas filtradas (HIBP): **es un toggle del
-  dashboard, lo tenés que activar vos**.
-- **F4.3** — 2 buckets públicos listables (`photos`, `product-photos`): se puede
-  enumerar todo el contenido, no solo acceder por URL conocida. Y `backups` sin
-  `file_size_limit` ni `allowed_mime_types`, contra la regla #10.
-- **F4.4** — 1 vista materializada expuesta en la API.
+- ✅ **F4.1 — APLICADO v2.200.0. Corrección: eran 10, no 42.** El informe (y mi
+  primera consulta) ignoraron que `auth_employee_id` resuelve también por `code`
+  del `user_metadata`. **Actuar sobre el número del informe habría revocado 32
+  cuentas de empleados activos**, una con login del día anterior.
+
+  Lo que sí había es duplicación **sistémica**: casi todo empleado tenía 2-3
+  cuentas, en tres oleadas — `nombre.apellido@farmalasa.app` (marzo),
+  `<código>@staff.local` (1-2 de julio) y `<random>@staff.local` (escaneo de
+  carné, las que se usan). Se borraron **17**, todas de la oleada de julio y
+  todas sin ningún login, con dos guardas: nunca borrar la última cuenta de una
+  clave, y nunca borrar una cuyo `id` sea el de un empleado. La segunda importó:
+  filtró varias `nombre.apellido@` que nunca entraron pero **cuyo id ES
+  `employees.id`** — borrarlas habría roto el registro del empleado.
+  **92 → 76 cuentas.**
+
+- 🚫 **F4.2 — HIBP: NO se activa, por decisión explícita del usuario**
+  (2026-07-29). No es un pendiente ni un olvido.
+
+- ✅ **F4.3 — APLICADO** (`20260729_fk_index_and_backups_bucket`): `backups` ganó
+  `file_size_limit` (100 MB) y `allowed_mime_types`. Los otros seis buckets ya
+  los tenían. Los públicos `photos`/`product-photos` siguen públicos a propósito
+  (fotos de catálogo).
+
+- ✅ **F4.4 — Sin acción necesaria.** La única MV expuesta es `mv_product_factor`
+  a `authenticated`, que es **la excepción ya documentada** en la regla #6 de
+  `CLAUDE.md` (la lee `get_pedido_preview`, que es INVOKER). `anon` en `false`
+  en las tres.
 - **F4.5** — `pg_trgm` y `pg_net` en el schema `public`: contaminan el namespace
   REST. Mover a `extensions` **solo si** nada las referencia sin calificar —
   verificar antes, puede romper funciones.
-- **F4.6** — FK sin índice en `sales_invoices.customer_id` (336K filas).
+- ✅ **F4.6 — APLICADO.** Índice parcial sobre `sales_invoices.customer_id`
+  (2.8 MB; parcial porque la mayoría de facturas son consumidor final sin
+  cliente). Creado `CONCURRENTLY` — la variante normal toma un lock `SHARE` que
+  bloquea escrituras, inaceptable en una tabla que recibe inserts cada minuto
+  desde 6 sucursales. Las otras dos FK sin índice (`pedido_items.confirmado_suc_por`
+  y `.rechazado_por`) son columnas `*_por` de auditoría, exentas por la regla #2.
 - **F4.7** — 18% de rollbacks (535,671 de 2.98M). Rastrear la fuente.
 
 ---

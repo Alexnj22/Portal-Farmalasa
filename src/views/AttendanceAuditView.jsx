@@ -539,14 +539,14 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           <div className="flex flex-wrap gap-4">
             {/* Entrada */}
             <div className="flex items-center gap-2">
-              <LogIn size={13} className={entryPunch ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />
+              <LogIn size={13} className={entryPunch ? 'text-success-text' : 'text-content-3'} strokeWidth={2.5} />
               <div>
                 <p className="text-micro font-black uppercase tracking-widest text-content-2">Entrada</p>
                 {entryPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-body font-black text-content">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
                     {lateMin > 0 && <Badge variant="chart-4" size="sm" uppercase={false}>+{lateMin} min</Badge>}
-                    {isEditedPunch(entryPunch) && <span className="text-micro font-black text-success">✎</span>}
+                    {isEditedPunch(entryPunch) && <span className="text-micro font-black text-success-text">✎</span>}
                   </div>
                 ) : (
                   <p className="text-label font-black text-content-3">—</p>
@@ -563,8 +563,8 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                   <div className="flex items-center gap-1.5">
                     <p className="text-body font-black text-content">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
                     {isAutoPunch(exitPunch)  && <span className="text-micro font-black text-chart-3-text">Auto</span>}
-                    {isPendingPunch(exitPunch) && <span className="text-micro font-black text-warning">Pend.</span>}
-                    {isEditedPunch(exitPunch) && <span className="text-micro font-black text-success">✎</span>}
+                    {isPendingPunch(exitPunch) && <span className="text-micro font-black text-warning-text">Pend.</span>}
+                    {isEditedPunch(exitPunch) && <span className="text-micro font-black text-success-text">✎</span>}
                   </div>
                 ) : (
                   <p className="text-label font-black text-content-3">—</p>
@@ -614,7 +614,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
           {inconsistencies.length > 0 && (
             <div className="bg-danger/10 border border-danger/30 rounded-xl px-3 py-2 flex flex-wrap gap-2">
               {inconsistencies.map(inc => (
-                <span key={inc.type} className="text-caption font-bold text-danger flex items-center gap-1">
+                <span key={inc.type} className="text-caption font-bold text-danger-text flex items-center gap-1">
                   ⚠ {inc.label} no registrada
                 </span>
               ))}
@@ -623,7 +623,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Edited by */}
           {isEditedDay && editedInfo?.details?.auditedByName && (
-            <p className="text-micro font-bold text-success flex items-center gap-1">
+            <p className="text-micro font-bold text-success-text flex items-center gap-1">
               <Check size={9} strokeWidth={3} />
               Editado por {editedInfo.details.auditedByName}
               {editedInfo.details.reason && ` — "${editedInfo.details.reason}"`}
@@ -640,7 +640,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
           {/* Pending review note */}
           {isPendDay && dayPunches.find(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id))?.details?.skipReason && (
-            <p className="text-micro font-bold text-warning flex items-center gap-1">
+            <p className="text-micro font-bold text-warning-text flex items-center gap-1">
               <ShieldAlert size={10} strokeWidth={2.5} />
               {dayPunches.find(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id)).details.skipReason}
             </p>
@@ -784,10 +784,10 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           )}
           {totalOT > 0 && (
             <div className="flex flex-col items-end min-w-[3rem]">
-              <span className="text-subtitle font-black text-warning tabular-nums leading-none">
-                {totalOT.toFixed(1)}<span className="text-caption font-bold text-warning ml-0.5">h</span>
+              <span className="text-subtitle font-black text-warning-text tabular-nums leading-none">
+                {totalOT.toFixed(1)}<span className="text-caption font-bold text-warning-text ml-0.5">h</span>
               </span>
-              <span className="text-micro font-black uppercase tracking-widest text-warning mt-0.5">extra</span>
+              <span className="text-micro font-black uppercase tracking-widest text-warning-text mt-0.5">extra</span>
             </div>
           )}
           {totalLate > 0 && (
@@ -800,8 +800,8 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           )}
           {totalAbs > 0 && (
             <div className="flex flex-col items-end min-w-[2rem]">
-              <span className="text-subtitle font-black text-danger tabular-nums leading-none">{totalAbs}</span>
-              <span className="text-micro font-black uppercase tracking-widest text-danger mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
+              <span className="text-subtitle font-black text-danger-text tabular-nums leading-none">{totalAbs}</span>
+              <span className="text-micro font-black uppercase tracking-widest text-danger-text mt-0.5">ausencia{totalAbs > 1 ? 's' : ''}</span>
             </div>
           )}
           {(totalNocturnal + totalNoctOT) > 0 && (
@@ -819,8 +819,8 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           <div className="w-px h-8 bg-divider mx-0.5" />
           {allApproved ? (
             <div className="flex flex-col items-center min-w-[2.5rem]">
-              <ShieldCheck size={16} className="text-success" strokeWidth={2} />
-              <span className="text-micro font-black uppercase tracking-widest text-success mt-0.5">OK</span>
+              <ShieldCheck size={16} className="text-success-text" strokeWidth={2} />
+              <span className="text-micro font-black uppercase tracking-widest text-success-text mt-0.5">OK</span>
             </div>
           ) : (
             <div className="flex flex-col items-end min-w-[2.5rem]">
@@ -1294,7 +1294,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                       {meta.declaredStart && meta.declaredEnd ? (
                         <p className="text-label font-bold text-chart-3-text mt-1">
                           Declara: {meta.declaredStart} – {meta.declaredEnd}
-                          {meta.pinOmitido && <span className="ml-2 text-warning text-micro uppercase tracking-wider font-black">sin PIN</span>}
+                          {meta.pinOmitido && <span className="ml-2 text-warning-text text-micro uppercase tracking-wider font-black">sin PIN</span>}
                         </p>
                       ) : (
                         <p className="text-caption text-content-3 mt-1 italic">No declaró horario — solo registró entrada</p>
@@ -1343,8 +1343,8 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                 {[
                   { Icon: Users,        label: 'Empleados',   val: withData,          unit: '',  c: 'text-brand-text', bg: 'bg-brand/10' },
                   { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1), unit: 'h', c: 'text-content-2',  bg: 'bg-surface-card-hover' },
-                  { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-warning' : 'text-content-3', bg: totOT > 0 ? 'bg-warning/10' : 'bg-surface-card-hover' },
-                  { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-danger' : 'text-content-3', bg: totAbs > 0 ? 'bg-danger/10' : 'bg-surface-card-hover' },
+                  { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-warning-text' : 'text-content-3', bg: totOT > 0 ? 'bg-warning/10' : 'bg-surface-card-hover' },
+                  { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-danger-text' : 'text-content-3', bg: totAbs > 0 ? 'bg-danger/10' : 'bg-surface-card-hover' },
                 ].map(({ Icon, label, val, unit, c, bg }) => (
                   <div key={label} data-surface="card" className="p-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">

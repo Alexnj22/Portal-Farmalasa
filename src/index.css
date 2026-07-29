@@ -769,7 +769,12 @@
      misma tarjeta (T7) — el par bg/texto de :root está pensado para
      tarjeta clara, invertido aquí. Mismo motivo para success/warning/
      danger-text (fix del bug real de Badge.jsx). */
-  --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
+  --success-text: #34d399; --warning-text: #fbbf24;
+  /* 2026-07-29: #f87171 daba 4.43:1 sobre el TINTE del badge danger
+     (#462e3a = tarjeta + danger/12), justo bajo el 4.5 de AA. Sobre la
+     tarjeta plana medía 5.29 y por eso había pasado. #fb9a9a da 5.95
+     sobre el tinte, 7.1 sobre la tarjeta y 8.66 sobre la página. */
+  --danger-text: #fb9a9a;
   /* Los CINCO categóricos, aclarados para fondo oscuro. */
   --chart-1-text: #60a5fa; --chart-3-text: #a78bfa; --chart-4-text: #fb923c;
   --chart-6-text: #f472b6; --chart-9-text: #2dd4bf;
@@ -944,7 +949,12 @@
   --chart-6-text: #f472b6; --chart-9-text: #2dd4bf;
   --chart-2-text: var(--success-text); --chart-5-text: var(--chart-9-text);
   --chart-7-text: var(--warning-text); --chart-8-text: var(--content-2);
-  --success-text: #34d399; --warning-text: #fbbf24; --danger-text: #f87171;
+  --success-text: #34d399; --warning-text: #fbbf24;
+  /* 2026-07-29: #f87171 daba 4.43:1 sobre el TINTE del badge danger
+     (#462e3a = tarjeta + danger/12), justo bajo el 4.5 de AA. Sobre la
+     tarjeta plana medía 5.29 y por eso había pasado. #fb9a9a da 5.95
+     sobre el tinte, 7.1 sobre la tarjeta y 8.66 sobre la página. */
+  --danger-text: #fb9a9a;
   --brand-text:   #60A5FA; /* D1.1 — 5.75:1 sobre la tarjeta #1e293b */
 
   --surface-card:       rgba(30,41,59,1.00);

@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.226.0';
+export const APP_VERSION = '2.227.0';
+
+// v2.227.0 — se cierran los pendientes, y DOS de los tres "fallos" que
+// quedaban eran de mi medidor, no del portal.
+//
+// Contraste: 23 -> **0**. Lo que se corrigio de verdad fue uno solo:
+// `--danger-text` #f87171 media 4.43:1 sobre el TINTE del badge danger
+// (#462e3a = tarjeta + danger/12), justo bajo AA. Sobre la tarjeta plana daba
+// 5.29 y por eso habia pasado siempre. Ahora #fb9a9a: 5.95 sobre el tinte, 7.1
+// sobre la tarjeta, 8.66 sobre la pagina. Mas 17 `text-danger|success|warning`
+// de AttendanceAuditView que seguian usando el token de RELLENO como color de
+// texto.
+//
+// Los otros dos NO eran defectos:
+//   · Los 6 nodos de "General" a 2.51:1 eran la etiqueta de un tab inactivo de
+//     `ViewTabBar` medida **a mitad de su transicion de 700ms**. El alfa de
+//     0.97 y un color que no correspondia a ningun token lo delataron. Con la
+//     espera correcta: 0.
+//   · Los 2 targets de 36px del kiosco eran mi contexto de Playwright sin
+//     `hasTouch`. El kiosco REAL es una pantalla tactil: con `pointer: coarse`
+//     los mismos botones miden 44 y quedan en 0.
+//
+// Pendientes que se cierran:
+//   · KIOSCO — fuerza `data-theme="dark"` como esta documentado, 0 nodos bajo
+//     AA, 0 targets bajo 44 (tactil), 0 errores de pagina.
+//   · LOGIN — 0 targets bajo 44 y **0 controles sin indicador de foco**.
+//   · ESTADOS DE ERROR de formulario — validacion disparada con el formulario
+//     vacio (la escritura la aborta un guardia de red): 4 marcas de error
+//     renderizadas, 210 nodos medidos, 0 bajo AA.
+//   · FIREFOX — **no se pudo verificar**: no arranca en este entorno (el
+//     sandbox de macOS le bloquea `plugin-container`). Lo que si se verifico es
+//     el riesgo concreto que este proyecto ya sufrio ahi: que Lightning CSS
+//     descarte la propiedad estandar y deje solo `-webkit-backdrop-filter`.
+//     En el bundle: 37 estandar / 37 con prefijo, **0 reglas con solo el
+//     prefijo**. El vidrio le llega a Firefox.
+//
+// Con los modales abiertos: 31 modales, 1,507 nodos de texto, 0 bajo AA.
+// Foco: 8 dialogos, entra / atrapa / devuelve, 0 fallos.
+// Targets: 1,003 controles, 7 bajo 44 y son las barras del grafico.
+// gate:design 0/25 · gate:doc y eslint limpios.
 
 // v2.226.0 — Mantenimiento: lista completa con switch, y el aviso que no se leia.
 //

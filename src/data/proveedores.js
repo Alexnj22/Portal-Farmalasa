@@ -18,6 +18,27 @@ export async function setProveedorCategoria(id, categoriaId) {
     if (error) throw error;
 }
 
+// H5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): asignación masiva. Las dos
+// devuelven cuántas filas cambiaron DE VERDAD (no cuántas se seleccionaron),
+// así el aviso no miente cuando algunas ya tenían esa categoría.
+//
+// La diferencia entre ambas es real y por eso son dos RPC: `bulk` le pone a
+// todos LA MISMA categoría; `sugerida` le pone a cada uno LA SUYA, calculada
+// desde su propio giro fiscal, e ignora a los que no tienen sugerencia.
+export async function setProveedoresCategoriaBulk(ids, categoriaId) {
+    const { data, error } = await supabase.rpc('set_proveedores_categoria_bulk', {
+        p_ids: ids, p_categoria_id: categoriaId ?? null,
+    });
+    if (error) throw error;
+    return data ?? 0;
+}
+
+export async function applyProveedoresCategoriaSugerida(ids) {
+    const { data, error } = await supabase.rpc('apply_proveedores_categoria_sugerida', { p_ids: ids });
+    if (error) throw error;
+    return data ?? 0;
+}
+
 export async function setProveedorSupplier(id, supplierId) {
     const { error } = await supabase.rpc('set_proveedor_supplier', { p_id: id, p_supplier_id: supplierId });
     if (error) throw error;

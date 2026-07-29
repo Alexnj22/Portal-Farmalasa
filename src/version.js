@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.197.0';
+export const APP_VERSION = '2.198.0';
+
+// v2.198.0 — H5, segunda mitad: la UI para clasificar 99 proveedores sin
+// hacerlo de a uno. Aprobada por mockup antes de construirla.
+//
+// Es el PRIMER patron de seleccion multiple en tabla del proyecto — no habia
+// canonico que copiar, por eso paso por mockup. Si otra vista lo necesita,
+// copiar de ProveedoresView: Checkbox canonico (nunca el input nativo), el
+// "seleccionar todo" opera sobre la PAGINA visible y no sobre los 99 (marcar
+// una casilla no deberia alcanzar filas que nadie esta viendo), y la barra de
+// acciones existe solo mientras haya seleccion.
+//
+// Dos acciones separadas porque hacen cosas distintas: "Aceptar sugerencia" le
+// da a cada proveedor LA SUYA (calculada desde su propio giro); el select le da
+// a todos LA MISMA. El contador del boton cuenta solo los seleccionados que
+// TIENEN sugerencia: con los 25 de la primera pagina marcados dice
+// "Aceptar sugerencia (13)", asi que se ve solo que los otros 12 no la tienen.
+//
+// El aviso reporta lo que devuelve el RPC (filas que cambiaron de verdad), no
+// cuantas se seleccionaron — si ya tenian esa categoria, dice que no cambio
+// ninguna en vez de mentir.
+//
+// El gate:design cazo la barra: la habia escrito a mano en vez de usar
+// `data-surface="card"`. Existe `data-tono="brand"` justo para esto.
+//
+// Medido al ejercitarla: la tabla YA desbordaba antes de este cambio (1276px
+// de contenido en un contenedor de 1044 — de ahi que v2.27.4 le quitara la
+// columna Giro). Se acoto el subtexto de la sugerencia con truncate + title
+// para no empeorarlo: quedo en 1302, o sea +26px netos sobre lo que ya habia.
+// El desborde de fondo sigue abierto, es anterior y aparte.
 
 // v2.197.0 — se cerraron 24 de las 26 policies de escritura abierta.
 //

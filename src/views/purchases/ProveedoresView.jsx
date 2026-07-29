@@ -11,7 +11,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { fetchSuppliersBasic } from '../../data/compras';
-import { fetchProveedoresMaestro, fetchProveedorCategorias } from '../../data/proveedores';
+import Checkbox from '../../components/common/Checkbox';
+import {
+    fetchProveedoresMaestro, fetchProveedorCategorias,
+    setProveedoresCategoriaBulk, applyProveedoresCategoriaSugerida,
+} from '../../data/proveedores';
 import FilterBar from '../../components/common/FilterBar';
 import { useToastStore } from '../../store/toastStore';
 
@@ -23,7 +27,9 @@ const SIN_MATCH_ERP = '__sin_match__';
 // fuera del viewport (a pedido del usuario, ver también max-w+truncate en las
 // celdas de abajo, que es lo que realmente frena el ancho bajo table-layout
 // auto). Giro se quita del todo (no solo hideBelow) — no cabía junto al resto.
-const COLS = [
+// `sel` se inyecta desde la vista (necesita el estado de selección para el
+// "seleccionar todo"), por eso COLS deja de ser una constante suelta.
+const BASE_COLS = [
     { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]' },
     { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: 'md' },
     { key: 'tipo',       label: 'Tipo',       align: 'left', hideBelow: 'lg' },
@@ -59,10 +65,77 @@ const fmtDate = (d) => {
 // ── CategoriaCell / MatchErpCell — solo lectura; editar vive en el modal
 // detalle (FormProveedorDetail), a pedido del usuario 2026-07-18. ───────────
 
+// H5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): sin categoría, la celda muestra
+// lo que el sistema propone según el giro fiscal del DTE — informativo, nunca
+// se aplica solo. Los giros ambiguos (supermercados, alimentos, bebidas) no
+// traen sugerencia a propósito y lo dicen en gris, no en ámbar: no es un
+// problema del dato, es una decisión que le toca al usuario.
 function CategoriaCell({ row }) {
-    return row.categoria_nombre
-        ? <span className="text-content-2 text-body-sm font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>
-        : <span className="text-warning text-label font-bold whitespace-nowrap">Sin categoría</span>;
+    if (row.categoria_nombre) {
+        return <span className="text-content-2 text-body-sm font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>;
+    }
+    return (
+        <div className="min-w-0">
+            <span className="text-warning text-label font-bold whitespace-nowrap block">Sin categoría</span>
+            {/* max-w acotado y `truncate`: esta tabla ya venía angosta de ancho
+                (v2.27.4 le quitó la columna Giro por lo mismo), así que el
+                subtexto no puede volver a estirarla. El texto completo vive en
+                el title, junto con el giro que justifica la sugerencia. */}
+            {row.categoria_sugerida_nombre ? (
+                <span className="text-caption text-brand-text truncate block max-w-[132px]" title={`Sugerida: ${row.categoria_sugerida_nombre} — por el giro "${row.desc_actividad || '—'}"`}>
+                    Sugerida: {row.categoria_sugerida_nombre}
+                </span>
+            ) : (
+                <span className="text-caption text-content-3 truncate block max-w-[132px]" title={`Giro ambiguo o ausente ("${row.desc_actividad || '—'}") — la categoría la decidís vos`}>
+                    Sin sugerencia
+                </span>
+            )}
+        </div>
+    );
+}
+
+// ── BulkBar — aparece solo con filas seleccionadas ────────────────────────────
+// Dos acciones separadas porque hacen cosas distintas: "Aceptar sugerencia" le
+// da a cada proveedor LA SUYA; el select le da a todos LA MISMA. El contador
+// del botón cuenta solo los seleccionados que tienen sugerencia, así que si
+// entra un ambiguo el número no sube y se ve por qué.
+function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, onAsignar, onCancelar }) {
+    return (
+        <div
+            data-surface="card"
+            data-tono="brand"
+            className="sticky bottom-4 z-dropdown mt-4 flex items-center gap-3 flex-wrap px-4 py-3"
+        >
+            <span className="text-body-sm font-black text-content whitespace-nowrap">
+                {count.toLocaleString()} seleccionado{count !== 1 ? 's' : ''}
+            </span>
+            <span className="w-px h-6 bg-divider" aria-hidden="true" />
+            <Button
+                size="sm"
+                icon={CheckCircle2}
+                disabled={busy || conSugerencia === 0}
+                title={conSugerencia === 0
+                    ? 'Ninguno de los seleccionados tiene sugerencia — asignales una a mano'
+                    : `Aplica a cada proveedor la categoría sugerida por su propio giro`}
+                onClick={onAceptarSugerencia}
+            >
+                Aceptar sugerencia ({conSugerencia})
+            </Button>
+            <div className="w-[210px]">
+                <LiquidSelect
+                    value=""
+                    onChange={onAsignar}
+                    options={categorias.map(c => ({ value: c.id, label: c.nombre }))}
+                    placeholder={busy ? 'Guardando…' : 'Asignar categoría…'}
+                    icon={Tag}
+                    compact
+                    clearable={false}
+                />
+            </div>
+            <div className="flex-1" />
+            <Button variant="ghost" disabled={busy} onClick={onCancelar}>Cancelar</Button>
+        </div>
+    );
 }
 
 function MatchErpCell({ row }) {
@@ -94,6 +167,20 @@ export default function ProveedoresView({ openModal }) {
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
+
+    // H5: selección múltiple para asignar categoría a varios de una. Es el
+    // primer patrón de este tipo en el proyecto — si otra vista lo necesita,
+    // copiar de acá.
+    const [selectedIds, setSelectedIds] = useState(() => new Set());
+    const [bulkBusy, setBulkBusy] = useState(false);
+    const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+    const toggleId = useCallback((id) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -143,6 +230,69 @@ export default function ProveedoresView({ openModal }) {
     const sorted = useMemo(() => [...filteredSinMatch].sort((a, b) => a.nombre.localeCompare(b.nombre)), [filteredSinMatch]);
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize]);
+
+    // "Seleccionar todo" opera sobre la PÁGINA visible, no sobre los 99: marcar
+    // una casilla no debería alcanzar filas que el usuario no está viendo.
+    const pageIds = useMemo(() => pageRows.map(r => r.id), [pageRows]);
+    const pageAllSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.has(id));
+    const pageSomeSelected = pageIds.some(id => selectedIds.has(id));
+    const togglePage = useCallback(() => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            const todos = pageIds.length > 0 && pageIds.every(id => next.has(id));
+            for (const id of pageIds) { if (todos) next.delete(id); else next.add(id); }
+            return next;
+        });
+    }, [pageIds]);
+
+    // El contador del botón cuenta solo los que TIENEN sugerencia — se calcula
+    // sobre todo `rows` y no sobre la página, porque la selección sobrevive al
+    // cambio de página.
+    const seleccionConSugerencia = useMemo(
+        () => rows.filter(r => selectedIds.has(r.id) && r.categoria_sugerida_id).length,
+        [rows, selectedIds],
+    );
+
+    const COLS = useMemo(() => [
+        {
+            key: 'sel',
+            align: 'left',
+            className: 'w-[44px]',
+            label: (
+                <Checkbox
+                    size="sm"
+                    checked={pageAllSelected}
+                    indeterminate={!pageAllSelected && pageSomeSelected}
+                    onChange={togglePage}
+                    aria-label={pageAllSelected ? 'Quitar la selección de esta página' : 'Seleccionar los proveedores de esta página'}
+                />
+            ),
+        },
+        ...BASE_COLS,
+    ], [pageAllSelected, pageSomeSelected, togglePage]);
+
+    const runBulk = useCallback(async (fn, accion, extra) => {
+        setBulkBusy(true);
+        try {
+            const ids = [...selectedIds];
+            const cambiados = await fn(ids);
+            useStaff.getState().appendAuditLog(accion, null, { seleccionados: ids.length, cambiados, ...extra });
+            useToastStore.getState().showToast(
+                'Categorías actualizadas',
+                cambiados === 0
+                    ? 'Ninguno cambió — ya tenían esa categoría.'
+                    : `${cambiados} proveedor${cambiados !== 1 ? 'es' : ''} actualizado${cambiados !== 1 ? 's' : ''}.`,
+                cambiados === 0 ? 'info' : 'success',
+            );
+            clearSelection();
+            await load();
+        } catch (e) {
+            console.error('ProveedoresView.jsx: bulk categoría', e);
+            useToastStore.getState().showToast('No se pudo guardar', e.message || 'Intentá de nuevo.', 'error');
+        } finally {
+            setBulkBusy(false);
+        }
+    }, [selectedIds, clearSelection, load]);
 
     const openDetail = (row) => {
         openModal?.('editProveedor', { ...row, categorias, suppliers, canEdit, onSaved: load });
@@ -209,6 +359,17 @@ export default function ProveedoresView({ openModal }) {
                 <DataTable columns={COLS} loading={loading} empty={{ icon: Truck, message: 'Sin proveedores registrados todavía.' }}>
                     {pageRows.map((row, i) => (
                         <DataRow key={row.id} index={i} onClick={() => openDetail(row)}>
+                            {/* stopPropagation: la fila entera abre el detalle,
+                                así que marcar la casilla no debe abrirlo también. */}
+                            <DataCell onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                    size="sm"
+                                    checked={selectedIds.has(row.id)}
+                                    onChange={() => toggleId(row.id)}
+                                    disabled={!canEdit}
+                                    aria-label={`Seleccionar ${row.nombre}`}
+                                />
+                            </DataCell>
                             <DataCell>
                                 <div className="flex items-center gap-2 min-w-0">
                                     <div className="w-8 h-8 rounded-xl bg-surface-card-hover/80 border border-divider flex items-center justify-center shrink-0">
@@ -247,6 +408,21 @@ export default function ProveedoresView({ openModal }) {
                         </DataRow>
                     ))}
                 </DataTable>
+                {canEdit && selectedIds.size > 0 && (
+                    <BulkBar
+                        count={selectedIds.size}
+                        conSugerencia={seleccionConSugerencia}
+                        categorias={categorias}
+                        busy={bulkBusy}
+                        onAceptarSugerencia={() => runBulk(applyProveedoresCategoriaSugerida, 'PROVEEDORES_CATEGORIA_SUGERIDA_BULK')}
+                        onAsignar={(categoriaId) => {
+                            if (!categoriaId) return;
+                            runBulk((ids) => setProveedoresCategoriaBulk(ids, categoriaId), 'PROVEEDORES_CATEGORIA_BULK', { categoria_id: categoriaId });
+                        }}
+                        onCancelar={clearSelection}
+                    />
+                )}
+
                 {!loading && sorted.length > 0 && (
                     <TablePagination
                         pageSize={pageSize}

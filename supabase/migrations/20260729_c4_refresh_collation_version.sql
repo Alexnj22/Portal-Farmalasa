@@ -1,0 +1,45 @@
+-- C4 hallazgo 2 — Cerrar el `collation version mismatch`.
+--
+-- Sintoma: el log de Postgres inundado con
+--   WARNING: database "postgres" has a collation version mismatch
+-- decenas por minuto, porque se emite en CADA conexion nueva. Confirmado en
+-- catalogo: datcollversion = 153.120 contra glibc real 153.121 — Supabase
+-- actualizo la imagen base y con ella glibc, sin que la BD registrara la
+-- version nueva.
+--
+-- Riesgo real (no solo ruido): los indices B-tree sobre columnas `text` se
+-- construyeron con las reglas de ordenamiento viejas. Si el salto de glibc
+-- cambio el orden de alguna cadena, esos indices pueden devolver resultados
+-- INCOMPLETOS en comparaciones de rango — falla en silencio, no da error.
+-- El salto aca es de patch (153.120 → 153.121), donde historicamente el orden
+-- no cambia, por eso no era emergencia; pero tampoco algo para dejar abierto.
+--
+-- ── PASO 1 (ya ejecutado, NO va en este archivo) ────────────────────────────
+-- REINDEX de los 71 indices sobre columnas colacionables (151 MB en 37 tablas),
+-- reconstruidos con las reglas actuales. Se hizo con:
+--   REINDEX TABLE CONCURRENTLY public.<tabla>;      -- las 34 frias
+--   REINDEX INDEX CONCURRENTLY public.<indice>;     -- sales_invoices, 1 x 1
+-- CONCURRENTLY es obligatorio: sin el, el REINDEX toma ACCESS EXCLUSIVE y con
+-- seis crons escribiendo cada minuto se reproduce el outage del 2026-07-08.
+-- Y como CONCURRENTLY no puede correr dentro de una transaccion, NO pasa por
+-- apply_migration (que envuelve todo en BEGIN/COMMIT) — se ejecuto por
+-- execute_sql, una sentencia por llamada.
+--
+-- Orden de ejecucion usado: 58 indices frios primero, despues products e
+-- inventory, y sales_invoices (355 MB, 7 indices) al final indice por indice,
+-- dejando para el ultimo los tres trigram `_norm` que sostienen la busqueda de
+-- facturas en 313 ms.
+--
+-- ── PASO 2 (ya verificado) ──────────────────────────────────────────────────
+-- Un REINDEX CONCURRENTLY interrumpido deja un indice invalido que Postgres
+-- DEJA DE USAR EN SILENCIO. Verificado post-reindex, ambos en cero:
+--   SELECT ... FROM pg_index WHERE NOT indisvalid;              → 0 filas
+--   SELECT count(*) ... WHERE relname LIKE '%_ccnew%';          → 0
+--
+-- ── PASO 3 (este archivo) ───────────────────────────────────────────────────
+-- Recien ahora se registra la version nueva. Hacer esto ANTES del REINDEX
+-- apagaria la advertencia sin arreglar nada: seria tapar el testigo.
+
+SET lock_timeout = '5s';
+
+ALTER DATABASE postgres REFRESH COLLATION VERSION;

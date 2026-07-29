@@ -16,8 +16,41 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.208.0';
+export const APP_VERSION = '2.209.0';
 
+// v2.209.0 — los dos hallazgos laterales de C4, corregidos y medidos.
+//
+// 1. SLOTS DE CONEXION. Los 13 crons de sync por minuto compartian el horario
+// EXACTO '* 12-23,0-5 * * *', sin desfase, y cron.max_running_jobs=32, asi que
+// pg_cron los lanzaba a los 13 a la vez — cada job es un background worker con
+// su propia conexion. Con max_connections=60 y 52 ya en uso (42 IDLE: Storage
+// API retiene 15, PostgREST 13), los ~8 libres se agotaban y el que llegaba
+// tarde recibia "FATAL: remaining connection slots are reserved...". Esa era la
+// causa medida de los 375 fallos de cron.
+// Los 13 llamaban a la MISMA edge function, solo cambiaba el body, asi que se
+// consolidaron en un job que hace los 13 net.http_post en una sesion. Funciona
+// porque net.http_post es asincrono: encola en net.http_request_queue y retorna,
+// y el worker de pg_net hace el HTTP. Medido: succeeded, 13 rows en 53 ms, UNA
+// conexion. La frecuencia no cambio.
+// Conexiones libres 8 → 18; crons fallando en una ventana de 15 min: 0.
+//
+// 2. COLLATION VERSION MISMATCH. datcollversion 153.120 contra glibc real
+// 153.121 — Supabase actualizo la imagen base y con ella glibc. Emitia un
+// WARNING en CADA conexion nueva (log inservible) y dejaba en duda el orden de
+// los indices de texto: si el salto cambio el orden de alguna cadena, un indice
+// puede devolver resultados INCOMPLETOS en comparaciones de rango, sin error.
+// Corregido en tres pasos, en este orden — invertirlo apaga el aviso sin
+// arreglar nada: REINDEX CONCURRENTLY de los 71 indices colacionables (151 MB
+// en 37 tablas) → verificar que ninguno quedo invalido (un CONCURRENTLY
+// interrumpido deja un indice que Postgres deja de usar EN SILENCIO) → ALTER
+// DATABASE REFRESH COLLATION VERSION. Los tres trigram _norm de sales_invoices
+// se dejaron para el final.
+// Medido: 153.121 = 153.121, 0 indices invalidos de 71, y la busqueda de
+// facturas sigue sobre el trigram reconstruido (84 ms en caliente).
+//
+// Sigue pendiente y NO es de codigo: los pools idle de Storage/PostgREST son
+// internos de Supabase; se atacan con Supavisor en modo transaccion (dashboard).
+//
 // v2.208.0 — el modal de nuevo conteo estaba aplastado a un cuarto de su ancho.
 //
 // El SegmentedControl del alcance iba envuelto en un `md:grid-cols-2`. Pero en

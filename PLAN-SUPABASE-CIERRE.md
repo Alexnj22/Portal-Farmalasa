@@ -4,13 +4,13 @@ Continuación de `PLAN-SUPABASE-100-2026-07-29.md`. Ahí quedaron cerrados F1, F
 F3.1, F3.4, F4.1, F4.3, F4.4 y F4.6. Advisor de seguridad **110 → 86**;
 `rls_policy_always_true` de **28 → 2**.
 
-## Estado al 2026-07-29 (v2.205.0)
+## Estado al 2026-07-29 (v2.209.0)
 
 | | |
 |---|---|
 | ✅ Cerrado | P1, P3+P5, P4, F1, F2, F3.1/3.4, F4.1/4.3/4.4/4.6, **C1, C3, C4, C5** |
 | ⏸️ Tu decisión | **C2** (rebaseline de migraciones), rotar el secreto de cron, PITR |
-| 📋 Documentado, sin ejecutar | slots de conexión al 87%, `collation version mismatch` (ambos en C4) |
+| ✅ Cerrado (v2.209.0) | slots de conexión al 87%, `collation version mismatch` (ambos en C4) |
 | 📋 Proyecto | POS |
 
 Queda **un solo punto técnico abierto (C2)**, y es de decisión, no de ejecución.
@@ -260,10 +260,46 @@ la BD registre la nueva versión. Dos consecuencias:
    (153.120 → 153.121), donde históricamente el orden no cambia — por eso no es
    una emergencia, pero tampoco algo para dejar indefinido.
 
-Arreglo: `REINDEX` de los índices de texto y después
-`ALTER DATABASE postgres REFRESH COLLATION VERSION`. Toca tablas calientes, así
-que va en la ventana 06:00–11:59 UTC. **No ejecutado — documentado por decisión
-del usuario el 2026-07-29.**
+### ✅ Ambos hallazgos CERRADOS (v2.209.0)
+
+**Slots** — `20260729_c4_consolidar_crons_sync_1min.sql`. Los 13 jobs compartían
+el horario **exacto** `* 12-23,0-5 * * *`, sin desfase, y `cron.max_running_jobs=32`,
+así que pg_cron los lanzaba a los 13 a la vez — cada uno un background worker con
+su propia conexión. Los 13 llamaban a la **misma** edge function, solo cambiaba el
+body. Consolidados en un job que hace los 13 `net.http_post` en una sesión:
+funciona porque `net.http_post` es asíncrono (encola en `net.http_request_queue`
+y retorna; el worker de pg_net hace el HTTP). **Medido: `succeeded`, 13 rows en
+53 ms, una conexión.** La frecuencia no cambió.
+
+**Collation** — `20260729_c4_refresh_collation_version.sql`, en tres pasos y en
+este orden (invertirlo apaga el aviso sin arreglar nada):
+1. `REINDEX ... CONCURRENTLY` de los 71 índices colacionables (151 MB, 37 tablas):
+   34 tablas frías por tabla, después `products` e `inventory`, y `sales_invoices`
+   (355 MB) índice por índice, dejando al final los tres trigram `_norm`.
+   `CONCURRENTLY` no corre dentro de transacción → no pasa por `apply_migration`,
+   va por `execute_sql` una sentencia por llamada.
+2. Verificar que ninguno quedó inválido — un `CONCURRENTLY` interrumpido deja un
+   índice que Postgres **deja de usar en silencio**. `NOT indisvalid` → 0,
+   `%_ccnew%` → 0.
+3. `ALTER DATABASE postgres REFRESH COLLATION VERSION`.
+
+**Resultado medido:**
+
+| | antes | después |
+|---|---|---|
+| conexiones libres | 8 | **18** |
+| en uso / idle | 52 / 42 | **42 / 32** |
+| crons fallando (ventana 15 min) | — | **0** |
+| `datcollversion` | 153.120 ≠ 153.121 | **153.121 = 153.121** |
+| índices inválidos | — | **0 de 71** |
+
+La búsqueda de facturas sigue sobre el trigram reconstruido
+(`Bitmap Index Scan on idx_si_cliente_norm_trgm`, 84 ms en caliente).
+
+**Lo que sigue pendiente y NO es de código:** los 15 slots idle de Storage API y
+los 13 de PostgREST son pools internos de Supabase, no configurables por SQL. Se
+atacan con **Supavisor en modo transacción** (Dashboard → Settings → Database →
+Connection pooling): es cambio de cadena de conexión + redeploy, no migración.
 
 ---
 

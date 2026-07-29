@@ -13,6 +13,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatHourAMPM, timeToMins } from '../../utils/scheduleHelpers';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -453,12 +454,11 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                                     onChange={t => setCurrentForm(f => ({ ...f, name: t }))}
                                     label="Tipo de turno" className="mb-2" />
                             </div>
-                            <input aria-label="Nombre personalizado del turno"
-                                type="text"
+                            <PortalInput
+                                aria-label="Nombre personalizado del turno"
                                 value={currentForm.name}
                                 onChange={e => setCurrentForm(f => ({ ...f, name: e.target.value }))}
                                 placeholder={`Nombre personalizado (ej: ${autoName})`}
-                                className="w-full bg-surface-card backdrop-blur-md border border-border-card rounded-xl px-3 py-2.5 text-body-xl font-semibold text-content placeholder-content-3 outline-none focus:border-brand/40 focus:bg-surface-card transition-all"
                             />
                         </div>
 

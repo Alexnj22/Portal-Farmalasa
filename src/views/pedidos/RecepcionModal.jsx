@@ -860,9 +860,12 @@ export default function RecepcionModal({
                                             </div>
 
                                             <div className="relative">
-                                                <input aria-label="Cantidad facturada" type="number" min={0} value={e.fQty}
+                                                <PortalInput
+                                                    aria-label="Cantidad facturada" compact
+                                                    tono={eDiff ? 'warning' : 'chart-9'}
+                                                    type="number" min={0} value={e.fQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-chart-9-text focus:border-chart-9'}`}
+                                                    inputClassName="text-center font-bold tabular-nums"
                                                 />
                                                 {eDiff && delta !== 0 && (
                                                     <Badge variant={delta < 0 ? 'danger' : 'success'} tone="solid" size="sm" uppercase={false}
@@ -880,9 +883,12 @@ export default function RecepcionModal({
                                                 />
                                             </div>
 
-                                            <input aria-label="Cantidad recibida" type="number" min={0} value={e.sQty}
+                                            <PortalInput
+                                                aria-label="Cantidad recibida" compact
+                                                tono={eDiff ? 'warning' : 'chart-9'}
+                                                type="number" min={0} value={e.sQty}
                                                 onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${eDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-chart-3-text focus:border-chart-3'}`}
+                                                inputClassName="text-center font-bold tabular-nums"
                                             />
 
                                             <Button variant="ghost" icon={Trash2} iconOnly onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))} />
@@ -1078,7 +1084,7 @@ export default function RecepcionModal({
                 )}
 
                 <div className="divide-y divide-divider">
-                    {visibleRows.map((r, rowIdx) => {
+                    {visibleRows.map((r) => {
                         const erpFactor  = Number(r.factor) || 1;
                         const dispFactor = Number(r.dispatch_factor) || erpFactor;
                         const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
@@ -1136,11 +1142,12 @@ export default function RecepcionModal({
                                     </div>
 
                                     <div className="relative">
-                                        <input aria-label="Cantidad facturada" type="number" min={0} value={fQty}
-                                            data-qty-row={rowIdx} data-qty-col="fqty"
+                                        <PortalInput
+                                            aria-label="Cantidad facturada" compact
+                                            tono={hasDiff ? 'warning' : 'chart-9'}
+                                            type="number" min={0} value={fQty}
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
-                                            onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
-                                            className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-9/30 bg-surface-card text-content-2 focus:border-chart-9'}`}
+                                            inputClassName="text-center font-bold tabular-nums"
                                         />
                                         {hasDiff && (
                                             <Badge variant={delta < 0 ? 'danger' : 'success'} tone="solid" size="sm" uppercase={false}
@@ -1158,11 +1165,12 @@ export default function RecepcionModal({
                                         />
                                     </div>
 
-                                    <input aria-label="Cantidad recibida" type="number" min={0} value={sQty}
-                                        data-qty-row={rowIdx} data-qty-col="sqty"
+                                    <PortalInput
+                                        aria-label="Cantidad recibida" compact
+                                        tono={hasDiff ? 'warning' : 'chart-9'}
+                                        type="number" min={0} value={sQty}
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
-                                        onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-body-xl font-bold tabular-nums ${hasDiff ? 'border-warning bg-warning/10 text-warning-text' : 'border-chart-3/30 bg-surface-card text-content-2 focus:border-chart-3'}`}
+                                        inputClassName="text-center font-bold tabular-nums"
                                     />
 
                                     <Button

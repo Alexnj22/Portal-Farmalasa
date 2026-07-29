@@ -4,6 +4,7 @@ import Button from '../../../components/common/Button';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
 import { updateStockConfig } from '../../../data/stockParams';
+import PortalInput from '../../../components/common/PortalInput';
 
 // Definido a nivel de módulo — dentro del componente, React lo recreaba en cada render
 // y desmontaba/remontaba el <input>, perdiendo el foco tras cada tecla (M-4).
@@ -11,9 +12,12 @@ const Field = ({ form, set, label, k, unit, min = 0, max, step = 1 }) => (
     <div className="flex items-center justify-between gap-3">
         <span className="text-label text-content-2 font-medium flex-1">{label}</span>
         <div className="flex items-center gap-1.5">
-            <input aria-label="Valor del parámetro" type="number" min={min} max={max} step={step} value={form[k] ?? 0}
-                onChange={e => set(k, e.target.value)}
- className="w-16 text-right text-body-xl font-bold text-content bg-surface-card border border-divider rounded-lg px-2 py-1 focus:border-brand" />
+            <PortalInput
+                aria-label="Valor del parámetro" compact className="w-16"
+                type="number" min={min} max={max} step={step}
+                value={form[k] ?? 0} onChange={e => set(k, e.target.value)}
+                inputClassName="text-right font-bold"
+            />
             {unit && <span className="text-caption text-content-3 shrink-0 w-8">{unit}</span>}
         </div>
     </div>

@@ -113,13 +113,12 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         />
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 block">Día de Vencimiento (1-31)</label>
-                        <input aria-label="Día de vencimiento del mes" 
-                            required
-                            type="number" min="1" max="31" 
- className={`w-full px-4 py-3.5 rounded-2xl bg-surface-card border border-divider transition-all font-bold text-content shadow-sm ${config.ring}`}
+                        <PortalInput
+                            aria-label="Día de vencimiento del mes" required
+                            type="number" min="1" max="31"
                             placeholder="Ej: 15"
-                            value={currentData.dueDay || ""} 
-                            onChange={(e) => handleChange('dueDay', parseInt(e.target.value, 10))} 
+                            value={currentData.dueDay || ""}
+                            onChange={(e) => handleChange('dueDay', e.target.value)}
                         />
                     </div>
                 </div>

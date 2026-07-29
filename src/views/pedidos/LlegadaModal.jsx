@@ -10,6 +10,7 @@ import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -327,11 +328,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                         placeholder="¿De qué sucursal?"
                                                     />
                                                 </div>
-                                                <input aria-label="Número de caja"
+                                                <PortalInput
+                                                    aria-label="Número de caja" compact className="w-32"
+                                                    tono={extraError && !d.cajaNum?.trim() ? 'danger' : undefined}
                                                     value={d.cajaNum ?? ''}
                                                     onChange={e => { setExtraField(i, 'cajaNum', e.target.value); setExtraError(null); }}
                                                     placeholder="# de caja"
- className={`w-32 text-body-xl rounded-lg border px-2.5 py-1.5 bg-surface-card ${extraError && !d.cajaNum?.trim() ? 'border-danger' : 'border-divider'}`}
                                                 />
                                             </div>
                                         )}

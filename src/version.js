@@ -16,7 +16,19 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.174.0';
+export const APP_VERSION = '2.175.0';
+
+// v2.175.0 — 13 inputs mas al canonico. input-a-mano 28 → 15.
+//
+// Las celdas de RecepcionModal (4) y TabCatalogo (4) tenian el tinte por
+// estado escrito en un ternario dentro del className; ahora sale de `tono`.
+// Las de ancho fijo (ConfigPanel `w-16`, WidgetInventorySearch `w-10`,
+// LlegadaModal `w-32`) usan `className` en el contenedor, que es para lo que
+// se agrego.
+//
+// Dos variables quedaron muertas al migrar y las agarro el lint: `inp` de
+// TabCatalogo —era la paleta de la celda escrita a mano, que el canonico ya
+// trae— y el `rowIdx` de RecepcionModal.
 
 // v2.174.0 — `tarjeta-a-mano` en CERO, y el porque de las ultimas 10.
 //

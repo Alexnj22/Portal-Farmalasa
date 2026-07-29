@@ -28,6 +28,7 @@ import {
     updateProductDevolutivo, updateProductFoto, fetchProductPreciosMarginPage, fetchProductCounts,
     fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
 } from '../../data/productos';
+import PortalInput from '../../components/common/PortalInput';
 
 
 const PRICE_FIELDS = [
@@ -324,8 +325,6 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     }, [items, preset]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useImperativeHandle(ref, () => ({ save }));
-
- const inp = 'bg-surface-card-hover border-divider text-content-2 placeholder:text-content-3';
     const numCls = 'text-content-3';
     const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
     const addCls = 'text-content-3 hover:text-brand-text';
@@ -349,17 +348,22 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                     {items.map((item, idx) => (
                         <div key={item._key} className="flex items-center gap-1.5">
                             <span className={`text-micro font-bold w-3 text-right shrink-0 ${numCls}`}>{idx + 1}</span>
-                            <input aria-label="Nombre del principio activo"
+                            <PortalInput
+                                aria-label="Nombre del principio activo"
                                 value={item.nombre}
                                 onChange={e => updateItem(item._key, 'nombre', e.target.value)}
                                 placeholder="Nombre del principio"
- className={`flex-1 min-w-0 px-2 py-1.5 border rounded-lg text-body-xl transition-colors ${inp}`}
+                                compact
+                                className="flex-1 min-w-0"
                             />
-                            <input aria-label="Concentración del principio activo"
+                            <PortalInput
+                                aria-label="Concentración del principio activo"
                                 value={item.concentracion || ''}
                                 onChange={e => updateItem(item._key, 'concentracion', e.target.value)}
                                 placeholder="Cant."
- className={`w-[58px] shrink-0 px-2 py-1.5 border rounded-lg text-body-xl text-center transition-colors ${inp}`}
+                                compact
+                                inputClassName="text-center"
+                                className="w-[58px] shrink-0"
                             />
                             <Button variant="ghost" size="xs" icon={X} iconOnly className={rmBtn} onClick={() => removeItem(item._key)} />
                         </div>
@@ -509,10 +513,6 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
     const labelCls = 'text-content-3';
 
-
-    const inp = (sala) =>
- `bg-surface-card-hover text-content-2 font-bold ${sala ? 'border-divider' : 'border-warning/30'}`;
-
     return (
         <div className="space-y-2">
             {locs.map((loc, i) => {
@@ -567,22 +567,26 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                             <div className="flex gap-2 flex-1">
                                 <div className="flex-1">
                                     <p className={`text-micro font-semibold mb-1 ${labelCls}`}>N°</p>
-                                    <input aria-label={isSala ? "N° de ubicación en sala" : "N° de ubicación en bodega"}
+                                    <PortalInput
+                                        aria-label={isSala ? "N° de ubicación en sala" : "N° de ubicación en bodega"}
                                         value={isSala ? loc.numero : loc.bodega_numero}
                                         onChange={e => setField(i, isSala ? 'numero' : 'bodega_numero', e.target.value)}
-                                        maxLength={4}
                                         placeholder="—"
-                                        className={`w-full px-2 py-1.5 border rounded-lg text-body-xl text-center font-bold transition-colors ${inp(isSala)}`}
+                                        maxLength={4}
+                                        compact
+                                        inputClassName="text-center font-bold"
                                     />
                                 </div>
                                 <div className="flex-1">
                                     <p className={`text-micro font-semibold mb-1 ${labelCls}`}>Peldaño</p>
-                                    <input aria-label={isSala ? "Peldaño en sala" : "Peldaño en bodega"}
+                                    <PortalInput
+                                        aria-label={isSala ? "Peldaño en sala" : "Peldaño en bodega"}
                                         value={isSala ? loc.peldano : loc.bodega_peldano}
                                         onChange={e => setField(i, isSala ? 'peldano' : 'bodega_peldano', e.target.value)}
-                                        maxLength={4}
                                         placeholder="—"
-                                        className={`w-full px-2 py-1.5 border rounded-lg text-body-xl text-center font-bold transition-colors ${inp(isSala)}`}
+                                        maxLength={4}
+                                        compact
+                                        inputClassName="text-center font-bold"
                                     />
                                 </div>
                             </div>

@@ -14,6 +14,7 @@ import {
   fetchInventoryByProductIds,
 } from '../../data/inventory';
 import { insertVentaPerdida } from '../../data/ventasPerdidas';
+import PortalInput from '../../components/common/PortalInput';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -216,12 +217,10 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
           <Badge variant="success" size="sm" icon={CheckCircle2} uppercase={false}>OK</Badge>
         ) : formOpen ? (
           <div className="shrink-0 flex items-center gap-1">
-            <input
-              aria-label="Cantidad a solicitar"
-              type="number" min="1"
-              value={qty}
-              onChange={e => setQty(e.target.value)}
-              className="w-10 px-1.5 py-0.5 rounded-lg border border-divider text-body-xl font-black text-content-2 text-center outline-none focus:border-danger"
+            <PortalInput
+                aria-label="Cantidad a solicitar" compact className="w-12"
+                type="number" min="1" value={qty} onChange={e => setQty(e.target.value)}
+                inputClassName="text-center font-black"
             />
             <Button variant="destructive" disabled={rState === 'saving'} onClick={submit}>{rState === 'saving' ? '…' : 'OK'}</Button>
             <Button variant="ghost" icon={X} iconOnly onClick={() => setFormOpen(false)} />

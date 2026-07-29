@@ -16,7 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.200.0';
+export const APP_VERSION = '2.201.0';
+
+// v2.201.0 — el ciclico se programa solo el 15, y la lista filtra por sucursal.
+//
+// **Un CHECK bloqueaba TODO el ciclico.** conteos_inventario_scope_type_check
+// nunca incluyo 'CICLICO', asi que cualquier intento de crear ese conteo —el
+// programado y el de la vista— reventaba al insertar. No lo detecte en v2.194.0
+// porque solo habia probado el sorteo de la muestra, nunca la creacion. Lo
+// encontro el primer test real de la funcion programada, en transaccion
+// revertida. De paso sale 'APROBADO' del CHECK de status: nadie lo escribe,
+// aprobar_conteo_inventario pone 'CERRADO'.
+//
+// - `crear_conteos_ciclicos_programados()` + cron `0 15 15 * *` (15 de cada mes,
+//   9am El Salvador). El 15 y no el 1 porque ese dia ya corren el recalculo de
+//   MIN/MAX y el cierre de ventas.
+// - Que sucursales entran lo decide `branches.conteo_ciclico_activo`, no el
+//   codigo: las 6 de venta en true, Bodega en false (ellos llevan su control).
+//   Cambiarlo es un UPDATE, no un deploy. El tamano tambien es por sucursal.
+// - Salta la sucursal que ya tenga un conteo abierto y lo registra, en vez de
+//   romper la corrida. Avisa a la sucursal con notify_branch.
+// - El guard interno era `auth.role() = 'service_role'`, que habria roto el cron
+//   en silencio (pg_cron no tiene contexto de request, auth.role() es NULL). El
+//   control lo hacen los GRANT.
+// - La lista de conteos gana selector de sucursal. Con scope BRANCH queda fijado
+//   y deshabilitado en la propia, para que se vea de que sucursal son los datos.
+
 
 // v2.200.0 — 17 cuentas auth duplicadas borradas, FK sin indice, bucket sin limites.
 //

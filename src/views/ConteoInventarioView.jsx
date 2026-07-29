@@ -3,7 +3,8 @@ import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import TabBarAction from '../components/common/TabBarAction';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet } from 'lucide-react';
+import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2 } from 'lucide-react';
+import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
@@ -43,24 +44,42 @@ const fmtMoney = (n) => n == null ? '—' : `$${Number(n).toFixed(2)}`;
 
 export default function ConteoInventarioView() {
     const navigate = useNavigate();
-    const { hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const canEdit = hasPermission('conteo_inventario', 'can_edit');
     const conteos = useStaffStore((s) => s.conteosInventario);
     const loading = useStaffStore((s) => s.conteosInventarioLoading);
     const fetchConteosInventario = useStaffStore((s) => s.fetchConteosInventario);
+    const branches = useStaffStore((s) => s.branches);
+
+    // El scope del permiso ya lo aplica RLS: con BRANCH, la consulta solo trae
+    // los conteos de su sucursal. Acá el selector es para el que ve TODAS y
+    // necesita mirar una sola — con BRANCH queda fijado y deshabilitado, para
+    // que se vea de qué sucursal son los datos y no parezca "todo el portal".
+    const isBranchScoped = getScope('conteo_inventario') === 'BRANCH';
 
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [branchFilter, setBranchFilter] = useState(isBranchScoped ? String(user?.branchId || '') : '');
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
+
+    const branchOpts = useMemo(() => {
+        const conIdsUsados = new Set((conteos || []).map((c) => String(c.branch_id)));
+        return (branches || [])
+            .filter((b) => conIdsUsados.has(String(b.id)) || !isBranchScoped)
+            .map((b) => ({ value: String(b.id), label: b.name }));
+    }, [branches, conteos, isBranchScoped]);
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
 
     const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
-        if (!search.trim()) return { results: conteos, isFuzzy: false };
-        return smartFilter(search, conteos, (c) => [c.branches?.name]);
-    }, [conteos, search]);
+        const base = branchFilter
+            ? (conteos || []).filter((c) => String(c.branch_id) === branchFilter)
+            : conteos;
+        if (!search.trim()) return { results: base, isFuzzy: false };
+        return smartFilter(search, base, (c) => [c.branches?.name]);
+    }, [conteos, search, branchFilter]);
 
     // D3.9 (2026-07-27): barra reescrita a mano → canónico.
     const filtersContent = (
@@ -68,10 +87,28 @@ export default function ConteoInventarioView() {
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar por sucursal..."
-            trailingActions={canEdit && (
-                <TabBarAction icon={Plus} variant="primary" onClick={() => setShowModal(true)}>
-                    Nuevo Conteo
-                </TabBarAction>
+            trailingActions={(
+                <>
+                    {/* Los filtros van a la derecha, con el resto de las acciones
+                        (DESIGN.md — toolbar de widget). En táctil ViewTabBar los
+                        recoge solo en la hoja inferior. */}
+                    <div className="w-52 shrink-0">
+                        <LiquidSelect
+                            value={branchFilter || null}
+                            onChange={(v) => setBranchFilter(v || '')}
+                            options={branchOpts}
+                            placeholder="Todas las sucursales"
+                            icon={Building2}
+                            disabled={isBranchScoped}
+                            clearable={!isBranchScoped}
+                        />
+                    </div>
+                    {canEdit && (
+                        <TabBarAction icon={Plus} variant="primary" onClick={() => setShowModal(true)}>
+                            Nuevo Conteo
+                        </TabBarAction>
+                    )}
+                </>
             )}
         />
     );

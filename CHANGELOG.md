@@ -258,6 +258,40 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.201.0 — el cíclico se programa solo el 15, y la lista filtra por sucursal.
+
+**Un CHECK bloqueaba todo el cíclico.** `conteos_inventario_scope_type_check`
+nunca incluyó `'CICLICO'`, así que cualquier intento de crear ese conteo —el
+programado y el que se crea desde la vista— reventaba al insertar. No se detectó
+en v2.194.0 porque solo se había probado el sorteo de la muestra, nunca la
+creación del conteo; lo encontró el primer test real de la función programada,
+corriendo en una transacción revertida. De paso sale `'APROBADO'` del CHECK de
+status: nadie lo escribe, `aprobar_conteo_inventario` pone `'CERRADO'`.
+
+**Programación mensual:**
+
+- `crear_conteos_ciclicos_programados()` + cron `0 15 15 * *` — el 15 de cada mes
+  a las 9am de El Salvador. El 15 y no el 1 porque ese día ya corren el recálculo
+  de MIN/MAX y el cierre de ventas del mes.
+- Qué sucursales entran lo decide `branches.conteo_ciclico_activo`, no el código:
+  las 6 de venta en `true`, **Bodega en `false`** (ellos llevan su propio
+  control). Cambiarlo es un UPDATE, no un deploy. El tamaño también es por
+  sucursal (`conteo_ciclico_tamano`, default 200).
+- Salta la sucursal que ya tenga un conteo abierto y lo deja registrado, en vez
+  de romper la corrida. Avisa a la sucursal con `notify_branch`.
+- El guard interno era `auth.role() = 'service_role'`, que habría roto el cron en
+  silencio: pg_cron ejecuta SQL directo, sin contexto de request, así que
+  `auth.role()` es NULL. El control lo hacen los GRANT, que es donde corresponde.
+
+Probado de punta a punta en transacción revertida: crea los 6 conteos, 200
+productos cada uno, composición correcta por sucursal, Bodega fuera.
+
+**Selector de sucursal** en la lista de conteos, a la derecha con el resto de las
+acciones. Con scope `BRANCH` queda fijado y deshabilitado en la propia sucursal,
+para que se vea de qué sucursal son los datos y no parezca "todo el portal".
+
+---
+
 ## v2.194.0 — conteo cíclico mensual: 200 productos por sucursal.
 
 En vez de un evento anual de ~4,800 líneas, una muestra chica todos los meses:

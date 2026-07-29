@@ -16,7 +16,48 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.168.0';
+export const APP_VERSION = '2.169.0';
+
+// v2.169.0 — `chart-retirado` y `chip-a-mano` a CERO, y el lint tambien.
+//
+// **chart-retirado 430 → 0.** Migrados los tres categoricos retirados
+// (chart-2/5/7 → success/chart-9/warning): 424 referencias en 51 archivos.
+// Verificado POR TOKEN en los cuatro temas: los seis alias resuelven identico
+// a su destino, asi que es pixel-igual.
+//
+// **`chart-8` no estaba retirado.** Al ir a migrar sus 107 referencias quedo a
+// la vista que es el NEUTRO de la paleta y esta vivo: `--chart-8-solid` tiene
+// valor propio (#64748b, no alias), el `neutral` de `Badge` se apoya en el, y
+// tiene familia completa de glows. Marcarlo retirado obligaba a mapearlo a
+// `content-3`, que es un color de TEXTO — usarlo de fondo habria sido cambiar
+// el significado para callar al gate. Sale de la lista.
+//
+// **El renombrado colapso claves en 7 archivos y eslint lo atrapo.** Los
+// canonicos listaban `chart-N` y el semantico por separado; al renombrar
+// quedaron duplicados, y la entrada ex-chart GANABA por venir ultima. Tres
+// valores no eran equivalentes:
+//   · Badge      warning  /[0.14] → /[0.12]
+//   · SegmentedControl  success y warning perdian su variante `-solid`
+//   · Switch            idem
+// Al quitar las redundantes mandan otra vez los semanticos. El resto eran
+// byte-identicas.
+//
+// **chip-a-mano 7 → 0.** `getExpiryBadge` devuelve la VARIANTE en vez de
+// clases sueltas —dos call sites la pegaban dentro de un `<span>` propio, dos
+// chips a mano del mismo estado—; RangeDatePicker, VacationPlan, TabMinMax x3
+// y BranchesView al canonico. En BranchesView el ternario tenia dos ramas de
+// TEXTO y una de chip: separadas, cada una es lo que es.
+//
+// **Lint en CERO** (estaba en 2, preexistentes):
+//   · `useThemeSync` — `ready` se DERIVA de para que usuario se cargo el tema,
+//     en vez de un setState sincrono en el effect. Cierra ademas una carrera
+//     real: con un fetch en vuelo y cambio de usuario, la respuesta vieja
+//     aplicaba el tema del anterior.
+//   · `MenuSearchModal` — la expresion del array de dependencias extraida a
+//     `claveSeleccion`.
+//
+// Verificado en vivo: 16 vistas sin errores ni fondos sin resolver, el tema
+// persiste tras recargar (probado por la UI, no por atributo), y ⌘K filtra.
 
 // v2.168.0 — el modulo Promociones se retira tambien de la BD y del servidor.
 //

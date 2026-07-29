@@ -6,7 +6,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, ChevronRight, Search, Printer, CheckCircle2, ShieldCheck, Loader2,
-    Plus, X, Package, FlaskConical, History, Radio, Pencil,
+    Plus, X, Package, FlaskConical, History, Radio, Pencil, PackageX, EyeOff,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -14,7 +14,6 @@ import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidModal from '../../components/common/LiquidModal';
-import ConfirmModal from '../../components/common/ConfirmModal';
 import PromptModal from '../../components/common/PromptModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -22,25 +21,31 @@ import { useToastStore } from '../../store/toastStore';
 import { printHojaConteo, printResultadosConteo } from '../../utils/conteoInventarioPrint';
 import {
     searchActiveProductsForConteo, fetchProductPresentacionesForConteo, fetchErpSucursalIdsForBranch,
-    fetchInventoryLotesForProduct, fetchProductCostoActivo,
+    fetchInventoryLotesForProduct,
 } from '../../data/conteoInventario';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
+import Switch from '../../components/common/Switch';
+import Notice from '../../components/common/Notice';
 
 const PAGE_SIZE = 25;
 
+// `variante` es lo que consume Badge. Faltaba: la cabecera pasaba
+// `variant={es.variante}` contra un mapa que solo tenía bg/text/label, así que
+// el badge de estado se renderizaba siempre con la variante por defecto.
+// 'APROBADO' no está porque nunca existió: aprobar escribe 'CERRADO'.
 const ESTADO_CFG = {
-    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',   label: 'Borrador' },
-    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-warning-text',   label: 'En Progreso' },
-    FINALIZADO:  { bg: 'bg-chart-1/10',    text: 'text-chart-1-text',    label: 'Finalizado' },
-    APROBADO:    { bg: 'bg-success/10', text: 'text-success-text', label: 'Aprobado' },
-    CERRADO:     { bg: 'bg-success/10', text: 'text-success-text', label: 'Cerrado' },
+    BORRADOR:    { label: 'Borrador',    variante: 'neutral' },
+    EN_PROGRESO: { label: 'En Progreso', variante: 'warning' },
+    FINALIZADO:  { label: 'Finalizado',  variante: 'chart-1' },
+    CERRADO:     { label: 'Cerrado',     variante: 'success' },
 };
 
 const FILTRO_PILLS = [
     { key: 'TODOS', label: 'Todos' },
     { key: 'PENDIENTES', label: 'Pendientes' },
     { key: 'DIFERENCIA', label: 'Con diferencia' },
+    { key: 'SIN_UBICAR', label: 'No ubicados' },
 ];
 
 const COLUMNS = [
@@ -96,7 +101,12 @@ function LiveBadge() {
     );
 }
 
-function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, currentUserName }) {
+// En modo ciego el contador no puede ver ni el sistema ni la diferencia: con la
+// diferencia a la vista, el sistema se despeja restando. Ocultar solo una de las
+// dos columnas sería un ciego de mentira.
+const OCULTO = '•••';
+
+function ItemRow({ item, index, editable, ciego, onSave, onShowHistory, onEditLote, currentUserName }) {
     const { showToast } = useToastStore();
     const [fisico, setFisico] = useState(item.fisico_cantidad ?? '');
     const [nota, setNota] = useState(item.nota ?? '');
@@ -170,6 +180,28 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
         }
     };
 
+    // "No ubicado" ≠ "no lo he contado todavía". El primero es un hallazgo del
+    // conteo (lo busqué, no está: su faltante es real); el segundo es trabajo
+    // pendiente. SIN_UBICAR era un estado válido en la BD y un filtro en la
+    // RPC, pero la UI solo sabía escribir CONTADO y PENDIENTE.
+    const marcarNoUbicado = async () => {
+        if (!editable || saving) return;
+        setSaving(true);
+        try {
+            const result = await onSave(item.id, { fisicoCantidad: 0, nota: nota.trim() || null, estadoItem: 'SIN_UBICAR' });
+            lastSaved.current = { fisico: 0, nota: nota.trim() || null, estado: 'SIN_UBICAR' };
+            setFisico(0);
+            setSistema(result.sistema_cantidad);
+            setEstadoItem('SIN_UBICAR');
+            setContadoPorNombre(currentUserName);
+            setContadoAt(new Date().toISOString());
+        } catch (err) {
+            showToast('No se marcó el renglón', err.message, 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleFisicoKeyDown = (e) => {
         if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
         e.preventDefault();
@@ -187,6 +219,12 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
             <DataCell hideBelow="md">
                 <div className="flex items-center gap-1.5">
                     <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
+                    {/* El ERP separa el stock vencido en su propia área. Sin esta
+                        marca, esa fila y la del stock bueno se veían idénticas
+                        (mismo producto, presentación, lote y fecha) y el
+                        contador no sabía cuál de las dos estaba llenando. */}
+                    {item.is_vencidos && <Badge variant="danger" size="sm" className="shrink-0">Área vencidos</Badge>}
+                    {item.es_agregado_manual && <Badge variant="chart-9" size="sm" className="shrink-0">Agregado</Badge>}
                     {editable && (
                         <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
                     )}
@@ -199,28 +237,45 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 </div>
             </DataCell>
             <DataCell align="center">
-                <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema}</span>
-                    {isLive && <LiveBadge />}
+                {ciego ? (
+                    <span className="text-body-sm font-bold text-content-3 tabular-nums" title="Oculto: conteo ciego">{OCULTO}</span>
+                ) : (
+                    <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema}</span>
+                        {isLive && <LiveBadge />}
+                    </div>
+                )}
+            </DataCell>
+            <DataCell align="center">
+                <div className="flex items-center justify-center gap-1">
+                    <PortalInput
+                        aria-label="Cantidad física contada"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={fisico}
+                        onChange={(e) => setFisico(e.target.value)}
+                        placeholder="—"
+                        onKeyDown={handleFisicoKeyDown}
+                        onBlur={commit}
+                        readOnly={!editable}
+                        compact
+                        inputClassName="text-center text-body-xl font-bold"
+                        className="w-16"
+                    />
+                    {editable && (
+                        <Button variant="ghost" icon={PackageX} disabled={saving}
+                            title="No ubicado — lo busqué y no está en el anaquel"
+                            iconOnly onClick={marcarNoUbicado} />
+                    )}
                 </div>
             </DataCell>
             <DataCell align="center">
-                <PortalInput
-                    aria-label="Cantidad física contada"
-                    type="number"
-                    value={fisico}
-                    onChange={(e) => setFisico(e.target.value)}
-                    placeholder="—"
-                    onKeyDown={handleFisicoKeyDown}
-                    onBlur={commit}
-                    readOnly={!editable}
-                    compact
-                    inputClassName="text-center text-body-xl font-bold"
-                    className="w-16"
-                />
-            </DataCell>
-            <DataCell align="center">
-                <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                {ciego ? (
+                    <span className="text-body-sm font-black text-content-3 tabular-nums">{OCULTO}</span>
+                ) : (
+                    <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                )}
             </DataCell>
             <DataCell hideBelow="lg">
                 <PortalInput
@@ -237,7 +292,11 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
             </DataCell>
             <DataCell align="center">
                 <div className="flex flex-col items-center gap-0.5">
-                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-success" /> : <span className="text-content-3 text-micro">Pendiente</span>)}
+                    {estadoItem === 'SIN_UBICAR'
+                        ? <Badge variant="danger" size="sm" icon={PackageX}>No ubicado</Badge>
+                        : estadoItem === 'CONTADO'
+                            ? <CheckCircle2 size={14} className="text-success" />
+                            : <span className="text-content-3 text-micro">Pendiente</span>}
                     {contadoPorNombre && (
                         <Button variant="ghost" icon={History} title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`} onClick={() => onShowHistory(item)}>{contadoPorNombre}</Button>
                     )}
@@ -247,7 +306,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
     );
 }
 
-function ProductGroupRow({ product, index, expanded, onToggle }) {
+function ProductGroupRow({ product, index, expanded, ciego, onToggle }) {
     const dif = product.diferencia_total;
     return (
         <DataRow index={index} onClick={onToggle} className="cursor-pointer">
@@ -273,9 +332,19 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
                 </div>
             </DataCell>
-            <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.sistema_total}</span></DataCell>
+            <DataCell align="center">
+                <span className={`text-body-sm font-black tabular-nums ${ciego ? 'text-content-3' : 'text-content-2'}`}>
+                    {ciego ? OCULTO : product.sistema_total}
+                </span>
+            </DataCell>
             <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
-            <DataCell align="center"><span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span></DataCell>
+            <DataCell align="center">
+                {ciego ? (
+                    <span className="text-body-sm font-black text-content-3 tabular-nums">{OCULTO}</span>
+                ) : (
+                    <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                )}
+            </DataCell>
             <DataCell hideBelow="lg" />
             <DataCell align="center">
                 <span className={`text-caption font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-success' : 'text-content-3'}`}>
@@ -389,6 +458,76 @@ function EditLoteModal({ item, onClose, onSave }) {
     );
 }
 
+// Finalizar dejó de ser un sí/no. Antes, los renglones nunca tocados quedaban
+// con diferencia NULL: fuera de total_diferencias y fuera de la valuación. Un
+// conteo donde se contó el 5% se finalizaba y salía "sin diferencias". Qué son
+// esos pendientes es una decisión contable, y tiene que tomarla una persona.
+const TRATO_PENDIENTES = [
+    { value: 'EXCLUIR', label: 'Dejarlos fuera del cálculo' },
+    { value: 'CERO', label: 'Darlos por no ubicados (físico 0)' },
+];
+
+function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
+    const [trato, setTrato] = useState('EXCLUIR');
+
+    // El default se restablece al salir, no con un efecto sobre `open`:
+    // "excluir" es la opción conservadora y tiene que ser deliberado elegir la
+    // otra cada vez, incluso si el modal se abre dos veces seguidas.
+    const salir = (fn) => () => { setTrato('EXCLUIR'); fn(); };
+    const handleClose = salir(onClose);
+    const handleConfirm = () => { const comoCero = trato === 'CERO'; setTrato('EXCLUIR'); onConfirm(comoCero); };
+
+    const hayPendientes = pendientes > 0;
+
+    return (
+        <LiquidModal open={open} onClose={handleClose} maxWidth="max-w-md" ariaLabel="Finalizar conteo">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
+                <div>
+                    <h3 className="font-black text-content text-subtitle">Finalizar Conteo</h3>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Se calculan los resultados</p>
+                </div>
+                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={handleClose} />
+            </div>
+
+            <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
+                <p className="text-label text-content-2">
+                    Después de finalizar ya no se pueden editar cantidades. El conteo queda a la espera de que otra persona lo apruebe.
+                </p>
+
+                {hayPendientes ? (
+                    <>
+                        <Notice variant="warning">
+                            Quedan <strong className="tabular-nums">{pendientes}</strong> renglón(es) sin cantidad física. Decidí qué son antes de cerrar:
+                        </Notice>
+                        <SegmentedControl
+                            layout="block"
+                            tone="chart-9"
+                            label="Qué hacer con los renglones pendientes"
+                            options={TRATO_PENDIENTES}
+                            value={trato}
+                            onChange={setTrato}
+                        />
+                        <p className="text-caption text-content-3 leading-snug">
+                            {trato === 'CERO'
+                                ? 'El conteo cubrió toda el área: lo que no apareció en el anaquel se registra con físico 0 y su faltante es real. Quedan marcados como "no ubicado", no como contados.'
+                                : 'El conteo fue parcial: esos renglones no se valúan ni cuentan como diferencia. El número queda guardado en el reporte para que nadie lea el resultado como un cuadre completo.'}
+                        </p>
+                    </>
+                ) : (
+                    <Notice variant="success">Todos los renglones tienen cantidad física.</Notice>
+                )}
+            </div>
+
+            <div className="flex-none px-6 py-4 border-t border-border-card flex justify-between items-center relative z-base">
+                <Button variant="secondary" disabled={busy} onClick={handleClose}>Cancelar</Button>
+                <Button icon={CheckCircle2} disabled={busy} loading={busy} onClick={handleConfirm}>
+                    Finalizar
+                </Button>
+            </div>
+        </LiquidModal>
+    );
+}
+
 export default function ConteoDetailView() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -406,6 +545,7 @@ export default function ConteoDetailView() {
     const finalizarConteoInventario = useStaffStore((s) => s.finalizarConteoInventario);
     const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
     const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
+    const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
@@ -426,7 +566,13 @@ export default function ConteoDetailView() {
     const [itemsByProduct, setItemsByProduct] = useState({});
     const [loadingExpand, setLoadingExpand] = useState({});
     const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
+    const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
     const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
+    // Conteo ciego: arranca encendido mientras el conteo sea editable. Es el
+    // orden correcto — el primer conteo se hace a ciegas y el sistema se revela
+    // para revisar, no al revés. printHojaConteo ya sabía imprimir ciego desde
+    // el día uno, pero la vista siempre le pasaba { ciego: false }.
+    const [ciego, setCiego] = useState(true);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -453,7 +599,7 @@ export default function ConteoDetailView() {
     const editable = conteo && ['BORRADOR', 'EN_PROGRESO'].includes(conteo.status);
     const canFinalize = editable && canEdit;
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove;
-    const hasResults = conteo && ['FINALIZADO', 'APROBADO', 'CERRADO'].includes(conteo.status);
+    const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
 
     const toggleExpand = async (product) => {
         const key = product.erp_product_id;
@@ -515,13 +661,25 @@ export default function ConteoDetailView() {
         showToast('Lote corregido', 'Se actualizó la etiqueta del renglón', 'success');
     };
 
-    const handleFinalizar = () => setConfirmFinalizarOpen(true);
+    const handleFinalizar = async () => {
+        try {
+            setPendientesAlFinalizar(await fetchConteoPendientesCount(id));
+        } catch {
+            setPendientesAlFinalizar(0);
+        }
+        setConfirmFinalizarOpen(true);
+    };
 
-    const confirmFinalizar = async () => {
+    const confirmFinalizar = async (pendientesComoCero) => {
         setBusy(true);
         try {
-            await finalizarConteoInventario(id);
-            showToast('Conteo finalizado', 'Se calcularon los resultados', 'success');
+            const res = await finalizarConteoInventario(id, pendientesComoCero);
+            setCiego(false); // ya no hay nada que contar: se pasa a revisar
+            showToast(
+                'Conteo finalizado',
+                `${res.total_diferencias} diferencia(s)${res.total_pendientes > 0 ? ` · ${res.total_pendientes} pendiente(s)` : ''}`,
+                'success',
+            );
             await load();
         } catch (err) {
             showToast('Error', err.message, 'error');
@@ -551,7 +709,9 @@ export default function ConteoDetailView() {
         setPrinting(true);
         try {
             const allItems = await fetchTodosLosItemsConteo(id);
-            if (kind === 'hoja') printHojaConteo(conteo, allItems, { ciego: false });
+            // La hoja sale ciega si la pantalla está ciega: son el mismo conteo,
+            // no tendría sentido que el papel revelara lo que la vista oculta.
+            if (kind === 'hoja') printHojaConteo(conteo, allItems, { ciego });
             else printResultadosConteo(conteo, allItems, { soloDiferencias: false });
         } catch (err) {
             showToast('Error al imprimir', err.message, 'error');
@@ -602,6 +762,16 @@ export default function ConteoDetailView() {
                             </div>
                         </div>
 
+                        {hasResults && conteo.total_pendientes > 0 && (
+                            <div className="mt-4">
+                                <Notice variant={conteo.pendientes_como_cero ? 'warning' : 'danger'}>
+                                    {conteo.pendientes_como_cero
+                                        ? <>Al cerrar, <strong className="tabular-nums">{conteo.total_pendientes}</strong> renglón(es) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.</>
+                                        : <>Conteo parcial: <strong className="tabular-nums">{conteo.total_pendientes}</strong> renglón(es) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.</>}
+                                </Notice>
+                            </div>
+                        )}
+
                         {hasResults && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                                 <div className="bg-surface-card-hover rounded-xl px-3 py-2 text-center">
@@ -634,14 +804,25 @@ export default function ConteoDetailView() {
                         onChange={setFiltro}
                         options={FILTRO_PILLS.map(f => ({ value: f.key, label: f.label }))}
                     />
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <Switch checked={ciego} onChange={setCiego} size="sm" variant="chart-9" label="Conteo ciego" />
+                        <span className="text-label font-bold text-content-2 flex items-center gap-1">
+                            <EyeOff size={12} strokeWidth={2.5} /> Conteo ciego
+                        </span>
+                    </label>
                     {editable && canEdit && (
                         <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm((v) => !v)}>Agregar Producto/Lote</Button>
                     )}
                 </div>
 
+                {ciego && editable && (
+                    <Notice variant="info" icon={EyeOff}>
+                        Sistema y diferencia están ocultos: el contador anota lo que ve en el anaquel, no lo que el sistema espera. Apagalo para revisar los resultados.
+                    </Notice>
+                )}
+
                 {showAddForm && editable && conteo && (
                     <AddManualItemForm
-                        conteoId={id}
                         branchId={conteo.branch_id}
                         onAdd={async (payload) => {
                             await agregarProductoManualConteo(id, payload);
@@ -659,7 +840,7 @@ export default function ConteoDetailView() {
                         const lines = itemsByProduct[key];
                         return (
                             <React.Fragment key={key}>
-                                <ProductGroupRow product={product} index={i} expanded={isExpanded} onToggle={() => toggleExpand(product)} />
+                                <ProductGroupRow product={product} index={i} expanded={isExpanded} ciego={ciego} onToggle={() => toggleExpand(product)} />
                                 {isExpanded && loadingExpand[key] && (
                                     <tr><td colSpan={COLUMNS.length} className="py-4 px-6"><SkeletonText lines={3} /></td></tr>
                                 )}
@@ -669,6 +850,7 @@ export default function ConteoDetailView() {
                                         item={item}
                                         index={j}
                                         editable={editable}
+                                        ciego={ciego}
                                         onSave={(itemId, payload) => handleSaveItem(itemId, payload, key)}
                                         onShowHistory={setHistoryItem}
                                         onEditLote={setEditLoteItem}
@@ -692,16 +874,12 @@ export default function ConteoDetailView() {
                 onSave={(itemId, payload) => handleEditLote(itemId, payload, editLoteItem?.erp_product_id)}
             />
 
-            <ConfirmModal
-                isOpen={confirmFinalizarOpen}
+            <FinalizarConteoModal
+                open={confirmFinalizarOpen}
+                pendientes={pendientesAlFinalizar}
+                busy={busy}
                 onClose={() => setConfirmFinalizarOpen(false)}
                 onConfirm={confirmFinalizar}
-                title="Finalizar Conteo"
-                message="¿Finalizar el conteo? Los ítems sin contar quedarán marcados como pendientes y ya no se podrán editar cantidades."
-                confirmText="Finalizar"
-                cancelText="Cancelar"
-                isProcessing={busy}
-                isDestructive={false}
             />
 
             <PromptModal
@@ -719,10 +897,8 @@ export default function ConteoDetailView() {
     );
 }
 
-function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
+function AddManualItemForm({ branchId, onAdd, onCancel }) {
     const { showToast } = useToastStore();
-    const fetchConteoExistingProductIds = useStaffStore((s) => s.fetchConteoExistingProductIds);
-    const [existingIds, setExistingIds] = useState([]);
     const [results, setResults] = useState([]);
     const [selected, setSelected] = useState(null);
     const [presentacionOpts, setPresentacionOpts] = useState([]);
@@ -733,15 +909,15 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
-        fetchConteoExistingProductIds(conteoId).then(setExistingIds);
-    }, [conteoId, fetchConteoExistingProductIds]);
-
+    // Antes se filtraban los productos ya presentes en el conteo, lo que hacía
+    // imposible el caso más común de una farmacia: el snapshot trae el lote A y
+    // en el anaquel aparece también el B. El duplicado real es
+    // (producto, presentación, lote), y ahora lo rechaza agregar_item_conteo.
     const handleSearch = async (q) => {
         if (!q || q.trim().length < 2) { setResults([]); return; }
         const { data, error } = await searchActiveProductsForConteo(q.trim());
         if (error) console.error('handleSearch: product search failed:', error.message);
-        setResults((data || []).filter((p) => !existingIds.includes(p.id)));
+        setResults(data || []);
     };
 
     const handleSelectProduct = async (val) => {
@@ -784,22 +960,21 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
     const finalLote = lote === '__OTRO__' ? loteOtro.trim() : lote;
     const canSubmit = selected && presentacion && finalLote;
 
+    // El costo ya no lo manda el cliente: lo pone agregar_item_conteo con el
+    // mismo criterio que el snapshot (costo de la presentación de la línea).
     const handleSubmit = async () => {
         if (!canSubmit) return;
         setSaving(true);
         try {
-            const { data: precio, error: precioErr } = await fetchProductCostoActivo(selected.id);
-            if (precioErr) console.error('handleSubmit: fetch costo failed:', precioErr.message);
             await onAdd({
                 erpProductId: selected.id,
                 presentacion,
                 lote: finalLote,
                 fechaVencimiento: fechaVencimiento || null,
-                costoUnitario: precio?.costo ?? null,
             });
             showToast('Producto agregado', selected.nombre, 'success');
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('No se agregó el producto', err.message, 'error');
         } finally {
             setSaving(false);
         }

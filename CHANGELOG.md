@@ -12,6 +12,65 @@ retomar; acá está todo.
 
 ---
 
+## v2.183.0 — el conteo de inventario comparaba contra un número inflado.
+
+Auditoría completa del módulo (`AUDITORIA-CONTEO-2026-07-29.md`): 6 capas del
+frontend más 12 RPCs, 3 tablas y sus policies.
+
+**El hallazgo.** `crear_conteo_inventario` copia una línea por fila de
+`inventory`, pero las cuatro funciones que releen el stock en vivo agrupaban por
+`(producto, presentacion, lote, is_vencidos)`. Esa clave **incluye
+`presentacion`** — que el sync sobrescribe en cada corrida, no es identidad — y
+**omite `detalle` y `fecha_vencimiento`**, que sí lo son. En producción hay 1,375
+grupos donde la clave se repite, y **1,354 de ellos difieren solo en la fecha de
+vencimiento**: mismo número de lote, distintas fechas. Dato normal del ERP.
+
+Cada línea hermana mostraba el total del grupo. Sobre el conteo abierto: 1,243 de
+4,782 líneas (26%), **4,634 unidades reales presentadas como 12,588**. Un lote de
+10 u (vence ene-27) y otro de 5 u (jun-27) aparecían como dos renglones de 15; el
+contador escribía 10 y 5 y el sistema registraba −5 y −10. Faltante inventado de
+15 unidades sobre stock perfecto.
+
+La línea ahora se ata a `inventory.sync_key`
+(`sucursal|vencidos|producto|lote|detalle|fecha_venc`), que es la identidad real
+del ERP: `UNIQUE` global y estable entre syncs. `source_inventory_id` no servía —
+1,170 de las 4,782 líneas ya apuntaban a filas borradas y reinsertadas.
+
+**Lo demás de la misma pasada:**
+
+- **Costeo por presentación.** Era `MIN(costo)` sobre todas las presentaciones
+  activas del producto: 628 productos tienen más de un costo activo, razón
+  máx/mín promedio 7.8x y hasta 250x. El 97.8% de las líneas casan exacto por
+  `presentaciones.tipo`. Un único helper (`conteo_costo_unitario`) reemplaza los
+  tres criterios que convivían.
+- **Los pendientes ya no desaparecen del cálculo.** Antes quedaban con
+  `diferencia` NULL: fuera de las diferencias y fuera de la valuación — un conteo
+  con el 5% contado se finalizaba y salía "sin diferencias". Ahora finalizar
+  obliga a decidir si son "no ubicados" (físico 0, faltante real) o si el conteo
+  fue parcial, y el número queda persistido, en pantalla y en el PDF.
+- **`sistema_inicial`** archiva la existencia del libro al abrir el conteo, que
+  se destruía en el primer guardado.
+- **Conteo ciego alcanzable.** `printHojaConteo` lo soportaba desde el día uno,
+  pero la vista siempre le pasaba `{ ciego: false }`. Ahora oculta sistema **y**
+  diferencia en pantalla — ocultar solo una es un ciego de mentira: el sistema se
+  despeja restando.
+- **Segregación de funciones**: no se puede aprobar un conteo que uno mismo
+  finalizó.
+- **RLS**: se eliminan `conteos_update` (permitía saltarse `can_approve` por
+  PostgREST directo y sellar el conteo) y `conteo_items_update` (permitía
+  escribir cantidades sin dejar fila de historial). Ninguna la usaba la app. El
+  alta manual pasa a RPC con costo y autoría server-side.
+- **Un guardado que falla ya no queda en pantalla como guardado** (`try/finally`
+  sin `catch` en `ItemRow.commit`), y el físico se valida entero ≥ 0.
+- `SIN_UBICAR` alcanzable, marca del área de vencidos del ERP, lote nuevo sobre
+  producto ya presente, bloqueo de dos conteos abiertos por sucursal, y el badge
+  de estado de la cabecera que se renderizaba siempre con la variante por defecto.
+
+Fuera de alcance, documentado: el conteo aprobado sigue sin ajustar stock ni
+exportar al ERP, y no hay corte de movimientos ni recuento de variaciones.
+
+---
+
 ## v2.106.0 — 22 campos de texto sin nombre accesible, y el gate que los pesca.
 
 Buscando por que empezar D3.4 aparecio algo mas urgente que migrar inputs a

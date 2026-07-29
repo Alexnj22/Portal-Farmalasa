@@ -11,12 +11,14 @@ import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 
+// 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
+// 'CERRADO'. Las claves bg/text/border tampoco: solo se usaba `variante`, que es
+// lo que consume Badge.
 const ESTADO_CFG = {
-    BORRADOR:    { bg: 'bg-surface-card-hover',  text: 'text-content-2',  border: 'border-divider',  icon: Clock,       label: 'Borrador', variante: 'neutral' },
-    EN_PROGRESO: { bg: 'bg-warning/10',   text: 'text-warning-text',  border: 'border-warning/30',  icon: Clock,       label: 'En Progreso', variante: 'warning' },
-    FINALIZADO:  { bg: 'bg-chart-1/10',    text: 'text-chart-1-text',   border: 'border-chart-1/30',   icon: FileCheck2,  label: 'Finalizado', variante: 'chart-1' },
-    APROBADO:    { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Aprobado', variante: 'success' },
-    CERRADO:     { bg: 'bg-success/10', text: 'text-success-text',border: 'border-success/30',icon: CheckCircle2,label: 'Cerrado', variante: 'success' },
+    BORRADOR:    { icon: Clock,        label: 'Borrador',    variante: 'neutral' },
+    EN_PROGRESO: { icon: Clock,        label: 'En Progreso', variante: 'warning' },
+    FINALIZADO:  { icon: FileCheck2,   label: 'Finalizado',  variante: 'chart-1' },
+    CERRADO:     { icon: CheckCircle2, label: 'Cerrado',     variante: 'success' },
 };
 
 const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual' };
@@ -91,7 +93,17 @@ export default function ConteoInventarioView() {
                             <DataCell><span className="text-body-sm font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>
                             <DataCell><span className="text-body-sm font-bold text-content">{c.branches?.name || '—'}</span></DataCell>
                             <DataCell hideBelow="md"><span className="text-label text-content-3">{SCOPE_LABEL[c.scope_type] || c.scope_type}</span></DataCell>
-                            <DataCell align="center" hideBelow="md"><span className="text-label tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span></DataCell>
+                            <DataCell align="center" hideBelow="md">
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span className="text-label tabular-nums text-content-2">{c.total_contados ?? '—'}/{c.total_items ?? '—'}</span>
+                                    {/* Un conteo cerrado con renglones sin contar y sin
+                                        valuar NO es un cuadre: tiene que verse desde la lista,
+                                        no solo al abrirlo. */}
+                                    {c.total_pendientes > 0 && !c.pendientes_como_cero && (
+                                        <Badge variant="danger" size="sm" uppercase={false}>Parcial</Badge>
+                                    )}
+                                </div>
+                            </DataCell>
                             <DataCell align="center">
                                 {c.total_diferencias > 0 ? (
                                     <Badge variant="warning" icon={AlertTriangle} uppercase={false}>{c.total_diferencias}</Badge>

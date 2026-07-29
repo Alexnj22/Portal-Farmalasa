@@ -72,6 +72,14 @@ function productCell(item) {
 const HOJA_COL_WIDTHS = ['26%', '18%', '11%', '11%', '10%', '24%'];
 const HOJA_LABELS = ['Producto', 'Lote', 'Vence', 'Sistema', 'Físico', 'Nota'];
 
+// El ERP separa el stock vencido en su propia área: dos filas del mismo
+// producto/lote/fecha que en papel se veían idénticas y nadie sabía cuál era
+// cuál. La etiqueta va pegada al lote, que es la columna que se lee al buscar.
+function loteCell(item) {
+    const marca = item.is_vencidos ? ' · ÁREA VENCIDOS' : '';
+    return `${item.lote || '—'}${marca}`;
+}
+
 function buildHojaTable(conteo, items, ciego) {
     const headerRow = HOJA_LABELS.map((label, i) => ({
         text: (i === 3 && ciego) ? '' : label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
@@ -82,7 +90,7 @@ function buildHojaTable(conteo, items, ciego) {
         const bg = idx % 2 === 1 ? '#f7f7f7' : '#ffffff';
         return [
             { ...productCell(item), fillColor: bg },
-            { text: item.lote || '—', fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
             ciego
                 ? { text: '', fillColor: bg }
@@ -149,11 +157,14 @@ function buildResultadosTable(items) {
         const dif = item.diferencia;
         const valor = dif != null && item.costo_unitario != null ? dif * item.costo_unitario : null;
         const difColor = dif == null ? '#999' : dif === 0 ? '#059669' : dif < 0 ? '#dc2626' : '#2563eb';
+        const fisicoTxt = item.fisico_cantidad != null
+            ? (item.estado_item === 'SIN_UBICAR' ? '0 (no ubic.)' : String(item.fisico_cantidad))
+            : '—';
         return [
             { ...productCell(item), fillColor: bg },
-            { text: item.lote || '—', fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: String(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: item.fisico_cantidad != null ? String(item.fisico_cantidad) : '—', fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: fisicoTxt, fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: dif != null ? (dif > 0 ? `+${dif}` : String(dif)) : '—', fontSize: 8.5, bold: true, color: difColor, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: valor != null ? fmtMoney(valor) : '—', fontSize: 7.5, color: difColor, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: item.nota || '', fontSize: 7, color: '#555', fillColor: bg, margin: [4, 3, 4, 3] },
@@ -174,17 +185,41 @@ function buildResultadosTable(items) {
 function buildTotalesBlock(conteo, items) {
     const conDiferencia = items.filter((i) => i.diferencia != null && i.diferencia !== 0).length;
     const sinContar = items.filter((i) => i.estado_item === 'PENDIENTE').length;
+    const noUbicados = items.filter((i) => i.estado_item === 'SIN_UBICAR').length;
     return {
         margin: [0, 10, 0, 0],
         table: {
-            widths: ['*', '*', '*', '*', '*'],
+            widths: ['*', '*', '*', '*', '*', '*'],
             body: [[
                 { text: `${items.length} ítems`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
                 { text: `${conDiferencia} con diferencia`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
+                { text: `${noUbicados} no ubicados`, fontSize: 8, bold: true, color: '#92400e', fillColor: '#fffbeb', margin: [6, 4, 6, 4] },
                 { text: `${sinContar} sin contar`, fontSize: 8, bold: true, color: '#92400e', fillColor: '#fffbeb', margin: [6, 4, 6, 4] },
                 { text: `Faltante: ${fmtMoney(conteo.valor_faltante)}`, fontSize: 8, bold: true, color: '#dc2626', fillColor: '#fef2f2', margin: [6, 4, 6, 4] },
                 { text: `Sobrante: ${fmtMoney(conteo.valor_sobrante)}`, fontSize: 8, bold: true, color: '#2563eb', fillColor: '#eff6ff', margin: [6, 4, 6, 4] },
             ]],
+        },
+        layout: 'noBorders',
+    };
+}
+
+// Un reporte que muestra $ de faltante calculados sobre un conteo parcial tiene
+// que decirlo en la misma hoja. Si no, el número se lee como un cuadre completo.
+function avisoParcialBlock(conteo) {
+    if (!conteo.total_pendientes) return null;
+    const texto = conteo.pendientes_como_cero
+        ? `Al cerrar, ${conteo.total_pendientes} renglón(es) sin contar se dieron por no ubicados (físico 0). Su faltante está incluido en los montos.`
+        : `CONTEO PARCIAL: ${conteo.total_pendientes} renglón(es) quedaron sin contar y NO están valuados. Estos montos no son un cuadre completo.`;
+    return {
+        margin: [0, 8, 0, 0],
+        table: {
+            widths: ['*'],
+            body: [[{
+                text: texto, fontSize: 8, bold: true,
+                color: conteo.pendientes_como_cero ? '#92400e' : '#dc2626',
+                fillColor: conteo.pendientes_como_cero ? '#fffbeb' : '#fef2f2',
+                margin: [8, 5, 8, 5],
+            }]],
         },
         layout: 'noBorders',
     };
@@ -202,7 +237,8 @@ export function printResultadosConteo(conteo, items, { soloDiferencias = false }
             headerBlock(conteo, `Reporte de resultados${soloDiferencias ? ' (solo diferencias)' : ''}`),
             buildResultadosTable(filtered),
             buildTotalesBlock(conteo, items),
-        ],
+            avisoParcialBlock(conteo),
+        ].filter(Boolean),
         footer: footerFirmas('Contado por', 'Revisado por'),
     };
     downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Resultados.pdf`);

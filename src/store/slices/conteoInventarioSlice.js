@@ -1,8 +1,35 @@
 import { supabase } from '../../supabaseClient';
 import {
     fetchConteosInventario as fetchConteosInventarioData, fetchConteoDetalle as fetchConteoDetalleData,
-    insertConteoItemManual,
 } from '../../data/conteoInventario';
+
+// Las RPCs del módulo levantan códigos, no frases. Sin esta traducción el
+// usuario veía el identificador crudo de Postgres en el toast.
+const ERRORES = {
+    SIN_PERMISO: 'No tenés permiso para esta acción.',
+    FUERA_DE_ALCANCE: 'Ese conteo pertenece a otra sucursal.',
+    ALCANCE_INVALIDO: 'El alcance del conteo no es válido.',
+    SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no está mapeada al ERP: no se puede tomar el inventario.',
+    CONTEO_ABIERTO_EN_SUCURSAL: 'Ya hay un conteo abierto en esta sucursal. Finalizalo antes de empezar otro.',
+    CONTEO_CERRADO_NO_EDITABLE: 'El conteo ya está cerrado y no admite cambios.',
+    CONTEO_NO_ENCONTRADO: 'No se encontró el conteo.',
+    CONTEO_NO_ENCONTRADO_O_YA_FINALIZADO: 'El conteo ya fue finalizado.',
+    CONTEO_NO_ENCONTRADO_O_NO_FINALIZADO: 'El conteo no está finalizado todavía.',
+    APROBADOR_ES_QUIEN_FINALIZO: 'No podés aprobar un conteo que vos mismo finalizaste: debe firmarlo otra persona.',
+    ITEM_NO_ENCONTRADO: 'No se encontró el renglón.',
+    ESTADO_INVALIDO: 'Estado de renglón inválido.',
+    PRESENTACION_Y_LOTE_REQUERIDOS: 'Elegí presentación y lote antes de agregar.',
+    PRODUCTO_NO_ENCONTRADO: 'Ese producto no existe o está inactivo.',
+    LINEA_YA_EXISTE: 'Ese producto ya está en el conteo con esa presentación y lote.',
+};
+
+function traducirError(err) {
+    if (!err) return err;
+    for (const [code, msg] of Object.entries(ERRORES)) {
+        if (err.message?.includes(code)) return new Error(msg);
+    }
+    return err;
+}
 
 export const createConteoInventarioSlice = (set, get) => ({
     conteosInventario: [],
@@ -30,7 +57,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_scope_filter: scopeFilter || null,
             p_erp_product_ids: erpProductIds || null,
         });
-        if (error) throw error;
+        if (error) throw traducirError(error);
 
         await get().appendAuditLog('CONTEO_CREADO', data, {
             timeline_title: 'Conteo de inventario iniciado',
@@ -47,21 +74,6 @@ export const createConteoInventarioSlice = (set, get) => ({
         const { data, error } = await fetchConteoDetalleData(conteoId);
         if (error) throw error;
         return data;
-    },
-
-    // p_limit/p_offset se pasan como parámetros de la función (no .range() de
-    // PostgREST) — así el LIMIT se aplica DENTRO del SQL antes del lookup en
-    // vivo a inventory, acotando ese costo al tamaño de página sin importar
-    // el tamaño total del conteo (ver comentario en la migración de la RPC).
-    fetchConteoItems: async (conteoId, { page = 1, pageSize = 50, search = '', filtro = 'TODOS' } = {}) => {
-        const from = (page - 1) * pageSize;
-        const [{ data: count, error: countErr }, { data: rows, error: rowsErr }] = await Promise.all([
-            supabase.rpc('get_conteo_items_count', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro }),
-            supabase.rpc('get_conteo_items_search', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro, p_limit: pageSize, p_offset: from }),
-        ]);
-        if (countErr) throw countErr;
-        if (rowsErr) throw rowsErr;
-        return { rows: rows || [], total: count || 0 };
     },
 
     // Paginación por PRODUCTO (no por fila) — así un producto con muchos
@@ -89,20 +101,33 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data || [];
     },
 
-    fetchConteoExistingProductIds: async (conteoId) => {
-        const { data, error } = await supabase.rpc('get_conteo_existing_product_ids', { p_conteo_id: conteoId });
+    // Cuántos renglones siguen sin cantidad física. Se pide antes de finalizar:
+    // el usuario tiene que decidir qué son esos pendientes, no descubrirlos
+    // después en el reporte (C4).
+    fetchConteoPendientesCount: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_items_count', {
+            p_conteo_id: conteoId, p_search: null, p_filtro: 'PENDIENTES',
+        });
         if (error) throw error;
-        return data || [];
+        return data || 0;
     },
 
     // Corrige la etiqueta de lote/vencimiento de una línea ya creada (ej. el
     // físico encontrado trae un lote distinto al que copió el snapshot) —
-    // nunca toca la tabla inventory real, solo el snapshot de auditoría.
+    // nunca toca la tabla inventory real, ni cambia contra qué fila del ERP se
+    // compara (eso lo fija source_sync_key), solo la etiqueta del renglón.
     editarLoteConteoItem: async (itemId, { lote, fechaVencimiento }) => {
         const { data, error } = await supabase.rpc('editar_lote_conteo_item', {
             p_item_id: itemId, p_lote: lote, p_fecha_vencimiento: fechaVencimiento || null,
         });
-        if (error) throw error;
+        if (error) throw traducirError(error);
+
+        await get().appendAuditLog('CONTEO_LOTE_CORREGIDO', itemId, {
+            timeline_title: 'Etiqueta de lote corregida en un conteo',
+            dimension: 'OPERATIVE',
+            new_value: `Lote: ${data.lote || '—'} · Vence: ${data.fecha_vencimiento || '—'}`,
+        });
+
         return data;
     },
 
@@ -110,8 +135,13 @@ export const createConteoInventarioSlice = (set, get) => ({
     // inventory en vivo en ese instante) — el cliente nunca envía/decide ese
     // valor, para que un conteo "en caliente" (sucursal abierta, ventas
     // corriendo) compare contra el stock real vigente al momento de contar,
-    // no contra un snapshot viejo. También registra el guardado en el
-    // historial append-only del ítem (quién contó, incluidas ediciones).
+    // no contra un snapshot viejo.
+    //
+    // No lleva appendAuditLog a propósito: cada renglón guardado ya escribe en
+    // conteo_inventario_item_history, que es su bitácora dedicada e
+    // inmodificable (quién, cuándo, sistema, físico, nota, incluidas las
+    // ediciones). Un conteo total son ~4,800 renglones: duplicarlos en
+    // audit_logs no agregaría trazabilidad, solo volumen.
     guardarConteoItem: async (itemId, { fisicoCantidad, nota, estadoItem }) => {
         const { data, error } = await supabase.rpc('guardar_conteo_item', {
             p_item_id: itemId,
@@ -119,7 +149,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_nota: nota ?? null,
             p_estado_item: estadoItem,
         });
-        if (error) throw error;
+        if (error) throw traducirError(error);
         return data;
     },
 
@@ -129,34 +159,41 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data || [];
     },
 
-    agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, detalle, lote, fechaVencimiento, costoUnitario }) => {
-        const { data, error } = await insertConteoItemManual({
-            conteo_id: conteoId,
-            erp_product_id: erpProductId,
-            presentacion: presentacion || null,
-            detalle: detalle || null,
-            lote: lote || null,
-            fecha_vencimiento: fechaVencimiento || null,
-            is_vencidos: false,
-            sistema_cantidad: 0,
-            costo_unitario: costoUnitario ?? null,
-            estado_item: 'PENDIENTE',
-            es_agregado_manual: true,
+    agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, lote, fechaVencimiento }) => {
+        const { data, error } = await supabase.rpc('agregar_item_conteo', {
+            p_conteo_id: conteoId,
+            p_erp_product_id: erpProductId,
+            p_presentacion: presentacion,
+            p_lote: lote,
+            p_fecha_vencimiento: fechaVencimiento || null,
         });
-        if (error) throw error;
+        if (error) throw traducirError(error);
+
+        await get().appendAuditLog('CONTEO_ITEM_AGREGADO', conteoId, {
+            timeline_title: 'Producto agregado a un conteo',
+            dimension: 'OPERATIVE',
+            new_value: `Producto ${erpProductId} · ${presentacion} · lote ${lote}`,
+        });
+
         return data;
     },
 
-    finalizarConteoInventario: async (conteoId) => {
-        const { data, error } = await supabase.rpc('finalizar_conteo_inventario', { p_conteo_id: conteoId });
-        if (error) throw error;
+    finalizarConteoInventario: async (conteoId, pendientesComoCero = false) => {
+        const { data, error } = await supabase.rpc('finalizar_conteo_inventario', {
+            p_conteo_id: conteoId,
+            p_pendientes_como_cero: pendientesComoCero,
+        });
+        if (error) throw traducirError(error);
 
         const detalle = await get().fetchConteoDetalle(conteoId);
+        const trato = data.total_pendientes > 0
+            ? ` · ${data.total_pendientes} pendiente(s) ${pendientesComoCero ? 'cerrados como no ubicados' : 'excluidos del cálculo'}`
+            : '';
         await get().appendAuditLog('CONTEO_FINALIZADO', conteoId, {
             timeline_title: 'Conteo de inventario finalizado',
             dimension: 'OPERATIVE',
             branch_id: detalle?.branch_id,
-            new_value: `${data.total_diferencias} diferencia(s) — faltante $${Number(data.valor_faltante).toFixed(2)} · sobrante $${Number(data.valor_sobrante).toFixed(2)}`,
+            new_value: `${data.total_diferencias} diferencia(s) — faltante $${Number(data.valor_faltante).toFixed(2)} · sobrante $${Number(data.valor_sobrante).toFixed(2)}${trato}`,
         });
 
         return data;
@@ -164,7 +201,7 @@ export const createConteoInventarioSlice = (set, get) => ({
 
     aprobarConteoInventario: async (conteoId, nota) => {
         const { data, error } = await supabase.rpc('aprobar_conteo_inventario', { p_conteo_id: conteoId, p_nota: nota || null });
-        if (error) throw error;
+        if (error) throw traducirError(error);
 
         const detalle = await get().fetchConteoDetalle(conteoId);
         await get().appendAuditLog('CONTEO_APROBADO', conteoId, {

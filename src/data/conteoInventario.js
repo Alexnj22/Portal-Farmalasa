@@ -1,22 +1,30 @@
-// Bloque 6.A — capa de datos, entidad "conteoInventario". Extraído de
-// conteoInventarioSlice.js: 3 llamadas supabase.from() (el resto del
-// slice son RPCs, ya server-side y fuera de alcance de 6.A).
+// Bloque 6.A — capa de datos, entidad "conteoInventario". El resto del módulo
+// son RPCs (ya server-side y fuera de alcance de 6.A).
+//
+// C5 (2026-07-29): insertConteoItemManual y fetchProductCostoActivo salieron de
+// aquí. El alta manual era el único write del módulo que no pasaba por RPC, con
+// el cliente eligiendo sistema_cantidad y costo_unitario; ahora es
+// agregar_item_conteo, que costea server-side con el mismo criterio que el
+// snapshot.
 import { supabase } from '../supabaseClient';
 import { likePattern } from '../utils/searchUtils';
 
+// Un conteo por sucursal cada vez que se audita: la tabla crece del orden de
+// decenas al año, muy lejos del tope de 1000 de PostgREST. El límite va
+// explícito para que el día que se acerque sea un cambio deliberado y no un
+// truncado silencioso (CLAUDE.md, regla del cap de 1000).
 export function fetchConteosInventario() {
-    return supabase.from('conteos_inventario').select('*, branches(name)').order('created_at', { ascending: false });
+    return supabase.from('conteos_inventario')
+        .select('*, branches(name)')
+        .order('created_at', { ascending: false })
+        .limit(1000);
 }
 
 export function fetchConteoDetalle(conteoId) {
     return supabase.from('conteos_inventario').select('*, branches(name)').eq('id', conteoId).single();
 }
 
-export function insertConteoItemManual(payload) {
-    return supabase.from('conteo_inventario_items').insert([payload]).select().single();
-}
-
-// ── ConteoDetailView.jsx / AddManualItemForm (5 sitios) ─────────────────────
+// ── ConteoDetailView.jsx / AddManualItemForm ────────────────────────────────
 
 export function searchActiveProductsForConteo(term) {
     return supabase.from('products')
@@ -44,14 +52,4 @@ export function fetchInventoryLotesForProduct(productId, erpSucursalIds) {
         .eq('erp_product_id', productId)
         .in('erp_sucursal_id', erpSucursalIds)
         .not('lote', 'is', null);
-}
-
-export function fetchProductCostoActivo(productId) {
-    return supabase.from('product_precios')
-        .select('costo')
-        .eq('product_id', productId)
-        .eq('activo', true)
-        .order('id')
-        .limit(1)
-        .maybeSingle();
 }

@@ -16,7 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.182.0';
+export const APP_VERSION = '2.183.0';
+
+// v2.183.0 — auditoria del modulo Conteo de Inventario (AUDITORIA-CONTEO-2026-07-29.md).
+//
+// **El "Sistema" estaba inflado en el 26% de las lineas.** El snapshot copiaba
+// una linea por fila de `inventory`, pero la relectura en vivo agrupaba por
+// (producto, presentacion, lote, is_vencidos): una clave que INCLUYE
+// `presentacion` — que el sync sobrescribe, no es identidad — y OMITE `detalle`
+// y `fecha_vencimiento`, que si lo son. 1,354 de los 1,375 grupos duplicados de
+// prod difieren solo en la fecha de vencimiento: mismo lote, distintas fechas.
+// Cada linea hermana mostraba el total del grupo. Medido sobre el conteo
+// abierto: 1,243 de 4,782 lineas, 4,634 unidades reales presentadas como 12,588.
+// Todas iban a registrar un faltante fantasma.
+//
+// Ahora la linea se ata a `inventory.sync_key`, que es la identidad real del ERP
+// (UNIQUE global, estable entre syncs). `source_inventory_id` no servia: 1,170
+// de las 4,782 lineas ya apuntaban a filas borradas y reinsertadas por el sync.
+//
+// Lo demas de la misma pasada:
+// - Costeo por presentacion, no MIN(costo) del producto (628 productos con
+//   varios costos activos, razon max/min hasta 250x). Un solo criterio para
+//   snapshot y alta manual: `conteo_costo_unitario()`.
+// - Los renglones sin contar ya no desaparecen del calculo: al finalizar hay
+//   que decidir si son "no ubicados" (fisico 0, faltante real) o si el conteo
+//   fue parcial — y el numero queda persistido, en pantalla y en el PDF.
+// - `sistema_inicial` archiva la existencia del libro al abrir el conteo, que
+//   antes se destruia en el primer guardado.
+// - Conteo ciego alcanzable: `printHojaConteo` ya lo soportaba desde el dia uno
+//   pero la vista siempre le pasaba `{ ciego: false }`. Ahora tambien oculta
+//   sistema Y diferencia en pantalla (ocultar una sola es un ciego de mentira).
+// - Segregacion de funciones: no se puede aprobar un conteo que uno mismo
+//   finalizo.
+// - RLS: se eliminan `conteos_update` (permitia saltarse can_approve por
+//   PostgREST directo) y `conteo_items_update` (permitia escribir sin dejar
+//   historial). El alta manual pasa a RPC con costo y autoria server-side.
+// - Un guardado que falla ya no deja el numero en pantalla como si se hubiera
+//   guardado (try/finally sin catch).
+// - SIN_UBICAR alcanzable, marca del area de vencidos, lote nuevo sobre
+//   producto ya presente, y bloqueo de dos conteos abiertos por sucursal.
 
 // v2.182.0 — el mismo regex se habia comido cuatro props mas.
 //

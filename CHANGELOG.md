@@ -288,6 +288,30 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.210.0 — el modal solo ofrece sucursales con inventario.
+
+Administración aparecía en la lista y no tiene inventario: elegirla llevaba a que
+`crear_conteo_inventario` reventara con `SUCURSAL_SIN_MAPEO_ERP`. El filtro va por
+el **mapeo al ERP** (`erp_sucursal_map`) y no por el `type` de la sucursal, que es
+exactamente el criterio que exige la RPC — filtrar por otra cosa dejaría opciones
+que revientan al elegirlas. Quedan las 7 con inventario.
+
+**Medido de paso, buscando por qué el sorteo tardaba ~5 s:**
+
+| | |
+|---|---|
+| `preview_muestra_ciclica` en BD (EXPLAIN ANALYZE) | **35 ms** |
+| Ida y vuelta HTTP | ~230 ms |
+| Abrir el modal + elegir sucursal | **2 peticiones** |
+
+**El sorteo no es lento.** Lo lento es que el portal entero se re-arranca solo:
+**24 peticiones en 8 segundos con la pestaña quieta**, sin tocar nada, incluida
+`ensure_user_by_code` (la edge function de auth) repetida. El preview salía
+dentro de esa ráfaga y esperaba detrás. Es un problema del arranque global, no
+del módulo de conteo — queda anotado, sin tocar.
+
+---
+
 ## v2.208.0 — el modal de nuevo conteo estaba aplastado a un cuarto de su ancho.
 
 El `SegmentedControl` del alcance iba envuelto en un `md:grid-cols-2`. Pero en

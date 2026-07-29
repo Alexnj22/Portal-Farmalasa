@@ -9,7 +9,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
-import { searchActiveProductsForConteo } from '../../data/conteoInventario';
+import { searchActiveProductsForConteo, fetchBranchIdsConInventario } from '../../data/conteoInventario';
 import SegmentedControl from '../common/SegmentedControl';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
@@ -46,8 +46,11 @@ const reqBadge = <Badge variant="danger" uppercase={false}>Requerido</Badge>;
 
 const AREA_TYPE_LABEL = { FARMACIA: 'Farmacias', BODEGA: 'Bodega', ADMINISTRATIVA: 'Administración', EXTERNA: 'Personal Externo' };
 const TYPE_ORDER = ['FARMACIA', 'BODEGA', 'ADMINISTRATIVA', 'EXTERNA'];
-const buildBranchOpts = (branches) => TYPE_ORDER.flatMap((type) => {
-    const group = (branches || []).filter((b) => (b.type || 'FARMACIA') === type);
+// `conInventario` = ids mapeados al ERP. Mientras no hayan cargado se muestran
+// todas: es preferible a que la lista aparezca vacía por un instante.
+const buildBranchOpts = (branches, conInventario) => TYPE_ORDER.flatMap((type) => {
+    const group = (branches || []).filter((b) => (b.type || 'FARMACIA') === type
+        && (!conInventario || conInventario.has(String(b.id))));
     if (!group.length) return [];
     return [
         { value: `__header_${type}`, label: AREA_TYPE_LABEL[type], isSeparator: true },
@@ -74,6 +77,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const [tamano, setTamano] = useState(String(TAMANO_DEFAULT));
     const [preview, setPreview] = useState(null);
     const [previewLoading, setPreviewLoading] = useState(false);
+    const [branchIdsConInv, setBranchIdsConInv] = useState(null);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -110,7 +114,16 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         });
     }, [isOpen, scopeType]);
 
-    const branchOpts = useMemo(() => buildBranchOpts(branches), [branches]);
+    // Una sola vez al abrir: son 7 filas y no cambian entre aperturas.
+    useEffect(() => {
+        if (!isOpen || branchIdsConInv) return;
+        fetchBranchIdsConInventario().then(({ data, error }) => {
+            if (error) { console.error('NuevoConteoModal: erp_sucursal_map failed:', error.message); return; }
+            setBranchIdsConInv(new Set((data || []).map((r) => String(r.branch_id))));
+        });
+    }, [isOpen, branchIdsConInv]);
+
+    const branchOpts = useMemo(() => buildBranchOpts(branches, branchIdsConInv), [branches, branchIdsConInv]);
     const laboratorioOpts = laboratorios.map((l) => ({ value: String(l.id), label: l.nombre }));
 
     const handleManualSearch = async (q) => {

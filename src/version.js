@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.209.0';
+export const APP_VERSION = '2.210.0';
+
+// v2.210.0 — el modal solo ofrece sucursales con inventario.
+//
+// Administracion aparecia en la lista y no tiene inventario: elegirla llevaba a
+// que crear_conteo_inventario reventara con SUCURSAL_SIN_MAPEO_ERP. El filtro
+// va por el mapeo al ERP (erp_sucursal_map) y no por el `type` de la sucursal,
+// que es exactamente el criterio que exige la RPC — filtrar por otra cosa
+// dejaria opciones que revientan al elegirlas. Quedan las 7 con inventario.
+//
+// Medido de paso, buscando por que el sorteo tardaba ~5s:
+//   · seleccionar/preview_muestra_ciclica en BD: **35 ms** (EXPLAIN ANALYZE)
+//   · ida y vuelta HTTP: ~230 ms
+//   · abrir el modal + elegir sucursal: solo 2 peticiones
+// El sorteo NO es lento. Lo lento es que el portal entero se re-arranca solo:
+// 24 peticiones en 8 segundos con la pestana QUIETA, incluida
+// `ensure_user_by_code` (la edge function de auth) repetida. El preview salia
+// dentro de esa rafaga y esperaba detras. Es un problema del arranque global,
+// no del conteo — anotado, sin tocar.
+
 
 // v2.209.0 — los dos hallazgos laterales de C4, corregidos y medidos.
 //

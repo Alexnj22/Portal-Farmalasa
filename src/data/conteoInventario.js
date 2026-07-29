@@ -46,6 +46,15 @@ export function fetchErpSucursalIdsForBranch(branchId) {
     return supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', branchId);
 }
 
+// Qué sucursales pueden tener un conteo: las que están mapeadas al ERP. El
+// criterio es el mapeo y no el `type` de la sucursal — es lo mismo que exige
+// crear_conteo_inventario (SUCURSAL_SIN_MAPEO_ERP), así que filtrar por otra
+// cosa dejaría opciones en la lista que revientan al elegirlas. Hoy la única
+// sin mapeo es Administración, que no tiene inventario.
+export function fetchBranchIdsConInventario() {
+    return supabase.from('erp_sucursal_map').select('branch_id');
+}
+
 export function fetchInventoryLotesForProduct(productId, erpSucursalIds) {
     return supabase.from('inventory')
         .select('lote, fecha_vencimiento')

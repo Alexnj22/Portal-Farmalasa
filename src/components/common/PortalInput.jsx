@@ -44,6 +44,19 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     // numéricas densas de las grillas (nómina, min/max) donde el campo va
     // dentro de una tabla y no como campo de formulario.
     compact = false,
+    // `alto`: el opuesto de `compact` — 56px y dígitos grandes, para el campo
+    // que se llena DE PIE con una sola mano. Nace del conteo de inventario en el
+    // teléfono: contar un anaquel es teclear un número por lote mirando la
+    // estantería, no la pantalla, y un campo de 44px con texto normal se falla.
+    // Va en el canónico y no como input a mano porque es una VARIANTE DE ALTO
+    // del mismo control (igual que `compact`), no otra anatomía.
+    //
+    // Del mismo cambio: los spinners de `input[type=number]` se retiran SIEMPRE
+    // (abajo, en las clases del `<input>`). Son cromo del navegador —no salen
+    // del tema, no responden a la densidad— y en un campo angosto se comen
+    // ~24px justo donde el número tiene que leerse. Mismo criterio que prohibir
+    // `<select>`/date nativos. Las flechas del teclado siguen funcionando.
+    alto = false,
     inputClassName = '',
     // `className` va al CONTENEDOR, no al `<input>` (para eso está
     // `inputClassName`). Lo necesitan las celdas de ancho fijo: `w-20`, `w-24`,
@@ -134,7 +147,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 `SegmentedControl` — los tres tenían la altura escrita a mano.
                 `compact` se queda en 32px a propósito: son las celdas de grilla
                 densa de DESIGN.md §15.12. */}
-            <div data-surface={(t || od) ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : 'h-[max(40px,var(--tap-min))]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${od ? `rounded-input ${od.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
+            <div data-surface={(t || od) ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : alto ? 'h-14' : 'h-[max(40px,var(--tap-min))]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${od ? `rounded-input ${od.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
                 {Icon && <div className={`absolute left-3 ${t?.icono ?? od?.icono ?? 'text-content-3'}`}><Icon size={14} strokeWidth={2.5} /></div>}
                 {prefix && <div className="absolute left-3 text-content-3 font-black text-body">{prefix}</div>}
                 <input
@@ -151,7 +164,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
                     aria-describedby={isInvalid ? messageId : rest['aria-describedby']}
-                    className={`w-full h-full bg-transparent ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold ${t?.texto ?? od?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    className={`w-full h-full bg-transparent [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0 ${compact ? 'text-body-sm' : alto ? 'text-display-sm' : 'text-body-xl'} font-bold ${t?.texto ?? od?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}
             </div>

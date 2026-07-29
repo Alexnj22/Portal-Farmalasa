@@ -5,10 +5,11 @@ import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ClipboardCheck, ChevronLeft, ChevronRight, Search, Printer, CheckCircle2, ShieldCheck, Loader2,
-    Plus, X, Package, FlaskConical, History, Radio, Pencil, PackageX, EyeOff,
+    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
+    Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
     FileSpreadsheet, Download,
 } from 'lucide-react';
+import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
@@ -51,16 +52,20 @@ const FILTRO_PILLS = [
     { key: 'SIN_UBICAR', label: 'No ubicados' },
 ];
 
-const COLUMNS = [
+// Las columnas del sistema no se declaran si el conteo es ciego: la RPC ya
+// devuelve NULL ahí, así que una columna "Sistema" llena de ••• sería un hueco
+// que además invita a preguntar por qué está tapada.
+const columnas = (verSistema) => [
     { key: 'producto', label: 'Producto' },
-    { key: 'laboratorio', label: 'Laboratorio', hideBelow: 'lg' },
-    { key: 'presentacion', label: 'Presentación', align: 'center', hideBelow: 'md' },
-    { key: 'lote', label: 'Lote', hideBelow: 'md' },
-    { key: 'vence', label: 'Vence', align: 'center', hideBelow: 'lg' },
-    { key: 'sistema', label: 'Sistema', align: 'center' },
+    { key: 'laboratorio', label: 'Laboratorio', hideBelow: 'xl' },
+    { key: 'presentacion', label: 'Presentación', align: 'center', hideBelow: 'lg' },
+    { key: 'lote', label: 'Lote' },
+    { key: 'vence', label: 'Vence', align: 'center', hideBelow: 'xl' },
+    { key: 'quien', label: 'Contado por', hideBelow: 'lg' },
+    ...(verSistema ? [{ key: 'sistema', label: 'Sistema', align: 'center' }] : []),
     { key: 'fisico', label: 'Físico', align: 'center' },
-    { key: 'diferencia', label: 'Diferencia', align: 'center' },
-    { key: 'nota', label: 'Nota', hideBelow: 'lg' },
+    ...(verSistema ? [{ key: 'diferencia', label: 'Diferencia', align: 'center' }] : []),
+    { key: 'nota', label: 'Nota', hideBelow: 'xl' },
     { key: 'estado', label: 'Estado', align: 'center' },
 ];
 
@@ -74,6 +79,10 @@ const fmtDateTime = (iso) => {
     if (!iso) return '—';
     return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
+// Solo la hora: en la línea de autoría la fecha es siempre la del conteo en
+// curso, así que repetirla en cada lote gasta ancho sin decir nada. La fecha
+// completa sigue en el `title` y en el historial.
+const fmtHora = (iso) => (iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '—');
 const difClass = (dif) => (dif == null ? 'text-content-3' : dif === 0 ? 'text-success' : dif < 0 ? 'text-danger' : 'text-chart-1-text');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 
@@ -104,13 +113,53 @@ function LiveBadge() {
     );
 }
 
-// En modo ciego el contador no puede ver ni el sistema ni la diferencia: con la
-// diferencia a la vista, el sistema se despeja restando. Ocultar solo una de las
-// dos columnas sería un ciego de mentira.
-const OCULTO = '•••';
+// Qué pasó en cada fila del historial. El discriminador lo escribe la BD
+// (columna `evento`); antes las cuatro clases de evento se veían idénticas y el
+// único indicio era el texto de la nota, que el usuario puede pisar.
+const EVENTO_CFG = {
+    CAPTURA:  { label: 'Capturó',           variante: 'success' },
+    EDICION:  { label: 'Editó',             variante: 'warning' },
+    BORRADO:  { label: 'Borró la cantidad', variante: 'danger'  },
+    RECUENTO: { label: 'Recontó',           variante: 'chart-1' },
+    LOTE:     { label: 'Corrigió el lote',  variante: 'chart-9' },
+    CIERRE:   { label: 'Cerró sin ubicar',  variante: 'neutral' },
+};
 
-function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, onShowHistory, onEditLote, currentUserName }) {
+// Máscara del recuento: el supervisor no ve ni el sistema ni el primer conteo
+// hasta registrar el suyo. El ciego del conteo normal ya no pasa por acá — el
+// número no viene en la respuesta.
+const TAPADO = '•••';
+
+// Quién puso la cantidad y cuándo, en la línea misma — no escondido detrás de un
+// clic. Abre el historial completo, que es donde se ve si alguien la cambió.
+//
+// Una sola línea a propósito: en el teléfono hay una de estas por LOTE, y
+// apilarla en tres renglones (avatar, nombre, fecha) empujaba el siguiente lote
+// fuera de la pantalla.
+function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
+    if (!nombre && !cuando) return null;
+    const titulo = `Contado por ${nombre || 'desconocido'} · ${fmtDateTime(cuando)}`
+        + (ediciones > 0 ? ` · editada ${ediciones} ${ediciones === 1 ? 'vez' : 'veces'}` : '')
+        + ' — ver historial';
+    return (
+        <Button variant="ghost" size="sm" onClick={onClick} title={titulo} className="min-w-0 max-w-full">
+            <span className="flex items-center gap-1.5 min-w-0">
+                <LiquidAvatar src={fotoUrl} alt="" fallbackText={nombre || '?'}
+                    className="w-5 h-5 rounded-full shrink-0" />
+                <span className="text-label font-bold text-content-2 truncate">{nombre || 'Desconocido'}</span>
+                <span className="text-micro text-content-3 tabular-nums shrink-0">{fmtHora(cuando)}</span>
+                {ediciones > 0 && <Badge variant="warning" size="sm" className="shrink-0">{ediciones} ed.</Badge>}
+            </span>
+        </Button>
+    );
+}
+
+function ItemRow({
+    item, index, editable, recuento, desbloqueada,
+    onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser,
+}) {
     const { showToast } = useToastStore();
+    const verSistema = !!item.ver_sistema;
     // En recuento el campo arranca VACÍO: precargarlo con el primer conteo
     // sería mostrarle al supervisor justo el número que viene a verificar.
     const [fisico, setFisico] = useState(recuento ? '' : (item.fisico_cantidad ?? ''));
@@ -119,7 +168,9 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
     const [nota, setNota] = useState(item.nota ?? '');
     const [sistema, setSistema] = useState(item.sistema_cantidad);
     const [contadoPorNombre, setContadoPorNombre] = useState(item.contado_por_nombre ?? null);
+    const [contadoPorFoto, setContadoPorFoto] = useState(item.contado_por_photo_url ?? null);
     const [contadoAt, setContadoAt] = useState(item.contado_at ?? null);
+    const [ediciones, setEdiciones] = useState(item.ediciones_count ?? 0);
     const [estadoItem, setEstadoItem] = useState(item.estado_item);
     const [saving, setSaving] = useState(false);
     // Última combinación efectivamente guardada — evita que un blur sin
@@ -132,21 +183,30 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
         setNota(item.nota ?? '');
         setSistema(item.sistema_cantidad);
         setContadoPorNombre(item.contado_por_nombre ?? null);
+        setContadoPorFoto(item.contado_por_photo_url ?? null);
         setContadoAt(item.contado_at ?? null);
+        setEdiciones(item.ediciones_count ?? 0);
         setEstadoItem(item.estado_item);
         lastSaved.current = { fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item };
-    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre, item.estado_item, item.nota, recuento]);
+    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre,
+        item.contado_por_photo_url, item.ediciones_count, item.estado_item, item.nota, recuento]);
 
     // Estimado inmediato con el "sistema" ya visible (en vivo si aún no se ha
     // contado) — el valor definitivo llega en la respuesta de guardar_conteo_item,
     // que releyó inventory en el instante exacto del guardado.
-    const dif = fisico !== '' ? Number(fisico) - sistema : null;
+    const dif = fisico !== '' && sistema != null ? Number(fisico) - sistema : null;
     const isLive = item.fisico_cantidad == null && !item.es_agregado_manual;
 
-    // Un recuento también es ciego, y además al primer conteo: si el supervisor
+    // Una línea ya confirmada NO es un campo. Una celda que sigue pareciendo un
+    // input invita a teclear encima de lo ya contado; el lápiz es el único
+    // camino de vuelta, y por eso deja rastro en el historial.
+    const confirmada = !recuento && estadoItem !== 'PENDIENTE';
+    const bloqueada = editable && confirmada && !desbloqueada;
+
+    // El recuento se tapa al primer conteo además del sistema: si el supervisor
     // ve que decía 12, escribe 12. Se destapa recién cuando registró el suyo.
-    const tapado = ciego || (recuento && !revelado);
-    const puedeEscribir = editable || (recuento && !revelado);
+    const tapado = recuento && !revelado;
+    const puedeEscribir = recuento ? !revelado : (editable && !bloqueada);
 
     // Devuelve la celda al último valor confirmado por el servidor. Se usa en
     // todo camino de fallo: dejar el número tecleado en pantalla haría que el
@@ -208,8 +268,18 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
             lastSaved.current = { fisico: nextFisico, nota: nextNota, estado: nextEstado };
             setSistema(result.sistema_cantidad);
             setEstadoItem(nextEstado);
-            setContadoPorNombre(currentUserName);
-            setContadoAt(new Date().toISOString());
+            // SIN_CAMBIO: la RPC no tocó la fila (ni el sistema, ni la autoría).
+            // Reflejarlo acá como si alguien hubiera contado sería mentir sobre
+            // quién y cuándo — y es justo el caso de abrir el lápiz y salir.
+            if (result.evento !== 'SIN_CAMBIO') {
+                setContadoPorNombre(currentUser?.name ?? contadoPorNombre);
+                setContadoPorFoto(currentUser?.photo ?? contadoPorFoto);
+                setContadoAt(new Date().toISOString());
+                if (result.evento === 'EDICION' || result.evento === 'BORRADO') setEdiciones((k) => k + 1);
+            }
+            // Confirmar vuelve a bloquear: el estado normal de una línea contada
+            // es cerrada, y desbloquearla es siempre un acto explícito.
+            if (nextFisico !== null) onUnlock(item.id, false);
         } catch (err) {
             revertToLastSaved();
             showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
@@ -231,8 +301,12 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
             setFisico(0);
             setSistema(result.sistema_cantidad);
             setEstadoItem('SIN_UBICAR');
-            setContadoPorNombre(currentUserName);
-            setContadoAt(new Date().toISOString());
+            if (result.evento !== 'SIN_CAMBIO') {
+                setContadoPorNombre(currentUser?.name ?? contadoPorNombre);
+                setContadoPorFoto(currentUser?.photo ?? contadoPorFoto);
+                setContadoAt(new Date().toISOString());
+            }
+            onUnlock(item.id, false);
         } catch (err) {
             showToast('No se marcó el renglón', err.message, 'error');
         } finally {
@@ -240,22 +314,38 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
         }
     };
 
+    // Contar es teclear seguido sin levantar la vista del anaquel: las flechas
+    // recorren los campos y Enter salta al siguiente que falta.
+    //
+    // `offsetParent !== null` NO es de más: la tabla y las tarjetas del teléfono
+    // están las DOS en el DOM (el corte es `md:hidden`, que oculta pero no quita),
+    // así que sin el filtro cada línea aporta dos campos y la flecha abajo salta
+    // al gemelo invisible del otro layout.
     const handleFisicoKeyDown = (e) => {
+        const campos = () => Array.from(document.querySelectorAll('input[data-fisico-input="true"]'))
+            .filter((el) => el.offsetParent !== null);
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.currentTarget.blur();
+            const pendiente = campos().find((el) => el !== e.currentTarget && el.value === '');
+            if (pendiente) { pendiente.focus(); pendiente.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+            return;
+        }
         if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
         e.preventDefault();
-        const inputs = Array.from(document.querySelectorAll('input[data-fisico-input="true"]'));
+        const inputs = campos();
         const idx = inputs.indexOf(e.currentTarget);
         const next = e.key === 'ArrowDown' ? inputs[idx + 1] : inputs[idx - 1];
         if (next) { next.focus(); next.select(); }
     };
 
     return (
-        <DataRow index={index} className="bg-surface-card-hover/30">
+        <DataRow index={index} className={bloqueada ? 'bg-success/5' : 'bg-surface-card-hover/30'}>
             <DataCell><span className="text-content-3 text-label">↳</span></DataCell>
-            <DataCell hideBelow="lg" />
-            <DataCell align="center" hideBelow="md"><span className="text-label font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
-            <DataCell hideBelow="md">
-                <div className="flex items-center gap-1.5">
+            <DataCell hideBelow="xl" />
+            <DataCell align="center" hideBelow="lg"><span className="text-label font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
+            <DataCell>
+                <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
                     {/* El ERP separa el stock vencido en su propia área. Sin esta
                         marca, esa fila y la del stock bueno se veían idénticas
@@ -268,44 +358,71 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
                     )}
                 </div>
             </DataCell>
-            <DataCell align="center" hideBelow="lg">
+            <DataCell align="center" hideBelow="xl">
                 <div className="flex items-center justify-center gap-1">
                     <span className="text-label text-content-3 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
                     <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
                 </div>
             </DataCell>
-            <DataCell align="center">
-                {tapado ? (
-                    <span className="text-body-sm font-bold text-content-3 tabular-nums" title={recuento ? 'Oculto: recuento a ciegas' : 'Oculto: conteo ciego'}>{OCULTO}</span>
-                ) : (
-                    <div className="flex items-center justify-center gap-1.5">
-                        <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema}</span>
-                        {isLive && <LiveBadge />}
-                    </div>
-                )}
+            <DataCell hideBelow="lg">
+                <AutorLinea
+                    nombre={contadoPorNombre} fotoUrl={contadoPorFoto} cuando={contadoAt}
+                    ediciones={ediciones} onClick={() => onShowHistory(item)}
+                />
             </DataCell>
+            {verSistema && (
+                <DataCell align="center">
+                    {tapado ? (
+                        <span className="text-body-sm font-bold text-content-3 tabular-nums" title="Oculto hasta que registrés tu recuento">{TAPADO}</span>
+                    ) : (
+                        <div className="flex items-center justify-center gap-1.5">
+                            <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema ?? '—'}</span>
+                            {isLive && <LiveBadge />}
+                        </div>
+                    )}
+                </DataCell>
+            )}
             <DataCell align="center">
                 <div className="flex flex-col items-center gap-0.5">
                     <div className="flex items-center justify-center gap-1">
-                        <PortalInput
-                            aria-label={recuento ? 'Cantidad del recuento' : 'Cantidad física contada'}
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={fisico}
-                            onChange={(e) => setFisico(e.target.value)}
-                            placeholder={recuento && !revelado ? 'Recontar' : '—'}
-                            onKeyDown={handleFisicoKeyDown}
-                            onBlur={commit}
-                            readOnly={!puedeEscribir}
-                            compact
-                            inputClassName="text-center text-body-xl font-bold"
-                            className="w-16"
-                        />
-                        {editable && (
-                            <Button variant="ghost" icon={PackageX} disabled={saving}
-                                title="No ubicado — lo busqué y no está en el anaquel"
-                                iconOnly onClick={marcarNoUbicado} />
+                        {bloqueada ? (
+                            <>
+                                {/* Ya confirmada: el número se muestra, no se ofrece. */}
+                                <span className="inline-flex items-center justify-center min-w-16 h-9 px-2 rounded-xl
+                                                 border border-success/40 bg-success/10 text-success
+                                                 text-body-xl font-bold tabular-nums">
+                                    {fisico}
+                                </span>
+                                <Button variant="ghost" icon={Pencil} disabled={saving}
+                                    title="Corregir esta cantidad — queda registrado en el historial"
+                                    aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, lote ${item.lote || 'sin lote'}`}
+                                    iconOnly onClick={() => onUnlock(item.id, true)} />
+                            </>
+                        ) : (
+                            <>
+                                <PortalInput
+                                    aria-label={recuento ? 'Cantidad del recuento' : 'Cantidad física contada'}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={fisico}
+                                    onChange={(e) => setFisico(e.target.value)}
+                                    placeholder={recuento && !revelado ? 'Recontar' : '—'}
+                                    onKeyDown={handleFisicoKeyDown}
+                                    onBlur={commit}
+                                    readOnly={!puedeEscribir}
+                                    compact
+                                    data-fisico-input="true"
+                                    inputClassName="text-center text-body-xl font-bold"
+                                    className="w-16"
+                                />
+                                {editable && !recuento && (
+                                    <Button variant="ghost" icon={PackageX} disabled={saving}
+                                        title="No ubicado — lo busqué y no está en el anaquel"
+                                        aria-label="Marcar como no ubicado"
+                                        iconOnly onClick={marcarNoUbicado} />
+                                )}
+                            </>
                         )}
                     </div>
                     {/* Solo después de registrar el recuento: ver si coincidió con
@@ -317,14 +434,16 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
                     )}
                 </div>
             </DataCell>
-            <DataCell align="center">
-                {tapado ? (
-                    <span className="text-body-sm font-black text-content-3 tabular-nums">{OCULTO}</span>
-                ) : (
-                    <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
-                )}
-            </DataCell>
-            <DataCell hideBelow="lg">
+            {verSistema && (
+                <DataCell align="center">
+                    {tapado ? (
+                        <span className="text-body-sm font-black text-content-3 tabular-nums">{TAPADO}</span>
+                    ) : (
+                        <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                    )}
+                </DataCell>
+            )}
+            <DataCell hideBelow="xl">
                 <PortalInput
                     aria-label="Nota del conteo"
                     type="text"
@@ -350,61 +469,221 @@ function ItemRow({ item, index, editable, ciego, recuento, onSave, onRecount, on
                             Recontada
                         </Badge>
                     )}
-                    {contadoPorNombre && (
-                        <Button variant="ghost" icon={History} title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`} onClick={() => onShowHistory(item)}>{contadoPorNombre}</Button>
-                    )}
                 </div>
             </DataCell>
         </DataRow>
     );
 }
 
-function ProductGroupRow({ product, index, expanded, ciego, onToggle }) {
+function ProductGroupRow({ product, index, verSistema }) {
     const dif = product.diferencia_total;
+    // Todos sus lotes confirmados: la banda deja de llamar. Es la señal que se
+    // busca al recorrer un anaquel — qué falta, no qué ya está.
+    const completo = product.item_count > 0 && product.contados_count >= product.item_count;
     return (
-        <DataRow index={index} onClick={onToggle} className="cursor-pointer">
+        <DataRow index={index} className={completo ? 'bg-success/10' : ''}>
             <DataCell className="w-[280px]">
-                <div className="flex items-center gap-2">
-                    <ChevronRight size={14} className={`text-content-3 shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-content text-body-sm truncate">{product.product_nombre || `Producto ${product.erp_product_id}`}</p>
-                            {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
-                        </div>
-                    </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <p className={`font-bold text-body-sm truncate ${completo ? 'text-success' : 'text-content'}`}>
+                        {product.product_nombre || `Producto ${product.erp_product_id}`}
+                    </p>
+                    {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
                 </div>
             </DataCell>
-            <DataCell hideBelow="lg"><span className="text-label text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
-            <DataCell align="center" hideBelow="md">
-                <Badge uppercase={false}>{product.item_count} lote{product.item_count === 1 ? '' : 's'}</Badge>
-            </DataCell>
-            <DataCell hideBelow="md" />
+            <DataCell hideBelow="xl"><span className="text-label text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
             <DataCell align="center" hideBelow="lg">
+                <Badge uppercase={false} variant={completo ? 'success' : 'neutral'}>
+                    {product.item_count} lote{product.item_count === 1 ? '' : 's'}
+                </Badge>
+            </DataCell>
+            <DataCell />
+            <DataCell align="center" hideBelow="xl">
                 <div className="flex items-center justify-center gap-1">
                     {product.con_vencidos_count > 0 && <VencimientoBadge status="VENCIDO" />}
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
                 </div>
             </DataCell>
-            <DataCell align="center">
-                <span className={`text-body-sm font-black tabular-nums ${ciego ? 'text-content-3' : 'text-content-2'}`}>
-                    {ciego ? OCULTO : product.sistema_total}
-                </span>
-            </DataCell>
-            <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
-            <DataCell align="center">
-                {ciego ? (
-                    <span className="text-body-sm font-black text-content-3 tabular-nums">{OCULTO}</span>
-                ) : (
-                    <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
-                )}
-            </DataCell>
             <DataCell hideBelow="lg" />
+            {verSistema && (
+                <DataCell align="center">
+                    <span className="text-body-sm font-black text-content-2 tabular-nums">{product.sistema_total ?? '—'}</span>
+                </DataCell>
+            )}
+            <DataCell align="center"><span className="text-body-sm font-black text-content-2 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
+            {verSistema && (
+                <DataCell align="center">
+                    <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
+                </DataCell>
+            )}
+            <DataCell hideBelow="xl" />
             <DataCell align="center">
-                <span className={`text-caption font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-success' : 'text-content-3'}`}>
+                <span className={`text-caption font-bold tabular-nums ${completo ? 'text-success' : 'text-content-3'}`}>
                     {product.contados_count}/{product.item_count}
                 </span>
             </DataCell>
         </DataRow>
+    );
+}
+
+// ── Teléfono ────────────────────────────────────────────────────────────────
+// DESIGN.md §32 anota como hueco que `DataTable` no se convierte en tarjetas.
+// Acá se cierra para esta vista, porque es la única que se usa de pie en un
+// pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
+// por lote se leía como dos productos distintos), campo de 56px y todo objetivo
+// táctil en 44px o más.
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, currentUser }) {
+    const { showToast } = useToastStore();
+    const [fisico, setFisico] = useState(recuento ? '' : (item.fisico_cantidad ?? ''));
+    const [estadoItem, setEstadoItem] = useState(item.estado_item);
+    const [autor, setAutor] = useState({
+        nombre: item.contado_por_nombre ?? null,
+        foto: item.contado_por_photo_url ?? null,
+        cuando: item.contado_at ?? null,
+        ediciones: item.ediciones_count ?? 0,
+    });
+    const [saving, setSaving] = useState(false);
+    const guardado = useRef(item.fisico_cantidad ?? null);
+
+    useEffect(() => {
+        setFisico(recuento ? '' : (item.fisico_cantidad ?? ''));
+        setEstadoItem(item.estado_item);
+        setAutor({
+            nombre: item.contado_por_nombre ?? null,
+            foto: item.contado_por_photo_url ?? null,
+            cuando: item.contado_at ?? null,
+            ediciones: item.ediciones_count ?? 0,
+        });
+        guardado.current = item.fisico_cantidad ?? null;
+    }, [item.id, item.fisico_cantidad, item.estado_item, item.contado_at, item.contado_por_nombre,
+        item.contado_por_photo_url, item.ediciones_count, recuento]);
+
+    const confirmada = !recuento && estadoItem !== 'PENDIENTE';
+    const bloqueada = editable && confirmada && !desbloqueada;
+
+    const commit = async (valor, estado) => {
+        if (saving) return;
+        if (valor !== null && (!Number.isInteger(valor) || valor < 0)) {
+            showToast('Cantidad inválida', 'El conteo físico debe ser un número entero de 0 o más.', 'error');
+            setFisico(guardado.current ?? '');
+            return;
+        }
+        if (!recuento && guardado.current === valor && estado === estadoItem) return;
+        setSaving(true);
+        try {
+            const res = recuento
+                ? await onRecount(item.id, { fisicoCantidad: valor, nota: null })
+                : await onSave(item.id, { fisicoCantidad: valor, nota: item.nota ?? null, estadoItem: estado });
+            guardado.current = valor;
+            setEstadoItem(recuento ? (valor === 0 && res.sistema_cantidad > 0 ? 'SIN_UBICAR' : 'CONTADO') : estado);
+            if (res.evento !== 'SIN_CAMBIO') {
+                setAutor((a) => ({
+                    nombre: currentUser?.name ?? a.nombre,
+                    foto: currentUser?.photo ?? a.foto,
+                    cuando: new Date().toISOString(),
+                    ediciones: res.evento === 'EDICION' || res.evento === 'BORRADO' ? a.ediciones + 1 : a.ediciones,
+                }));
+            }
+            if (valor !== null) onUnlock(item.id, false);
+        } catch (err) {
+            setFisico(guardado.current ?? '');
+            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const onBlur = () => {
+        const v = fisico === '' ? null : Number(fisico);
+        if (v === null && !recuento) { onUnlock(item.id, false); return; }
+        if (v === null) return;
+        commit(v, 'CONTADO');
+    };
+
+    return (
+        <div className="pt-2.5 mt-2.5 border-t border-dashed border-border-card first:border-t-0 first:mt-1 first:pt-0">
+            <div className="flex items-baseline justify-between gap-2 flex-wrap mb-1.5">
+                <span className={`text-label font-bold tabular-nums ${bloqueada ? 'text-success' : 'text-content-2'}`}>
+                    Lote {item.lote || '—'}
+                </span>
+                <span className="text-caption text-content-3 tabular-nums">
+                    {item.presentacion || '—'} · vence {fmtDate(item.fecha_vencimiento)}
+                </span>
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+                {bloqueada ? (
+                    <>
+                        {/* Confirmada: el número se muestra, no se ofrece. min-w-0 es
+                            obligatorio — sin él el ancho intrínseco del contenido
+                            empuja al lápiz fuera del marco en un teléfono angosto. */}
+                        <span className="flex-1 min-w-0 h-14 grid place-items-center rounded-xl border
+                                         border-success/50 bg-success/10 text-success
+                                         text-display-sm font-bold tabular-nums">
+                            {fisico}
+                        </span>
+                        <Button variant="secondary" icon={Pencil} iconOnly disabled={saving}
+                            className="h-14 w-14 shrink-0"
+                            aria-label={`Corregir la cantidad de ${item.product_nombre || 'esta línea'}, lote ${item.lote || 'sin lote'}`}
+                            onClick={() => onUnlock(item.id, true)} />
+                    </>
+                ) : (
+                    <>
+                        <PortalInput
+                            aria-label={`Cantidad de ${item.product_nombre || 'el producto'}, lote ${item.lote || 'sin lote'}`}
+                            type="number" min="0" step="1" inputMode="numeric"
+                            value={fisico}
+                            onChange={(e) => setFisico(e.target.value)}
+                            onBlur={onBlur}
+                            placeholder={recuento ? 'Recontar' : '—'}
+                            readOnly={!editable && !recuento}
+                            data-fisico-input="true"
+                            alto
+                            className="flex-1 min-w-0"
+                            inputClassName="text-center"
+                        />
+                        {editable && !recuento && (
+                            <Button variant="secondary" icon={PackageX} iconOnly disabled={saving}
+                                className="h-14 w-14 shrink-0"
+                                aria-label="Marcar como no ubicado"
+                                title="No ubicado — lo busqué y no está"
+                                onClick={() => { setFisico(0); commit(0, 'SIN_UBICAR'); }} />
+                        )}
+                    </>
+                )}
+            </div>
+            {(autor.nombre || estadoItem === 'SIN_UBICAR' || item.is_vencidos || item.es_agregado_manual) && (
+                <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    {item.is_vencidos && <Badge variant="danger" size="sm">Área vencidos</Badge>}
+                    {item.es_agregado_manual && <Badge variant="chart-9" size="sm">Agregado</Badge>}
+                    {estadoItem === 'SIN_UBICAR' && <Badge variant="danger" size="sm" icon={PackageX}>No ubicado</Badge>}
+                    <AutorLinea
+                        nombre={autor.nombre} fotoUrl={autor.foto} cuando={autor.cuando}
+                        ediciones={autor.ediciones} onClick={() => onShowHistory(item)}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ProductCardMovil({ product, lines, desbloqueadas, ...rest }) {
+    const completo = product.item_count > 0 && product.contados_count >= product.item_count;
+    return (
+        <div data-surface="card" className={`p-3 ${completo ? 'bg-success/10' : ''}`}>
+            <div className="flex items-start justify-between gap-2">
+                <p className={`font-bold text-body-sm leading-tight text-balance min-w-0 ${completo ? 'text-success' : 'text-content'}`}>
+                    {product.product_nombre || `Producto ${product.erp_product_id}`}
+                </p>
+                <span className={`text-caption font-bold tabular-nums shrink-0 ${completo ? 'text-success' : 'text-content-3'}`}>
+                    {product.contados_count}/{product.item_count}
+                </span>
+            </div>
+            {product.es_antibiotico && <Badge variant="danger" size="sm" className="mt-1">Bajo Receta</Badge>}
+            {lines
+                ? lines.map((it) => (
+                    <LoteMovil key={it.id} item={it} desbloqueada={!!desbloqueadas[it.id]} {...rest} />
+                ))
+                : <div className="mt-2"><SkeletonText lines={2} /></div>}
+        </div>
     );
 }
 
@@ -434,21 +713,34 @@ function ItemHistoryModal({ item, onClose }) {
                     <p className="text-body-sm text-content-3 text-center py-8">Sin registros todavía.</p>
                 ) : (
                     <div className="space-y-2">
-                        {history.map((h) => (
-                            <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-label font-bold text-content-2">{h.contado_por_nombre || 'Desconocido'}</p>
-                                    <p className="text-micro text-content-3">{fmtDateTime(h.contado_at)}</p>
-                                    {h.nota && <p className="text-caption text-content-3 italic mt-0.5">"{h.nota}"</p>}
+                        {history.map((h) => {
+                            const ev = EVENTO_CFG[h.evento] || EVENTO_CFG.EDICION;
+                            return (
+                                <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <LiquidAvatar src={h.contado_por_photo_url} alt=""
+                                            fallbackText={h.contado_por_nombre || '?'}
+                                            className="w-9 h-9 rounded-full shrink-0" />
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <p className="text-label font-bold text-content-2 truncate">{h.contado_por_nombre || 'Desconocido'}</p>
+                                                <Badge variant={ev.variante} size="sm" uppercase={false}>{ev.label}</Badge>
+                                            </div>
+                                            <p className="text-micro text-content-3 tabular-nums">{fmtDateTime(h.contado_at)}</p>
+                                            {h.nota && <p className="text-caption text-content-3 italic mt-0.5 break-words">&ldquo;{h.nota}&rdquo;</p>}
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-label font-bold text-content-2 tabular-nums">
+                                            {h.sistema_cantidad != null && <>Sist. {h.sistema_cantidad} · </>}Fís. {h.fisico_cantidad ?? '—'}
+                                        </p>
+                                        {h.diferencia != null && (
+                                            <p className={`text-caption font-black tabular-nums ${difClass(h.diferencia)}`}>{difLabel(h.diferencia)}</p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <p className="text-label font-bold text-content-2 tabular-nums">Sist. {h.sistema_cantidad} · Fís. {h.fisico_cantidad ?? '—'}</p>
-                                    {h.diferencia != null && (
-                                        <p className={`text-caption font-black tabular-nums ${difClass(h.diferencia)}`}>{difLabel(h.diferencia)}</p>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -591,7 +883,7 @@ export default function ConteoDetailView() {
 
     const fetchConteoDetalle = useStaffStore((s) => s.fetchConteoDetalle);
     const fetchConteoProductsPage = useStaffStore((s) => s.fetchConteoProductsPage);
-    const fetchConteoProductItems = useStaffStore((s) => s.fetchConteoProductItems);
+    const fetchConteoItemsForProducts = useStaffStore((s) => s.fetchConteoItemsForProducts);
     const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
     const editarLoteConteoItem = useStaffStore((s) => s.editarLoteConteoItem);
     const agregarProductoManualConteo = useStaffStore((s) => s.agregarProductoManualConteo);
@@ -617,21 +909,33 @@ export default function ConteoDetailView() {
     const [printing, setPrinting] = useState(false);
     const [historyItem, setHistoryItem] = useState(null);
     const [editLoteItem, setEditLoteItem] = useState(null);
-    const [expanded, setExpanded] = useState({});
     const [itemsByProduct, setItemsByProduct] = useState({});
-    const [loadingExpand, setLoadingExpand] = useState({});
     const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
     const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
     const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
     const [promptAjusteOpen, setPromptAjusteOpen] = useState(false);
-    // Conteo ciego: arranca encendido mientras el conteo sea editable. Es el
-    // orden correcto — el primer conteo se hace a ciegas y el sistema se revela
-    // para revisar, no al revés. printHojaConteo ya sabía imprimir ciego desde
-    // el día uno, pero la vista siempre le pasaba { ciego: false }.
-    const [ciego, setCiego] = useState(true);
+    // Qué líneas se desbloquearon con el lápiz. Es por LÍNEA y no un modo de la
+    // vista: se corrige una cantidad puntual, no se "entra a editar todo".
+    const [desbloqueadas, setDesbloqueadas] = useState({});
     // Recuento de supervisor: vive entre finalizar y aprobar. Antes es el
     // conteo normal; después ya está firmado y el ajuste salió al ERP.
     const [recuento, setRecuento] = useState(false);
+
+    // El ciego ya NO es un estado de la vista. La RPC devuelve NULL en sistema y
+    // diferencia si el llamador no tiene `conteo_ver_sistema` y el conteo sigue
+    // abierto, y manda el flag para que la UI ni declare esas columnas. Antes era
+    // un <Switch> con default encendido: cualquiera lo apagaba, y el número
+    // viajaba igual en la respuesta.
+    const verSistema = products.length > 0 ? !!products[0].ver_sistema : true;
+
+    const setDesbloqueada = useCallback((itemId, abierta) => {
+        setDesbloqueadas((prev) => {
+            if (!!prev[itemId] === abierta) return prev;
+            const next = { ...prev };
+            if (abierta) next[itemId] = true; else delete next[itemId];
+            return next;
+        });
+    }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -643,14 +947,21 @@ export default function ConteoDetailView() {
             setConteo(detalle);
             setProducts(productsPage.rows);
             setTotal(productsPage.total);
-            setExpanded({});
-            setItemsByProduct({});
+            setDesbloqueadas({});
+
+            // Nada se contrae: las líneas de los productos de la página vienen
+            // de una sola llamada. Antes era una por producto, al expandirlo.
+            const ids = productsPage.rows.map((r) => r.erp_product_id);
+            const lines = await fetchConteoItemsForProducts(id, ids, { search, filtro });
+            const porProducto = {};
+            for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
+            setItemsByProduct(porProducto);
         } catch (err) {
             showToast('Error', err.message, 'error');
         } finally {
             setLoading(false);
         }
-    }, [id, page, search, filtro, fetchConteoDetalle, fetchConteoProductsPage, showToast]);
+    }, [id, page, search, filtro, fetchConteoDetalle, fetchConteoProductsPage, fetchConteoItemsForProducts, showToast]);
 
     useEffect(() => { load(); }, [load]);
     useEffect(() => { setPage(1); }, [search, filtro]);
@@ -660,23 +971,6 @@ export default function ConteoDetailView() {
     const canApproveNow = conteo?.status === 'FINALIZADO' && canApprove;
     const puedeRecontar = conteo?.status === 'FINALIZADO' && canApprove;
     const hasResults = conteo && ['FINALIZADO', 'CERRADO'].includes(conteo.status);
-
-    const toggleExpand = async (product) => {
-        const key = product.erp_product_id;
-        if (expanded[key]) { setExpanded((prev) => ({ ...prev, [key]: false })); return; }
-        setExpanded((prev) => ({ ...prev, [key]: true }));
-        if (itemsByProduct[key]) return;
-        setLoadingExpand((prev) => ({ ...prev, [key]: true }));
-        try {
-            const rows = await fetchConteoProductItems(id, key);
-            setItemsByProduct((prev) => ({ ...prev, [key]: rows }));
-        } catch (err) {
-            showToast('Error', err.message, 'error');
-            setExpanded((prev) => ({ ...prev, [key]: false }));
-        } finally {
-            setLoadingExpand((prev) => ({ ...prev, [key]: false }));
-        }
-    };
 
     // Recalcula los totales agregados del producto a partir de sus líneas ya
     // en memoria — evita un refetch de la página de productos por cada guardado.
@@ -752,7 +1046,9 @@ export default function ConteoDetailView() {
         setBusy(true);
         try {
             const res = await finalizarConteoInventario(id, pendientesComoCero);
-            setCiego(false); // ya no hay nada que contar: se pasa a revisar
+            // El ciego se levanta solo: `conteo_puede_ver_sistema` deja de dar
+            // false en cuanto el status sale de BORRADOR/EN_PROGRESO, y el
+            // `load()` de abajo trae ya los números. No hay flag que apagar.
             showToast(
                 'Conteo finalizado',
                 `${res.total_diferencias} diferencia(s)${res.total_pendientes > 0 ? ` · ${res.total_pendientes} pendiente(s)` : ''}`,
@@ -787,9 +1083,11 @@ export default function ConteoDetailView() {
         setPrinting(true);
         try {
             const allItems = await fetchTodosLosItemsConteo(id);
-            // La hoja sale ciega si la pantalla está ciega: son el mismo conteo,
-            // no tendría sentido que el papel revelara lo que la vista oculta.
-            if (kind === 'hoja') printHojaConteo(conteo, allItems, { ciego });
+            // La hoja sale ciega porque el dato NO VIENE: get_conteo_items_jsonb
+            // aplica el mismo predicado que la tabla. El flag se deriva de lo que
+            // llegó, no de un switch — antes la vista pasaba { ciego: false } fijo
+            // y el papel revelaba justo lo que la pantalla tapaba.
+            if (kind === 'hoja') printHojaConteo(conteo, allItems, { ciego: !allItems[0]?.ver_sistema });
             else if (kind === 'ajuste') printAjustesConteo(conteo, allItems);
             else if (kind === 'ajuste-csv') exportAjustesConteo(conteo, allItems);
             else printResultadosConteo(conteo, allItems, { soloDiferencias: false });
@@ -933,16 +1231,15 @@ export default function ConteoDetailView() {
                         tone="chart-9"
                         value={filtro}
                         onChange={setFiltro}
-                        options={FILTRO_PILLS.map(f => ({ value: f.key, label: f.label }))}
+                        // "Con diferencia" no se ofrece si el conteo es ciego: la
+                        // RPC lo trata como TODOS (filtrar por diferencia señala
+                        // exactamente las líneas que descuadran), así que sería un
+                        // control que no controla — y ofrecerlo ya insinúa que hay
+                        // algo ahí que mirar.
+                        options={FILTRO_PILLS
+                            .filter((f) => verSistema || f.key !== 'DIFERENCIA')
+                            .map((f) => ({ value: f.key, label: f.label }))}
                     />
-                    {editable && (
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <Switch checked={ciego} onChange={setCiego} size="sm" variant="chart-9" label="Conteo ciego" />
-                            <span className="text-label font-bold text-content-2 flex items-center gap-1">
-                                <EyeOff size={12} strokeWidth={2.5} /> Conteo ciego
-                            </span>
-                        </label>
-                    )}
                     {puedeRecontar && (
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             {/* Entrar al recuento deja la vista en "Con diferencia": es lo
@@ -963,9 +1260,11 @@ export default function ConteoDetailView() {
                     )}
                 </div>
 
-                {ciego && editable && (
+                {!verSistema && (
                     <Notice variant="info" icon={EyeOff}>
-                        Sistema y diferencia están ocultos: el contador anota lo que ve en el anaquel, no lo que el sistema espera. Apagalo para revisar los resultados.
+                        <strong>Conteo ciego.</strong> Anotá lo que ves en el anaquel, no lo que el sistema espera:
+                        la existencia del sistema y la diferencia no se muestran porque no salen de la base para tu rol.
+                        Se ven cuando el conteo se finaliza, o con el permiso «Ver Existencia del Sistema».
                     </Notice>
                 )}
 
@@ -989,36 +1288,65 @@ export default function ConteoDetailView() {
                     />
                 )}
 
-                <DataTable columns={COLUMNS} loading={loading} empty={{ icon: Package, message: 'Sin productos para este filtro' }}>
-                    {products.map((product, i) => {
-                        const key = product.erp_product_id;
-                        const isExpanded = !!expanded[key];
-                        const lines = itemsByProduct[key];
-                        return (
-                            <React.Fragment key={key}>
-                                <ProductGroupRow product={product} index={i} expanded={isExpanded} ciego={(ciego && editable) || recuento} onToggle={() => toggleExpand(product)} />
-                                {isExpanded && loadingExpand[key] && (
-                                    <tr><td colSpan={COLUMNS.length} className="py-4 px-6"><SkeletonText lines={3} /></td></tr>
-                                )}
-                                {isExpanded && lines && lines.map((item, j) => (
-                                    <ItemRow
-                                        key={item.id}
-                                        item={item}
-                                        index={j}
-                                        editable={editable}
-                                        ciego={ciego && editable}
-                                        recuento={recuento}
-                                        onSave={(itemId, payload) => handleSaveItem(itemId, payload, key)}
-                                        onRecount={(itemId, payload) => handleRecountItem(itemId, payload, key)}
-                                        onShowHistory={setHistoryItem}
-                                        onEditLote={setEditLoteItem}
-                                        currentUserName={user?.name}
-                                    />
-                                ))}
-                            </React.Fragment>
-                        );
-                    })}
-                </DataTable>
+                {/* Teléfono: tarjetas. La tabla de 11 columnas no se opera de pie
+                    en un pasillo, y `DataTable` no reflowa a tarjetas (DESIGN.md §32). */}
+                <div className="md:hidden space-y-2">
+                    {loading ? (
+                        <div data-surface="card" className="p-4"><SkeletonText lines={6} /></div>
+                    ) : products.length === 0 ? (
+                        <div data-surface="card" className="p-8 text-center">
+                            <Package size={28} className="mx-auto text-content-3 mb-2" />
+                            <p className="text-body-sm text-content-3">Sin productos para este filtro</p>
+                        </div>
+                    ) : products.map((product) => (
+                        <ProductCardMovil
+                            key={product.erp_product_id}
+                            product={product}
+                            lines={itemsByProduct[product.erp_product_id]}
+                            desbloqueadas={desbloqueadas}
+                            editable={editable}
+                            recuento={recuento}
+                            onUnlock={setDesbloqueada}
+                            onSave={(itemId, payload) => handleSaveItem(itemId, payload, product.erp_product_id)}
+                            onRecount={(itemId, payload) => handleRecountItem(itemId, payload, product.erp_product_id)}
+                            onShowHistory={setHistoryItem}
+                            currentUser={user}
+                        />
+                    ))}
+                </div>
+
+                <div className="hidden md:block">
+                    <DataTable columns={columnas(verSistema)} loading={loading} empty={{ icon: Package, message: 'Sin productos para este filtro' }}>
+                        {products.map((product, i) => {
+                            const key = product.erp_product_id;
+                            const lines = itemsByProduct[key];
+                            return (
+                                <React.Fragment key={key}>
+                                    <ProductGroupRow product={product} index={i} verSistema={verSistema} />
+                                    {!lines && (
+                                        <tr><td colSpan={columnas(verSistema).length} className="py-4 px-6"><SkeletonText lines={2} /></td></tr>
+                                    )}
+                                    {lines && lines.map((item, j) => (
+                                        <ItemRow
+                                            key={item.id}
+                                            item={item}
+                                            index={j}
+                                            editable={editable}
+                                            recuento={recuento}
+                                            desbloqueada={!!desbloqueadas[item.id]}
+                                            onUnlock={setDesbloqueada}
+                                            onSave={(itemId, payload) => handleSaveItem(itemId, payload, key)}
+                                            onRecount={(itemId, payload) => handleRecountItem(itemId, payload, key)}
+                                            onShowHistory={setHistoryItem}
+                                            onEditLote={setEditLoteItem}
+                                            currentUser={user}
+                                        />
+                                    ))}
+                                </React.Fragment>
+                            );
+                        })}
+                    </DataTable>
+                </div>
 
                 {total > 0 && (
                     <TablePagination pageSize={PAGE_SIZE} onPageSizeChange={() => {}} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />

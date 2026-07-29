@@ -20,13 +20,32 @@
  * Column definition:
  *   { key, label, sortable?, align?, hideBelow?, className? }
  *   align:     'left' | 'center' | 'right'   (default 'left')
- *   hideBelow: 'sm' | 'md' | 'lg'            — renders hidden {x}:table-cell
+ *   hideBelow: 'sm' | 'md' | 'lg' | 'xl'     — ver HIDE_BELOW abajo
  */
 
 import React, { createContext, useContext } from 'react';
 import Badge from './Badge';
 import { ArrowUp, ArrowDown, ChevronsUpDown, Inbox } from 'lucide-react';
 import Button from './Button';
+
+// `hideBelow` se armaba en runtime: `hidden ${hideBelow}:table-cell`. Tailwind
+// escanea el FUENTE, así que esa clase nunca existió por sí misma — funcionaba
+// de prestado, porque otras vistas escriben `md:table-cell`, `lg:table-cell` y
+// `sm:table-cell` literales en su JSX. `hideBelow="xl"` no lo escribía nadie:
+// la columna quedaba con `hidden` y sin la regla que la devuelve, o sea oculta
+// PARA SIEMPRE, en todos los anchos. No lo ve el build, ni el lint, ni el gate
+// —la clase está en el DOM, solo que no existe en el CSS— y es la cuarta vez
+// que este proyecto se tropieza con lo mismo (memoria
+// feedback_clase_escrita_no_existe).
+//
+// Mapa literal: lo que Tailwind ve es el texto de acá, y agregar un breakpoint
+// obliga a escribirlo.
+const HIDE_BELOW = {
+  sm: 'hidden sm:table-cell',
+  md: 'hidden md:table-cell',
+  lg: 'hidden lg:table-cell',
+  xl: 'hidden xl:table-cell',
+};
 
 // ── Tokens (Fase T3, AUDITORIA-TEMA-2026-07.md — cierra el blindspot de dark
 // mode de DESIGN.md §22: este hook nunca leía el tema, siempre devolvía los
@@ -117,7 +136,7 @@ export function DataTable({
                 {columns.map((col) => {
                   const sortable = col.sortable && !!onSort;
                   const isSorted = col.key === sortKey;
-                  const hideCls  = col.hideBelow ? `hidden ${col.hideBelow}:table-cell` : '';
+                  const hideCls  = HIDE_BELOW[col.hideBelow] ?? '';
                   const alignCls = col.align === 'right'
                     ? 'text-right'
                     : col.align === 'center'
@@ -188,7 +207,7 @@ export function DataTable({
               {loading && Array.from({ length: skeletonRows }, (_, i) => (
                 <tr key={`sk-${i}`}>
                   {columns.map((col, ci) => {
-                    const hideCls = col.hideBelow ? `hidden ${col.hideBelow}:table-cell` : '';
+                    const hideCls = HIDE_BELOW[col.hideBelow] ?? '';
                     const w = `${45 + ((i * 11 + ci * 17) % 40)}%`;
                     const alignCls = col.align === 'right' ? 'ml-auto' : '';
                     return (
@@ -301,7 +320,7 @@ export function DataRow({ children, index = 0, onClick, className = '', style, .
 export function DataCell({ children, align = 'left', hideBelow, className = '', ...props }) {
   const tk = useTable() || {};
   const alignCls  = align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : '';
-  const hideCls   = hideBelow ? `hidden ${hideBelow}:table-cell` : '';
+  const hideCls   = HIDE_BELOW[hideBelow] ?? '';
 
   return (
     <td

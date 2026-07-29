@@ -101,7 +101,13 @@ export const MODULE_GROUPS = [
                 { key: 'facturas_compra_ver_montos', label: 'Cards Contables' },
             ]},
             { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y match manual con el proveedor del ERP', icon: Truck, hasApprove: false },
-            { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true },
+            { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, tabs: [
+                // El conteo es CIEGO mientras está abierto: sin este permiso la
+                // existencia del sistema NO SALE de la base (no es un switch en
+                // la vista, que era lo de antes). Con el conteo ya finalizado los
+                // números son el resultado y los ve cualquiera que vea el módulo.
+                { key: 'conteo_ver_sistema', label: 'Ver Existencia del Sistema (rompe el ciego)' },
+            ]},
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'              },

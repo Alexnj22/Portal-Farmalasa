@@ -2,6 +2,7 @@ import { supabase } from '../../supabaseClient';
 import {
     fetchConteosInventario as fetchConteosInventarioData, fetchConteoDetalle as fetchConteoDetalleData,
 } from '../../data/conteoInventario';
+import { signPhotosDeep } from '../../utils/storageFiles';
 
 // Las RPCs del módulo levantan códigos, no frases. Sin esta traducción el
 // usuario veía el identificador crudo de Postgres en el toast.
@@ -115,7 +116,29 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_conteo_id: conteoId, p_search: null, p_filtro: 'TODOS', p_limit: 500, p_offset: 0, p_erp_product_id: erpProductId,
         });
         if (error) throw error;
-        return data || [];
+        // La RPC devuelve `photo_url` cruda (formato-public) porque en BD nunca
+        // se guarda una URL firmada — expira. La foto de quien contó se firma acá.
+        return await signPhotosDeep(data || []);
+    },
+
+    // Las líneas de TODOS los productos de la página, en un solo viaje. Al no
+    // contraer nada (contar exige teclear seguido, no abrir acordeones) hacía
+    // falta esto: antes era una llamada por producto, disparada por un click.
+    // El array va acotado a los ~25 ids de la página, así que la respuesta son
+    // decenas de filas y nunca se acerca al techo de 1000 de PostgREST.
+    fetchConteoItemsForProducts: async (conteoId, erpProductIds, { search = '', filtro = 'TODOS' } = {}) => {
+        if (!erpProductIds?.length) return [];
+        const { data, error } = await supabase.rpc('get_conteo_items_search', {
+            p_conteo_id: conteoId,
+            p_search: search || null,
+            p_filtro: filtro,
+            p_limit: 2000,
+            p_offset: 0,
+            p_erp_product_id: null,
+            p_erp_product_ids: erpProductIds,
+        });
+        if (error) throw error;
+        return await signPhotosDeep(data || []);
     },
 
     // Cuántos renglones siguen sin cantidad física. Se pide antes de finalizar:
@@ -187,7 +210,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     fetchConteoItemHistory: async (itemId) => {
         const { data, error } = await supabase.rpc('get_conteo_item_history', { p_item_id: itemId });
         if (error) throw error;
-        return data || [];
+        return await signPhotosDeep(data || []);
     },
 
     agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, lote, fechaVencimiento }) => {

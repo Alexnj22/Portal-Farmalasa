@@ -16,7 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.230.0';
+export const APP_VERSION = '2.231.0';
+
+// v2.231.0 — el conteo ciego era un interruptor, y un click de más inventaba
+// faltantes.
+//
+// 1. EL CIEGO NO ERA CIEGO. Era `useState(true)` + un `<Switch>`: cualquiera con
+//    can_edit lo apagaba, y el número del sistema viajaba en la respuesta de
+//    todos modos. Ahora NO SALE DE LA BASE. Permiso `conteo_ver_sistema` y el
+//    predicado `conteo_puede_ver_sistema`: se ve si el conteo ya está cerrado
+//    —ahí los números SON el resultado— o si tenés el permiso. Son CINCO
+//    caminos y los cinco lo respetan; tapar solo la tabla dejaba tres puertas
+//    abiertas, entre ellas el JSON de los PDF (la hoja se imprimía con
+//    `{ciego:false}` FIJO, o sea que el papel revelaba lo que la pantalla
+//    tapaba) y los `*_count`, porque filtrar por "con diferencia" señala
+//    exactamente las líneas que descuadran sin mostrar un número.
+//
+// 2. UN GUARDADO SIN CAMBIOS MOVÍA LA EXISTENCIA. `guardar_conteo_item` releía
+//    `inventory` en TODA llamada: abrir una línea confirmada y salir sin tocar
+//    nada le reasignaba el sistema de ese instante, y si entre el conteo y ese
+//    click hubo una venta la línea pasaba de cuadrada a faltante sin que nadie
+//    contara. Verificado con ROLLBACK: inventory 25, captura 7 (dif -18) → la
+//    venta baja a 22 → re-guardar el mismo 7 devuelve SIN_CAMBIO y la fila
+//    sigue en 25/-18 → guardar 9 sí relee (22/-13). El no-op no escribe ni
+//    historial.
+//
+// 3. `hideBelow="xl"` DE `DataTable` OCULTABA LA COLUMNA PARA SIEMPRE. La clase
+//    se armaba en runtime y Tailwind escanea el fuente: funcionaba de prestado
+//    porque otras vistas escriben `md:`/`lg:` literales, y `xl:` no lo había
+//    escrito nadie. Cuarta vez con una clase que no existe. Ahora es un mapa.
+//
+// Lo que se ve: nada se contrae (las líneas de los 25 productos de la página en
+// UNA llamada); confirmada = BLOQUEADA con un lápiz como único camino de vuelta;
+// quién puso la cantidad EN la línea (foto, nombre corto, hora, contador de
+// ediciones) y un historial que dice QUÉ pasó (columna `evento`); y en el
+// TELÉFONO una tarjeta por PRODUCTO con sus lotes adentro, campo de 56px con
+// teclado numérico y Enter al siguiente pendiente — verificado en WebKit y
+// Chromium a 320/375/390/430/768/1024/1440 en los tres estados de línea: cero
+// scroll horizontal, cero recorte, tap ≥44px, fuente ≥16px. `PortalInput` gana
+// `alto` y pierde los spinners nativos de `input[type=number]`.
 
 // v2.227.0 — se cierran los pendientes, y DOS de los tres "fallos" que
 // quedaban eran de mi medidor, no del portal.

@@ -9,18 +9,19 @@ F3.1, F3.4, F4.1, F4.3, F4.4 y F4.6. Advisor de seguridad **110 → 86**;
 | | |
 |---|---|
 | ✅ Cerrado | P1, P3+P5, P4, F1, F2, F3.1/3.4, F4.1/4.3/4.4/4.6, **C1, C3, C4, C5** |
-| ✅ Cerrado (v2.228.0) | **C2** — baseline verificado 15/15 contra prod; falta el `migration repair` |
+| ✅ Cerrado (v2.228.0) | **C2** — baseline verificado 15/15 contra prod + `migration repair` aplicado |
 | ⏸️ Tu decisión | PITR (se hará antes de facturar) |
 | ✅ Cerrado (v2.217.0) | rotar el secreto de cron |
 | ✅ Cerrado (v2.209.0) | slots de conexión al 87%, `collation version mismatch` (ambos en C4) |
 | 📋 Proyecto | POS |
 
-**C2 quedó ejecutado y verificado** (v2.228.0): `supabase/migrations/` tiene un
-baseline generado del catálogo de prod, verificado aplicándolo a una rama limpia
-con las 15 categorías de la huella en md5 idéntico. Falta **un** paso, que es un
-write a prod y espera OK: `migration repair --status applied`.
+**C2 quedó cerrado** (v2.228.0): `supabase/migrations/` tiene un baseline generado
+del catálogo de prod, verificado aplicándolo a una rama limpia con las 15
+categorías de la huella en md5 idéntico, y registrado en prod con
+`migration repair`.
 
-Con eso **no queda ningún punto técnico abierto en este plan.**
+**No queda ningún punto técnico abierto en este plan.** Lo que sigue es decisión
+(PITR) o proyecto (POS).
 
 Pendiente menor aparte: borrar de Vault `admin_invoke_secret_prev_20260729`
 cuando pase un día sin incidentes desde la rotación (2026-07-29 17:31 UTC).
@@ -277,18 +278,34 @@ del baseline** — vale la pena registrarlas porque volverán a aparecer:
   compacto. Era un bug del **verificador**, que comparaba por número de columna en
   vez de por nombre — medía el layout físico, no el esquema.
 
-### ⏸️ Falta un paso, y es un write a prod
+### ✅ `migration repair` aplicado (con OK explícito)
 
-**`supabase migration repair --status applied 20260101000000`.** Registra el
-baseline como aplicado **sin ejecutarlo**: una fila en
-`supabase_migrations.schema_migrations`, sin tocar esquema ni datos. Sin ese paso,
-un `db push` intentaría correr el baseline contra la base viva (el archivo lleva
-la advertencia en la cabecera). Pendiente de OK explícito, por la regla de
-[[project_migration_baseline_and_staging]].
+`supabase migration repair --status applied 20260101000000`. El registro de prod
+pasó de 731 a **732 filas**; la nueva es `20260101000000 / baseline_schema`, con
+los 2,867 statements del baseline guardados. **Verificado que no tocó el
+esquema**: la huella de prod quedó idéntica a t0 en las 15 categorías, medida
+después del repair.
 
-Opcional aparte, no hace falta para nada: purgar las 700+ filas viejas del
-registro de prod. Recomendado **no** tocarlas — cada write a prod es riesgo y esas
-filas son inertes.
+Con eso el footgun está cerrado por el mecanismo correcto: `db push` solo aplica
+versiones locales que **no** estén en el registro remoto, y ésta ya está.
+
+### 🔎 Consecuencia medida: `db push` queda inutilizable (y no importa)
+
+`supabase db push --dry-run` ahora falla con **"Remote migration versions not
+found in local migrations directory"** y lista las 731 versiones viejas. Es
+esperado: existen en el registro de prod y ya no tienen archivo local.
+
+**No afecta el flujo del proyecto**, que aplica migraciones con `apply_migration`
+(MCP), no con `db push` — ver CLAUDE.md. Y no reabre ningún riesgo.
+
+Para que `db push` vuelva a funcionar habría que marcar las 731 como revertidas
+(`migration repair --status reverted <731 versiones>`, que **borra** esas filas).
+**Recomendado NO hacerlo tal cual**: la columna `statements` de esas filas es el
+**único registro fiel de lo que realmente se aplicó** — los 339 archivos de
+`migrations-legacy/` son el set paralelo mantenido a mano, que no se corresponde
+1:1 (solo 14 de 699 coincidían). Si alguna vez se quiere `db push` operativo, el
+orden correcto es: **volcar primero esas 731 filas con su SQL a
+`migrations-legacy/servidor/`, y solo después marcarlas revertidas.**
 
 ### Nota histórica: por qué se pausó a mitad
 

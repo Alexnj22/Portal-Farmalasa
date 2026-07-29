@@ -16,7 +16,25 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.214.0';
+export const APP_VERSION = '2.216.0';
+
+// v2.216.0 — los 6 crons horarios de DTE, consolidados en uno.
+//
+// Continuacion de v2.209.0, que consolido los 13 de cada minuto. Quedaban 6
+// compartiendo el horario EXACTO '0 12-23,0-5 * * *' — y encima caen en el
+// minuto :00, el mismo en que dispara el consolidado de cada minuto, asi que el
+// pico real al tope de cada hora era ~10 conexiones simultaneas.
+//
+// Los 6 llaman a la MISMA edge function (sync-dte-sales) con el MISMO rango
+// —del 1 del mes hasta ayer, que es el resync de arrastre— y solo cambia
+// branchId (2, 4, 25, 27, 28, 29). Se consolidan igual: net.http_post es
+// asincrono, asi que los 6 encolados salen en una sesion con UNA conexion.
+// Payloads verificados identicos a los originales antes de aplicar.
+//
+// Colisiones restantes: solo las 6 mensuales (1 vez al mes, dia 1) y 2 cada
+// 10 min. El pico al tope de hora bajo de ~10 a ~4.
+//
+// v2.215.0 — (ver entrada anterior)
 
 // v2.214.0 — el portal tardaba 5 SEGUNDOS en hacer su primera peticion.
 //

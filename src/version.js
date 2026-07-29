@@ -16,7 +16,41 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.212.0';
+export const APP_VERSION = '2.213.0';
+
+// v2.213.0 — el backup semanal llevaba 17 dias sin correr, en silencio.
+//
+// Lo encontro la alerta que se acababa de arreglar en v2.211.0: backup_sync_log
+// tenia 0 filas. No era ruido, era cierto.
+//
+// Causa: `backup-critical-tables` quedo con verify_jwt=true. Su cron le manda
+// el secreto de Vault como Bearer, que NO es un JWT, asi que la plataforma lo
+// rechazaba con 401 ANTES de ejecutar una linea de la funcion — y la funcion ya
+// tiene su propio control de acceso adentro (compara contra ADMIN_INVOKE_SECRET),
+// que nunca llegaba a correr. Es exactamente la trampa documentada en la memoria
+// reference_edge_function_deploy_workaround: un redeploy sin repetir
+// --no-verify-jwt resetea el flag al default de Supabase.
+//
+// Timeline reconstruido:
+//   2026-07-12  ultimo backup exitoso (carpeta en el bucket, 28 archivos)
+//   2026-07-16 17:09 UTC  redeploy de la funcion sin el flag → verify_jwt=true
+//   2026-07-19 y 07-26    domingos sin backup, sin aviso
+//   2026-07-29  redeploy con --no-verify-jwt + corrida manual de verificacion
+//
+// Verificado de punta a punta, no solo desplegado: se disparo con el mismo
+// mecanismo del cron (net.http_post leyendo el secreto de Vault dentro de la BD)
+// y devolvio HTTP 200 con success=true, tables_ok=23, tables_failed=0,
+// total_kb=1317, y 23 archivos nuevos en el bucket privado `backups`.
+//
+// Se reviso si habia mas victimas del mismo dia cruzando los 29 crons que
+// invocan edge functions contra su verify_jwt. `auto-copy-weekly-roster` salio
+// como candidato (verify_jwt=true + cron con secreto), pero NO esta roto: ese
+// cron manda la anon key como Authorization —un JWT valido— y valida el secreto
+// aparte en el header x-cron-secret. Los horarios se siguen copiando cada
+// sabado, confirmado en employee_rosters. backup-critical-tables era el unico.
+//
+// Sin cambio de codigo: la funcion estaba bien, lo que estaba mal era el flag
+// del deploy. Por eso el arreglo no aparece en el diff.
 
 // v2.212.0 — auditoria CON LOS MODALES ABIERTOS: seis capas que no eran dialogos.
 //

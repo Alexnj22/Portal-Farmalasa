@@ -637,7 +637,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
             {/* ── Error ── */}
             {activeError && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text font-semibold">
                     <AlertTriangle size={14} /> {activeError}
                     <Button variant="ghost" onClick={() => loadMode(selectedErp, mode)}>Reintentar</Button>
                 </div>
@@ -716,7 +716,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             <span className="text-body font-bold text-warning tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
-                                            <span className="text-caption text-warning ml-1">uds.</span>
+                                            <span className="text-caption text-warning-text ml-1">uds.</span>
                                         </DataCell>
                                         <DataCell align="right">
                                             <span className="text-body font-bold text-content-2 tabular-nums">{fmtMoney(row.revenue)}</span>

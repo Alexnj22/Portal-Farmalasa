@@ -169,7 +169,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             }
                             <div>
                                 <p className="font-bold text-success-text text-body-lg">{employee.name}</p>
-                                <p className="text-label text-success mt-0.5">Confirma para registrar como apoyo</p>
+                                <p className="text-label text-success-text mt-0.5">Confirma para registrar como apoyo</p>
                             </div>
                         </div>
                     )}

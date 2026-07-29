@@ -338,7 +338,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                             </div>
                                         )}
                                         {d.sinRotulacion && (
-                                            <p className="text-caption text-warning italic">Se reportará a bodega como caja sin identificar.</p>
+                                            <p className="text-caption text-warning-text italic">Se reportará a bodega como caja sin identificar.</p>
                                         )}
                                     </div>
                                 );
@@ -364,7 +364,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </div>
                 )}
                 {extraError && (
-                    <p className="text-caption text-danger font-medium flex items-center gap-1">
+                    <p className="text-caption text-danger-text font-medium flex items-center gap-1">
                         <span>⚠</span> {extraError}
                     </p>
                 )}

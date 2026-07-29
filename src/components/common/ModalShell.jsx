@@ -1,5 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+
+// Lo que un diálogo debe poder enfocar. `[tabindex="-1"]` queda fuera a
+// propósito: es enfocable por código, no por Tab.
+const ENFOCABLES = [
+  'a[href]', 'button:not([disabled])', 'input:not([disabled])',
+  'select:not([disabled])', 'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])', '[contenteditable="true"]',
+].join(',');
+
+const visible = (el) => {
+  const cs = getComputedStyle(el);
+  if (cs.visibility === 'hidden' || cs.display === 'none' || cs.pointerEvents === 'none') return false;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0;
+};
 
 /**
  * Envoltura canónica de TODO modal del portal (DESIGN.md §14).
@@ -55,6 +70,8 @@ export default function ModalShell({
 }) {
   // `mounted` sobrevive a `open=false` el tiempo de la animación de salida.
   const [mounted, setMounted] = useState(open);
+  const panelRef = useRef(null);
+  const disparadorRef = useRef(null);
 
   useEffect(() => {
     if (open) {
@@ -69,8 +86,22 @@ export default function ModalShell({
     if (!open) return undefined;
 
     const onKeyDown = (e) => {
-      if (!closeOnEsc) return;
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") {
+        if (closeOnEsc) onClose?.();
+        return;
+      }
+      // Trampa de foco: dentro de un diálogo modal, Tab no puede salir a la
+      // página de atrás — que sigue ahí, con todos sus controles enfocables e
+      // invisibles bajo el scrim. Escape es la salida, y siempre está.
+      if (e.key !== "Tab") return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const f = [...panel.querySelectorAll(ENFOCABLES)].filter(visible);
+      if (!f.length) { e.preventDefault(); panel.focus(); return; }
+      const primero = f[0], ultimo = f[f.length - 1];
+      if (!panel.contains(document.activeElement)) { e.preventDefault(); primero.focus(); return; }
+      if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -91,6 +122,69 @@ export default function ModalShell({
       }
     };
   }, [open, onClose, closeOnEsc, lockScroll]);
+
+  // Foco: entrar al abrir, y VOLVER al disparador al cerrar.
+  // Lo segundo es lo que más se olvida y lo que más se nota: sin eso, cerrar un
+  // modal con teclado deja el foco en el `<body>` y la siguiente tabulación
+  // arranca desde el principio de la página. Medido el 2026-07-29 antes de este
+  // cambio: `document.activeElement` era BODY tras cerrar los 6 modales.
+  useEffect(() => {
+    if (!open) return undefined;
+    disparadorRef.current = document.activeElement;
+
+    const t = setTimeout(() => {
+      const panel = panelRef.current;
+      if (!panel || panel.contains(document.activeElement)) return; // un autoFocus ya lo movió
+      const f = [...panel.querySelectorAll(ENFOCABLES)].filter(visible);
+      (f[0] || panel).focus();
+    }, 60);
+
+    return () => {
+      clearTimeout(t);
+      const previo = disparadorRef.current;
+
+      // Se difiere un tick: varios modales del portal se despachan desde
+      // `UnifiedModal`, que al cerrar **se desmonta entero** y hace re-render
+      // de la vista de atrás. Enfocando en el mismo tick, React reemplazaba el
+      // nodo del disparador justo después y el foco caía al `<body>` igual.
+      // Medido el 2026-07-29: 3 de 11 diálogos terminaban en BODY por esto.
+      setTimeout(() => {
+        if (previo && typeof previo.focus === 'function' && previo.isConnected) {
+          previo.focus({ preventScroll: true });
+        }
+      }, 0);
+
+      // Segunda pasada DESPUÉS de que el panel se desmonta.
+      // La primera versión de este respaldo comprobaba "¿el foco quedó en el
+      // body?" en el mismo tick, y ahí todavía no: el panel sigue montado
+      // `EXIT_MS` por la animación de salida, así que el foco seguía adentro,
+      // la comprobación salía temprano, y recién al desmontarse el navegador lo
+      // mandaba al body. Los 3 diálogos que fallaban seguían fallando.
+      // Ahora se corre cuando el panel ya no existe.
+      setTimeout(() => {
+        if (document.activeElement && document.activeElement !== document.body) return;
+        // El disparador no sobrevivió (lo reemplazó un re-render, o la vista
+        // cambió). Antes que dejar el foco en `<body>` —donde la próxima
+        // tabulación arranca desde el principio de la página, pasando otra vez
+        // por todo el menú— se lo lleva al contenido, que es lo que recomienda
+        // la APG de WAI-ARIA cuando el disparador no sobrevive.
+        if (previo && typeof previo.focus === 'function' && previo.isConnected) {
+          previo.focus({ preventScroll: true });
+          return;
+        }
+        const main = document.querySelector('main') || document.querySelector('[role="main"]');
+        if (!main) return;
+        const habiaTabIndex = main.hasAttribute('tabindex');
+        if (!habiaTabIndex) main.setAttribute('tabindex', '-1');
+        main.focus({ preventScroll: true });
+        if (!habiaTabIndex) {
+          // se quita en cuanto suelta el foco: un `<main>` permanentemente
+          // enfocable ensucia el recorrido de teclado del resto de la app
+          main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
+        }
+      }, EXIT_MS + 40);
+    };
+  }, [open]);
 
   if (!open && !mounted) return null;
 
@@ -121,10 +215,15 @@ export default function ModalShell({
       aria-modal="true"
       aria-label={ariaLabel}
     >
+      {/* El fondo es una afordancia de MOUSE: duplica lo que Escape ya hace,
+          así que va fuera del árbol de accesibilidad y fuera de Tab. Dejarlo
+          tabulable metía una parada de foco invisible antes del contenido del
+          diálogo — el mismo criterio que los chevrons de §25.9. */}
       {closeOnBackdrop && (
         <button
           type="button"
-          aria-label="Cerrar modal"
+          aria-hidden="true"
+          tabIndex={-1}
           onClick={onClose}
           className="absolute inset-0 cursor-default w-full h-full bg-transparent border-none outline-none"
         />
@@ -135,8 +234,12 @@ export default function ModalShell({
           Al quitar transform-gpu, evitamos que todo el modal se convierta en una sola textura rígida,
           permitiendo que el scroll interno del UnifiedModal se procese de forma independiente y nativa. */}
       <div
+        ref={panelRef}
+        // `tabIndex={-1}`: destino de respaldo del foco cuando el diálogo no
+        // tiene ningún control adentro (un visor, una confirmación sin botones).
+        tabIndex={-1}
         data-surface={surface || undefined}
-        className={`relative w-full ${maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] ${panelClassName}`}
+        className={`relative w-full ${maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

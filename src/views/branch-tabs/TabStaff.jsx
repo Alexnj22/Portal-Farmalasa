@@ -21,9 +21,9 @@ import { clickable } from '../../utils/clickable';
 // ============================================================================
 const getStaffTheme = (colorTheme) => {
     const themes = {
-        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[var(--shadow-glow-warning)]', icon: Star, gradient: 'from-warning to-chart-4' },
+        amber: { bg: 'bg-surface-card hover:bg-warning/10', text: 'text-warning-text', ring: 'border-warning', badge: 'bg-warning', shadow: 'hover:shadow-[var(--shadow-glow-warning)]', icon: Star, gradient: 'from-warning to-chart-4' },
         blue: { bg: 'bg-surface-card hover:bg-chart-1/10', text: 'text-brand-text', ring: 'border-brand', badge: 'bg-brand', shadow: 'hover:shadow-[var(--shadow-glow-brand)]', icon: Award, gradient: 'from-brand to-chart-3' },
-        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[var(--shadow-glow-success)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
+        emerald: { bg: 'bg-surface-card hover:bg-success/10', text: 'text-success-text', ring: 'border-success', badge: 'bg-success', shadow: 'hover:shadow-[var(--shadow-glow-success)]', icon: ShieldCheck, gradient: 'from-success to-chart-9' },
         purple: { bg: 'bg-surface-card hover:bg-chart-3/10', text: 'text-chart-3-text', ring: 'border-chart-3', badge: 'bg-chart-3', shadow: 'hover:shadow-[var(--shadow-glow-chart-3)]', icon: HeartPulse, gradient: 'from-chart-3 to-chart-6' },
         slate: { bg: 'bg-surface-card hover:bg-surface-card', text: 'text-content-2', ring: 'border-divider', badge: 'bg-content-3', shadow: 'hover:shadow-[var(--shadow-elevation-md)]', icon: User, gradient: 'from-slate-300 to-slate-400' },
     };
@@ -72,10 +72,10 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     if (isMissing) {
         return (
             <div {...clickable(onEditRole)} data-surface="card" className="group relative overflow-hidden flex flex-col items-center justify-center p-5 border-2 border-dashed border-danger/30 bg-danger/10 hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 min-h-[260px]">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger-text group-hover:bg-danger/10 group-hover:text-danger-text transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
-                <p className="text-body-lg font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
+                <p className="text-body-lg font-black text-content-2 leading-tight group-hover:text-danger-text transition-colors text-center">{missingText}</p>
                 <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-surface-card shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
                     <Edit3 size={10} strokeWidth={2.5} /> <span className="text-micro font-black uppercase tracking-widest">Asignar</span>
@@ -116,10 +116,10 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
             {missingDocs && missingDocs.length > 0 && (
                 <div className="mx-2 mb-3 mt-1 p-2 bg-danger/10 border border-danger/30 rounded-xl flex items-start gap-1.5 backdrop-blur-sm shadow-inner">
-                    <FileX size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
+                    <FileX size={12} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />
                     <div className="flex flex-col">
-                        <span className="text-micro font-black text-danger uppercase tracking-widest leading-tight">Faltan Archivos</span>
-                        <span className="text-micro font-bold text-danger leading-tight">{missingDocs.join(', ')}</span>
+                        <span className="text-micro font-black text-danger-text uppercase tracking-widest leading-tight">Faltan Archivos</span>
+                        <span className="text-micro font-bold text-danger-text leading-tight">{missingDocs.join(', ')}</span>
                     </div>
                 </div>
             )}
@@ -136,7 +136,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     {employee.phone && (
                         <div className="flex items-center gap-1 shrink-0">
                             <Button variant="secondary" icon={MessageCircle} title="WhatsApp" iconOnly onClick={(e) => handleAction(e, 'wa', employee.phone)} />
-                            <Button variant="secondary" title="Copiar" onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')}>{copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-success" /> : <Copy size={12} strokeWidth={2} />}</Button>
+                            <Button variant="secondary" title="Copiar" onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')}>{copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-success-text" /> : <Copy size={12} strokeWidth={2} />}</Button>
                         </div>
                     )}
                 </div>
@@ -265,7 +265,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             <div className="flex justify-between items-center gap-4">
                 <div>
                     <h4 className="text-content font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
-                        <Zap size={14} className="text-warning" /> Motor de Sincronización WFM
+                        <Zap size={14} className="text-warning-text" /> Motor de Sincronización WFM
                     </h4>
                     <p className="text-content-3 font-bold text-caption mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
                 </div>
@@ -297,7 +297,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
 
             {log && (
                 <div className="bg-black/50 rounded-lg p-3 border border-border-card">
-                    <p className="text-caption font-mono text-success tracking-wide leading-relaxed">{log}</p>
+                    <p className="text-caption font-mono text-success-text tracking-wide leading-relaxed">{log}</p>
                 </div>
             )}
         </div>
@@ -407,7 +407,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
     const complianceScore = reqCount > 0 ? Math.round((metCount / reqCount) * 100) : 100;
     const scoreTheme = complianceScore === 100 ? 'bg-success' : complianceScore >= 70 ? 'bg-warning' : 'bg-danger';
-    const textTheme = complianceScore === 100 ? 'text-success' : complianceScore >= 70 ? 'text-warning' : 'text-danger';
+    const textTheme = complianceScore === 100 ? 'text-success-text' : complianceScore >= 70 ? 'text-warning-text' : 'text-danger-text';
 
     const MIN_CONCURRENT_STAFF = 2;
     const branchCreationDate = liveBranch?.opening_date || liveBranch?.created_at || null;
@@ -481,11 +481,11 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     {/* 🚨 PÍLDORA WFM / DÉFICIT — solo farmacias */}
                     {isFarmacia && isStaffDeficit && (
                         <div className="relative group/wfm flex items-center gap-2.5 bg-warning/10 backdrop-blur-md border border-warning/30 px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
-                            <Calculator size={14} className="text-warning shrink-0" />
+                            <Calculator size={14} className="text-warning-text shrink-0" />
                             <div className="flex flex-col gap-1 w-28">
                                 <div className="flex justify-between items-center w-full">
-                                    <span className="text-micro font-black uppercase tracking-widest text-warning leading-none">Déficit Staff</span>
-                                    <span className="text-micro font-black leading-none text-danger">-{minStaff - coverageStaffCount}</span>
+                                    <span className="text-micro font-black uppercase tracking-widest text-warning-text leading-none">Déficit Staff</span>
+                                    <span className="text-micro font-black leading-none text-danger-text">-{minStaff - coverageStaffCount}</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-warning/20 rounded-full overflow-hidden">
                                     <div className="h-full bg-danger animate-pulse" style={{ width: `${wfmProgress}%` }}></div>
@@ -508,7 +508,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         </p>
                                         <div className="border-t border-border-card pt-2 mt-1">
                                             <p className="text-caption font-bold text-amber-300 leading-tight">
-                                                La sucursal exige un presupuesto de <span className="text-white font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Al dividir entre 44h legales, requieres <span className="font-black text-warning">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
+                                                La sucursal exige un presupuesto de <span className="text-white font-black">{totalLaborHoursNeeded} hrs</span> a la semana. Al dividir entre 44h legales, requieres <span className="font-black text-warning-text">{minStaff} operativos</span>. Tienes {coverageStaffCount}.
                                             </p>
                                         </div>
                                     </>
@@ -523,7 +523,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     <>
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 border-b border-border-card pb-1 flex items-center gap-1.5"><Calculator size={12} /> Cálculo Tradicional</p>
                                         <p className="text-caption font-bold text-content-3 leading-tight">
-                                            Basado en los horarios de apertura configurados, necesitas al menos <span className="text-warning font-black">{minStaff} operativos</span> para cubrir los turnos legales.
+                                            Basado en los horarios de apertura configurados, necesitas al menos <span className="text-warning-text font-black">{minStaff} operativos</span> para cubrir los turnos legales.
                                         </p>
                                     </>
                                 )}
@@ -533,7 +533,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                     {/* 🚨 PÍLDORA DE SALUD LEGAL — solo farmacias */}
                     {isFarmacia && <div className="relative group/health flex items-center gap-2.5 bg-surface-card backdrop-blur-md border border-border-card px-4 py-2 rounded-full shadow-sm cursor-help hover:bg-surface-card-hover hover:shadow-md transition-all animate-in slide-in-from-right-4">
-                        <ShieldAlert size={14} className={complianceScore === 100 ? 'text-success' : 'text-content-3'} />
+                        <ShieldAlert size={14} className={complianceScore === 100 ? 'text-success-text' : 'text-content-3'} />
                         <div className="flex flex-col gap-1 w-24">
                             <div className="flex justify-between items-center w-full">
                                 <span className="text-micro font-black uppercase tracking-widest text-content-3 leading-none">Salud Legal</span>
@@ -549,7 +549,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <ul className="space-y-2">
                                     {complianceIssues.map((issue, i) => (
                                         <li key={i} className="flex items-start gap-1.5 text-caption font-bold text-danger-text leading-tight">
-                                            {issue.isDoc ? <FileX size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} /> : <AlertTriangle size={12} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />}
+                                            {issue.isDoc ? <FileX size={12} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} /> : <AlertTriangle size={12} className="text-danger-text shrink-0 mt-0.5" strokeWidth={2.5} />}
                                             <span>{issue.text}</span>
                                         </li>
                                     ))}
@@ -711,9 +711,9 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <p className="text-micro font-bold text-chart-1-text">Promedio facturado: <span className="font-black">${peakHour?.avgSales}/hr</span></p>
                                             </div>
                                             <div className="bg-warning/10 backdrop-blur-md rounded-xl p-3 border border-warning/30 shadow-[var(--shadow-glow-warning)]">
-                                                <p className="text-micro font-black uppercase tracking-widest text-warning">Impacto en Plantilla</p>
+                                                <p className="text-micro font-black uppercase tracking-widest text-warning-text">Impacto en Plantilla</p>
                                                 <p className="text-title-sm font-black text-warning-text mt-1">+{extraVolumeHours} Hrs</p>
-                                                <p className="text-micro font-bold text-warning">Añadidas al presupuesto semanal</p>
+                                                <p className="text-micro font-bold text-warning-text">Añadidas al presupuesto semanal</p>
                                             </div>
                                         </div>
                                     ) : (
@@ -733,7 +733,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {/* SECCIÓN 1: LIDERAZGO */}
                             <div className="space-y-3">
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
-                                    <Star size={12} className="text-warning" strokeWidth={3} /> {isAdmin ? 'Dirección Administrativa' : 'Dirección de Sucursal'}
+                                    <Star size={12} className="text-warning-text" strokeWidth={3} /> {isAdmin ? 'Dirección Administrativa' : 'Dirección de Sucursal'}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {jefeEmp
@@ -775,11 +775,11 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                     {(wfmApplied || isNewBranch || isStaffDeficit) && Array.from({ length: minStaff > coverageStaffCount ? minStaff - coverageStaffCount : 0 }).map((_, i) => (
                                         <div key={`deficit-${i}`} {...clickable(handleEditHROperative)} className="group flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
-                                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
+                                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning-text group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>
                                             <p className="text-body-sm font-black text-warning-text">Plaza Sugerida</p>
-                                            <p className="text-micro font-bold text-warning uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
+                                            <p className="text-micro font-bold text-warning-text uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
                                         </div>
                                     ))}
                                 </div>
@@ -788,7 +788,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {/* SECCIÓN 3: CUMPLIMIENTO REGULATORIO — solo farmacias */}
                             {isFarmacia && <div className="space-y-3 pt-2 border-t border-border-card mt-6 pt-6">
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
-                                    <ShieldCheck size={12} className="text-success" strokeWidth={3} /> Cumplimiento SRS (DNM/CSSP)
+                                    <ShieldCheck size={12} className="text-success-text" strokeWidth={3} /> Cumplimiento SRS (DNM/CSSP)
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {regentEmp ? <ProfileCard employee={regentEmp} roleLabel="Regente Farmacéutico" colorTheme="emerald" missingDocs={regentMissingDocs} onClick={goToProfile} onEditRole={() => openModal('editPharmacyRegent', liveBranch)} /> : <ProfileCard isMissing missingText="Falta Regente" missingSub="Requerido (SRS)" onEditRole={() => openModal('editPharmacyRegent', liveBranch)} />}

@@ -184,7 +184,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 {canEdit && (
                     <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}>Emparejar</Button>
                 )}
-                {error && <span className="text-caption text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger-text">{error}</span>}
             </div>
         );
     }
@@ -292,7 +292,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         }
         if (state === 'loading') return <span className="text-micro text-content-3 whitespace-nowrap">Analizando…</span>;
         if (state === 'no_code') return <Button variant="ghost" onClick={(e) => { e.stopPropagation(); detect(); }}>Sin código, reintentar</Button>;
-        if (state === 'error') return <span className="text-micro text-danger whitespace-nowrap" title={result.error}>Error al detectar</span>;
+        if (state === 'error') return <span className="text-micro text-danger-text whitespace-nowrap" title={result.error}>Error al detectar</span>;
         if (state === 'not_found') return <span className="text-micro text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
             <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}</Button>
@@ -371,7 +371,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                     color="blue"
                     onClick={() => { onOpen(); setError(''); }}
                 />
-                {error && <span className="text-caption text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger-text">{error}</span>}
             </div>
         );
     }
@@ -434,7 +434,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     color="slate"
                     onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
                 />
-                {error && <span className="text-caption text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger-text">{error}</span>}
             </div>
         );
     }
@@ -480,7 +480,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     clearable={false}
                 />
             </div>
-            {error && <span className="text-caption text-danger shrink-0">{error}</span>}
+            {error && <span className="text-caption text-danger-text shrink-0">{error}</span>}
             <Button tone="success" icon={CheckCircle2} disabled={saving || !documentId} title="Confirmar clasificación" iconOnly onClick={confirm} />
             <Button variant="secondary" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
         </div>
@@ -519,7 +519,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
         return (
             <div className="flex items-center gap-1.5">
                 <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}>Adjuntar JSON</Button>
-                {error && <span className="text-caption text-danger">{error}</span>}
+                {error && <span className="text-caption text-danger-text">{error}</span>}
             </div>
         );
     }
@@ -775,7 +775,7 @@ function TabDocumentos({
                     <StatCard
                         icon={XCircle} label="Invalidados" value={cardStats.invalidadosCount}
                         sub={cardStats.invalidadosCount > 0 ? fmt$(cardStats.invalidadosMonto) : 'sin invalidados'}
-                        iconBg="bg-danger/10" iconCls="text-danger" valueCls="text-danger"
+                        iconBg="bg-danger/10" iconCls="text-danger" valueCls="text-danger-text"
                         activeBg="bg-danger/10 border-danger/40 shadow-md"
                         onClick={cardStats.invalidadosCount > 0 ? () => setFilterInvalidados(v => !v) : undefined}
                         active={filterInvalidados}
@@ -831,7 +831,7 @@ function TabDocumentos({
             </div>
             </div>
 
-            {bulkError && <div className="text-caption text-danger px-1">{bulkError}</div>}
+            {bulkError && <div className="text-caption text-danger-text px-1">{bulkError}</div>}
 
             <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
                 {pageRows.map((row, i) => (
@@ -1043,7 +1043,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             <div className="text-label text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
-            {rowError && <div className="text-caption text-danger px-1">{rowError}</div>}
+            {rowError && <div className="text-caption text-danger-text px-1">{rowError}</div>}
 
             <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Nada pendiente de revisión.' }}>
                 {filtered.map((row, i) => (

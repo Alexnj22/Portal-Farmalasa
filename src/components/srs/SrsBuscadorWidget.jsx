@@ -79,7 +79,7 @@ export default function SrsBuscadorWidget({
 
             {/* Error */}
             {error && (
-                <div className="px-4 py-3 rounded-2xl bg-danger/10 border border-danger/30 text-label text-danger font-medium">
+                <div className="px-4 py-3 rounded-2xl bg-danger/10 border border-danger/30 text-label text-danger-text font-medium">
                     {error}
                 </div>
             )}

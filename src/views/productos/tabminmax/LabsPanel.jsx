@@ -126,7 +126,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                 </p>
 
                 {err && (
-                    <p className="mx-3 mb-1.5 px-2.5 py-1.5 rounded-lg bg-danger/10 border border-danger/30 text-caption text-danger font-semibold">
+                    <p className="mx-3 mb-1.5 px-2.5 py-1.5 rounded-lg bg-danger/10 border border-danger/30 text-caption text-danger-text font-semibold">
                         {err}
                     </p>
                 )}

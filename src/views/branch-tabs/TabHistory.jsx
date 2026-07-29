@@ -21,10 +21,10 @@ const getThemeForAction = (action, isDoc, isSynthetic) => {
 
     switch (action) {
         case 'PAGO_REGISTRADO':
-            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[var(--shadow-glow-success)]' , variante: 'success' };
+            return { icon: Wallet, bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', dot: 'bg-success', shadow: 'shadow-[var(--shadow-glow-success)]' , variante: 'success' };
         case 'ALERTA_SISTEMA':
         case 'INSPECTION_RECORDED':
-            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[var(--shadow-glow-danger)]' , variante: 'danger' };
+            return { icon: AlertTriangle, bg: 'bg-danger/10', text: 'text-danger-text', border: 'border-danger/30', dot: 'bg-danger', shadow: 'shadow-[var(--shadow-glow-danger)]' , variante: 'danger' };
         case 'EDITAR_SUCURSAL':
         case 'APERTURA_OFICIAL':
         case 'VINCULAR_KIOSCO':
@@ -583,7 +583,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                                 {(oldVal || newVal) && (
                                                                                                     <div className="flex flex-col gap-1 mt-2">
                                                                                                         {oldVal && <span className="text-caption font-bold text-content-3 line-through truncate">Antes: {oldVal}</span>}
-                                                                                                        {newVal && <span className={`text-caption font-bold truncate ${item.severity === 'CRITICAL' ? 'text-danger' : 'text-brand-text'}`}>Nuevo: {newVal}</span>}
+                                                                                                        {newVal && <span className={`text-caption font-bold truncate ${item.severity === 'CRITICAL' ? 'text-danger-text' : 'text-brand-text'}`}>Nuevo: {newVal}</span>}
                                                                                                     </div>
                                                                                                 )}
 

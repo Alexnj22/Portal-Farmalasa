@@ -153,7 +153,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         </p>
                     </section>
 
-                    {err && <p className="text-label text-danger font-semibold">{err}</p>}
+                    {err && <p className="text-label text-danger-text font-semibold">{err}</p>}
                 </div>
 
                 {/* Footer */}

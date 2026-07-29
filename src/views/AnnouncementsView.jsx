@@ -696,7 +696,7 @@ const AnnouncementsView = ({ openModal }) => {
                        </div>
                    </div>
                    {publishImmediately && (
-                      <p className="text-caption text-success font-bold mt-1 ml-1 flex items-center gap-1">
+                      <p className="text-caption text-success-text font-bold mt-1 ml-1 flex items-center gap-1">
                         <Power size={10} /> Se mostrará en los kioscos inmediatamente
                       </p>
                    )}

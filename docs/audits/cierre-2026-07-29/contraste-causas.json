@@ -1,0 +1,34 @@
+[
+ {
+  "k": "solid | text-micro text-danger | 9px",
+  "n": 8,
+  "cr": 3.76,
+  "min": 4.5,
+  "ej": "ausencias",
+  "rutas": 1
+ },
+ {
+  "k": "solid-dark | text-micro text-danger | 9px",
+  "n": 8,
+  "cr": 3.89,
+  "min": 4.5,
+  "ej": "ausencias",
+  "rutas": 1
+ },
+ {
+  "k": "solid-dark | (sin clase de texto) | 10px",
+  "n": 6,
+  "cr": 2.05,
+  "min": 4.5,
+  "ej": "General",
+  "rutas": 6
+ },
+ {
+  "k": "solid-dark | text-micro text-danger-text | 9px",
+  "n": 1,
+  "cr": 4.45,
+  "min": 4.5,
+  "ej": "CCF",
+  "rutas": 1
+ }
+]

@@ -104,7 +104,7 @@ function marginLabel(m) {
 
 function MarginPct({ pct }) {
     if (pct === null) return <span className="text-micro text-content-3">—</span>;
-    const cls = pct < 0 ? 'text-danger' : pct < 15 ? 'text-warning' : 'text-success';
+    const cls = pct < 0 ? 'text-danger-text' : pct < 15 ? 'text-warning-text' : 'text-success-text';
     return <span className={`text-micro font-bold tabular-nums ${cls}`}>{pct.toFixed(1)}%</span>;
 }
 
@@ -135,9 +135,9 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             iconBg: filterMargin === 'perdida'
                 ? 'bg-surface-card'
                 : 'bg-danger/10',
-            iconColor: 'text-danger',
+            iconColor: 'text-danger-text',
             countColor: perdidaCount > 0
-                ? 'text-danger'
+                ? 'text-danger-text'
                 : 'text-content-3',
         },
         {
@@ -151,9 +151,9 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             iconBg: filterMargin === 'bajo'
                 ? 'bg-surface-card'
                 : 'bg-warning/10',
-            iconColor: 'text-warning',
+            iconColor: 'text-warning-text',
             countColor: bajoCount > 0
-                ? 'text-warning'
+                ? 'text-warning-text'
                 : 'text-content-3',
         },
     ];
@@ -190,11 +190,11 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             {/* §16.x — estas tarjetas de métrica eran la misma anatomía escrita
                 a mano. `StatCard` ya la tenía, con la × al estar activa incluida. */}
             <StatCard
-                icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success"
+                icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success-text"
                 label="Nuevos este mes"
                 sub={`agregados en ${new Date().toLocaleDateString('es-SV', { month: 'long' })}`}
                 value={productStatsLoading ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
-                valueCls="text-success"
+                valueCls="text-success-text"
                 active={filterNuevos} inactiveBg={nuevosBg}
                 activeBg={nuevosBg}
                 loading={productStatsLoading}
@@ -202,10 +202,10 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             />
 
             <StatCard
-                icon={History} iconBg={filterModificados ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning"
+                icon={History} iconBg={filterModificados ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning-text"
                 label="Modificados este mes" sub="precios o datos cambiados"
                 value={modificadosLoading ? '–' : (modificadosStats?.count ?? 0).toLocaleString()}
-                valueCls={(modificadosStats?.count ?? 0) > 0 ? 'text-warning' : 'text-content-3'}
+                valueCls={(modificadosStats?.count ?? 0) > 0 ? 'text-warning-text' : 'text-content-3'}
                 active={filterModificados}
                 activeBg="bg-warning/10 border-warning/40 shadow-md"
                 loading={modificadosLoading}
@@ -327,7 +327,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
     useImperativeHandle(ref, () => ({ save }));
     const numCls = 'text-content-3';
-    const rmBtn  = 'text-content-3 hover:text-danger hover:bg-danger/10';
+    const rmBtn  = 'text-content-3 hover:text-danger-text hover:bg-danger/10';
     const addCls = 'text-content-3 hover:text-brand-text';
 
     // `presetChipBase/On/Off` vivían acá: el riel de `SegmentedControl` escrito
@@ -536,8 +536,8 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                     {loc.branch_type === 'BODEGA' ? 'Bodega' : 'Farmacia'}
                                 </Badge>
                                 {hasSala && !hasBodega && <span className={`text-micro ${'text-chart-1-text'}`}>Sala</span>}
-                                {hasBodega && !hasSala && <span className={`text-micro ${'text-warning'}`}>Bodega int.</span>}
-                                {hasSala && hasBodega && <span className={`text-micro ${'text-success'}`}>Sala + Bodega</span>}
+                                {hasBodega && !hasSala && <span className={`text-micro ${'text-warning-text'}`}>Bodega int.</span>}
+                                {hasSala && hasBodega && <span className={`text-micro ${'text-success-text'}`}>Sala + Bodega</span>}
                             </div>
                             {!isMainBodega && (
                                 <SegmentedControl
@@ -560,10 +560,10 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
                                 </div>
                             )}
                             {!isSala && !isMainBodega && (
-                                <span className={`text-micro font-bold self-center ${'text-warning'}`}>Bodega interna</span>
+                                <span className={`text-micro font-bold self-center ${'text-warning-text'}`}>Bodega interna</span>
                             )}
                             {isMainBodega && (
-                                <span className={`text-micro font-bold self-center ${'text-warning'}`}>Bodega principal</span>
+                                <span className={`text-micro font-bold self-center ${'text-warning-text'}`}>Bodega principal</span>
                             )}
                             <div className="flex gap-2 flex-1">
                                 <div className="flex-1">
@@ -1032,8 +1032,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             worstOverall < 0 ? xk.alertDanger : xk.alertWarning
                         }`}>
                             {worstOverall < 0
-                                ? <ShieldAlert size={14} className="shrink-0 text-danger" />
-                                : <AlertTriangle size={13} className="shrink-0 text-warning" />}
+                                ? <ShieldAlert size={14} className="shrink-0 text-danger-text" />
+                                : <AlertTriangle size={13} className="shrink-0 text-warning-text" />}
                             {worstOverall < 0
                                 ? <><strong>Pérdida detectada</strong> — alguna presentación tiene precio de venta por debajo del costo.</>
                                 : <><strong>Margen bajo</strong> — alguna presentación tiene margen inferior al 15 %. Estándar farmacéutico: 20–35 %.</>}
@@ -1739,9 +1739,9 @@ export default function TabCatalogo({
             {/* ── Table ── */}
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
-                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
-                    <p className="text-sm font-semibold text-danger mb-1">Error al cargar productos</p>
-                    <p className="text-label text-danger mb-4">{loadError}</p>
+                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />
+                    <p className="text-sm font-semibold text-danger-text mb-1">Error al cargar productos</p>
+                    <p className="text-label text-danger-text mb-4">{loadError}</p>
                     <Button variant="destructive" onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}>Reintentar</Button>
                 </div>
             ) : (
@@ -1795,7 +1795,7 @@ export default function TabCatalogo({
                                                     {hasChanges && <Badge variant="warning" size="sm" icon={AlertTriangle} uppercase={false}>cambios</Badge>}
                                                     {!p.devolutivo && <Badge title="No devolutivo — no se puede devolver al proveedor" variant="warning" size="sm" icon={Ban} uppercase={false}>ND</Badge>}
                                                 </div>
-                                                {p.principio_activo && <p className="text-caption flex items-center gap-1 mt-0.5 text-chart-3-text/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
+                                                {p.principio_activo && <p className="text-caption flex items-center gap-1 mt-0.5 text-chart-3-text"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>
                                         </div>
                                     </DataCell>

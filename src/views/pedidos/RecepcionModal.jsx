@@ -846,7 +846,7 @@ export default function RecepcionModal({
                                             <div className="min-w-0">
                                                 <Badge variant="info" size="sm" icon={Plus}>Extra</Badge>
                                                 <p className={`text-body-sm font-semibold leading-snug ${eBothZero ? 'text-danger' : 'text-content-2'}`}>{e.nombre}</p>
-                                                {eBothZero && <p className="text-caption text-danger font-medium">Al menos uno &gt; 0</p>}
+                                                {eBothZero && <p className="text-caption text-danger-text font-medium">Al menos uno &gt; 0</p>}
                                             </div>
 
                                             <div className={eDiff ? 'ring-2 ring-warning/45 ring-offset-0 rounded-2xl' : ''}>

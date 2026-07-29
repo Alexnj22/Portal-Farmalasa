@@ -112,7 +112,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                         <Clock size={13} className="text-warning flex-shrink-0" strokeWidth={2.5} />
                         <p className="text-micro font-black uppercase tracking-widest text-warning">Banco de Horas Extra</p>
                     </div>
-                    <p className="text-micro text-warning">Distribuye cada tipo — puedes pagar una parte y compensar el resto.</p>
+                    <p className="text-micro text-warning-text">Distribuye cada tipo — puedes pagar una parte y compensar el resto.</p>
 
                     {/* Diurnal section */}
                     {otBank.diurnal > 0 && (

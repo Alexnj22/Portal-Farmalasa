@@ -922,8 +922,17 @@
   --bg-page: #0f172a;
 
   --text-primary:   rgba(248,250,252,0.95);
-  --text-secondary: rgba(148,163,184,0.90);
-  --text-tertiary:  rgba(148,163,184,0.90); /* corregido Fase T2: rgba(100,116,139,.9) daba 2.76:1, FAIL AA; slate-400 da 4.92:1 */
+  /* 2026-07-29 — subidos de `rgba(148,163,184,0.90)`. Ese valor medía 4.92:1
+     sobre la TARJETA (#1e293b) y por eso pasó la revisión de T2, pero el texto
+     secundario también vive sobre superficies ELEVADAS —chips, filas
+     resaltadas, `#334155`— y ahí caía a **3.58:1**: 191 nodos en una sola
+     pasada, el grupo más grande de todo el portal.
+     Los valores nuevos pasan sobre las tres superficies (chip / tarjeta /
+     página): secundario 5.61 / 7.93 / 9.68 · terciario 5.03 / 7.11 / 8.67, y
+     conservan la jerarquía entre ellos. Sin alfa: la transparencia era justo
+     lo que hacía que el resultado dependiera de la superficie de abajo. */
+  --text-secondary: #b4c0cf;
+  --text-tertiary:  #a8b6c9;
 
   /* --chart-N-text más claros para leerse sobre la tarjeta oscura opaca
      (T7) — mismos valores que [data-theme="dark"], la tarjeta oscura de
@@ -1879,6 +1888,39 @@
   /* La tarjeta flota por su sombra; sin ella el sidebar quedaba pegado al
      fondo aunque el vidrio ya fuera el mismo. */
   box-shadow: var(--card-shadow);
+}
+
+/* ── Superficies SIEMPRE-OSCURAS: sus tokens de texto también ────────────────
+   §25.5 dice que bespoke en COLOR no es bespoke en MATERIAL. Faltaba la otra
+   mitad: una superficie que es oscura en los cuatro temas necesita los tokens
+   de TEXTO del tema oscuro, o hereda los del tema activo. En liquid y dark no
+   se notaba —ahí ya son claros—, pero en los temas Solid (que son CLAROS)
+   resolvían a valores oscuros sobre fondo oscuro.
+
+   Medido el 2026-07-29 en el tema `solid`, y son fallos duros de AA:
+     · badge "Próximamente" del menú → `--warning-text` #9a4507 sobre #2c221c
+       = **2.39:1**
+     · tooltip "Clic para ver horas" → `--brand-text` #0052cc sobre #1a2a50
+       = **2.07:1**
+
+   Se fijan acá los valores del tema oscuro, que es lo que estas superficies
+   son. No se toca `--content-*`: eso ya lo resuelve cada superficie con sus
+   utilidades `text-white/N`. */
+[data-surface="sidebar"],
+[data-surface="tooltip"],
+[data-bespoke-glass] {
+  --success-text: #34d399;
+  --warning-text: #fbbf24;
+  --danger-text:  #f87171;
+  /* Más claro que el #60A5FA del tema oscuro: el tooltip no es tan oscuro como
+     la página (#34476c medido), así que ahí ese azul daba 3.64:1. #93c5fd da
+     6.05:1 sobre ese fondo y 8.9:1 sobre el sidebar. */
+  --brand-text:   #93c5fd;
+  --chart-1-text: #60a5fa;
+  --chart-3-text: #a78bfa;
+  --chart-4-text: #fb923c;
+  --chart-6-text: #f472b6;
+  --chart-9-text: #2dd4bf;
 }
 
 

@@ -230,7 +230,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-subtitle font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
-                        <span className={`flex items-center gap-0.5 text-caption font-black ${pct >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <span className={`flex items-center gap-0.5 text-caption font-black ${pct >= 0 ? 'text-success-text' : 'text-danger-text'}`}>
                             {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
                             {Math.abs(pct).toFixed(1)}%
                         </span>
@@ -238,8 +238,8 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 </div>
                 {sub && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
-            {isFilter && !active && <ChevronDown size={11} className="text-warning ml-0.5 shrink-0" />}
-            {active && <X size={11} className="text-warning ml-0.5 shrink-0" />}
+            {isFilter && !active && <ChevronDown size={11} className="text-warning-text ml-0.5 shrink-0" />}
+            {active && <X size={11} className="text-warning-text ml-0.5 shrink-0" />}
         </div>
     );
     if (conIva == null || blurred) return card;
@@ -257,7 +257,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
 
 // El color por tipo de documento, como nombre de variante de `Badge`. Estaba
 // escrito dos veces en el archivo, cada una con su propia cascada de ternarios
-// (y una usaba `text-danger` donde la otra usa `text-danger-text`).
+// (y una usaba `text-danger-text` donde la otra usa `text-danger-text`).
 const VARIANTE_DOC = { CCF: 'danger', FCF: 'chart-1' };
 
 // Encabezado ordenable de las tablas propias de esta vista.
@@ -667,7 +667,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     <p className={`text-body-sm font-bold text-content-2 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
                                     {r.hora && <p className="text-caption text-content-3">{r.hora?.slice(0, 5)}</p>}
                                     {isCancelled
-                                        ? <span className="text-micro font-black uppercase tracking-widest text-danger">ANULADA</span>
+                                        ? <span className="text-micro font-black uppercase tracking-widest text-danger-text">ANULADA</span>
                                         : r.recibido_mh === null && <span className="text-micro font-black uppercase tracking-widest text-warning-text">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
@@ -719,7 +719,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         {relevantChanges.length > 0 && (
                                             <LiquidTooltip content={
                                                 <div className="space-y-0.5">
-                                                    <p className="text-caption font-black uppercase tracking-widest text-warning mb-2">Cambios registrados</p>
+                                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-2">Cambios registrados</p>
                                                     {relevantChanges.map((c, ci) => (
                                                         <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-divider last:border-0">
                                                             <span className="text-label font-bold text-content-2 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
@@ -731,7 +731,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                             } className="shrink-0">
                                                 <div onClick={e => e.stopPropagation()}
                                                     className="w-4 h-4 rounded-full bg-warning/10 hover:bg-warning/20 flex items-center justify-center cursor-default transition-colors">
-                                                    <span className="text-micro font-black text-warning leading-none">!</span>
+                                                    <span className="text-micro font-black text-warning-text leading-none">!</span>
                                                 </div>
                                             </LiquidTooltip>
                                         )}
@@ -840,7 +840,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                         </div>
                                                                     </td>
                                                                     <td />
-                                                                    <td className="pt-1.5 pb-1 text-right text-label font-black text-warning">-{fmt(finalDiscount)}</td>
+                                                                    <td className="pt-1.5 pb-1 text-right text-label font-black text-warning-text">-{fmt(finalDiscount)}</td>
                                                                 </tr>
                                                             )}
                                                         </tbody>
@@ -1035,12 +1035,12 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         const diff = prev - currentRank;
         if (diff === 0) return <Minus size={12} className="text-content-3" />;
         if (diff > 0) return (
-            <span className="flex items-center gap-0.5 text-success text-caption font-black">
+            <span className="flex items-center gap-0.5 text-success-text text-caption font-black">
                 <ArrowUp size={10} />{diff}
             </span>
         );
         return (
-            <span className="flex items-center gap-0.5 text-danger text-caption font-black">
+            <span className="flex items-center gap-0.5 text-danger-text text-caption font-black">
                 <ArrowDown size={10} />{Math.abs(diff)}
             </span>
         );
@@ -1106,9 +1106,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                             <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-chart-1/10' : ''}>
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
-                                        {i === 0 ? <Trophy size={15} className="text-warning" />
+                                        {i === 0 ? <Trophy size={15} className="text-warning-text" />
                                             : i === 1 ? <Trophy size={15} className="text-content-3" />
-                                            : i === 2 ? <Trophy size={15} className="text-warning" />
+                                            : i === 2 ? <Trophy size={15} className="text-warning-text" />
                                             : <span className="text-xs text-content-3 font-bold w-4 text-center">{i + 1}</span>}
                                         <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
                                     </div>
@@ -1285,7 +1285,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     }
 
     const days  = Math.floor((now - new Date(fecha + 'T12:00:00')) / 86_400_000);
-    const color = days > 365 ? 'text-danger' : days > 180 ? 'text-chart-4-text' : 'text-content-2';
+    const color = days > 365 ? 'text-danger-text' : days > 180 ? 'text-chart-4-text' : 'text-content-2';
     const label = fmtDate(fecha);
 
     if (filterBranch) {
@@ -1317,7 +1317,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
-                const c = d > 365 ? 'text-danger' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
+                const c = d > 365 ? 'text-danger-text' : d > 180 ? 'text-chart-4-text' : 'text-brand-text';
                 return (
                     <div key={s.branch_id} className="flex items-center justify-between gap-6 whitespace-nowrap">
                         <span className="text-body-sm font-semibold text-content-2">{name}</span>
@@ -1788,7 +1788,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             </div>
 
             {error && (
-                <div className="text-center py-16 text-danger">
+                <div className="text-center py-16 text-danger-text">
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
                     <Button variant="ghost" onClick={fetchProductos}>Reintentar</Button>
@@ -1829,15 +1829,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 const pct        = (r.neto / maxNeto) * 100;
                                 const margin     = r.margen;
                                 const marginColor = margin == null ? 'text-content-3'
-                                    : margin >= 25 ? 'text-success'
-                                    : margin >= 10 ? 'text-warning'
-                                    : 'text-danger';
+                                    : margin >= 25 ? 'text-success-text'
+                                    : margin >= 10 ? 'text-warning-text'
+                                    : 'text-danger-text';
                                 return (
                                     <React.Fragment key={rowKey}>
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-chart-1/10' : ''}>
                                         <DataCell className="text-label font-bold">
-                                            {globalIdx === 0 ? <Star size={15} className="text-warning fill-warning" />
+                                            {globalIdx === 0 ? <Star size={15} className="text-warning-text fill-warning" />
                                                 : <span className="text-content-3">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
@@ -1919,7 +1919,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell align="right" hideBelow="sm" className="text-body-sm font-bold">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : r.utilidad != null
-                                                    ? <span className={r.utilidad >= 0 ? 'text-success' : 'text-danger'}>{fmt(r.utilidad)}</span>
+                                                    ? <span className={r.utilidad >= 0 ? 'text-success-text' : 'text-danger-text'}>{fmt(r.utilidad)}</span>
                                                     : <span className="opacity-30">—</span>}
                                             </span>
                                         </DataCell>
@@ -1956,8 +1956,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
                                                     className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
                                                         showHidden
-                                                            ? 'text-content-3 hover:text-success hover:bg-success/10'
-                                                            : 'text-content-3 hover:text-danger hover:bg-danger/10'
+                                                            ? 'text-content-3 hover:text-success-text hover:bg-success/10'
+                                                            : 'text-content-3 hover:text-danger-text hover:bg-danger/10'
                                                     }`}
                                                 >
                                                     {showHidden ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -2064,7 +2064,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                         <div key={m.month} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full group/bar cursor-default">
                                                                                             <div className="text-micro font-black h-3.5 flex items-center">
                                                                                                 {change !== null
-                                                                                                    ? <span className={isUp ? 'text-success' : 'text-danger'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
+                                                                                                    ? <span className={isUp ? 'text-success-text' : 'text-danger-text'}>{isUp ? '▲' : '▼'}{Math.abs(change).toFixed(0)}%</span>
                                                                                                     : <span />}
                                                                                             </div>
                                                                                             <div className="w-full flex flex-col justify-end rounded-t-lg overflow-hidden" style={{ height: 44 }}>
@@ -2233,9 +2233,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                             </Badge>
                                                                                                             {line.tierChanged && (
                                                                                                                 <>
-                                                                                                                    <span className="text-warning text-label cursor-help leading-none">⚠</span>
+                                                                                                                    <span className="text-warning-text text-label cursor-help leading-none">⚠</span>
                                                                                                                     <div data-surface="tooltip" className="absolute bottom-full right-0 mb-1.5 z-sidebar hidden group-hover/tier:block w-max max-w-[220px] text-caption leading-relaxed px-3 py-2 pointer-events-none">
-                                                                                                                        <p className="font-black text-warning mb-0.5">Precio cambió</p>
+                                                                                                                        <p className="font-black text-warning-text mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
                                                                                                                             <p className="text-content-tooltip-2">
                                                                                                                                 {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}

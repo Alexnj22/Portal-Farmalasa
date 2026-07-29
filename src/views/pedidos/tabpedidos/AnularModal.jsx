@@ -43,7 +43,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                                 rows={3}
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
-                                <p className="text-caption text-danger mt-1">Mínimo 5 caracteres.</p>
+                                <p className="text-caption text-danger-text mt-1">Mínimo 5 caracteres.</p>
                             )}
                         </div>
                     </>

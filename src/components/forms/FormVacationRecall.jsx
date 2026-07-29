@@ -58,7 +58,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                         <p className="text-body font-black text-content">{emp.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Palmtree size={10} className="text-success" strokeWidth={2.5} />
-                            <span className="text-caption text-success font-bold">
+                            <span className="text-caption text-success-text font-bold">
                                 Vacaciones: {vacStart ? formatDate(vacStart) : '—'} → {vacEnd ? formatDate(vacEnd) : '—'}
                             </span>
                         </div>
@@ -77,7 +77,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                 />
                 {vacStart && vacEnd && formData?.recall_date &&
                     (formData.recall_date < vacStart || formData.recall_date > vacEnd) && (
-                    <p className="text-caption text-danger font-bold mt-1 ml-1">
+                    <p className="text-caption text-danger-text font-bold mt-1 ml-1">
                         ⚠ La fecha debe estar dentro del período de vacaciones ({formatDate(vacStart)} – {formatDate(vacEnd)})
                     </p>
                 )}

@@ -652,7 +652,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                                 </p>
                               )}
                               {enc && (
-                                <p className="text-caption text-warning mt-px">Visita sin pedido asociado</p>
+                                <p className="text-caption text-warning-text mt-px">Visita sin pedido asociado</p>
                               )}
                               {!enc && cajas > 0 && (
                                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -742,7 +742,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     <p className="text-micro text-chart-3-text">ida + vuelta a bodega</p>
                   </div>
                   <div className="flex-1 bg-warning/10 rounded-xl px-3 py-2 border border-warning/30 text-center">
-                    <p className="text-micro text-warning font-semibold uppercase tracking-wider">Tiempo total</p>
+                    <p className="text-micro text-warning-text font-semibold uppercase tracking-wider">Tiempo total</p>
                     <p className="text-subtitle font-black text-warning-text">{fmtMin(totalTime)}</p>
                     <p className="text-micro text-warning-text/60">conducir + descargas</p>
                   </div>

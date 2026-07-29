@@ -265,7 +265,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             clearable
                         />
                     </div>
-                    {clasifError && <div className="sm:col-span-2 text-label text-danger px-1">{clasifError}</div>}
+                    {clasifError && <div className="sm:col-span-2 text-label text-danger-text px-1">{clasifError}</div>}
                 </div>
             </div>
 
@@ -362,7 +362,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 como el footer fijo de Nuevo Empleado). */}
             {canEdit && (
             <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider">
-                {error && <div className="text-label text-danger px-1 mb-2">{error}</div>}
+                {error && <div className="text-label text-danger-text px-1 mb-2">{error}</div>}
                 <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
             </div>
             )}

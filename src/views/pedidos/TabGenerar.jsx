@@ -488,7 +488,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
                     </Button>
                     {error && (
-                        <span className="text-body text-danger flex items-center gap-1">
+                        <span className="text-body text-danger-text flex items-center gap-1">
                             <AlertTriangle size={14} /> {error}
                         </span>
                     )}
@@ -552,11 +552,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                             </div>
                         </DataCell>
                         <DataCell align="center" hideBelow="sm">
-                            <span className="text-body font-bold text-danger tabular-nums">{row.total_necesidad}</span>
+                            <span className="text-body font-bold text-danger-text tabular-nums">{row.total_necesidad}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="sm">
                             {row.total_ventas_6m > 0 ? (
-                                <span className="inline-flex items-center justify-center gap-1 text-body-sm text-success font-semibold tabular-nums">
+                                <span className="inline-flex items-center justify-center gap-1 text-body-sm text-success-text font-semibold tabular-nums">
                                     <TrendingUp size={11} />
                                     {Math.round(row.total_ventas_6m).toLocaleString()}
                                 </span>

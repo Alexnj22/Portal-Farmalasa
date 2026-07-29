@@ -159,7 +159,7 @@ const BranchTabGeneral = ({
                             </div>
                         </div>
                         {location.lat && location.lng && (
-                            <p className="text-micro text-success font-semibold mt-1.5 ml-1">
+                            <p className="text-micro text-success-text font-semibold mt-1.5 ml-1">
                                 ✓ {Number(location.lat).toFixed(6)}, {Number(location.lng).toFixed(6)}
                             </p>
                         )}

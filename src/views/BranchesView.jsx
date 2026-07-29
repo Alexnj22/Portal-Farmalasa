@@ -243,7 +243,7 @@ const PanelCompletitud = memo(({ icono: Icono, etiqueta, pct, titulo, disabled, 
         className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-2xl text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
         <div className="flex items-center justify-between w-full">
             <Icono size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${pct === 0 ? 'text-danger' : pct === 100 ? 'text-content-3 group-hover/prog:text-content-2' : 'text-warning'}`} />
-            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${pct === 0 ? 'text-danger/80' : 'text-content-2 group-hover/prog:text-content-2'}`}>{etiqueta}</span>
+            <span className={`text-micro font-black uppercase tracking-widest transition-colors ${pct === 0 ? 'text-danger-text' : 'text-content-2 group-hover/prog:text-content-2'}`}>{etiqueta}</span>
         </div>
         {pct < 100 && (
             <div className="w-full h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden border border-border-card">

@@ -60,7 +60,7 @@ function ExpiryCell({ fecha }) {
             <Calendar size={9} /> {fecha} <span className="opacity-70">{info.days}d</span>
         </span>
     );
-    if (info.days <= 90)  return <span className="text-xs font-semibold text-warning whitespace-nowrap">{fecha}</span>;
+    if (info.days <= 90)  return <span className="text-xs font-semibold text-warning-text whitespace-nowrap">{fecha}</span>;
     if (info.days <= 180) return (
         <Badge variant="chart-4" icon={Calendar} uppercase={false}>{fecha}</Badge>
     );
@@ -259,9 +259,9 @@ export default function TabInventario({ searchTerm = '' }) {
                         cuatro veces seguidas en el mismo bloque. `StatCard` ya la
                         tenía, incluida la × al estar activa. */}
                     <StatCard
-                        icon={AlertTriangle} iconBg={filterVencidos ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger"
+                        icon={AlertTriangle} iconBg={filterVencidos ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
                         label="Vencidos" sub="por fecha"
-                        value={loading ? '–' : expiredTotal.toLocaleString()} valueCls="text-danger"
+                        value={loading ? '–' : expiredTotal.toLocaleString()} valueCls="text-danger-text"
                         active={filterVencidos}
                         activeBg="bg-danger/10 border-danger/40 shadow-md"
                         onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
@@ -288,7 +288,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     )}
 
                     <StatCard
-                        icon={DollarSign} iconBg="bg-success/10" iconCls="text-success"
+                        icon={DollarSign} iconBg="bg-success/10" iconCls="text-success-text"
                         label="Inversión" sub="costo sin IVA"
                         value={loading ? '–' : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         valueCls="text-success-text"
@@ -353,9 +353,9 @@ export default function TabInventario({ searchTerm = '' }) {
             {/* ── Table ── */}
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
-                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger" />
-                    <p className="text-sm font-semibold text-danger mb-1">Error al cargar inventario</p>
-                    <p className="text-label text-danger mb-4">{loadError}</p>
+                    <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />
+                    <p className="text-sm font-semibold text-danger-text mb-1">Error al cargar inventario</p>
+                    <p className="text-label text-danger-text mb-4">{loadError}</p>
                     <Button variant="destructive" onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}>Reintentar</Button>
                 </div>
             ) : (
@@ -443,7 +443,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     <DataCell align="right" className="whitespace-nowrap">
                                         <span className={`text-sm font-semibold tabular-nums ${
                                             units === 0 ? 'text-content-3' :
-                                            hasExpired  ? 'text-danger'   : 'text-content-2'
+                                            hasExpired  ? 'text-danger-text'   : 'text-content-2'
                                         }`}>
                                             {units.toLocaleString()}
                                         </span>

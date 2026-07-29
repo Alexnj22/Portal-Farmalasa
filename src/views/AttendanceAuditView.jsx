@@ -386,7 +386,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
           {isDemoMode && (
             <div className="bg-warning/10 border border-warning/30 rounded-2xl px-4 py-2.5">
-              <p className="text-caption text-warning font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
+              <p className="text-caption text-warning-text font-bold text-center">Modo demo — cambios simulados, no se guardan en DB</p>
             </div>
           )}
         </div>

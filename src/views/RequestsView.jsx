@@ -206,7 +206,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                             {fmtDate(meta.startDate)}{meta.endDate && meta.endDate !== meta.startDate ? ` — ${fmtDate(meta.endDate)}` : ''}
                                             {meta.days && <span className="text-danger font-medium ml-1.5">· {meta.days}d</span>}
                                         </p>
-                                        {Number(meta.days) > 3 && <p className="text-caption text-warning font-black mt-0.5">Requiere boleta ISSS</p>}
+                                        {Number(meta.days) > 3 && <p className="text-caption text-warning-text font-black mt-0.5">Requiere boleta ISSS</p>}
                                     </div>
                                 </div>
                             )}

@@ -474,7 +474,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     <div className="bg-success/10 px-4 py-2.5 border-b border-success/30 flex items-center justify-between gap-3 shrink-0">
                                         <div>
                                             <p className="text-body-sm font-black text-success-text">Alta confianza</p>
-                                            <p className="text-caption text-success">
+                                            <p className="text-caption text-success-text">
                                                 {autoQueue.length - autoRejected.size} de {autoQueue.length} seleccionados · toca ✗ para excluir
                                             </p>
                                         </div>

@@ -545,7 +545,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 }`}>{i + 1}</span>
                 <p className="text-body-sm font-semibold text-content-2 flex-1 truncate">{stop.suc_name}</p>
                 {stop.entregado_at
-                  ? <span className="text-caption text-success font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
+                  ? <span className="text-caption text-success-text font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
                   : <span className="text-caption text-content-3 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
                 }
               </div>

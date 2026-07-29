@@ -70,7 +70,7 @@ function CategoriaCell({ row }) {
     }
     return (
         <div className="min-w-0">
-            <span className="text-warning text-label font-bold whitespace-nowrap block">Sin categoría</span>
+            <span className="text-warning-text text-label font-bold whitespace-nowrap block">Sin categoría</span>
             {/* max-w acotado y `truncate`: esta tabla ya venía angosta de ancho
                 (v2.27.4 le quitó la columna Giro por lo mismo), así que el
                 subtexto no puede volver a estirarla. El texto completo vive en

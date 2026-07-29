@@ -181,12 +181,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         </span>
                     )}
                     {!saving && justSaved && (
-                        <span className="flex items-center gap-1 text-label text-success font-semibold">
+                        <span className="flex items-center gap-1 text-label text-success-text font-semibold">
                             <Check size={11} /> Guardado
                         </span>
                     )}
                     {!saving && !justSaved && saveError && (
-                        <span className="text-label text-danger flex items-center gap-1 max-w-[260px]">
+                        <span className="text-label text-danger-text flex items-center gap-1 max-w-[260px]">
                             <AlertTriangle size={10} className="shrink-0" /> {saveError}
                         </span>
                     )}

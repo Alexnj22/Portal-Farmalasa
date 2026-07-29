@@ -161,7 +161,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     style={{ boxShadow: 'var(--shadow-glass-1)' }}>
                     <div className="flex items-center gap-2">
                         <span className="text-micro font-black uppercase tracking-widest text-warning">Oportunidades de traslado</span>
-                        <span className="text-micro text-warning font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
+                        <span className="text-micro text-warning-text font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
                     </div>
                     <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto">
                         {transferOps.map(item => (
@@ -249,7 +249,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             </div>
 
             {error && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger font-semibold">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-danger/10 border border-danger/30 text-body-sm text-danger-text font-semibold">
                     <AlertTriangle size={14} /> {error}
                 </div>
             )}

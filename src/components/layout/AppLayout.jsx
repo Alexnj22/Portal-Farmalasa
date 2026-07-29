@@ -998,7 +998,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <Button variant="destructive" icon={LogOut} iconOnly className={focusRing} onClick={handleLogout} />
                                     </div>
 
-                                    <p className="text-center text-micro font-medium text-white/20 tracking-wider pt-1">
+                                    <p className="text-center text-micro font-medium text-white/55 tracking-wider pt-1">
                                         Edwin Nunez · v{APP_VERSION}
                                     </p>
                                 </>
@@ -1036,7 +1036,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         )}
                                     </div>
                                     <Button variant="destructive" icon={LogOut} title="Cerrar sesión" iconOnly className={focusRing} onClick={handleLogout} />
-                                    <span className="text-micro font-medium text-white/18 tracking-wider">v{APP_VERSION}</span>
+                                    <span className="text-micro font-medium text-white/55 tracking-wider">v{APP_VERSION}</span>
                                 </div>
                             )}
                         </div>

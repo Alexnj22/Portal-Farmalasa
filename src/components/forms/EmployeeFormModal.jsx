@@ -1040,7 +1040,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <AlertCircle size={16} className="text-danger shrink-0 mt-0.5" strokeWidth={2.5} />
                     <div>
                         <p className="text-caption font-black uppercase tracking-widest text-danger mb-0.5">Información Pendiente</p>
-                        <p className="text-label text-danger font-medium leading-tight">
+                        <p className="text-label text-danger-text font-medium leading-tight">
                             Completa los siguientes campos: <span className="font-black">{pendingItems.join(' • ')}</span>
                         </p>
                     </div>
@@ -1069,7 +1069,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <AlertTriangle size={18} className="text-warning shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <div>
                                     <h4 className="text-label font-black uppercase tracking-widest text-warning-text">Posible Duplicado</h4>
-                                    <p className="text-label text-warning font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Verifica si es una persona diferente (Homónimo).</p>
+                                    <p className="text-label text-warning-text font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Verifica si es una persona diferente (Homónimo).</p>
                                 </div>
                             </div>
                         )}
@@ -1784,7 +1784,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 </div>
                                             )}
                                             {formData.disability_has_certification && (
-                                                <p className="text-micro text-danger/80 font-bold -mt-1 ml-1 md:col-span-3">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
+                                                <p className="text-micro text-danger-text/90 font-bold -mt-1 ml-1 md:col-span-3">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
                                             )}
                                         </>
                                     );
@@ -1958,7 +1958,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <LiquidSelect invalid={temporalBasisMissing} value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
                                         </div>
                                         <PortalInput label="Motivo Concreto" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del puesto" required hasError={temporalReasonMissing} errorMessage="Requerido para justificar el plazo" />
-                                        <p className="md:col-span-2 text-caption text-warning/80 font-medium -mt-2 ml-1">La base legal es un catálogo cerrado (solo hay 2 según el Art. 25); el motivo concreto lo redacta la empresa caso por caso — queda como respaldo escrito si el plazo se disputa.</p>
+                                        <p className="md:col-span-2 text-caption text-warning-text/80 font-medium -mt-2 ml-1">La base legal es un catálogo cerrado (solo hay 2 según el Art. 25); el motivo concreto lo redacta la empresa caso por caso — queda como respaldo escrito si el plazo se disputa.</p>
                                     </div>
                                 )}
                             </div>

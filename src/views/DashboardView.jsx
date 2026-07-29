@@ -1518,7 +1518,7 @@ const DashboardView = ({ openModal }) => {
               // acción, una parada de foco que no hacía nada.
               :displayReqs.map(r=>(
                 <ListRow key={r.id} density="sm"
-                  icon={ClipboardList} iconClass="text-warning"
+                  icon={ClipboardList} iconClass="text-warning-text"
                   iconBoxClass="bg-warning/10 border-warning/30"
                   title={getEmpName(r.employee_id)}
                   subtitle={REQUEST_TYPE_LABELS[r.type]||r.type}
@@ -1557,7 +1557,7 @@ const DashboardView = ({ openModal }) => {
               ))
             ) : displayBranchAlerts.length===0?(
               <div className="flex flex-col items-center justify-center py-6 gap-2">
-                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center"><CheckCircle2 size={20} className="text-success"/></div>
+                <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center"><CheckCircle2 size={20} className="text-success-text"/></div>
                 <p className="text-body-sm font-bold text-content-3">Todo en orden</p>
                 <p className="text-caption text-content-3">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
               </div>
@@ -1574,7 +1574,7 @@ const DashboardView = ({ openModal }) => {
                     return (
                       <Caja key={b.id} {...(puede ? { to: `/branches/${b.id}` } : {})}
                         className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-[background-color] text-left w-full ${puede?'hover:bg-warning/10 cursor-pointer':'cursor-default'} border-warning/30 bg-warning/10`}>
-                        <AlertTriangle size={13} className="text-warning shrink-0"/>
+                        <AlertTriangle size={13} className="text-warning-text shrink-0"/>
                         <div className="flex-1 min-w-0"><p className="text-label font-black text-content-2 truncate">{b.name}</p><p className="text-micro text-warning-text font-semibold">{issue}</p></div>
                         {puede&&<ChevronRight size={11} className="text-content-3 shrink-0"/>}
                       </Caja>
@@ -1662,7 +1662,7 @@ const DashboardView = ({ openModal }) => {
               :recentAnnouncements.map(a=>(
                 <ListRow key={a.id} density="sm"
                   icon={a.priority==='URGENT'?Flame:Megaphone}
-                  iconClass={a.priority==='URGENT'?'text-danger':'text-chart-1-text'}
+                  iconClass={a.priority==='URGENT'?'text-danger-text':'text-chart-1-text'}
                   iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
                   title={a.title}
                   subtitle={new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}
@@ -2230,7 +2230,7 @@ const DashboardView = ({ openModal }) => {
         <div style={{position:'fixed',top:salesBarTip.y-8,left:salesBarTip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
           data-surface="tooltip" className="px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
           <span className="text-micro text-content-tooltip-2 font-semibold">{salesBarTip.label}</span>
-          {salesBarTip.amount&&<span className="text-caption text-success font-black">{salesBarTip.amount}</span>}
+          {salesBarTip.amount&&<span className="text-caption text-success-text font-black">{salesBarTip.amount}</span>}
           {salesBarTip.txCount>0&&<span className="text-micro text-content-tooltip-2 font-semibold">{salesBarTip.txCount} tx</span>}
           <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 -mt-1 rotate-45" style={{ background: 'var(--tooltip-bg)' }}/>
         </div>,
@@ -2244,7 +2244,7 @@ const DashboardView = ({ openModal }) => {
           {calTooltip.holidays?.length>0&&(
             <div className="px-3 py-2 border-b border-white/10">
               {calTooltip.holidays.map((h,i)=>(
-                <div key={i} className="flex items-center gap-1.5 text-label font-medium text-danger">
+                <div key={i} className="flex items-center gap-1.5 text-label font-medium text-danger-text">
                   <span>📅</span><span>{h}</span>
                 </div>
               ))}

@@ -174,7 +174,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                         </span>
                       )}
                       {isEntregado && (
-                        <span className="text-caption text-success font-semibold">
+                        <span className="text-caption text-success-text font-semibold">
                           ✓ Entregado {fmtTime(stop.entregado_at)}
                         </span>
                       )}

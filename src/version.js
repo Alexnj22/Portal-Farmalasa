@@ -16,7 +16,57 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.223.0';
+export const APP_VERSION = '2.224.0';
+
+// v2.224.0 — el foco de los modales, y 421 fallos de contraste que ningun
+// escaner anterior podia ver.
+//
+// FOCO. `ModalShell` no manejaba foco: no lo movia al abrir, no lo atrapaba, y
+// **no lo devolvia al cerrar**. Medido antes del cambio: activeElement quedaba
+// en BODY, o sea que la siguiente tabulacion arrancaba desde el principio de la
+// pagina, pasando otra vez por todo el menu. Afectaba a TODOS los modales.
+// Ahora: entra al primer enfocable, Tab no puede salir (Escape es la salida), y
+// al cerrar vuelve al disparador — con respaldo al <main> si ese disparador no
+// sobrevivio al re-render, para no dejar nunca el foco en el body.
+// Verificado en 8 dialogos: 0 fallos en los tres criterios.
+// El fondo pasa a `aria-hidden` + `tabIndex={-1}`: duplica lo que Escape ya
+// hace, y como parada de foco era una invisible antes del contenido.
+//
+// CONTRASTE — 421 nodos bajo AA, y el motivo por el que nunca se habian visto.
+// El escaner de D1 leia los colores con un regex `rgba?(...)`. Chrome devuelve
+// `oklab(...)` para cualquier color con alfa de Tailwind, asi que los saltaba:
+// en los temas de vidrio media 63 de 3,698 nodos y reportaba "0 bajo AA".
+// Reescrito para que el color lo convierta el navegador (canvas de 1px) y para
+// COMPONER el alfa sobre el fondo. Con eso, en los temas Solid —donde los
+// fondos son opacos y todo es medible— aparecieron 421 nodos en 28
+// combinaciones. **421 -> 23.**
+//
+// La causa dominante era una sola idea, y es la otra mitad de §25.5: una
+// superficie SIEMPRE-OSCURA (sidebar, tooltip) hereda los tokens de TEXTO del
+// tema activo. En liquid/dark no se nota porque ya son claros; en Solid, que es
+// un tema CLARO, resolvian a valores oscuros sobre fondo oscuro:
+//   · badge "Proximamente" del menu: 2.39:1
+//   · tooltip "Clic para ver horas": 2.07:1
+// Se fijan ahi los tokens del tema oscuro.
+//
+// Lo demas:
+//   · `--text-secondary`/`--text-tertiary` de solid-dark median 4.92:1 sobre la
+//     TARJETA (por eso pasaron T2) pero 3.58:1 sobre superficies ELEVADAS
+//     —chips, filas resaltadas—. 191 nodos, el grupo mas grande. Suben a
+//     valores que pasan sobre las tres superficies, y sin alfa: la
+//     transparencia era justo lo que hacia depender el resultado del fondo.
+//   · 133 usos de `text-success|warning|danger` como color de TEXTO -> variante
+//     `-text`. Son tokens de RELLENO: en blanco dan 2.35-3.76:1, sus `-text`
+//     dan 5.4-7.1. Es la regla de N2, que nadie verificaba.
+//   · etiqueta de version del sidebar: `text-white/20` = 1.83:1 -> /55 = 6.24.
+//
+// Zoom 200% y reflow a 320px (WCAG 1.4.4 y 1.4.10, nunca probados): 0 rutas con
+// desborde horizontal. Impresion: 0 nodos bajo AA.
+//
+// QUEDAN 23 nodos en 4 combinaciones, todos en los temas Solid y documentados
+// en el plan: 16 de un `text-danger` en un tooltip del Inicio, 6 del valor de un
+// `LiquidSelect` en modo `bare` que hereda color (un intento de arreglo lo
+// empeoro a 1.8:1 y se revirtio), y 1 a 4.45:1 (0.05 del minimo).
 
 // v2.223.0 — MIN·MAX F4: el candado por sucursal existia SOLO en el cliente.
 //

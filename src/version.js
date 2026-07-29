@@ -16,7 +16,55 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.191.0';
+export const APP_VERSION = '2.192.0';
+
+// v2.192.0 — Fase A de la auditoria DTE+Proveedores: seis cosas que la vista
+// prometia y no cumplia.
+//
+// La mas cara de las seis no se ve en pantalla. `update_proveedor_manual`
+// escribia `percibe_1_override = p_percibe_1` en CADA guardado, tocara o no el
+// usuario ese campo. La columna existia justo para el tri-estado (NULL =
+// automatico), y `upsert_proveedor_from_dte` SI la respeta — o sea que
+// entrarle a un proveedor a corregirle el telefono congelaba su percibe_1
+// contra sus propios DTE, para siempre, sin forma de volver a automatico desde
+// la UI. Dos filas ya habian caido (CAESS y CTE, ambas editadas cuando se
+// agrego el campo Alias). Ahora el cliente manda solo el override tri-estado y
+// `percibe_1` lo deriva el RPC; las 2 filas volvieron a NULL.
+//
+// Casi se colo un bug nuevo al arreglarlo: `get_proveedores_maestro` NO
+// devolvia `percibe_1_override`, asi que el form flamante habria mostrado
+// "Automatico" siempre y el primer guardado habria borrado un override real
+// sin avisar. Se agrego la columna al RPC en la misma migracion.
+//
+// Las otras cinco:
+// - Tres tooltips mostraban el codigo fuente en pantalla: `title="row.json_path
+//   ? 'Descargar JSON' : 'Sin JSON'"` — la expresion quedo DENTRO de la cadena.
+//   Build, lint y gate:design pasan en verde porque la forma es valida. Son los
+//   unicos 3 del repo (barrido global).
+// - La card "Sin Proveedor" contaba 143 documentos como "pendiente de
+//   emparejar". Los 143 eran tipo 09, que el sync excluye A PROPOSITO
+//   (_shared/proveedorFromDte.ts: el emisor es un banco, no un proveedor). Una
+//   lista de tareas imposibles que crecia ~2/dia, con boton de "Emparejar" que
+//   no podia resolver nada. Ahora dicen "No aplica".
+// - "Ver documentos" desde un proveedor navegaba sin rango de fechas, asi que
+//   caia en el mes actual: el usuario acababa de leer "Ultima compra:
+//   12/06/2026" y aterrizaba en "Sin facturas en el periodo". Ahora el link
+//   lleva el mes de esa ultima compra.
+// - El detalle de proveedor ignoraba el `canEdit` que la vista ya le pasaba:
+//   un usuario de solo lectura veia todo editable, escribia, y recibia el
+//   FORBIDDEN crudo del RPC (que si valida). La UI prometia lo que el servidor
+//   rechaza.
+// - Los filtros de las cards no contaban como filtros: con "Invalidados"
+//   activo, la barra decia que no habia ninguno y "Limpiar" no lo apagaba.
+//
+// Ademas: el selector de Emparejar/Clasificar en Revision marcaba
+// documentsLoaded ANTES de que resolviera el fetch y sin catch — si fallaba,
+// quedaba vacio el resto de la sesion, sin aviso ni reintento. Y se borraron
+// dos funciones muertas de la BD: el overload de 7 args de
+// update_proveedor_manual (el CREATE OR REPLACE del alias habia creado una
+// funcion NUEVA en vez de reemplazar) y set_purchase_dte_supplier, sin
+// llamadores desde que la Fase 2.1 movio el match al maestro. Ambas eran
+// SECURITY DEFINER de escritura con GRANT vivo.
 
 // v2.191.0 — buscar una factura tardaba 7.5 segundos.
 //

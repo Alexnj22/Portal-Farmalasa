@@ -23,6 +23,14 @@ export async function setProveedorSupplier(id, supplierId) {
     if (error) throw error;
 }
 
+// H2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): `percibe_1` ya NO se manda —
+// el RPC lo deriva. Lo que viaja es el override tri-estado:
+//   null  = automático (lo deciden los DTE del proveedor, Art. 163 CT)
+//   true  = manual, sí percibe
+//   false = manual, no percibe
+// Antes se mandaba un booleano plano y el RPC lo copiaba al override en cada
+// guardado, congelando el campo aunque el usuario solo hubiera tocado el
+// teléfono.
 export async function updateProveedorManual(id, fields) {
     const { error } = await supabase.rpc('update_proveedor_manual', {
         p_id: id,
@@ -31,8 +39,8 @@ export async function updateProveedorManual(id, fields) {
         p_nombre_cheques: fields.nombre_cheques || null,
         p_notas: fields.notas || null,
         p_activo: fields.activo !== false,
-        p_percibe_1: !!fields.percibe_1,
         p_alias: fields.alias || null,
+        p_percibe_1_override: fields.percibe_1_override ?? null,
     });
     if (error) throw error;
 }

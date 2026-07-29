@@ -19,7 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { tokenMatch, normSearch } from '../../utils/searchUtils';
-import { dteTypeLabel } from '../../utils/dteTypes';
+import { dteTypeLabel, dteAdmiteProveedor } from '../../utils/dteTypes';
 import { downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
 import { extractCodigoGeneracionFromPdf } from '../../utils/dtePdfCodigo';
 import { fetchProveedoresMaestro } from '../../data/proveedores';
@@ -155,6 +155,20 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 {matchSnippet && (
                     <span className="text-caption text-chart-1-text truncate block" title={matchSnippet}>…{matchSnippet}…</span>
                 )}
+            </div>
+        );
+    }
+
+    // H4: en 07/08/09 el emisor es un intermediario financiero (banco,
+    // procesador de tarjetas), no un proveedor — el sync los excluye a
+    // propósito (_shared/proveedorFromDte.ts). Mostrarlos como "pendiente de
+    // emparejar" con un botón que no resuelve nada era una tarea imposible
+    // permanente: 143 documentos tipo 09 marcados así, +2/día.
+    if (!dteAdmiteProveedor(row.tipo_dte)) {
+        return (
+            <div className="min-w-0">
+                <span className="text-content-2 text-body-sm block truncate">{row.emisor_nombre || '—'}</span>
+                <span className="text-caption text-content-3" title={`${dteTypeLabel(row.tipo_dte)}: el emisor es un intermediario financiero, no un proveedor de compras`}>No aplica</span>
             </div>
         );
     }
@@ -608,7 +622,8 @@ function TabDocumentos({
                 creditoFiscal += sign * iva;
                 comprasNetas += sign * monto;
             }
-            if (!r.proveedor_id) sinProveedorCount++;
+            // H4: solo cuenta como pendiente lo que el sync PUEDE emparejar.
+            if (!r.proveedor_id && dteAdmiteProveedor(r.tipo_dte)) sinProveedorCount++;
         }
         return { totalCompras, creditoFiscal, comprasNetas, invalidadosCount, invalidadosMonto, sinProveedorCount };
     }, [rows]);
@@ -616,7 +631,9 @@ function TabDocumentos({
     const filtered = useMemo(() => {
         return rows.filter(r => {
             if (filterInvalidados && !r.invalidado) return false;
-            if (filterSinProveedor && r.proveedor_id) return false;
+            // H4: mismo criterio que la card — los tipos sin proveedor posible
+            // no son "pendientes", así que tampoco entran a este filtro.
+            if (filterSinProveedor && (r.proveedor_id || !dteAdmiteProveedor(r.tipo_dte))) return false;
             // "nota de credito"/"anulado" no matcheaban — el buscador solo
             // conocía el tipo_dte crudo ("05") y la palabra "invalidado",
             // nunca la etiqueta legible ni el sinónimo que usa el resto del
@@ -797,9 +814,15 @@ function TabDocumentos({
                     </Button>
                 )}
 
+                {/* H14: los quick-filters de las cards (Invalidados / Sin
+                    Proveedor) SON filtros — deben contar en el badge y
+                    apagarse con "Limpiar". Faltaba filterInvalidados en ambos:
+                    con la card activa la barra decía que no había filtros y
+                    "Limpiar" no la apagaba, así que la tabla quedaba recortada
+                    sin ninguna señal de por qué. */}
                 <FilterBar
-                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); }}
-                    activeCount={[dateDirty, filterSinProveedor].filter(Boolean).length}
+                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterInvalidados(false); }}
+                    activeCount={[dateDirty, filterSinProveedor, filterInvalidados].filter(Boolean).length}
                 >
                     <FilterBar.Section active={dateDirty} onClear={() => setDateRange(defaultDateRange())} label="período">
                         <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
@@ -882,8 +905,8 @@ function TabDocumentos({
                         <DataCell align="center">
                             <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                                 <Button tone="chart-1" icon={Eye} title="Ver detalle" iconOnly onClick={() => viewDetail(row)} />
-                                <Button tone="chart-1" icon={FileJson} disabled={!row.json_path} title="row.json_path ? 'Descargar JSON' : 'Sin JSON'" iconOnly onClick={() => download(row.json_path, 'json', row)} />
-                                <Button tone="chart-1" icon={Download} disabled={!row.pdf_path} title="row.pdf_path ? 'Descargar PDF' : 'Sin PDF'" iconOnly onClick={() => download(row.pdf_path, 'pdf', row)} />
+                                <Button tone="chart-1" icon={FileJson} disabled={!row.json_path} title={row.json_path ? 'Descargar JSON' : 'Sin JSON'} iconOnly onClick={() => download(row.json_path, 'json', row)} />
+                                <Button tone="chart-1" icon={Download} disabled={!row.pdf_path} title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'} iconOnly onClick={() => download(row.pdf_path, 'pdf', row)} />
                                 <Button tone="chart-1" icon={Archive} title="Descargar paquete (JSON+PDF)" iconOnly onClick={() => downloadPackage(row)} />
                             </div>
                         </DataCell>
@@ -923,10 +946,21 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     // ambos formularios inline necesitan más ancho del que cabe junto al
     // resto de botones de la columna; al expandir una se ocultan las demás.
     const [expandedAction, setExpandedAction] = useState(null); // { rowId, kind: 'match' | 'classify' }
+    // H17: marcaba documentsLoaded ANTES de que el fetch resolviera y no tenía
+    // catch — si fallaba, el selector de Emparejar/Clasificar quedaba vacío el
+    // resto de la sesión, sin aviso, sin reintento y con una promesa rechazada
+    // sin manejar. Ahora el flag se libera ante el error para permitir otro
+    // intento al reabrir la acción.
     const loadDocuments = useCallback(() => {
         if (documentsLoaded) return;
         setDocumentsLoaded(true);
-        fetchPurchaseDteDocuments(dateStart, dateEnd).then(setDocuments);
+        fetchPurchaseDteDocuments(dateStart, dateEnd)
+            .then(setDocuments)
+            .catch((e) => {
+                console.error('FacturasCompraView.jsx: loadDocuments', e);
+                setDocumentsLoaded(false);
+                useToastStore.getState().showToast('No se pudieron cargar los documentos', 'No se puede emparejar por ahora — reintentá en un momento.', 'error');
+            });
     }, [documentsLoaded, dateStart, dateEnd]);
 
     const load = useCallback(async () => {
@@ -1032,7 +1066,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             <span className="text-content-2 text-label">{row.from_email || '—'}</span>
                         </DataCell>
                         <DataCell>
-                            <Button variant="ghost" title="row.filename" onClick={() => openFile(row)}>{row.filename}</Button>
+                            <Button variant="ghost" title={row.filename} onClick={() => openFile(row)}>{row.filename}</Button>
                         </DataCell>
                         <DataCell align="center">
                             {canEdit && (() => {
@@ -1118,7 +1152,15 @@ export default function FacturasCompraView({ openModal }) {
 
     // ?q= — cross-link desde el detalle de Proveedores ("Ver documentos").
     const [search, setSearch] = useState(() => searchParams.get('q') || '');
-    const [dateRange, setDateRange] = useState(defaultDateRange);
+    // H6: el cross-link traía solo ?q= y la vista abría en el mes actual, así
+    // que cualquier proveedor cuya última compra no fuera de este mes caía en
+    // "Sin facturas en el período" — justo después de mostrarle al usuario la
+    // fecha de esa última compra. Ahora el origen puede fijar el rango.
+    const [dateRange, setDateRange] = useState(() => {
+        const desde = searchParams.get('desde');
+        const hasta = searchParams.get('hasta');
+        return desde && hasta ? `${desde}|${hasta}` : defaultDateRange();
+    });
     const [dateStart, dateEnd] = dateRange.split('|');
     const [proveedores, setProveedores] = useState([]);
 

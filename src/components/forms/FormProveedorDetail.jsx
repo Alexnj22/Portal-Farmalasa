@@ -20,6 +20,19 @@ function SectionHeader({ icon: Icon, children }) {
 
 const SI_NO = [{ value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }];
 
+// H2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): "Percibe 1%" es tri-estado.
+// Automático = lo determinan los propios DTE del proveedor (ivaPerci1 > 0);
+// Sí/No = corrección manual que congela el campo contra futuros DTE. Antes era
+// un booleano plano y CUALQUIER guardado lo fijaba, aunque el usuario hubiera
+// venido a cambiar el teléfono — sin forma de volver a automático.
+const PERCIBE_OPTIONS = [
+    { value: 'auto', label: 'Automático (según sus DTE)' },
+    { value: 'si',   label: 'Sí, percibe 1%' },
+    { value: 'no',   label: 'No percibe' },
+];
+const percibeToOption = (override) => override === null || override === undefined ? 'auto' : (override ? 'si' : 'no');
+const optionToPercibe = (v) => v === 'auto' ? null : v === 'si';
+
 // Categoría Contable (Costo/Gasto del form del ERP viejo, PLAN-PROVEEDORES-2026-07.md
 // §2): NO es un campo propio — se deriva de la `clase` de la categoría asignada.
 // Sin categoría todavía, no hay clase que derivar. Antes esto vivía mal
@@ -79,7 +92,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         alias: formData?.alias || '',
         notas: formData?.notas || '',
         activo: formData?.activo !== false,
-        percibe_1: !!formData?.percibe_1,
+        percibe_1_override: formData?.percibe_1_override ?? null,
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -96,6 +109,12 @@ const FormProveedorDetail = ({ formData, onClose }) => {
 
     const categorias = formData?.categorias || [];
     const suppliers = formData?.suppliers || [];
+    // H3 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): ProveedoresView ya pasaba
+    // canEdit y este form nunca lo leía — un usuario con solo can_view veía
+    // todo editable y el botón Guardar, escribía, y recibía el FORBIDDEN crudo
+    // que lanzan los RPCs (que sí validan auth_can_edit_any). La UI prometía
+    // lo que el servidor rechaza.
+    const canEdit = formData?.canEdit !== false;
     const claseActual = categorias.find(c => String(c.id) === String(categoriaId))?.clase;
 
     const onCategoriaChange = async (val) => {
@@ -150,9 +169,25 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         }
     };
 
+    // H6 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): sin rango de fechas el
+    // destino abría en el mes actual y mostraba "Sin facturas en el período"
+    // para todo proveedor cuya última compra no fuera de este mes — con la
+    // fecha de esa última compra visible en este mismo modal. Se manda el mes
+    // completo de `ultima_vez_visto`; sin ese dato, el destino usa su default.
     const verDocumentos = () => {
+        const params = new URLSearchParams({
+            tab: 'documentos',
+            q: formData?.nit || formData?.nombre || '',
+        });
+        const ultima = formData?.ultima_vez_visto ? String(formData.ultima_vez_visto).slice(0, 10) : null;
+        if (ultima) {
+            const [y, m] = ultima.split('-');
+            const finDeMes = new Date(Number(y), Number(m), 0).getDate();
+            params.set('desde', `${y}-${m}-01`);
+            params.set('hasta', `${y}-${m}-${String(finDeMes).padStart(2, '0')}`);
+        }
         onClose();
-        navigate(`/facturas-compra?tab=documentos&q=${encodeURIComponent(formData?.nit || formData?.nombre || '')}`);
+        navigate(`/facturas-compra?${params.toString()}`);
     };
 
     return (
@@ -214,6 +249,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             onChange={onCategoriaChange}
                             options={categorias.map(c => ({ value: c.id, label: c.nombre }))}
                             placeholder={savingCategoria ? 'Guardando…' : 'Sin categoría'}
+                            disabled={!canEdit}
                             clearable
                         />
                     </div>
@@ -225,6 +261,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             onChange={onSupplierChange}
                             options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
                             placeholder={savingSupplier ? 'Guardando…' : 'Buscar proveedor ERP…'}
+                            disabled={!canEdit}
                             clearable
                         />
                     </div>
@@ -241,6 +278,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         label="Contacto"
                         placeholder="Nombre del contacto"
                         value={form.contacto_nombre}
+                        readOnly={!canEdit}
                         onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
                     />
                     <PortalInput
@@ -248,6 +286,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         label="Teléfono 2"
                         placeholder="Teléfono adicional"
                         value={form.telefono2}
+                        readOnly={!canEdit}
                         onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
                     />
                     <PortalInput
@@ -256,6 +295,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)"
                         placeholder="Nombre alterno de búsqueda"
                         value={form.alias}
+                        readOnly={!canEdit}
                         onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
                     />
                     <PortalInput
@@ -263,6 +303,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         label="Nombre para Cheques"
                         placeholder="Si difiere de la razón social"
                         value={form.nombre_cheques}
+                        readOnly={!canEdit}
                         onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
                     />
                 </div>
@@ -278,19 +319,26 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.activo ? 'si' : 'no'}
                             onChange={(v) => setForm(p => ({ ...p, activo: v === 'si' }))}
                             options={SI_NO}
+                            disabled={!canEdit}
                             clearable={false}
                         />
                     </div>
                     <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Art. 163 CT — se enciende solo al observarlo en un DTE, pero se puede corregir a mano">
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block" title="Art. 163 CT — en Automático se enciende solo al observarlo en un DTE; elegir Sí/No lo fija a mano y deja de actualizarse desde los DTE">
                             Percibe 1%
                         </label>
                         <LiquidSelect
-                            value={form.percibe_1 ? 'si' : 'no'}
-                            onChange={(v) => setForm(p => ({ ...p, percibe_1: v === 'si' }))}
-                            options={SI_NO}
+                            value={percibeToOption(form.percibe_1_override)}
+                            onChange={(v) => setForm(p => ({ ...p, percibe_1_override: optionToPercibe(v) }))}
+                            options={PERCIBE_OPTIONS}
+                            disabled={!canEdit}
                             clearable={false}
                         />
+                        {form.percibe_1_override === null && (
+                            <p className="text-caption text-content-3 mt-1 ml-1">
+                                Hoy: {formData?.percibe_1 ? 'sí percibe' : 'no percibe'} (observado en sus DTE)
+                            </p>
+                        )}
                     </div>
                     <div className="sm:col-span-2">
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Notas</label>
@@ -298,6 +346,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             value={form.notas}
                             onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
                             rows={3}
+                            readOnly={!canEdit}
                             placeholder="Notas internas"
                         />
                     </div>
@@ -311,10 +360,12 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 lo fija al fondo del viewport visible sin necesitar que el botón viva
                 fuera del contenedor scrolleable (pedido del usuario: que se comporte
                 como el footer fijo de Nuevo Empleado). */}
+            {canEdit && (
             <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider">
                 {error && <div className="text-label text-danger px-1 mb-2">{error}</div>}
                 <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
             </div>
+            )}
         </div>
     );
 };

@@ -16,7 +16,17 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.169.0';
+export const APP_VERSION = '2.170.0';
+
+// v2.170.0 — `PortalInput` acepta no tener etiqueta.
+//
+// Preguntado por el usuario: 43 de los 56 inputs a mano son el MISMO campo del
+// canonico; solo 2 son celdas tipo hoja de calculo. Lo unico que los dejaba
+// fuera era que `label` se dibujaba siempre. No hacia falta otro canonico:
+// hacia falta la ranura. Sin `label` el nombre va en `aria-label` y el error
+// pasa a `sr-only` (la senal visible es el borde rojo, que ya estaba).
+// Prop `className` nueva para el CONTENEDOR (celdas de ancho fijo).
+// Migrados: banco de horas de nomina (4) y feriados (2). input-a-mano 60 → 54.
 
 // v2.169.0 — `chart-retirado` y `chip-a-mano` a CERO, y el lint tambien.
 //

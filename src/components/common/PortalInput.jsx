@@ -33,6 +33,11 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     // dentro de una tabla y no como campo de formulario.
     compact = false,
     inputClassName = '',
+    // `className` va al CONTENEDOR, no al `<input>` (para eso está
+    // `inputClassName`). Lo necesitan las celdas de ancho fijo: `w-20`, `w-24`,
+    // `flex-1`. Verificado antes de definirlo: cero llamadores lo usaban, así
+    // que no cambia nada existente.
+    className = '',
     // `tono`: el campo tintado con un color semántico o de categoría. Al medir
     // D3.4 aparecieron **33 inputs a mano en 16 archivos** que son exactamente
     // esto — el salario nuevo en verde, el MIN propuesto en naranja y el MAX en
@@ -76,15 +81,33 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     const messageId = name ? `${name}-message` : undefined;
 
     return (
-        <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
-            <label htmlFor={name} className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
-                <span className="flex items-center gap-1.5">
-                    {label} {helperText && <span className="text-micro text-brand-text">{helperText}</span>}
-                    {labelAction}
+        <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''} ${className}`}>
+            {/* La etiqueta es OPCIONAL desde el 2026-07-28, y esa ranura es la
+                que faltaba. Al medir los 56 `<input>` que seguían a mano
+                agrupándolos por anatomía, 43 resultaron ser este mismo campo:
+                borde, fondo y redondeo idénticos. Lo único que los dejaba fuera
+                era que acá el `<label>` se dibujaba siempre, y ellos no llevan
+                etiqueta visible —el encabezado de su columna ya dice qué son—.
+                O sea que no hacía falta otro canónico: hacía falta esta línea.
+
+                Sin `label` el nombre accesible tiene que venir en `aria-label`
+                (el gate lo exige en `input-sin-nombre`, cero absoluto), y el
+                mensaje de error pasa a ser solo para lectores de pantalla: la
+                señal visible es el borde rojo, que ya estaba. */}
+            {label ? (
+                <label htmlFor={name} className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
+                    <span className="flex items-center gap-1.5">
+                        {label} {helperText && <span className="text-micro text-brand-text">{helperText}</span>}
+                        {labelAction}
+                    </span>
+                    {isMissing && !hasError && <span id={messageId} className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
+                    {hasError && errorMessage && <span id={messageId} className="text-danger font-bold bg-danger/15 px-2 py-0.5 rounded-md shadow-sm border border-danger/40 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
+                </label>
+            ) : isInvalid && (
+                <span id={messageId} className="sr-only">
+                    {hasError && errorMessage ? errorMessage : 'Requerido'}
                 </span>
-                {isMissing && !hasError && <span id={messageId} className="text-danger font-bold bg-danger/10 px-2 py-0.5 rounded-md shadow-sm border border-danger/30">Requerido</span>}
-                {hasError && errorMessage && <span id={messageId} className="text-danger font-bold bg-danger/15 px-2 py-0.5 rounded-md shadow-sm border border-danger/40 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
-            </label>
+            )}
             {/* Sin `tono` manda la superficie del tema (`data-surface="input"`).
                 Con `tono` NO se emite: esa regla de index.css va sin @layer, así
                 que le gana a cualquier utilidad de Tailwind — el borde tintado

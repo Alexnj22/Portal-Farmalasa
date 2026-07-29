@@ -9,7 +9,8 @@ F3.1, F3.4, F4.1, F4.3, F4.4 y F4.6. Advisor de seguridad **110 → 86**;
 | | |
 |---|---|
 | ✅ Cerrado | P1, P3+P5, P4, F1, F2, F3.1/3.4, F4.1/4.3/4.4/4.6, **C1, C3, C4, C5** |
-| ⏸️ Tu decisión | **C2** (rebaseline de migraciones), rotar el secreto de cron, PITR |
+| ⏸️ Tu decisión | **C2** (rebaseline de migraciones), PITR (se hará antes de facturar) |
+| ✅ Cerrado (v2.217.0) | rotar el secreto de cron |
 | ✅ Cerrado (v2.209.0) | slots de conexión al 87%, `collation version mismatch` (ambos en C4) |
 | 📋 Proyecto | POS |
 
@@ -88,8 +89,43 @@ ese mismo valor sigue en texto plano dentro de
 
 Alcance acotado: ese schema no está expuesto por PostgREST, así que hace falta
 acceso directo a la BD para leerlo. Aun así es una credencial en claro en reposo
-que autoriza invocar las edge functions de sync. **Recomendación: rotar el
-secreto de cron y actualizar Vault.**
+que autoriza invocar las edge functions de sync.
+
+### ✅ ROTADO el 2026-07-29 (v2.217.0)
+
+`ADMIN_INVOKE_SECRET` rotado a un valor nuevo de 96 caracteres
+(`openssl rand -hex 48`). Es el secreto que 13 edge functions validan como
+`Authorization: Bearer` y que ~25 `cron.job.command` leen de Vault.
+
+**El valor nuevo nunca pasó por el contexto del agente ni quedó en el
+transcript**: vivió solo en una variable de shell (`$NEW`), y los comandos
+llevan la referencia a la variable, no el valor. Se aplicó a los dos lados con
+el mismo `$NEW`:
+1. `supabase secrets set ADMIN_INVOKE_SECRET="$NEW"` (lo que validan las funciones)
+2. `vault.update_secret('<uuid>', '$NEW')` (lo que mandan los crons)
+
+`update_secret` se llamó con 2 argumentos a propósito: su cuerpo usa
+`coalesce(new_name, s.name)` y `coalesce(new_description, s.description)`, así
+que nombre y descripción se preservan — verificado leyendo la definición antes
+de tocar producción.
+
+**Rollback**: el valor viejo quedó respaldado dentro de Vault como
+`admin_invoke_secret_prev_20260729`, copiado de `decrypted_secrets` sin salir
+nunca de la BD. **Borrarlo cuando haya pasado un día sin incidentes** — ya no
+sirve para nada, y dejarlo es acumular una credencial muerta.
+
+**Verificación medida**: las 14 respuestas HTTP posteriores a la rotación
+(17:31:34 UTC) fueron **200, cero 401** — no hubo siquiera ventana de fallo, las
+funciones tomaron el valor nuevo de inmediato. Y no solo respondieron: 6
+corridas de `dte` y 8 de `inventory` posteriores escribieron datos con
+`success = true`.
+
+Nota: lo que sigue en claro en `schema_migrations` es el valor **viejo**, que ya
+no autoriza nada. El nuevo nunca tocó una migración.
+
+`CRON_INVOKE_SECRET` **no se rotó y no hace falta**: se creó justamente para no
+heredar esta exposición (header propio `x-cron-secret`, secreto propio) y nunca
+estuvo en texto plano en un `cron.job.command`.
 
 ---
 

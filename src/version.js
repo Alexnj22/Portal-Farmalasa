@@ -16,7 +16,43 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.216.0';
+export const APP_VERSION = '2.217.0';
+
+// v2.217.0 — rotado ADMIN_INVOKE_SECRET, la credencial que quedo en claro.
+//
+// Contexto (PLAN-SUPABASE-CIERRE.md, hallazgo lateral de C2): el secreto de
+// invocacion de crons vive en texto plano dentro de 7 migraciones viejas en
+// supabase_migrations.schema_migrations. La migracion 0B.2 lo movio a Vault,
+// pero MOVER UN SECRETO A VAULT NO LO ROTA — el valor seguia siendo el mismo.
+// Es la credencial que 13 edge functions validan como Authorization: Bearer y
+// que ~25 cron.job.command leen de Vault.
+//
+// Rotado a 96 caracteres (openssl rand -hex 48), aplicado a los dos lados con
+// el mismo valor: `supabase secrets set` (lo que validan las funciones) y
+// `vault.update_secret` (lo que mandan los crons).
+//
+// El valor nuevo NUNCA paso por el contexto del agente ni quedo en el
+// transcript: vivio solo en una variable de shell, y los comandos llevan la
+// referencia a la variable, no el valor. Rotar un secreto imprimiendolo en un
+// log seria cambiar una exposicion por otra.
+//
+// update_secret se llamo con 2 argumentos a proposito: su cuerpo usa
+// coalesce(new_name, s.name) y coalesce(new_description, s.description), asi
+// que nombre y descripcion se preservan — verificado leyendo la definicion
+// antes de tocar produccion, no asumido.
+//
+// Verificacion medida: las 14 respuestas HTTP posteriores a la rotacion fueron
+// 200, CERO 401 — no hubo ni ventana de fallo, las funciones tomaron el valor
+// nuevo de inmediato. Y no solo respondieron: 6 corridas de dte y 8 de
+// inventory posteriores escribieron datos con success=true.
+//
+// Rollback: el valor viejo quedo respaldado dentro de Vault como
+// `admin_invoke_secret_prev_20260729`, copiado de decrypted_secrets sin salir
+// nunca de la BD. BORRARLO tras un dia sin incidentes.
+//
+// Lo que sigue en claro en schema_migrations es el valor VIEJO, que ya no
+// autoriza nada. CRON_INVOKE_SECRET no se roto y no hace falta: se creo
+// justamente para no heredar esta exposicion.
 
 // v2.216.0 — los 6 crons horarios de DTE, consolidados en uno.
 //

@@ -258,6 +258,29 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.193.0 — la grilla del conteo se ordena como está el anaquel.
+
+En las sucursales el producto está acomodado **por laboratorio**. La grilla
+ordenaba por nombre de producto — y con el filtro de diferencias, por valor del
+desvío (v2.190.0) — lo que obliga a zigzaguear la farmacia entera para contar o
+recontar. Gana la razón física: **laboratorio primero, producto alfabético
+adentro**, los sin laboratorio al final. Aplica a la pantalla, a las líneas y al
+payload de impresión.
+
+Verificado que el orden alfabético ya reproduce el numérico: de 356
+laboratorios, 57 tienen prefijo numérico y **ninguno pasa de un dígito**, así que
+no aparece el clásico "10- antes que 2-".
+
+La hoja de ajustes para el ERP mantiene su orden por código: ese documento no se
+camina, se digita.
+
+Además, entrar al **modo recuento** deja la vista filtrada en "Con diferencia",
+que es lo que se recuenta. Queda como filtro y no como candado: verificar unas
+líneas que cuadraron es lo que detecta al que copió el número del sistema en vez
+de contar.
+
+---
+
 ## v2.190.0 — recuento de variaciones por supervisor.
 
 La causa más común de una diferencia grande no es robo ni merma: es **un error

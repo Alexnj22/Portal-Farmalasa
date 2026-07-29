@@ -16,7 +16,25 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.192.0';
+export const APP_VERSION = '2.193.0';
+
+// v2.193.0 — la grilla del conteo se ordena como esta el anaquel.
+//
+// En las sucursales el producto esta acomodado POR LABORATORIO. La grilla
+// ordenaba por nombre de producto — y con el filtro de diferencias, por valor
+// del desvio (v2.190.0) — lo que obliga a zigzaguear la farmacia entera para
+// contar o recontar. Gana la razon fisica: laboratorio primero, producto
+// alfabetico adentro, los sin laboratorio al final.
+//
+// Verificado que el orden alfabetico ya reproduce el numerico: de 356
+// laboratorios, 57 tienen prefijo numerico y NINGUNO pasa de un digito, asi que
+// no aparece el clasico "10- antes que 2-".
+//
+// Ademas, entrar al modo recuento deja la vista filtrada en "Con diferencia",
+// que es lo que se recuenta. Queda como filtro y no como candado: verificar
+// unas lineas que cuadraron es lo que detecta al que copio el numero del
+// sistema en vez de contar.
+
 
 // v2.192.0 — Fase A de la auditoria DTE+Proveedores: seis cosas que la vista
 // prometia y no cumplia.

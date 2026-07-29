@@ -945,7 +945,14 @@ export default function ConteoDetailView() {
                     )}
                     {puedeRecontar && (
                         <label className="flex items-center gap-2 cursor-pointer select-none">
-                            <Switch checked={recuento} onChange={setRecuento} size="sm" variant="chart-1" label="Modo recuento" />
+                            {/* Entrar al recuento deja la vista en "Con diferencia": es lo
+                                que se recuenta. Queda como filtro y no como candado para no
+                                perder el sondeo de control — verificar unas líneas que
+                                cuadraron es lo que detecta al que copió el número. */}
+                            <Switch
+                                checked={recuento}
+                                onChange={(v) => { setRecuento(v); if (v) setFiltro('DIFERENCIA'); }}
+                                size="sm" variant="chart-1" label="Modo recuento" />
                             <span className="text-label font-bold text-content-2 flex items-center gap-1">
                                 <ShieldCheck size={12} strokeWidth={2.5} /> Modo recuento
                             </span>
@@ -964,8 +971,8 @@ export default function ConteoDetailView() {
 
                 {recuento && (
                     <Notice variant="info" icon={ShieldCheck}>
-                        Recuento a ciegas: el campo arranca vacío y no ves el primer conteo ni el sistema hasta registrar el tuyo.
-                        Filtrá por <strong>Con diferencia</strong> — vienen ordenados por el valor del desvío, lo caro primero.
+                        Recuento a ciegas sobre los renglones <strong>con diferencia</strong>, en orden de anaquel (por laboratorio).
+                        El campo arranca vacío y no ves el primer conteo ni el sistema hasta registrar el tuyo.
                         No podés recontar una línea que vos mismo contaste.
                     </Notice>
                 )}

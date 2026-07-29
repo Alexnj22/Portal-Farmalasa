@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.172.0';
+export const APP_VERSION = '2.173.0';
+
+// v2.173.0 — 38 tarjetas mas y 20 inputs al canonico.
+//
+// **Tarjetas 31 → 10.** Las de plantilla se migraron limpiando solo los trozos
+// ESTATICOS del template literal. Las que tienen la superficie DENTRO de un
+// condicional usan ahora el mismo idioma que `PortalInput` con `tono`: cuando
+// hay tinte no se emite `data-surface`, porque la regla de index.css va sin
+// @layer y le ganaria a la clase tintada.
+//
+//     data-surface={d.isToday ? undefined : 'card'}
+//     className={`… ${d.isToday ? 'bg-brand/5 border-brand/30' : ''}`}
+//
+// **Inputs 48 → 28.** El migrador parte el className en tres: lo que el
+// canonico ya dibuja (caja, borde, radio, foco, transicion) se descarta; lo
+// que afecta al TEXTO (alineacion, peso, mono) va a `inputClassName`; lo que
+// define ANCHO (flex-1, w-24) va a `className`, que ahora es del contenedor.
+// El `tono` sale del borde tintado y `compact` del alto.
+//
+// Los `data-qty-*` NO se tocan: son las celdas con navegacion por flechas.
+//
+// Verificado en vivo sobre 14 vistas: cero rotas, cero tarjetas sin fondo,
+// cero campos anonimos, cero errores.
 
 // v2.172.0 — 150 tarjetas dibujadas a mano pasan al canonico.
 //

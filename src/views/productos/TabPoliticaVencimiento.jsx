@@ -18,6 +18,7 @@ import {
     fetchLaboratoriosBasic, fetchProveedores, fetchSuppliersNames, insertProveedor,
     updateProveedor, deleteProveedor, fetchProductCountByLabDevolutivo, updateProductsMarkND,
 } from '../../data/laboratorios';
+import PortalInput from '../../components/common/PortalInput';
 
 let rowIdSeq = 0;
 const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;
@@ -507,15 +508,19 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                    <input aria-label="Viñeta del proveedor"
+                    <PortalInput
+                        aria-label="Viñeta del proveedor"
                         type="number"
-                        step="0.01"
-                        min="0"
                         value={draft.vineta}
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
+                        min="0"
+                        step="0.01"
                         title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
- className="w-14 text-body-xl font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card border-border-card focus:border-chart-9/40 text-content-2 text-center"
+                        tono="chart-9"
+                        compact
+                        inputClassName="text-body-xl font-semibold text-content-2 text-center"
+                        className="w-14"
                     />
                     <span className="text-micro font-semibold text-content-3 whitespace-nowrap">viñeta</span>
                 </div>
@@ -533,11 +538,15 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     onClick={() => setDraft(d => ({ ...d, devolutivo: !d.devolutivo, meses_devolucion: d.devolutivo ? '' : d.meses_devolucion }))}
                 />
 
-                <input aria-label="Notas de la política"
+                <PortalInput
+                    aria-label="Notas de la política"
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
- className="flex-1 min-w-[110px] text-body-xl px-2 py-1.5 rounded-lg border border-border-card bg-surface-card focus:border-chart-9/40 text-content-2 placeholder-content-3"
+                    tono="chart-9"
+                    compact
+                    inputClassName="text-body-xl text-content-2"
+                    className="flex-1 min-w-[110px]"
                 />
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -552,12 +561,15 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
             </div>
 
             {isOtro && (
-                <input aria-label="Nombre del proveedor o droguería"
-                    autoFocus
+                <PortalInput
+                    aria-label="Nombre del proveedor o droguería"
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}
                     placeholder="Nombre del proveedor/droguería"
- className="w-full mt-1.5 text-body-xl font-semibold px-2.5 py-1.5 rounded-lg border border-border-card bg-surface-card focus:border-chart-9/40 text-content-2 placeholder-content-3"
+                    autoFocus
+                    tono="chart-9"
+                    compact
+                    inputClassName="text-body-xl font-semibold text-content-2"
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (

@@ -25,6 +25,7 @@ import {
     fetchInventoryLotesForProduct, fetchProductCostoActivo,
 } from '../../data/conteoInventario';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
 
 const PAGE_SIZE = 25;
 
@@ -182,30 +183,34 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                 </div>
             </DataCell>
             <DataCell align="center">
-                <input aria-label="Cantidad física contada"
+                <PortalInput
+                    aria-label="Cantidad física contada"
                     type="number"
-                    data-fisico-input="true"
                     value={fisico}
-                    disabled={!editable}
                     onChange={(e) => setFisico(e.target.value)}
-                    onBlur={commit}
-                    onKeyDown={handleFisicoKeyDown}
                     placeholder="—"
- className="w-16 text-center text-body-xl font-bold bg-surface-card border border-border-card rounded-lg px-1 py-1 focus:border-chart-9 disabled:bg-surface-card-hover disabled:text-content-3"
+                    onKeyDown={handleFisicoKeyDown}
+                    onBlur={commit}
+                    readOnly={!editable}
+                    compact
+                    inputClassName="text-center text-body-xl font-bold"
+                    className="w-16"
                 />
             </DataCell>
             <DataCell align="center">
                 <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
             </DataCell>
             <DataCell hideBelow="lg">
-                <input aria-label="Nota del conteo"
+                <PortalInput
+                    aria-label="Nota del conteo"
                     type="text"
                     value={nota}
-                    disabled={!editable}
                     onChange={(e) => setNota(e.target.value)}
-                    onBlur={commit}
                     placeholder="Nota..."
- className="w-full text-body-xl bg-surface-card border border-border-card rounded-lg px-2 py-1 focus:border-chart-9 disabled:bg-surface-card-hover"
+                    onBlur={commit}
+                    readOnly={!editable}
+                    compact
+                    inputClassName="text-body-xl"
                 />
             </DataCell>
             <DataCell align="center">
@@ -341,7 +346,13 @@ function EditLoteModal({ item, onClose, onSave }) {
                 <p className="text-label text-content-3">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Lote</label>
-                    <input aria-label="Lote" type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <PortalInput
+                        aria-label="Lote"
+                        type="text"
+                        value={lote}
+                        onChange={(e) => setLote(e.target.value)}
+                        inputClassName="text-body-xl"
+                    />
                 </div>
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
@@ -789,7 +800,13 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                     clearable={false}
                 />
                 {lote === '__OTRO__' && (
-                    <input aria-label="Número de lote nuevo" value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-body-xl bg-surface-card border border-border-card rounded-xl px-3 py-2 outline-none focus:border-chart-9" />
+                    <PortalInput
+                        aria-label="Número de lote nuevo"
+                        value={loteOtro}
+                        onChange={(e) => setLoteOtro(e.target.value)}
+                        placeholder="Número de lote nuevo"
+                        inputClassName="text-body-xl"
+                    />
                 )}
             </div>
             <div className="flex items-center gap-2">

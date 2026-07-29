@@ -17,6 +17,7 @@ import {
     fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
     deleteDispatchRule, updateDispatchRule, insertDispatchRule,
 } from '../../data/dispatchRules';
+import PortalInput from '../../components/common/PortalInput';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
@@ -282,13 +283,19 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                         onClick={() => selectMultiplo(n)}
                                     >×{n}</Button>
                                 ))}
-                                <input aria-label="Otro múltiplo de despacho" type="number" min={1} placeholder="Otro…"
+                                <PortalInput
+                                    aria-label="Otro múltiplo de despacho"
+                                    type="number"
                                     value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
                                     onChange={e => {
                                         const n = parseInt(e.target.value);
                                         if (n > 0) selectMultiplo(n);
                                     }}
-                                    className="w-20 border border-divider rounded-xl px-2 py-1.5 text-body-xl focus:border-chart-1 bg-surface-card"
+                                    placeholder="Otro…"
+                                    min={1}
+                                    compact
+                                    inputClassName="text-body-xl"
+                                    className="w-20"
                                 />
                             </div>
 
@@ -344,14 +351,16 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     Notas internas
                     <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir del campo</span>
                 </p>
-                <input aria-label="Notas de la regla" type="text"
-                    placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
+                <PortalInput
+                    aria-label="Notas de la regla"
+                    type="text"
                     value={vals.notes}
-                    disabled={!vals.dispatch_id_presentacion}
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
-                    onBlur={commitNotes}
+                    placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
                     onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                    className="w-full border border-divider rounded-xl px-3 py-2 text-body-xl focus:border-chart-1 bg-surface-card backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    onBlur={commitNotes}
+                    readOnly={!vals.dispatch_id_presentacion}
+                    inputClassName="text-body-xl"
                 />
             </div>
         </div>

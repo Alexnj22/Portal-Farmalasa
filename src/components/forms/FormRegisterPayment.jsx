@@ -3,6 +3,7 @@ import Badge from '../common/Badge';
 import { Receipt, DollarSign, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
+import PortalInput from '../common/PortalInput';
 
 const SERVICE_LABELS = {
     rent: 'Arrendamiento',
@@ -145,15 +146,17 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <span className="text-content-3 font-black text-lg">$</span>
                             </div>
-                            <input aria-label="Monto del pago"
-                                required
+                            <PortalInput
+                                aria-label="Monto del pago"
                                 type="number"
-                                min="0.01"
-                                step="0.01"
-                                className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-black text-content text-lg shadow-sm transition-all group-hover:border-brand/50 placeholder:text-content-3"
-                                placeholder="0.00"
                                 value={paymentData.amount}
                                 onChange={(e) => handleUpdate('amount', e.target.value)}
+                                placeholder="0.00"
+                                min="0.01"
+                                step="0.01"
+                                required
+                                tono="brand"
+                                inputClassName="font-black text-content text-lg"
                             />
                         </div>
                     </div>
@@ -190,12 +193,14 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 flex items-center gap-1.5">
                         <FileText size={12} className="text-content-3" /> Notas / Observaciones (Opcional)
                     </label>
-                    <input aria-label="Notas del pago"
+                    <PortalInput
+                        aria-label="Notas del pago"
                         type="text"
-                        className="w-full px-5 py-3.5 rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card font-bold text-content-2 text-body-xl shadow-sm transition-all hover:border-brand/50 placeholder:text-content-3 placeholder:font-medium"
-                        placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
                         value={paymentData.notes}
                         onChange={(e) => handleUpdate('notes', e.target.value)}
+                        placeholder="Ej: Incluye recargo por mora, ajuste tarifario..."
+                        tono="brand"
+                        inputClassName="font-bold text-content-2 text-body-xl"
                     />
                 </div>
 

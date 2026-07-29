@@ -6,6 +6,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
+import PortalInput from '../common/PortalInput';
 
 const FormNursingRegents = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);
@@ -58,12 +59,14 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                             N° Permiso / Licencia
                         </label>
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">
-                            <input aria-label="N° de permiso del servicio de enfermería" 
-                                type="text" 
-                                className="w-full px-5 py-3.5 h-[50px] rounded-2xl bg-surface-card border border-divider outline-none focus:border-brand focus:bg-surface-card focus:shadow-[var(--shadow-ring-brand)] hover:border-brand/40 hover:bg-surface-card-hover transition-all text-body-xl font-bold text-content shadow-sm placeholder:text-content-3 placeholder:font-medium" 
+                            <PortalInput
+                                aria-label="N° de permiso del servicio de enfermería"
+                                type="text"
+                                value={legalData.nursingServicePermit || ""}
+                                onChange={(e) => updateLegalField('nursingServicePermit', e.target.value)}
                                 placeholder="Ej: ENF-2026-001"
-                                value={legalData.nursingServicePermit || ""} 
-                                onChange={(e) => updateLegalField('nursingServicePermit', e.target.value)} 
+                                tono="brand"
+                                inputClassName="text-body-xl font-bold text-content"
                             />
                         </div>
                     </div>

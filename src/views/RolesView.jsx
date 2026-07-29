@@ -18,6 +18,7 @@ import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
+import PortalInput from '../components/common/PortalInput';
 
 const SCOPE_OPTIONS = [
     { value: 'BRANCH', label: 'Por Sucursal' },
@@ -533,12 +534,14 @@ const RolesView = ({ openModal }) => {
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand-text group-focus-within:bg-brand/10">
                                                 <Award size={16} />
                                             </div>
-                                            <input aria-label="Nombre del rol nuevo"
+                                            <PortalInput
+                                                aria-label="Nombre del rol nuevo"
                                                 type="text"
-                                                placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-content-2 transition-all duration-300 placeholder-content-3"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
+                                                placeholder="Ej: Gerente General..."
+                                                tono="brand"
+                                                inputClassName="text-body-xl font-bold text-content-2"
                                             />
                                         </div>
                                     </div>
@@ -568,13 +571,15 @@ const RolesView = ({ openModal }) => {
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-content-3 group-focus-within:text-brand-text transition-colors z-base">
                                                     <Hash size={16} />
                                                 </div>
-                                                <input aria-label="Nivel jerárquico"
+                                                <PortalInput
+                                                    aria-label="Nivel jerárquico"
                                                     type="number"
-                                                    min="1"
-                                                    max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-surface-card border border-border-card focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] rounded-2xl text-body-xl outline-none font-bold text-brand-text transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
+                                                    min="1"
+                                                    max="99"
+                                                    tono="brand"
+                                                    inputClassName="text-body-xl font-bold text-brand-text"
                                                 />
                                             </div>
                                         </div>

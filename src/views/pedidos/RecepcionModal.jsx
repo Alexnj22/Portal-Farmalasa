@@ -23,6 +23,7 @@ import {
 } from '../../data/recepcion';
 import { updatePedidoSucursalStatus } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import PortalInput from '../../components/common/PortalInput';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
@@ -888,9 +889,15 @@ export default function RecepcionModal({
                                         </div>
                                         {(eDiff || e.nota) && (
                                             <div className="px-5 pb-2">
-                                                <input aria-label="Nota del renglón" type="text" placeholder="Nota (opcional)…" value={e.nota}
+                                                <PortalInput
+                                                    aria-label="Nota del renglón"
+                                                    type="text"
+                                                    value={e.nota}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
-                                                    className="w-full text-body-xl border border-brand/30 rounded-lg px-3 py-1.5 bg-surface-card focus:border-brand placeholder-content-3"
+                                                    placeholder="Nota (opcional)…"
+                                                    tono="brand"
+                                                    compact
+                                                    inputClassName="text-body-xl"
                                                 />
                                             </div>
                                         )}
@@ -1180,21 +1187,34 @@ export default function RecepcionModal({
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 <span className="text-caption text-content-3">¿Cuántos?</span>
-                                                <input aria-label="Cantidad con problema" type="number" min={1} max={fQty}
+                                                <PortalInput
+                                                    aria-label="Cantidad con problema"
+                                                    type="number"
                                                     value={cantProblemaVals[r.id] ?? 1}
                                                     onChange={e => setCantProblemaVals(p => ({
                                                         ...p, [r.id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))
                                                     }))}
-                                                    className="w-12 text-center border border-chart-4/40 rounded-full px-2 py-1 text-body-xl font-bold focus:border-chart-4 bg-surface-tab-active text-chart-4-text"
+                                                    min={1}
+                                                    max={fQty}
+                                                    tono="chart-4"
+                                                    compact
+                                                    inputClassName="text-center text-body-xl font-bold text-chart-4-text"
+                                                    className="w-12"
                                                 />
                                                 <span className="text-caption text-content-3">de {fQty}</span>
                                             </div>
                                         )}
-                                        <input aria-label="Nota del renglón" type="text" placeholder="Nota…"
+                                        <PortalInput
+                                            aria-label="Nota del renglón"
+                                            type="text"
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
+                                            placeholder="Nota…"
                                             onKeyDown={e => e.key === 'Enter' && confirmProblema()}
-                                            className="flex-1 min-w-0 text-body-xl border border-chart-4/30 rounded-full px-3 py-1 focus:border-chart-4 bg-surface-card placeholder-content-3"
+                                            tono="chart-4"
+                                            compact
+                                            inputClassName="text-body-xl"
+                                            className="flex-1 min-w-0"
                                         />
                                         <Button tone="chart-4" icon={Check} onClick={confirmProblema}>Listo</Button>
                                     </div>

@@ -242,7 +242,7 @@ const Skel = ({ className = '', style }) => (
 );
 
 const KpiCardSkeleton = () => (
-  <div className="relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3">
+  <div data-surface="card" className="relative p-4 flex flex-col gap-3">
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     <div className="flex items-center gap-2">
       <Skel className="w-7 h-7 rounded-xl flex-shrink-0" />
@@ -256,7 +256,7 @@ const KpiCardSkeleton = () => (
 );
 
 const SalesBranchSkeleton = () => (
-  <div className="bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card border border-border-card shadow-[var(--shadow-glass-3)] p-3.5 flex flex-col gap-2">
+  <div data-surface="card" className="p-3.5 flex flex-col gap-2">
     <div className="flex items-start justify-between gap-2">
       <Skel className="h-3 w-24" />
       <Skel className="h-3 w-14 shrink-0" />
@@ -351,7 +351,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
       </Button>
       {open && createPortal(
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
-          <div className="bg-surface-card backdrop-blur-[20px] border border-border-card shadow-[var(--shadow-elevation-lg)] rounded-2xl p-4 w-[196px]">
+          <div data-surface="card" className="p-4 w-[196px]">
             <div className="flex items-center justify-center mb-3 px-1">
               <PeriodStepper
                   size="sm"
@@ -2094,7 +2094,7 @@ const DashboardView = ({ openModal }) => {
           const tabWidgetIds = TAB_WIDGETS[configTab] ?? [];
           const tabDefs = WIDGET_DEFS.filter(w => tabWidgetIds.includes(w.id));
           return (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-surface-card rounded-3xl border border-divider shadow-sm p-4 space-y-3">
+            <div data-surface="card" className="animate-in fade-in slide-in-from-top-2 duration-150 p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
                 <p className="text-label font-black uppercase tracking-widest text-content-2">Personalizar Dashboard</p>

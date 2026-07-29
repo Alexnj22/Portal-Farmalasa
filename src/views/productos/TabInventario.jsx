@@ -236,7 +236,7 @@ export default function TabInventario({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-3 flex-wrap">
 
-                    <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-divider bg-surface-card min-w-[130px]">
+                    <div data-surface="card" className="flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
                             <Package size={15} className="text-brand-text" />
                         </div>

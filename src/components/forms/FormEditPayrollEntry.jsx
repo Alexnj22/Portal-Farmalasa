@@ -252,7 +252,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {numField('salary_advance',  'Adelanto Salarial ($)')}
 
             {/* Live preview */}
-            <div className="col-span-2 bg-surface-card rounded-2xl p-4 border border-divider mt-2">
+            <div data-surface="card" className="col-span-2 p-4 mt-2">
                 <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-3">Vista previa</p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div>

@@ -91,7 +91,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                 </div>
             </div>
 
-            <div className="bg-surface-card-hover/50 border border-divider rounded-modal p-6 shadow-sm space-y-5">
+            <div data-surface="card" className="bg-surface-card-hover/50 p-6 space-y-5">
                 <PortalInput
                     name="servicio-provider"
                     label={config.providerLabel}

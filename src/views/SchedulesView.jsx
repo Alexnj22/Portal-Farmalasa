@@ -105,7 +105,7 @@ const HolidaysPanel = ({
 
             {/* Add form */}
             {showForm && canEdit && (
-                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-3xl p-5 shadow-sm space-y-4 animate-in slide-in-from-top-2 duration-200">
+                <div data-surface="card" className="p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
                     <p className="text-caption font-black text-warning uppercase tracking-widest">Nuevo Feriado</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>

@@ -734,7 +734,7 @@ const PermissionsView = () => {
                         {/* Skeleton left column */}
                         <div className="w-full lg:w-64 shrink-0 lg:overflow-y-auto [&::-webkit-scrollbar]:hidden lg:pt-[180px] xl:pt-[200px] space-y-2.5 lg:pb-10">
                             {[...Array(6)].map((_, i) => (
-                                <div key={i} className="animate-stagger-child rounded-3xl border border-border-card bg-surface-card p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
+                                <div key={i} data-surface="card" className="animate-stagger-child p-4" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-xl skeleton flex-shrink-0" />
                                         <div className="flex-1 space-y-1.5">
@@ -752,7 +752,7 @@ const PermissionsView = () => {
                                     <div className="h-3 w-24 skeleton mx-auto mb-3" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                         {g.modules.map((_, i) => (
-                                            <div key={i} className="animate-stagger-child bg-surface-card rounded-3xl border border-border-card p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
+                                            <div key={i} data-surface="card" className="animate-stagger-child p-4" style={{ '--stagger-delay': `${(gi * 3 + i) * 50}ms` }}>
                                                 <div className="flex gap-3 mb-4">
                                                     <div className="w-9 h-9 rounded-xl skeleton flex-shrink-0" />
                                                     <div className="flex-1 space-y-1.5 pt-0.5">
@@ -830,7 +830,7 @@ const PermissionsView = () => {
                         </div>
 
                         {/* Info */}
-                        <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-surface-card-hover/80 border border-border-card">
+                        <div data-surface="card" className="mt-4 mb-10 px-4 py-3 bg-surface-card-hover/80">
                             <div className="flex items-start gap-2">
                                 <Info size={11} className="text-content-3 flex-shrink-0 mt-0.5" strokeWidth={2} />
                                 <p className="text-caption text-content-3 font-medium leading-snug">
@@ -927,7 +927,7 @@ const PermissionsView = () => {
                                 const activeOpt = PRICE_OPTS.find(o => o.value === currentLevel) || PRICE_OPTS[0];
                                 const ActiveIcon = activeOpt.icon;
                                 return (
-                                <div className="rounded-2xl border bg-surface-card backdrop-blur-2xl border-border-card shadow-[var(--shadow-glass-2)] p-4 md:col-span-2">
+                                <div data-surface="card" className="p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-300`}>
                                             <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />

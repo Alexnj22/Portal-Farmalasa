@@ -51,7 +51,7 @@ const BranchTabInmueble = ({
                         <Home size={16} strokeWidth={2.5} /> Inmueble y Arrendamiento
                     </h4>
 
-                    <div className="flex items-center gap-4 bg-surface-card backdrop-blur-md border border-border-card shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
+                    <div data-surface="card" className="flex items-center gap-4 px-5 py-2.5 transition-[box-shadow,background-color] duration-300">
                         <span className={`text-caption font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-chart-3-text' : 'text-content-2'}`}>Propio</span>
                         <Switch label="Local alquilado" on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";
@@ -70,7 +70,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {isRented ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-surface-card p-5 rounded-3xl border border-border-card shadow-[var(--shadow-shine-lg)]">
+                    <div data-surface="card" className="grid grid-cols-1 md:grid-cols-2 gap-5 p-5">
                         <div className="md:col-span-2">
                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-2 flex justify-between items-center">
                                 Arrendador (Dueño) * {getTabStatus(3) === 'red' && !rent.landlordName && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
@@ -278,7 +278,7 @@ const BranchTabInmueble = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center bg-surface-card rounded-3xl border border-border-card shadow-[var(--shadow-shine-lg)] p-6">
+                        <div data-surface="card" className="flex-1 flex flex-col items-center justify-center text-center p-6">
                             <div className="w-12 h-12 bg-surface-card-hover text-content-3 rounded-full flex items-center justify-center mb-3">
                                 <Trash2 size={20} strokeWidth={2} />
                             </div>

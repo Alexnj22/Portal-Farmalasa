@@ -44,7 +44,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2 pt-2">
 
             {/* 📝 PERMISO DEL ESTABLECIMIENTO (TARJETA PADRE 1) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-6 rounded-modal shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
+            <div data-surface="card" className="p-6 hover:bg-surface-card transition-all duration-500 transform-gpu space-y-5">
                 <div className="flex items-center gap-2 mb-2">
                     <Award size={16} className="text-brand-text" strokeWidth={2.5}/>
                     <h4 className="text-label font-black uppercase tracking-widest text-content">
@@ -107,7 +107,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                 <div className="space-y-6">
                     {nursingRegents.map((nurse, index) => (
                         /* TARJETA PADRE 2 (DINÁMICA) */
-                        <div key={nurse.id || index} className="bg-surface-card backdrop-blur-xl border border-border-card p-5 md:p-6 rounded-modal relative group shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 hover:bg-surface-card transition-all duration-500 transform-gpu">
+                        <div key={nurse.id || index} data-surface="card" className="p-5 md:p-6 relative group hover:bg-surface-card transition-all duration-500 transform-gpu">
                             
                             <Button variant="destructive" size="sm" icon={Trash2} iconOnly onClick={() => removeNurse(index)} />
                             

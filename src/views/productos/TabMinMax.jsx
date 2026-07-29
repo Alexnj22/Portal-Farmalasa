@@ -1500,7 +1500,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
                                 const fmt = v => v == null ? '—' : v;
                                 return (
-                                    <div key={log.id} className="flex items-start gap-3 bg-surface-card border border-border-card rounded-2xl px-3.5 py-3 shadow-[var(--shadow-elevation-sm)]">
+                                    <div key={log.id} data-surface="card" className="flex items-start gap-3 px-3.5 py-3">
                                         {/* Employee avatar */}
                                         <div className="w-8 h-8 rounded-full bg-surface-card-hover border border-divider overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                             {empPhoto

@@ -52,7 +52,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
   const name      = r.requested_by_name || emp?.name || r.requested_by;
 
   return (
-    <div className="rounded-2xl border border-border-card bg-surface-card backdrop-blur-xl shadow-[var(--shadow-glass-2)] p-4 flex flex-col gap-3 transition-shadow hover:shadow-[var(--shadow-glass-3)]">
+    <div data-surface="card" className="p-4 flex flex-col gap-3 transition-shadow">
 
       {/* Header: solicitante + estado */}
       <div className="flex items-center gap-2.5">

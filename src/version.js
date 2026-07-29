@@ -16,7 +16,28 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.171.0';
+export const APP_VERSION = '2.172.0';
+
+// v2.172.0 — 150 tarjetas dibujadas a mano pasan al canonico.
+//
+// Lo que se recupera no es solo dejar de repetir seis clases: **la forma
+// vuelve a ser del TEMA**. Medido en /my-requests, /cotizaciones y /monitor,
+// el radio de la tarjeta ahora da 28px en Liquid Glass y 12px en Solido —
+// antes eran 24px fijos (`rounded-3xl`) en los cuatro temas. Lo mismo con el
+// `backdrop-filter`, que quedaba escrito aunque Solido prometa cero blur.
+//
+// El migrador quita solo lo que `data-surface="card"` ya provee: superficie,
+// borde, radio, sombra y material. El padding y el layout se quedan. Tambien
+// se va el hover duplicado (`hover:shadow-*` y `hover:-translate-y-*`): el
+// canonico ya trae sombra y lift de -2px, y tenerlo dos veces era como se
+// habian ido separando unas tarjetas de otras.
+//
+// Verificado en vivo sobre 18 vistas: cero rotas, cero errores, y ninguna
+// tarjeta quedo sin fondo (que es como se veria una superficie que no
+// resolvio).
+//
+// tarjeta-a-mano: 184 → 31. Las 31 que quedan usan plantilla en el className
+// —el migrador solo toca literales a proposito— y van una por una.
 
 // v2.171.0 — el kiosco entra al canonico, y aparece `tarjeta-a-mano`.
 //

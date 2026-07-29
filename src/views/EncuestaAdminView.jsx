@@ -750,7 +750,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Response form ────────────────────────────────────────── */}
                     {leftPanel === 'response-form' && canManage && (
-                        <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[var(--shadow-glass-3)]">
+                        <div data-surface="card" className="p-6 md:p-8">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>
@@ -768,7 +768,7 @@ export default function EncuestaAdminView() {
                                 <div>
                                     <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
                                     {editingResponse ? (
-                                        <div className="flex items-center gap-2.5 py-3 px-4 bg-surface-card border border-border-card rounded-2xl">
+                                        <div data-surface="card" className="flex items-center gap-2.5 py-3 px-4">
                                             <PersonAvatar
                                                 src={editingResponse.employee?.photo_url}
                                                 name={`${(editingResponse.employee?.first_names || '').split(' ')[0]} ${(editingResponse.employee?.last_names || '').split(' ')[0]}`}

@@ -529,7 +529,7 @@ const PayrollView = ({ openModal }) => {
 
                     {/* ── Sidebar: Períodos ── */}
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
-                        <div className="backdrop-blur-[30px] rounded-header p-5 bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)]">
+                        <div data-surface="card" className="p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
                                 <Button size="sm" icon={Plus} iconOnly onClick={() => openModal?.('newPayrollPeriod')} />
@@ -563,7 +563,7 @@ const PayrollView = ({ openModal }) => {
                     {/* ── Main content ── */}
                     <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 space-y-5">
                         {!activePeriod ? (
-                            <div className="backdrop-blur-[30px] rounded-header p-12 bg-surface-card border border-border-card flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
+                            <div data-surface="card" className="p-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
                                 <div className="w-16 h-16 bg-gradient-to-tr from-brand to-brand-purple rounded-2xl flex items-center justify-center shadow-[var(--shadow-glow-brand)] mb-4">
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
@@ -573,7 +573,7 @@ const PayrollView = ({ openModal }) => {
                         ) : (
                             <>
                                 {/* Period summary card */}
-                                <div className="backdrop-blur-[30px] rounded-header p-6 bg-surface-card border border-border-card shadow-[var(--shadow-glass-3)] animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div data-surface="card" className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
                                             <h2 className="text-body-xl font-black text-content tracking-tight">{activePeriod.name}</h2>
@@ -610,7 +610,7 @@ const PayrollView = ({ openModal }) => {
                                                 { label:'Deducciones',    value:totals.deducts,  color:'text-danger'  },
                                                 { label:'Total a Pagar',  value:totals.net,      color:'text-success-text' },
                                             ].map(t => (
-                                                <div key={t.label} className="text-center bg-surface-card rounded-2xl py-3 px-2 border border-border-card">
+                                                <div key={t.label} data-surface="card" className="text-center py-3 px-2">
                                                     <p className="text-micro text-content-2 uppercase tracking-widest font-black">{t.label}</p>
                                                     <p className={`text-body-xl font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
@@ -670,7 +670,7 @@ const PayrollView = ({ openModal }) => {
                                         </table>
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
-                                    <div className="backdrop-blur-[30px] rounded-header p-12 bg-surface-card border border-border-card text-center text-content-3 text-body-sm animate-in fade-in duration-500">
+                                    <div data-surface="card" className="p-12 text-center text-content-3 text-body-sm animate-in fade-in duration-500">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (

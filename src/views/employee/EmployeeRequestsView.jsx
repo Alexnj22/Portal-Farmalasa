@@ -143,7 +143,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
 
             {/* Shift comparison grid */}
             <div className="grid grid-cols-2 gap-2">
-                <div className="bg-surface-card border border-divider rounded-2xl p-3">
+                <div data-surface="card" className="p-3">
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
                     <p className="text-body-sm font-black text-content-2">
                         {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
@@ -254,7 +254,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             </div>
                         )}
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-surface-card border border-divider rounded-2xl p-3">
+                            <div data-surface="card" className="p-3">
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno ese día</p>
                                 <p className="text-body-sm font-black text-content-2">
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
@@ -865,7 +865,7 @@ const EmployeeRequestsView = () => {
                     {/* Turnos lado a lado */}
                     {showShifts && !targetEmpStatus?.blocked && (
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-surface-card border border-divider rounded-2xl p-3">
+                            <div data-surface="card" className="p-3">
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Mi turno ese día</p>
                                 <p className="text-body-sm font-black text-content-2">
                                     {myShiftOnDate ? `${myShiftOnDate.start} – ${myShiftOnDate.end}` : '—'}
@@ -994,7 +994,7 @@ const EmployeeRequestsView = () => {
 
     // ── Filtros ──────────────────────────────────────────────────────────────
     const renderFiltersContent = () => (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
+        <div data-surface="card" className="flex items-center hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
             <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
                 <SegmentedControl
                     label="Estado de las solicitudes"
@@ -1019,7 +1019,7 @@ const EmployeeRequestsView = () => {
 
                 {/* ── PANEL IZQUIERDO: Formulario ── */}
                 <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8 px-2 -mx-2 group/panel transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-sidebar transform-gpu">
-                    <div className="bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border border-border-card p-6 md:p-8 rounded-header shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
+                    <div data-surface="card" className="p-6 md:p-8 hover:shadow-[var(--shadow-glass-5)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
 
                         <div className="flex items-center gap-2 mb-6">
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-brand text-white shadow-sm">
@@ -1188,7 +1188,7 @@ const EmployeeRequestsView = () => {
                         {isLoading ? (
                             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="animate-stagger-child bg-surface-card border border-border-card rounded-header p-6 flex flex-col gap-3" style={{ '--stagger-delay': `${i * 60}ms` }}>
+                                    <div key={i} data-surface="card" className="animate-stagger-child p-6 flex flex-col gap-3" style={{ '--stagger-delay': `${i * 60}ms` }}>
                                         <div className="flex items-center gap-2 pr-10">
                                             <div className="skeleton rounded-md h-6 w-24" />
                                             <div className="skeleton rounded-md h-6 w-20" />

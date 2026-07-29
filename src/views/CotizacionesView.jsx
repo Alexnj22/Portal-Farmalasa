@@ -232,7 +232,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
     const dsg = desglose(item.precioUnitario, item.cantidad);
 
     return (
-        <div className="bg-surface-card backdrop-blur-sm border border-border-card rounded-2xl p-4 shadow-sm space-y-3">
+        <div data-surface="card" className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                     <Badge size="sm" uppercase={false}>#{idx + 1}</Badge>
@@ -669,7 +669,7 @@ export default function CotizacionesView() {
             <div className="p-4 lg:p-6 space-y-4">
 
                 {/* ── Cabecera ─────────────────────────────────────────────── */}
-                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm space-y-4">
+                <div data-surface="card" className="p-5 space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-border-card">
                         <div className="w-8 h-8 rounded-xl bg-chart-1/10 text-chart-1-text border border-chart-1/30 flex items-center justify-center">
                             <FileText size={16} strokeWidth={2.5} />
@@ -710,7 +710,7 @@ export default function CotizacionesView() {
                         {/* Sucursal */}
                         <div>
                             <label className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5 block">Sucursal</label>
-                            <div className="flex items-center gap-2 bg-surface-card border border-border-card rounded-2xl px-4 py-3 min-h-[46px]">
+                            <div data-surface="card" className="flex items-center gap-2 px-4 py-3 min-h-[46px]">
                                 <Building2 size={13} className="text-content-3 shrink-0" />
                                 <span className="text-body-sm font-bold text-content-2 truncate">
                                     {branches.find(b => String(b.id) === String(formBranchId))?.name || '—'}
@@ -750,7 +750,7 @@ export default function CotizacionesView() {
                 </div>
 
                 {/* ── Productos ─────────────────────────────────────────────── */}
-                <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm space-y-3">
+                <div data-surface="card" className="p-5 space-y-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-xl bg-success/10 text-success border border-success/30 flex items-center justify-center">
@@ -792,7 +792,7 @@ export default function CotizacionesView() {
                 {/* ── Totales ───────────────────────────────────────────────── */}
                 {items.length > 0 && (
                     <div className="flex justify-end">
-                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm w-full max-w-[380px] space-y-2">
+                        <div data-surface="card" className="p-5 w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card mb-1">
                                 <Calculator size={14} className="text-chart-1-text" />
                                 <h3 className="text-label font-black uppercase tracking-widest text-content-2">Resumen</h3>
@@ -862,7 +862,7 @@ export default function CotizacionesView() {
                             { icon: CreditCard, label: 'Forma de Pago', val: { EFECTIVO:'Efectivo', TARJETA:'Tarjeta', TRANSFERENCIA:'Transferencia', CHEQUE:'Cheque' }[cot.payment_type] },
                             { icon: Building2,  label: 'Sucursal',      val: branchName || `Suc. ${cot.branch_id}`, sub: fmtD(cot.fecha) },
                         ].map(c => (
-                            <div key={c.label} className="bg-surface-card backdrop-blur-sm border border-border-card rounded-2xl p-4 shadow-sm">
+                            <div key={c.label} data-surface="card" className="p-4">
                                 <div className="flex items-center gap-1.5 mb-1.5">
                                     <c.icon size={11} className="text-content-3" strokeWidth={2} />
                                     <span className="text-micro font-black text-content-2 uppercase tracking-widest">{c.label}</span>
@@ -875,7 +875,7 @@ export default function CotizacionesView() {
 
                     {/* Creador */}
                     {cot.created_by_name && (
-                        <div className="flex items-center gap-3 bg-surface-card border border-border-card rounded-2xl px-4 py-3">
+                        <div data-surface="card" className="flex items-center gap-3 px-4 py-3">
                             <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
                                 className="w-8 h-8 rounded-full shrink-0" />
                             <div>
@@ -942,7 +942,7 @@ export default function CotizacionesView() {
 
                     {/* Totales */}
                     <div className="flex justify-end">
-                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-5 shadow-sm w-full max-w-[380px] space-y-2">
+                        <div data-surface="card" className="p-5 w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card">
                                 <Calculator size={14} className="text-chart-1-text" />
                                 <h3 className="text-label font-black uppercase tracking-widest text-content-2">Totales</h3>
@@ -1013,7 +1013,7 @@ export default function CotizacionesView() {
                     { label: 'Anuladas', val: cotizaciones.filter(c => c.status === 'ANULADA').length,                                                   color: 'text-danger' },
                     { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)),    color: 'text-chart-1-text' },
                 ].map(s => (
-                    <div key={s.label} className="flex items-center gap-2 bg-surface-card border border-border-card px-4 py-2.5 rounded-2xl shadow-sm">
+                    <div key={s.label} data-surface="card" className="flex items-center gap-2 px-4 py-2.5">
                         <span className="text-micro font-black uppercase tracking-widest text-content-2">{s.label}</span>
                         <span className={`text-subtitle font-black ${s.color}`}>{s.val}</span>
                     </div>

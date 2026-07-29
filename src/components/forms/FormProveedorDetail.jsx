@@ -158,7 +158,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     return (
         <div className="flex flex-col gap-5 p-1">
             {/* Datos fiscales — solo lectura, vienen del DTE */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-surface-card-hover/70 border border-divider">
+            <div data-surface="card" className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-surface-card-hover/70">
                 <FiscalRow icon={FileText} label={formData?.nit ? 'NIT' : 'DUI'} value={formData?.nit || formData?.dui} />
                 {formData?.nrc && <FiscalRow icon={FileText} label="NRC" value={formData.nrc} />}
                 <FiscalRow icon={FileText} label="Giro" value={formData?.desc_actividad} />

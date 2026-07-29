@@ -100,8 +100,7 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     if (variant === 'route') {
         return (
             <div className={`fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header ${className}`}>
-                <div className="relative bg-surface-card backdrop-blur-3xl border border-border-card rounded-modal
-                    px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
+                <div data-surface="card" className="relative px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
                     {spinner}
                     <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3">
                         {label || 'Cargando…'}

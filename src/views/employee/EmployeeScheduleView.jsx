@@ -229,7 +229,7 @@ const EmployeeScheduleView = () => {
                 flechas no tenían nombre accesible (un lector decía "botón,
                 botón") y desde una semana lejana no había forma de volver a la
                 actual salvo repetir clics. */}
-            <div className="flex items-center justify-center bg-surface-card backdrop-blur-xl border border-border-card rounded-card px-4 py-2 shadow-sm">
+            <div data-surface="card" className="flex items-center justify-center px-4 py-2">
                 <PeriodStepper
                     unit="semana"
                     label={weekLabel}
@@ -244,7 +244,7 @@ const EmployeeScheduleView = () => {
             {isLoading ? (
                 <div className="space-y-2 animate-in fade-in duration-300">
                     {Array.from({ length: 7 }).map((_, i) => (
-                        <div key={i} className="rounded-card border border-border-card bg-surface-card backdrop-blur-md p-4">
+                        <div key={i} data-surface="card" className="p-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-2xl skeleton flex-shrink-0" />
                                 <div className="flex-1 space-y-2">
@@ -305,7 +305,7 @@ const EmployeeScheduleView = () => {
             )}
 
             {/* ── Mis Vacaciones ── */}
-            <div className="rounded-card border border-border-card bg-surface-card backdrop-blur-xl p-5 space-y-3">
+            <div data-surface="card" className="p-5 space-y-3">
                 <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                     <Palmtree size={10} /> Mis Vacaciones
                 </p>
@@ -324,7 +324,7 @@ const EmployeeScheduleView = () => {
                             const meta = VACATION_STATUS[vp.status] || VACATION_STATUS.PRE_APPROVED;
                             const canRequest = vp.status === 'PRE_APPROVED' && !pendingRequest;
                             return (
-                                <div key={vp.id} className="bg-surface-card border border-border-card rounded-2xl p-4 space-y-2">
+                                <div key={vp.id} data-surface="card" className="p-4 space-y-2">
                                     <div className="flex items-center justify-between gap-2 flex-wrap">
                                         <div className="flex items-center gap-2">
                                             <Calendar size={13} className="text-warning flex-shrink-0" strokeWidth={2.5} />
@@ -367,13 +367,13 @@ const EmployeeScheduleView = () => {
             {/* Change request form modal */}
             {showChangeForm && changeTarget && (
                 <div className="fixed inset-0 z-sidebar flex items-end justify-center bg-scrim backdrop-blur-sm p-4">
-                    <div className="w-full max-w-md bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+                    <div data-surface="card" className="w-full max-w-md p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center justify-between">
                             <p className="text-body-lg font-black text-content">Solicitar cambio de vacaciones</p>
                             <Button variant="secondary" icon={X} iconOnly onClick={() => setShowChangeForm(false)} />
                         </div>
 
-                        <div className="bg-surface-card-hover border border-divider rounded-2xl px-4 py-3">
+                        <div data-surface="card" className="bg-surface-card-hover px-4 py-3">
                             <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Fechas actuales</p>
                             <p className="text-body-sm font-bold text-content-2">
                                 {fmtDate(changeTarget.start_date)} → {fmtDate(changeTarget.end_date)}

@@ -673,7 +673,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                     </div>
                                 </div>
                             ) : reviewDone && (
-                                <div className="flex items-center gap-3 p-4 rounded-2xl bg-surface-card-hover border border-divider">
+                                <div data-surface="card" className="flex items-center gap-3 p-4 bg-surface-card-hover">
                                     <Check size={18} className="text-success shrink-0" />
                                     <p className="text-body font-bold text-content-2">Revisión completada.</p>
                                 </div>

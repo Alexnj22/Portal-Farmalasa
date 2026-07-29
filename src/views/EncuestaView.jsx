@@ -653,7 +653,7 @@ export default function EncuestaView() {
                                 </div>
                             ))}
                         </div>
-                        <div className="rounded-3xl border border-divider bg-surface-card shadow-sm p-5 space-y-3">
+                        <div data-surface="card" className="p-5 space-y-3">
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <div key={i} className="flex items-center gap-3 py-2 border-b border-divider last:border-0">
                                     <div className="h-3 w-8 skeleton rounded-full" />
@@ -692,7 +692,7 @@ export default function EncuestaView() {
                         {/* Score global + por bloque */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Score global */}
-                            <div className="flex flex-col items-center justify-center bg-surface-card rounded-2xl border border-divider shadow-sm p-6 gap-2">
+                            <div data-surface="card" className="flex flex-col items-center justify-center p-6 gap-2">
                                 <span className="text-caption font-black uppercase tracking-wider text-content-2">Score Global</span>
                                 <div className="relative w-28 h-28">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -715,7 +715,7 @@ export default function EncuestaView() {
                             </div>
 
                             {/* Scores por bloque */}
-                            <div className="md:col-span-2 bg-surface-card rounded-2xl border border-divider shadow-sm p-4">
+                            <div data-surface="card" className="md:col-span-2 p-4">
                                 <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-3">Puntaje por Bloque</h3>
                                 <div className="space-y-2.5">
                                     {bloquesScores.map(b => {
@@ -742,7 +742,7 @@ export default function EncuestaView() {
 
                         {/* Razones de permanencia */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4">
+                            <div data-surface="card" className="p-4">
                                 <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-3 flex items-center gap-1.5">
                                     <Heart size={12} className="text-danger-text" /> ¿Por qué siguen en la empresa?
                                 </h3>
@@ -772,7 +772,7 @@ export default function EncuestaView() {
                             </div>
 
                             {/* Autocalificación */}
-                            <div className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4 flex flex-col gap-3">
+                            <div data-surface="card" className="p-4 flex flex-col gap-3">
                                 <h3 className="text-label font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
                                     <Star size={12} className="text-warning" /> Autocalificación como trabajador/a
                                 </h3>
@@ -833,7 +833,7 @@ export default function EncuestaView() {
                         </div>
 
                         {/* Comunicación de inconformidades */}
-                        <div className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4">
+                        <div data-surface="card" className="p-4">
                             <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-3 flex items-center gap-1.5">
                                 <Info size={12} className="text-chart-1-text" /> ¿Con quién comunican las inconformidades?
                             </h3>
@@ -1074,7 +1074,7 @@ export default function EncuestaView() {
                 {tab === 'segmentos' && (
                     <div className="space-y-5">
                         {/* Jefes vs Empleados */}
-                        <div className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4">
+                        <div data-surface="card" className="p-4">
                             <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-4 flex items-center gap-1.5">
                                 <Award size={12} className="text-chart-3-text" /> Jefes vs Empleados
                             </h3>
@@ -1124,7 +1124,7 @@ export default function EncuestaView() {
                         </div>
 
                         {/* Por sucursal */}
-                        <div className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4">
+                        <div data-surface="card" className="p-4">
                             <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-4 flex items-center gap-1.5">
                                 <Building2 size={12} className="text-chart-9-text" /> Score Global por Sucursal
                             </h3>
@@ -1157,7 +1157,7 @@ export default function EncuestaView() {
                         </div>
 
                         {/* Detalle por sucursal y bloque */}
-                        <div className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4 overflow-x-auto">
+                        <div data-surface="card" className="p-4 overflow-x-auto">
                             <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-3">Desglose por Sucursal × Bloque</h3>
                             <table className="w-full text-xs min-w-[600px]">
                                 <thead>
@@ -1491,7 +1491,7 @@ export default function EncuestaView() {
                         {/* Individual comments */}
                         <h3 className="text-label font-black uppercase tracking-wider text-content-2 px-1">{withComment.length} comentarios individuales</h3>
                         {withComment.map((row, i) => (
-                            <div key={i} className="bg-surface-card rounded-2xl border border-divider shadow-sm p-4">
+                            <div key={i} data-surface="card" className="p-4">
                                 <div className="flex items-center gap-2.5 mb-2">
                                     <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={34} />
                                     <div>

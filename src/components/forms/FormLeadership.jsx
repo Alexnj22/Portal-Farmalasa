@@ -142,7 +142,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                     <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-right-4 pb-10">
                         
                         {/* 1. MINI-RESUMEN DEL EMPLEADO (EXPANDIDO) */}
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-5 shadow-[var(--shadow-glass-2)] relative overflow-hidden">
+                        <div data-surface="card" className="p-5 relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-base">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-border-card shadow-md overflow-hidden bg-surface-card-hover shrink-0">
                                     {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-content-3 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
@@ -188,7 +188,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         /* ESTADO B: SI EL SELECCIONADO ES NUEVO (Flujo de Cambio) */
                             <>
                                 {/* 2. ANÁLISIS DE MOVIMIENTO */}
-                                <div className="bg-surface-card border border-border-card rounded-3xl p-4 shadow-[var(--shadow-shine-lg)]">
+                                <div data-surface="card" className="p-4">
                                     <div className="flex items-center gap-3">
                                         {moveType === 'PROMOTION' && <TrendingUp size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                         {moveType === 'TRANSFER' && <ArrowRightLeft size={20} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
@@ -293,7 +293,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     </div>
 
                                     {formData.isPermanent === false && (
-                                        <div className="bg-surface-card backdrop-blur-md border border-warning/30 rounded-3xl p-5 shadow-sm animate-in slide-in-from-top-2">
+                                        <div data-surface="card" className="border-warning/30 p-5 animate-in slide-in-from-top-2">
                                             <label className="text-caption font-black uppercase tracking-widest text-warning-text mb-2 flex items-center gap-1.5 ml-1">
                                                 <AlertCircle size={12} strokeWidth={3}/> Fecha de Fin de Interinato
                                             </label>

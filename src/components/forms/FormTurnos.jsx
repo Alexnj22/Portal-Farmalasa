@@ -239,7 +239,7 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             {/* 📝 PANEL IZQUIERDO: CREADOR / EDITOR (Estilo Glassmorphic como el Aviso) */}
             {/* ================================================================================= */}
-            <div className="flex flex-col h-full bg-surface-card border border-divider shadow-[var(--shadow-elevation-xs)] rounded-modal p-6 sticky top-0">
+            <div data-surface="card" className="flex flex-col h-full p-6 sticky top-0">
                 <div className="flex items-center gap-3 mb-6 shrink-0 border-b border-divider pb-5">
                     <div className={`w-11 h-11 flex items-center justify-center rounded-2xl shrink-0 border ${editingShiftId ? 'bg-warning/10 text-warning border-warning/30' : 'bg-chart-3/10 text-chart-3-text border-chart-3/30'}`}>
                         {editingShiftId ? <Pencil size={20} strokeWidth={2.5} /> : <BookOpen size={20} strokeWidth={2.5} />}
@@ -307,7 +307,7 @@ const FormTurnos = ({ branches }) => {
             {/* ================================================================================= */}
             {/* 📋 PANEL DERECHO: LISTA DE TURNOS (Bento Cards + Scroll) */}
             {/* ================================================================================= */}
-            <div className="flex flex-col h-full bg-surface-card-hover rounded-modal border border-divider p-6 overflow-hidden">
+            <div data-surface="card" className="flex flex-col h-full bg-surface-card-hover p-6 overflow-hidden">
                 <div className="flex items-center justify-between gap-4 mb-6 shrink-0 pb-5 border-b border-divider">
                     <h4 className="text-body-sm font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <ListTodo size={16} className="text-brand-text"/> {listBranchFilter === 'ALL' ? 'Catálogo Completo' : 'Turnos Registrados'}

@@ -398,7 +398,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 <div className="w-full flex-1 flex flex-col relative z-base pb-12">
                     <div ref={sentinelRef} className="absolute -top-10 h-1 w-full pointer-events-none" aria-hidden="true" />
 
-                    <div className="bg-surface-card backdrop-blur-[20px] backdrop-saturate-[180%] rounded-header border border-border-card shadow-[var(--shadow-glass-3)] p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
+                    <div data-surface="card" className="p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
                         <div key={activeTab} className="animate-view-enter flex-1 flex flex-col">
                         {activeTab === 'history' && (
                             <TabHistory liveBranch={liveBranch} history={history} isLoadingHistory={isLoadingHistory} employees={employees} openModal={openModal} />

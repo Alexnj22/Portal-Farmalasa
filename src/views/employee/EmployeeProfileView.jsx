@@ -60,7 +60,7 @@ const SectionLabel = ({ icon: Icon, label, color = 'text-content-3' }) => (
 );
 
 const Field = ({ label, value, icon: Icon }) => (
-    <div className="p-3.5 rounded-2xl bg-surface-card backdrop-blur-sm border border-border-card hover:bg-surface-card hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default">
+    <div data-surface="card" className="p-3.5 hover:bg-surface-card transition-all duration-200 cursor-default">
         <div className="flex items-center gap-1.5 mb-0.5">
             {Icon && <Icon size={9} className="text-content-3 flex-shrink-0" />}
             <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em]">{label}</p>
@@ -244,7 +244,7 @@ const EmployeeProfileView = ({ openModal }) => {
     );
 
     const filtersContent = (
-        <div className="flex items-center bg-surface-card backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
+        <div data-surface="card" className="flex items-center h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
             {/* Info chips */}
             {emp.phone && (
                 <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-surface-card border border-border-card rounded-2xl">
@@ -459,7 +459,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                         {/* Filter panel */}
                         {showTimelineFilter && (
-                            <div className="mb-4 p-3 bg-surface-card-hover/80 rounded-2xl border border-divider space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                            <div data-surface="card" className="mb-4 p-3 bg-surface-card-hover/80 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                                 {/* Date range */}
                                 <div className="flex items-center gap-2">
                                     <div className="flex-1 bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">

@@ -652,7 +652,7 @@ const AnnouncementsView = ({ openModal }) => {
                   {targetType === 'EMPLOYEE' && (
                     <div className="space-y-3">
                       {selectedEmployees.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 p-3 bg-surface-card rounded-2xl border border-border-card shadow-sm">
+                        <div data-surface="card" className="flex flex-wrap gap-1.5 p-3">
                           {selectedEmployees.map((id) => (
                             <div key={id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1.5 rounded-lg text-label font-bold border border-brand/20 hover:scale-105">
                               <span>{employeesById.get(String(id))?.name || 'Empleado'}</span>

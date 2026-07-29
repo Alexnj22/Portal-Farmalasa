@@ -113,7 +113,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card p-4 rounded-2xl shadow-[var(--shadow-elevation-lg)]">
+            <div data-surface="card" className="p-4">
                 <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-body-xl font-black text-content flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>
@@ -270,7 +270,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* SKELETON DE CARGA DASHBOARD */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                     {/* Gráfico Skeleton */}
-                    <div className="lg:col-span-2 bg-surface-card border border-border-card rounded-modal p-6 shadow-sm flex flex-col min-h-[280px]">
+                    <div data-surface="card" className="lg:col-span-2 p-6 flex flex-col min-h-[280px]">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-12 h-12 skeleton rounded-2xl"></div>
                             <div className="flex flex-col gap-2 w-1/3">
@@ -290,14 +290,14 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
 
                     {/* Métricas Rápidas Skeleton */}
                     <div className="flex flex-col gap-5">
-                        <div className="bg-surface-card border border-border-card rounded-modal p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div data-surface="card" className="p-6 flex-1 flex flex-col justify-center gap-3">
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-4 rounded-full skeleton"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
                             </div>
                             <div className="h-8 skeleton rounded-lg w-1/3 mt-2"></div>
                         </div>
-                        <div className="bg-surface-card border border-border-card rounded-modal p-6 flex-1 flex flex-col justify-center gap-3 shadow-sm">
+                        <div data-surface="card" className="p-6 flex-1 flex flex-col justify-center gap-3">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg skeleton"></div>
                                 <div className="h-2.5 skeleton rounded-full w-1/2"></div>
@@ -310,7 +310,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 /* DASHBOARD REAL */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
                     {/* Gráfico de Barras */}
-                    <div className="group lg:col-span-2 bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-[var(--shadow-elevation-xs)] flex flex-col relative overflow-hidden transition-all duration-500 hover:shadow-[var(--shadow-glow-brand)]">
+                    <div data-surface="card" className="group lg:col-span-2 p-6 flex flex-col relative overflow-hidden transition-all duration-500">
                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand/5 to-transparent pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-50"></div>
                         
                         <div className="flex justify-between items-start mb-6 relative z-base">
@@ -369,7 +369,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="flex flex-col gap-5">
                         
                         {/* Tarjeta de Variación Mensual */}
-                        <div className="group bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center transition-all duration-500 hover:shadow-md hover:-translate-y-1 relative overflow-hidden">
+                        <div data-surface="card" className="group p-6 flex-1 flex flex-col justify-center transition-all duration-500 relative overflow-hidden">
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }}></div>
                             <div className="flex items-center gap-2 mb-3 relative z-base">
                                 <Activity size={16} className="text-content-3 transition-colors duration-300 group-hover:text-content-2" strokeWidth={2.5}/>

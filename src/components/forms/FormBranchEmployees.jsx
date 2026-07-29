@@ -193,7 +193,7 @@ const hasInjections = legal.injections === true;
 
                         if (!emp) {
                             return (
-                                <div key={slot.id} className="flex items-center gap-3 p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-dashed border-divider h-[72px]">
+                                <div key={slot.id} data-surface="card" className="flex items-center gap-3 p-3 bg-surface-card-hover/50 border-dashed h-[72px]">
                                     <div className="w-9 h-9 rounded-lg bg-surface-card flex items-center justify-center text-content-3 shrink-0 border border-divider">
                                         <slot.icon size={14} strokeWidth={2.5} />
                                     </div>

@@ -369,7 +369,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             return (
                                 <div
                                     key={id}
-                                    className="relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center overflow-hidden bg-surface-card-hover/60 border-divider opacity-60 cursor-not-allowed"
+                                    data-surface="card" className="relative flex flex-col items-center gap-1 px-3 py-4 text-center overflow-hidden bg-surface-card-hover/60 opacity-60 cursor-not-allowed"
                                 >
                                     <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-[var(--shimmer-sweep)] to-transparent pointer-events-none" />
                                     <Building2 size={20} className="text-content-3 mt-1" />

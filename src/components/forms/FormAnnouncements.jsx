@@ -123,7 +123,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedConfirmed.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
+                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-success shadow-[var(--shadow-glow-success)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
@@ -138,7 +138,7 @@ const FormAnnouncements = ({ data }) => {
                   <PaginationControls currentPage={confirmedPage} totalPages={totalConfirmedPages} setPage={setConfirmedPage} />
                 </div>
               ) : (
-                <div className="p-5 bg-surface-card rounded-2xl border border-border-card text-center shadow-[var(--shadow-shine-lg)]">
+                <div data-surface="card" className="p-5 text-center">
                   <p className="text-body-sm text-content-3 font-bold flex items-center justify-center gap-2">
                     Nadie ha abierto este aviso todavía <span className="text-lg">🫣</span>
                   </p>
@@ -177,7 +177,7 @@ const FormAnnouncements = ({ data }) => {
                     {paginatedPending.map((emp) => (
                         <div
                           key={emp.id}
-                          className="flex items-center gap-3.5 p-3 bg-surface-card rounded-2xl border border-border-card shadow-[var(--shadow-elevation-xs)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-surface-card group"
+                          data-surface="card" className="flex items-center gap-3.5 p-3 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-surface-card group"
                         >
                           <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-surface-card-hover text-content-3 group-hover:text-content-2 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">

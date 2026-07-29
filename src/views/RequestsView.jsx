@@ -631,7 +631,7 @@ const RequestsView = () => {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div key={i} className="rounded-modal border border-divider bg-surface-card p-4 flex items-center gap-3">
+                                        <div key={i} data-surface="card" className="p-4 flex items-center gap-3">
                                             <div className="w-9 h-9 skeleton rounded-full shrink-0" />
                                             <div className="flex-1 space-y-2">
                                                 <div className="h-3 w-28 skeleton rounded-full" />
@@ -708,7 +708,7 @@ const RequestsView = () => {
             {actionModal && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-scrim backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
-                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-header shadow-[var(--shadow-elevation-lg)] w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                    <div data-surface="card" className="relative w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className={`w-14 h-14 rounded-card flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
                         </div>
@@ -751,7 +751,7 @@ const RequestsView = () => {
             {createModalOpen && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-scrim backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
-                    <div className="relative bg-surface-card backdrop-blur-2xl border border-border-card rounded-header shadow-[var(--shadow-elevation-lg)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                    <div data-surface="card" className="relative w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
                                 <ClipboardList size={20} className="text-brand-text" strokeWidth={2} />

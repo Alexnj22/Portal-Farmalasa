@@ -843,7 +843,7 @@ const ScheduleCalendar = memo(({
                                     {!showCoverageSearch ? (
                                         <Button tone="chart-3" icon={Plus} onClick={() => setShowCoverageSearch(true)}>Agregar Personal de Apoyo</Button>
                                     ) : (
-                                        <div {...coverageSearchContainerRef} className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl p-3 shadow-lg">
+                                        <div {...coverageSearchContainerRef} data-surface="card" className="p-3">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <SearchInput
                                                     autoFocus

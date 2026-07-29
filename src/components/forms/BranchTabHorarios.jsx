@@ -73,7 +73,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                     </div>
                 </div>
             ) : (
-                <div className="py-3.5 text-center rounded-2xl bg-surface-card-hover/50 border border-divider shadow-[var(--shadow-shine)] transition-colors duration-300 group-hover:bg-surface-card-hover">
+                <div data-surface="card" className="py-3.5 text-center bg-surface-card-hover/50 transition-colors duration-300 group-hover:bg-surface-card-hover">
                     <p className="text-caption font-black uppercase tracking-[0.2em] text-content-3 transition-colors duration-300 group-hover:text-content-3">
                         Cerrado
                     </p>

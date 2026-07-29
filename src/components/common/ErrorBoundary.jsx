@@ -30,11 +30,7 @@ export default class ErrorBoundary extends React.Component {
 
         return (
             <div className="fixed inset-0 flex items-center justify-center p-6" style={{ zIndex: 99998 }}>
-                <div className="relative w-full max-w-sm text-center
-                    bg-surface-card backdrop-blur-[48px] backdrop-saturate-[160%]
-                    border border-border-card
-                    shadow-[var(--shadow-glass-5)]
-                    rounded-header p-10 flex flex-col items-center gap-6">
+                <div data-surface="card" className="relative w-full max-w-sm text-center p-10 flex flex-col items-center gap-6">
 
                     <div className="absolute inset-x-0 top-0 h-2/5 pointer-events-none rounded-t-[2.5rem]" style={{ background: 'linear-gradient(to bottom, var(--card-sheen-strong), transparent)' }} />
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 blur-[60px] rounded-full pointer-events-none bg-danger/10" />

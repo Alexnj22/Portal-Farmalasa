@@ -256,7 +256,7 @@ const DayRow = memo(({
                     </div>
                 ) : (
                     <div className="flex-1 flex items-center justify-center xl:border-l xl:border-divider xl:pl-6 pt-3 xl:pt-0 border-t border-divider xl:border-t-0">
-                        <div className="w-full xl:w-auto px-5 py-2 rounded-2xl bg-surface-card border border-dashed border-divider text-content-3 flex justify-center items-center gap-2 shadow-inner">
+                        <div data-surface="card" className="w-full xl:w-auto px-5 py-2 border-dashed text-content-3 flex justify-center items-center gap-2 shadow-inner">
                             <Palmtree size={14} strokeWidth={2.5}/>
                             <span className="text-[9.5px] font-black uppercase tracking-widest">Día de Descanso</span>
                         </div>
@@ -375,7 +375,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
         <div className="flex flex-col h-full -mx-6 -my-6 p-4 md:-mx-10 md:-my-8 md:p-10 relative z-base">
             
             {/* 🚨 DASHBOARD COMPACTO Y ELEGANTE */}
-            <div className="bg-surface-card backdrop-blur-md p-3 md:p-4 rounded-2xl border border-border-card shadow-[var(--shadow-glass-2)] mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+            <div data-surface="card" className="p-3 md:p-4 mb-4 flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 <div className="flex-1 w-full">
                     <div className="flex justify-between items-end mb-1.5">
                         <div>

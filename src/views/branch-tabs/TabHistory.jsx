@@ -377,7 +377,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL (DIAGNÓSTICO) */}
                 <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
-                    <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[var(--shadow-glass-5)] relative overflow-hidden">
+                    <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
                         
                         {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -400,7 +400,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                             {isGeneratingAi ? (
                                 /* SKELETON DE CARGA NEURONAL */
-                                <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-base">
+                                <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 animate-pulse relative z-base">
                                     <AiThinkingState size="sm" title="Sintetizando Historial" className="mb-2" />
                                     <div className="space-y-4">
                                         <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
@@ -413,7 +413,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 </div>
                             ) : (
                                 /* RESULTADO DE LA IA */
-                                <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm relative z-base animate-in slide-in-from-bottom-4 duration-500">
+                                <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base animate-in slide-in-from-bottom-4 duration-500">
                                     {aiSummaryData?.split('\n').map((paragraph, index) => (
                                         <div key={index} className="relative mb-6 last:mb-0 group/p">
                                             <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>

@@ -557,7 +557,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
                                                                 </ChipDoc>
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[210px]">
-                                                                    <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
+                                                                    <div data-surface="card" className="px-3.5 py-3 space-y-2">
                                                                         <div>
                                                                             <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                             <p className={`font-mono text-body-sm font-black leading-none ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo}</p>
@@ -1004,7 +1004,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none
                                                                     opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100
                                                                     transition-all duration-150 ease-out w-[210px]">
-                                                                    <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3">
+                                                                    <div data-surface="card" className="px-3.5 py-3">
                                                                         <div className="space-y-2">
                                                                             <div>
                                                                                 <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
@@ -1324,7 +1324,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 <span className="text-micro font-black uppercase select-none">{g.tipo_documento}</span>
                                                             </ChipDoc>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
-                                                                <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
+                                                                <div data-surface="card" className="px-3.5 py-3 space-y-2">
                                                                     <div>
                                                                         <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Rango</p>
                                                                         <p className="font-mono text-label font-black text-content">{pad7(g.gap_from)} → {pad7(g.gap_to)}</p>
@@ -1422,7 +1422,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 {(n.campos_nulos || []).length > 2 && <span className="text-micro font-black">+{n.campos_nulos.length - 2}</span>}
                                                             </ChipDoc>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 z-sidebar pointer-events-none opacity-0 group-hover/tip:opacity-100 focus-within:opacity-100 scale-95 group-hover/tip:scale-100 transition-all duration-150 ease-out w-[200px]">
-                                                                <div className="bg-surface-card backdrop-blur-xl border border-divider rounded-2xl shadow-[var(--shadow-elevation-lg)] px-3.5 py-3 space-y-2">
+                                                                <div data-surface="card" className="px-3.5 py-3 space-y-2">
                                                                     {n.correlativo && <div>
                                                                         <p className="text-micro font-bold uppercase tracking-widest text-content-2 mb-0.5">Correlativo</p>
                                                                         <p className="font-mono text-body-sm font-black text-content">{n.correlativo}</p>

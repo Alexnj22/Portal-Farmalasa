@@ -321,7 +321,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               </div>
             </div>
           ) : (
-            <div className="bg-surface-card-hover/80 border border-divider rounded-2xl px-4 py-3">
+            <div data-surface="card" className="bg-surface-card-hover/80 px-4 py-3">
               <p className="text-label font-bold text-content-3">Sin horario planificado para este día</p>
             </div>
           )}
@@ -334,7 +334,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             ) : (
               <div className="space-y-1.5">
                 {dayPunches.map(p => (
-                  <div key={p.id} className="flex items-center gap-3 bg-surface-card border border-black/[0.06] rounded-2xl px-4 py-2.5">
+                  <div key={p.id} data-surface="card" className="flex items-center gap-3 border-black/[0.06] px-4 py-2.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-body-sm font-black text-content">{PUNCH_TYPE_LABELS[p.type] || p.type}</p>
                       <p className="text-label font-bold text-content-3">{fmtTimeCSTStr(p.timestamp)}</p>
@@ -356,7 +356,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
           </div>
 
           {/* Agregar marcaje */}
-          <div className="bg-surface-card-hover/70 border border-divider rounded-2xl p-4 space-y-3">
+          <div data-surface="card" className="bg-surface-card-hover/70 p-4 space-y-3">
             <p className="text-micro font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
               <Plus size={10} strokeWidth={3} /> Agregar marcaje
             </p>
@@ -1343,7 +1343,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                   { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-warning' : 'text-content-3', bg: totOT > 0 ? 'bg-warning/10' : 'bg-surface-card-hover' },
                   { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-danger' : 'text-content-3', bg: totAbs > 0 ? 'bg-danger/10' : 'bg-surface-card-hover' },
                 ].map(({ Icon, label, val, unit, c, bg }) => (
-                  <div key={label} className="bg-surface-card backdrop-blur-xl border border-border-card rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                  <div key={label} data-surface="card" className="p-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
                         <Icon size={13} className={c} strokeWidth={2.5} />

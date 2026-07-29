@@ -538,7 +538,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 <div className="flex items-center gap-3 flex-wrap">
 
                     {/* Total count card */}
-                    <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]">
+                    <div data-surface="card" className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-brand/[0.08]">
                             <Package size={15} className="text-brand-text/60" />
                         </div>
@@ -555,7 +555,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Costo retenido */}
                     {mode === 'stock_ret' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
+                        <div data-surface="card" className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 min-w-[145px]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-4/10">
                                 <DollarSign size={15} className="text-chart-4-text" />
                             </div>
@@ -574,7 +574,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
-                        <div className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[145px] bg-surface-card border-divider backdrop-blur-sm shadow-[var(--shadow-glow-brand)]" style={{ animationDelay: '40ms' }}>
+                        <div data-surface="card" className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 min-w-[145px]" style={{ animationDelay: '40ms' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/10">
                                 <TrendingUp size={15} className="text-warning" />
                             </div>

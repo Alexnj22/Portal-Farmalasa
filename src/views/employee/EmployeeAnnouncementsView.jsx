@@ -713,7 +713,7 @@ const EmployeeAnnouncementsView = () => {
                 {isStoreLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="animate-stagger-child bg-surface-card backdrop-blur-md border border-border-card rounded-header p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
+                            <div key={i} data-surface="card" className="animate-stagger-child p-6 space-y-4" style={{ '--stagger-delay': `${i * 55}ms` }}>
                                 <div className="flex gap-2">
                                     <div className="skeleton rounded-full h-4 w-4" />
                                     <div className="skeleton rounded-md h-4 w-20" />

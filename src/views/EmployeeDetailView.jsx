@@ -423,28 +423,28 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                     {/* --- MINI-DASHBOARD (SIGNOS VITALES) --- */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 mb-4 md:mb-5">
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div data-surface="card" className="p-4 md:p-5 flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-success/10 text-success rounded-xl shadow-sm border border-success/30"><CheckCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Estado</p>
                                 <p className="text-body md:text-body-lg font-bold text-content">{emp.effectiveStatus || emp.status || 'Activo'}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div data-surface="card" className="p-4 md:p-5 flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-chart-1/10 text-brand-text rounded-xl shadow-sm border border-chart-1/30"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-body md:text-body-lg font-bold text-content truncate">{tenure}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div data-surface="card" className="p-4 md:p-5 flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className="p-2.5 bg-chart-6/10 text-chart-6 rounded-xl shadow-sm border border-chart-6/30"><Cake size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Edad</p>
                                 <p className="text-body md:text-body-lg font-bold text-content">{age ? `${age} Años` : 'N/D'}</p>
                             </div>
                         </div>
-                        <div className="bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-surface-card-hover">
+                        <div data-surface="card" className="p-4 md:p-5 flex items-center gap-4 transition-all hover:bg-surface-card-hover">
                             <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-danger/10 text-danger border-danger/30' : 'bg-surface-card-hover text-content-3 border-divider'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Tardanzas (Mes)</p>
@@ -496,7 +496,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     </div>
                                     
                                     <div className="w-full space-y-3">
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
+                                        <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
                                             <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
@@ -504,7 +504,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         </div>
 
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)] relative">
+                                        <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors relative">
                                             <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Celular</p>
@@ -517,7 +517,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             )}
                                         </div>
 
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
+                                        <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
                                             <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
@@ -525,7 +525,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         </div>
 
-                                        <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-card border border-border-card hover:bg-surface-card-hover transition-colors shadow-[var(--shadow-elevation-xs)]">
+                                        <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
                                             <div className="p-2.5 bg-surface-card border border-divider rounded-xl shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
@@ -574,7 +574,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                         {/* --- CONTENIDO PRINCIPAL (DERECHA) --- */}
                         <div className="lg:col-span-8">
-                            <div className="bg-surface-card backdrop-blur-2xl rounded-header border border-border-card shadow-[var(--shadow-elevation-xs)] p-5 md:p-8 min-h-[600px] overflow-hidden relative">
+                            <div data-surface="card" className="p-5 md:p-8 min-h-[600px] overflow-hidden relative">
                                 
                                 {/* PESTAÑA 1: HISTORIAL */}
                                 {currentTab === 'history' && (
@@ -746,7 +746,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         </div>
 
                                         {/* ── Calendario ── */}
-                                        <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-3xl p-4 shadow-sm overflow-visible">
+                                        <div data-surface="card" className="p-4 overflow-visible">
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
                                                 <Button tone="chart-1" size="xs" icon={ChevronLeft} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }} />
@@ -957,7 +957,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <p className="text-caption font-black uppercase tracking-widest text-success/70 mb-1">Salario Base Contractual</p>
                                                         <p className="text-2xl font-black text-success-text tracking-tight">${emp.salary || emp.base_salary || '0.00'}</p>
                                                     </div>
-                                                    <div className="p-5 bg-surface-card rounded-3xl border border-border-card shadow-sm flex flex-col justify-center">
+                                                    <div data-surface="card" className="p-5 flex flex-col justify-center">
                                                         <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-2">Depósito de Planilla</p>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-body-lg font-bold text-content-2">{emp.bank_name || 'No configurado'}</span>
@@ -1041,7 +1041,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {isLoadingEmpReqs ? (
                                             <div className="space-y-3">
                                                 {Array.from({ length: 4 }).map((_, i) => (
-                                                    <div key={i} className="flex items-start gap-4 p-4 rounded-3xl border border-black/[0.06] bg-surface-card">
+                                                    <div key={i} data-surface="card" className="flex items-start gap-4 p-4 border-black/[0.06]">
                                                         <div className="w-9 h-9 skeleton rounded-2xl shrink-0" />
                                                         <div className="flex-1 space-y-2">
                                                             <div className="flex gap-2">

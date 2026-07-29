@@ -188,7 +188,7 @@ const BranchTabLegal = ({
                                 {availableNurses.length === 0 ? (
                                     <p className="text-warning text-caption font-bold p-3 bg-warning/10 rounded-2xl border border-warning/30 text-center shadow-sm">No hay personal de enfermería registrado en esta sucursal.</p>
                                 ) : (
-                                    <div className="flex flex-wrap gap-2 bg-surface-card p-3.5 rounded-3xl border border-border-card max-h-[100px] overflow-y-auto custom-scrollbar shadow-[var(--shadow-shine-lg)]">
+                                    <div data-surface="card" className="flex flex-wrap gap-2 p-3.5 max-h-[100px] overflow-y-auto custom-scrollbar">
                                         {availableNurses.map(emp => {
                                             const isSelected = (legal.nurses || []).includes(emp.id);
                                             return (
@@ -217,7 +217,7 @@ const BranchTabLegal = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex items-center justify-center py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[var(--shadow-shine-lg)]">
+                        <div data-surface="card" className="flex-1 flex items-center justify-center py-8 text-center border-2 border-dashed">
                             <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center gap-1.5">
                                 <AlertCircle size={14} /> Módulo Desactivado
                             </p>
@@ -259,7 +259,7 @@ const BranchTabLegal = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="py-8 text-center bg-surface-card backdrop-blur-sm rounded-3xl border-2 border-dashed border-border-card shadow-[var(--shadow-shine-lg)] animate-in fade-in duration-300">
+                    <div data-surface="card" className="py-8 text-center border-2 border-dashed animate-in fade-in duration-300">
                         <p className="text-content-2 font-bold text-caption uppercase tracking-widest flex items-center justify-center gap-1.5">
                             <AlertCircle size={14} /> Módulo Desactivado
                         </p>

@@ -133,7 +133,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
             </div>
 
             {/* 📝 CONTENEDOR DE CAMPOS (GLASSMORPHISM) */}
-            <div className="bg-surface-card backdrop-blur-xl border border-border-card rounded-modal p-6 space-y-5 shadow-[var(--shadow-elevation-xs)]">
+            <div data-surface="card" className="p-6 space-y-5">
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {/* MONTO EXACTO */}

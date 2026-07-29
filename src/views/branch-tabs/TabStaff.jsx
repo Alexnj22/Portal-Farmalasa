@@ -70,7 +70,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div onClick={onEditRole} className="group relative overflow-hidden flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-danger/30 bg-danger/10 backdrop-blur-md hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-1 min-h-[260px]">
+            <div onClick={onEditRole} data-surface="card" className="group relative overflow-hidden flex flex-col items-center justify-center p-5 border-2 border-dashed border-danger/30 bg-danger/10 hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
@@ -591,7 +591,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 {/* 🤖 VISTA DE INTELIGENCIA ARTIFICIAL */}
                 <div inert={!(aiMode) ? true : undefined} className={`transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] transform w-full ${aiMode ? 'opacity-100 translate-y-0 relative z-content' : 'opacity-0 translate-y-12 absolute inset-x-0 top-0 pointer-events-none -z-base'}`}>
                     <div className="w-full max-w-4xl mx-auto py-2">
-                        <div className="bg-surface-card backdrop-blur-3xl border border-chart-3/30 rounded-header p-8 md:p-12 shadow-[var(--shadow-glass-5)] relative overflow-hidden">
+                        <div data-surface="card" className="border-chart-3/30 p-8 md:p-12 relative overflow-hidden">
 
                             {/* 🔮 Esferas de Energía Animatedas de Fondo */}
                             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -614,7 +614,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                                 {isGeneratingAi ? (
                                     /* SKELETON DE CARGA NEURONAL */
-                                    <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm animate-pulse relative z-base">
+                                    <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 animate-pulse relative z-base">
                                         <AiThinkingState size="sm" title="Analizando Organización" className="mb-2" />
                                         <div className="space-y-4">
                                             <div className="h-3 bg-indigo-200/50 rounded-full w-3/4 mb-2"></div>
@@ -627,7 +627,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     </div>
                                 ) : (
                                     /* RESULTADO DE LA IA */
-                                    <div className="w-full max-w-3xl text-left bg-surface-card backdrop-blur-md border border-border-card rounded-3xl p-6 md:p-8 shadow-sm relative z-base">
+                                    <div data-surface="card" className="w-full max-w-3xl text-left p-6 md:p-8 relative z-base">
                                         {aiSummaryData?.split('\n').map((paragraph, index) => (
                                             <div key={index} className="relative mb-6 last:mb-0 group/p">
                                                 <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-indigo-400 to-purple-400 rounded-full opacity-40 group-hover/p:opacity-100 group-hover/p:shadow-[var(--shadow-glow-chart-3-md)] transition-all duration-300"></div>
@@ -652,7 +652,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                         /* SKELETON DE CARGA NORMAL (WFM + TARJETAS) */
                         <div className="space-y-8 mb-8 pt-2">
                             {/* Dashboard Skeleton */}
-                            <div className="bg-surface-card border border-chart-1/30 rounded-3xl p-5 shadow-sm h-[180px] flex flex-col justify-center gap-4">
+                            <div data-surface="card" className="border-chart-1/30 p-5 h-[180px] flex flex-col justify-center gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full skeleton"></div>
                                     <div className="flex flex-col gap-2 w-1/3">
@@ -670,7 +670,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className="h-3 skeleton rounded w-48 mb-4"></div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {[1, 2].map((i) => (
-                                        <div key={`skel-jefe-${i}`} className="bg-surface-card border border-border-card rounded-3xl h-[220px] p-5 flex flex-col items-center">
+                                        <div key={`skel-jefe-${i}`} data-surface="card" className="h-[220px] p-5 flex flex-col items-center">
                                             <div className="w-16 h-16 rounded-full skeleton mb-4"></div>
                                             <div className="h-4 skeleton rounded w-3/4 mb-2"></div>
                                             <div className="h-3 skeleton rounded w-1/2 mb-auto"></div>

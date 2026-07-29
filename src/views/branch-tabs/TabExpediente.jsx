@@ -86,7 +86,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                                 {/* Puente invisible para el mouse */}
                                 <div className="absolute -top-5 left-0 w-full h-6 bg-transparent"></div>
 
-                                <div className="bg-surface-card backdrop-blur-2xl border border-chart-3/30 p-4 rounded-2xl shadow-[var(--shadow-glow-chart-3-lg)] relative overflow-hidden">
+                                <div data-surface="card" className="border-chart-3/30 p-4 relative overflow-hidden">
 
                                     {/* Fondo de luz sutil interno (Estilo holográfico) */}
                                     <div className="absolute inset-0 pointer-events-none z-0">
@@ -402,7 +402,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
             {/* ESTADO VACÍO */}
             {isSearchEmpty && (
-                <div className="flex flex-col items-center justify-center p-12 bg-surface-card border-2 border-dashed border-white rounded-modal animate-in fade-in duration-500">
+                <div data-surface="card" className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white animate-in fade-in duration-500">
                     {searchTerm ? (
                         <>
                             <Search size={40} className="text-content-3 mb-3" strokeWidth={1.5} />

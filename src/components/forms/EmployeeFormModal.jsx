@@ -1250,7 +1250,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 ? EL_SALVADOR_GEO[addr.department].map(m => ({ value: m, label: m }))
                                                 : [];
                                             return (
-                                                <div key={idx} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
+                                                <div key={idx} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                                     <div className="flex items-center justify-between mb-3">
                                                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Dirección Alterna {idx + 1}</span>
                                                         <Button variant="destructive" size="xs" icon={X} title="Quitar dirección" iconOnly onClick={() => removeAddress(idx)} />
@@ -1512,7 +1512,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const isOtherSkill = isCatalogOther(entry.skill, cursoHabilidadOptions);
                                         const isOtherInstitution = isCatalogOther(entry.institution, institucionOptions);
                                         return (
-                                            <div key={idx} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
+                                            <div key={idx} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Curso / Habilidad {idx + 1}</span>
                                                     <Button variant="destructive" size="xs" icon={X} title="Quitar" iconOnly onClick={() => removeSkill(idx)} />
@@ -1617,7 +1617,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 .map(({ d, i }) => ({ value: `dep-${i}`, label: `Igual que ${d.name || `Persona ${i + 1}`}` })),
                                         ];
                                         return (
-                                            <div key={idx} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
+                                            <div key={idx} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Persona {idx + 1}</span>
                                                     <Button variant="destructive" size="xs" icon={X} title="Quitar persona" iconOnly onClick={() => removeDependent(idx)} />
@@ -2148,7 +2148,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 independientes. La imagen NO bloquea el alta del empleado (a
                                 diferencia del campo de texto DUI/documento alterno, que sí es
                                 obligatorio) — si falta, queda marcada "Pendiente". */}
-                            <div className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60 mb-4">
+                            <div data-surface="card" className="p-3 bg-surface-card-hover/60 mb-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 block">{isMinor ? altIdDocTypeLabel : 'DUI'}</label>
                                     {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
@@ -2179,7 +2179,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {documentCategories.map(cat => (
-                                    <div key={cat.key} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
+                                    <div key={cat.key} data-surface="card" className="p-3 bg-surface-card-hover/60">
                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 block">{cat.label}</label>
                                         {cat.key === 'SRS' && (
                                             <PortalInput label="Número de Carné JVPQF" name="pharmacist_license_number" value={formData.pharmacist_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPQF" colSpan={1} />

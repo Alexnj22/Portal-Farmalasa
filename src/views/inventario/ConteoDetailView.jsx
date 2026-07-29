@@ -543,7 +543,7 @@ export default function ConteoDetailView() {
                 <Button variant="ghost" icon={ChevronLeft} onClick={() => navigate('/conteo-inventario')}>Volver a Conteos</Button>
 
                 {conteo && (
-                    <div className="bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-sm">
+                    <div data-surface="card" className="p-4 md:p-5">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">

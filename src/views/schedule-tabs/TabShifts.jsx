@@ -161,11 +161,11 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
             </div>
 
             <div className="flex items-center gap-3 mt-auto border-t border-border-card pt-4 relative z-base">
-                <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[var(--shadow-shine)]">
+                <div data-surface="card" className="flex-1 p-3 border-white">
                     <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Entrada</span>
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.start)}</span>
                 </div>
-                <div className="flex-1 bg-surface-card backdrop-blur-md p-3 rounded-2xl border border-white shadow-[var(--shadow-shine)]">
+                <div data-surface="card" className="flex-1 p-3 border-white">
                     <span className="text-micro font-black text-content-3 uppercase block mb-1 tracking-widest">Salida</span>
                     <span className="text-body-lg font-bold text-content-2 tracking-tight">{formatTime12h(group.end)}</span>
                 </div>

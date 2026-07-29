@@ -4,6 +4,33 @@
 // Normalize legacy demand_variability values → X/Y/Z
 export const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
 
+// Traduce el error crudo de Postgres a algo que se pueda leer. Vive acá y no
+// dentro del hook porque las solicitudes (TabMinMaxRequests) muestran los
+// mismos errores que el guardado.
+export const translateDbError = (msg) => {
+    if (!msg) return 'Error desconocido';
+    // Los tres CHECK del par MIN/MAX (F1.2/F1.3) van primero: son los que un
+    // usuario puede provocar escribiendo, y "valor fuera del rango permitido"
+    // no le dice qué corregir.
+    if (/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i.test(msg))
+        return 'MIN y MAX no forman un par válido: con MIN ≥ 1, el MAX debe ser mayor; con MIN 0, el MAX solo puede ser 0 o 1.';
+    if (/MODULE_LOCKED/i.test(msg))
+        return 'El módulo está en mantenimiento: por ahora es solo lectura.';
+    if (/statement timeout|canceling statement/i.test(msg))
+        return 'La consulta tardó demasiado. Intenta nuevamente.';
+    if (/row-level security/i.test(msg))
+        return 'Sin permisos para esta operación.';
+    if (/unique constraint/i.test(msg))
+        return 'Ya existe un registro con esos datos.';
+    if (/foreign key constraint/i.test(msg))
+        return 'No se puede eliminar: hay registros relacionados.';
+    if (/not-null constraint/i.test(msg))
+        return 'Falta un campo requerido.';
+    if (/check constraint/i.test(msg))
+        return 'Valor fuera del rango permitido.';
+    return msg;
+};
+
 // Riesgo de regla de despacho: el MAX efectivo (publicado + manual), llevado
 // a la unidad de despacho del producto (factor de presentación de la regla ×
 // múltiplo), redondea a 0 incluso en el mejor caso posible (repunte completo

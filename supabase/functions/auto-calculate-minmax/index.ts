@@ -48,6 +48,10 @@ serve(async (req) => {
   // "completado, no hay borradores pendientes" mientras no se calculaba nada.
   const MOTIVOS: Record<string, string> = {
     branch_has_pending_drafts: "tiene borradores pendientes de revisar",
+    // Candado de mantenimiento (F0): alguien tiene MIN·MAX o Pedidos en
+    // mantenimiento. El cron se salta el recálculo a propósito para no
+    // reescribir min/max por debajo de quien está trabajando.
+    module_locked: "el módulo está en mantenimiento",
   };
 
   const results: { id: number; name: string; rows?: number; auto_applied?: number; drafted?: number; error?: string; skipped?: string }[] = [];
@@ -71,10 +75,11 @@ serve(async (req) => {
       continue;
     }
 
-    const r = (data as { rows?: number; auto_applied?: number; drafted?: number; skipped?: boolean; reason?: string }) ?? {};
+    const r = (data as { rows?: number; auto_applied?: number; drafted?: number; skipped?: boolean; reason?: string; locked_by?: string }) ?? {};
 
     if (r.skipped) {
-      const motivo = MOTIVOS[r.reason ?? ""] ?? (r.reason ?? "motivo desconocido");
+      const motivo = (MOTIVOS[r.reason ?? ""] ?? (r.reason ?? "motivo desconocido")) +
+        (r.locked_by ? ` (${r.locked_by})` : "");
       results.push({ id, name: ERP_NAMES[id], skipped: motivo });
       console.warn(`[auto-calculate-minmax] SALTADA ${ERP_NAMES[id]}: ${motivo}`);
       // success:false a propósito: desde "¿se recalculó esta sucursal?", una

@@ -9,30 +9,13 @@ import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import { smartFilter } from '../../../utils/searchUtils';
-import { normXyz, hasDispatchRisk } from './helpers';
+import { normXyz, hasDispatchRisk, translateDbError } from './helpers';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS } from './constants';
 import {
-    upsertStockParams, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
+    upsertStockParams, upsertStockParamsReturning, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
     fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
     fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMax,
 } from '../../../data/stockParams';
-
-const translateDbError = (msg) => {
-    if (!msg) return 'Error desconocido';
-    if (/statement timeout|canceling statement/i.test(msg))
-        return 'La consulta tardó demasiado. Intenta nuevamente.';
-    if (/row-level security/i.test(msg))
-        return 'Sin permisos para esta operación.';
-    if (/unique constraint/i.test(msg))
-        return 'Ya existe un registro con esos datos.';
-    if (/foreign key constraint/i.test(msg))
-        return 'No se puede eliminar: hay registros relacionados.';
-    if (/not-null constraint/i.test(msg))
-        return 'Falta un campo requerido.';
-    if (/check constraint/i.test(msg))
-        return 'Valor fuera del rango permitido.';
-    return msg;
-};
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
 const warnIfOutrageous = (field, numVal, row) => {
@@ -382,7 +365,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             p_published_by: user?.email ?? null,
         });
         if (error) {
-            useToastStore.getState().showToast(row.product_name, error.message || 'Error al ejecutar', 'error');
+            useToastStore.getState().showToast(row.product_name, translateDbError(error.message), 'error');
             return;
         }
         setData(prev => prev.map(r =>
@@ -438,10 +421,15 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             // effective = sum + delta. Si no hay excedente (numVal === floor), delta = null.
             const delta = numVal - floor;
             const deltaToStore = delta > 0 ? delta : null;
-            const { error: e } = await upsertStockParams(
-                { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: deltaToStore, updated_at: new Date().toISOString() }
+            // F2.6: `.select()` de vuelta para poder registrar el delta que NO se
+            // editó. get_stock_analysis no devuelve manual_min/manual_max, así que
+            // el `targetRow?.manual_min` de abajo era SIEMPRE undefined y el log
+            // guardaba null en la mitad no tocada del par.
+            const { data: guardada, error: e } = await upsertStockParamsReturning(
+                { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: deltaToStore, updated_at: new Date().toISOString() },
+                'manual_min, manual_max, min_units, max_units'
             );
-            if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error'); return; }
             const newMinEff = edit.field === 'min' ? (numVal ?? 0) : (targetRow?.effective_min ?? 0);
             const newMaxEff = edit.field === 'max' ? (numVal ?? 0) : (targetRow?.effective_max ?? 0);
             setData(prev => prev.map(r => {
@@ -454,10 +442,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 field: 'min+max', product: targetRow?.product_name, sucursal_id: 6,
                 old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
                 new_min: newMinEff, new_max: newMaxEff,
-                delta_min: edit.field === 'min' ? deltaToStore : (targetRow?.manual_min ?? null),
-                delta_max: edit.field === 'max' ? deltaToStore : (targetRow?.manual_max ?? null),
-                pub_sum_min: edit.field === 'min' ? floor : (targetRow?.pub_min ?? 0),
-                pub_sum_max: edit.field === 'max' ? floor : (targetRow?.pub_max ?? 0),
+                delta_min: edit.field === 'min' ? deltaToStore : (guardada?.manual_min ?? null),
+                delta_max: edit.field === 'max' ? deltaToStore : (guardada?.manual_max ?? null),
+                pub_sum_min: edit.field === 'min' ? floor : (guardada?.min_units ?? targetRow?.pub_min ?? 0),
+                pub_sum_max: edit.field === 'max' ? floor : (guardada?.max_units ?? targetRow?.pub_max ?? 0),
             });
             return;
         }
@@ -476,7 +464,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             );
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error');
                 return;
             }
             Promise.all([
@@ -505,7 +493,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             );
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error');
                 return;
             }
             Promise.all([
@@ -563,7 +551,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const deltaMinStore = deltaMin > 0 ? deltaMin : null;
             const deltaMaxStore = deltaMax > 0 ? deltaMax : null;
             const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: deltaMinStore, manual_max: deltaMaxStore, updated_at: new Date().toISOString() });
-            if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            if (e) { useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return; }
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== 6) return r;
                 return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: deltaMinStore !== null || deltaMaxStore !== null, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
@@ -594,7 +582,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() });
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return;
+                useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return;
             }
         } else {
             setData(prev => prev.map(r => {
@@ -604,7 +592,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() });
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return;
+                useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return;
             }
         }
         Promise.all([

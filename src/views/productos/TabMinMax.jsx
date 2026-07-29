@@ -1147,7 +1147,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 if (e.key === 'ArrowLeft') {
                                                                     e.preventDefault(); skipBlurSave.current = true;
                                                                     if (inlineDraftEdit.pendingMin !== undefined) { setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin }); }
-                                                                    else { if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? ((row.draft_min > 0 || row.draft_max > 0) ? String(row.draft_min ?? 0) : '') : ((row.effective_min > 0 || row.effective_max > 0) ? String(row.effective_min ?? 0) : '') }); }
+                                                                    // ArrowLeft desde MAX era el ÚNICO de los 5 caminos de guardado que
+                                                                    // no validaba: guardaba MAX suelto y el par inválido (MAX≤MIN,
+                                                                    // MAX=0 con MIN>0) recién explotaba en el publish, abortando el
+                                                                    // lote entero. Ahora valida igual que blur/Enter/ArrowUp.
+                                                                    else { if (inlineDraftEdit.value !== '') { const errL = validateEditForRow(inlineDraftEdit, row); if (errL) { useToastStore.getState().showToast(row.product_name, errL, 'error'); setInlineDraftEdit(null); return; } saveDraftCell(inlineDraftEdit); } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? ((row.draft_min > 0 || row.draft_max > 0) ? String(row.draft_min ?? 0) : '') : ((row.effective_min > 0 || row.effective_max > 0) ? String(row.effective_min ?? 0) : '') }); }
                                                                     return;
                                                                 }
                                                                 if (e.key === 'Enter' || e.key === 'ArrowDown') {
@@ -1460,7 +1464,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {bodegaTooltip.pending.map(b => (
                         <div key={b.erp_sucursal_id} className="flex items-center justify-between gap-3">
                             <span className="text-caption text-content-2 font-medium">{ERP_NAMES[b.erp_sucursal_id] ?? `Suc. ${b.erp_sucursal_id}`}</span>
-                            <span className="text-caption text-warning tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString()}·{(b.draft_max ?? 0).toLocaleString()}</span>
+                            <span className="text-caption text-warning-text tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString()}·{(b.draft_max ?? 0).toLocaleString()}</span>
                         </div>
                     ))}
                 </div>,

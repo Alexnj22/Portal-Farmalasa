@@ -391,7 +391,19 @@ export default function ItemSections({ allItems, loading }) {
         try {
             const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
             const prevPsp = pspMap[k];
-            const { error } = await updateStockParams(row.erp_product_id, row.erp_sucursal_id, { min_units: min, max_units: max, manual_min: null, manual_max: null });
+            // F2.7 — dos cosas que faltaban en este payload:
+            //   · updated_at: el polling de Bodega avanza por cursor keyset
+            //     (updated_at, erp_product_id). Sin bumpearlo, este cambio era
+            //     invisible para la pestaña de Bodega abierta al lado.
+            //   · draft_status/draft_min/draft_max: si la fila tenía un borrador
+            //     pendiente, quedaba pendiente — y al publicar, el borrador viejo
+            //     pisaba lo que se acaba de guardar acá. Es lo mismo que hace el
+            //     guardado en vivo de MIN·MAX (useMinMaxData, rama saveLive).
+            const { error } = await updateStockParams(row.erp_product_id, row.erp_sucursal_id, {
+                min_units: min, max_units: max, manual_min: null, manual_max: null,
+                draft_status: 'none', draft_min: null, draft_max: null,
+                updated_at: new Date().toISOString(),
+            });
             if (error) throw error;
             // target_id debe ser el producto (no el pedido) — es lo que el historial
             // MIN/MAX de Productos usa para buscar cambios de un producto puntual.
@@ -518,7 +530,7 @@ export default function ItemSections({ allItems, loading }) {
                 label="Stock insuficiente en bodega" count={agotamiento.length} variante="warning" rows={agotamiento} columns={COLS_AGOTAMIENTO}
                 noteEl={<p className="text-caption text-warning-text/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
-            <ItemSection label="Sin inventario en bodega" count={sinStock.length} variante="warning" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} variante="warning" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-caption text-warning-text/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} variante="danger" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}

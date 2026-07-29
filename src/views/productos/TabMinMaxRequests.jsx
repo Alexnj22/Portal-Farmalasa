@@ -13,6 +13,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
+import { translateDbError } from './tabminmax/helpers';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { Skeleton } from '../../components/common/StateViews';
@@ -270,6 +271,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       const skippedBodega = data?.skipped_bodega ?? [];
       const skippedHidden = data?.skipped_hidden ?? [];
       const skippedNotFound = data?.skipped_not_found ?? [];
+      const skippedInvalid  = data?.skipped_invalid ?? [];
 
       await runInBatches(approved, r => appendAuditLog('MINMAX_REQUEST_APPROVED', String(r.erp_product_id), {
         request_id: r.id, product: r.product_name, sucursal_id: r.erp_sucursal_id,
@@ -296,12 +298,16 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         });
       });
 
-      // Superficia los 3 tipos de omisión — antes solo Bodega se mostraba,
+      // Superficia los 4 tipos de omisión — antes solo Bodega se mostraba,
       // "ya decidida por otra persona" y "producto oculto" quedaban en
       // silencio (hallazgo de /code-review post-auditoría).
+      // skipped_invalid es de F1.3: la RPC metía las violaciones de constraint
+      // en skipped_not_found, así que una solicitud que NO se puede aplicar
+      // nunca se reportaba como una carrera entre dos aprobadores.
       const skipMsgs = [];
       if (skippedBodega.length)   skipMsgs.push(`${skippedBodega.length} de Bodega (no admite solicitudes directas)`);
       if (skippedHidden.length)   skipMsgs.push(`${skippedHidden.length} de producto(s) oculto(s) en Min/Max`);
+      if (skippedInvalid.length)  skipMsgs.push(`${skippedInvalid.length} que la base rechaza — ${translateDbError(skippedInvalid[0]?.error)}`);
       if (skippedNotFound.length) skipMsgs.push(`${skippedNotFound.length} ya decidida(s) por otra persona`);
       if (skipMsgs.length) {
         setError(`Se omitieron ${skipMsgs.join(', ')}.`);

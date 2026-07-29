@@ -16,7 +16,52 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.220.0';
+export const APP_VERSION = '2.221.0';
+
+// v2.221.0 — MIN·MAX: el par invalido ya no llega al publish (F1 del
+// PLAN-MINMAX-Y-CANDADO), y el candado tapa su ultimo agujero (cierre de F0).
+//
+// F0 (cierre): calculate_stock_params era la unica de las 23 RPCs que exime a
+// service_role, porque la llama el cron auto-calculate-minmax el dia 1. Con el
+// modulo en mantenimiento, ese recalculo reescribia el catalogo entero por
+// debajo de quien estaba trabajando. Ahora chequea el candado ANTES de todo y
+// aplica tambien a service_role: para el cron devuelve
+// { skipped:true, reason:'module_locked' } — el contrato que la edge function ya
+// sabe registrar como sucursal SALTADA — y para una persona lanza MODULE_LOCKED
+// con el nombre del titular, en vez del PERMISSION_DENIED generico que mentia
+// ("se requiere permiso de edicion" cuando el permiso existe).
+//
+// F1.1: ArrowLeft desde MAX era el UNICO de los 5 caminos de guardado sin
+// validacion, y como hay preventDefault() nunca mueve el cursor dentro del
+// numero: siempre salta de celda y guarda. Ahora valida como sus hermanos.
+//
+// F1.2: la defensa en los 3 lugares donde se escribe el par.
+// - psp_draft_pair_valid reemplaza a psp_draft_max_gte_min (que dejaba pasar
+//   max = min). El plan decia "hoy 0 filas lo violarian": eran 4 (residuo de
+//   borrador descartado en Salud 1), anuladas aca.
+// - El trigger de Bodega clampeaba el MIN hacia arriba pero no el MAX: si la Σ
+//   de MAX quedaba <= la Σ de MIN, el UPSERT violaba el CHECK y abortaba la
+//   escritura DE LA SUCURSAL que lo disparo.
+// - publish_stock_params derivaba MIN y MAX con dos reglas incompatibles (una
+//   bajaba el MIN, la otra subia el MAX). Con (12,12) daba (12,12) y ABORTABA EL
+//   LOTE ENTERO. Ahora un solo CTE ordena el par y lo separa. Verificado sobre
+//   los 81 pares posibles: identico en los 61 que hoy dan resultado valido,
+//   distinto solo en los 20 que hoy se caen.
+//
+// F1.3: mmcr_pair_valid alinea las solicitudes con el invariante real (antes
+// (0,5) pasaba la constraint de la solicitud y explotaba al aprobarla), y
+// approve_minmax_requests_bulk deja de meter las violaciones de constraint en
+// skipped_not_found — la UI las traducia como "ya decidida por otra persona",
+// o sea una carrera entre aprobadores, cuando era una solicitud inaplicable.
+//
+// F1.4: translateDbError pasa a helpers.js (lo usan dos vistas) y cubre los 7
+// toasts de guardado que mostraban el texto crudo de Postgres.
+//
+// Y las 3 filas de La Popular con MAX sin MIN (ACIDO BORICO, LEVUSOL, TEGADERM):
+// nunca publicadas, 0 ventas en 6 meses, MAX tecleado a mano el 18-jun con el
+// MIN vacio porque la UI guarda celda por celda. Su par efectivo se lee (0,3) y
+// habria hecho fallar "descartar borrador". MIN=1 por decision de Alex, que es
+// el mismo min-lift que ya aplican el publish y el trigger.
 
 // v2.220.0 — el arreglo del select, cerrado como canonico de verdad.
 //

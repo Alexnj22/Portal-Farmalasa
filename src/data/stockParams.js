@@ -23,6 +23,16 @@ export function upsertStockParams(payload) {
     return supabase.from('product_stock_params').upsert(payload, { onConflict: ONCONFLICT });
 }
 
+// Igual que upsertStockParams pero devuelve la fila escrita. F2.6: el log de
+// auditoría de Bodega necesita el delta que NO se editó (manual_min cuando se
+// edita el MAX, y viceversa), y get_stock_analysis no devuelve esas columnas —
+// registraba `null`. Se resuelve con la fila de vuelta del propio upsert, sin
+// round-trip extra y sin agregarle columnas a un RPC de 1.5 s.
+export function upsertStockParamsReturning(payload, columns = '*') {
+    return supabase.from('product_stock_params').upsert(payload, { onConflict: ONCONFLICT })
+        .select(columns).maybeSingle();
+}
+
 export function upsertStockParamsBulk(rows) {
     return supabase.from('product_stock_params').upsert(rows, { onConflict: ONCONFLICT });
 }
@@ -136,6 +146,13 @@ export function fetchStockParamsHistory(erpProductId, erpSucursalId) {
         .eq('erp_product_id', erpProductId)
         .eq('erp_sucursal_id', erpSucursalId)
         .order('captured_at', { ascending: false })
+        // F2.2 — desempate obligatorio: hasta el 2026-07-29 el historial se
+        // escribia por dos caminos (trigger con el valor viejo + INSERT de la
+        // RPC con el nuevo) en la MISMA transaccion, asi que 13,198 pares
+        // comparten captured_at al segundo. Sin `id DESC` el "antes" se podia
+        // pintar como si fuera el estado posterior. Las filas nuevas ya vienen
+        // de una sola fuente, pero las historicas siguen ahi.
+        .order('id', { ascending: false })
         .limit(5);
 }
 

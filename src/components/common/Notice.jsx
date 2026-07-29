@@ -22,10 +22,22 @@ import { Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
  * acá va uno solo, del token.
  */
 
+// El texto va SIEMPRE con el token `-text` de su color, no con el color puro.
+// Bug real, reportado el 2026-07-29 sobre un aviso de este componente que no se
+// podía leer: `warning` y `success` usaban el color de acento crudo mientras
+// `info` y `danger` sí usaban su `-text`. Medido sobre el fondo efectivo del
+// propio aviso (bg-warning/10 sobre tarjeta clara = #fef4e6):
+//
+//   text-warning      #F79009 → 2.16:1   ✗ (WCAG AA pide 4.5:1)
+//   text-warning-text #9a4507 → 5.98:1   ✓
+//
+// Los dos tokens `-text` ya existen y tienen override por tema (index.css), así
+// que esto arregla los 22 avisos de tipo warning de la app de una sola vez, y no
+// solo el que se reportó.
 const VARIANTES = {
     info:    { caja: 'bg-brand/10 border-brand/25 text-brand-text',       icono: Info },
-    success: { caja: 'bg-success/10 border-success/30 text-success',      icono: CheckCircle2 },
-    warning: { caja: 'bg-warning/10 border-warning/30 text-warning',      icono: AlertTriangle },
+    success: { caja: 'bg-success/10 border-success/30 text-success-text', icono: CheckCircle2 },
+    warning: { caja: 'bg-warning/10 border-warning/30 text-warning-text', icono: AlertTriangle },
     danger:  { caja: 'bg-danger/10 border-danger/30 text-danger-text',    icono: XCircle },
     neutral: { caja: 'bg-surface-card-hover border-border-card text-content-2', icono: Info },
 };

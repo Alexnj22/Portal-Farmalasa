@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.225.0';
+export const APP_VERSION = '2.226.0';
+
+// v2.226.0 — Mantenimiento: lista completa con switch, y el aviso que no se leia.
+//
+// 1. BUG DEL CANONICO `Notice`, reportado por Alex sobre un aviso ilegible.
+//    `warning` y `success` pintaban el texto con el color de acento CRUDO
+//    mientras `info` y `danger` si usaban su token `-text`. Medido sobre el fondo
+//    efectivo del propio aviso (bg-warning/10 sobre tarjeta clara = #fef4e6):
+//        text-warning      #F79009 → 2.16:1   ✗ (WCAG AA pide 4.5:1)
+//        text-warning-text #9a4507 → 5.98:1   ✓
+//    Los dos tokens ya existian (y con override por tema), asi que el arreglo va
+//    en el canonico: cubre los 22 avisos warning de la app, no solo el que se vio.
+//    Verificado en el navegador: el texto sale rgb(154, 69, 7).
+//
+// 2. Fuera el boton "Poner en mantenimiento" y fuera el modal. Ahora se listan
+//    LOS 27 modulos bloqueables con un switch cada uno; al encenderlo el candado
+//    queda puesto y la fila revela sus DOS CUADROS (motivo y duracion), que son el
+//    estado del candado y se editan en vivo sobre el candado ya tomado — el motivo
+//    guarda al salir del campo o con Enter, la duracion al cambiarla. El switch ES
+//    la accion.
+//
+// 3. Lupa canonica: el buscador va en el ViewTabBar del encabezado, como en el
+//    resto de las vistas. Filtra por nombre, descripcion y key (smartFilter).
+//    Verificado: "nomina" deja 1 modulo, "sucursal" deja 6.
+//
+// 4. Los nombres salen del registro de PERMISOS, no del menu. Se extrajo
+//    MODULE_GROUPS de PermissionsView a constants/permissionModules.js con un mapa
+//    plano MODULE_INFO (label + desc + grupo + icono, incluidas las pestañas). El
+//    menu dice "Listado"; Permisos dice "Listado de Personal", y ahora esta vista
+//    tambien. Los 27 bloqueables tienen etiqueta y descripcion — verificado.
+//
+// Se muestran TODOS los modulos, tambien los que uno no puede editar (switch
+// deshabilitado): saber que existen y quien los tiene tomados es parte de
+// responder "¿que hay bloqueado?".
+//
+// Verificado en navegador con lock_module/unlock_module INTERCEPTADAS — no se
+// escribio ningun candado en prod: encender llama lock_module(payroll, null, 4),
+// aparecen los dos cuadros, escribir el motivo vuelve a llamar con
+// reason="cierre de quincena", el banner sale en /payroll, y apagar llama
+// unlock_module. Cero errores de consola.
 
 // v2.225.0 — el candado de mantenimiento sale de MIN·MAX: panel en Sistema y
 // banner en las 37 vistas.

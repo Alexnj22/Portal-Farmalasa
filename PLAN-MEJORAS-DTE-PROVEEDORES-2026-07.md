@@ -178,7 +178,23 @@ va a resolver, y crece ~2/día.
 - [ ] `SupplierMatchCell`: para esos tipos, "No aplica" en gris — sin ⚠️ ni
       botón.
 
-### H5 · El maestro de proveedores no clasifica nada: 99 de 99 sin categoría
+### H5 · 🔨 EN CURSO — BD aplicada (v2.196.1), UI en mockup
+
+Migración `20260729140000_proveedor_categoria_sugerida` en prod:
+`suggest_proveedor_categoria_id()` (14 patrones sobre el giro, 68/99 = 89% de
+los docs), la sugerencia expuesta en `get_proveedores_maestro`, y dos RPC de
+escritura — `set_proveedores_categoria_bulk` (todos la misma) y
+`apply_proveedores_categoria_sugerida` (cada uno la suya). Ambas devuelven el
+conteo real de filas cambiadas.
+
+Los ~11 ambiguos no reciben sugerencia a propósito (ver H5b).
+
+**UI pendiente de tu OK** — no hay patrón canónico de selección múltiple en el
+proyecto, así que va mockup primero (regla del proyecto). Mockup publicado con
+los 3 estados: reposo con sugerencia visible, selección con barra de acciones,
+y resultado.
+
+### H5 (diagnóstico original) · El maestro no clasifica nada: 99 de 99 sin categoría
 
 Existen 16 categorías seed, un filtro "Categoría", un filtro "Clase"
 (costo / gasto operativo / gasto admin / otro), una columna en la tabla y la

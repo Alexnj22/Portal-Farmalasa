@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.196.0';
+export const APP_VERSION = '2.196.1';
+
+// v2.196.1 — H5, primera mitad: la regla que sabe clasificar proveedores.
+//
+// 99 de 99 proveedores estan sin categoria, asi que las 16 categorias, el
+// filtro Categoria, el filtro Clase y la derivacion costo/gasto del detalle
+// estan construidos y sin usar: filtrar por cualquier categoria devuelve 0
+// filas, siempre. Clasificar 99 de a uno desde un modal es por que nadie lo
+// hizo.
+//
+// Solo BD en este commit — la UI de asignacion masiva va con mockup aprobado
+// antes (no hay patron canonico de seleccion multiple en el proyecto, asi que
+// construirla de una seria inventar uno sin que nadie lo vea primero).
+//
+// `suggest_proveedor_categoria_id(desc_actividad)`: 14 patrones sobre el giro
+// fiscal que ya viene en los 99 registros desde el propio DTE. Cubre 68 de 99
+// proveedores = 1,958 de 2,192 documentos (89%), medido contra prod antes de
+// escribirla. Case/acento-insensible porque el mismo giro convive hoy como
+// "VENTA DE PRODUCTOS FARMACEUTICOS" y "Venta de productos farmacéuticos".
+//
+// Los ~11 ambiguos (supermercados, alimentos, lacteos, bebidas, abarrotes) NO
+// reciben sugerencia A PROPOSITO. En una farmacia pueden ser mercaderia para
+// reventa o insumo interno, y PriceSmart es literalmente las dos segun la
+// factura — lo trajo el usuario. Sugerir ahi seria adivinar. La solucion de
+// fondo es H5b: categoria a nivel de DOCUMENTO con el proveedor como default.
+//
+// La sugerencia viaja en get_proveedores_maestro (informativa, no se aplica
+// sola) y hay dos RPC de escritura: set_proveedores_categoria_bulk (todos la
+// MISMA) y apply_proveedores_categoria_sugerida (cada uno la SUYA). Las dos
+// devuelven cuantas filas cambiaron de verdad, para que la UI no reporte el
+// numero de seleccionados como si fuera el de aplicados.
 
 // v2.196.0 — Fase B de la auditoria DTE: dos cosas del sync que se rehacian
 // solas. Cambio de edge function, sin efecto visual.

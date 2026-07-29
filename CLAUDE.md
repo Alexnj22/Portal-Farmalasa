@@ -154,9 +154,17 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    35 tablas expuestas el 2026-07-02 (`20260702_granular_write_policies.sql`).
 4. **Funciones**: SECURITY DEFINER solo si es necesario, SIEMPRE con
    `SET search_path = public, extensions`, y `REVOKE EXECUTE ... FROM PUBLIC, anon` +
-   `GRANT ... TO authenticated, service_role`. Únicas funciones con anon permitido:
-   `get_kiosk_boot_payload`, `get_kiosk_coverage_employees` (pre-login kiosco, validan
-   device token internamente).
+   `GRANT ... TO authenticated, service_role`. Únicas funciones con anon permitido
+   (las 5 del pre-login del kiosco, todas validan `device_token` internamente):
+   `get_kiosk_boot_payload`, `get_kiosk_coverage_employees`, `verify_kiosk_device`,
+   `verify_kiosk_pin`, `verify_kiosk_authorization`.
+   Las últimas tres se agregaron en las fases 1/2/4 del rediseño de credenciales
+   del kiosco (2026-07-29) y son las que reemplazaron la comparación client-side.
+   **La regla se aplicó retroactivamente el 2026-07-29**
+   (`20260729_revoke_anon_function_surface`): ninguna otra función del proyecto
+   es ejecutable por `anon`. Las 31 que quedan pertenecen a `pg_trgm`/`pg_net`
+   — son internas de extensión y revocarles EXECUTE rompe los índices de trigram;
+   salen del namespace público moviendo la extensión, no revocando.
 5. **Vistas**: SIEMPRE `WITH (security_invoker = true)` (o `ALTER VIEW ... SET`).
 6. **Vistas materializadas**: no exponerlas a la API — `REVOKE ALL FROM anon, authenticated`
    y acceso solo vía RPC SECURITY DEFINER. Excepción actual: `mv_product_factor`

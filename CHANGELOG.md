@@ -165,6 +165,40 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.188.0 — el conteo termina en un ajuste, no en un número.
+
+Decisión del usuario: mientras el portal no sea el sistema completo, los ajustes
+de inventario se aplican en el ERP. El portal **no escribe stock** — eso no
+cambia y es deliberado — pero el conteo ahora entrega el documento con el que se
+hace ese ajuste, y registra si ya se aplicó.
+
+Antes, aprobar solo sellaba el estado. La diferencia quedaba medida y firmada, y
+ahí moría: un conteo aprobado y uno ya reflejado en el ERP se veían idénticos,
+así que nadie sabía si el stock del ERP todavía mentía.
+
+- **Hoja de Ajustes** (PDF apaisado) y **CSV**, partidos en **FALTANTES** (ajuste
+  de salida) y **SOBRANTES** (ajuste de entrada) — en un ERP son dos
+  transacciones distintas, y mezclarlas obliga a separarlas a mano al digitar.
+  Ordenados por código ERP, que es como se teclea, un renglón tras otro.
+- Cada línea trae código ERP, código de barras, producto, presentación, lote,
+  vencimiento, área (normal / vencidos), sistema, físico, **la cantidad firmada a
+  aplicar** y su valor, con totales por sección. Los renglones agregados a mano
+  salen marcados **ALTA DE LOTE**: en el ERP eso no es ajustar una cantidad, es
+  dar de alta un lote que no existe.
+- `marcar_ajuste_erp` deja constancia de quién lo aplicó y cuándo. Exige el
+  conteo **aprobado** (`CERRADO`): ajustar el ERP con un conteo que nadie firmó
+  es justo lo que el paso de aprobación existe para impedir.
+- Aviso persistente en el detalle y badge **"Falta ajuste ERP"** en la lista
+  mientras siga pendiente. Si el conteo cerró sin diferencias, lo dice y no pide
+  nada.
+- El PDF de ajustes arrastra el aviso de conteo parcial: valuar un faltante
+  sobre un conteo incompleto y no decirlo en la misma hoja se lee como un cuadre.
+
+Sigue abierto y documentado en `AUDITORIA-CONTEO-2026-07-29.md`: el corte de
+movimientos, el recuento de variaciones y los conteos cíclicos por ABC.
+
+---
+
 ## v2.183.0 — el conteo de inventario comparaba contra un número inflado.
 
 Auditoría completa del módulo (`AUDITORIA-CONTEO-2026-07-29.md`): 6 capas del

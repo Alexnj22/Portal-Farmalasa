@@ -121,10 +121,39 @@ Sin verificar en navegador con sesión real: el camino de escritura
 SQL de esas funciones sí se ejecutó contra los datos reales en la transacción
 revertida.
 
-## Fuera de alcance (decisión pendiente del usuario)
+## Fase A — El ajuste sale al ERP (decisión tomada 2026-07-29)
 
-- **Ajuste contable del conteo aprobado** (#4). Requiere definir si el portal
-  escribe en `inventory` o solo exporta al ERP.
+**Decisión del usuario:** mientras el portal no sea el sistema completo, los
+ajustes se aplican en el ERP. El conteo no escribe stock — pero al finalizar
+tiene que dejar **el reporte con el que se hace ese ajuste**, y constancia de que
+se aplicó.
+
+Esto cambia el #4 de "pendiente de decidir" a "resuelto en su forma correcta
+para hoy". Lo que NO cambia: el portal sigue sin ser fuente de escritura de
+inventario, y eso es deliberado.
+
+- **A1** — `conteos_inventario` gana `ajuste_erp_aplicado/_por/_at/_nota`, la RPC
+  `marcar_ajuste_erp` (exige `CERRADO`, o sea aprobado) y el payload de impresión
+  suma `codigo_barras` y `sistema_inicial`.
+- **A2** — Hoja de Ajustes en PDF y CSV, partida en **faltantes** (salidas) y
+  **sobrantes** (entradas), que en un ERP son dos transacciones distintas. Cada
+  línea trae el código con el que se teclea, el lote, el área (normal/vencidos) y
+  la cantidad firmada a aplicar.
+- **A3** — Descarga desde el detalle, badge de "ajuste pendiente / aplicado", y
+  la señal en la lista para que un conteo aprobado pero sin ajustar no se pierda.
+
+Un conteo aprobado sin ajuste aplicado es trabajo a medias: la diferencia está
+medida y firmada, pero el stock del ERP sigue mintiendo. Por eso el estado se
+sigue mostrando hasta que alguien registre que lo aplicó.
+
+**Aplicado el 2026-07-29 en v2.188.0** (migraciones `20260729_conteo_a1_*`).
+Simulado sobre el conteo real dentro de una transacción revertida: el reporte
+sale en dos secciones (3,549 líneas de faltante por −$109,591.04 y 40 de sobrante
+por +$834.93 en el escenario de prueba), con 56 líneas correctamente marcadas
+como área de vencidos. El payload de impresión trae los 22 campos que el reporte
+necesita.
+
+## Fuera de alcance (decisión pendiente del usuario)
 - **Corte (cutoff) de movimientos.** Hoy la lectura es en vivo, sin registrar
   las ventas ocurridas durante el conteo. Con 6 sucursales sincronizando cada
   minuto, contar con la sucursal abierta mete ruido irreducible en la

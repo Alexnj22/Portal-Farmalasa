@@ -3,7 +3,7 @@ import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import TabBarAction from '../components/common/TabBarAction';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, X } from 'lucide-react';
+import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
@@ -115,7 +115,14 @@ export default function ConteoInventarioView() {
                                 <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <Badge variant={es.variante} size="sm" icon={es.icon}>{es.label}</Badge>
+                                <div className="flex flex-col items-center gap-1">
+                                    <Badge variant={es.variante} size="sm" icon={es.icon}>{es.label}</Badge>
+                                    {/* Aprobado no es el final: el stock lo corrige el ERP.
+                                        Un conteo firmado y sin ajustar es trabajo a medias. */}
+                                    {c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado && (
+                                        <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste ERP</Badge>
+                                    )}
+                                </div>
                             </DataCell>
                             <DataCell align="right">
                                 <ChevronRight size={16} className="text-content-3" />

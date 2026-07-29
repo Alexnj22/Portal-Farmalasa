@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.187.0';
+export const APP_VERSION = '2.188.0';
+
+// v2.188.0 — el conteo termina en un ajuste, no en un numero.
+//
+// Decision del usuario: mientras el portal no sea el sistema completo, los
+// ajustes de inventario se aplican en el ERP. El portal NO escribe stock — eso
+// no cambia y es deliberado — pero el conteo ahora entrega el documento con el
+// que se hace ese ajuste, y registra si ya se aplico.
+//
+// Antes, aprobar solo sellaba el estado: la diferencia quedaba medida y firmada
+// y ahi moria. Un conteo aprobado y uno ya reflejado en el ERP se veian
+// identicos, asi que nadie sabia si el stock del ERP todavia mentia.
+//
+// - **Hoja de Ajustes** (PDF apaisado) y **CSV**, partidos en FALTANTES (ajuste
+//   de salida) y SOBRANTES (ajuste de entrada), que en un ERP son dos
+//   transacciones distintas. Ordenados por codigo ERP, que es como se teclea.
+//   Cada linea trae codigo, codigo de barras, lote, vencimiento, area
+//   (normal/vencidos) y la cantidad firmada a aplicar, con totales por seccion.
+//   Los renglones agregados a mano salen marcados **ALTA DE LOTE**: en el ERP
+//   no es ajustar una cantidad, es dar de alta un lote que no existe.
+// - `marcar_ajuste_erp` deja constancia de quien lo aplico y cuando. Exige el
+//   conteo **aprobado** (CERRADO): ajustar el ERP con un conteo que nadie firmo
+//   es justo lo que el paso de aprobacion existe para impedir.
+// - Aviso persistente en el detalle y badge "Falta ajuste ERP" en la lista
+//   mientras siga pendiente.
+// - El payload de impresion suma `codigo_barras` y `sistema_inicial`.
+//
+// Sigue abierto y documentado en AUDITORIA-CONTEO-2026-07-29.md: el corte de
+// movimientos, el recuento de variaciones y los conteos ciclicos por ABC.
 
 // v2.187.0 - auditoria de puntos ciegos, P3 + dos reglas nuevas en el gate.
 //

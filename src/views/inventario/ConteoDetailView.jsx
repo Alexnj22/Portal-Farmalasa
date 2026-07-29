@@ -7,6 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, ChevronRight, Search, Printer, CheckCircle2, ShieldCheck, Loader2,
     Plus, X, Package, FlaskConical, History, Radio, Pencil, PackageX, EyeOff,
+    FileSpreadsheet, Download,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -18,7 +19,9 @@ import PromptModal from '../../components/common/PromptModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
-import { printHojaConteo, printResultadosConteo } from '../../utils/conteoInventarioPrint';
+import {
+    printHojaConteo, printResultadosConteo, printAjustesConteo, exportAjustesConteo,
+} from '../../utils/conteoInventarioPrint';
 import {
     searchActiveProductsForConteo, fetchProductPresentacionesForConteo, fetchErpSucursalIdsForBranch,
     fetchInventoryLotesForProduct,
@@ -546,6 +549,7 @@ export default function ConteoDetailView() {
     const aprobarConteoInventario = useStaffStore((s) => s.aprobarConteoInventario);
     const fetchTodosLosItemsConteo = useStaffStore((s) => s.fetchTodosLosItemsConteo);
     const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
+    const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
@@ -568,6 +572,7 @@ export default function ConteoDetailView() {
     const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
     const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
     const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
+    const [promptAjusteOpen, setPromptAjusteOpen] = useState(false);
     // Conteo ciego: arranca encendido mientras el conteo sea editable. Es el
     // orden correcto — el primer conteo se hace a ciegas y el sistema se revela
     // para revisar, no al revés. printHojaConteo ya sabía imprimir ciego desde
@@ -712,11 +717,27 @@ export default function ConteoDetailView() {
             // La hoja sale ciega si la pantalla está ciega: son el mismo conteo,
             // no tendría sentido que el papel revelara lo que la vista oculta.
             if (kind === 'hoja') printHojaConteo(conteo, allItems, { ciego });
+            else if (kind === 'ajuste') printAjustesConteo(conteo, allItems);
+            else if (kind === 'ajuste-csv') exportAjustesConteo(conteo, allItems);
             else printResultadosConteo(conteo, allItems, { soloDiferencias: false });
         } catch (err) {
-            showToast('Error al imprimir', err.message, 'error');
+            showToast('Error al generar el documento', err.message, 'error');
         } finally {
             setPrinting(false);
+        }
+    };
+
+    const confirmMarcarAjuste = async (nota) => {
+        setBusy(true);
+        try {
+            await marcarAjusteErp(id, nota);
+            showToast('Ajuste registrado', 'Queda constancia de que se aplicó en el ERP', 'success');
+            await load();
+        } catch (err) {
+            showToast('Error', err.message, 'error');
+        } finally {
+            setBusy(false);
+            setPromptAjusteOpen(false);
         }
     };
 
@@ -753,6 +774,12 @@ export default function ConteoDetailView() {
                                 {hasResults && (
                                     <Button variant="secondary" icon={Printer} disabled={printing} onClick={() => handlePrint('resultados')}>Imprimir Resultados</Button>
                                 )}
+                                {hasResults && (
+                                    <>
+                                        <Button variant="secondary" icon={FileSpreadsheet} disabled={printing} onClick={() => handlePrint('ajuste')}>Ajuste para el ERP</Button>
+                                        <Button variant="secondary" icon={Download} disabled={printing} onClick={() => handlePrint('ajuste-csv')}>CSV</Button>
+                                    </>
+                                )}
                                 {canFinalize && (
                                     <Button disabled={busy} onClick={handleFinalizar}>{busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Finalizar Conteo</Button>
                                 )}
@@ -761,6 +788,35 @@ export default function ConteoDetailView() {
                                 )}
                             </div>
                         </div>
+
+                        {/* El conteo mide y firma la diferencia, pero el stock lo
+                            corrige el ERP: hasta que alguien registre que lo aplicó,
+                            el ERP sigue mintiendo y esto tiene que estar a la vista. */}
+                        {conteo.status === 'CERRADO' && (
+                            <div className="mt-4">
+                                {conteo.ajuste_erp_aplicado ? (
+                                    <Notice variant="success" icon={ClipboardCheck}>
+                                        Ajuste aplicado en el ERP el {fmtDateTime(conteo.ajuste_erp_at)}.
+                                        {conteo.ajuste_erp_nota ? ` — "${conteo.ajuste_erp_nota}"` : ''}
+                                    </Notice>
+                                ) : conteo.total_diferencias > 0 ? (
+                                    <Notice
+                                        variant="warning"
+                                        icon={FileSpreadsheet}
+                                        action={canEdit && (
+                                            <Button size="sm" disabled={busy} onClick={() => setPromptAjusteOpen(true)}>
+                                                Ya lo apliqué
+                                            </Button>
+                                        )}
+                                    >
+                                        Ajuste pendiente de aplicar en el ERP: {conteo.total_diferencias} línea(s).
+                                        Descargá la hoja o el CSV, aplicalo, y registralo acá.
+                                    </Notice>
+                                ) : (
+                                    <Notice variant="success">Sin diferencias: no hay ajuste que aplicar en el ERP.</Notice>
+                                )}
+                            </div>
+                        )}
 
                         {hasResults && conteo.total_pendientes > 0 && (
                             <div className="mt-4">
@@ -887,9 +943,21 @@ export default function ConteoDetailView() {
                 onClose={() => setPromptAprobarOpen(false)}
                 onConfirm={confirmAprobar}
                 title="Aprobar Conteo"
-                message="Queda cerrado y con firma auditable."
+                message="Queda cerrado y con firma auditable. No podés aprobar un conteo que vos mismo finalizaste."
                 placeholder="Nota de aprobación (opcional)"
                 confirmText="Aprobar"
+                cancelText="Cancelar"
+                isProcessing={busy}
+            />
+
+            <PromptModal
+                isOpen={promptAjusteOpen}
+                onClose={() => setPromptAjusteOpen(false)}
+                onConfirm={confirmMarcarAjuste}
+                title="Registrar ajuste aplicado"
+                message="Esto no modifica existencias — el portal no escribe stock. Solo deja constancia de que el ajuste ya se tecleó en el ERP, para que este conteo no quede como pendiente."
+                placeholder="Referencia del ajuste en el ERP (opcional)"
+                confirmText="Registrar"
                 cancelText="Cancelar"
                 isProcessing={busy}
             />

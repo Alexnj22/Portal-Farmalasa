@@ -21,6 +21,8 @@ const ERRORES = {
     PRESENTACION_Y_LOTE_REQUERIDOS: 'Elegí presentación y lote antes de agregar.',
     PRODUCTO_NO_ENCONTRADO: 'Ese producto no existe o está inactivo.',
     LINEA_YA_EXISTE: 'Ese producto ya está en el conteo con esa presentación y lote.',
+    CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',
+    AJUSTE_YA_APLICADO: 'Este ajuste ya figura como aplicado en el ERP.',
 };
 
 function traducirError(err) {
@@ -211,6 +213,25 @@ export const createConteoInventarioSlice = (set, get) => ({
             new_value: nota || 'Sin nota',
         });
 
+        return data;
+    },
+
+    // El portal no escribe stock: esto NO ajusta nada, deja constancia de que
+    // alguien ya tecleó el ajuste en el ERP. Sin este registro, un conteo
+    // aprobado y uno ya reflejado en el ERP se ven idénticos.
+    marcarAjusteErp: async (conteoId, nota) => {
+        const { data, error } = await supabase.rpc('marcar_ajuste_erp', { p_conteo_id: conteoId, p_nota: nota || null });
+        if (error) throw traducirError(error);
+
+        const detalle = await get().fetchConteoDetalle(conteoId);
+        await get().appendAuditLog('CONTEO_AJUSTE_ERP_APLICADO', conteoId, {
+            timeline_title: 'Ajuste del conteo aplicado en el ERP',
+            dimension: 'OPERATIVE',
+            branch_id: detalle?.branch_id,
+            new_value: nota || 'Sin nota',
+        });
+
+        await get().fetchConteosInventario();
         return data;
     },
 

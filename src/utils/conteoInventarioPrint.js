@@ -5,6 +5,7 @@
 
 import pdfMake from 'pdfmake/build/pdfmake';
 import vfsFonts from 'pdfmake/build/vfs_fonts';
+import { exportCsv } from './csvExport';
 
 pdfMake.addVirtualFileSystem(vfsFonts);
 
@@ -223,6 +224,179 @@ function avisoParcialBlock(conteo) {
         },
         layout: 'noBorders',
     };
+}
+
+// ── Hoja de ajustes para el ERP ─────────────────────────────────────────────
+// El portal NO escribe stock: mientras no sea el sistema completo, el ajuste se
+// teclea en el ERP. Esta hoja es ese insumo, y por eso está partida en dos:
+// faltantes y sobrantes son transacciones distintas en un ERP (salida vs
+// entrada), y mezclarlas obliga a separarlas a mano al momento de digitar.
+
+const AJU_COL_WIDTHS = ['8%', '25%', '11%', '14%', '8%', '7%', '7%', '8%', '12%'];
+const AJU_LABELS = ['Cód. ERP', 'Producto', 'Presentación', 'Lote', 'Vence', 'Sistema', 'Físico', 'Ajuste', 'Valor'];
+
+const esAjuste = (i) => i.diferencia != null && i.diferencia !== 0;
+const valorAjuste = (i) => (i.costo_unitario != null ? i.diferencia * Number(i.costo_unitario) : null);
+
+// Orden por código: es como se teclea en el ERP, un renglón tras otro, sin
+// tener que buscar el producto por nombre en cada línea.
+function sortParaDigitar(items) {
+    return [...items].sort((a, b) =>
+        (a.erp_product_id ?? 0) - (b.erp_product_id ?? 0)
+        || (a.lote || '').localeCompare(b.lote || '', 'es'));
+}
+
+function loteAjusteCell(item) {
+    const marcas = [];
+    if (item.is_vencidos) marcas.push('ÁREA VENCIDOS');
+    // sistema 0 y sobrante: en el ERP esto no es ajustar una cantidad, es dar
+    // de alta un lote que no existe. Es otro trámite y hay que verlo distinto.
+    if (item.es_agregado_manual) marcas.push('ALTA DE LOTE');
+    return `${item.lote || '—'}${marcas.length ? ` · ${marcas.join(' · ')}` : ''}`;
+}
+
+function buildAjusteSection(titulo, color, fill, items) {
+    if (!items.length) return null;
+    const totalQty = items.reduce((s, i) => s + i.diferencia, 0);
+    const totalVal = items.reduce((s, i) => s + (valorAjuste(i) || 0), 0);
+
+    const headerRow = AJU_LABELS.map((label, i) => ({
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
+        alignment: i >= 5 ? 'center' : 'left', margin: [4, 3, 4, 3],
+    }));
+
+    const body = sortParaDigitar(items).map((item, idx) => {
+        const bg = idx % 2 === 1 ? '#f7f7f7' : '#ffffff';
+        const val = valorAjuste(item);
+        return [
+            { text: String(item.erp_product_id ?? '—'), fontSize: 8, bold: true, fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: item.product_nombre || '—', fontSize: 7.5, fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: item.presentacion || '—', fontSize: 7, color: '#555', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: loteAjusteCell(item), fontSize: 7, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: fmtFecha(item.fecha_vencimiento), fontSize: 7, color: '#555', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
+            { text: String(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: String(item.fisico_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: item.diferencia > 0 ? `+${item.diferencia}` : String(item.diferencia), fontSize: 9, bold: true, color, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: val != null ? fmtMoney(val) : '—', fontSize: 7.5, color, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+        ];
+    });
+
+    return [
+        {
+            text: `${titulo} — ${items.length} línea(s)`,
+            fontSize: 9.5, bold: true, color, margin: [0, 12, 0, 4],
+        },
+        {
+            table: { headerRows: 1, dontBreakRows: true, widths: AJU_COL_WIDTHS, body: [headerRow, ...body] },
+            layout: {
+                hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
+                vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
+                hLineColor: () => '#ccc', vLineColor: () => '#ccc',
+                paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 0, paddingBottom: () => 0,
+            },
+        },
+        {
+            margin: [0, 4, 0, 0],
+            table: {
+                widths: ['*', 'auto', 'auto'],
+                body: [[
+                    { text: '', border: [false, false, false, false] },
+                    { text: `Total unidades: ${totalQty > 0 ? `+${totalQty}` : totalQty}`, fontSize: 8, bold: true, color, fillColor: fill, margin: [6, 4, 6, 4] },
+                    { text: `Total valor: ${fmtMoney(totalVal)}`, fontSize: 8, bold: true, color, fillColor: fill, margin: [6, 4, 6, 4] },
+                ]],
+            },
+            layout: 'noBorders',
+        },
+    ];
+}
+
+function ajusteHeaderBlock(conteo, faltantes, sobrantes) {
+    const lineas = [
+        { text: 'AJUSTE DE INVENTARIO', fontSize: 13, bold: true, color: '#111' },
+        { text: 'Documento para aplicar en el ERP — el portal no modifica existencias', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
+    ];
+    return {
+        margin: [0, 0, 0, 6],
+        columns: [
+            { width: '*', stack: lineas },
+            {
+                width: 'auto',
+                stack: [
+                    { text: conteo.branches?.name || 'Sucursal', fontSize: 10, bold: true, alignment: 'right', color: '#111' },
+                    { text: `Conteo del ${fmtFechaLarga(new Date(conteo.created_at))} · Alcance: ${conteo.scope_type}`, fontSize: 8, alignment: 'right', color: '#666' },
+                    { text: `${faltantes.length} faltante(s) · ${sobrantes.length} sobrante(s)`, fontSize: 8, alignment: 'right', color: '#666' },
+                    { text: `Ref. conteo: ${String(conteo.id).slice(0, 8).toUpperCase()}`, fontSize: 7.5, alignment: 'right', color: '#999' },
+                ],
+            },
+        ],
+    };
+}
+
+export function printAjustesConteo(conteo, items) {
+    const ajustes = items.filter(esAjuste);
+    const faltantes = ajustes.filter((i) => i.diferencia < 0);
+    const sobrantes = ajustes.filter((i) => i.diferencia > 0);
+
+    const content = [ajusteHeaderBlock(conteo, faltantes, sobrantes)];
+
+    const aviso = avisoParcialBlock(conteo);
+    if (aviso) content.push(aviso);
+
+    if (!ajustes.length) {
+        content.push({
+            margin: [0, 16, 0, 0],
+            text: 'Este conteo no arrojó diferencias: no hay ajuste que aplicar en el ERP.',
+            fontSize: 10, bold: true, color: '#059669',
+        });
+    } else {
+        const secFalt = buildAjusteSection('FALTANTES — ajuste de SALIDA en el ERP', '#dc2626', '#fef2f2', faltantes);
+        const secSobr = buildAjusteSection('SOBRANTES — ajuste de ENTRADA en el ERP', '#2563eb', '#eff6ff', sobrantes);
+        if (secFalt) content.push(...secFalt);
+        if (secSobr) content.push(...secSobr);
+    }
+
+    const docDefinition = {
+        pageSize: 'LETTER',
+        // Nueve columnas de digitación no entran legibles en vertical.
+        pageOrientation: 'landscape',
+        pageMargins: PAGE_MARGINS,
+        info: { title: `Ajuste de Inventario — ${conteo.branches?.name || ''}` },
+        defaultStyle: { fontSize: 9 },
+        content,
+        footer: footerFirmas('Aplicado en el ERP por', 'Fecha de aplicación'),
+    };
+    downloadPdf(docDefinition, `Ajuste_ERP_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+}
+
+// Mismo contenido en CSV: para filtrar, ordenar o cargar en lote si el ERP lo
+// admite, sin volver a teclear lo que ya está medido.
+export function exportAjustesConteo(conteo, items) {
+    const ajustes = sortParaDigitar(items.filter(esAjuste));
+    const headers = [
+        'Tipo', 'Codigo ERP', 'Codigo barras', 'Producto', 'Laboratorio', 'Presentacion',
+        'Lote', 'Vence', 'Area', 'Alta de lote', 'Sistema', 'Fisico', 'Ajuste',
+        'Costo unitario', 'Valor ajuste', 'Nota',
+    ];
+    const rows = ajustes.map((i) => [
+        i.diferencia < 0 ? 'FALTANTE' : 'SOBRANTE',
+        i.erp_product_id ?? '',
+        i.codigo_barras ?? '',
+        i.product_nombre ?? '',
+        i.laboratorio_nombre ?? '',
+        i.presentacion ?? '',
+        i.lote ?? '',
+        i.fecha_vencimiento ?? '',
+        i.is_vencidos ? 'VENCIDOS' : 'NORMAL',
+        i.es_agregado_manual ? 'SI' : 'NO',
+        i.sistema_cantidad,
+        i.fisico_cantidad,
+        i.diferencia,
+        i.costo_unitario ?? '',
+        valorAjuste(i) != null ? valorAjuste(i).toFixed(2) : '',
+        i.nota ?? '',
+    ]);
+    const suc = (conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_');
+    exportCsv(headers, rows, `Ajuste_ERP_${suc}_${String(conteo.id).slice(0, 8)}.csv`);
 }
 
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.

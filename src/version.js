@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.195.0';
+export const APP_VERSION = '2.196.0';
+
+// v2.196.0 — Fase B de la auditoria DTE: dos cosas del sync que se rehacian
+// solas. Cambio de edge function, sin efecto visual.
+//
+// H10 — `TIME_BUDGET_MS` (100s) era el presupuesto de UNA CUENTA, y las
+// cuentas se recorren en serie. El wall-clock real de una invocacion era
+// N x 100s: con 2 correos ya daban ~200s, y conectar el tercero (pendiente
+// conocido) lo llevaba a ~300s contra el limite de la plataforma. Si la
+// invocacion se cortaba ahi, la ultima cuenta perdia su trabajo y se
+// re-escaneaba entera. No habia perdida de datos — markMessagesProcessed
+// corre dentro de processAccount y solo con mensajes ya completados — pero si
+// trabajo tirado y un hasMore que nunca llegaba al cliente. Ahora el deadline
+// es absoluto y se reparte entre las cuentas: la que no alcanza devuelve
+// hasMore y el boton reintenta solo (E5 ya hacia eso). Esto DESBLOQUEA
+// conectar el tercer correo.
+//
+// H7 — el insert guardaba `items_text: extractItemsText(json)`, que es null
+// cuando el DTE no trae cuerpoDocumento (tipo 09, FSE tipo 14). El backfill ya
+// usaba '' a proposito, con un comentario explicando que dejarlo en NULL hace
+// que la fila se re-procese; el insert no seguia ese criterio. Cada corrida
+// futura del backfill re-descargaba de Storage todos los tipo 09 acumulados
+// desde la anterior (~2/dia) para volver a concluir lo mismo. Convergia, pero
+// la deuda se rehacia sola todos los dias. Ahora los dos caminos usan el mismo
+// criterio; las 21 filas en NULL pasaron a ''.
+//
+// Verificado en prod: edge function v47 desplegada con --no-verify-jwt (esa
+// funcion tenia verify_jwt=false y un redeploy sin el flag lo resetea a true,
+// trampa ya documentada), y dry_run real contra las 2 cuentas en UNA sola
+// invocacion: 5.6s, sin errores, hasMore=false.
 
 // v2.195.0 — tres suscripciones de Realtime estaban muertas en silencio.
 //

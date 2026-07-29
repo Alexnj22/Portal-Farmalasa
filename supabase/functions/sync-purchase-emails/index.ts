@@ -14,7 +14,17 @@ const TOKEN_URL       = "https://oauth2.googleapis.com/token";
 const BACKFILL_FROM   = "2026/06/01";
 const OVERLAP_DAYS    = 3;
 const BUCKET          = "purchase-dte";
-const TIME_BUDGET_MS  = 100_000; // presupuesto por cuenta/corrida — deja margen bajo el límite de la plataforma (backfills grandes requieren varias llamadas sucesivas, ver hasMore en la respuesta)
+// Presupuesto de UNA invocación completa, no de una cuenta. H10
+// (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): era por cuenta y las cuentas se
+// recorren en serie, así que N cuentas multiplicaban el wall-clock real —
+// con 2 cuentas ya daba ~200s, y conectar el tercer correo (pendiente
+// conocido) lo llevaba a ~300s contra el límite de la plataforma. Si la
+// invocación se corta ahí, la última cuenta pierde su trabajo y se re-escanea
+// (no hay pérdida de datos: markMessagesProcessed corre dentro de
+// processAccount, sólo con mensajes ya completados). Ahora el deadline es
+// absoluto y se reparte entre las cuentas: la que no alcanza devuelve
+// hasMore y el caller vuelve a llamar (el botón ya reintenta solo, ver E5).
+const TIME_BUDGET_MS  = 100_000;
 const ZIP_MAX_ENTRIES     = 50;               // tope de entradas escaneadas por zip — defensa contra zip bombs (miles de archivos diminutos)
 const ZIP_MAX_ENTRY_BYTES = 10 * 1024 * 1024; // igual a MAX_REMOTE_BYTES/file_size_limit del bucket — más grande solo generaría un upload fallido
 
@@ -651,7 +661,9 @@ async function markMessagesProcessed(supabase: any, accountId: number, messageId
   }
 }
 
-async function processAccount(supabase: any, account: any, dryRun: boolean, debugQuery?: string | null): Promise<AccountResult> {
+// `deadline` es el instante absoluto en que esta INVOCACIÓN debe haber
+// terminado — compartido por todas las cuentas de la corrida (H10).
+async function processAccount(supabase: any, account: any, dryRun: boolean, debugQuery: string | null | undefined, deadline: number): Promise<AccountResult> {
   const clientId     = Deno.env.get(account.client_id_secret_name ?? '') ?? '';
   const clientSecret  = Deno.env.get(account.client_secret_secret_name ?? '') ?? '';
   const refreshToken  = Deno.env.get(account.vault_secret_name ?? '') ?? '';
@@ -705,12 +717,12 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   let documentsSkipped   = 0;
   let pdfsUnmatched       = 0;
   const warnings: string[] = [];
-  const startTime = Date.now();
   let cutOff = false;
   const messagesToMarkProcessed: string[] = [];
 
   for (const id of pendingIds) {
-    if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+    // H10: contra el deadline de la invocación, no contra un reloj propio.
+    if (Date.now() > deadline) { cutOff = true; break; }
     messagesScanned++;
     // Si algo con pérdida de datos real falla para este mensaje (marcar
     // invalidado, encolar a revisión), NO se marca como procesado al final —
@@ -967,7 +979,12 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           from_email:          fromEmail,
           source_message_id:   id,
           received_at:         receivedAt,
-          items_text:          extractItemsText(json),
+          // H7: '' y no NULL cuando el DTE no trae cuerpoDocumento (tipo 09,
+          // FSE tipo 14). El backfill ya usaba '' a propósito — el insert no,
+          // así que cada corrida futura del backfill re-descargaba de Storage
+          // todos los tipo 09 acumulados desde la anterior (~2/día) para
+          // volver a concluir lo mismo. Mismo criterio en los dos caminos.
+          items_text:          extractItemsText(json) ?? '',
           // supplier_id se llena DESPUÉS del insert, derivado del maestro
           // (ver 2.2 más abajo) — no acá con un lookup propio por nrc exacto,
           // que ignoraba el match normalizado (nrc con/sin guión) que ya
@@ -1643,10 +1660,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // H10: un solo deadline para toda la invocación. Las cuentas se recorren
+    // en serie, así que con un presupuesto por cuenta el wall-clock real era
+    // N × TIME_BUDGET_MS. La cuenta que llega sin tiempo devuelve hasMore y
+    // el caller vuelve a llamar; las cuentas que ya corrieron dejaron sus
+    // mensajes marcados, así que la próxima tanda arranca donde quedó.
+    const deadline = Date.now() + TIME_BUDGET_MS;
+
     const results: any[] = [];
     for (const account of accounts) {
       try {
-        const r = await processAccount(admin, account, dry_run, debug_query);
+        const r = await processAccount(admin, account, dry_run, debug_query, deadline);
         results.push({ account: account.email, ...r });
         if (!dry_run) {
           await admin.from('email_sync_log').insert({

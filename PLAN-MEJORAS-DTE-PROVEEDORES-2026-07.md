@@ -215,7 +215,21 @@ período" — el usuario acaba de ver "Última: 12/06/2026" en el mismo modal.
 
 ---
 
-## FASE B — Deuda que se rehace sola
+## FASE B — Deuda que se rehace sola ✅ H7 y H10 APLICADOS (v2.196.0)
+
+Edge function `sync-purchase-emails` **v47** desplegada con `--no-verify-jwt`
+(esa función tenía `verify_jwt=false`; un redeploy sin el flag lo resetea).
+Verificado con `dry_run` real: las 2 cuentas en **una sola invocación, 5.6s**,
+`hasMore=false`, sin errores. Las 21 filas con `items_text` NULL pasaron a `''`
+(quedan 0).
+
+**H10 desbloquea conectar el tercer correo** — era el motivo por el que el
+presupuesto se quedaba corto. Sigue abierto: H11 (E8), H8/H9 ya se hicieron en
+Fase A.
+
+---
+
+## FASE B (detalle original)
 
 ### H7 · `items_text`: el sync escribe NULL donde el backfill escribe `''`
 

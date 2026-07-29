@@ -258,6 +258,43 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.203.0 — ocultar en MIN/MAX dejaba la sucursal sin recalcular desde junio.
+
+El recálculo mensual **no corre desde el 14-jun en ninguna sucursal**, y la causa
+es una cadena de tres piezas que por separado se ven razonables:
+
+1. **Ocultar** un producto escribía `draft_min=0, draft_max=0, draft_status='pending'`
+   — la propuesta de dejarlo en cero.
+2. Esa propuesta era **inalcanzable**: la tabla no lista los ocultos y el contador
+   de borradores los saltea a propósito (`useMinMaxData.js:298` lo documenta), así
+   que nadie podía verla ni publicarla. Tampoco la limpiaba
+   `calculate_stock_params`: su upsert lleva `WHERE is_hidden IS NOT TRUE`.
+3. `calculate_stock_params` **se salta la sucursal entera** ante un solo
+   `'pending'`, y esa guarda no excluía los ocultos.
+
+Resultado: **32 pendientes invisibles e inlimpiables** —11 en La Popular, todas
+ocultas, cero visibles— bloqueando las 6 sucursales para siempre. Eran servicios
+y no-inventario ocultados el 17-jul: APLICACION DE INYECCION, SERVICIO A
+DOMICILIO, COMISIONES POR CORRESPONSAL, DIETAS COFARSAL, AQUA ECO, PRUEBA DE
+GLUCOSA. Los `updated_at` coinciden exactamente con los `MINMAX_HIDE` de ese día.
+
+**El arreglo, por decisión del usuario: un producto oculto va en `-/-`
+publicado**, no en un borrador de 0/0. Ocultar —individual y masivo— ahora
+escribe `min/max` NULL y `draft_status='none'`.
+
+Se normalizaron las 41 filas ocultas que arrastraban valores, incluidas 3 con
+cantidades reales (PRUEBA DE EMBARAZO ADVIN 21/34, DOLO ESPASMON 8/13, ELECTROLIT
+JAMAICA 6/17): un producto que se decidió no gestionar no debería seguir pesando
+en el pedido sugerido. Revertirlo es desocultar y dejar que el recálculo lo
+vuelva a calcular.
+
+La guarda de `calculate_stock_params` también ignora ocultos, como defensa en
+profundidad.
+
+Verificado: **0 pendientes en las 6 sucursales**. El 1 de agosto ya calcula.
+
+---
+
 ## v2.201.0 — el cíclico se programa solo el 15, y la lista filtra por sucursal.
 
 **Un CHECK bloqueaba todo el cíclico.** `conteos_inventario_scope_type_check`

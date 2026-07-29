@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.202.0';
+export const APP_VERSION = '2.203.0';
+
+// v2.203.0 — ocultar en MIN/MAX dejaba la sucursal sin recalcular desde junio.
+//
+// El recalculo mensual no corre desde el 14-jun en NINGUNA sucursal, y la causa
+// es una cadena de tres piezas que por separado se ven razonables:
+//
+//   1. Ocultar un producto escribia draft_min=0, draft_max=0, status='pending'
+//      — la propuesta de dejarlo en cero.
+//   2. Esa propuesta era INALCANZABLE: la tabla no lista ocultos y el contador
+//      de borradores los saltea a proposito (useMinMaxData.js:298), asi que
+//      nadie podia verla ni publicarla. Tampoco la limpia calculate_stock_params:
+//      su upsert lleva `WHERE is_hidden IS NOT TRUE`.
+//   3. calculate_stock_params se salta la sucursal ENTERA ante un solo
+//      'pending', y esa guarda NO excluia los ocultos.
+//
+// Resultado: 32 pendientes invisibles e inlimpiables (11 en La Popular, todas
+// ocultas, cero visibles) bloqueando las 6 sucursales para siempre. Eran
+// servicios y no-inventario ocultados el 17-jul: APLICACION DE INYECCION,
+// SERVICIO A DOMICILIO, COMISIONES POR CORRESPONSAL, DIETAS COFARSAL, AQUA ECO.
+// Los updated_at coinciden exactamente con los MINMAX_HIDE de ese dia.
+//
+// Arreglo, por decision del usuario: **un producto oculto va en -/- publicado**,
+// no en un borrador de 0/0. Ocultar (individual y masivo) ahora escribe
+// min/max NULL y draft_status 'none'. Se normalizaron las 41 filas ocultas que
+// arrastraban valores — incluidas 3 con cantidades reales (PRUEBA DE EMBARAZO
+// ADVIN 21/34, DOLO ESPASMON 8/13, ELECTROLIT JAMAICA 6/17): un producto que se
+// decidio no gestionar no deberia seguir pesando en el pedido sugerido.
+// La guarda tambien ignora ocultos, como defensa.
+//
+// Verificado: 0 pendientes en las 6 sucursales. El 1 de agosto ya calcula.
+
 
 // v2.202.0 — cierre de los pendientes chicos de la auditoria DTE.
 //

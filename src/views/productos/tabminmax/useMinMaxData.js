@@ -868,21 +868,30 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         try {
             const ids = filtered.map(r => r.erp_product_id);
             // upsert en vez de update para que dead-stock products (sin fila en product_stock_params) también queden ocultos
+            //
+            // Oculto queda en -/- PUBLICADO, no en un borrador de 0/0. El borrador
+            // era inalcanzable —la tabla no lista ocultos y el contador de borradores
+            // los saltea a propósito (ver el `continue` de arriba)— así que quedaba
+            // pendiente para siempre, y calculate_stock_params se salta la sucursal
+            // ENTERA ante un solo pendiente: eso dejó el recálculo mensual sin correr
+            // desde junio en las 6 sucursales.
             await upsertStockParamsBulk(
                 ids.map(id => ({
                     erp_product_id: id,
                     erp_sucursal_id: selectedErp,
                     is_hidden: true,
-                    draft_min: 0,
-                    draft_max: 0,
-                    draft_status: 'pending',
+                    min_units: null,
+                    max_units: null,
+                    draft_min: null,
+                    draft_max: null,
+                    draft_status: 'none',
                     updated_at: new Date().toISOString(),
                 }))
             );
             setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
             setData(prev => prev.map(r =>
                 ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
-                    ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r
+                    ? { ...r, is_hidden: true, min_units: null, max_units: null, draft_min: null, draft_max: null, draft_status: 'none' } : r
             ));
             useStaff.getState().appendAuditLog('MINMAX_HIDE_FILTERED', 'batch', { count: ids.length, sucursal_id: selectedErp });
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Ocultó ${ids.length} producto${ids.length !== 1 ? 's' : ''}`, 'success');

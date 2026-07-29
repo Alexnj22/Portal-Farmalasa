@@ -57,6 +57,63 @@ se corresponden 1:1 con nada.
 generó 685 archivos y dejó el directorio en 991, con duplicados del mismo DDL
 bajo dos nombres — un `db reset` con eso aplicaría cosas dos veces. Se revirtió.
 
+### 🔬 Diagnóstico del 2026-07-29: el problema es de ORDEN, no de historia perdida
+
+Se intentó ejecutar la Opción A de punta a punta. **No se completó, pero el
+intento cambió el diagnóstico y el problema resultó mucho más chico de lo que
+decía este documento.**
+
+Lo hecho y medido:
+
+1. **Las 708 migraciones del servidor tienen su SQL íntegro** (3.0 MB,
+   `sin_sql = 0`, versiones únicas y ordenadas). Se volcaron a 708 archivos
+   `<version>_<nombre>.sql` sin pérdida — el separador `array_to_string` se
+   verificó (cero `;;`).
+2. Se creó una rama de verificación y se aplicaron con `supabase db push`.
+   **Falló en la PRIMERA migración**:
+   ```
+   20260404143525_create_approval_requests.sql
+   ERROR: relation "employees" does not exist
+   ```
+3. **La causa no es que falte historia.** `employees` sí se crea en una
+   migración — pero en
+   `20260711201046_baseline_append_02_tables_p1.sql`, del **11 de julio**,
+   mientras la migración que la referencia es del **4 de abril**. Ya hubo un
+   intento de baseline (19 migraciones `baseline_*` del 2026-07-11) que se
+   **añadió al final en vez de al principio**, e incluye un
+   `revert_baseline_schema_metadata`, señal de que quedó a medias.
+4. **Solo 2 de las 109 tablas de prod no tienen `CREATE TABLE` en ninguna
+   migración**: `proveedores_maestro` y `proveedores_categorias`. El otro 98%
+   sí está.
+
+**Conclusión: la historia registrada es casi completa; lo que no es, es
+replayeable en orden de fecha.** El arreglo es reubicar las 19 `baseline_*` al
+principio y resolver esas 2 tablas — no reconstruir 700 migraciones.
+
+**Lo que bloqueó terminar hoy** (tooling, no diseño): esta máquina no tiene
+Docker, ni `pg_dump`, ni `psql`. `supabase db dump` los necesita, así que no se
+pudo generar el baseline por squash, que era la vía alterna.
+
+**Para retomarlo hace falta**, en orden de preferencia:
+- `brew install libpq` (≈10 MB, solo cliente, sin demonio) → habilita `pg_dump`
+  y con eso el squash a un baseline único, que es la solución más limpia; o
+- Docker Desktop → habilita `supabase db dump` y `db reset` local, gratis.
+
+**Datos operativos aprendidos** (para no re-descubrirlos):
+- `create_branch` **NO** aplica las migraciones: la rama nace vacía. Hay que
+  hacer `supabase db push --db-url ...`.
+- El host directo `db.<ref>.supabase.co` resuelve a **IPv6** y desde acá no hay
+  ruta. Hay que usar el pooler:
+  `postgresql://postgres.<ref>:<pass>@aws-0-us-east-1.pooler.supabase.com:5432/postgres`.
+- `supabase branches get <nombre>` devuelve host/usuario/contraseña de la rama.
+- Costo real de la rama de verificación: **menos de un centavo** (~25 min a
+  $0.0134/hora). El costo no es el obstáculo; el tooling sí.
+- Toda invocación del CLI necesita mover el `.env` fuera del camino
+  (ver [[reference_edge_function_deploy_workaround]]).
+
+**El árbol se dejó limpio**: los 708 archivos generados se revirtieron y los 316
+heredados volvieron a su lugar. Un rebaseline sin verificar no se commitea.
+
 ### C2 — decisión estructural pendiente (NO ejecutada)
 
 **Opción A — rebaseline.** Archivar los 306 heredados en

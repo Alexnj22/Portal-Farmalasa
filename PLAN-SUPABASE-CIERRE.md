@@ -86,9 +86,52 @@ Lo hecho y medido:
    migración**: `proveedores_maestro` y `proveedores_categorias`. El otro 98%
    sí está.
 
-**Conclusión: la historia registrada es casi completa; lo que no es, es
-replayeable en orden de fecha.** El arreglo es reubicar las 19 `baseline_*` al
-principio y resolver esas 2 tablas — no reconstruir 700 migraciones.
+### Segundo intento (mismo día): por qué el reordenamiento tampoco alcanza
+
+Se probó exactamente eso — mover las 19 `baseline_*` al frente y replayear. Dos
+hallazgos que cierran el diagnóstico:
+
+**1. Las `baseline_*` NO son DDL: son concatenación de texto.** Su cuerpo es
+
+```sql
+UPDATE supabase_migrations.schema_migrations
+SET statements[...] = statements[...] || $chunk$ CREATE TABLE public.employees (...) $chunk$
+```
+
+El intento de julio no *ejecutaba* el esquema: iba **pegando el texto del DDL
+dentro de la tabla de migraciones**, como dato. Por eso las 18 "aplican" sin
+error y dejan la base con **0 tablas**. El `baseline_reset_02_tables_elem` del
+medio descarta la serie `append_02` y la rehace como `fix_02`, así que el
+baseline real es `append_01` + `fix_02_p0b..p6`.
+
+Ese DDL **sí se pudo extraer** de los `$chunk$`: 55 KB, **100 `CREATE TABLE` y
+41 `CREATE SEQUENCE`**, y aplicado a una rama limpia funciona — crea las 100
+tablas.
+
+**2. Pero la historia no puede replayearse encima de un baseline actual.** Con
+el baseline puesto, la primera migración de abril falla con
+
+```
+column employees.is_admin does not exist
+```
+
+`is_admin` existía en abril y ya no existe. **El baseline es una foto de julio y
+las migraciones esperan el esquema de abril**: son mutuamente incompatibles por
+construcción. No es un bug que se arregle reordenando; es que "baseline reciente
++ historia vieja" no es una combinación válida.
+
+**Conclusión definitiva: la única arquitectura viable es baseline SOLO, con toda
+la historia archivada.** Y para eso el baseline tiene que estar completo — el
+extraído solo trae tablas y secuencias; le faltan los 369 índices, 218 policies,
+187 funciones, 11 triggers y 361 constraints, que venían de las migraciones que
+ya no se pueden aplicar.
+
+**Lo único que falta para cerrarlo: `pg_dump --schema-only` de producción**, que
+necesita la contraseña de la base. `libpq` ya está instalado
+(`/opt/homebrew/opt/libpq/bin`, pg_dump 18.4). El CLI **no** revela esa
+contraseña (`supabase branches get main` la devuelve enmascarada), así que la
+tiene que aportar el usuario — y no debe pegarse en el chat: se escribe a un
+archivo desde su propia terminal y se consume con `PGPASSWORD=$(cat ...)`.
 
 **Lo que bloqueó terminar hoy** (tooling, no diseño): esta máquina no tiene
 Docker, ni `pg_dump`, ni `psql`. `supabase db dump` los necesita, así que no se

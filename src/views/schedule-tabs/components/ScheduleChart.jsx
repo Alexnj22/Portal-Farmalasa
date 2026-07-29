@@ -12,7 +12,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="bg-white/[0.14] backdrop-blur-2xl border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[80px] hover:bg-white/[0.22] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-300 group/chart relative overflow-visible z-base">
+        <div data-surface="card" className="border border-border-card rounded-2xl px-4 py-1.5 shadow-[var(--shadow-glass-1)] flex flex-col h-full min-h-[80px] hover:shadow-[var(--shadow-elevation-md)] transition-all duration-300 group/chart relative overflow-visible z-base">
 
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0">

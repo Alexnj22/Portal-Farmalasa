@@ -16,7 +16,43 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.163.0';
+export const APP_VERSION = '2.164.0';
+
+// v2.164.0 — todo elemento del CUERPO sigue el tema. Cero excepciones.
+//
+// Decidido por el usuario sobre el panel WFM (opcion B) y extendido a regla
+// general: "todos los modals y elementos deben seguir al tema".
+//
+// **Los modales ya cumplian.** Auditados los 40+ que pasan por ModalShell /
+// LiquidModal / UnifiedModal: el unico con superficie de color fijo es
+// `KioskConfigModal`, que es chrome del kiosco.
+//
+// Lo que si estaba mal, y era el mismo bug en todos: superficie pintada con un
+// color FIJO, con texto adentro usando tokens que si siguen el tema. En tema
+// claro eso deja texto gris oscuro sobre casi negro.
+//
+//   TabStaff        panel "Motor de Sincronizacion WFM"  2.88:1 / 3.75:1
+//   TabShifts       SuggestionCard + el panel de la IA   bg-slate-900/80
+//   SalyCopilot     el panel sin alertas                 bg-slate-900/80
+//   ScheduleChart   la tarjeta del grafico               bg-white/[0.14]
+//   FormWfmAnalytics  el divisor                         border-slate-700
+//   AttendanceMonitor los 3 chips de estado              bg-black/[0.06]
+//   TabStaff        la pildora "Asignar"                 bg-white
+//
+// El panel WFM ademas gana un `Notice` de tono warning: la senal de "esto
+// reescribe el historico" pasa a color CON significado, que el tema sabe
+// adaptar, en vez de un rectangulo negro que encima no se leia. Y la barra de
+// progreso gana `role="progressbar"` con sus valores.
+//
+// La consola del log se queda oscura a proposito: ahi lo oscuro no es
+// decoracion, es lo que la hace leerse como salida de terminal.
+//
+// Verificado en vivo: 18 vistas en tema claro, **cero superficies oscuras en
+// el cuerpo**. (El unico hallazgo del barrido fue un falso positivo mio:
+// `oklab(0.9999 …)` es blanco, y mi calculo de luminancia lo leyo como RGB.)
+//
+// Pendiente de decision: el chrome siempre-oscuro — sidebar, kiosco y login —
+// que son decisiones de diseno previas y explicitas, no descuidos.
 
 // v2.163.0 — el "pendiente" de §25 no era un pendiente, y al ir a verificarlo
 // apareció uno de verdad al lado.

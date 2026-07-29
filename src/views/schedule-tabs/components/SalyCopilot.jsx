@@ -7,7 +7,10 @@ const SalyCopilot = ({ aiCopilotAlerts }) => {
     const hasCriticalAlerts = aiCopilotAlerts.some(a => a.type === 'danger');
     const hasWarningAlerts = aiCopilotAlerts.some(a => a.type === 'warning');
 
-    let aiBoxBg = "bg-slate-900/80 border-chart-5/30";
+    // Sin alertas el panel es una tarjeta como cualquier otra: la identidad de
+    // "Saly AI" la lleva el borde y el glow de categoría, no un fondo oscuro
+    // fijo que en tema claro dejaba texto de tema sobre casi negro.
+    let aiBoxBg = "border-chart-5/30";
     let aiGlow = "bg-chart-5";
     let aiTitle = "Saly AI";
     let aiIconColor = "text-chart-5";

@@ -374,7 +374,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "FINISHED":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-divider">
             <LogOut size={14} /> Finalizado
           </div>
         );
@@ -388,13 +388,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "OFF_DAY":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-3 rounded-xl text-caption font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-3 rounded-xl text-caption font-bold uppercase tracking-widest border border-divider">
             <Clock size={14} /> Día Libre
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-black/[0.06] text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-black/[0.06]">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-divider">
             <CircleDashed size={14} /> Sin Marcar
           </div>
         );

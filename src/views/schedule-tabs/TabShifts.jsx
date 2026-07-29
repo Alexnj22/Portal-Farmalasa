@@ -34,7 +34,7 @@ const formatBranchNames = (names) => {
 const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     const isError = insight.type === 'error';
     return (
-        <div className={`p-5 rounded-header border bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
+        <div data-surface="card" className={`p-5 rounded-header border backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
             ${isError
                 ? 'border-danger/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glow-danger-lg)]'
                 : 'border-chart-5/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
@@ -465,7 +465,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                         {currentForm.start && currentForm.end && (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="bg-slate-900/80 backdrop-blur-3xl rounded-2xl p-4 border border-chart-5/30 shadow-[var(--shadow-glass-3)] relative overflow-hidden">
+                                <div data-surface="card" className="rounded-2xl p-4 border border-chart-5/30 shadow-[var(--shadow-glass-3)] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-chart-5 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-base">
                                         <div className="flex items-center gap-1.5 text-caption font-black text-chart-5 uppercase tracking-widest">

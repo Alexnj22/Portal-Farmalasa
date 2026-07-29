@@ -9,6 +9,7 @@ import {
     CircleUserRound, BarChart3, TrendingUp, Clock, Hourglass, Sparkles, ArrowLeft, Activity, X
 } from 'lucide-react';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import Notice from '../../components/common/Notice';
 import { calculateMinimumStaff } from '../../utils/staffHelpers';
 
 import { supabase } from '../../supabaseClient';
@@ -75,7 +76,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 </div>
                 <p className="text-body-lg font-black text-content-2 leading-tight group-hover:text-danger transition-colors text-center">{missingText}</p>
                 <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-surface-card shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
                     <Edit3 size={10} strokeWidth={2.5} /> <span className="text-micro font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
@@ -245,10 +246,24 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
     };
 
     return (
-        <div className="mt-8 p-5 bg-slate-900 rounded-3xl border border-slate-700 shadow-xl flex flex-col gap-4 no-print">
-            <div className="flex justify-between items-center">
+        // 2026-07-28 — este panel estaba en oscuro fijo (`bg-slate-900` +
+        // `border-slate-700`) pero el texto de adentro usaba tokens que SÍ
+        // siguen el tema. En los dos temas claros el subtítulo quedaba gris
+        // oscuro sobre casi negro: 2.88:1 en liquid y 3.75:1 en sólido, los dos
+        // por debajo de AA. Mismo bug que tenían los tooltips.
+        //
+        // Sigue el tema como cualquier tarjeta. La señal de "cuidado, esto
+        // inyecta datos" no se pierde: pasa a un `Notice` de tono warning, que
+        // es color CON significado y que el tema sabe adaptar — a diferencia de
+        // un rectángulo negro, que además no se leía.
+        //
+        // La consola del log sí se queda oscura más abajo, y eso es deliberado:
+        // ahí lo oscuro no es decoración, es lo que hace que se lea como salida
+        // de terminal.
+        <div data-surface="card" className="mt-8 p-5 rounded-card flex flex-col gap-4 no-print">
+            <div className="flex justify-between items-center gap-4">
                 <div>
-                    <h4 className="text-white font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
+                    <h4 className="text-content font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
                         <Zap size={14} className="text-warning" /> Motor de Sincronización WFM
                     </h4>
                     <p className="text-content-3 font-bold text-caption mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
@@ -256,9 +271,15 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                 <Button disabled={isSyncing} onClick={startHistoricalSync}>{isSyncing ? `Sincronizando ${progress}%` : 'Ejecutar Inyección'}</Button>
             </div>
 
+            <Notice tone="warning">
+                Reescribe el histórico de ventas de esta sucursal desde enero de 2025. Ejecutalo solo si sabés que faltan datos.
+            </Notice>
+
             {isSyncing && (
-                <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner">
-                    <div className="bg-gradient-to-r from-blue-500 to-brand h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                <div className="w-full bg-surface-card-hover h-2.5 rounded-full overflow-hidden shadow-inner"
+                     role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}
+                     aria-label="Progreso de la sincronización histórica">
+                    <div className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                 </div>
             )}
 

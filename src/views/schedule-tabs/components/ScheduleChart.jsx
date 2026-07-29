@@ -18,7 +18,7 @@ const ScheduleChart = ({
             <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
                     <span className="flex items-center gap-1.5 text-[10.5px] font-black text-content-2 tracking-tight whitespace-nowrap">
-                        <TrendingUp size={10} strokeWidth={2.5} className="text-chart-5-text shrink-0" />
+                        <TrendingUp size={10} strokeWidth={2.5} className="text-chart-9-text shrink-0" />
                         {chartTitle}
                     </span>
                     {/* Legend inline */}

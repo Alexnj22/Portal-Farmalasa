@@ -1105,7 +1105,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                             <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(r.cod_vendedor)} className={isOpen ? 'bg-chart-1/10' : ''}>
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
-                                        {i === 0 ? <Trophy size={15} className="text-chart-7" />
+                                        {i === 0 ? <Trophy size={15} className="text-warning" />
                                             : i === 1 ? <Trophy size={15} className="text-content-3" />
                                             : i === 2 ? <Trophy size={15} className="text-warning" />
                                             : <span className="text-xs text-content-3 font-bold w-4 text-center">{i + 1}</span>}
@@ -1209,7 +1209,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 // `color` pasa a ser el NOMBRE de la variante de `Badge` (2026-07-28, D3.5).
 const DRILL_TIERS = [
     { key: 'vip',         label: 'VIP',     variante: 'chart-3', num: 3 },
-    { key: 'clinica',     label: 'Clínica', variante: 'chart-7', num: 4 },
+    { key: 'clinica',     label: 'Clínica', variante: 'warning', num: 4 },
     { key: 'mayoreo',     label: 'Mayoreo', variante: 'chart-4', num: 5 },
     { key: 'premium',     label: 'Premium', variante: 'warning', num: 6 },
     { key: 'descuento_1', label: 'Desc.',   variante: 'success', num: 2 },
@@ -1221,7 +1221,7 @@ const PAGO_STYLE = {
     efectivo:      'bg-success/10 text-success-text',
     tarjeta:       'bg-chart-1/10 text-chart-1-text',
     credito:       'bg-chart-3/10 text-chart-3-text',
-    transferencia: 'bg-chart-5/10 text-chart-5-text',
+    transferencia: 'bg-chart-9/10 text-chart-9-text',
     cheque:        'bg-chart-9/10 text-chart-9-text',
     bitcoin:       'bg-chart-4/10 text-chart-4-text',
 };
@@ -1776,7 +1776,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-chart-1 to-chart-3',   text: 'text-chart-1-text',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
                         { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-danger to-chart-4',    text: 'text-danger-text',     pct: null,        sub: undefined },
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-success to-chart-9',  text: 'text-success-text', pct: null,        sub: undefined },
-                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-warning to-chart-7',  text: 'text-warning-text',   pct: null,        sub: undefined },
+                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-warning to-warning',  text: 'text-warning-text',   pct: null,        sub: undefined },
                         ...(hiddenCount > 0 || showHidden ? [
                             { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-chart-8 to-chart-8/70', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
                         ] : []),
@@ -1836,7 +1836,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     <DataRow index={i} onClick={privacyMode ? undefined : () => toggleExpand(rowKey, r.erp_product_id)}
                                         className={isExpanded ? 'bg-chart-1/10' : ''}>
                                         <DataCell className="text-label font-bold">
-                                            {globalIdx === 0 ? <Star size={15} className="text-chart-7 fill-chart-7" />
+                                            {globalIdx === 0 ? <Star size={15} className="text-warning fill-warning" />
                                                 : <span className="text-content-3">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
@@ -2014,7 +2014,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             // Trend bar heights
                                                             const maxTrend = showTrend ? Math.max(...drillMonthly.map(m => m.neto), 1) : 1;
 
-                                                            const BRANCH_COLORS = ['bg-chart-1','bg-chart-2','bg-chart-3','bg-chart-4','bg-chart-5','bg-chart-6'];
+                                                            const BRANCH_COLORS = ['bg-chart-1','bg-success','bg-chart-3','bg-chart-4','bg-chart-9','bg-chart-6'];
                                                             return (
                                                                 <div className={`grid gap-3 mb-1 ${showBranch && showTrend ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                                                                     {/* Branch rotation */}

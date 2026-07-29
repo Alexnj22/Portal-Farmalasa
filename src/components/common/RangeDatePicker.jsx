@@ -612,7 +612,7 @@ const RangeDatePicker = ({
             {multiRange && selectedRanges.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                     {selectedRanges.map((range, i) => (
-                        <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-success/10 text-success border border-success/30 rounded-full text-caption font-bold">
+                        <Badge key={i} variant="success" uppercase={false} className="gap-1">
                             {range.start === range.end ? formatDisplay(range.start) : `${formatDisplay(range.start)} → ${formatDisplay(range.end)}`}
                             <Button variant="ghost" onClick={(e) => {
                                     e.stopPropagation();
@@ -620,7 +620,7 @@ const RangeDatePicker = ({
                                     setSelectedRanges(next);
                                     onMultiChange && onMultiChange(next);
                                 }}>×</Button>
-                        </span>
+                        </Badge>
                     ))}
                 </div>
             )}

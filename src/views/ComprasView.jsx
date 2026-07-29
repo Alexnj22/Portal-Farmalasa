@@ -331,7 +331,7 @@ function TabProductos({ searchTerm }) {
                             <span className="tabular-nums text-content-2 font-medium text-label">{fmtDate(row.last_purchase_date)}</span>
                         </DataCell>
                         <DataCell align="center" hideBelow="md">
-                            <span className="tabular-nums text-chart-7-text font-bold text-label">{row.days_since_first_purchase ?? '—'}d</span>
+                            <span className="tabular-nums text-warning-text font-bold text-label">{row.days_since_first_purchase ?? '—'}d</span>
                         </DataCell>
                         <DataCell align="center">
                             <span className="tabular-nums text-content-2">{row.total_receipts}</span>

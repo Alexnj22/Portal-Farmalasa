@@ -148,7 +148,7 @@ export const getRoleTheme = (roleName) => {
     if (role.includes('SUBJEFE')) return { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' };
     if (role.includes('REGENTE')) return { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' };
     if (role.includes('SUPERVISOR')) return { bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' };
-    if (role.includes('ADMINISTRADOR')) return { bg: 'bg-chart-2/10', text: 'text-chart-2-text', border: 'border-chart-2/30', variante: 'chart-2' };
+    if (role.includes('ADMINISTRADOR')) return { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30', variante: 'success' };
     return { bg: 'bg-surface-card-hover', text: 'text-content-2', border: 'border-divider', variante: 'neutral' };
 };
 
@@ -159,7 +159,7 @@ export const getDayConflictLocal = (dateStr, history) => {
     );
     if (event) {
         const config = {
-            VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
+            VACATION:    { label: 'Vacaciones', icon: Palmtree,   bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30' },
             DISABILITY:  { label: 'Incapacidad', icon: HeartPulse, bg: 'bg-chart-6/10', text: 'text-chart-6-text', border: 'border-chart-6/30' },
             PERMIT:      { label: 'Permiso',     icon: FileText,   bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
             HOLIDAY:     { label: 'Asueto',      icon: CalendarOff,bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' }

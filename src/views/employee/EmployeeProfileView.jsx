@@ -32,7 +32,7 @@ const formatDate = (d) => d
 // mapeado a los MISMOS chart-N que RequestsView para el tipo compartido.
 const EVENT_THEMES = {
     VACATION:    { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]', variante: 'success' },
-    PERMIT:      { bg: 'bg-chart-2/10',  text: 'text-chart-2-text', border: 'border-chart-2/30', dot: 'border-chart-2',  glow: 'hover:shadow-[var(--shadow-glow-success)]', variante: 'chart-2'  },
+    PERMIT:      { bg: 'bg-success/10',  text: 'text-success-text', border: 'border-success/30', dot: 'border-success',  glow: 'hover:shadow-[var(--shadow-glow-success)]', variante: 'success'  },
     DISABILITY:  { bg: 'bg-danger/10',   text: 'text-danger-text',  border: 'border-danger/30',  dot: 'border-danger',   glow: 'hover:shadow-[var(--shadow-glow-danger)]', variante: 'danger'   },
     SHIFT_CHANGE:{ bg: 'bg-chart-3/10',  text: 'text-chart-3-text', border: 'border-chart-3/30', dot: 'border-chart-3',  glow: 'hover:shadow-[var(--shadow-glow-chart-3)]', variante: 'chart-3'   },
     SALARY:      { bg: 'bg-chart-6/10',  text: 'text-chart-6-text', border: 'border-chart-6/30', dot: 'border-chart-6',  glow: 'hover:shadow-[var(--shadow-glow-chart-6-lg)]', variante: 'chart-6'  },
@@ -393,7 +393,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const evCfg    = ev ? {
                                         VACATION:   { label: 'Vac', Icon: Palmtree,    bg: 'bg-success', light: 'bg-success/10 border-success/30', text: 'text-success-text' },
                                         DISABILITY: { label: 'Incapacidad', Icon: Stethoscope, bg: 'bg-danger',     light: 'bg-danger/10 border-danger/30',         text: 'text-danger-text'     },
-                                        PERMIT:     { label: 'Per', Icon: FileText,    bg: 'bg-chart-2',   light: 'bg-chart-2/10 border-chart-2/30',     text: 'text-chart-2-text'   },
+                                        PERMIT:     { label: 'Per', Icon: FileText,    bg: 'bg-success',   light: 'bg-success/10 border-success/30',     text: 'text-success-text'   },
                                     }[ev.type] : null;
                                     return (
                                         <div key={d.id} className={`flex flex-col items-center rounded-2xl p-2 transition-all duration-200 ${

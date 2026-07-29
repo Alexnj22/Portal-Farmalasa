@@ -131,7 +131,7 @@ const ChipDoc = memo(({
 const VARIANTE_DOC = { CCF: 'danger', FCF: 'chart-1' };
 
 const TIPO_PAGO_VARIANTE = {
-    tarjeta: 'chart-1', credito: 'chart-3', transferencia: 'chart-5',
+    tarjeta: 'chart-1', credito: 'chart-3', transferencia: 'chart-9',
     bitcoin: 'chart-4', cheque:  'chart-9',
 };
 
@@ -147,7 +147,7 @@ const TIPO_PAGO_LABELS = {
 const TIPO_PAGO_THEME = {
  tarjeta: { card: 'border-chart-1/30', header: 'from-chart-1 to-brand', rowHover: 'hover:bg-chart-1/10', expand: 'bg-chart-1/10 border-chart-1/30', input: 'border-chart-1/30', btn: 'bg-chart-1 hover:bg-brand' },
  credito: { card: 'border-chart-3/30', header: 'from-chart-3 to-chart-6', rowHover: 'hover:bg-chart-3/10', expand: 'bg-chart-3/10 border-chart-3/30', input: 'border-chart-3/30', btn: 'bg-chart-3 hover:bg-chart-6' },
- transferencia: { card: 'border-chart-5/30', header: 'from-chart-5 to-chart-1', rowHover: 'hover:bg-chart-5/10', expand: 'bg-chart-5/10 border-chart-5/20', input: 'border-chart-5/30', btn: 'bg-chart-5 hover:bg-chart-1' },
+ transferencia: { card: 'border-chart-9/30', header: 'from-chart-9 to-chart-1', rowHover: 'hover:bg-chart-9/10', expand: 'bg-chart-9/10 border-chart-9/20', input: 'border-chart-9/30', btn: 'bg-chart-9 hover:bg-chart-1' },
  cheque: { card: 'border-chart-9/30', header: 'from-chart-9 to-success', rowHover: 'hover:bg-chart-9/10', expand: 'bg-chart-9/10 border-chart-9/20', input: 'border-chart-9/30', btn: 'bg-chart-9 hover:bg-success' },
  bitcoin: { card: 'border-chart-4/30', header: 'from-chart-4 to-warning', rowHover: 'hover:bg-chart-4/10', expand: 'bg-chart-4/10 border-chart-4/30', input: 'border-chart-4/30', btn: 'bg-chart-4 hover:bg-warning' },
 };

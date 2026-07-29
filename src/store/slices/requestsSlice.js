@@ -26,16 +26,16 @@ import { upsertWeeklyRoster } from '../../data/system';
 // chips (D3.5): sin él, cada vista sacaba el `chart-N` con un regex sobre la
 // clase de Tailwind — que es adivinar el dato en vez de tenerlo.
 export const REQUEST_TYPES = {
-    VACATION:     { label: 'Vacaciones',         color: 'bg-chart-7/10 text-chart-7-text', border: 'border-chart-7/30', variante: 'chart-7' },
+    VACATION:     { label: 'Vacaciones',         color: 'bg-warning/10 text-warning-text', border: 'border-warning/30', variante: 'warning' },
     PERMIT:       { label: 'Permiso / Licencia', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
-    SHIFT_CHANGE: { label: 'Cambio de Turno',    color: 'bg-chart-5/10 text-chart-5-text', border: 'border-chart-5/30', variante: 'chart-5' },
+    SHIFT_CHANGE: { label: 'Cambio de Turno',    color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
     OVERTIME:     { label: 'Horas Extra',        color: 'bg-chart-4/10 text-chart-4-text', border: 'border-chart-4/30', variante: 'chart-4' },
-    ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-chart-2/10 text-chart-2-text', border: 'border-chart-2/30', variante: 'chart-2' },
+    ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-success/10 text-success-text', border: 'border-success/30', variante: 'success' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-chart-1/10 text-chart-1-text', border: 'border-chart-1/30', variante: 'chart-1' },
     DISABILITY:             { label: 'Incapacidad',             color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
     SHIFT_EXCEPTION:        { label: 'Excepción Turno (Kiosk)', color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     ANNULMENT_REQUEST:      { label: 'Anulación de Factura',    color: 'bg-chart-6/10 text-chart-6-text', border: 'border-chart-6/30', variante: 'chart-6' },
-    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-chart-5/10 text-chart-5-text', border: 'border-chart-5/30', variante: 'chart-5' },
+    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
     VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-chart-3/10 text-chart-3-text', border: 'border-chart-3/30', variante: 'chart-3' },
     CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-chart-9/10 text-chart-9-text', border: 'border-chart-9/30', variante: 'chart-9' },
 };

@@ -318,7 +318,7 @@ const BranchCard = memo(({
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                     <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-chart-3/20 blur-[50px] rounded-full animate-pulse [animation-duration:4s]"></div>
                     <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-chart-3/20 blur-[50px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
-                    <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-5/20 blur-[50px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
+                    <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-9/20 blur-[50px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
                 </div>
 
                 {/* Cabecera del Overlay IA */}
@@ -434,7 +434,7 @@ const BranchCard = memo(({
                             <div className="flex items-center gap-2">
                                 <h3 className="text-title-sm font-bold text-content leading-tight group-hover/header:text-brand-text transition-colors duration-300 line-clamp-2">{branch.name}</h3>
                                 <div className="relative group/status flex items-center justify-center p-1.5 cursor-help shrink-0">
-                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[var(--shadow-glow-warning-md)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[var(--shadow-glow-chart-2-md)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
+                                    {isInactive ? <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[var(--shadow-glow-warning-md)] shrink-0"></span> : currentStatus.status === 'OPEN' ? <span className="relative flex h-2.5 w-2.5 shrink-0"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success shadow-[var(--shadow-glow-success-md)]"></span></span> : <span className="h-2.5 w-2.5 rounded-full bg-content-3 shrink-0"></span>}
                                     <div data-surface="tooltip" className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2.5 py-1.5 text-micro font-black uppercase tracking-widest opacity-0 invisible group-hover/status:opacity-100 focus-within:opacity-100 group-hover/status:visible transition-all duration-300 translate-y-1 group-hover/status:translate-y-0 z-sidebar pointer-events-none">
                                         {isInactive ? 'Inactiva' : currentStatus.status === 'OPEN' ? 'Abierta Ahora' : 'Cerrada Ahora'}
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 -mt-1 rotate-45" style={{ background: 'var(--tooltip-bg)' }}></div>
@@ -492,9 +492,15 @@ const BranchCard = memo(({
                             hoy). Pasarlo a `Badge` lo volvería chip siempre, y las
                             otras dos ramas —el horario y el "Definir" en rojo— son
                             texto suelto dentro de la fila. */}
-                        <span className={`font-bold text-body-sm tracking-tight ${!scheduleDefined ? 'text-danger' : todaySchedule === 'CERRADO' ? 'px-2 py-0.5 bg-surface-card-hover/60 text-content-3 rounded-md text-micro uppercase tracking-widest' : 'text-content'}`}>
-                            {!scheduleDefined ? 'Definir' : todaySchedule}
-                        </span>
+                        {/* Dos de las tres ramas son TEXTO y una es un chip; escribirlo
+                            como un solo `<span>` con el ternario adentro obligaba a
+                            reconstruir la pastilla a mano. Separadas, cada una es lo
+                            que es. */}
+                        {todaySchedule === 'CERRADO' && scheduleDefined
+                            ? <Badge variant="neutral" size="sm">{todaySchedule}</Badge>
+                            : <span className={`font-bold text-body-sm tracking-tight ${!scheduleDefined ? 'text-danger' : 'text-content'}`}>
+                                  {!scheduleDefined ? 'Definir' : todaySchedule}
+                              </span>}
                     </button>
                 </div>
 
@@ -526,7 +532,7 @@ const BranchCard = memo(({
                     </div>
                     <div className="flex items-center gap-3 w-full pr-4">
                         <div className="flex-1 h-1.5 bg-surface-card shadow-[var(--shadow-shine)] rounded-full overflow-hidden border border-border-card">
-                            <div className="h-full bg-gradient-to-r from-brand to-chart-5" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-gradient-to-r from-brand to-chart-9" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="text-body-lg font-black text-content leading-none">{count}</span>
                     </div>
@@ -542,7 +548,7 @@ const BranchCard = memo(({
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={`text-body-lg font-black leading-none ${activeKiosks > 0 ? 'text-chart-3-text' : 'text-content-3'}`}>{activeKiosks} <span className="text-caption font-bold text-content-3">/ 3</span></span>
-                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-success border-success/30 shadow-[var(--shadow-glow-chart-2-md)] animate-pulse' : 'bg-surface-card shadow-inner border-border-card'}`} />
+                                <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-success border-success/30 shadow-[var(--shadow-glow-success-md)] animate-pulse' : 'bg-surface-card shadow-inner border-border-card'}`} />
                             </div>
                         </button>
                     </>

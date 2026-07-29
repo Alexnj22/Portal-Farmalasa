@@ -71,42 +71,33 @@ const SOLID = {
 //
 // ESCRITOS LITERALES A PROPÓSITO, no generados en un bucle. Tailwind escanea
 // strings literales en el código fuente: con `bg-chart-${i}-solid` no ve nada
-// y no emite la clase. Se detectó en vivo — con el bucle, chart-2, chart-5 y
-// chart-7 no existían en el CSS compilado (solo sobrevivían los que ya usaba
+// y no emite la clase. Se detectó en vivo — con el bucle, success, chart-9 y
+// warning no existían en el CSS compilado (solo sobrevivían los que ya usaba
 // otro archivo), así que esas tres variantes se habrían renderizado sin
 // fondo y en silencio.
 Object.assign(SOFT, {
     'chart-1': 'text-chart-1-text bg-chart-1/[0.12] border-chart-1/30',
-    'chart-2': 'text-chart-2-text bg-chart-2/[0.12] border-chart-2/30',
     'chart-3': 'text-chart-3-text bg-chart-3/[0.12] border-chart-3/30',
     'chart-4': 'text-chart-4-text bg-chart-4/[0.12] border-chart-4/30',
-    'chart-5': 'text-chart-5-text bg-chart-5/[0.12] border-chart-5/30',
-    'chart-6': 'text-chart-6-text bg-chart-6/[0.12] border-chart-6/30',
-    'chart-7': 'text-chart-7-text bg-chart-7/[0.12] border-chart-7/30',
-    'chart-8': 'text-chart-8-text bg-chart-8/[0.12] border-chart-8/30',
     'chart-9': 'text-chart-9-text bg-chart-9/[0.12] border-chart-9/30',
+    'chart-6': 'text-chart-6-text bg-chart-6/[0.12] border-chart-6/30',
+    'chart-8': 'text-chart-8-text bg-chart-8/[0.12] border-chart-8/30',
 });
 Object.assign(SOLID, {
     'chart-1': 'text-white bg-chart-1-solid border-transparent',
-    'chart-2': 'text-white bg-chart-2-solid border-transparent',
     'chart-3': 'text-white bg-chart-3-solid border-transparent',
     'chart-4': 'text-white bg-chart-4-solid border-transparent',
-    'chart-5': 'text-white bg-chart-5-solid border-transparent',
-    'chart-6': 'text-white bg-chart-6-solid border-transparent',
-    'chart-7': 'text-white bg-chart-7-solid border-transparent',
-    'chart-8': 'text-white bg-chart-8-solid border-transparent',
     'chart-9': 'text-white bg-chart-9-solid border-transparent',
-});
+    'chart-6': 'text-white bg-chart-6-solid border-transparent',
+    'chart-8': 'text-white bg-chart-8-solid border-transparent'});
 
 const DOT = {
     success: 'bg-success', warning: 'bg-warning', danger: 'bg-danger',
     info: 'bg-brand', neutral: 'bg-content-3',
 };
 Object.assign(DOT, {
-    'chart-1': 'bg-chart-1', 'chart-2': 'bg-chart-2', 'chart-3': 'bg-chart-3',
-    'chart-4': 'bg-chart-4', 'chart-5': 'bg-chart-5', 'chart-6': 'bg-chart-6',
-    'chart-7': 'bg-chart-7', 'chart-8': 'bg-chart-8', 'chart-9': 'bg-chart-9',
-});
+    'chart-1': 'bg-chart-1', 'chart-3': 'bg-chart-3',
+    'chart-4': 'bg-chart-4', 'chart-9': 'bg-chart-9', 'chart-6': 'bg-chart-6', 'chart-8': 'bg-chart-8'});
 
 const SIZE = {
     sm: 'text-micro px-2 py-0.5 gap-1',

@@ -87,7 +87,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                         <>
                             {meta.targetEmployeeName && (
                                 <div className="flex items-center gap-2">
-                                    <ArrowLeftRight size={12} className="text-chart-5-text flex-shrink-0" strokeWidth={2.5} />
+                                    <ArrowLeftRight size={12} className="text-chart-9-text flex-shrink-0" strokeWidth={2.5} />
                                     <span className="text-body-sm font-black text-content-2">Con: {meta.targetEmployeeName}</span>
                                 </div>
                             )}
@@ -103,8 +103,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                                         <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Tu turno</p>
                                         <p className="text-label font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
-                                    <div className="bg-chart-5/10 border border-chart-5/20 rounded-xl p-2">
-                                        <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                    <div className="bg-chart-9/10 border border-chart-9/20 rounded-xl p-2">
+                                        <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-0.5">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                         <p className="text-label font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                     </div>
                                 </div>
@@ -461,7 +461,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     {meta.requestType === 'SHIFT_CHANGE' && (<>
                                         {meta.targetEmployeeName && (
                                             <div className="flex items-center gap-2">
-                                                <ArrowLeftRight size={12} className="text-chart-5-text flex-shrink-0" strokeWidth={2.5}/>
+                                                <ArrowLeftRight size={12} className="text-chart-9-text flex-shrink-0" strokeWidth={2.5}/>
                                                 <span className="text-body-sm font-black text-content-2">Con: {meta.targetEmployeeName}</span>
                                             </div>
                                         )}
@@ -477,8 +477,8 @@ const UnreadStack = memo(({ list, onRead }) => {
                                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-body-sm font-black text-content-2">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
-                                                <div className="bg-chart-5/10 border border-chart-5/20 rounded-xl p-2.5">
-                                                    <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                                                <div className="bg-chart-9/10 border border-chart-9/20 rounded-xl p-2.5">
+                                                    <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                                     <p className="text-body-sm font-black text-content-2">{meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}</p>
                                                 </div>
                                             </div>

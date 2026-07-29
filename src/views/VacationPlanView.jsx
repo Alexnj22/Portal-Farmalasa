@@ -977,9 +977,9 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 text-content-2 font-medium whitespace-nowrap">{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</td>
                                                             <td className="py-3 pr-4 font-black text-content-2">{p.days}</td>
                                                             <td className="py-3 pr-4">
-                                                                <span className={`text-caption font-black px-2 py-0.5 rounded-md border ${remaining >= 0 ? 'text-brand-text bg-brand/5 border-brand/15' : 'text-danger-text bg-danger/10 border-danger/30'}`}>
+                                                                <Badge variant={remaining >= 0 ? 'info' : 'danger'} size="sm">
                                                                     {Math.max(0, remaining)}<span className="font-medium opacity-60">/15</span>
-                                                                </span>
+                                                                </Badge>
                                                             </td>
                                                             <td className="py-3 pr-4 max-w-[160px]">
                                                                 {p.notes

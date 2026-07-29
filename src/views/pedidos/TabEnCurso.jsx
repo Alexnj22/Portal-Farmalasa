@@ -44,8 +44,8 @@ const STAGE_CONFIG = {
     preparando:  { label: 'En preparación',        color: 'chart-1', icon: Activity     },
     pausado:     { label: 'Pausado',               color: 'warning', icon: Pause        },
     preparado:   { label: 'Listo para envío',      color: 'chart-3', icon: CheckCircle2 },
-    transito:    { label: 'En tránsito',           color: 'chart-5', icon: Truck        },
-    contando:    { label: 'Cajas recibidas',       color: 'chart-7', icon: PackageCheck },
+    transito:    { label: 'En tránsito',           color: 'chart-9', icon: Truck        },
+    contando:    { label: 'Cajas recibidas',       color: 'warning', icon: PackageCheck },
     erp:         { label: 'Ingresado al ERP',      color: 'success', icon: Database     },
 };
 
@@ -55,8 +55,7 @@ const COLOR_CLASSES = {
     success: { bg: 'bg-success/10',         text: 'text-success-text', border: 'border-success/30'   },
     'chart-1': { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' },
     'chart-3': { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
-    'chart-5': { bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30' },
-    'chart-7': { bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
+    'chart-9': { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30' },
 };
 
 function fmtMin(min) {

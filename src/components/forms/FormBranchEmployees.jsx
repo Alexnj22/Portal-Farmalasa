@@ -12,7 +12,7 @@ const COLOR_MAP = {
     indigo: "bg-gradient-to-br from-chart-3/10 to-chart-3/20 border-chart-3/40 text-chart-3-text",
     emerald: "bg-gradient-to-br from-success/10 to-success/20 border-success/40 text-success-text",
     rose: "bg-gradient-to-br from-danger/10 to-danger/20 border-danger/40 text-danger-text",
-    cyan: "bg-gradient-to-br from-chart-5/10 to-chart-5/20 border-chart-5/40 text-chart-5-text",
+    cyan: "bg-gradient-to-br from-chart-9/10 to-chart-9/20 border-chart-9/40 text-chart-9-text",
     amber: "bg-gradient-to-br from-warning/10 to-warning/20 border-warning/40 text-warning-text",
     slate: "bg-gradient-to-br from-chart-8/10 to-chart-8/20 border-chart-8/40 text-chart-8-text",
     violet: "bg-gradient-to-br from-chart-3/10 to-chart-3/20 border-chart-3/40 text-chart-3-text",

@@ -37,29 +37,29 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
         <div data-surface="card" className={`p-5 rounded-header border backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
             ${isError
                 ? 'border-danger/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glow-danger-lg)]'
-                : 'border-chart-5/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
+                : 'border-chart-9/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
 
             <div className="absolute inset-0 rounded-header overflow-hidden pointer-events-none">
-                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-danger' : 'bg-chart-5'}`} />
+                <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[60px] opacity-15 group-hover:opacity-30 transition-opacity duration-1000 ${isError ? 'bg-danger' : 'bg-chart-9'}`} />
             </div>
 
             <div className="flex items-center justify-between relative z-base pr-8">
                 <Badge variant={isError ? 'danger' : 'chart-9'} icon={Bot}>{isError ? 'SALY REQUIERE DATOS' : 'SALY SUGIERE'}</Badge>
                 {isError
                     ? <AlertTriangle size={16} className="text-danger-text animate-pulse" />
-                    : <Sparkles size={16} className="text-chart-5 animate-pulse" />}
+                    : <Sparkles size={16} className="text-chart-9 animate-pulse" />}
             </div>
 
             <Button variant="secondary" icon={X} title="Ignorar aviso" iconOnly onClick={onDismiss} />
 
             <div className="relative z-base flex-1">
                 <h4 className="font-black text-white text-body-xl leading-tight tracking-tight mb-2">{insight.branch}</h4>
-                <p className={`text-body-sm font-medium leading-relaxed ${isError ? 'text-danger/80' : 'text-chart-5/70'}`}>{insight.text}</p>
+                <p className={`text-body-sm font-medium leading-relaxed ${isError ? 'text-danger/80' : 'text-chart-9/70'}`}>{insight.text}</p>
             </div>
 
             {insight.action && (
                 <div className="mt-auto pt-4 relative z-base">
-                    <Button tone="chart-5" icon={Zap} onClick={() => onApply(insight.action)}>Crear este turno</Button>
+                    <Button tone="chart-9" icon={Zap} onClick={() => onApply(insight.action)}>Crear este turno</Button>
                 </div>
             )}
         </div>
@@ -465,14 +465,14 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
 
                         {currentForm.start && currentForm.end && (
                             <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div data-surface="card" className="rounded-2xl p-4 border border-chart-5/30 shadow-[var(--shadow-glass-3)] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-chart-5 rounded-full blur-[50px] opacity-20 pointer-events-none" />
+                                <div data-surface="card" className="rounded-2xl p-4 border border-chart-9/30 shadow-[var(--shadow-glass-3)] relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-chart-9 rounded-full blur-[50px] opacity-20 pointer-events-none" />
                                     <div className="flex items-center justify-between border-b border-border-card pb-3 mb-3 relative z-base">
-                                        <div className="flex items-center gap-1.5 text-caption font-black text-chart-5 uppercase tracking-widest">
+                                        <div className="flex items-center gap-1.5 text-caption font-black text-chart-9 uppercase tracking-widest">
                                             <Bot size={13} /> SALY AI AUDITOR
                                         </div>
-                                        <div className="flex items-center gap-1 text-chart-5/70 font-bold text-body-sm uppercase tracking-tight">
-                                            <Sparkles size={13} className="text-chart-5" /> {autoName}
+                                        <div className="flex items-center gap-1 text-chart-9/70 font-bold text-body-sm uppercase tracking-tight">
+                                            <Sparkles size={13} className="text-chart-9" /> {autoName}
                                         </div>
                                     </div>
                                     <div className="relative z-base">

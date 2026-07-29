@@ -182,7 +182,7 @@ const REQUEST_TYPE_LABELS = {
 // EmployeeProfileView (mismo enum de tipo de ausencia en toda la app).
 // El `bg`/`border` se queda porque pinta también el cuadro del ícono, que es
 // una SUPERFICIE y no un chip. `variante` es para el chip. PERMIT pasa de
-// chart-2 a success — mismo verde desde v2.139.0.
+// success a success — mismo verde desde v2.139.0.
 const ABSENCE_COLORS = {
   VACATION:   { bg: 'bg-warning/10', text: 'text-warning-text', border: 'border-warning/30', variante: 'warning' },
   DISABILITY: { bg: 'bg-danger/10',  text: 'text-danger-text',  border: 'border-danger/30',  variante: 'danger'  },
@@ -193,7 +193,7 @@ const ABSENCE_COLORS = {
 // sí necesita leerse como "requiere seguimiento" → warning).
 // `variante` reemplaza al trío bg/text/border, que era la paleta SOFT de
 // `Badge` a mano. `dot` se queda: se usa aparte para el punto de estado.
-// WORKING pasa de chart-2 a success — es el mismo verde desde v2.139.0.
+// WORKING pasa de success a success — es el mismo verde desde v2.139.0.
 const STATUS_CONFIG = {
   WORKING:   { label: 'En labores',    dot: 'bg-success',   variante: 'success' },
   LUNCH:     { label: 'Almuerzo',      dot: 'bg-chart-4',   variante: 'chart-4' },
@@ -1355,7 +1355,7 @@ const DashboardView = ({ openModal }) => {
                         {salesView==='DAYS'&&<p className="text-micro text-brand-text font-black uppercase tracking-widest mt-1 bg-chart-1/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
                       <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-base ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
-                      <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-5-text transition-[opacity,color] whitespace-nowrap z-base">{item.label}</span>
+                      <span className="text-micro font-bold text-content-3 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-chart-9-text transition-[opacity,color] whitespace-nowrap z-base">{item.label}</span>
                     </div>
                   ));
                 })()}

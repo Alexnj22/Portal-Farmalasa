@@ -142,7 +142,7 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
 
    El patrón estaba copiado a mano en 7 archivos (17 instancias) con tamaños,
    colores y duraciones distintas en cada uno. Los anillos usan --chart-3 y
-   --chart-5, no los morados crudos que traía cada copia.
+   --chart-9, no los morados crudos que traía cada copia.
 
    `steps` rota mensajes: en una espera larga, un texto fijo se lee como
    colgado. */

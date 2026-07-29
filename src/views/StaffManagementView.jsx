@@ -78,11 +78,11 @@ const getStatusInfo = (rawStatus) => {
   const status = String(rawStatus || '').toUpperCase().trim();
 
   if (status === 'ACTIVO') return { text: 'Activo', icon: CheckCircle2, className: 'text-success bg-success/10 border-success/30', variante: 'success' };
-  if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-chart-5-text bg-chart-5/10 border-chart-5/30', variante: 'chart-5' };
+  if (status.includes('APOYO')) return { text: 'En Apoyo', icon: Briefcase, className: 'text-chart-9-text bg-chart-9/10 border-chart-9/30', variante: 'chart-9' };
   if (status.includes('VACACION')) return { text: 'Vacaciones', icon: Palmtree, className: 'text-warning bg-warning/10 border-warning/30', variante: 'warning' };
   if (status.includes('INCAPACITAD') || status.includes('INCAPACIDAD')) return { text: 'Incapacitado', icon: Stethoscope, className: 'text-danger-text bg-danger/10 border-danger/30', variante: 'danger' };
   if (status.includes('MATERNIDAD')) return { text: 'Maternidad', icon: Baby, className: 'text-chart-6-text bg-chart-6/10 border-chart-6/30', variante: 'chart-6' };
-  if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-chart-2-text bg-chart-2/10 border-chart-2/30', variante: 'chart-2' };
+  if (status.includes('PERMISO')) return { text: 'Permiso', icon: Clock, className: 'text-success-text bg-success/10 border-success/30', variante: 'success' };
   if (status.includes('LIQUIDADO')) return { text: 'Liquidado', icon: UserX, className: 'text-danger bg-danger/10 border-danger/30', variante: 'danger' };
   if (status === 'INACTIVO') return { text: 'Inactivo', icon: UserMinus, className: 'text-content-3 bg-surface-card-hover/80 border-divider', variante: 'neutral' };
 
@@ -474,7 +474,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 const STAT_CARD_COLORS = {
   blue:    { activeBg: 'bg-chart-1/10 border-chart-1/40 shadow-md shadow-chart-1/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-1/30 hover:bg-chart-1/10',       iconBg: 'bg-chart-1/10',    iconColor: 'text-chart-1-text',  textColor: 'text-content-2'   },
   emerald: { activeBg: 'bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px', inactiveBg: 'bg-surface-card border-border-card hover:border-success/30 hover:bg-success/10', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
-  cyan:    { activeBg: 'bg-chart-5/10 border-chart-5/40 shadow-md shadow-chart-5/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-5/30 hover:bg-chart-5/10',       iconBg: 'bg-chart-5/10',    iconColor: 'text-chart-5-text',   textColor: 'text-chart-5-text'    },
+  cyan:    { activeBg: 'bg-chart-9/10 border-chart-9/40 shadow-md shadow-chart-9/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-9/30 hover:bg-chart-9/10',       iconBg: 'bg-chart-9/10',    iconColor: 'text-chart-9-text',   textColor: 'text-chart-9-text'    },
   amber:   { activeBg: 'bg-warning/10 border-warning/40 shadow-md shadow-warning/20 -translate-y-px',     inactiveBg: 'bg-surface-card border-border-card hover:border-warning/30 hover:bg-warning/10',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
   violet:  { activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-md shadow-chart-3/20 -translate-y-px',   inactiveBg: 'bg-surface-card border-border-card hover:border-chart-3/30 hover:bg-chart-3/10',   iconBg: 'bg-chart-3/10',  iconColor: 'text-chart-3-text', textColor: 'text-chart-3-text'  },
 };

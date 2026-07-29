@@ -45,9 +45,9 @@ const DOC_CFG = {
     },
     SHIFT_CHANGE: {
         label: 'Cambio Turno', Icon: RefreshCw,
-        bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30',
-        iconBg: 'bg-chart-5/10', accent: 'bg-chart-5',
-        glow: 'hover:shadow-[var(--shadow-glow-chart-5-lg)]',
+        bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30',
+        iconBg: 'bg-chart-9/10', accent: 'bg-chart-9',
+        glow: 'hover:shadow-[var(--shadow-glow-chart-9-lg)]',
     },
 };
 const DEFAULT_CFG = {

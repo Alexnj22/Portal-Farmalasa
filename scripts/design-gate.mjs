@@ -305,12 +305,21 @@ const COLOR_PREFIXES = [
 ];
 // Un color que no existe en el tema: `chart-N` con N fuera de 1..9…
 const RE_CHART_FUERA = /\bchart-(?:[1-9]\d+|0)\b/g;
-// …y los CUATRO retirados el 2026-07-28. Siguen definidos como alias para que
-// las 343 referencias existentes no se rompan, pero un uso NUEVO es volver a
-// abrir la paleta. El mensaje dice a cuál apunta cada uno.
+// …y los TRES retirados el 2026-07-28, ya migrados: quedan como alias para que
+// nada se rompa, pero un uso NUEVO es volver a abrir la paleta.
+//
+// `chart-8` estaba en esta lista y NO correspondía. Al ir a migrar sus 107
+// referencias quedó a la vista que no es un categórico retirado sino **el
+// neutro de la paleta**, y que está vivo:
+//   · `--chart-8-solid` tiene VALOR PROPIO (#64748b), no es alias de nadie
+//   · el `neutral` de `Badge` —soft y solid— se apoya en él
+//   · tiene familia completa de glows (`--shadow-glow-chart-8*`)
+// Marcarlo como retirado obligaba a mapearlo a `content-3`, que es un color de
+// TEXTO: usarlo de fondo habría sido cambiar el significado para callar al
+// gate. Sale de la lista y se documenta como lo que es (DESIGN.md §6.0).
 const CHART_RETIRADOS = { 'chart-2': 'success', 'chart-5': 'chart-9',
-                          'chart-7': 'warning', 'chart-8': 'neutral' };
-const RE_CHART_RETIRADO = /\bchart-[2578]\b/g;
+                          'chart-7': 'warning' };
+const RE_CHART_RETIRADO = /\bchart-[257]\b/g;
 
 const GRAY_RE = new RegExp(
   `\\b(${COLOR_PREFIXES.join('|')})-(${GRAY_PALETTES.join('|')})-\\d{2,3}\\b`,

@@ -507,7 +507,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             )}
             {ts?.is_absent && ts?.absence_type === 'VACATION'   && <Badge variant="success" size="sm" icon={Palmtree}>Vacación</Badge>}
             {ts?.is_absent && ts?.absence_type === 'DISABILITY' && <Badge variant="danger" size="sm">Incapacidad</Badge>}
-            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <Badge variant="chart-2" size="sm">Permiso</Badge>}
+            {ts?.is_absent && ts?.absence_type === 'PERMIT'     && <Badge variant="success" size="sm">Permiso</Badge>}
             {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <Badge size="sm">Ausente</Badge>}
           </div>
           {!isOff && shift && (

@@ -357,7 +357,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             <Badge variant="danger" uppercase={false}>✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}</Badge>
                         )}
                         {cajasExtra > 0 && (
-                            <Badge variant="chart-7" uppercase={false}>+ {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}</Badge>
+                            <Badge variant="warning" uppercase={false}>+ {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}</Badge>
                         )}
                     </div>
                 )}

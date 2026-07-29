@@ -383,7 +383,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
                             <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:4s]"></div>
                             <div className="absolute top-[50%] -right-[10%] w-[70%] h-[70%] bg-chart-3/20 blur-[80px] rounded-full animate-pulse [animation-duration:5s] delay-300"></div>
-                            <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-5/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
+                            <div className="absolute -bottom-[20%] left-[20%] w-[50%] h-[50%] bg-chart-9/20 blur-[80px] rounded-full animate-pulse [animation-duration:6s] delay-700"></div>
                         </div>
 
                         <div className="relative z-base flex flex-col items-center justify-center text-center">

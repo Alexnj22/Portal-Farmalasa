@@ -32,7 +32,7 @@ const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 // agrega acá y ya, sin volver a escribir tres clases de Tailwind.
 const SUC_VARIANTE = {
     1: 'chart-1', 2: 'chart-3', 3: 'success',
-    4: 'warning', 5: 'danger',  7: 'chart-5', 6: 'neutral',
+    4: 'warning', 5: 'danger',  7: 'chart-9', 6: 'neutral',
 };
 
 

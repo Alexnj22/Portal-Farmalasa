@@ -269,7 +269,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
     {
       key: 'pay_change', icon: CreditCard, label: 'Cambio de Forma de Pago',
       desc: `Actual: ${PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || 'N/A'}`,
-      color: 'text-chart-7-text',    bg: 'bg-chart-7/10 border-chart-7/20',     iconBg: 'bg-chart-7/10',
+      color: 'text-warning-text',    bg: 'bg-warning/10 border-warning/20',     iconBg: 'bg-warning/10',
     },
     {
       key: 'vendor_change', icon: UserCog, label: 'Cambio de Vendedor',

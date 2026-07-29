@@ -28,7 +28,7 @@ import {
 const MODULE_GROUPS = [
     {
         group: 'Autogestión',
-        color: 'text-chart-2-text',
+        color: 'text-success-text',
         modules: [
             { key: 'emp_requests',      label: 'Mis Solicitudes',     desc: 'Crear y seguir solicitudes propias (permiso, vacación, etc.)', icon: ClipboardList, hasApprove: false },
             { key: 'emp_announcements', label: 'Mis Avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
@@ -214,8 +214,8 @@ const ROLE_META = {
     SUBJEFE: {
         label: 'Sub-Jefe', locked: false,
         desc: 'Apoyo en aprobaciones y gestión operativa.',
-        color: 'from-chart-5 to-chart-1', textColor: 'text-chart-5-text',
-        bg: 'bg-chart-5/10', border: 'border-chart-5/30',
+        color: 'from-chart-9 to-chart-1', textColor: 'text-chart-9-text',
+        bg: 'bg-chart-9/10', border: 'border-chart-9/30',
     },
     SUPERVISOR: {
         label: 'Supervisor', locked: false,
@@ -241,7 +241,7 @@ const ROLE_COLORS = [
     { color: 'from-success to-chart-9', textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
     { color: 'from-chart-6 to-chart-3', textColor: 'text-chart-6-text',   bg: 'bg-chart-6/10',   border: 'border-chart-6/30'   },
     { color: 'from-warning to-chart-4', textColor: 'text-chart-4-text', bg: 'bg-chart-4/10', border: 'border-chart-4/30' },
-    { color: 'from-chart-5 to-chart-1', textColor: 'text-chart-5-text',   bg: 'bg-chart-5/10',   border: 'border-chart-5/30'   },
+    { color: 'from-chart-9 to-chart-1', textColor: 'text-chart-9-text',   bg: 'bg-chart-9/10',   border: 'border-chart-9/30'   },
     { color: 'from-chart-8 to-chart-8-text',   textColor: 'text-content-2',  bg: 'bg-surface-card-hover',  border: 'border-border-card'  },
 ];
 
@@ -859,7 +859,7 @@ const PermissionsView = () => {
                                 return (
                                 <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
                                     isRoleSU
-                                        ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-chart-7/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]'
+                                        ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]'
                                         : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-glass-1)]'
                                 }`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
@@ -915,12 +915,12 @@ const PermissionsView = () => {
                             {(() => {
                                 const currentLevel = rolePriceLevels[selectedRoleId] ?? null;
                                 const PRICE_OPTS = [
-                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock,     grad: 'from-chart-2 to-chart-9'  },
+                                    { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock,     grad: 'from-success to-chart-9'  },
                                     { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-chart-1 to-chart-3'   },
                                     { value: 'descuento_1', label: 'Desc. 1',     sub: 'descuento 1',       icon: DollarSign, grad: 'from-chart-3 to-chart-6' },
                                     { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-warning to-chart-4'  },
                                     { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-danger to-chart-6'     },
-                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-chart-5 to-chart-1'      },
+                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-chart-9 to-chart-1'      },
                                     { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-chart-8 to-chart-8-text'   },
                                     { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-chart-4 to-danger'    },
                                 ];

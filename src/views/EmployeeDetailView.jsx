@@ -614,7 +614,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     VACATION_RECALL:                'warning',
                                                     DISABILITY:                     'danger',
                                                     VACATION:                       'success',
-                                                    PERMIT:                         'chart-2',
+                                                    PERMIT:                         'success',
                                                     SUPPORT:                        'chart-4',
                                                     INDUCTION:                      'chart-9',
                                                 };

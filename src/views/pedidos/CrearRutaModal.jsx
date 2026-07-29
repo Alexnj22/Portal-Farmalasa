@@ -658,7 +658,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                   <Badge variant="chart-3" uppercase={false}>📦 {cajas} caja{cajas !== 1 ? 's' : ''}</Badge>
                                   {electrolit > 0 && (
-                                    <Badge variant="chart-5" uppercase={false}>💧 {electrolit} Electrolit</Badge>
+                                    <Badge variant="chart-9" uppercase={false}>💧 {electrolit} Electrolit</Badge>
                                   )}
                                   {especiales > 0 && (
                                     <Badge variant="warning" uppercase={false}>⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}</Badge>

@@ -30,7 +30,7 @@ const getServiceStatus = (dueDay, paidThrough, isReceiptPending) => {
     const ptMonth = parseInt(ptMonthStr, 10);
 
     if (ptYear > currentYear || (ptYear === currentYear && ptMonth >= currentMonth)) {
-        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-chart-2-md)] ring-1 ring-success/30' };
+        return { state: 'paid', label: 'Al Día', colorClass: 'border-success bg-success/10 text-success-text shadow-[var(--shadow-glow-success-md)] ring-1 ring-success/30' };
     }
 
     if (ptYear === currentYear && ptMonth === currentMonth - 1) {
@@ -55,7 +55,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
     const colorMap = {
         blue: 'text-brand-text bg-chart-1/10 border-chart-1/30',
         orange: 'text-chart-4-text bg-chart-4/10 border-chart-4/30',
-        cyan: 'text-chart-5-text bg-chart-5/10 border-chart-5/20',
+        cyan: 'text-chart-9-text bg-chart-9/10 border-chart-9/20',
         purple: 'text-chart-3-text bg-chart-3/10 border-chart-3/20',
         emerald: 'text-success bg-success/10 border-success/30',
         slate: 'text-content-3 bg-surface-card-hover border-border-card'

@@ -13,17 +13,28 @@ import { fetchUserTheme, upsertUserTheme } from '../data/dashboard';
 export function useThemeSync() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [ready, setReady] = useState(false);
+  // `ready` se DERIVA de para qué usuario ya se cargó el tema, en vez de ser
+  // un estado que el effect apaga y prende. El `setReady(false)` síncrono que
+  // había acá es lo que marcaba `react-hooks/set-state-in-effect`: un setState
+  // en el cuerpo del effect fuerza un render extra en cadena.
+  //
+  // De paso cierra una carrera que existía de verdad: si el usuario cambiaba
+  // con un fetch en vuelo, la respuesta vieja llegaba después y aplicaba el
+  // tema del usuario anterior. `cancelado` la descarta.
+  const [cargadoPara, setCargadoPara] = useState(null);
+  const ready = !!user?.id && cargadoPara === user.id;
   const saveTimerRef = useRef(null);
 
   useEffect(() => {
-    if (!user?.id) { setReady(false); return; }
-    setReady(false);
+    if (!user?.id) return;
+    let cancelado = false;
     fetchUserTheme(user.id).then(({ data, error }) => {
+      if (cancelado) return;
       if (error) console.error('[theme sync] load', error);
       if (data?.theme) setTheme(data.theme);
-      setReady(true);
+      setCargadoPara(user.id);
     });
+    return () => { cancelado = true; };
   }, [user?.id, setTheme]);
 
   useEffect(() => {

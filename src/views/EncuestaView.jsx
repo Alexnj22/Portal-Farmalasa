@@ -46,8 +46,8 @@ const OPT_COLORS = {
 // del archivo) pero los valores ya no inventan un color Tailwind por vista.
 const PCT_COLORS = {
     blue:    { bar: 'bg-chart-1',    text: 'text-chart-1-text',    bg: 'bg-chart-1/10',    border: 'border-chart-1/30',    variante: 'chart-1' },
-    emerald: { bar: 'bg-chart-2', text: 'text-chart-2-text', bg: 'bg-chart-2/10', border: 'border-chart-2/30', variante: 'chart-2' },
-    amber:   { bar: 'bg-chart-7',   text: 'text-chart-7-text',   bg: 'bg-chart-7/10',   border: 'border-chart-7/30',   variante: 'chart-7' },
+    emerald: { bar: 'bg-success', text: 'text-success-text', bg: 'bg-success/10', border: 'border-success/30', variante: 'success' },
+    amber:   { bar: 'bg-warning',   text: 'text-warning-text',   bg: 'bg-warning/10',   border: 'border-warning/30',   variante: 'warning' },
     indigo:  { bar: 'bg-chart-3',  text: 'text-chart-3-text',  bg: 'bg-chart-3/10',  border: 'border-chart-3/30',  variante: 'chart-3' },
     purple:  { bar: 'bg-chart-3',  text: 'text-chart-3-text',  bg: 'bg-chart-3/10',  border: 'border-chart-3/30',  variante: 'chart-3' },
     teal:    { bar: 'bg-chart-9',    text: 'text-chart-9-text',    bg: 'bg-chart-9/10',    border: 'border-chart-9/30',    variante: 'chart-9' },
@@ -698,7 +698,7 @@ export default function EncuestaView() {
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                                         <circle cx="50" cy="50" r="42" fill="none" stroke="var(--divider)" strokeWidth="10" />
                                         <circle cx="50" cy="50" r="42" fill="none"
-                                            stroke={globalScore >= 70 ? 'var(--chart-2)' : globalScore >= 55 ? 'var(--warning)' : 'var(--danger)'}
+                                            stroke={globalScore >= 70 ? 'var(--success)' : globalScore >= 55 ? 'var(--warning)' : 'var(--danger)'}
                                             strokeWidth="10"
                                             strokeDasharray={`${(globalScore / 100) * 263.9} 263.9`}
                                             strokeLinecap="round" />

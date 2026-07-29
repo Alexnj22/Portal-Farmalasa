@@ -32,11 +32,10 @@ const TONE_ICON = {
     success:   'text-success-text',
     warning:   'text-warning-text',
     danger:    'text-danger-text',
-    'chart-1': 'text-chart-1-text', 'chart-2': 'text-chart-2-text',
+    'chart-1': 'text-chart-1-text',
     'chart-3': 'text-chart-3-text', 'chart-4': 'text-chart-4-text',
-    'chart-5': 'text-chart-5-text', 'chart-6': 'text-chart-6-text',
-    'chart-7': 'text-chart-7-text', 'chart-8': 'text-chart-8-text',
-    'chart-9': 'text-chart-9-text',
+    'chart-9': 'text-chart-9-text', 'chart-6': 'text-chart-6-text',
+    'chart-8': 'text-chart-8-text',
 };
 
 const BASE = `h-11 px-4 md:px-[18px] rounded-full shrink-0 whitespace-nowrap

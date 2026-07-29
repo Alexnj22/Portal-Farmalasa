@@ -230,7 +230,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
     if (isHoursOver || daysOffCount === 0) {
         barColor = 'bg-danger shadow-[var(--shadow-glow-danger-md)]'; // Infracción Grave
     } else if (isHoursUnder || daysOffCount > 1) {
-        barColor = 'bg-warning shadow-[var(--shadow-glow-chart-7-md)]'; // Falta rellenar
+        barColor = 'bg-warning shadow-[var(--shadow-glow-warning-md)]'; // Falta rellenar
     }
 
     const shortName = shortEmployeeName(emp);

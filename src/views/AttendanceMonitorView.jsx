@@ -384,7 +384,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "BUSINESS_OUT":
         return (
-          <Badge variant="chart-7" icon={MapPin}>Gestión Externa</Badge>
+          <Badge variant="warning" icon={MapPin}>Gestión Externa</Badge>
         );
       case "OFF_DAY":
         return (

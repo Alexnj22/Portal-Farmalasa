@@ -40,10 +40,10 @@ const ACTIVO = {
     warning: 'bg-warning-solid text-white',
     danger:  'bg-danger-solid text-white',
     neutro:  'bg-surface-tab-active text-content',
-    'chart-1': 'bg-chart-1 text-white', 'chart-2': 'bg-chart-2 text-white',
+    'chart-1': 'bg-chart-1 text-white',
     'chart-3': 'bg-chart-3-solid text-white', 'chart-4': 'bg-chart-4 text-white',
-    'chart-5': 'bg-chart-5 text-white', 'chart-6': 'bg-chart-6 text-white',
-    'chart-7': 'bg-chart-7 text-white', 'chart-8': 'bg-chart-8-solid text-white',
+    'chart-6': 'bg-chart-6 text-white',
+    'chart-8': 'bg-chart-8-solid text-white',
     'chart-9': 'bg-chart-9-solid text-white',
 };
 

@@ -33,7 +33,7 @@ export const STAT_CFGS = [
     { key: 'ok',           label: 'OK',              dot: 'bg-stock-ok', active: 'bg-stock-ok/20 backdrop-blur-sm border-stock-ok/40 text-success-text shadow-[var(--shadow-glow-success-md)]', chipActive: 'bg-stock-ok/10 text-success-text'},
     { key: 'overstocked',  label: 'Excesos',         dot: 'bg-stock-overstocked',    active: 'bg-stock-overstocked/20 backdrop-blur-sm border-stock-overstocked/40 text-chart-1-text shadow-[var(--shadow-glow-chart-1-md)]',         chipActive: 'bg-stock-overstocked/10 text-chart-1-text'     },
     { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-stock-dead',   active: 'bg-surface-card-hover backdrop-blur-sm border-border-card text-content-2 shadow-[var(--shadow-elevation-sm)]',     chipActive: 'bg-surface-card-hover text-content-2'  },
-    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-stock-no-data',   active: 'bg-stock-no-data/20 backdrop-blur-sm border-stock-no-data/40 text-chart-7-text shadow-[var(--shadow-glow-chart-7-md)]',    chipActive: 'bg-stock-no-data/10 text-chart-7-text' },
+    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-stock-no-data',   active: 'bg-stock-no-data/20 backdrop-blur-sm border-stock-no-data/40 text-warning-text shadow-[var(--shadow-glow-warning-md)]',    chipActive: 'bg-stock-no-data/10 text-warning-text' },
 ];
 // Solo estos chips se muestran en el filtro bar
 export const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];

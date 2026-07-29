@@ -342,7 +342,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
     // Accent colours based on branch type
     const accent = isBodegaBranch
         ? { bar: 'from-warning to-warning/70', variante: 'warning', dot: 'bg-warning' }
-        : { bar: 'from-chart-9 to-chart-5',   badge: 'bg-chart-9/10 text-chart-9-text',   dot: 'bg-chart-9'  };
+        : { bar: 'from-chart-9 to-chart-9',   badge: 'bg-chart-9/10 text-chart-9-text',   dot: 'bg-chart-9'  };
 
     return (
         <motion.div

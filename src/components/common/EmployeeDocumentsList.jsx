@@ -35,7 +35,7 @@ const DocumentRow = ({ doc }) => {
             </div>
             <div className="flex items-center gap-2 shrink-0">
                 {badge && (
-                    <span className={`text-micro font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badge.className}`}>{badge.label}</span>
+                    <Badge variant={badge.variant} size="sm">{badge.label}</Badge>
                 )}
                 {hasFile ? (
                     <Button size="sm" icon={Eye} title="Ver documento" iconOnly onClick={() => openStoredFile(doc.url)} />

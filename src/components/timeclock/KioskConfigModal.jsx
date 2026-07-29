@@ -54,7 +54,7 @@ const KioskConfigModal = ({
              ESTADO: KIOSCO VINCULADO (ACTIVO)
              ========================================= */
           <div className="flex flex-col items-center w-full group/icon">
-            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[var(--shadow-glow-chart-2-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-2-lg)]">
+            <div className="inline-flex p-4 rounded-3xl mb-4 sm:mb-5 transition-all duration-300 border backdrop-blur-md bg-success/10 border-success/40 shadow-[var(--shadow-glow-success-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-success-lg)]">
               <MonitorCheck size={42} className="text-success drop-shadow-[var(--shadow-glow-success)] sm:w-12 sm:h-12" strokeWidth={1.5} />
             </div>
 

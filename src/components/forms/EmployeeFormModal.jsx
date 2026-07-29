@@ -794,7 +794,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <div className="mt-2">
                         <label className="text-micro font-bold text-content-2 uppercase tracking-wide mb-1 flex items-center justify-between">
                             <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
-                            {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
+                            {expiryBadge && <Badge variant={expiryBadge.variant} size="sm" uppercase={false} className="ml-1 shrink-0">{expiryBadge.label}</Badge>}
                         </label>
                         <div className="bg-surface-card rounded-xl border border-divider h-[36px] flex items-center px-1.5">
                             <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(category, { expiry_date: date })} placeholder="Sin vencimiento" />
@@ -1594,7 +1594,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-chart-5/10 text-chart-5-text rounded-xl border border-chart-5/20 shadow-[var(--shadow-shine)]">
+                                <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-shine)]">
                                     <Users size={16} strokeWidth={2.5} />
                                 </div>
                                 <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Personas que Dependen Económicamente</h4>

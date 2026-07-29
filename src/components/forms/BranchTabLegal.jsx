@@ -194,7 +194,7 @@ const BranchTabLegal = ({
                                             return (
                                                 <Button
                                                     size="sm"
-                                                    tone="chart-5"
+                                                    tone="chart-9"
                                                     key={emp.id}
                                                     type="button"
                                                     onClick={() => toggleNurse(emp.id)}

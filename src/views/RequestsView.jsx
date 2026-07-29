@@ -57,14 +57,14 @@ const TYPE_ICONS = {
 // color categórico arbitrario.
 const TYPE_COLORS = {
     VACATION:     { circle: 'bg-chart-1',  ring: 'ring-chart-1/30', section: 'text-chart-1-text', border: 'border-chart-1/30', hover: 'hover:shadow-[var(--shadow-glow-chart-1)]',  sectionIcon: 'text-chart-1-text bg-chart-1/10 border-chart-1/30'  },
-    PERMIT:       { circle: 'bg-chart-2',  ring: 'ring-chart-2/30', section: 'text-chart-2-text', border: 'border-chart-2/30', hover: 'hover:shadow-[var(--shadow-glow-success)]',  sectionIcon: 'text-chart-2-text bg-chart-2/10 border-chart-2/30'  },
+    PERMIT:       { circle: 'bg-success',  ring: 'ring-success/30', section: 'text-success-text', border: 'border-success/30', hover: 'hover:shadow-[var(--shadow-glow-success)]',  sectionIcon: 'text-success-text bg-success/10 border-success/30'  },
     SHIFT_CHANGE: { circle: 'bg-chart-3',  ring: 'ring-chart-3/30', section: 'text-chart-3-text', border: 'border-chart-3/30', hover: 'hover:shadow-[var(--shadow-glow-chart-3)]',  sectionIcon: 'text-chart-3-text bg-chart-3/10 border-chart-3/30'  },
     OVERTIME:     { circle: 'bg-chart-4',  ring: 'ring-chart-4/30', section: 'text-chart-4-text', border: 'border-chart-4/30', hover: 'hover:shadow-[var(--shadow-glow-chart-4)]',  sectionIcon: 'text-chart-4-text bg-chart-4/10 border-chart-4/30'  },
-    ADVANCE:      { circle: 'bg-chart-5',  ring: 'ring-chart-5/30', section: 'text-chart-5-text', border: 'border-chart-5/30', hover: 'hover:shadow-[var(--shadow-glow-chart-5-lg)]',   sectionIcon: 'text-chart-5-text bg-chart-5/10 border-chart-5/30'  },
+    ADVANCE:      { circle: 'bg-chart-9',  ring: 'ring-chart-9/30', section: 'text-chart-9-text', border: 'border-chart-9/30', hover: 'hover:shadow-[var(--shadow-glow-chart-9-lg)]',   sectionIcon: 'text-chart-9-text bg-chart-9/10 border-chart-9/30'  },
     CERTIFICATE:  { circle: 'bg-chart-6',  ring: 'ring-chart-6/30', section: 'text-chart-6-text', border: 'border-chart-6/30', hover: 'hover:shadow-[var(--shadow-glow-chart-6-lg)]',  sectionIcon: 'text-chart-6-text bg-chart-6/10 border-chart-6/30'  },
     DISABILITY:             { circle: 'bg-danger',  ring: 'ring-danger/30',  section: 'text-danger-text',  border: 'border-danger/30',  hover: 'hover:shadow-[var(--shadow-glow-danger)]',   sectionIcon: 'text-danger-text bg-danger/10 border-danger/30'   },
     ANNULMENT_REQUEST:      { circle: 'bg-warning', ring: 'ring-warning/30', section: 'text-warning-text', border: 'border-warning/30', hover: 'hover:shadow-[var(--shadow-glow-warning-lg)]',   sectionIcon: 'text-warning-text bg-warning/10 border-warning/30' },
-    PAYMENT_CHANGE_REQUEST: { circle: 'bg-chart-7',  ring: 'ring-chart-7/30', section: 'text-chart-7-text', border: 'border-chart-7/30', hover: 'hover:shadow-[var(--shadow-glow-chart-7)]',   sectionIcon: 'text-chart-7-text bg-chart-7/10 border-chart-7/30'  },
+    PAYMENT_CHANGE_REQUEST: { circle: 'bg-warning',  ring: 'ring-warning/30', section: 'text-warning-text', border: 'border-warning/30', hover: 'hover:shadow-[var(--shadow-glow-warning)]',   sectionIcon: 'text-warning-text bg-warning/10 border-warning/30'  },
     VENDOR_CHANGE_REQUEST:  { circle: 'bg-chart-8',  ring: 'ring-chart-8/30', section: 'text-chart-8-text', border: 'border-chart-8/30', hover: 'hover:shadow-[var(--shadow-glow-chart-8)]', sectionIcon: 'text-chart-8-text bg-chart-8/10 border-chart-8/30'  },
     CLIENT_CHANGE_REQUEST:  { circle: 'bg-chart-9',  ring: 'ring-chart-9/30', section: 'text-chart-9-text', border: 'border-chart-9/30', hover: 'hover:shadow-[var(--shadow-glow-chart-9-lg)]',  sectionIcon: 'text-chart-9-text bg-chart-9/10 border-chart-9/30'  },
 };
@@ -239,11 +239,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* PERMIT */}
                     {req.type === 'PERMIT' && (meta.permissionDates || []).length > 0 && (
-                        <div className="px-3 py-2.5 rounded-2xl bg-chart-2/10 border border-chart-2/30">
-                            <p className="text-caption font-black uppercase tracking-widest text-chart-2-text mb-2">Días de Permiso</p>
+                        <div className="px-3 py-2.5 rounded-2xl bg-success/10 border border-success/30">
+                            <p className="text-caption font-black uppercase tracking-widest text-success-text mb-2">Días de Permiso</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {meta.permissionDates.map(d => (
-                                    <Badge key={d} variant="chart-2" uppercase={false}>{new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</Badge>
+                                    <Badge key={d} variant="success" uppercase={false}>{new Date(d+'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</Badge>
                                 ))}
                             </div>
                         </div>
@@ -251,11 +251,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 
                     {/* ADVANCE */}
                     {req.type === 'ADVANCE' && meta.amount && (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-5/10 border border-chart-5/30">
-                            <Banknote size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-chart-9/10 border border-chart-9/30">
+                            <Banknote size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
                             <div>
-                                <p className="text-caption font-black uppercase tracking-widest text-chart-5-text mb-0.5">Monto solicitado</p>
-                                <p className="text-body font-black text-chart-5-text">${Number(meta.amount).toLocaleString('es-SV')}</p>
+                                <p className="text-caption font-black uppercase tracking-widest text-chart-9-text mb-0.5">Monto solicitado</p>
+                                <p className="text-body font-black text-chart-9-text">${Number(meta.amount).toLocaleString('es-SV')}</p>
                             </div>
                         </div>
                     )}
@@ -299,11 +299,11 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* PAYMENT_CHANGE_REQUEST */}
                     {req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo && (
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-chart-7/10 border border-chart-7/30">
-                                <CreditCard size={13} className="text-chart-7-text flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
+                                <CreditCard size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-caption font-black uppercase tracking-widest text-chart-7-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-chart-7-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">Factura</p>
+                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -311,8 +311,8 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Actual</p>
                                     <p className="text-body-sm font-black text-content-2 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
-                                <div className="bg-chart-7/10 border border-chart-7/30 rounded-2xl p-2.5">
-                                    <p className="text-micro font-black text-chart-7-text uppercase tracking-widest mb-0.5">Cambiar a</p>
+                                <div className="bg-warning/10 border border-warning/30 rounded-2xl p-2.5">
+                                    <p className="text-micro font-black text-warning-text uppercase tracking-widest mb-0.5">Cambiar a</p>
                                     <p className="text-body-sm font-black text-content-2 capitalize">{meta.new_pago || '—'}</p>
                                 </div>
                             </div>

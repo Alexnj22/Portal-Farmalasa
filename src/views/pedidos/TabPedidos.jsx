@@ -67,8 +67,8 @@ const STAGE_CONFIG = {
     preparando:  { label: 'En preparación',  color: 'chart-1', icon: Activity     },
     pausado:     { label: 'Pausado',         color: 'warning', icon: Pause        },
     preparado:   { label: 'Listo p/ envío',  color: 'chart-3', icon: CheckCircle2 },
-    transito:    { label: 'En tránsito',     color: 'chart-5', icon: Truck        },
-    contando:    { label: 'Cajas recibidas', color: 'chart-7', icon: PackageCheck },
+    transito:    { label: 'En tránsito',     color: 'chart-9', icon: Truck        },
+    contando:    { label: 'Cajas recibidas', color: 'warning', icon: PackageCheck },
     erp:         { label: 'Sis. Ventas',      color: 'success', icon: Database     },
 };
 
@@ -78,8 +78,7 @@ const COLOR_CLS = {
     success: { bg: 'bg-success/10', text: 'text-success-text', border: 'border-success/30' },
     'chart-1': { bg: 'bg-chart-1/10', text: 'text-chart-1-text', border: 'border-chart-1/30' },
     'chart-3': { bg: 'bg-chart-3/10', text: 'text-chart-3-text', border: 'border-chart-3/30' },
-    'chart-5': { bg: 'bg-chart-5/10', text: 'text-chart-5-text', border: 'border-chart-5/30' },
-    'chart-7': { bg: 'bg-chart-7/10', text: 'text-chart-7-text', border: 'border-chart-7/30' },
+    'chart-9': { bg: 'bg-chart-9/10', text: 'text-chart-9-text', border: 'border-chart-9/30' },
 };
 
 const PEDIDO_PILL  = { confirmado: 'bg-chart-1/10 text-chart-1-text border-chart-1/30', enviado: 'bg-chart-3/10 text-chart-3-text border-chart-3/30', parcial: 'bg-warning/10 text-warning-text border-warning/30', completado: 'bg-success/10 text-success-text border-success/30', anulado: 'bg-danger/10 text-danger-text border-danger/30' };
@@ -315,7 +314,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
-                                            ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-chart-7-lg)]'
+                                            ? 'ring-2 ring-warning/45 shadow-[var(--shadow-glow-warning-lg)]'
                                             : hasObservacion(row) && row.pedido_status !== 'completado'
                                                 ? 'ring-2 ring-chart-4/45 shadow-[var(--shadow-glow-chart-4)]'
                                                 : isFadedOut

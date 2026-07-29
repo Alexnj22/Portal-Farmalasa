@@ -203,9 +203,14 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 
   | categoría | baseline | por qué no es 0 |
   |---|---|---|
-  | `chart-retirado` | 430 | referencias a los 4 categóricos retirados en la consolidación de paleta; son ALIAS, se ven idénticos, y el número baja solo al tocar cada archivo por otro motivo |
-  | `input-a-mano` | 60 | celdas de grilla densa, que NO deben ser `PortalInput` (DESIGN.md §15.12) |
-  | `chip-a-mano` | 7 | texto que a veces parece chip, documentado caso por caso |
+  | `input-a-mano` | 60 | celdas de grilla densa, que NO deben ser `PortalInput` (DESIGN.md §15.12). Todas con `aria-label`; `input-sin-nombre` las vigila en cero |
+
+  `chart-retirado` y `chip-a-mano` llegaron a **0 el 2026-07-28** y quedaron
+  bloqueantes: los 3 categóricos retirados se migraron a su destino (424
+  referencias en 51 archivos) y los 7 chips restantes se resolvieron uno por
+  uno. `chart-8` salió de la lista de retirados porque no lo estaba: es el
+  NEUTRO de la paleta y está vivo (`--chart-8-solid` tiene valor propio, el
+  `neutral` de `Badge` se apoya en él, y tiene familia completa de glows).
 
   Las tres bloqueantes agregadas en D3/D4 — `button-name`, `paleta-cerrada`,
   `input-sin-nombre` — no van al baseline: una categoría que no figura en el

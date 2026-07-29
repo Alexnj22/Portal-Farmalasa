@@ -15,12 +15,16 @@ export function daysUntilExpiry(expiryDateStr) {
 }
 
 // Badge visual para un solo documento — mismo cálculo que usaba EmployeeFormModal inline.
+// Devuelve la VARIANTE de `Badge`, no un puñado de clases. Antes devolvía
+// `className` con la paleta escrita a mano, y los dos call sites la pegaban
+// dentro de un `<span>` propio — dos chips a mano que el canónico ya sabía
+// dibujar, y dos formas distintas del mismo estado.
 export function getExpiryBadge(expiryDateStr) {
     const daysLeft = daysUntilExpiry(expiryDateStr);
     if (daysLeft === null) return null;
-    if (daysLeft < 0) return { label: 'Vencido', className: 'text-danger-text bg-danger/10 border-danger/30', daysLeft };
-    if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, className: 'text-danger-text bg-danger/10 border-danger/30', daysLeft };
-    if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, className: 'text-warning-text bg-warning/10 border-warning/30', daysLeft };
+    if (daysLeft < 0) return { label: 'Vencido', variant: 'danger', daysLeft };
+    if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, variant: 'danger', daysLeft };
+    if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, variant: 'warning', daysLeft };
     return null;
 }
 

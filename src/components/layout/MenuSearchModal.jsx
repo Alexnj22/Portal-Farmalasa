@@ -39,7 +39,13 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
         return results;
     }, [query, items]);
 
-    useEffect(() => { setSelected(0); }, [results.length === 0 ? 0 : query]); // eslint-disable-line react-hooks/set-state-in-effect -- reinicia selección al cambiar el filtro
+    // La selección vuelve al primer resultado cuando cambia el filtro. Con la
+    // lista vacía la clave se congela en 0: seguir tecleando sobre "sin
+    // resultados" no tiene a qué mover la selección, así que no re-dispara.
+    // Extraída del array de dependencias porque una expresión ahí adentro no
+    // se puede verificar estáticamente (react-hooks/exhaustive-deps).
+    const claveSeleccion = results.length === 0 ? 0 : query;
+    useEffect(() => { setSelected(0); }, [claveSeleccion]); // eslint-disable-line react-hooks/set-state-in-effect -- reinicia selección al cambiar el filtro
 
     useEffect(() => {
         const el = listRef.current?.querySelector(`[data-idx="${selected}"]`);

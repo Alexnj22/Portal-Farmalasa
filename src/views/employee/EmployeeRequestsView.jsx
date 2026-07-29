@@ -122,12 +122,12 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         : null;
 
     return (
-        <div className="p-5 rounded-modal border-2 border-chart-5/30 bg-gradient-to-br from-chart-5/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[var(--shadow-glow-chart-5-lg)]">
+        <div className="p-5 rounded-modal border-2 border-chart-9/30 bg-gradient-to-br from-chart-9/10 to-[var(--card-tint-base)] backdrop-blur-2xl flex flex-col gap-4 shadow-[var(--shadow-glow-chart-9-lg)]">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-chart-5/10 border border-chart-5/30 flex items-center justify-center flex-shrink-0">
-                        <RefreshCw size={16} strokeWidth={2} className="text-chart-5-text" />
+                    <div className="w-9 h-9 rounded-xl bg-chart-9/10 border border-chart-9/30 flex items-center justify-center flex-shrink-0">
+                        <RefreshCw size={16} strokeWidth={2} className="text-chart-9-text" />
                     </div>
                     <div>
                         <p className="text-body font-black text-content leading-tight">
@@ -137,7 +137,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                     </div>
                 </div>
                 {dateStr && (
-                    <Badge variant="chart-5" uppercase={false} className="flex-shrink-0 whitespace-nowrap"> {dateStr}</Badge>
+                    <Badge variant="chart-9" uppercase={false} className="flex-shrink-0 whitespace-nowrap"> {dateStr}</Badge>
                 )}
             </div>
 
@@ -152,13 +152,13 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
                         <p className="text-micro text-content-3 mt-0.5">Lo que darías</p>
                     )}
                 </div>
-                <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
-                    <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">Turno que tomarías</p>
-                    <p className="text-body-sm font-black text-chart-5-text">
+                <div className="bg-chart-9/10 border border-chart-9/20 rounded-2xl p-3">
+                    <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">Turno que tomarías</p>
+                    <p className="text-body-sm font-black text-chart-9-text">
                         {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                     </p>
                     {(!meta.myShift || meta.myShift === 'No especificado') && (
-                        <p className="text-micro text-chart-5 mt-0.5">Lo que recibirías</p>
+                        <p className="text-micro text-chart-9 mt-0.5">Lo que recibirías</p>
                     )}
                 </div>
             </div>
@@ -239,14 +239,14 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                 {req.type === 'SHIFT_CHANGE' && (
                     <div className="space-y-2">
                         {(meta.targetEmployeeName || meta.date) && (
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-5/10 border border-chart-5/30">
-                                <RefreshCw size={13} className="text-chart-5-text flex-shrink-0" strokeWidth={2} />
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-9/10 border border-chart-9/30">
+                                <RefreshCw size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                                     {meta.targetEmployeeName && (
-                                        <span className="text-body-sm font-black text-chart-5-text">↔ {meta.targetEmployeeName}</span>
+                                        <span className="text-body-sm font-black text-chart-9-text">↔ {meta.targetEmployeeName}</span>
                                     )}
                                     {meta.date && (
-                                        <span className="text-label font-bold text-chart-5-text">
+                                        <span className="text-label font-bold text-chart-9-text">
                                             {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}
                                         </span>
                                     )}
@@ -260,8 +260,8 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                                 </p>
                             </div>
-                            <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
-                                <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
+                            <div className="bg-chart-9/10 border border-chart-9/20 rounded-2xl p-3">
+                                <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">Turno de {meta.targetEmployeeName?.split(' ')[0] || 'compañero'}</p>
                                 <p className="text-body-sm font-black text-content-2">
                                     {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
                                 </p>
@@ -834,7 +834,7 @@ const EmployeeRequestsView = () => {
                     </div>
                     <div>
                         <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 flex items-center gap-1.5 ml-1">
-                            <CalendarDays size={11} strokeWidth={2.5} className="text-chart-5" />
+                            <CalendarDays size={11} strokeWidth={2.5} className="text-chart-9" />
                             Fecha del cambio
                         </label>
                         <div className="bg-surface-card border border-divider rounded-xl h-10 overflow-hidden">
@@ -872,14 +872,14 @@ const EmployeeRequestsView = () => {
                                 </p>
                                 {!myShiftOnDate && <p className="text-micro text-content-3 mt-0.5">Sin turno asignado</p>}
                             </div>
-                            <div className="bg-chart-5/10 border border-chart-5/20 rounded-2xl p-3">
-                                <p className="text-micro font-black text-chart-5-text uppercase tracking-widest mb-1">
+                            <div className="bg-chart-9/10 border border-chart-9/20 rounded-2xl p-3">
+                                <p className="text-micro font-black text-chart-9-text uppercase tracking-widest mb-1">
                                     Turno de {targetEmp?.name?.split(' ')[0] || 'compañero'}
                                 </p>
-                                <p className="text-body-sm font-black text-chart-5-text">
+                                <p className="text-body-sm font-black text-chart-9-text">
                                     {targetEmpShift ? `${targetEmpShift.start} – ${targetEmpShift.end}` : '—'}
                                 </p>
-                                {!targetEmpShift && <p className="text-micro text-chart-5 mt-0.5">Sin turno asignado</p>}
+                                {!targetEmpShift && <p className="text-micro text-chart-9 mt-0.5">Sin turno asignado</p>}
                             </div>
                         </div>
                     )}
@@ -1152,7 +1152,7 @@ const EmployeeRequestsView = () => {
                         {/* Solicitudes de cambio de turno que requieren mi aprobación */}
                         {peerRequests.length > 0 && (
                             <div className="col-span-full">
-                                <p className="text-caption font-black uppercase tracking-widest text-chart-5-text mb-3 flex items-center gap-1.5">
+                                <p className="text-caption font-black uppercase tracking-widest text-chart-9-text mb-3 flex items-center gap-1.5">
                                     <RefreshCw size={10} /> Requieren tu aprobación
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -12,6 +12,142 @@ retomar; acá está todo.
 
 ---
 
+## v2.230.0 — el overload no estaba muerto, estaba estorbando.
+
+Salió del chequeo de claves duplicadas al generar el baseline: `get_puntos_canjeados`
+tenía dos versiones, de 3 y 4 argumentos. Parecía código muerto inerte, del mismo
+patrón que el `update_proveedor_manual` de C1. Medirlo cambió el diagnóstico.
+
+El de 3 args **no tiene un solo llamador** —ni en `src/`, ni en edge functions, ni
+en otra función SQL, vista, trigger, CHECK, policy o cron job— y ademas era
+**inalcanzable**, porque el de 4 args tiene `DEFAULT` en `p_branch_id` y
+`p_hora_corte`:
+
+| llamada | antes | ahora |
+|---|---|---|
+| 4 args (lo que usa VentasView) | 8.25 | 8.25 |
+| 3 args | `42725 is not unique` | 8.25 |
+| 2 args | `42725 is not unique` | 8.25 |
+
+O sea el overload de sobra **volvía inservibles los `DEFAULT` del que sí se usa**:
+`p_hora_corte` parecía opcional y no lo era, así que cualquier llamada nueva que lo
+omitiera se comía un error en vez de un fallback.
+
+Y no era "el mismo cálculo sin un parámetro": el viejo usa
+`fecha BETWEEN p_fini AND p_ffin` y **no excluye a MAPFRE**, mientras el vivo aplica
+hora de corte y `cliente NOT ILIKE '%MAPFRE%'`. Llamarlo habría dado un total
+distinto al que muestra el portal.
+
+Probado antes en prod dentro de una subtransacción revertida, verificando que el
+rollback devolvía los dos overloads. El censo completo dice que en `public` hay solo
+dos pares: el otro (`get_vendedor_diario`) no tiene `DEFAULT` en ninguna de las dos
+versiones, así que resuelven sin ambigüedad y se deja como está.
+
+La regla que sale: dos overloads donde el más largo tiene `DEFAULT` en los
+parámetros extra no son "uno viejo y uno nuevo" — son una función que solo se puede
+llamar con la aridad máxima. Al agregar un parámetro con `DEFAULT`, se dropea la
+versión anterior.
+
+## v2.229.0 — el conteo ciego era un interruptor, y un click de más inventaba faltantes.
+
+El conteo de inventario se rediseña para lo que realmente es: alguien de pie en
+un pasillo tecleando un número por lote. Tres defectos de fondo salieron en el
+camino, y ninguno era visual.
+
+**1. El ciego no era ciego.** Era `useState(true)` + un `<Switch>`: cualquiera
+con `can_edit` lo apagaba, y el número del sistema viajaba en la respuesta de
+todos modos — bastaba mirar el inspector. Ahora **no sale de la base**. Permiso
+nuevo `conteo_ver_sistema` (sub-permiso de Conteo de Inventario), y el predicado
+`conteo_puede_ver_sistema(conteo_id)` decide: se ve si el conteo ya está cerrado
+—ahí los números **son** el resultado y no hay nada que sesgar— o si tenés el
+permiso. Mientras está abierto y no lo tenés, no hay switch que apagar.
+
+Son **cinco** caminos que devuelven el dato y los cinco lo respetan; tapar solo
+la tabla dejaba tres puertas abiertas:
+
+| camino | qué dejaba escapar |
+|---|---|
+| `get_conteo_items_search` | las líneas de la tabla |
+| `get_conteo_products_page` | los totales por producto |
+| `get_conteo_items_jsonb` | los PDF y el CSV — la hoja se imprimía con `{ciego: false}` **fijo**, o sea que el papel revelaba justo lo que la pantalla tapaba |
+| `get_conteo_items_count` | filtrar por "con diferencia" señala **exactamente** las líneas que descuadran, sin mostrar un número |
+| `get_conteo_products_count` | idem, a nivel de producto |
+
+Con el conteo ciego ese filtro ya no filtra (la RPC lo trata como `TODOS`) y la
+UI ni lo ofrece. Verificado impersonando empleados reales en transacción con
+`ROLLBACK`: rol 11 (edita, sin el permiso) → 0 de 20 filas con `sistema`, 0 con
+`diferencia`, 0 con `costo_unitario`, el JSON de los PDF con 0 de 2500, y el
+filtro devolviendo 2500 = igual que "todos". Rol 13 (con el permiso) → 20/20.
+
+**2. Un guardado sin cambios movía la existencia.** `guardar_conteo_item` releía
+`inventory` en **toda** llamada. Abrir una línea confirmada y salir sin tocar
+nada le reasignaba el sistema de ese instante: si entre el conteo y ese click
+hubo una venta, la línea pasaba de cuadrada a faltante **sin que nadie
+contara**. El físico es una MEDICIÓN tomada en un momento; releer la existencia
+solo se justifica cuando se registra una medición nueva. El guard va después de
+los chequeos de permiso, para que quien no puede editar siga recibiendo
+`SIN_PERMISO` y no un no-op silencioso.
+
+Probado con `BEGIN … ROLLBACK` sobre el conteo real de La Popular:
+
+```
+inventory 25 · captura 7   → CAPTURA,    sistema 25, dif -18
+una venta baja inventory a 22
+re-guardar el MISMO 7      → SIN_CAMBIO, sistema 25, dif -18   ← el fix
+guardar 9 (distinto)       → EDICION,    sistema 22, dif -13   ← relee, y debe
+historial: exactamente 2 filas (el no-op no escribió nada)
+```
+
+La vista ya tenía un `lastSaved` que evitaba el guardado redundante en el blur,
+pero eso es client-side: bastaba un reintento, otra pestaña o un doble submit
+para pisar el dato. El invariante va en la RPC.
+
+**3. `hideBelow="xl"` de `DataTable` ocultaba la columna para siempre.** La
+clase se armaba en runtime (`hidden ${x}:table-cell`) y Tailwind escanea el
+**fuente**: funcionaba de prestado porque otras vistas escriben `md:table-cell`
+y `lg:table-cell` literales en su JSX. `xl:` no lo había escrito nadie nunca, así
+que la columna se quedaba con `hidden` y sin la regla que la devuelve. No lo ve
+el build, ni el lint, ni el gate — la clase está en el DOM, solo que no existe
+en el CSS. Cuarta vez que el proyecto se tropieza con lo mismo. Ahora es un mapa
+literal y agregar un breakpoint obliga a escribirlo.
+
+### Lo que se ve
+
+- **Nada se contrae.** El acordeón por producto costaba dos toques por lote; el
+  producto pasa a ser una banda de encabezado y las cantidades se escriben
+  directo. Las líneas de los 25 productos de la página vienen en **una** llamada
+  (`p_erp_product_ids`) — antes era una por producto, disparada por un click.
+- **Confirmada = bloqueada**, con un lápiz como único camino de vuelta. Una
+  celda que sigue pareciendo un campo invita a teclear encima de lo ya contado.
+  Cuando todos los lotes del producto están confirmados, la banda entera deja de
+  llamar.
+- **Quién puso la cantidad, en la línea**: foto, nombre corto y hora, más el
+  contador de ediciones si alguien la cambió después. El historial ahora dice
+  **qué** pasó — columna `evento` (`CAPTURA` / `EDICION` / `BORRADO` /
+  `RECUENTO` / `LOTE` / `CIERRE`); antes las cuatro clases de evento se veían
+  idénticas y el único indicio era el texto de `nota`, que el usuario puede
+  pisar.
+- **Teléfono**: una tarjeta por PRODUCTO con sus lotes adentro — repetir el
+  nombre por lote hacía que dos lotes se leyeran como dos productos distintos.
+  Campo de 56 px con teclado numérico, Enter salta al siguiente pendiente.
+  Cierra para esta vista el hueco anotado en DESIGN.md §32 (`DataTable` no
+  reflowa a tarjetas). Verificado en **WebKit y Chromium** a 320/375/390/430/
+  768/1024/1440 en los tres estados de línea (pendiente / bloqueada /
+  editando): cero scroll horizontal, cero recorte dentro del marco, tap mínimo
+  44 px, fuente ≥16 px, sin errores de JS.
+- **`PortalInput` gana `alto`** (56 px, dígitos grandes) — el opuesto de
+  `compact`, para el campo que se llena de pie con una mano. Y pierde los
+  spinners nativos de `input[type=number]`: son cromo del navegador —no salen
+  del tema, no responden a la densidad— y en un campo angosto se comen ~24 px
+  justo donde el número tiene que leerse. Mismo criterio que prohibir
+  `<select>`/date nativos.
+
+### Migraciones
+
+`20260729_conteo_v1_permiso_ver_sistema` · `_v2_evento_en_historial` ·
+`_v2b_guardado_sin_cambio_es_noop` · `_v3_ciego_en_el_servidor` ·
+`_v4_items_por_lote_de_productos`
+
 ## v2.228.0 — 339 migraciones que no reconstruían nada, y un baseline que sí.
 
 Cierre de C2. El repo tenía 339 migraciones y el servidor 700+, pero el problema

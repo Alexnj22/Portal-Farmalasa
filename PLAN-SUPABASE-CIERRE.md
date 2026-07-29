@@ -368,12 +368,63 @@ CLI (el CLI lo lee y falla), y borrar la rama al terminar.
 **El árbol se dejó limpio**: los 708 archivos generados se revirtieron y los 316
 heredados volvieron a su lugar. Un rebaseline sin verificar no se commitea.
 
-### 🔎 Hallazgo lateral: otro overload muerto, igual que C1
+### ✅ Hallazgo lateral CERRADO: el overload no estaba muerto, estaba estorbando
 
-`get_puntos_canjeados` tiene dos versiones —3 args y 4 args (agrega
-`p_hora_corte`)— exactamente el mismo patrón que el `update_proveedor_manual` de
-C1. Salió al chequear claves duplicadas en el volcado. No se tocó: hay que
-verificar primero cuál llama el frontend. Vale revisar si hay más pares así.
+`get_puntos_canjeados` tenía dos versiones —3 y 4 args— y salió al chequear claves
+duplicadas en el volcado. Verificado el 2026-07-29: **el enunciado subestimaba el
+problema.**
+
+**Cero llamadores** del de 3 args: ni `src/`, ni edge functions, ni otra función
+SQL, vista, trigger, CHECK, policy o cron job. El único uso del RPC es
+`VentasView.jsx:434-435`, con los 4 argumentos.
+
+**Y era inalcanzable**, porque el de 4 args tiene `DEFAULT` en `p_branch_id` y
+`p_hora_corte`. Medido en prod:
+
+| llamada | antes | después del drop |
+|---|---|---|
+| 4 args (VentasView) | `8.25` | `8.25` |
+| 3 args | **`42725 is not unique`** | `8.25` |
+| 2 args | **`42725 is not unique`** | `8.25` |
+
+O sea el overload muerto **volvía inservibles los `DEFAULT` del que sí se usa**:
+`p_hora_corte` parecía opcional y no lo era. Cualquier llamada nueva que lo
+omitiera se comía un error, no un fallback.
+
+**Y no era "el mismo cálculo sin un parámetro".** El viejo usa
+`fecha BETWEEN p_fini AND p_ffin` y **no excluye a MAPFRE**; el vivo aplica hora de
+corte y `cliente NOT ILIKE '%MAPFRE%'`. Llamarlo habría dado un total distinto al
+que muestra el portal.
+
+Diferencia con C1: ninguna de las dos era `SECURITY DEFINER` (ambas INVOKER con
+`search_path=''`), así que no había componente de privilegios.
+
+**Dropeado** en `20260729223030_drop_overload_muerto_get_puntos_canjeados`,
+probado antes en prod dentro de una subtransacción revertida (verificado que el
+rollback devolvía los 2 overloads). Grants del sobreviviente intactos:
+`authenticated`, `postgres`, `service_role`.
+
+**Censo completo de overloads en `public`: solo hay dos pares.** El otro,
+`get_vendedor_diario`, **no tiene el problema** — ninguna de sus dos versiones
+tiene `DEFAULT`, así que las dos resuelven sin ambigüedad (probado: ambas
+devuelven). El frontend usa la de 3 args (`VentasView.jsx:972`); la de 4 (con
+`p_branch_id` al frente) está sin usar pero es inofensiva y plausiblemente
+intencional para filtrar por sucursal. **Se deja.**
+
+**Regla que sale de acá**: dos overloads donde el más largo tiene `DEFAULT` en los
+parámetros extra no son "uno viejo y uno nuevo" — son una función que solo se puede
+llamar con la aridad máxima. Al agregar un parámetro con `DEFAULT` hay que
+**dropear** la versión anterior, no dejarla.
+
+### Primera migración post-baseline: la convención de nombres cambió
+
+`20260729223030_drop_overload_muerto_get_puntos_canjeados.sql` es la primera
+migración después del baseline, y su archivo local se nombró con **la versión que
+asignó el servidor**, no con el `YYYYMMDD_nombre` de antes. `migration list`
+muestra las dos filas alineadas local↔remoto. Ésa es la convención de acá en
+adelante: aplicar con `apply_migration`, leer la versión asignada, y nombrar el
+archivo `<version>_<name>.sql`. Es lo que evita volver a acumular la deriva que
+C2 acaba de limpiar.
 
 ### C2 — decisión estructural pendiente (NO ejecutada)
 

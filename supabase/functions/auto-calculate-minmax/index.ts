@@ -40,7 +40,17 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const results: { id: number; name: string; rows?: number; auto_applied?: number; drafted?: number; error?: string }[] = [];
+  // calculate_stock_params puede devolver { ok:false, skipped:true, reason } —
+  // p.ej. la sucursal tiene borradores pendientes de revisar. Eso NO es un
+  // cálculo: es un cálculo que no ocurrió, y hay que decirlo. Tratarlo como
+  // éxito con rows=0 es lo que hizo que el recálculo llevara desde junio sin
+  // correr en las 6 sucursales sin que nadie se enterara — el aviso decía
+  // "completado, no hay borradores pendientes" mientras no se calculaba nada.
+  const MOTIVOS: Record<string, string> = {
+    branch_has_pending_drafts: "tiene borradores pendientes de revisar",
+  };
+
+  const results: { id: number; name: string; rows?: number; auto_applied?: number; drafted?: number; error?: string; skipped?: string }[] = [];
   let totalRows = 0;
   let totalAutoApplied = 0;
   let totalDrafted = 0;
@@ -58,26 +68,45 @@ serve(async (req) => {
         success: false,
         error_msg: error.message.slice(0, 2000),
       });
-    } else {
-      const r = (data as { rows?: number; auto_applied?: number; drafted?: number }) ?? {};
-      const rows = r.rows ?? 0;
-      const autoApplied = r.auto_applied ?? 0;
-      const drafted = r.drafted ?? 0;
-      totalRows += rows;
-      totalAutoApplied += autoApplied;
-      totalDrafted += drafted;
-      results.push({ id, name: ERP_NAMES[id], rows, auto_applied: autoApplied, drafted });
+      continue;
+    }
+
+    const r = (data as { rows?: number; auto_applied?: number; drafted?: number; skipped?: boolean; reason?: string }) ?? {};
+
+    if (r.skipped) {
+      const motivo = MOTIVOS[r.reason ?? ""] ?? (r.reason ?? "motivo desconocido");
+      results.push({ id, name: ERP_NAMES[id], skipped: motivo });
+      console.warn(`[auto-calculate-minmax] SALTADA ${ERP_NAMES[id]}: ${motivo}`);
+      // success:false a propósito: desde "¿se recalculó esta sucursal?", una
+      // saltada es un no. Así cualquier consulta al log la ve.
       await supabase.from("minmax_sync_log").insert({
         source: "auto-calculate-minmax",
         erp_sucursal_id: id,
-        success: true,
-        items_count: rows,
+        success: false,
+        error_msg: `SALTADA: ${motivo}`.slice(0, 2000),
+        items_count: 0,
       });
+      continue;
     }
+
+    const rows = r.rows ?? 0;
+    const autoApplied = r.auto_applied ?? 0;
+    const drafted = r.drafted ?? 0;
+    totalRows += rows;
+    totalAutoApplied += autoApplied;
+    totalDrafted += drafted;
+    results.push({ id, name: ERP_NAMES[id], rows, auto_applied: autoApplied, drafted });
+    await supabase.from("minmax_sync_log").insert({
+      source: "auto-calculate-minmax",
+      erp_sucursal_id: id,
+      success: true,
+      items_count: rows,
+    });
   }
 
   const failed = results.filter((r) => r.error).map((r) => r.name);
-  const succeeded = results.filter((r) => !r.error);
+  const skipped = results.filter((r) => r.skipped);
+  const succeeded = results.filter((r) => !r.error && !r.skipped);
 
   // Obtener IDs de supervisores disponibles (con fallback a jefe inmediato)
   const { data: approverIds, error: approverErr } = await supabase.rpc(
@@ -93,11 +122,22 @@ serve(async (req) => {
     const pushUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`;
     const invokeSecret = Deno.env.get("ADMIN_INVOKE_SECRET")!;
 
-    const message = failed.length > 0
-      ? `Recálculo completado con errores (${succeeded.length}/${ERP_ORDER.length} sucursales). Errores en: ${failed.join(", ")}. Revisá los borradores en MinMax.`
-      : totalDrafted > 0
-        ? `Recálculo mensual completado. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente · ${totalDrafted.toLocaleString()} requieren revisión en MinMax.`
-        : `Recálculo mensual completado. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente. No hay borradores pendientes.`;
+    // El detalle de lo que se saltó va SIEMPRE que haya algo saltado: es la
+    // información que faltaba para notar que el recálculo no estaba corriendo.
+    const detalleSaltadas = skipped.length > 0
+      ? ` No se recalcularon ${skipped.length} de ${ERP_ORDER.length}: ${skipped.map((s) => `${s.name} (${s.skipped})`).join(", ")}.`
+      : "";
+
+    const nadaSeCalculo = succeeded.length === 0;
+
+    const message = nadaSeCalculo && skipped.length > 0 && failed.length === 0
+      // El caso que antes salía como "completado, no hay borradores pendientes".
+      ? `NO se recalculó ninguna sucursal: las ${skipped.length} se saltaron.${detalleSaltadas} El MIN/MAX quedó igual que el mes pasado.`
+      : failed.length > 0
+        ? `Recálculo con errores (${succeeded.length}/${ERP_ORDER.length} sucursales calculadas). Errores en: ${failed.join(", ")}.${detalleSaltadas} Revisá MinMax.`
+        : totalDrafted > 0
+          ? `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente · ${totalDrafted.toLocaleString()} requieren revisión en MinMax.${detalleSaltadas}`
+          : `Recálculo mensual completado en ${succeeded.length}/${ERP_ORDER.length} sucursales. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente. No hay borradores pendientes.${detalleSaltadas}`;
 
     const pushTitle = "Recálculo mensual MIN/MAX";
     try {
@@ -112,7 +152,9 @@ serve(async (req) => {
           title: pushTitle,
           message,
           url: "/minmax",
-          urgent: false,
+          // Que no se recalculara nada sí es urgente: el MIN/MAX se quedó viejo
+          // y nadie lo sabría hasta el mes siguiente.
+          urgent: failed.length > 0 || nadaSeCalculo,
           target_type: "EMPLOYEE",
           target_value: empIds,
         }),
@@ -136,7 +178,9 @@ serve(async (req) => {
         read_by: [],
         is_archived: false,
         created_by: null,
-        priority: failed.length > 0 ? "HIGH" : "NORMAL",
+        // Que no se recalculara NADA es tan urgente como un error: en los dos
+        // casos el MIN/MAX se quedó viejo.
+        priority: (failed.length > 0 || nadaSeCalculo) ? "HIGH" : "NORMAL",
         metadata: {
           type: "MINMAX_AUTO_CALCULATE",
           totalRows,
@@ -144,6 +188,7 @@ serve(async (req) => {
           totalDrafted,
           succeeded: succeeded.length,
           failed,
+          skipped: skipped.map((s) => ({ name: s.name, reason: s.skipped })),
           url: "/minmax",
         },
       });
@@ -153,11 +198,18 @@ serve(async (req) => {
   }
 
   console.log(
-    `[auto-calculate-minmax] totalRows=${totalRows} autoApplied=${totalAutoApplied} drafted=${totalDrafted} failed=${failed.length} notified=${notified}`,
+    `[auto-calculate-minmax] calculadas=${succeeded.length}/${ERP_ORDER.length} saltadas=${skipped.length} totalRows=${totalRows} autoApplied=${totalAutoApplied} drafted=${totalDrafted} failed=${failed.length} notified=${notified}`,
   );
 
   return new Response(
-    JSON.stringify({ results, totalRows, failed, approversNotified: notified }),
+    JSON.stringify({
+      results,
+      totalRows,
+      calculated: succeeded.length,
+      skipped: skipped.map((s) => ({ name: s.name, reason: s.skipped })),
+      failed,
+      approversNotified: notified,
+    }),
     { headers: { ...cors, "Content-Type": "application/json" } },
   );
 });

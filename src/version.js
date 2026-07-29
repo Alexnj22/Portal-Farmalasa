@@ -16,7 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.205.0';
+export const APP_VERSION = '2.206.0';
+
+// v2.206.0 — el aviso del recalculo mensual ya no miente cuando no calculo nada.
+//
+// calculate_stock_params devuelve { ok:false, skipped:true, reason } cuando se
+// salta una sucursal. auto-calculate-minmax lo trataba como exito con rows=0,
+// asi que el push a los supervisores decia "Recalculo mensual completado.
+// 0 productos actualizados automaticamente. No hay borradores pendientes."
+// — exactamente lo contrario de lo que habia pasado. Por eso el recalculo
+// llevaba desde junio sin correr en las 6 sucursales sin que nadie se enterara.
+//
+// Ahora:
+// - Las saltadas se cuentan aparte de las calculadas y el mensaje las NOMBRA
+//   con su motivo ("La Popular (tiene borradores pendientes de revisar)").
+// - Si no se calculo NINGUNA: "NO se recalculo ninguna sucursal… El MIN/MAX
+//   quedo igual que el mes pasado", con push urgente y anuncio en HIGH — igual
+//   que un error, porque el efecto es el mismo.
+// - En minmax_sync_log una saltada va con success=false y "SALTADA: motivo":
+//   desde "se recalculo esta sucursal?", saltada es un no, y asi la ve
+//   cualquier consulta al log.
+// - El resumen dice siempre cuantas de cuantas se calcularon.
+//
+// Desplegada con --no-verify-jwt (esta funcion se autentica con su propio
+// secreto como Bearer, no con un JWT; sin el flag el redeploy la resetea a
+// verify_jwt=true y su cron empieza a fallar con 401).
+
 
 // v2.205.0 — C3 y C4 del plan de cierre Supabase: 11 funciones SECURITY DEFINER
 // dejaron de saltarse el RLS, y el 18% de rollbacks resulto ser historico.

@@ -288,6 +288,34 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.206.0 — el aviso del recálculo mensual ya no miente cuando no calculó nada.
+
+`calculate_stock_params` devuelve `{ ok:false, skipped:true, reason }` cuando se
+salta una sucursal. `auto-calculate-minmax` lo trataba como éxito con `rows=0`,
+así que el push a los supervisores decía:
+
+> *"Recálculo mensual completado. 0 productos actualizados automáticamente. No hay
+> borradores pendientes."*
+
+Exactamente lo contrario de lo que había pasado. Por eso el recálculo llevaba
+desde junio sin correr en las 6 sucursales **sin que nadie se enterara**.
+
+- Las saltadas se cuentan aparte de las calculadas, y el mensaje **las nombra con
+  su motivo**: "La Popular (tiene borradores pendientes de revisar)".
+- Si no se calculó **ninguna**: *"NO se recalculó ninguna sucursal… El MIN/MAX
+  quedó igual que el mes pasado"*, con push **urgente** y anuncio en **HIGH** —
+  igual que un error, porque el efecto es el mismo.
+- En `minmax_sync_log` una saltada va con `success=false` y `"SALTADA: motivo"`:
+  desde "¿se recalculó esta sucursal?", saltada es un no, y así la ve cualquier
+  consulta al log.
+- El resumen dice siempre **cuántas de cuántas** se calcularon.
+
+Desplegada con `--no-verify-jwt`: esta función se autentica con su propio secreto
+como Bearer, no con un JWT, y sin el flag el redeploy la resetea a
+`verify_jwt=true` y su cron empieza a fallar con 401 (trampa ya registrada).
+
+---
+
 ## v2.203.0 — ocultar en MIN/MAX dejaba la sucursal sin recalcular desde junio.
 
 El recálculo mensual **no corre desde el 14-jun en ninguna sucursal**, y la causa

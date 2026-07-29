@@ -12,6 +12,64 @@ retomar; acá está todo.
 
 ---
 
+## v2.184.0 — `employees` se leía sin autenticación.
+
+Auditoría completa de Supabase (`AUDITORIA-SUPABASE-2026-07-29.md`): 106 tablas,
+10 vistas, 165 funciones, 234 policies, 364 índices, 51 crons, 35 edge functions.
+
+**La fuga.** La policy `employees_select` se creó sin cláusula `TO`, que en
+Postgres equivale a `TO PUBLIC` — incluye `anon`. Su `USING` solo excluía
+superusuarios, sin ningún gate de autenticación. Verificado contra la API REST
+pública con la sola anon key, que viaja en el bundle JS y es pública por diseño:
+
+```
+GET /rest/v1/employees?select=id&limit=0  →  HTTP 206 · content-range: */50
+```
+
+50 empleados legibles por cualquiera en internet. Entre las columnas con dato:
+**46 `kiosk_pin`** —que no es un tema de privacidad sino bypass de autenticación
+del kiosco de marcaje—, 4 DUI, teléfonos, direcciones, fechas de nacimiento.
+`base_salary` y `account_number` estaban vacías hoy pero eran seleccionables: se
+filtraban solas el día que se cargue planilla. Ahora devuelve `*/0`.
+`employees_update` y `employees_delete` tenían el mismo defecto — no filtraban
+solo porque `anon` carece de `EXECUTE` sobre `auth_has_module_permission`, una
+defensa accidental a un `GRANT` de distancia de romperse.
+
+**El PIN nunca fue una credencial.** `generateHashCorto` (EmployeeFormModal.jsx:209)
+es `SHA-256(code)` sin secreto: quien conoce el código de un empleado —el
+identificador visible en todo el portal— deriva su PIN con una línea de JS. Y
+`get_kiosk_boot_payload` los reparte **en claro** al rol `anon`, con la
+comparación hecha del lado del cliente y los PINs de supervisores cacheados en
+`localStorage`. Rotarlos con el mismo algoritmo no habría cambiado nada.
+
+Fase 1 del rediseño, **aditiva** (el kiosco sigue funcionando igual):
+`kiosk_credentials` con hash bcrypt en tabla aparte —una credencial no pertenece
+a una entidad de lectura amplia, y además `data/system.js:37` hace `select('*')`
+sobre `employees`, así que un grant por columna lo rompería—, `kiosk_pin_attempts`
+con rate limit de 10 fallos / 5 min por dispositivo, y las RPC `verify_kiosk_pin`
+y `set_kiosk_pin`. La verificación recibe al empleado **ya identificado por
+carné**: una sola comparación bcrypt (~80 ms) en lugar de las ~50 que harían
+falta si el PIN tuviera que identificar además de probar.
+
+Las tablas nuevas necesitaron un `REVOKE` aparte: las default privileges de
+Supabase le dan a `anon` y `authenticated` privilegios **completos** sobre toda
+tabla nueva de `public` —incluido `TRUNCATE`— y solo RLS las frenaba. Un
+`TRUNCATE` accidental dejaba a 46 personas sin poder marcar.
+
+**Lo que queda abierto es peor.** `getHourlyCode()` (`helpers.js:180`) es
+`Math.sin()` del reloj, calculado en el navegador y comparado client-side, igual
+que `getSuPinSuffix()`. Cualquiera que abra el bundle público calcula el código
+de la hora y **se autoriza sus propias horas extra**. Las reglas que eso protege
+están bien definidas (`timeClock.helpers.js:130-259`: 6 casos, todos los que
+afectan planilla); lo que falla es que la credencial que las custodia no tiene
+ningún secreto detrás.
+
+El resto de la auditoría —27% del CPU en un upsert incondicional, 275 fallos de
+cron por semana, 400 MB de basura operativa, y qué falta para que la base sea el
+sistema de registro del POS— está en el informe.
+
+---
+
 ## v2.183.0 — el conteo de inventario comparaba contra un número inflado.
 
 Auditoría completa del módulo (`AUDITORIA-CONTEO-2026-07-29.md`): 6 capas del

@@ -16,7 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.183.0';
+export const APP_VERSION = '2.184.0';
+
+// v2.184.0 — auditoria de Supabase: `employees` se leia SIN autenticacion.
+//
+// Auditoria completa de la BD (AUDITORIA-SUPABASE-2026-07-29.md): 106 tablas,
+// 165 funciones, 234 policies, 51 crons, 35 edge functions.
+//
+// **La fuga.** La policy `employees_select` se creo sin clausula TO, que en
+// Postgres es TO PUBLIC — incluye `anon`. Su USING solo excluia superusuarios,
+// sin ningun gate de autenticacion. Verificado contra la API REST publica con
+// la sola anon key (que viaja en el bundle JS, es publica por diseno):
+// `GET /rest/v1/employees?select=id&limit=0` devolvia HTTP 206 con
+// `content-range: */50`. Exponia 50 empleados, incluidos **46 kiosk_pin** —que
+// no es privacidad sino bypass de autenticacion del kiosco de marcaje—, DUI,
+// telefonos, direcciones y fechas de nacimiento. `base_salary` y
+// `account_number` estaban vacias pero eran seleccionables.
+// Ahora: `*/0`. `employees_update` y `employees_delete` tenian el mismo defecto
+// (fallaban cerrado por accidente, no por diseno) y tambien se corrigieron.
+//
+// **El PIN no era una credencial.** `generateHashCorto` = SHA-256(code) sin
+// secreto: quien conoce el codigo de un empleado —el identificador visible en
+// todo el portal— derivaba su PIN. Y `get_kiosk_boot_payload` los repartia en
+// claro al rol `anon`, con comparacion client-side y cache en localStorage.
+// Fase 1 del rediseno (aditiva, el kiosco sigue igual): `kiosk_credentials` con
+// hash bcrypt fuera de `employees`, `kiosk_pin_attempts` con rate limit de
+// 10/5min por dispositivo, y las RPC `verify_kiosk_pin` / `set_kiosk_pin`.
+// La verificacion recibe al empleado ya identificado por carne: una sola
+// comparacion bcrypt (~80 ms) en vez de las ~50 que harian falta si el PIN
+// tuviera que identificar.
+//
+// Las tablas nuevas necesitaron un REVOKE aparte: las default privileges de
+// Supabase le dan a anon/authenticated privilegios COMPLETOS sobre toda tabla
+// nueva —incluido TRUNCATE—, y solo RLS las frenaba.
+//
+// Pendiente y mas grave que lo anterior: `getHourlyCode()` (helpers.js:180) es
+// Math.sin() del reloj, calculado en el navegador y comparado client-side, asi
+// que cualquiera que abra el bundle publico **se autoriza sus propias horas
+// extra**. Las reglas que protege estan bien (timeClock.helpers.js:130-259, 6
+// casos que afectan planilla); lo que falla es que la credencial no es secreta.
 
 // v2.183.0 — auditoria del modulo Conteo de Inventario (AUDITORIA-CONTEO-2026-07-29.md).
 //

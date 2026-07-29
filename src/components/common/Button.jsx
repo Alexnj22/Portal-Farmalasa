@@ -87,15 +87,24 @@ const SOFT_CLASSES = {
 };
 
 // Literales, NO plantilla: Tailwind escanea texto (ver la nota de Badge/Switch).
+// Relleno sólido + texto blanco → SIEMPRE el token `-solid` (N2, DESIGN.md §6).
+// Los `chart-N` crudos están calibrados para teñir (`bg-X/10` + `text-X-text`),
+// no para llevar blanco encima: medido el 2026-07-29 con el escáner de D1,
+// `tone="chart-3"` daba **4.23:1** contra el 4.5 que pide AA. Los `-solid` son
+// el shade 600/700 de la misma familia y van de 4.60 a 5.70.
+// El escáner solo encontró 2 de los 82 usos porque el resto vive en modales y
+// ramas condicionales — el mismo motivo por el que N2 tuvo que buscarlos por
+// código y no por captura.
+// `brand` se queda crudo a propósito: mide 6.82:1 con blanco y no tiene `-solid`.
 const TONE_CLASSES = {
     success: 'text-white bg-success-solid hover:brightness-110',
     warning: 'text-white bg-warning-solid hover:brightness-110',
-    'chart-1': 'text-white bg-chart-1 hover:brightness-110',
-    'chart-3': 'text-white bg-chart-3 hover:brightness-110',
-    'chart-4': 'text-white bg-chart-4 hover:brightness-110',
-    'chart-6': 'text-white bg-chart-6 hover:brightness-110',
-    'chart-8': 'text-white bg-chart-8 hover:brightness-110',
-    'chart-9': 'text-white bg-chart-9 hover:brightness-110',
+    'chart-1': 'text-white bg-chart-1-solid hover:brightness-110',
+    'chart-3': 'text-white bg-chart-3-solid hover:brightness-110',
+    'chart-4': 'text-white bg-chart-4-solid hover:brightness-110',
+    'chart-6': 'text-white bg-chart-6-solid hover:brightness-110',
+    'chart-8': 'text-white bg-chart-8-solid hover:brightness-110',
+    'chart-9': 'text-white bg-chart-9-solid hover:brightness-110',
     danger:  'text-white bg-danger-solid hover:brightness-110',
     brand:   'text-white bg-brand hover:brightness-110',
 };

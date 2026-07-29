@@ -88,7 +88,14 @@ const ChipDoc = memo(({
 }) => {
     const t = CHIP_TONO[estado] || CHIP_TONO.normal;
     return (
-        <div className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
+        // `min-h-[var(--tap-min)]`: los dos botones de este chip medían 29px de
+        // alto, y en un teléfono el piso es 44 (medido en iPhone 13 el
+        // 2026-07-29: 22 targets en esta vista, los únicos de la pasada que
+        // eran deuda real y no un duplicado decorativo). `items-stretch` hace
+        // que los segmentos hereden la altura del riel, así que se corrige acá
+        // una vez en vez de en los tres. En escritorio `--tap-min` es 0: no
+        // cambia nada.
+        <div className={`inline-flex items-stretch min-h-[var(--tap-min)] rounded-xl border overflow-hidden transition-all duration-150 shadow-sm ${
             resuelto ? 'border-success shadow-emerald-100' : t.borde}`}>
             {/* Sin `onCopiar` el primer segmento NO es un botón. El de los
                 saltos de correlativo muestra un rango que no se copia, y
@@ -98,7 +105,7 @@ const ChipDoc = memo(({
                 <button
                     aria-label={copiado ? 'Copiado' : `Copiar ${etiquetaCopia}`}
                     onClick={onCopiar}
-                    className={`flex items-center gap-1 px-2 py-1.5 font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
+                    className={`flex items-center gap-1 px-2 py-1.5 min-h-[var(--tap-min)] font-mono text-caption font-black border-r transition-all active:scale-[0.97] ${
                         copiado ? 'bg-success/10 text-success-text border-success/30' : t.copia}`}>
                     {copiado || estado === 'visitado' ? <Check size={8} /> : <Copy size={8} />}
                     {etiquetaCopia}
@@ -115,7 +122,7 @@ const ChipDoc = memo(({
                 aria-pressed={resuelto}
                 aria-label={resuelto ? `Cancelar la resolución de ${nombreResolver}` : `Marcar ${nombreResolver} como resuelta`}
                 onClick={onResolver}
-                className={`flex items-center px-2 py-1.5 transition-all ${
+                className={`flex items-center justify-center px-2 py-1.5 min-h-[var(--tap-min)] min-w-[var(--tap-min)] transition-all ${
                     resuelto ? 'bg-danger/10 text-danger hover:bg-danger/10'
                              : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
                 {resuelto ? <X size={10} /> : <Check size={10} />}

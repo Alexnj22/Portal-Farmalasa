@@ -1,0 +1,65 @@
+[
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Lun13 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ },
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Mar12 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ },
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Mié11 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ },
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Jue19 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ },
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Vie11 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ },
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Sáb10 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ },
+ {
+  "ruta": "/overview",
+  "w": 38,
+  "h": 68,
+  "tag": "div",
+  "rol": "button",
+  "nombre": "Día: Dom17 Tx / hora punta (P7",
+  "cls": "flex-1 flex flex-col justify-end items-center group relative"
+ }
+]

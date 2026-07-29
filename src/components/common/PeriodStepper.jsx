@@ -84,7 +84,10 @@ const PeriodStepper = memo(({
             ) : onReset ? (
                 <button type="button" onClick={onReset} disabled={isCurrent}
                     title={isCurrent ? undefined : `Volver a ${unit === 'período' ? 'el período actual' : `la ${unit} actual`}`}
-                    className={`flex flex-col items-center justify-center px-2 ${s.min} rounded-btn
+                    // El rótulo es un atajo real ("volver al período actual"),
+                    // así que es un target: medido en iPhone 13 daba 104x23.
+                    // `--tap-min` lo sube a 44 solo en táctil.
+                    className={`flex flex-col items-center justify-center px-2 ${s.min} min-h-[var(--tap-min)] rounded-btn
                         transition-colors duration-150 disabled:cursor-default
                         ${isCurrent ? '' : 'hover:bg-surface-card-hover'}`}>
                     {cuerpo}

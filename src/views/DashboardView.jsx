@@ -1311,7 +1311,11 @@ const DashboardView = ({ openModal }) => {
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
+              {/* `shrink-0`: en la cabecera del widget compite con un select
+                  y un segmentado, y en un teléfono el flex se lo comía hasta
+                  20px de ancho (medido en iPhone 13) aunque su alto fuera 44. */}
               {openModal&&<Button
+                              className="shrink-0"
                               icon={Maximize2}
                               iconOnly
                               size="xs"

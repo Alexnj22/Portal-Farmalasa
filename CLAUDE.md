@@ -206,14 +206,22 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
   tenerla en rojo. Un gate permanentemente rojo no lo mira nadie — que es
   exactamente cómo se acumuló esta deuda.
 
-  **Estado al 2026-07-28 (cierre de D4): 20 de las 23 categorías están en cero
-  absoluto** — las cinco que arrancaron con deuda en D0 (`white` 1094,
-  `typography` 4490, `z-index` 552, `hex` 32, `motion` 30) se cerraron en D1/D2.
-  Quedan tres con ratchet, y las tres son deuda deliberada, no pendiente:
+  **Estado al 2026-07-29 (cierre del plan `PLAN-CIERRE-DISENO-2026-07-29.md`):
+  el baseline está VACÍO y las 24 categorías son bloqueantes en cero absoluto.**
+  Las cinco que arrancaron con deuda en D0 (`white` 1094, `typography` 4490,
+  `z-index` 552, `hex` 32, `motion` 30) se cerraron en D1/D2; la última con
+  ratchet era `input-a-mano`, cerrada al pasar sus 3 archivos —login, kiosco y
+  el campo del ⌘K, todas superficies bespoke de DESIGN.md §25.4— a `EXCEPTIONS`
+  **con su motivo escrito**, que es más fuerte que tolerarlos por número: ahora
+  un `<input>` a mano en cualquier OTRO archivo falla el gate.
 
-  | categoría | baseline | por qué no es 0 |
-  |---|---|---|
-  | `input-a-mano` | 60 | celdas de grilla densa, que NO deben ser `PortalInput` (DESIGN.md §15.12). Todas con `aria-label`; `input-sin-nombre` las vigila en cero |
+  Categoría nueva del mismo cierre: **`celda-a-mano`** (un `<td>` crudo dentro
+  de un `<DataRow>` — saltea `DataCell` y con él la densidad de fila).
+
+  **Cuidado con `EXCEPTIONS`:** es un objeto literal, así que una clave repetida
+  hace que la segunda pise a la primera **en silencio**. Había 4 duplicados sin
+  detectar. Lo verifica `assertSinClavesDuplicadas` al arrancar el gate: cada
+  archivo va en UNA entrada con todas sus categorías.
 
   `chart-retirado` y `chip-a-mano` llegaron a **0 el 2026-07-28** y quedaron
   bloqueantes: los 3 categóricos retirados se migraron a su destino (424

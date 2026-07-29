@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '../common/Button';
-import { createPortal } from 'react-dom';
+import ModalShell from '../common/ModalShell';
 import { Search, CornerDownLeft, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { smartFilter } from '../../utils/searchUtils';
 import { Link } from 'react-router-dom';
@@ -17,20 +17,17 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
     const [selected, setSelected] = useState(0);
     const inputRef = useRef(null);
     const listRef = useRef(null);
-    const [render, setRender] = useState(false);
 
+    // El montaje, el bloqueo de scroll y la animación los maneja `ModalShell`
+    // (2026-07-29). Acá queda solo lo propio del buscador: limpiar el término
+    // y llevar el foco al campo, que es lo que hace usable una paleta ⌘K.
     useEffect(() => {
-        if (isOpen) {
-            setRender(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta el modal en respuesta a isOpen, dispara animación de entrada
-            setQuery('');
-            setSelected(0);
-            document.body.style.overflow = 'hidden';
-            const t = setTimeout(() => inputRef.current?.focus(), 50);
-            return () => clearTimeout(t);
-        }
-        const timeout = setTimeout(() => setRender(false), 200);
-        document.body.style.overflow = '';
-        return () => clearTimeout(timeout);
+        if (!isOpen) return undefined;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reinicia término y selección en respuesta a la apertura
+        setQuery('');
+        setSelected(0);
+        const t = setTimeout(() => inputRef.current?.focus(), 50);
+        return () => clearTimeout(t);
     }, [isOpen]);
 
     const results = useMemo(() => {
@@ -58,30 +55,26 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
         onClose();
     };
 
+    // Escape ya lo cierra `ModalShell` a nivel window: repetirlo acá lo dejaba
+    // funcionando solo mientras el foco estuviera dentro del panel.
     const handleKeyDown = (e) => {
-        if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
         if (e.key === 'ArrowDown') { e.preventDefault(); setSelected(i => (i + 1) % Math.max(results.length, 1)); return; }
         if (e.key === 'ArrowUp') { e.preventDefault(); setSelected(i => (i - 1 + Math.max(results.length, 1)) % Math.max(results.length, 1)); return; }
         if (e.key === 'Enter') { e.preventDefault(); navigate(results[selected]); }
     };
 
-    if (!render) return null;
-
-    const overlayClass = isOpen ? 'opacity-100' : 'opacity-0';
-    const modalClass = isOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95';
-
-    const modalContent = (
-        <div className="fixed inset-0 z-confirm flex items-start justify-center pt-[10vh] px-4">
-            <div
-                className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out ${overlayClass}`}
-                onClick={onClose}
-            />
-
-            <div
-                data-surface="dropdown"
-                className={`relative w-full max-w-xl overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${modalClass}`}
-                onKeyDown={handleKeyDown}
-            >
+    return (
+        <ModalShell
+            open={isOpen}
+            onClose={onClose}
+            maxWidthClass="max-w-xl"
+            zClass="z-confirm"
+            align="top"
+            surface="dropdown"
+            panelClassName="overflow-hidden"
+            ariaLabel="Buscar en el portal"
+        >
+            <div onKeyDown={handleKeyDown}>
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[60px] rounded-full pointer-events-none w-56 h-24 opacity-[0.15] bg-brand" />
 
                 {/* Input */}
@@ -150,8 +143,6 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                     <span className="ml-auto">Esc para cerrar</span>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
-
-    return createPortal(modalContent, document.body);
 }

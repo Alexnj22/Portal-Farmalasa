@@ -16,7 +16,70 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.203.0';
+export const APP_VERSION = '2.204.0';
+
+// v2.204.0 — cierre del sistema de diseno: los 4 residuos, y uno que nadie
+// habia visto.
+//
+// F0 — 223 animaciones que no existian. `animate-in fade-in zoom-in-95` esta
+// escrito en 73 archivos, incluidos los canonicos `ModalShell` y
+// `LiquidModal`, y compilaba a CERO CSS: son clases del plugin
+// `tailwindcss-animate` (Tailwind v3), que nunca estuvo instalado. Todo modal,
+// dropdown y panel del portal aparecia de golpe — justo lo que D2.4 declara
+// movimiento FUNCIONAL que se queda. Verificado contra el bundle, que es la
+// unica prueba valida: `duration-500` y `animate-pulse` existian, `animate-in`
+// daba 0. Resuelto con `tw-animate-css` (sucesor para v4, mismo API): no hubo
+// que tocar un solo JSX y la duracion sale del `duration-*` ya escrito al lado.
+// Atado a los dos gates de movimiento — en Solid 130ms lineales, y con
+// prefers-reduced-motion se anulan las variables de geometria y queda el fade.
+// Medido en /ventas: liquid 105 animaciones, solid 12, con `reduce` 0 y 0.
+//
+// F1 — `MenuSearchModal`, `PromptModal` y `PhotoEditorModal` montaban su propio
+// portal: sin `role="dialog"`, sin `aria-modal` y dos sin cierre con Escape.
+// Para un lector de pantalla no eran dialogos. Pasan a `ModalShell`, al que le
+// faltaban cuatro cosas que se le agregaron a EL y no inline: `align="top"`,
+// `closeOnBackdrop`, `surface`/`panelClassName` y la animacion de SALIDA (sin
+// ella, migrar los dos que si la tenian habria sido una regresion).
+//
+// F2 — el contrato "Solid no tiene vidrio" solo se cumplia donde el autor
+// combinaba `bg-surface-*` con `backdrop-blur` en la misma clase: 66 apagados,
+// 82 siguiendo con blur. Se invierte — se apaga por defecto y la excepcion es
+// explicita (`data-bespoke-glass` en el sidebar). Login y kiosco no la
+// necesitan: uno quita `data-theme` y el otro fuerza `dark`. Medido en el
+// navegador: 0 elementos con backdrop-filter vivo fuera del sidebar.
+//
+// F3 — `input-a-mano` pasa de ratchet a excepcion nombrada y el baseline del
+// gate queda VACIO: las 25 categorias bloqueantes en cero. De paso aparecio que
+// `EXCEPTIONS` tenia 4 claves repetidas — un objeto literal deja que la segunda
+// pise a la primera en silencio, o sea 4 excepciones que no se aplicaban. Lo
+// vigila `assertSinClavesDuplicadas`.
+//
+// F4 — "la densidad no comprime filas" estaba mal enunciado: comprime, salvo
+// donde la celda apila dos o tres datos, y ahi no puede (el `height` de un
+// `<td>` es un minimo por spec). Dos causas reales: interlineado de lectura en
+// modo denso, y 5 `<td>` a mano dentro de un `<DataRow>` que traian su propio
+// `py-3`. /ventas 52→42px, /pedidos 71→41px. Categoria nueva `celda-a-mano`.
+//
+// F5 — de "224 targets tacticos sin clasificar" a **989 controles medidos y 7
+// con motivo**. La mayoria no eran targets: 50 chevrons `aria-hidden` que
+// duplican una fila ya clicable, 26 inputs `sr-only` cuyo target es su etiqueta
+// visible, y botones de 44px declarados que el rect reportaba en 42 por un
+// `scale` de ancestro. Deuda real corregida en `SegmentedControl`,
+// `LiquidSelect` y `PeriodStepper` — los tres canonicos, asi que vale para todo
+// el portal. Los 7 restantes son las barras del grafico: ahi el ancho ES el
+// dato (WCAG 2.5.5 tiene excepcion para presentacion esencial).
+//
+// Y lo que encontro la auditoria final: `Button.TONE_CLASSES` usaba
+// `bg-chart-N` CRUDO con texto blanco para las seis tonalidades de grafico
+// (4.23:1 contra el 4.5 que pide AA), y `SegmentedControl` estaba migrado a
+// medias. 82 usos de `tone="chart-N"` renderizaban blanco bajo AA. Los tokens
+// `-solid` de N2 existian desde hace semanas; los canonicos no los usaban.
+// Gate nuevo `relleno-sin-solid`, que evalua el par POR VARIANTE (el primer
+// intento miraba la cadena entera y dio 15 falsos positivos).
+//
+// Cierre verificado: gate:design 0 en 25 categorias · gate:doc limpio · eslint
+// limpio · escaner de contraste de D1 en las 29 rutas: 0 superficies blancas y
+// 0 nodos bajo AA.
 
 // v2.203.0 — ocultar en MIN/MAX dejaba la sucursal sin recalcular desde junio.
 //

@@ -925,6 +925,35 @@ los usaba — se descartaron en vez de migrarse (código muerto).
 | `animate-ping` *(Tailwind)* | | | Live indicator dot, alert dot |
 | `animate-spin` *(Tailwind)* | | | Loader2 spinner |
 
+### `animate-in` / `animate-out` — la familia de entrada (tw-animate-css)
+
+`animate-in fade-in zoom-in-95`, `slide-in-from-*` y sus pares de salida vienen
+de **`tw-animate-css`**, importado en `index.css` justo después de Tailwind.
+Cúbrelos siempre que un elemento **aparezca o desaparezca**: modal, dropdown,
+popover, panel, toast. Es el movimiento que D2.4 clasifica como *funcional*.
+
+```jsx
+// entrada estándar de un panel que aparece
+className="animate-in fade-in zoom-in-95 duration-300"
+// salida (el elemento tiene que seguir montado mientras dura)
+className="animate-out fade-out zoom-out-95 duration-150"
+```
+
+La duración sale de `duration-*` de Tailwind (`--tw-duration`), o sea que se
+escribe al lado como en cualquier transición. Los dos gates de movimiento ya
+los alcanzan: en Solid duran 130ms lineales, y con `prefers-reduced-motion` se
+les anulan las variables de geometría (`--tw-enter-scale`, `-translate-x/y`,
+`-rotate`, `-blur`) y queda solo el fade.
+
+> **Tercera vez que pasa lo mismo.** Hasta el 2026-07-29 estas clases estaban
+> escritas en **223 lugares de 73 archivos —incluidos `ModalShell` y
+> `LiquidModal`— y no generaban ni una línea de CSS**: son del plugin
+> `tailwindcss-animate` (Tailwind v3), que nunca estuvo instalado. Todo modal
+> del portal aparecía de golpe. Es el mismo fallo que esta sección ya
+> documenta para `tailwind.config.js` en T1 y que §7 documenta para
+> `rounded-full`. **Antes de dar por buena una clase, buscarla en el bundle**:
+> `grep -c '\.animate-in' dist/assets/*.css`.
+
 ### Shimmer sweep (hover on buttons)
 
 All primary CTA buttons include an inner `<span>` shimmer overlay:
@@ -2800,6 +2829,33 @@ recuperaron de `git show aca2ef0f^`.
 Las tres comparten causa: **una migración masiva que reescribe JSX solo se puede
 dar por buena si se ejercita el resultado**. Verde en build + lint + gate
 significa que compila, no que el control sigue haciendo lo que hacía.
+
+### 25.9 Qué cuenta como target — y por qué 224 eran 46 (2026-07-29)
+
+La auditoría anterior dejó **"224 targets bajo 44px"** abiertos. Al volver a
+medirlos en iPhone 13 sobre 22 rutas, la mayoría **no eran targets**. Tres
+exclusiones, y las tres son criterio, no conveniencia:
+
+| se excluye | por qué |
+|---|---|
+| `aria-hidden="true"` + `tabIndex={-1}` | Duplican una acción que ya tiene un control mayor — el chevron de `LiquidSelect` sobre su propio combobox, el de `AttendanceAuditView` sobre una fila entera clicable. **50 de los 224 eran esto en una sola vista.** No están en el árbol de accesibilidad ni reciben foco: el target es el control que envuelven. |
+| `.sr-only` con etiqueta visible | Un `<input>` de 1×1 emparejado por `peer` con una etiqueta que sí se ve. Es el patrón accesible correcto; el target es la etiqueta. **26 en `/proveedores`.** |
+| Caja CSS ≥44 encogida por un `scale` de ancestro | El botón de tamaño del widget mide 44px declarados y 42 en pantalla porque su panel está en `scale-[0.95]` **mientras está oculto** (`opacity-0`). Medir el rect y no la caja inventa un hallazgo. |
+
+Lo que quedó después de eso: **989 controles medidos, 7 bajo 44px**, y los 7 son
+las **barras del gráfico de ventas** (38×68). Ahí 44px de ancho no es una
+mejora: el ancho de la barra *es* el dato. WCAG 2.5.5 tiene excepción explícita
+para presentación esencial, y 2.5.8 (AA, 24×24) se cumple.
+
+Lo que sí era deuda y se corrigió: `SegmentedControl` (28/36px fijos →
+`max(…, var(--tap-min))`), `LiquidSelect` (40px fijos → ídem; `nano` se queda en
+26 porque vive en grillas densas y ya recibe su área tocable por
+pseudo-elemento), `PeriodStepper` (el rótulo es un atajo real, no decoración),
+los botones de `/branches` y el chip de tres segmentos de `/facturacion`.
+
+**La regla que sale de acá:** antes de contar un control como target, preguntar
+si es *el* control o el adorno de otro. Un conteo que no distingue eso manda a
+agrandar cosas que no se tocan y esconde las que sí.
 
 ---
 

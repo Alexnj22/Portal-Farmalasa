@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Button from './Button';
 import Cropper from 'react-easy-crop';
-import { createPortal } from 'react-dom';
+import ModalShell from './ModalShell';
 import {
     X, ZoomIn, ZoomOut, Scissors, Loader2, Check,
     RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus,
@@ -336,9 +336,22 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     const cW = canvasDims.w ? Math.round(canvasDims.w * baseScale * brushZoom) : undefined;
     const cH = canvasDims.h ? Math.round(canvasDims.h * baseScale * brushZoom) : undefined;
 
-    return createPortal(
-        <div className="fixed inset-0 z-confirm flex items-center justify-center bg-scrim backdrop-blur-sm p-4">
-            <div data-surface="modal" className="w-full max-w-md flex flex-col overflow-hidden">
+    // 2026-07-29: montaba su propio portal sin `role="dialog"`, sin
+    // `aria-modal` y sin Escape. Pasa a `ModalShell` como los demás, con una
+    // diferencia deliberada: `closeOnBackdrop={false}`. Acá un clic afuera
+    // tiraría un recorte a medias sin preguntar, y el modal ya tiene dos
+    // salidas explícitas (la X del encabezado y "Cancelar").
+    return (
+        <ModalShell
+            open
+            onClose={onCancel}
+            maxWidthClass="max-w-md"
+            zClass="z-confirm"
+            closeOnBackdrop={false}
+            panelClassName="flex flex-col overflow-hidden"
+            ariaLabel={brushMode ? 'Retocar fondo' : 'Editar foto'}
+        >
+            <>
 
                 {/* ── Header ── */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-divider shrink-0">
@@ -594,8 +607,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                 : 'Guardar foto'}</Button>
                     </div>
                 )}
-            </div>
-        </div>,
-        document.body
+            </>
+        </ModalShell>
     );
 }

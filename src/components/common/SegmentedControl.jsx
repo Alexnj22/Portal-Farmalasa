@@ -28,9 +28,14 @@ import React, { memo } from 'react';
  * peleando contra su propio lenguaje de forma.
  */
 
+// Las alturas pasan por `max(…, var(--tap-min))`: en escritorio `--tap-min` es
+// 0 y quedan en 28/36px como siempre; en táctil sube a 44px, que es el piso del
+// dedo (DESIGN.md §25). Medido en iPhone 13 el 2026-07-29, un segmentado de
+// "Horas/Días" daba 68x28 y 54x28 — el mismo control que en escritorio está
+// bien dimensionado.
 const SIZE = {
-    sm: { riel: 'p-0.5 gap-0.5', op: 'h-7 px-3 text-micro',   icono: 11 },
-    md: { riel: 'p-1 gap-0.5',   op: 'h-9 px-4 text-caption', icono: 13 },
+    sm: { riel: 'p-0.5 gap-0.5', op: 'h-[max(28px,var(--tap-min))] px-3 text-micro',   icono: 11 },
+    md: { riel: 'p-1 gap-0.5',   op: 'h-[max(36px,var(--tap-min))] px-4 text-caption', icono: 13 },
 };
 
 // Literales, no plantilla: Tailwind escanea texto (ver la nota de Badge/Switch).
@@ -40,9 +45,11 @@ const ACTIVO = {
     warning: 'bg-warning-solid text-white',
     danger:  'bg-danger-solid text-white',
     neutro:  'bg-surface-tab-active text-content',
-    'chart-1': 'bg-chart-1 text-white',
-    'chart-3': 'bg-chart-3-solid text-white', 'chart-4': 'bg-chart-4 text-white',
-    'chart-6': 'bg-chart-6 text-white',
+    // Estaba migrado A MEDIAS: chart-3/8/9 usaban `-solid` y chart-1/4/6 el
+    // color crudo, que con blanco encima no llega a AA (ver Button.TONE_CLASSES).
+    'chart-1': 'bg-chart-1-solid text-white',
+    'chart-3': 'bg-chart-3-solid text-white', 'chart-4': 'bg-chart-4-solid text-white',
+    'chart-6': 'bg-chart-6-solid text-white',
     'chart-8': 'bg-chart-8-solid text-white',
     'chart-9': 'bg-chart-9-solid text-white',
 };

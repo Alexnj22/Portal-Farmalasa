@@ -1,7 +1,6 @@
 {
   "_comment": "Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (docs/planes-cerrados/AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline",
+  "_estado": "2026-07-29: VACÍO — las categorías están todas en cero absoluto y bloqueantes (una que no figura acá arranca en 0: baseline[c] ?? 0). La última con ratchet era `input-a-mano` (4), cerrada al pasar sus 3 archivos a EXCEPTIONS con el motivo escrito, en vez de tolerarlos por número (PLAN-CIERRE-DISENO-2026-07-29.md, F3). No volver a poner números acá para tapar un hallazgo nuevo: si una categoría sube, es código nuevo que hay que arreglar.",
   "updated": "2026-07-29",
-  "categories": {
-    "input-a-mano": 4
-  }
+  "categories": {}
 }

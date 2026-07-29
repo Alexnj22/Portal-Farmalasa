@@ -73,11 +73,11 @@ const EXCEPTIONS = {
   // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
   // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
   // 343 referencias vivas no se rompan mientras migran.
+  // Badge/Button/Switch NO están acá: ya tenían entrada más abajo (por 'white'
+  // y 'hex') y repetir la clave habría borrado una de las dos. Llevan
+  // 'chart-retirado' en aquella. Ver `assertSinClavesDuplicadas`.
   'src/index.css': ['chart-retirado'],
-  'src/components/common/Badge.jsx': ['chart-retirado'],
-  'src/components/common/Button.jsx': ['chart-retirado'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
-  'src/components/common/Switch.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],
   // Superficies fijas-oscuras (no siguen el tema activo, confirmado en DESIGN.md §6)
@@ -90,6 +90,21 @@ const EXCEPTIONS = {
   // portal (verde + magenta del logo). La escala --shadow-glow-* es de un color
   // por token; un token propio para esto sería una escala de uno.
   'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index', 'shadow-literal'],
+  // `input-a-mano` (2026-07-29): los 4 que quedaban NO son deuda, son las
+  // superficies bespoke de DESIGN.md §25.4 —lista CERRADA— más la paleta de
+  // comandos. Pasan de ratchet a excepción nombrada para que la categoría
+  // quede en CERO y bloqueante: un `<input>` nuevo en cualquier OTRO archivo
+  // falla el gate, que es justo lo que un número en el baseline no garantiza.
+  //   · LoginView / AuthPromptPanel — login y kiosco no siguen el tema ni el
+  //     sistema de formularios; `PortalInput` traería su caja y su etiqueta.
+  //   · MenuSearchModal — el campo del ⌘K es transparente y sin marco: una
+  //     paleta de comandos no lleva etiqueta visible (el placeholder y el
+  //     `aria-label` son su nombre). Los 3 tienen nombre accesible, vigilado
+  //     en cero por `input-sin-nombre`.
+  // (LoginView y AuthPromptPanel llevan 'input-a-mano' en su entrada de más
+  // abajo — este objeto NO admite la misma clave dos veces: la segunda pisa a
+  // la primera en silencio. Lo verifica `assertSinClavesDuplicadas`.)
+  'src/components/layout/MenuSearchModal.jsx': ['input-a-mano'],
   'src/views/branch-tabs/TabStaff.jsx': ['color', 'native'], // panel WFM dark + shimmer IA
   'src/components/forms/FormWfmAnalytics.jsx': ['color'], // tooltip flotante dark
   'src/components/timeclock/IdleScanPanel.jsx': ['color'], // kiosco
@@ -116,12 +131,14 @@ const EXCEPTIONS = {
   'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
   'src/views/TimeClockView.jsx': ['color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['color', 'z-index'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
   'src/components/timeclock/KioskConfigModal.jsx': ['color'],
-  'src/components/timeclock/FeedbackOverlay.jsx': ['color'], // overlay kiosco full-screen
   'src/components/common/ThemeToggle.jsx': ['color'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
-  'src/components/forms/FormAuditDetail.jsx': ['color'], // mockup de ventana macOS (colores reales del semáforo Apple)
+  // 'relleno-sin-solid': `selection:bg-success/30 selection:text-white` es el
+  // resaltado de SELECCIÓN de texto, no un relleno de control — el usuario ve
+  // ese par solo mientras arrastra sobre el bloque de código.
+  'src/components/forms/FormAuditDetail.jsx': ['color', 'relleno-sin-solid'], // mockup de ventana macOS (colores reales del semáforo Apple)
   'src/views/AccessDeniedView.jsx': ['color'], // verde real de marca WhatsApp
   'src/views/NoAccessView.jsx': ['color'], // verde real de marca WhatsApp
   'src/App.jsx': ['color'], // fondo splash bespoke (comparte gradiente con LoginView)
@@ -155,7 +172,11 @@ const EXCEPTIONS = {
   // Piezas únicas fuera de la rampa, no una escala: emoji decorativos de
   // fondo (120/80px, opacity .07 — decoración, no texto) y un numeral hero
   // de 72px. Con esto la categoría `typography` queda en 0 y bloqueante.
-  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography'],
+  // 'relleno-sin-solid': el kiosco es superficie bespoke SIEMPRE oscura
+  // (§25.4). Ahí `bg-chart-6/10` no es un relleno claro sino un tinte sobre
+  // negro, y el texto blanco encima mide de sobra — la regla del `-solid`
+  // existe para rellenos sobre fondo claro.
+  'src/components/timeclock/FeedbackOverlay.jsx': ['color', 'typography', 'relleno-sin-solid'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -168,13 +189,13 @@ const EXCEPTIONS = {
   //   chart-8 colapsaría dos categorías en un color. Es una rampa
   //   secuencial y el sistema solo tiene paletas categóricas — decidirlo es
   //   trabajo de D2.5, no de un reemplazo mecánico.
-  'src/components/common/Button.jsx': ['hex', 'white'],
+  'src/components/common/Button.jsx': ['hex', 'white', 'chart-retirado'],
   // Badge.jsx ES la implementación canónica del patrón sólido que definió N2
   // (bg-X-solid + text-white). Su `text-white` no es deuda: es el contrato.
   // Mismo criterio que la excepción 'native' de LiquidSelect por ser el
   // canónico del <select>.
-  'src/components/common/Badge.jsx': ['white'],
-  'src/components/common/Switch.jsx': ['white'], // ES el canónico de la perilla
+  'src/components/common/Badge.jsx': ['white', 'chart-retirado'],
+  'src/components/common/Switch.jsx': ['white', 'chart-retirado'], // ES el canónico de la perilla
   // ── Perillas de switch (revisadas una por una, 2026-07-27) ─────────────
   // `bg-white` en un círculo pequeño ABSOLUTAMENTE POSICIONADO dentro de un
   // riel: es una perilla de switch, y una perilla es blanca sobre su riel en
@@ -207,7 +228,7 @@ const EXCEPTIONS = {
   // anclados al sidebar NO siguen el tema activo — son oscuros en los cuatro.
   // Ahí `bg-white/[0.06]` y `border-white/10` no son deuda: son la paleta
   // bespoke de esa superficie, que ya está documentada en DESIGN.md §6.
-  'src/components/timeclock/AuthPromptPanel.jsx': ['color', 'white'],
+  'src/components/timeclock/AuthPromptPanel.jsx': ['color', 'white', 'input-a-mano'],
   'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['color', 'white'],
   'src/components/timeclock/EarlyExitForm.jsx': ['color', 'white'],
   'src/components/common/SidebarSettingsMenu.jsx': ['color', 'white'],
@@ -246,6 +267,28 @@ const EXCEPTIONS = {
   // app, y nombrarlo con la escala global sería peor: sugeriría una relación
   // que no existe.
 };
+
+// EXCEPTIONS es un objeto literal: repetir una clave NO es un error de JS, la
+// segunda simplemente pisa a la primera y la excepción de arriba desaparece sin
+// aviso. Pasó el 2026-07-29 al agregar 'input-a-mano' a LoginView y
+// AuthPromptPanel: ambos ya figuraban más abajo, así que el gate siguió
+// marcándolos y el motivo escrito no servía de nada. Se lee el propio fuente
+// porque para cuando el objeto existe la información ya se perdió.
+function assertSinClavesDuplicadas() {
+  const fuente = readFileSync(new URL(import.meta.url), 'utf8');
+  const bloque = fuente.slice(fuente.indexOf('const EXCEPTIONS = {'));
+  const cuerpo = bloque.slice(0, bloque.indexOf('\n};'));
+  const vistas = new Map();
+  for (const m of cuerpo.matchAll(/^\s*'([^']+)':\s*\[/gm)) {
+    vistas.set(m[1], (vistas.get(m[1]) || 0) + 1);
+  }
+  const dup = [...vistas].filter(([, n]) => n > 1).map(([k]) => k);
+  if (dup.length) {
+    console.error(`\n✗ EXCEPTIONS tiene claves repetidas — la última gana y las anteriores se pierden en silencio:\n${dup.map(d => `  · ${d}`).join('\n')}\n  Unificá cada archivo en UNA sola entrada con todas sus categorías.\n`);
+    process.exit(1);
+  }
+}
+assertSinClavesDuplicadas();
 
 const hasException = (file, category) => (EXCEPTIONS[file] || []).includes(category);
 
@@ -869,6 +912,78 @@ function scanFile(path) {
         const linea = sinComentarios2.slice(0, ms.index).split('\n').length;
         findings.push({ line: linea, label: 'chip escrito a mano — usar `Badge` (DESIGN.md §16)',
           category: 'chip-a-mano', text: abre.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
+    // ── `relleno-sin-solid` (2026-07-29) ────────────────────────────────
+    // `text-white` sobre un relleno de color que NO es el token `-solid`.
+    // Es la regla que N2 dejó escrita en DESIGN.md §6 —teñido usa
+    // `bg-X/10 + text-X-text`, sólido usa `bg-X-solid + text-white`— y que
+    // nadie verificaba. El 2026-07-29 el escáner de contraste encontró dos
+    // botones a **4.23:1** (AA pide 4.5) y al abrirlos el defecto estaba en
+    // los CANÓNICOS: `Button.TONE_CLASSES` usaba `bg-chart-N` crudo para las
+    // seis tonalidades de gráfico, y `SegmentedControl` estaba migrado a
+    // medias (chart-3/8/9 con `-solid`, chart-1/4/6 sin él). 82 usos de
+    // `tone="chart-N"` en el portal renderizaban blanco bajo AA.
+    // El par se evalúa POR VARIANTE, no sobre la cadena entera: el patrón
+    // correcto y muy usado es `bg-danger/10 text-danger hover:bg-danger-solid
+    // hover:text-white` — teñido en reposo, sólido al pasar el mouse. Mirando
+    // la cadena completa eso da un falso positivo (fue el primer intento de
+    // esta regla: 15 hallazgos, los 15 falsos).
+    if (!hasException(path, 'relleno-sin-solid')) {
+      const RE_CLS = /className=\{?(?:`([^`]*)`|"([^"]*)")/g;
+      let mc;
+      while ((mc = RE_CLS.exec(sinComentarios2))) {
+        const cls = mc[1] || mc[2] || '';
+        if (!/text-white\b/.test(cls)) continue;
+        const porVariante = new Map();
+        for (const tok of cls.split(/\s+/)) {
+          const i = tok.lastIndexOf(':');
+          const variante = i === -1 ? '' : tok.slice(0, i);
+          const util = i === -1 ? tok : tok.slice(i + 1);
+          const g = porVariante.get(variante) || { blanco: false, rellenos: [] };
+          if (util === 'text-white') g.blanco = true;
+          const mb = util.match(/^bg-(chart-\d|success|warning|danger)(?!-solid)(?:\/\[?[\d.]+\]?)?$/);
+          if (mb) g.rellenos.push(mb[1]);
+          porVariante.set(variante, g);
+        }
+        for (const [variante, g] of porVariante) {
+          if (!g.blanco || !g.rellenos.length) continue;
+          const pref = variante ? `${variante}:` : '';
+          const linea = sinComentarios2.slice(0, mc.index).split('\n').length;
+          findings.push({ line: linea, label: `\`${pref}text-white\` sobre \`${pref}bg-${g.rellenos[0]}\` — el relleno sólido usa \`-solid\` (DESIGN.md §6)`,
+            category: 'relleno-sin-solid', text: cls.replace(/\s+/g, ' ').slice(0, 110) });
+        }
+      }
+    }
+
+    // ── `celda-a-mano` (2026-07-29, F4/A1) ──────────────────────────────
+    // Un `<td>` crudo DENTRO de un `<DataRow>`. Es lo que impedía que la
+    // densidad llegara a la fila: `DataCell` es quien pone `h-[var(--row-h)]`
+    // y el `data-cell` del que cuelga el interlineado denso; un `<td>` a mano
+    // trae su propio `py-3` y deja la fila en 71px cuando --row-h pide 32
+    // (medido en /pedidos, TabGenerar.jsx).
+    //
+    // El alcance es DELIBERADAMENTE estrecho: solo dentro de `<DataRow>`. Hay
+    // 224 `<td>` más en el portal y **no son deuda** — son plantillas de
+    // impresión (la boleta de PayrollView), sub-tablas dentro de una tarjeta
+    // (que DESIGN.md §14 prohíbe que sean `DataTable`) y calendarios. Contar
+    // "todos los <td>" habría dado 229 y mandado a migrar 224 cosas que están
+    // bien; contar por estructura da 5, que era el número real.
+    {
+      const RE_ROW = /<DataRow\b/g;
+      let mr;
+      while ((mr = RE_ROW.exec(sinComentarios2))) {
+        const fin = sinComentarios2.indexOf('</DataRow>', mr.index);
+        if (fin === -1) continue;
+        const bloque = sinComentarios2.slice(mr.index, fin);
+        const RE_TD = /<td\b/g;
+        let mt;
+        while ((mt = RE_TD.exec(bloque))) {
+          const linea = sinComentarios2.slice(0, mr.index + mt.index).split('\n').length;
+          findings.push({ line: linea, label: '`<td>` a mano dentro de `<DataRow>` — usar `DataCell` (DESIGN.md §14)',
+            category: 'celda-a-mano', text: bloque.slice(mt.index, mt.index + 90).replace(/\s+/g, ' ') });
+        }
       }
     }
 

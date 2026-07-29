@@ -793,6 +793,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* ── Sidebar ── */}
                 <aside
                     ref={asideRef}
+                    // `data-bespoke-glass`: el sidebar es una de las tres
+                    // superficies bespoke de DESIGN.md §25.4 — siempre oscura,
+                    // no sigue el tema. Este atributo la exceptúa de la regla
+                    // que apaga TODO backdrop-filter en Solid (index.css, buscar
+                    // "contrato Solid"). Login y kiosco no lo necesitan: quitan
+                    // o pisan `data-theme`, así que nunca se pintan bajo solid.
+                    data-bespoke-glass=""
                     className={`fixed lg:relative z-sidebar lg:z-sidebar-desktop lg:h-auto flex flex-col shrink-0
                         my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
                         ${isMobile
@@ -1148,6 +1155,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* ── Flyout tooltip ── */}
                 {!isMobile && flyout && (
                     <div
+                        // Anclado al sidebar y por lo tanto oscuro como él
+                        // (ver el `data-bespoke-glass` del <aside>): vive fuera
+                        // del </aside> en el DOM, así que necesita marcarse solo.
+                        data-bespoke-glass=""
                         className="fixed z-flyout pointer-events-auto"
                         style={{ left: flyout.x, top: flyout.y, transform: 'translateY(-50%)' }}
                         onMouseEnter={() => clearTimeout(flyoutTimerRef.current)}

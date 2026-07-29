@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { DataTable, DataRow } from '../../components/common/DataTable';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '../../utils/pedidoPrint';
@@ -530,11 +530,11 @@ export default function TabGenerar({ searchTerm = '' }) {
             >
                 {filteredSinBodega.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
-                        <td className="px-4 py-3 text-body font-semibold text-content">
+                        <DataCell className="text-body font-semibold text-content">
                             {row.product_name}
-                        </td>
-                        <td className="px-4 py-3 text-body-sm text-content-3">{row.laboratorio || '—'}</td>
-                        <td className="px-4 py-3">
+                        </DataCell>
+                        <DataCell className="text-body-sm text-content-3">{row.laboratorio || '—'}</DataCell>
+                        <DataCell>
                             <div className="flex flex-wrap gap-1">
                                 {(row.sucursales || []).map(s => (
                                     <span key={s.erp_sucursal_id}
@@ -550,11 +550,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     </span>
                                 ))}
                             </div>
-                        </td>
-                        <td className="px-4 py-3 text-center hidden sm:table-cell">
+                        </DataCell>
+                        <DataCell align="center" hideBelow="sm">
                             <span className="text-body font-bold text-danger tabular-nums">{row.total_necesidad}</span>
-                        </td>
-                        <td className="px-4 py-3 text-center hidden sm:table-cell">
+                        </DataCell>
+                        <DataCell align="center" hideBelow="sm">
                             {row.total_ventas_6m > 0 ? (
                                 <span className="inline-flex items-center justify-center gap-1 text-body-sm text-success font-semibold tabular-nums">
                                     <TrendingUp size={11} />
@@ -563,7 +563,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                             ) : (
                                 <span className="text-label text-content-3">—</span>
                             )}
-                        </td>
+                        </DataCell>
                     </DataRow>
                 ))}
             </DataTable>

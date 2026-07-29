@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Button from './Button';
-import { createPortal } from 'react-dom';
-import { MessageSquarePlus, Loader2 } from 'lucide-react';
+import { MessageSquarePlus } from 'lucide-react';
+import ModalShell from './ModalShell';
 import PortalTextarea from './PortalTextarea';
 
 // Mismo shell visual que ConfirmModal/AlertModal (glass modal, glow, footer
@@ -9,6 +9,12 @@ import PortalTextarea from './PortalTextarea';
 // de confirmar una acción. Canónico nuevo (DESIGN.md §14, ver también §9.0
 // "regla cero-nativo"): reemplaza `window.prompt()`, que no respeta tema ni
 // estilo del proyecto.
+//
+// 2026-07-29: montaba su propio `createPortal` + `fixed inset-0` + lock de
+// scroll. Eso lo dejaba sin `role="dialog"`, sin `aria-modal` y sin cierre con
+// Escape — o sea que para un lector de pantalla no era un diálogo, y con
+// teclado no había forma de salir. Ahora lo compone `ModalShell`, igual que
+// `AlertModal`.
 const PromptModal = ({
     isOpen,
     onClose,
@@ -21,39 +27,27 @@ const PromptModal = ({
     isProcessing = false,
     required = false,
 }) => {
-    const [render, setRender] = useState(false);
     const [text, setText] = useState('');
 
+    // El texto se limpia al ABRIR, no al cerrar: durante la animación de salida
+    // el panel sigue montado y vaciarlo ahí se ve como un parpadeo del campo.
     useEffect(() => {
-        if (isOpen) {
-            setRender(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta el modal en respuesta a isOpen, dispara la animación de entrada
-            setText('');
-            document.body.style.overflow = 'hidden';
-        } else {
-            const timeout = setTimeout(() => setRender(false), 300);
-            document.body.style.overflow = '';
-            return () => clearTimeout(timeout);
-        }
-        return () => { document.body.style.overflow = ''; };
+        if (isOpen) setText(''); // eslint-disable-line react-hooks/set-state-in-effect -- reinicia el campo en respuesta a la apertura
     }, [isOpen]);
 
-    if (!render) return null;
-
-    const overlayClass = isOpen ? 'opacity-100' : 'opacity-0';
-    const modalClass = isOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95';
     const canConfirm = !isProcessing && (!required || text.trim().length > 0);
 
-    const modalContent = (
-        <div className="fixed inset-0 z-confirm flex items-center justify-center p-4 sm:p-6">
-            <div
-                className={`absolute inset-0 transition-opacity duration-300 ease-out bg-scrim backdrop-blur-sm ${overlayClass}`}
-                onClick={!isProcessing ? onClose : undefined}
-            />
-
-            <div
-                data-surface="modal"
-                className={`relative w-full max-w-sm overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${modalClass}`}
-            >
+    return (
+        <ModalShell
+            open={isOpen}
+            onClose={isProcessing ? undefined : onClose}
+            maxWidthClass="max-w-sm"
+            zClass="z-confirm"
+            closeOnEsc={!isProcessing}
+            closeOnBackdrop={!isProcessing}
+            ariaLabel={title}
+        >
+            <div className="overflow-hidden relative">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-brand" />
 
                 <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-base">
@@ -84,22 +78,19 @@ const PromptModal = ({
                 <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-base bg-surface-card-hover">
                     <Button variant="secondary" disabled={isProcessing} onClick={onClose}>{cancelText}</Button>
 
-                    <button
-                        onClick={() => onConfirm(text.trim())}
+                    <Button
+                        variant="primary"
+                        className="flex-1"
+                        loading={isProcessing}
                         disabled={!canConfirm}
-                        className={`py-3 px-4 rounded-xl font-black text-label uppercase tracking-widest text-white transition-all duration-300 flex-1 flex items-center justify-center gap-2 border-transparent shadow-sm ${
-                            !canConfirm ? 'cursor-not-allowed opacity-60 bg-brand' : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] bg-brand hover:bg-brand-hover'
-                        }`}
+                        onClick={() => onConfirm(text.trim())}
                     >
-                        {isProcessing ? <Loader2 size={16} strokeWidth={2.5} className="animate-spin shrink-0" /> : null}
-                        <span>{confirmText}</span>
-                    </button>
+                        {confirmText}
+                    </Button>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
-
-    return createPortal(modalContent, document.body);
 };
 
 export default PromptModal;

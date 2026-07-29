@@ -86,7 +86,15 @@ const LiquidSelect = ({
     // que no se puede resolver con tamaño real (medido en iPhone 13: 20x20).
     const areaTocable = "after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-[var(--tap-min)] after:h-[var(--tap-min)]";
     const iconSize = nano ? 10 : compact ? 11 : 14;
-    const minHeightClass = nano ? 'min-h-[26px]' : 'min-h-[40px]';
+    // El disparador se quedaba en 40px fijos, así que en un teléfono el
+    // combobox medía 40 donde el piso del dedo son 44 — medido en iPhone 13 el
+    // 2026-07-29: 11 comboboxes a 150x40 en 7 rutas. `--tap-min` es 0 en
+    // escritorio (no agranda nada ahí) y 44px en táctil, así que el `max()`
+    // sube solo donde hace falta.
+    // `nano` queda con su 26px a propósito: vive dentro de grillas densas
+    // (DESIGN.md §15.12) y ya recibe su área tocable de 44px por el
+    // pseudo-elemento `areaTocable`, sin ocupar ese espacio en pantalla.
+    const minHeightClass = nano ? 'min-h-[26px]' : 'min-h-[max(40px,var(--tap-min))]';
 
     const selectedOption = useMemo(() =>
         options.find(opt => String(opt.value) === String(value)),

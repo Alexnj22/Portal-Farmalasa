@@ -306,6 +306,12 @@ export function DataCell({ children, align = 'left', hideBelow, className = '', 
   return (
     <td
       {...props}
+      // `data-cell`: marca estable para que la densidad pueda apretar el
+      // interlineado de la celda (index.css, buscar "A1"). Sin eso, una celda
+      // que apila fecha+hora+estado mide 52px aunque --row-h pida 32 — el
+      // `height` de un <td> es MÍNIMO por spec, así que el único margen real
+      // está en el interlineado, no en la altura declarada.
+      data-cell=""
       className={[
         // D2.3 — el alto de fila sale de --row-h (44/38/32px con mouse, piso
         // de 44px en táctil) en vez de un padding fijo.

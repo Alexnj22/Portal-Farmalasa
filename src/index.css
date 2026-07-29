@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/* `animate-in` / `fade-in` / `zoom-in-*` / `slide-in-from-*` — 223 usos en 73
+   archivos, incluidos los canónicos `ModalShell` y `LiquidModal`.
+   Descubierto el 2026-07-29: esas clases son del plugin `tailwindcss-animate`
+   (Tailwind v3) y NUNCA estuvieron instaladas. Tailwind v4 no las trae de
+   core, así que las 223 declaraciones compilaban a CERO CSS y todo modal,
+   dropdown y panel del portal aparecía de golpe — justo lo que D2.4 declara
+   movimiento FUNCIONAL que se queda ("un modal que aparece de golpe se lee
+   como roto"). Verificado contra el bundle: `duration-500`, `animate-pulse` y
+   `rounded-btn` existían; `animate-in`, `fade-in`, `zoom-in-95` y
+   `slide-in-from-*` daban 0 coincidencias.
+   `tw-animate-css` es el sucesor del plugin para v4 (CSS puro, mismo API).
+   La duración sale de `--tw-duration`, o sea que el `duration-300` que ya
+   estaba escrito al lado alimenta la animación sin tocar ni un JSX.
+   Los dos gates de movimiento se aplican más abajo: buscar `.animate-in`. */
+@import "tw-animate-css";
+
 /* ═══════════════════════════════════════════════════════════════
    DESIGN TOKENS — PORTAL FARMALASA
    Fuente de verdad. Todos los componentes consumen estas variables.
@@ -1091,6 +1107,33 @@
 :root { --tap-min: 0px; }
 @media (pointer: coarse) { :root { --tap-min: 44px; } }
 
+/* A1 — por qué la densidad no comprimía algunas filas (medido 2026-07-29).
+   El hallazgo venía escrito como "la densidad no comprime filas". Al medirlo
+   con datos reales a 1100px (ultra, --row-h: 32px) resultó ser falso como
+   afirmación general y cierto para un caso concreto:
+
+     /compras      32px  exceso 0    ← comprime exacto
+     /proveedores  34px  exceso 2
+     /ventas       52px  exceso 20   ← celda con fecha + hora + estado
+     /pedidos      71px  exceso 39   ← celda apilada
+
+   O sea: donde la celda lleva UN dato, la densidad funciona. Donde apila dos
+   o tres, no — y no puede: el `height` de un <td> es un MÍNIMO por spec (CSS
+   Tables §17.5.3), así que ningún token va a achicar una celda que contiene
+   tres líneas de texto. Lo único que queda por ganar es el INTERLINEADO, que
+   en modo lectura (1.5) desperdicia ~6px por línea apilada.
+
+   Por eso la densidad aprieta el interlineado de la celda en vez de pelearse
+   con su altura. No se oculta ni un dato — es exactamente la misma
+   información, más junta, que es lo que el modo denso quiere decir. */
+@media (max-width: 1439.98px) and (pointer: fine) {
+  td[data-cell] { line-height: 1.35; }
+}
+@media (max-width: 1151.98px) and (pointer: fine),
+       (max-height:  699.98px) and (pointer: fine) {
+  td[data-cell] { line-height: 1.2; }
+}
+
 
 /* ═══════════════════════════════════════════════════════════════
    ESTADOS DE INTERACCIÓN — ramps semánticas (Fase T2, §8.4)
@@ -1242,7 +1285,15 @@
 [data-theme="solid-dark"] .animate-kpi-enter,
 [data-theme="solid-dark"] .animate-widget-enter,
 [data-theme="solid-dark"] .animate-table-row-enter,
-[data-theme="solid-dark"] .skeleton {
+[data-theme="solid-dark"] .skeleton,
+/* `animate-in`/`animate-out` (tw-animate-css) entran acá y no en el bloque de
+   arriba: son la entrada de modales, dropdowns y paneles, que es lo que D2.4
+   define como funcional. En Solid se conservan pero al ritmo corto y lineal —
+   el mismo trato que ya recibían `animate-view-enter` y compañía. */
+[data-theme="solid"] .animate-in,
+[data-theme="solid"] .animate-out,
+[data-theme="solid-dark"] .animate-in,
+[data-theme="solid-dark"] .animate-out {
   animation-duration: 130ms;
   animation-timing-function: ease-out;
 }
@@ -1449,8 +1500,25 @@
    notó porque el portal se usa en Chrome y Safari. Encontrado al medir el
    backdrop del tooltip nuevo, que salía `none`. Quitadas las 7 líneas
    `-webkit-` escritas a mano; el prefijo lo pone el compilador. */
-[data-theme="solid"] [class*="bg-surface-"][class*="backdrop-blur"],
-[data-theme="solid-dark"] [class*="bg-surface-"][class*="backdrop-blur"] {
+/* 2026-07-29 — LA REGLA SE INVIERTE. Exigir las dos subcadenas dejaba el
+   contrato a merced de cómo cada autor escribiera su clase: medido ese día,
+   66 usos combinaban `bg-surface-*` con `backdrop-blur` (se apagaban) y **82
+   no**, así que seguían difuminando en Solid. El plan de D3 los había
+   descartado como "costo sin efecto"; es falso para los teñidos —
+   `bg-danger/10` es translúcido, o sea que ahí el blur SÍ se ve.
+
+   Ahora se apaga por DEFECTO y la excepción es explícita. Con eso el contrato
+   se cumple solo para todo lo que se escriba en el futuro, en vez de depender
+   de que alguien recuerde combinar dos clases.
+
+   La razón por la que en T5 no se pudo hacer así (mataba el vidrio del sidebar
+   y de login) ya no aplica: `LoginView` QUITA `data-theme` y `TimeClockView`
+   fuerza `dark`, así que ninguna de las dos se renderiza jamás bajo
+   `[data-theme="solid"]`. La única bespoke que vive dentro del tema es el
+   sidebar, y se exceptúa por `data-bespoke-glass` (AppLayout.jsx: el <aside>
+   y el flyout, que en el DOM cuelga fuera de él). */
+[data-theme="solid"] [class*="backdrop-blur"]:not([data-bespoke-glass]):not([data-bespoke-glass] *),
+[data-theme="solid-dark"] [class*="backdrop-blur"]:not([data-bespoke-glass]):not([data-bespoke-glass] *) {
   backdrop-filter: none !important;
 }
 
@@ -2161,6 +2229,28 @@ a:focus-visible,
      quita significado. */
   .animate-pulse {
     animation: none !important;
+  }
+
+  /* `animate-in`/`animate-out`: se conserva el fade y se anula la GEOMETRÍA.
+     Es el mismo criterio que `rm-fade-in` de arriba (opacidad sí, transform
+     no), solo que acá no hace falta reemplazar la animación: basta neutralizar
+     las variables que alimentan el `translate3d`/`scale3d`/`rotate` de los
+     keyframes `enter`/`exit`, y el fade sobrevive solo.
+     Sin esto, las 223 entradas que el plugin acaba de activar (2026-07-29)
+     habrían nacido ignorando la preferencia — el mismo agujero que A9 abrió
+     con `animate-pulse` y que costó descubrir dos veces. */
+  .animate-in, .animate-out {
+    animation-duration: 120ms !important;
+    --tw-enter-scale:       1 !important;
+    --tw-enter-rotate:      0 !important;
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-enter-blur:        0 !important;
+    --tw-exit-scale:        1 !important;
+    --tw-exit-rotate:       0 !important;
+    --tw-exit-translate-x:  0 !important;
+    --tw-exit-translate-y:  0 !important;
+    --tw-exit-blur:         0 !important;
   }
 
   /* — Detener el skeleton sweep (dejar color sólido) ————————— */

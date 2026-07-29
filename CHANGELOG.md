@@ -12,6 +12,36 @@ retomar; acá está todo.
 
 ---
 
+## v2.204.0 — cierre del sistema de diseño: los 4 residuos, y uno que nadie había visto.
+
+Cierra `PLAN-CIERRE-DISENO-2026-07-29.md` (F0–F6), que a su vez cierra lo que
+quedó abierto de D0–D4 y de la auditoría de puntos ciegos del gate.
+
+**F0 — 223 animaciones que no existían.** `animate-in fade-in zoom-in-95` está
+escrito en 73 archivos, incluidos los canónicos `ModalShell` y `LiquidModal`, y
+compilaba a **cero CSS**: son clases del plugin `tailwindcss-animate` (Tailwind
+v3), que nunca estuvo instalado. Todo modal, dropdown y panel del portal
+aparecía de golpe — justo lo que D2.4 declara movimiento *funcional* que se
+queda. Es la tercera vez que el mismo fallo silencioso muerde al proyecto (ver
+`tailwind.config.js` en T1 y `rounded-full` en §7). Resuelto con
+`tw-animate-css`, sin tocar un solo JSX.
+
+**F1** los tres modales fuera de `ModalShell` (sin `role="dialog"`, sin
+`aria-modal`, dos sin Escape) · **F2** el contrato "Solid no tiene vidrio" se
+invierte: se apaga por defecto, la excepción es explícita · **F3** el baseline
+del gate queda vacío y las 25 categorías bloqueantes en cero · **F4** la
+densidad y el alto de fila (/ventas 52→42px, /pedidos 71→41px) · **F5** de "224
+targets táctiles" a **989 controles medidos y 7 con motivo escrito**.
+
+Y lo que encontró la auditoría final: `Button.TONE_CLASSES` usaba el color de
+gráfico **crudo** con texto blanco (4.23:1 contra el 4.5 de AA) en vez de los
+tokens `-solid` que N2 creó para eso — 82 usos afectados, y el defecto estaba en
+el canónico, no en las vistas.
+
+Verificado: `gate:design` 0 en 25 categorías · `gate:doc` limpio · eslint limpio
+· escáner de contraste de D1 sobre las 29 rutas: **0 superficies blancas, 0
+nodos bajo AA** · movimiento con `prefers-reduced-motion`: **0** en los dos ejes.
+
 ## v2.191.0 — buscar una factura tardaba 7.5 segundos.
 
 La auditoría de Supabase reportó esto como **dos hallazgos separados**: *"6 GIN de

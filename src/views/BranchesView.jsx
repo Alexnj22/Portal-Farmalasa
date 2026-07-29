@@ -229,7 +229,7 @@ const TarjetaTelefono = memo(({ icono: Icono, etiqueta, numero, onAccion, onWhat
             <button onClick={onWhatsApp} type="button"
                 aria-label={`Abrir WhatsApp con ${numero}`}
                 title="Abrir WhatsApp"
-                className="mr-1.5 w-6 h-6 bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm shrink-0 opacity-0 group-hover/tel:opacity-100 focus-visible:opacity-100 transition-all hover:bg-success-solid hover:text-white">
+                className="mr-1.5 w-6 h-6 min-w-[var(--tap-min)] min-h-[var(--tap-min)] bg-success/10 text-success rounded-md flex items-center justify-center shadow-sm shrink-0 opacity-0 group-hover/tel:opacity-100 focus-visible:opacity-100 transition-all hover:bg-success-solid hover:text-white">
                 <MessageCircle size={13} strokeWidth={2.5} />
             </button>
         )}
@@ -372,7 +372,7 @@ const BranchCard = memo(({
                                 if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
                                 else { generateBranchAiSummary(e); }
                             }}
-                            className="relative group/ai-btn w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:-translate-y-0.5"
+                            className="relative group/ai-btn w-8 h-8 min-w-[var(--tap-min)] min-h-[var(--tap-min)] flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:-translate-y-0.5"
                             title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
                         >
                             {aiMode ? (

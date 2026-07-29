@@ -20,7 +20,10 @@ import { createPortal } from "react-dom";
  *                      lo usa el editor de fotos, donde un clic afuera durante
  *                      un recorte tira el trabajo sin confirmación.
  *   lockScroll       – default true
- *   align            – "center" (default) | "top" para paletas de comandos
+ *   align            – "center" (default) | "top" para paletas de comandos |
+ *                      "bottom" para hojas táctiles (entran deslizando desde
+ *                      abajo y llegan a los bordes: sin padding en el
+ *                      contenedor, el panel pone el suyo)
  *   surface          – data-surface del panel (default "modal"; el ⌘K usa
  *                      "dropdown", que es lo que ese material es). En `null`
  *                      el panel no declara superficie: para los consumidores
@@ -96,18 +99,24 @@ export default function ModalShell({
   // 130ms lineales y con prefers-reduced-motion pierden la geometría y queda
   // solo el fade.
   const backdropAnim = open ? "animate-in fade-in duration-500" : "animate-out fade-out duration-150";
+  // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
+  // resto del sistema hace entre movimiento decorativo y movimiento que dice de
+  // dónde viene la cosa.
+  const esHoja = align === "bottom";
   const panelAnim = open
-    ? "animate-in fade-in zoom-in-95 duration-300"
-    : "animate-out fade-out zoom-out-95 duration-150";
+    ? (esHoja ? "animate-in slide-in-from-bottom duration-300" : "animate-in fade-in zoom-in-95 duration-300")
+    : (esHoja ? "animate-out slide-out-to-bottom duration-200" : "animate-out fade-out zoom-out-95 duration-150");
+  const alignCls =
+    align === "top"    ? "items-start justify-center pt-[10vh] px-4" :
+    align === "bottom" ? "items-end justify-center" :
+                         "items-center justify-center p-4 sm:p-6";
 
   return createPortal(
     <div
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,
       // el navegador deja de monitorear cambios de opacidad, liberando el CPU.
-      className={`fixed inset-0 ${zClass} bg-scrim backdrop-blur-sm flex ${
-        align === "top" ? "items-start justify-center pt-[10vh] px-4" : "items-center justify-center p-4 sm:p-6"
-      } ${backdropAnim}`}
+      className={`fixed inset-0 ${zClass} bg-scrim backdrop-blur-sm flex ${alignCls} ${backdropAnim}`}
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}

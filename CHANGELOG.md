@@ -12,6 +12,41 @@ retomar; acá está todo.
 
 ---
 
+## v2.212.0 — auditoría con los modales ABIERTOS: seis capas que no eran diálogos.
+
+Al confirmar el cierre de v2.204.0 quedó claro que todo lo medido hasta ahí era
+**lo que se renderiza al cargar una ruta**. El bug de contraste de `Button` ya
+había mostrado el hueco: el escáner vio 2 de 82 usos porque los otros 80 viven
+en modales cerrados. Esta pasada los abre — **26 modales en escritorio y 14
+capas en móvil**, con un guardia de red que aborta toda escritura a Supabase
+(81 abortadas) para que ningún clic pueda tocar datos de producción.
+
+**Seis capas se montaban a mano y ninguna era un diálogo.** Tres se corrigieron
+en v2.204.0; faltaban tres, y la peor es la más usada:
+
+- **`ConfirmModal`** — el diálogo que pregunta antes de **borrar**. Sin
+  `role="dialog"`, sin `aria-modal` y **sin Escape**: una confirmación de
+  borrado que solo se podía cancelar con el mouse. Y su botón de confirmar era
+  `text-white` sobre `bg-danger` (3.76:1 contra el 4.5 de AA).
+- La **hoja de filtros de `ViewTabBar`**, presente en 28 vistas.
+- La **hoja de fecha de `LiquidDatePicker`**.
+
+`ModalShell` gana `align="bottom"` para las hojas táctiles. El gate atrapó un
+import faltante que el build no detecta y habría reventado en runtime.
+
+**Tres canónicos tenían la altura escrita a mano** y quedaban bajo el piso del
+dedo en táctil: `SegmentedControl`, `LiquidSelect` y `PortalInput`. Ahora
+`max(<diseño>, var(--tap-min))`, que es 0 en escritorio.
+
+Y un hallazgo que **no** lo era: el `<input>` de `PortalInput` medía 42px con su
+contenedor en 44. No se resolvió bajando el umbral sino con una prueba de
+impacto — `elementFromPoint` sobre el borde devuelve el propio input, o sea que
+los 44px son zona viva.
+
+Verificado: `gate:design` 0/25 · contraste 29/29 rutas en 0 · 892 controles
+táctiles medidos con 7 bajo 44 (las barras del gráfico) · **dentro de los
+modales: 1.427 nodos de texto y 234 controles, 0 y 0**.
+
 ## v2.204.0 — cierre del sistema de diseño: los 4 residuos, y uno que nadie había visto.
 
 Cierra `PLAN-CIERRE-DISENO-2026-07-29.md` (F0–F6), que a su vez cierra lo que

@@ -16,7 +16,51 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.211.0';
+export const APP_VERSION = '2.212.0';
+
+// v2.212.0 — auditoria CON LOS MODALES ABIERTOS: seis capas que no eran dialogos.
+//
+// Al confirmar el cierre anterior quedo claro que todo lo medido hasta ahi era
+// lo que se renderiza al CARGAR una ruta. El bug de contraste de `Button` ya
+// habia mostrado el hueco: el escaner vio 2 de 82 usos porque los otros 80
+// viven en modales cerrados. Esta pasada los abre — 26 modales en escritorio y
+// 14 capas en movil, con guardia de red que aborta toda escritura a Supabase
+// para que ningun clic pueda tocar datos de produccion (81 abortadas).
+//
+// SEIS CAPAS SE MONTABAN A MANO Y NINGUNA ERA UN DIALOGO. Tres ya se habian
+// corregido en v2.204.0; faltaban tres, y la peor es la mas usada:
+//
+//   · `ConfirmModal` — el dialogo que pregunta antes de BORRAR. Sin
+//     `role="dialog"`, sin `aria-modal` y **sin Escape**: una confirmacion de
+//     borrado que solo se podia cancelar con el mouse. Ademas su boton de
+//     confirmar era `text-white` sobre `bg-danger` (3.76:1, AA pide 4.5).
+//     Componerlo sobre `ModalShell` + `Button` arregla los tres de una vez.
+//   · La hoja de filtros de `ViewTabBar` — en 28 vistas.
+//   · La hoja de fecha de `LiquidDatePicker`.
+//
+// `ModalShell` gana `align="bottom"` para las hojas tactiles (entran
+// deslizando, llegan a los bordes). El gate atrapo un import faltante de
+// `ModalShell` que el build NO detecta y habria reventado en runtime.
+//
+// TRES CANONICOS TENIAN LA ALTURA ESCRITA A MANO y quedaban bajo el piso del
+// dedo en tactil: `SegmentedControl` (h-7/h-9), `LiquidSelect` (40px) y
+// `PortalInput` (40px). Ahora `max(<diseno>, var(--tap-min))`, que es 0 en
+// escritorio: no cambia nada ahi. Las variantes densas se quedan a proposito.
+//
+// Y el gate `relleno-sin-solid` tuvo que endurecerse dos veces: no veia los
+// `className` con ternario (por eso `ConfirmModal` se le escapo), y al
+// arreglarlo empezo a cruzar las dos ramas del ternario entre si. Ahora evalua
+// «lo literal + UNA rama», que es lo que se renderiza de verdad. Probado con
+// fixture: 1 hallazgo real, 4 patrones correctos que pasan.
+//
+// Un hallazgo que NO era: el <input> de `PortalInput` medido en 42px con su
+// contenedor en 44. No se resolvio bajando el umbral sino con una prueba de
+// impacto — `elementFromPoint` sobre el borde devuelve el propio input, o sea
+// que los 44px son zona viva. El target es el CONTROL, no su elemento interno.
+//
+// Verificado: gate:design 0/25 · eslint y build limpios · contraste 29/29
+// rutas en 0 · 892 controles tactiles medidos, 7 bajo 44 (las barras del
+// grafico) · dentro de los modales: 1,427 nodos de texto y 234 controles, 0 y 0.
 
 // v2.211.0 — dte e inventario entran a las alertas de sync, y se apaga una
 // falsa alarma diaria que llevaba dos semanas.

@@ -2857,6 +2857,55 @@ los botones de `/branches` y el chip de tres segmentos de `/facturacion`.
 si es *el* control o el adorno de otro. Un conteo que no distingue eso manda a
 agrandar cosas que no se tocan y esconde las que sí.
 
+Una cuarta exclusión apareció midiendo **dentro de los modales**: el `<input>`
+de `PortalInput` mide 42px mientras su contenedor `data-surface="input"` mide
+44 — los 2px son el borde. **No se resolvió bajando el umbral sino con una
+prueba de impacto**: `elementFromPoint` sobre el borde del contenedor devuelve
+el propio `<input>`, o sea que los 44px son zona viva. El target es el
+**control**, no su elemento interno.
+
+### 25.10 Los canónicos con altura escrita a mano (2026-07-29)
+
+Tres canónicos llevaban su altura como literal, y los tres quedaban bajo el
+piso del dedo en táctil sin que nadie lo notara — porque en escritorio se ven
+perfectos:
+
+| canónico | tenía | ahora |
+|---|---|---|
+| `SegmentedControl` | `h-7` / `h-9` | `h-[max(28px,var(--tap-min))]` / `max(36px,…)` |
+| `LiquidSelect` | `min-h-[40px]` | `min-h-[max(40px,var(--tap-min))]` |
+| `PortalInput` | `h-[40px]` | `h-[max(40px,var(--tap-min))]` |
+
+`--tap-min` vale 0 con puntero fino, así que **en escritorio no cambia nada**.
+Las variantes densas (`compact`, `nano`) se quedan en 32/26px a propósito: son
+las celdas de grilla de §15.12, y ya reciben su área tocable por
+pseudo-elemento sin ocupar ese espacio en pantalla.
+
+**La regla:** un canónico nunca escribe su altura como literal. Va por
+`max(<altura de diseño>, var(--tap-min))` — o por `--control-h`, que ya lo
+incluye.
+
+### 25.11 Toda capa que se monta sobre la pantalla es un diálogo
+
+Una capa que cubre la pantalla, atrapa el clic de afuera y contiene controles
+**es un diálogo**, aunque se llame hoja, panel o popover. Se monta con
+`ModalShell`, que da `role="dialog"`, `aria-modal`, Escape, bloqueo de scroll
+con restauración y la animación de entrada/salida.
+
+`ModalShell` tiene tres anclajes: `center` (default), `top` (paletas de
+comandos) y `bottom` (hojas táctiles, que entran deslizando y llegan a los
+bordes).
+
+**Encontrado al auditar con los modales abiertos (2026-07-29):** cinco capas se
+montaban a mano y ninguna era un diálogo — `MenuSearchModal`, `PromptModal`,
+`PhotoEditorModal`, la hoja de filtros de `ViewTabBar` (en 28 vistas) y la hoja
+de fecha de `LiquidDatePicker`. Y la peor: **`ConfirmModal`**, el diálogo que
+pregunta antes de borrar, que además **no cerraba con Escape** — el único sitio
+del portal donde no poder cancelar con el teclado tiene consecuencias.
+
+**No cuenta como diálogo** un `LiquidSelect` abierto: eso es un `listbox`, y su
+rol correcto es `role="listbox"` con `role="option"` en los ítems.
+
 ---
 
 ## 26. Performance

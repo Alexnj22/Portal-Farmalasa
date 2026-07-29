@@ -126,7 +126,15 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 Con `tono` NO se emite: esa regla de index.css va sin @layer, así
                 que le gana a cualquier utilidad de Tailwind — el borde tintado
                 no se vería. Tintado ⇒ el contenedor se pinta entero acá. */}
-            <div data-surface={(t || od) ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : 'h-[40px]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${od ? `rounded-input ${od.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
+            {/* La caja medía 40px fijos, así que en un teléfono el campo quedaba
+                bajo el piso del dedo (medido en iPhone 13 el 2026-07-29 dentro
+                del modal de perfil: 3 campos a 296x38). `--tap-min` es 0 en
+                escritorio y 44px en táctil, así que el `max()` sube solo donde
+                hace falta. Es el mismo arreglo que necesitaron `LiquidSelect` y
+                `SegmentedControl` — los tres tenían la altura escrita a mano.
+                `compact` se queda en 32px a propósito: son las celdas de grilla
+                densa de DESIGN.md §15.12. */}
+            <div data-surface={(t || od) ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : 'h-[max(40px,var(--tap-min))]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${od ? `rounded-input ${od.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
                 {Icon && <div className={`absolute left-3 ${t?.icono ?? od?.icono ?? 'text-content-3'}`}><Icon size={14} strokeWidth={2.5} /></div>}
                 {prefix && <div className="absolute left-3 text-content-3 font-black text-body">{prefix}</div>}
                 <input

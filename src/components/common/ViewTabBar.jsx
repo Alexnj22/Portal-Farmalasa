@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Search, X, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import ModalShell from './ModalShell';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import LiquidSelect from './LiquidSelect';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
@@ -199,29 +199,39 @@ export default function ViewTabBar({
           ancestro transformado crea un bloque contenedor para `position: fixed`.
           Sin el portal la hoja se anclaba a la barra —medía 108px de ancho en vez
           de los 390 de la pantalla— y sus controles quedaban fuera. */}
-      {esTactil && hojaFiltros && createPortal(
-        <div className="fixed inset-0 z-confirm flex items-end animate-in fade-in duration-200">
-          <button type="button" aria-label="Cerrar" onClick={() => setHojaFiltros(false)}
-            className="absolute inset-0 bg-scrim backdrop-blur-[2px]" />
-          <div data-surface="dropdown"
-            className="relative w-full rounded-t-modal rounded-b-none px-4 pt-3
-              pb-[max(1rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto
-              animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-body-sm font-black uppercase tracking-widest text-content-2">Filtros</p>
-              <button type="button" aria-label="Cerrar los filtros" onClick={() => setHojaFiltros(false)}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-content-3 hover:text-content">
-                <X size={16} strokeWidth={2.5} />
-              </button>
-            </div>
-            {/* Los mismos controles, en columna y a ancho completo. */}
-            <div className="flex flex-col gap-3 [&>*]:w-full [&_button]:w-full">
-              {trailingActions}
-            </div>
+      {/* 2026-07-29: la hoja se montaba a mano con su propio portal, y por eso
+          NO declaraba `role="dialog"` ni `aria-modal`, y no cerraba con Escape.
+          Es el mismo defecto que tenían los tres modales de F1 — cuarta
+          instancia del patrón, y esta vez dentro de un canónico que usan 28
+          vistas. Ahora lo monta `ModalShell` con `align="bottom"`.
+          El portal sigue siendo necesario y lo hace el canónico: la barra tiene
+          `transform-gpu`, y un ancestro transformado crea bloque contenedor
+          para `position: fixed` — sin portal la hoja medía 108px de ancho. */}
+      {esTactil && (
+        <ModalShell
+          open={hojaFiltros}
+          onClose={() => setHojaFiltros(false)}
+          align="bottom"
+          zClass="z-confirm"
+          maxWidthClass="max-w-none"
+          surface="dropdown"
+          panelClassName="rounded-t-modal rounded-b-none px-4 pt-3
+            pb-[max(1rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto"
+          ariaLabel="Filtros y acciones"
+        >
+          <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-body-sm font-black uppercase tracking-widest text-content-2">Filtros</p>
+            <button type="button" aria-label="Cerrar los filtros" onClick={() => setHojaFiltros(false)}
+              className="w-9 h-9 min-w-[var(--tap-min)] min-h-[var(--tap-min)] rounded-full flex items-center justify-center text-content-3 hover:text-content">
+              <X size={16} strokeWidth={2.5} />
+            </button>
           </div>
-        </div>,
-        document.body
+          {/* Los mismos controles, en columna y a ancho completo. */}
+          <div className="flex flex-col gap-3 [&>*]:w-full [&_button]:w-full">
+            {trailingActions}
+          </div>
+        </ModalShell>
       )}
     </div>
   );

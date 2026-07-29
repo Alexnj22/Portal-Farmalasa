@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Button from './Button';
 import { createPortal } from 'react-dom';
+import ModalShell from './ModalShell';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 
@@ -305,18 +306,24 @@ const LiquidDatePicker = ({
     // no entra. Es el mismo calendario y los mismos tokens —el portal entero se
     // ve igual, que era la condición— pero presentado como hoja inferior:
     // ancho completo, arrastre para cerrar, y respeta el área segura del iPhone.
+    // 2026-07-29: la hoja se montaba a mano y por eso no declaraba
+    // `role="dialog"` ni cerraba con Escape — mismo defecto que tenían los
+    // modales de F1 y la hoja de `ViewTabBar`. La monta `ModalShell`
+    // con `align="bottom"`, que ya trae las tres cosas.
     const envolver = (contenido) => esTactil ? (
-        <div className="fixed inset-0 z-confirm flex items-end animate-in fade-in duration-200">
-            <button type="button" aria-label="Cerrar" onClick={() => setIsOpen(false)}
-                className="absolute inset-0 bg-scrim backdrop-blur-[2px]" />
-            <div data-surface="sheet"
-                className="relative w-full rounded-t-modal rounded-b-none px-4 pt-3 font-sans
-                    animate-in slide-in-from-bottom duration-300
-                    pb-[max(1rem,env(safe-area-inset-bottom))]">
-                <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
-                {contenido}
-            </div>
-        </div>
+        <ModalShell
+            open={isOpen}
+            onClose={() => setIsOpen(false)}
+            align="bottom"
+            zClass="z-confirm"
+            maxWidthClass="max-w-none"
+            surface="sheet"
+            panelClassName="rounded-t-modal rounded-b-none px-4 pt-3 font-sans pb-[max(1rem,env(safe-area-inset-bottom))]"
+            ariaLabel="Elegir fecha"
+        >
+            <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
+            {contenido}
+        </ModalShell>
     ) : (
         <div
             ref={popoverRef}
@@ -542,7 +549,11 @@ const LiquidDatePicker = ({
                     </button>
                 )}
             </div>
-            {isOpen && createPortal(popoverContent, document.body)}
+            {/* En táctil `envolver` devuelve un `ModalShell`, que ya hace su
+                propio portal — envolverlo en otro seria portalear dos veces.
+                El popover de escritorio sí lo necesita: se posiciona con
+                coordenadas absolutas contra el body. */}
+            {isOpen && (esTactil ? popoverContent : createPortal(popoverContent, document.body))}
         </>
     );
 };

@@ -176,82 +176,216 @@
     }
   },
   "consoleErrs": {
+    "overview": [
+      "[top_productos] {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/local",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "ventas": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
     "productos": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "pedidos": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "prefetchRow failed: TypeError: Failed to fetch",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "minmax": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "requests": [
       "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
-      "TypeError: Cannot read properties of null (reading 'mode')\n    at Rt (http://localhost:4173/assets/RequestsView-BpIqe3Sy",
-      "[ErrorBoundary] TypeError: Cannot read properties of null (reading 'mode')\n    at Rt (http://localhost:4173/assets/Reque"
+      "TypeError: Cannot read properties of null (reading 'mode')\n    at Rt (http://localhost:4180/assets/RequestsView-CCy0KHPl",
+      "[ErrorBoundary] TypeError: Cannot read properties of null (reading 'mode')\n    at Rt (http://localhost:4180/assets/Reque",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "staff": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "schedules": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "payroll": [
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "branches": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "facturacion": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] load {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Error obteniendo Kioscos: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localh",
+      "Error obteniendo Kioscos: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localh",
+      "Error obteniendo Kioscos: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localh",
+      "Error obteniendo Kioscos: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localh",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "cotizaciones": [
+      "[theme sync] load {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Error cargando notificaciones: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://l",
+      "fetchAllRows error: TypeError: Failed to fetch",
+      "fetchAllRows error: TypeError: Failed to fetch",
       "fetchAllRows error: TypeError: Failed to fetch",
       "load: fetch sales_invoice_gaps failed: TypeError: Failed to fetch",
-      "load: fetch sales_invoice_nulls failed: TypeError: Failed to fetch"
+      "load: fetch sales_invoice_nulls failed: TypeError: Failed to fetch",
+      "load: fetch sales_gap_resolutions failed: TypeError: Failed to fetch",
+      "load: fetch sales_null_resolutions failed: TypeError: Failed to fetch",
+      "loadData: fetch confirmed ids failed: TypeError: Failed to fetch",
+      "loadData: fetch confirmation history failed: TypeError: Failed to fetch",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "promociones": [
       "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
-      "fetchAllRows error: TypeError: Failed to fetch"
+      "fetchAllRows error: TypeError: Failed to fetch",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "proveedores": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "facturas-compra": [
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "compras": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "audit": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "roles": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "permissions": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "announcements": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "encuesta": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "monitor": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "vacation-plan": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "ventas-perdidas": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "conteo-inventario": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "my-requests": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "my-documents": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "profile": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ],
     "laboratorios": [
-      "[theme sync] save {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch\n    at http://localhost…/loc"
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED",
+      "Access to fetch at 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/ensure_user_by_code' from origin 'http://local",
+      "Failed to load resource: net::ERR_FAILED"
     ]
   }
 }

@@ -936,22 +936,51 @@ function scanFile(path) {
       while ((mc = RE_CLS.exec(sinComentarios2))) {
         const cls = mc[1] || mc[2] || '';
         if (!/text-white\b/.test(cls)) continue;
-        const porVariante = new Map();
-        for (const tok of cls.split(/\s+/)) {
-          const i = tok.lastIndexOf(':');
-          const variante = i === -1 ? '' : tok.slice(0, i);
-          const util = i === -1 ? tok : tok.slice(i + 1);
-          const g = porVariante.get(variante) || { blanco: false, rellenos: [] };
-          if (util === 'text-white') g.blanco = true;
-          const mb = util.match(/^bg-(chart-\d|success|warning|danger)(?!-solid)(?:\/\[?[\d.]+\]?)?$/);
-          if (mb) g.rellenos.push(mb[1]);
-          porVariante.set(variante, g);
+
+        // Un `className` con ternario NO renderiza sus dos ramas a la vez.
+        // Evaluarlas juntas cruza el `text-white` de una con el relleno de la
+        // otra y da falsos positivos (pasó con StaffManagementView, cuya rama
+        // "cumpleaños" ya usaba `-solid`). Lo que se renderiza de verdad es
+        // «lo literal + UNA rama», así que se arma ese conjunto por rama.
+        const literal = cls.replace(/\$\{[^}]*\}/g, ' ');
+        const ramas = [...cls.matchAll(/\$\{[^}]*\}/g)]
+          .flatMap(m => [...m[0].matchAll(/['"`]([^'"`]*)['"`]/g)].map(q => q[1]));
+        const conjuntos = ramas.length ? ramas.map(r => `${literal} ${r}`) : [literal];
+        // Los `className` con ternario llegan acá como texto crudo del template
+        // literal, con las clases entrecomilladas dentro del `${…}`. Sin limpiar
+        // eso, `'bg-danger hover:bg-danger-hover'` no matcheaba y el botón de
+        // confirmar de `ConfirmModal` —blanco sobre danger, 3.76:1— se escapó de
+        // la primera versión de esta regla.
+        // OJO: no se toca el `:` — es el separador de variante, y borrarlo
+        // convertía `hover:text-white` en `text-white` de base, marcando como
+        // error el patrón CORRECTO (`bg-X/10 text-X-text hover:bg-X-solid
+        // hover:text-white`). Se limpia solo la sintaxis del template.
+        // OJO: no se toca el `:` — es el separador de variante, y borrarlo
+        // convertía `hover:text-white` en `text-white` de base, marcando como
+        // error el patrón CORRECTO (`bg-X/10 text-X-text hover:bg-X-solid
+        // hover:text-white`).
+        let reportado = null;
+        for (const conjunto of conjuntos) {
+          const porVariante = new Map();
+          for (const tok of conjunto.split(/\s+/)) {
+            const i = tok.lastIndexOf(':');
+            const variante = i === -1 ? '' : tok.slice(0, i);
+            const util = i === -1 ? tok : tok.slice(i + 1);
+            const g = porVariante.get(variante) || { blanco: false, rellenos: [] };
+            if (util === 'text-white') g.blanco = true;
+            const mb = util.match(/^bg-(chart-\d|success|warning|danger)(?!-solid)(?:\/\[?[\d.]+\]?)?$/);
+            if (mb) g.rellenos.push(mb[1]);
+            porVariante.set(variante, g);
+          }
+          for (const [variante, g] of porVariante) {
+            if (!g.blanco || !g.rellenos.length || reportado) continue;
+            reportado = { variante, relleno: g.rellenos[0] };
+          }
         }
-        for (const [variante, g] of porVariante) {
-          if (!g.blanco || !g.rellenos.length) continue;
-          const pref = variante ? `${variante}:` : '';
+        if (reportado) {
+          const pref = reportado.variante ? `${reportado.variante}:` : '';
           const linea = sinComentarios2.slice(0, mc.index).split('\n').length;
-          findings.push({ line: linea, label: `\`${pref}text-white\` sobre \`${pref}bg-${g.rellenos[0]}\` — el relleno sólido usa \`-solid\` (DESIGN.md §6)`,
+          findings.push({ line: linea, label: `\`${pref}text-white\` sobre \`${pref}bg-${reportado.relleno}\` — el relleno sólido usa \`-solid\` (DESIGN.md §6)`,
             category: 'relleno-sin-solid', text: cls.replace(/\s+/g, ' ').slice(0, 110) });
         }
       }

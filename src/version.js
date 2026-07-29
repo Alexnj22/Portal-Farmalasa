@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.188.0';
+export const APP_VERSION = '2.189.0';
+
+// v2.189.0 — el 26.5% del CPU de la base era un INSERT que no insertaba nada.
+//
+// La query #1 de pg_stat_statements (127K llamadas, 8,281 s) era un
+// `ON CONFLICT DO NOTHING` sobre products que escribia CERO filas. El costo no
+// era escribir: era la insercion especulativa: Postgres arma el tuple y sondea
+// products_pkey por CADA fila del payload aunque todas existan (142M idx_scan
+// acumulados). Medido: 84.3 ms con DO NOTHING vs 6.3 ms filtrando primero con
+// un anti-join. Verificado en prod tras el deploy: 65.1 ms -> 4.2 ms.
+//
+// La auditoria atribuia esto a sync-erp-purchases. Era sync-dte-sales, que
+// corre cada minuto por 6 sucursales. Se migraron los 6 upserts incondicionales
+// de los tres syncs a RPC con IS DISTINCT FROM / anti-join, se saco el
+// updated_at de los payloads (hacia que toda fila "cambiara" siempre) y se
+// dejaron de tragar los error de supabase-js en esas llamadas.
+//
+// Ademas: la auditoria decia que cron.job_run_details no se purgaba. Si se
+// purgaba, a 14 dias — pero borrando por igual los 217K exitos (99 MB de ruido)
+// y los 345 fallos (163 kB, la evidencia que hace falta para diagnosticar los
+// errores de cron). Ahora es asimetrica: exitos 7 dias, fallos 90.
+// Con VACUUM FULL de esa tabla y de net._http_response (2,203 filas vivas en
+// 205 MB de hinchazon), la base bajo de 1,463 MB a 1,134 MB.
 
 // v2.188.0 — el conteo termina en un ajuste, no en un numero.
 //

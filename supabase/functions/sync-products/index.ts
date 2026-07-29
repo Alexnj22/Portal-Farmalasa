@@ -79,8 +79,11 @@ Deno.serve(async (req) => {
     for (const p of productos) {
       if (p.laboratorio?.id) labMap.set(p.laboratorio.id, p.laboratorio.nombre);
     }
-    const labRows = [...labMap.entries()].map(([id, nombre]) => ({ id, nombre, updated_at: now }));
-    const { error: labErr } = await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
+    // Vía RPC condicional: 356 filas acumulaban 442,903 updates porque el payload
+    // traía updated_at y las reescribía enteras cada 10 min. `ubicacion` y
+    // `ocultar_en_minmax` son del portal y el RPC no las toca.
+    const labRows = [...labMap.entries()].map(([id, nombre]) => ({ id, nombre }));
+    const { error: labErr } = await supabase.rpc('sync_laboratorios_batch', { p_rows: labRows });
     if (labErr) throw new Error(`Laboratorios upsert: ${labErr.message}`);
 
     // 3. Upsert presentaciones catalog — tipo only.
@@ -93,14 +96,14 @@ Deno.serve(async (req) => {
       for (const pres of (p.presentaciones ?? [])) {
         if (!presMap.has(pres.id_presentacion)) {
           presMap.set(pres.id_presentacion, {
-            id:         pres.id_presentacion,
-            tipo:       pres.tipo?.trim() ?? null,
-            updated_at: now,
+            id:   pres.id_presentacion,
+            tipo: pres.tipo?.trim() ?? null,
           });
         }
       }
     }
-    const { error: presErr } = await supabase.from('presentaciones').upsert([...presMap.values()], { onConflict: 'id' });
+    // Igual que laboratorios: 232 filas con 289,072 updates acumulados.
+    const { error: presErr } = await supabase.rpc('sync_presentaciones_batch', { p_rows: [...presMap.values()] });
     if (presErr) throw new Error(`Presentaciones upsert: ${presErr.message}`);
 
     // 4. Build product rows

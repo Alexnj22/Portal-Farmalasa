@@ -12,6 +12,58 @@ retomar; acá está todo.
 
 ---
 
+## v2.189.0 — el 26.5% del CPU de la base era un INSERT que no insertaba nada.
+
+La query #1 de `pg_stat_statements` —127,170 llamadas, 8,281 s, 65 ms de media—
+era un `INSERT INTO products(id, nombre, updated_at) ... ON CONFLICT DO NOTHING`
+que escribía **cero filas**. Ese era el punto: no fallaba, no escribía, y aun así
+se llevaba más de un cuarto del tiempo de la base.
+
+El costo no está en escribir sino en la **inserción especulativa**: para resolver
+el `ON CONFLICT`, Postgres arma el tuple y sondea el índice arbitrario por CADA
+fila del payload, aunque todas existan. Con ~5,000 productos por sucursal/área y
+6 sucursales cada minuto, `products_pkey` acumuló **142,472,951 idx_scan**.
+
+Medido con `EXPLAIN (ANALYZE, BUFFERS)` sobre 1,200 filas todas existentes:
+
+| forma | tiempo | buffers |
+|---|---|---|
+| `ON CONFLICT DO NOTHING` | 84.3 ms | 4,670 |
+| `WHERE NOT EXISTS` + `DO NOTHING` | **6.3 ms** | 3,611, Index Only Scan |
+
+La auditoría atribuía la query a `sync-erp-purchases`. No era: el texto
+normalizado termina en `DO NOTHING`, y el único llamador con esas tres columnas
+e `ignoreDuplicates: true` es **`sync-dte-sales`**, en dos puntos. Eso también
+explica el volumen — `sync-erp-purchases` corre 144 veces al día, no 14,000.
+
+Se migraron los **6 upserts incondicionales** de los tres syncs a RPC con
+`IS DISTINCT FROM` / anti-join (`products`, `laboratorios`, `presentaciones`,
+`suppliers`, `purchase_receipt_items`), se sacó el `updated_at` de los payloads
+—hacía que toda fila "cambiara" siempre, el antipatrón que `CLAUDE.md` prohíbe— y
+se dejaron de ignorar los `error` de supabase-js en esas llamadas.
+
+`laboratorios` tenía **442,903 updates sobre 356 filas**; `presentaciones`,
+289,072 sobre 232.
+
+**Verificado en producción**: la query vieja quedó congelada en 127,380 llamadas
+y la nueva promedia **4.2 ms**. 167 corridas de cron en los 12 minutos
+siguientes, cero fallos.
+
+No se tocó `purchase_receipts`: su `.upsert().select()` alimenta el mapa de ids
+del que dependen los items, y la ganancia no justifica el riesgo.
+
+### Y de paso, 329 MB
+
+La auditoría decía que `cron.job_run_details` no se purgaba. **Sí se purgaba**, a
+14 días — pero borrando por igual los 217,341 éxitos (99 MB de ruido operativo) y
+los 345 fallos (163 kB), que son exactamente la evidencia que hace falta para
+diagnosticar los errores de cron. Ahora la retención es asimétrica: éxitos 7
+días, fallos 90.
+
+`net._http_response` resultó ser 2,203 filas vivas dentro de **205 MB** — páginas
+liberadas que nunca volvieron al SO. Con `VACUUM FULL` de ambas, la base pasó de
+**1,463 MB a 1,134 MB**.
+
 ## v2.185.1 — `roles` se podía escribir desde cualquier cuenta.
 
 `roles` tenía INSERT y UPDATE con `true`: **cualquier usuario autenticado**,

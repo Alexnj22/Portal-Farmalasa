@@ -182,13 +182,21 @@ async function syncBranch(
 
     for (const p of (venta.productos ?? [])) {
       if (p.id && !productMap.has(p.id))
-        productMap.set(p.id, { id: p.id, nombre: p.descripcion, updated_at: new Date().toISOString() });
+        productMap.set(p.id, { id: p.id, nombre: p.descripcion });
     }
   }
 
   // 3. Productos + clientes
-  if (productMap.size > 0)
-    await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: true });
+  // Red de seguridad: el dueño del catálogo es sync-products. Acá solo hay que
+  // garantizar que la fila exista. Antes era un .upsert() con ON CONFLICT DO
+  // NOTHING que sondeaba products_pkey por CADA fila del payload aunque todas
+  // existieran — 26.5% del CPU de la base (65 ms × 127K llamadas). El RPC filtra
+  // con un anti-join primero: 84 ms → 6 ms medidos.
+  if (productMap.size > 0) {
+    const { error: prodErr } = await supabase
+      .rpc('insert_missing_products', { p_rows: [...productMap.values()] });
+    if (prodErr) throw new Error(`insert_missing_products (ventas): ${prodErr.message}`);
+  }
 
   const customerIdMap = new Map<string, number>();
   if (customerNames.size > 0) {
@@ -305,15 +313,18 @@ async function syncInventoryBranch(
   const productos: any[] = payload?.inventario ?? [];
   if (productos.length === 0) return { items: 0, rows: 0 };
 
-  // Solo insertar productos nuevos — sync-products maneja actualizaciones completas cada 10 min
+  // Solo insertar productos nuevos — sync-products maneja actualizaciones completas cada 10 min.
+  // Este es el camino caliente: ~5K filas por sucursal/área, cada minuto. Ver el
+  // comentario de insert_missing_products en syncBranch.
   const productUpserts: any[] = productos.map(p => ({
-    id:         parseInt(p.id_producto),
-    nombre:     p.producto,
-    updated_at: new Date().toISOString(),
+    id:     parseInt(p.id_producto),
+    nombre: p.producto,
   })).filter(p => !isNaN(p.id) && p.id > 0);
 
   if (productUpserts.length > 0) {
-    await supabase.from('products').upsert(productUpserts, { onConflict: 'id', ignoreDuplicates: true });
+    const { error: prodErr } = await supabase
+      .rpc('insert_missing_products', { p_rows: productUpserts });
+    if (prodErr) throw new Error(`insert_missing_products (inventario): ${prodErr.message}`);
   }
 
   // Escritura vía RPC sync_inventory_batch (una llamada por sucursal/área):

@@ -163,7 +163,7 @@ async function syncBranch(
     }
 
     if (erpSupplierId && !supplierMap.has(erpSupplierId))
-      supplierMap.set(erpSupplierId, { erp_supplier_id: erpSupplierId, nombre: provNombre, nrc: provNrc, updated_at: new Date().toISOString() });
+      supplierMap.set(erpSupplierId, { erp_supplier_id: erpSupplierId, nombre: provNombre, nrc: provNrc });
 
     const row = {
       erp_purchase_id: erpPurchaseId,
@@ -185,25 +185,37 @@ async function syncBranch(
     for (const p of (c.items ?? c.productos ?? c.detalle ?? [])) {
       const pid = p.producto_id ?? p.id ?? p.id_producto;
       if (pid && !productMap.has(Number(pid)))
-        productMap.set(Number(pid), { id: Number(pid), nombre: p.nombre ?? p.descripcion, updated_at: new Date().toISOString() });
+        productMap.set(Number(pid), { id: Number(pid), nombre: p.nombre ?? p.descripcion });
     }
   }
 
-  // 3a. Upsert proveedores
+  // 3a. Upsert proveedores — vía RPC, solo escribe si nombre/nrc cambiaron
+  // (antes reescribía las 78 filas en cada corrida por el updated_at del payload).
+  // El mapa erp_supplier_id→id se sigue leyendo en un SELECT aparte a propósito:
+  // dentro de un mismo statement los CTE ven el snapshot previo, así que un
+  // proveedor recién insertado no aparecería en el RETURNING.
   const erpSupplierToId = new Map<number, number>();
   if (supplierMap.size > 0) {
-    await supabase.from('suppliers').upsert([...supplierMap.values()], { onConflict: 'erp_supplier_id', ignoreDuplicates: false });
-    const { data: suppRows } = await supabase
+    const { error: suppErr } = await supabase
+      .rpc('sync_suppliers_batch', { p_rows: [...supplierMap.values()] });
+    if (suppErr) throw new Error(`sync_suppliers_batch: ${suppErr.message}`);
+
+    const { data: suppRows, error: suppSelErr } = await supabase
       .from('suppliers').select('id, erp_supplier_id').in('erp_supplier_id', [...supplierMap.keys()]);
+    if (suppSelErr) throw new Error(`suppliers select: ${suppSelErr.message}`);
     for (const s of (suppRows ?? [])) erpSupplierToId.set(s.erp_supplier_id, s.id);
     for (const row of receiptsToUpsert) {
       if (row.erp_supplier_id) row.supplier_id = erpSupplierToId.get(row.erp_supplier_id) ?? null;
     }
   }
 
-  // 3b. Upsert productos — ignoreDuplicates:false para que nombre se actualice si cambia en el ERP
-  if (productMap.size > 0)
-    await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: false });
+  // 3b. Upsert productos — sigue actualizando nombre si cambió en el ERP, pero
+  // solo escribe la fila cuando cambió de verdad.
+  if (productMap.size > 0) {
+    const { error: prodErr } = await supabase
+      .rpc('upsert_products_minimal', { p_rows: [...productMap.values()] });
+    if (prodErr) throw new Error(`upsert_products_minimal: ${prodErr.message}`);
+  }
 
   // 4. Upsert cabeceras
   let totalItems = 0;
@@ -253,12 +265,15 @@ async function syncBranch(
     }
   }
 
+  // Vía RPC: solo escribe las líneas cuyo dato real cambió. Era el peor caso de
+  // amplificación de escritura de la base — 185,228 updates sobre 35,840 filas
+  // con apenas 29.7% HOT, o sea el 71% reescribía también los índices, aunque el
+  // ERP no hubiera tocado una sola línea del rango sincronizado.
   if (itemsToUpsert.length > 0) {
     const CHUNK = 500;
     for (let i = 0; i < itemsToUpsert.length; i += CHUNK) {
       const { error } = await supabase
-        .from('purchase_receipt_items')
-        .upsert(itemsToUpsert.slice(i, i + CHUNK), { onConflict: 'receipt_id,linea_num', ignoreDuplicates: false });
+        .rpc('sync_purchase_receipt_items_batch', { p_rows: itemsToUpsert.slice(i, i + CHUNK) });
       if (error) throw new Error(`items upsert chunk ${i}: ${error.message}`);
     }
     totalItems = itemsToUpsert.length;

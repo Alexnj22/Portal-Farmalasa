@@ -11,6 +11,12 @@
 
 La base está **bien fundamentada en lo estructural** (numeric para dinero, RLS en las 106 tablas, vistas invoker, FKs, historial append-only) pero tiene **una fuga de datos activa**, **21 tablas con escritura abierta**, y **~45% del CPU quemado en trabajo inútil**. Nada de eso obliga a cambiar de proveedor: obliga a arreglarlo antes de mover ventas acá.
 
+> **Estado al cierre del 2026-07-29.** La fuga está cerrada (v2.184.0–2.185.1).
+> Del CPU inútil, el bloque grande —el 26.5% del upsert de `products`— está
+> resuelto y verificado en producción; queda Realtime (18.6%). La base bajó de
+> 1,463 MB a **1,134 MB**. Sigue abierto: las 21 tablas con escritura abierta,
+> los índices muertos, el compute mínimo, PITR, y toda la arquitectura del POS.
+
 ---
 
 # 1. Seguridad
@@ -261,13 +267,68 @@ Comprobado: `sales_invoices`, `pedidos`, `payroll_entries` y `branch_hourly_sale
 
 # 2. Rendimiento
 
-## 🔴 P1 — El 27% del CPU de la base es un upsert que no cambia nada
+## ✅ P1 — El 27% del CPU de la base era un upsert que no cambia nada (RESUELTO 2026-07-29)
 
 Query #1 por tiempo total en `pg_stat_statements`:
 
 ```
 INSERT INTO products(id, nombre, updated_at) ...   125,632 llamadas · 8,160 s · 65 ms media · 27.0%
 ```
+
+### Corrección: el diagnóstico de origen estaba mal
+
+Al ir a arreglarlo, la query resultó **no venir de `sync-erp-purchases`**. El texto
+normalizado completo termina en `ON CONFLICT ("id") DO NOTHING`, y el único
+llamador con esas tres columnas *y* `ignoreDuplicates: true` es **`sync-dte-sales`**,
+en dos puntos: `:191` (productos de líneas de venta) y `:316` (productos del
+endpoint de inventario, ~5K filas por sucursal/área). Con 6 sucursales por minuto
+eso da ~14K llamadas/día, que es exactamente el ritmo de las 127,170 acumuladas
+desde el reset del 2026-07-20. `sync-erp-purchases` aportaba 979 llamadas y 23 s.
+
+### Y la causa tampoco era la escritura
+
+`DO NOTHING` **no escribía nada** — 0 tuplas insertadas, 1,200 conflictivas en la
+medición. El costo es la *inserción especulativa*: Postgres arma el tuple y sondea
+el índice arbitrario por CADA fila del payload aunque todas existan.
+`products_pkey` acumuló **142,472,951 idx_scan**.
+
+Medido con `EXPLAIN (ANALYZE, BUFFERS)` sobre 1,200 filas, todas existentes:
+
+| forma | tiempo | buffers |
+|---|---|---|
+| `ON CONFLICT DO NOTHING` (la que había) | **84.3 ms** | 4,670 |
+| `WHERE NOT EXISTS` + `DO NOTHING` (anti-join) | **6.3 ms** | 3,611, Index Only Scan |
+
+De esos 6.3 ms, ~2.8 eran generar el payload de prueba.
+
+### Lo aplicado
+
+6 RPC nuevas (`20260729_sync_upserts_conditional`,
+`20260729_sync_purchases_upserts_conditional`), staging antes que prod, con
+`REVOKE ... FROM PUBLIC, anon, authenticated` + `GRANT ... TO service_role`:
+
+| RPC | reemplaza | tabla |
+|---|---|---|
+| `insert_missing_products` | `sync-dte-sales:191,316` | `products` |
+| `upsert_products_minimal` | `sync-erp-purchases:206` | `products` |
+| `sync_laboratorios_batch` | `sync-products:83` | `laboratorios` |
+| `sync_presentaciones_batch` | `sync-products:103` | `presentaciones` |
+| `sync_suppliers_batch` | `sync-erp-purchases:195` | `suppliers` |
+| `sync_purchase_receipt_items_batch` | `sync-erp-purchases:261` | `purchase_receipt_items` |
+
+Se quitó además el `updated_at` del payload en los seis casos (lo pone el RPC, y
+solo cuando el dato real cambió), y se dejaron de tragar los `error` de
+supabase-js en esas llamadas — violaban la regla explícita de `CLAUDE.md`.
+
+**Verificado en producción tras el deploy**: la query vieja quedó congelada en
+127,380 llamadas (dejó de ejecutarse) y la nueva promedia **4.2 ms** contra los
+65.1 ms de antes. 167 corridas de cron en los 12 minutos siguientes, cero fallos;
+inventario sincronizando al segundo; 5,191 productos sin cambio.
+
+**No se tocó `purchase_receipts`** (`sync-erp-purchases:215`, 18,869 updates sobre
+4,321 filas): su `.upsert().select()` alimenta el mapa `erp_purchase_id → id` del
+que dependen los items, y hacerlo condicional cambia qué filas vuelven en el
+`RETURNING`. La ganancia no justifica el riesgo. Deuda menor, anotada.
 
 Y en `pg_stat_user_tables`:
 
@@ -324,14 +385,55 @@ Los 6 GIN de trigram son deuda del proyecto de normalización de búsqueda: se c
 
 ⚠️ **NO dropear `sales_invoices_codigo_generacion_key`** (18 MB, 0 scans): es la restricción UNIQUE del UUID del DTE. Es integridad de datos, no optimización — el `idx_scan=0` no significa que no sirva.
 
-## 🟠 P4 — 400 MB de los 1,463 MB (27%) son basura operativa
+## ✅ P4 — 400 MB de los 1,463 MB (27%) eran basura operativa (RESUELTO 2026-07-29)
 
 | objeto | peso | filas | ¿se purga? |
 |---|---|---|---|
 | `cron.job_run_details` | **197 MB** | 215,434 | ❌ **no** |
 | `net._http_response` | **202 MB** | 4,722 | pg_net rota, pero la tabla está inflada |
 
-Existe `purge-sync-logs-daily` para `sync_log` / `inventory_sync_log`, y `purge-notifications-daily`. Nadie purga el historial de cron. Contra la regla #7 del proyecto ("Tablas de log/historial: definir retención desde el día 1").
+### Corrección: `cron.job_run_details` SÍ se purgaba
+
+La afirmación de arriba ("nadie purga el historial de cron") es **falsa**.
+`purge-sync-logs-daily` ya incluía `DELETE FROM cron.job_run_details WHERE
+start_time < now() - interval '14 days'` — y por eso el historial arrancaba
+exactamente el 2026-07-15, catorce días antes de la auditoría. Los 197 MB no eran
+crecimiento sin control: eran el **estado estable** de esa retención.
+
+Lo que sí estaba mal era el reparto:
+
+| status | filas | texto (`command` + `return_message`) |
+|---|---|---|
+| `succeeded` | 217,341 | **99 MB** |
+| `failed` | **345** | 163 kB |
+
+El 99.8% del espacio son corridas exitosas — ruido — mientras que los fallos, que
+son justo la evidencia que P2 necesita para diagnosticar los errores de cron,
+ocupan 163 kB y se borraban a los 14 días.
+
+**Aplicado** (`20260729_cron_run_details_retention`): retención asimétrica —
+éxitos 7 días, **fallos 90 días**. Cuesta ~1 MB y triplica la ventana de
+diagnóstico en vez de recortarla.
+
+### `net._http_response` era 99% hinchazón
+
+2,203 filas vivas, 0 dead tuples, todas del día — ocupando **205 MB**. No era
+dato: eran páginas liberadas que nunca volvieron al SO. Solo `VACUUM FULL` las
+recupera.
+
+### Resultado medido
+
+| objeto | antes | después |
+|---|---|---|
+| `cron.job_run_details` | 197 MB | **64 MB** (345 fallos conservados) |
+| `net._http_response` | 205 MB | **3.7 MB** |
+| **base completa** | **1,463 MB** | **1,134 MB** |
+
+**329 MB liberados (22%)**, en una instancia cuya base era más grande que su RAM.
+Los `VACUUM FULL` corrieron a las 14:45 UTC — dentro de la ventana ocupada, no de
+la tranquila — y las 167 corridas de cron de los 12 minutos siguientes terminaron
+todas en `succeeded`: el `ACCESS EXCLUSIVE` sobre tablas de infraestructura
+(pg_cron / pg_net) no encoló nada de la aplicación.
 
 ## 🟠 P5 — La instancia es la mínima
 
@@ -429,11 +531,11 @@ Lo que sí hay que resolver antes de mover ventas:
 5. Auditar y revocar las 42 cuentas `auth.users` huérfanas.
 
 ### Esta semana (estabilidad y costo)
-6. Arreglar los upserts incondicionales de `sync-products` y `sync-erp-purchases` → **la mayor ganancia de todas** (~27% de CPU).
-7. Purgar `cron.job_run_details` + cron de retención (90 días) → ~197 MB.
-8. Dropear los 6 GIN de trigram muertos y los 3 índices redundantes de `sales_invoices` → ~117 MB y menos amplificación de escritura.
-9. Subir compute → resuelve los 275 fallos de cron.
-10. Confirmar/activar PITR.
+6. ✅ **Hecho** — upserts incondicionales. El origen real era `sync-dte-sales`, no `sync-erp-purchases`; el costo no era escribir sino la inserción especulativa de `ON CONFLICT`. 65.1 ms → 4.2 ms verificado en prod.
+7. ✅ **Hecho** — retención asimétrica de `cron.job_run_details` (éxitos 7 días, fallos 90) + `VACUUM FULL` de esa tabla y de `net._http_response`. **1,463 MB → 1,134 MB.**
+8. ⬜ Dropear los 6 GIN de trigram muertos y los 3 índices redundantes de `sales_invoices` → ~117 MB y menos amplificación de escritura.
+9. ⬜ Subir compute → resuelve los 275 fallos de cron.
+10. ⬜ Confirmar/activar PITR.
 
 ### Antes del POS (arquitectura)
 11. Cerrar las 30 policies `USING (true)` restantes y las `TO PUBLIC`.
@@ -443,4 +545,11 @@ Lo que sí hay que resolver antes de mover ventas:
 
 ---
 
-*Todos los hallazgos fueron verificados en producción con consultas de solo lectura. No se aplicó ningún cambio.*
+---
+
+*Los hallazgos originales se verificaron en producción con consultas de solo
+lectura. Las secciones marcadas ✅ se aplicaron después: seguridad el 2026-07-29
+(v2.184.0–2.185.1) y rendimiento P1/P4 el mismo día (v2.189.0). Dos de los
+diagnósticos originales resultaron equivocados al ir a arreglarlos — el origen
+del 27% de CPU y la afirmación de que `cron.job_run_details` no se purgaba — y
+quedan corregidos en sus secciones, no borrados.*

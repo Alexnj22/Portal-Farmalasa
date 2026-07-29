@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.166.0';
+export const APP_VERSION = '2.167.0';
+
+// v2.167.0 — se retira la vista de Promociones; queda el slot de
+// Bonificaciones para construirla despues.
+//
+// Frontend borrado (1,563 lineas, autocontenido — nadie fuera lo importaba):
+//   src/views/PromocionesView.jsx        67
+//   src/views/promociones/PromoModal.jsx        578
+//   src/views/promociones/TabPromos.jsx         376
+//   src/views/promociones/TabBonificaciones.jsx 248
+//   src/views/promociones/TabHistorial.jsx      187
+//   src/data/promotions.js                      107
+// Mas la ruta, el import perezoso, el breadcrumb, el modulo del menu y su
+// entrada en la pantalla de permisos (con sus 3 tabs).
+//
+// **El backend NO se toco y es deliberado:** la edge function
+// `sync-promo-sales` (cron 4:30am) y las 6 tablas del modulo siguen ahi con
+// sus datos. Borrar tablas de produccion no estaba en el pedido y no es
+// reversible como un archivo; queda como decision aparte.
+//
+// El grupo del menu pasa a llamarse Bonificaciones con ese unico modulo. Ojo:
+// `bonificaciones` esta marcado `comingSoon`, y la regla anti-grupos-muertos
+// del menu (un grupo que solo contiene "Proximamente" no se muestra) hace que
+// el grupo quede OCULTO hasta que exista la vista real. Es el comportamiento
+// que ya tenia el sistema, no algo nuevo.
 
 // v2.166.0 — el sidebar en CUATRO perillas, y el movimiento como eje del tema.
 //

@@ -8,7 +8,7 @@ import {
     Megaphone, AlertTriangle, Activity,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, Cake,
-    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
+    TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
@@ -60,7 +60,6 @@ const MODULE_MAP = {
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
     encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },
     encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icon: PenLine    },
-    promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag        },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icon: Package       },
@@ -96,7 +95,9 @@ const MENU_GROUPS = [
     { key: 'horarios',      label: 'Horarios',      icon: Calendar,      modules: ['schedules', 'vacation_plan']          },
     { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['entrevistas']                        },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones'] },
-    { key: 'promociones',  label: 'Promociones',   icon: Tag,           modules: ['promociones', 'bonificaciones']       },
+    // La vista de Promociones se retiró el 2026-07-28 (pedido del usuario):
+    // el grupo queda como el slot de Bonificaciones, que se construye después.
+    { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift, modules: ['bonificaciones'] },
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a Sucursales', icon: ClipboardList, modules: ['pedidos'] },
     { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['minmax', 'ventas_perdidas', 'conteo_inventario'] },

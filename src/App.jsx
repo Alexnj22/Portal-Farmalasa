@@ -53,7 +53,6 @@ const FacturasCompraView = lazy(() => import("./views/purchases/FacturasCompraVi
 const ProveedoresView = lazy(() => import("./views/purchases/ProveedoresView"));
 const ConteoInventarioView = lazy(() => import("./views/ConteoInventarioView"));
 const ConteoDetailView = lazy(() => import("./views/inventario/ConteoDetailView"));
-const PromocionesView = lazy(() => import("./views/PromocionesView"));
 const FacturacionView = lazy(() => import("./views/FacturacionView"));
 const CotizacionesView = lazy(() => import("./views/CotizacionesView"));
 const EncuestaView = lazy(() => import("./views/EncuestaView"));
@@ -616,7 +615,6 @@ function MainApp() {
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
-                                    <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
 
@@ -706,7 +704,6 @@ const ROUTE_TITLES = {
     '/compras':           'Compras',
     '/facturas-compra':   'Facturas de Compra',
     '/conteo-inventario': 'Conteo de Inventario',
-    '/promociones':       'Promociones',
     '/branches':          'Sucursales',
     '/roles':             'Roles',
     '/permissions':       'Permisos',

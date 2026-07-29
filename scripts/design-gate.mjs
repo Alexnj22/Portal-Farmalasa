@@ -37,7 +37,7 @@
 // Uso: `npm run gate:design` — exit code 1 si hay hallazgos sin excepción.
 // Las excepciones viven en EXCEPTIONS más abajo (archivo → motivo), tal
 // como quedaron confirmadas archivo-por-archivo en DESIGN.md §6 y
-// AUDITORIA-TEMA-2026-07.md. Si un archivo nuevo necesita una excepción,
+// docs/planes-cerrados/AUDITORIA-TEMA-2026-07.md. Si un archivo nuevo necesita una excepción,
 // agregarla aquí Y documentar el motivo en DESIGN.md — nunca solo aquí.
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
@@ -1106,7 +1106,7 @@ function main() {
 
   if (process.argv.includes('--update-baseline')) {
     writeFileSync(BASELINE_PATH, JSON.stringify({
-      _comment: 'Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline',
+      _comment: 'Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (docs/planes-cerrados/AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline',
       updated: new Date().toISOString().slice(0, 10),
       categories: byCategory,
     }, null, 2) + '\n');

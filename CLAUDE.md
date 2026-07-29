@@ -87,7 +87,7 @@ considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 
 **Probar primero en staging.** Existe un branch de Supabase dedicado para esto
 (`ewcmerxqjvludtgskuin`, esquema reconstruido, cero PII — ver
-`PLAN-EJECUCION-2026-07.md` Bloque 3). Para DDL sobre las tablas calientes
+`docs/planes-cerrados/PLAN-EJECUCION-2026-07.md` Bloque 3). Para DDL sobre las tablas calientes
 listadas arriba, aplicar primero ahí con `apply_migration` apuntando a ese
 `project_id`, confirmar que no rompe nada, y solo entonces aplicar a prod.
 Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2 (secretos de Vault
@@ -187,11 +187,13 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
   Debe pasar en verde — las excepciones legítimas viven en
   `scripts/design-gate.mjs` (const `EXCEPTIONS`) y en `DESIGN.md` §6/§14. Este
   gate reemplaza los regex ad-hoc de sesiones anteriores que se perdían y
-  dejaban huecos reales sin detectar (ver `AUDITORIA-TEMA-2026-07.md` y
-  memoria `project_theme_audit_2026_07_22`).
+  dejaban huecos reales sin detectar (ver
+  `docs/planes-cerrados/AUDITORIA-TEMA-2026-07.md` y memoria
+  `project_theme_audit_2026_07_22`).
 
   **Desde D0 de la auditoría de diseño (2026-07-26) el gate funciona por
-  ratchet, no por cero absoluto** (`AUDITORIA-DISENO-2026-07-26.md`): falla si
+  ratchet, no por cero absoluto**
+  (`docs/planes-cerrados/AUDITORIA-DISENO-2026-07-26.md`): falla si
   una categoría SUBE respecto a `scripts/design-gate-baseline.json`, no por
   tenerla en rojo. Un gate permanentemente rojo no lo mira nadie — que es
   exactamente cómo se acumuló esta deuda.

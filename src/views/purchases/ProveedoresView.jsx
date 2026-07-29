@@ -20,7 +20,6 @@ import FilterBar from '../../components/common/FilterBar';
 import { useToastStore } from '../../store/toastStore';
 
 const SIN_CATEGORIA = '__sin_categoria__';
-const SIN_MATCH_ERP = '__sin_match__';
 
 // Proveedor con ancho acotado (className hint al <th>) — sin esto, el nombre
 // largo estira la columna a su ancho natural y empuja el resto de la tabla
@@ -30,13 +29,18 @@ const SIN_MATCH_ERP = '__sin_match__';
 // `sel` se inyecta desde la vista (necesita el estado de selección para el
 // "seleccionar todo"), por eso COLS deja de ser una constante suelta.
 const BASE_COLS = [
-    { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]' },
+    { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]', sortable: true },
     { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: 'md' },
     { key: 'tipo',       label: 'Tipo',       align: 'left', hideBelow: 'lg' },
-    { key: 'categoria',  label: 'Categoría',  align: 'left' },
-    { key: 'match_erp',  label: 'Match ERP',  align: 'left' },
-    { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md' },
-    { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg' },
+    { key: 'categoria',  label: 'Categoría',  align: 'left', sortable: true },
+    // Se ocultaba entera con `xl`, incluso a 1440px — o sea, en la pantalla
+    // donde se trabaja. Quitar una columna en silencio no es arreglar el ancho.
+    // Con `lg` desaparece solo en pantallas donde igual no cabía, y en desktop
+    // sigue visible; el match ERP además ya tiene filtro propio (H15) y se ve
+    // completo en el detalle.
+    { key: 'match_erp',  label: 'Match ERP',  align: 'left', hideBelow: 'lg' },
+    { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md', sortable: true },
+    { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg', sortable: true },
 ];
 
 // Tipo de Proveedor real (régimen fiscal, Código Tributario) — derivado
@@ -140,7 +144,7 @@ function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, 
 
 function MatchErpCell({ row }) {
     if (row.supplier_id) {
-        return <span className="text-content font-medium text-body-sm truncate max-w-[180px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
+        return <span className="text-content font-medium text-body-sm truncate max-w-[140px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
     }
     return (
         <div className="flex items-center gap-1.5">
@@ -160,6 +164,9 @@ export default function ProveedoresView({ openModal }) {
     const [categoriaId, setCategoriaId] = useState('');
     const [claseFilter, setClaseFilter] = useState('');
     const [activoFilter, setActivoFilter] = useState('activos');
+    const [matchErpFilter, setMatchErpFilter] = useState(''); // '' | 'con' | 'sin' (H15)
+    const [sortCol, setSortCol] = useState('proveedor');
+    const [sortDir, setSortDir] = useState('asc');
 
     const [rows, setRows] = useState([]);
     const [categorias, setCategorias] = useState([]);
@@ -208,26 +215,59 @@ export default function ProveedoresView({ openModal }) {
         });
     }, []);
 
+    // H15 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): "(sin match ERP)" vivía
+    // como una opción DENTRO del select de Categoría, y para que funcionara
+    // hacía falta un segundo filtrado aparte. No es una categoría, y metida ahí
+    // no se podía combinar con una categoría real. Ahora es su propia sección
+    // del FilterBar y el doble filtrado desaparece.
     const filtered = useMemo(() => {
         return rows.filter(r => {
             if (activoFilter === 'activos' && !r.activo) return false;
             if (activoFilter === 'inactivos' && r.activo) return false;
+            if (matchErpFilter === 'sin' && r.supplier_id) return false;
+            if (matchErpFilter === 'con' && !r.supplier_id) return false;
             if (categoriaId === SIN_CATEGORIA) { if (r.categoria_id) return false; }
-            else if (categoriaId && categoriaId !== SIN_MATCH_ERP) { if (String(r.categoria_id) !== String(categoriaId)) return false; }
+            else if (categoriaId) { if (String(r.categoria_id) !== String(categoriaId)) return false; }
             if (claseFilter) { if (r.categoria_clase !== claseFilter) return false; }
             if (search && !tokenMatch(search, r.nombre, r.nombre_comercial, r.alias, r.nit, r.dui, r.nrc, r.desc_actividad)) return false;
             return true;
         });
-    }, [rows, activoFilter, categoriaId, claseFilter, search]);
+    }, [rows, activoFilter, matchErpFilter, categoriaId, claseFilter, search]);
 
-    const filteredSinMatch = useMemo(() => {
-        if (categoriaId !== SIN_MATCH_ERP) return filtered;
-        return filtered.filter(r => !r.supplier_id);
-    }, [filtered, categoriaId]);
+    useEffect(() => { setPage(1); }, [search, categoriaId, claseFilter, activoFilter, matchErpFilter]);  
 
-    useEffect(() => { setPage(1); }, [search, categoriaId, claseFilter, activoFilter]);  
+    // H16: la tabla no ordenaba por ninguna columna — orden alfabético fijo,
+    // contra el estándar del proyecto (DataTable soporta sort desde siempre) y
+    // justo en las dos columnas donde más importa: cuántos documentos trae cada
+    // proveedor y hace cuánto que no le compramos.
+    const sorted = useMemo(() => {
+        const dir = sortDir === 'asc' ? 1 : -1;
+        const val = (r) => {
+            switch (sortCol) {
+                case 'docs':      return Number(r.docs_count) || 0;
+                case 'ultima':    return r.ultima_vez_visto || '';
+                case 'categoria': return (r.categoria_nombre || '').toLowerCase();
+                default:          return (r.nombre || '').toLowerCase();
+            }
+        };
+        return [...filtered].sort((a, b) => {
+            const av = val(a), bv = val(b);
+            if (av < bv) return -1 * dir;
+            if (av > bv) return 1 * dir;
+            // Desempate estable por nombre — sin esto, dos proveedores con el
+            // mismo docs_count bailan de lugar entre renders.
+            return (a.nombre || '').localeCompare(b.nombre || '');
+        });
+    }, [filtered, sortCol, sortDir]);
 
-    const sorted = useMemo(() => [...filteredSinMatch].sort((a, b) => a.nombre.localeCompare(b.nombre)), [filteredSinMatch]);
+    const handleSort = useCallback((col) => {
+        setSortCol(prev => {
+            if (prev === col) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return prev; }
+            setSortDir(col === 'docs' || col === 'ultima' ? 'desc' : 'asc');
+            return col;
+        });
+        setPage(1);
+    }, []);
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize]);
 
@@ -301,8 +341,11 @@ export default function ProveedoresView({ openModal }) {
 
     const categoriaFilterOptions = [
         { value: SIN_CATEGORIA, label: '(sin categoría)' },
-        { value: SIN_MATCH_ERP, label: '(sin match ERP)' },
         ...categorias.map(c => ({ value: c.id, label: c.nombre })),
+    ];
+    const matchErpOptions = [
+        { value: 'con', label: 'Con match ERP' },
+        { value: 'sin', label: 'Sin match ERP' },
     ];
     const claseOptions = [
         { value: 'costo', label: 'Costo' },
@@ -329,8 +372,8 @@ export default function ProveedoresView({ openModal }) {
                 {/* Filter pill — vive en el body (regla §17 DESIGN.md) */}
                 <div className="flex items-start justify-end gap-3 flex-wrap">
                     <FilterBar
-                        onClear={() => { setCategoriaId(''); setClaseFilter(''); setActivoFilter('activos'); }}
-                        activeCount={[categoriaId, claseFilter, activoFilter !== 'activos'].filter(Boolean).length}
+                        onClear={() => { setCategoriaId(''); setClaseFilter(''); setActivoFilter('activos'); setMatchErpFilter(''); }}
+                        activeCount={[categoriaId, claseFilter, activoFilter !== 'activos', matchErpFilter].filter(Boolean).length}
                     >
                         <FilterBar.Section active={!!categoriaId} onClear={() => setCategoriaId('')} label="categoría">
                             <div style={{ width: '190px' }}>
@@ -346,6 +389,16 @@ export default function ProveedoresView({ openModal }) {
                             </div>
                         </FilterBar.Section>
 
+                        {/* H15: sección propia — antes era una opción dentro de
+                            "Categoría", donde no es una categoría y no se podía
+                            combinar con una real. */}
+                        <FilterBar.Section active={!!matchErpFilter} onClear={() => setMatchErpFilter('')} label="match ERP">
+                            <div style={{ width: '165px' }}>
+                                <LiquidSelect value={matchErpFilter} onChange={setMatchErpFilter}
+                                    options={matchErpOptions} placeholder="Match ERP" icon={Building2} compact bare />
+                            </div>
+                        </FilterBar.Section>
+
                         <FilterBar.Section active={activoFilter !== 'activos'} onClear={() => setActivoFilter('activos')} label="estado">
                             <div style={{ width: '130px' }}>
                                 <LiquidSelect value={activoFilter} onChange={setActivoFilter}
@@ -356,7 +409,7 @@ export default function ProveedoresView({ openModal }) {
                     </FilterBar>
                 </div>
 
-                <DataTable columns={COLS} loading={loading} empty={{ icon: Truck, message: 'Sin proveedores registrados todavía.' }}>
+                <DataTable columns={COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: Truck, message: 'Sin proveedores registrados todavía.' }}>
                     {pageRows.map((row, i) => (
                         <DataRow key={row.id} index={i} onClick={() => openDetail(row)}>
                             {/* stopPropagation: la fila entera abre el detalle,
@@ -375,7 +428,7 @@ export default function ProveedoresView({ openModal }) {
                                     <div className="w-8 h-8 rounded-xl bg-surface-card-hover/80 border border-divider flex items-center justify-center shrink-0">
                                         <Building2 size={14} className="text-content-3" strokeWidth={1.8} />
                                     </div>
-                                    <div className="min-w-0 max-w-[200px]">
+                                    <div className="min-w-0 max-w-[168px]">
                                         <p className="text-body-sm font-bold text-content-2 truncate" title={row.nombre}>{row.nombre}</p>
                                         {row.alias && (
                                             <p className="text-caption text-content-3 truncate italic">&ldquo;{row.alias}&rdquo;</p>

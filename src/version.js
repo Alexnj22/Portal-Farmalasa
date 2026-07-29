@@ -16,7 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.201.0';
+export const APP_VERSION = '2.202.0';
+
+// v2.202.0 — cierre de los pendientes chicos de la auditoria DTE.
+//
+// H15 — "(sin match ERP)" vivia como una opcion DENTRO del select de Categoria,
+// y para que funcionara hacia falta un segundo filtrado aparte. No es una
+// categoria, y metida ahi no se podia combinar con una categoria real. Ahora
+// es su propia seccion del FilterBar (Con / Sin match) y el doble filtrado
+// desaparece. Medido: "sin match" da 46, que es el numero exacto de la BD, y
+// combinarlo con "Mercaderia para reventa" da 3 — antes era imposible.
+//
+// H16 — la tabla no ordenaba por ninguna columna: orden alfabetico fijo, contra
+// el estandar del proyecto, y justo en las dos columnas donde mas importa
+// (cuantos documentos trae cada proveedor y hace cuanto que no le compramos).
+// Ordenable por Proveedor / Categoria / Docs / Ultima compra, con desempate
+// estable por nombre — sin eso, dos proveedores con el mismo docs_count
+// bailaban de lugar entre renders.
+//
+// H13 — `get_purchase_dte_documents` YA devuelve `invalidacion_source` en cada
+// fila, pero el visor lo volvia a pedir al servidor cada vez que se abria el
+// modal. El RPC queda de respaldo para cuando el modal se abre sin pasar por
+// la lista.
+//
+// Ancho de la tabla: seguia el hallazgo de que YA desbordaba antes de todo esto
+// (1,276px de contenido en 1,044 disponibles — por eso v2.27.4 le quito la
+// columna Giro). Primer intento fue ocultar Match ERP con `xl`, y medido
+// resulto que la escondia hasta en 1440px: o sea, quitaba una columna en la
+// pantalla donde se trabaja, y AUN ASI desbordaba. Mal negocio. Quedo en `lg`
+// (desaparece solo donde ya no cabia) mas recorte de los max-w. Resultado:
+// 1,288px con las 8 columnas visibles, contra los 1,276 originales — se sumo
+// una columna entera de seleccion y el ordenamiento por +12px netos.
+//
+// El desborde de fondo NO se arreglo y no se puede sin sacar una columna, que
+// es decision del usuario (como lo fue Giro). Queda anotado en el plan.
 
 // v2.201.0 — el ciclico se programa solo el 15, y la lista filtra por sucursal.
 //

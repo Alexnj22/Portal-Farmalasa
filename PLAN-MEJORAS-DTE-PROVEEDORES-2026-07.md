@@ -42,8 +42,13 @@ contra código y BD el 2026-07-29:
 
 **Dos datos del plan viejo que ya no eran ciertos:** el cron
 `sync-purchase-emails-daily` (jobid 183) está **activo** desde entonces
-(`0 9 * * *`, corrió hoy 09:00); el tercer correo **sigue sin conectar**
-(2 cuentas en `email_sync_accounts`) — ver **H10**, que ahora lo bloquea.
+(`0 9 * * *`, corrió hoy 09:00).
+
+**El "tercer correo" YA NO EXISTE (confirmado por el usuario, 2026-07-29).**
+Arrastraba como pendiente desde el plan original. No hay tercera casilla que
+conectar: las cuentas del módulo son **dos**, `farmasalud.sv@gmail.com` y
+`compraslasalud.sv@gmail.com`, ambas activas y sincronizando. Queda anotado
+acá para que nadie lo vuelva a levantar como ítem abierto.
 
 **Salud estructural (verificada, sin acción):** security advisors en **0 ERRORES**;
 RLS con `(SELECT auth_*)` en las 7 tablas del módulo; sin policies de escritura
@@ -271,9 +276,14 @@ Verificado con `dry_run` real: las 2 cuentas en **una sola invocación, 5.6s**,
 `hasMore=false`, sin errores. Las 21 filas con `items_text` NULL pasaron a `''`
 (quedan 0).
 
-**H10 desbloquea conectar el tercer correo** — era el motivo por el que el
-presupuesto se quedaba corto. Sigue abierto: H11 (E8), H8/H9 ya se hicieron en
-Fase A.
+H10 se hizo para desbloquear el "tercer correo", que **resultó no existir**
+(ver arriba). El arreglo igual vale por sí solo: el presupuesto era por cuenta
+en un loop serial, así que con 2 cuentas una invocación podía llegar a ~200s
+sin necesidad de una tercera.
+
+**H11 (E8) se descarta** — ver el encuadre corregido: el comportamiento
+conservador es el correcto para un módulo cuyo trabajo es capturar.
+H8/H9 se hicieron en Fase A.
 
 ---
 
@@ -346,7 +356,31 @@ Prioridad baja, pero sigue vivo.
 
 ---
 
-## FASE C — Escala y simplificación
+## FASE C — Escala y simplificación ✅ CERRADA (v2.202.0)
+
+| # | Estado |
+|---|---|
+| H12 | ✅ medido — payload de 1 mes = 1.01 MB; **la búsqueda server-side queda descartada, no pendiente** |
+| H13 | ✅ el visor usa `invalidacion_source` de la fila; el RPC queda de respaldo |
+| H14 | ✅ (en Fase A) |
+| H15 | ✅ sección propia de FilterBar. "Sin match" = 46 (exacto vs BD) y **ya se combina con una categoría** — antes imposible |
+| H16 | ✅ ordenable por Proveedor / Categoría / Docs / Última compra, con desempate estable |
+
+**Ancho de la tabla — mejorado, NO resuelto.** Primer intento fue ocultar Match
+ERP con `xl`; medido, la escondía hasta en 1440px (la pantalla donde se
+trabaja) y **aun así desbordaba** — mal negocio, revertido a `lg`. Con los
+recortes de `max-w` quedó en **1,288px** con las 8 columnas visibles, contra
+**1,276px** originales: se sumó una columna entera de selección más el
+ordenamiento por **+12px netos**.
+
+El desborde de fondo (1,288 en 1,044 disponibles) **no se puede arreglar sin
+sacar una columna**, y eso es decisión del usuario — como lo fue quitar Giro en
+v2.27.4. Candidatas, en orden: `Tipo` (175px, el régimen fiscal ya se ve en el
+detalle) y `NIT / NRC` (132px).
+
+---
+
+## FASE C (detalle original)
 
 ### H12 · Medición que cierra la pregunta abierta de Fase 4
 
@@ -411,7 +445,62 @@ sin aviso ni reintento — y con una promesa rechazada sin manejar.
 
 ---
 
-## FASE D — Proveedores: hacia cuentas por pagar (sin implementar)
+## ⚠️ ENCUADRE CORREGIDO (2026-07-29) — leer antes que la Fase D
+
+**Este módulo captura y conserva correos DTE. No los procesa.** El
+procesamiento (ingresar las compras, generar cuentas por pagar, aplicar
+retenciones) es trabajo posterior, atado al sistema de ventas que todavía no
+existe.
+
+Eso corrige un error de encuadre de la auditoría original, que presentó la
+Fase D como *"la mitad faltante de este módulo"*. No lo es: pagos, saldos y
+retenciones **pertenecen a otro módulo que aún no se construyó a propósito**.
+El módulo actual hace lo que le toca, y lo hace completo — 1,343 documentos,
+0 sin PDF, 0 sin JSON.
+
+Consecuencias de esta corrección:
+
+- **La Fase D (P1-P6) sale del alcance de este plan.** No es deuda; es scope de
+  un módulo futuro. Se conserva abajo como referencia legal ya verificada para
+  cuando se retome, no como pendiente.
+- **H5b (categoría por documento) queda PREMATURO.** Se justificaba como
+  prerrequisito de cuentas por pagar. Construirlo ahora sería adivinar
+  requisitos que el módulo de procesamiento no definió. Esperar.
+- **H11 (E8) cambia de signo: NO hacerlo.** Es saltarse la búsqueda de links
+  externos cuando los adjuntos ya trajeron un DTE válido. Si la captura es
+  *todo* el trabajo del módulo, ahorrar segundos a cambio de cualquier riesgo
+  de perder un documento que solo venía por link es mal negocio. El
+  comportamiento conservador actual es el correcto.
+- **Gana peso la fidelidad del archivo:** 1,169 de 1,343 documentos no tienen
+  el JSON original crudo (`orig_json_path` NULL). Se arregló el 2026-07-22, así
+  que de ahí en adelante sí se guarda; lo anterior solo vive en Gmail y es
+  recuperable mientras esos correos sigan ahí. **Decisión abierta.**
+
+### Estado del almacenamiento (medido 2026-07-29)
+
+Bucket `purchase-dte`: **339 MB en 3,163 archivos**. Todos los buckets del
+proyecto suman ~374 MB.
+
+| tipo | archivos | tamaño | % |
+|---|---|---|---|
+| PDF | 1,462 | 313 MB | 92.2% |
+| JSON normalizado | 1,409 | 17 MB | 5.1% |
+| `review/` (huérfanos) | 118 | 7 MB | 2.0% |
+| JSON original (`.orig.json`) | 174 | 2 MB | 0.6% |
+
+Crecimiento ≈ **130 MB/mes** al ritmo actual (~660 docs/mes) → ~1.5 GB/año.
+
+**La descarga NO comprime, y está bien así.** `export-purchase-dte-zip` usa
+`STORE` deliberadamente: se midió que DEFLATE reducía <5% sobre PDFs (que ya
+vienen comprimidos internamente) y a escala rompía el edge function por CPU.
+Como el 92% del bucket son PDFs, no hay ahorro real disponible: comprimir los
+17 MB de JSON ahorraría ~14 MB del total. Además, el Decreto 487 Art. 3 exige
+conservar las representaciones gráficas "en el mismo formato y medio en que
+fueron originalmente expedidas" — recomprimir el PDF sería legalmente dudoso.
+
+---
+
+## FASE D — Proveedores: cuentas por pagar (FUERA DE ALCANCE — módulo futuro)
 
 Verificado en BD el 2026-07-29: `proveedores_maestro` **no tiene** columnas de
 gran contribuyente, datos bancarios ni plazo de crédito, y **no existe ninguna

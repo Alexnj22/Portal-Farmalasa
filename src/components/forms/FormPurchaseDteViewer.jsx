@@ -206,12 +206,21 @@ const FormPurchaseDteViewer = ({ formData }) => {
     // classify_purchase_dte_review) — sin esto, el aviso de anulación queda
     // sin rastro visible una vez que sale de Revisión (pedido del usuario
     // tras probar el caso real de Grupo Jamilu, 2026-07-22).
+    // H13 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): `get_purchase_dte_documents`
+    // YA devuelve `invalidacion_source` en cada fila, así que pedirlo de nuevo
+    // al abrir el modal era una ida al servidor por documento para traer algo
+    // que el llamador tenía en la mano. El RPC queda solo de respaldo, para
+    // cuando el modal se abre sin pasar por la lista (la fila no trae el campo).
     useEffect(() => {
         if (!document?.invalidado || !document?.id) { setInvalidacionSource(null); return; }
+        if (document.invalidacion_source !== undefined) {
+            setInvalidacionSource(document.invalidacion_source);
+            return;
+        }
         let alive = true;
         fetchPurchaseDteReviewSource(document.id).then((row) => { if (alive) setInvalidacionSource(row); }).catch(() => {});
         return () => { alive = false; };
-    }, [document?.invalidado, document?.id]);
+    }, [document?.invalidado, document?.id, document?.invalidacion_source]);
 
     const items = dte?.cuerpoDocumento || dte?.detalle || [];
     const resumen = dte?.resumen || {};

@@ -631,74 +631,7 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
     });
 }
 
-export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta = {}) {
-    const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
-    const sections = sortedSucIds.map(sucId => {
-        const g      = grouped[sucId] || { normal: [], revision: [], sinStock: [], agotamiento: [] };
-        const mapped = [...g.normal, ...g.agotamiento, ...g.revision].filter(row => !row.caja_especial).map(row => {
-            const erpFactor  = row.factor ?? 1;
-            const dispFactor = row.dispatch_factor ?? erpFactor;
-            const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
-            const isLabel    = row.tiene_dispatch_label === true;
-            return {
-                product_name:      row.product_name,
-                laboratorio:       row.laboratorio ?? '',
-                presentacion_tipo: row.dispatch_tipo ?? row.presentacion_tipo,
-                es_antibiotico:    row.es_antibiotico,
-                qty,
-                qty_base: isLabel ? qty * dispFactor : null,
-                lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
-            };
-        });
-        return {
-            sucId, nombre: ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
-            codigo: null,
-            rows:             mapped.filter(r => r.qty > 0),
-            sinCount:         g.sinStock.length,
-            revCount:         mapped.filter(r => r.qty === 0).length,
-            agotamientoCount: (g.agotamiento ?? []).length,
-        };
-    });
-    const filename = `${(title ?? 'Vista_previa').replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`;
-    downloadPdf(buildDocDefinition(sections, title ?? 'Vista previa', meta, logo, addrMap), filename);
-}
 
-export async function printFromSnapshot(snapshot, meta = {}) {
-    const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
-    const datos = Array.isArray(snapshot.datos) ? snapshot.datos : [];
-    const byS   = {};
-    for (const row of datos) {
-        const s = row.erp_sucursal_id;
-        if (!byS[s]) byS[s] = { normal: [], sinStock: [] };
-        if (row.sin_stock) byS[s].sinStock.push(row);
-        else byS[s].normal.push(row);
-    }
-    const ids = [
-        ...SUCURSALES_ORDER.filter(id => byS[id]),
-        ...Object.keys(byS).map(Number).filter(id => !SUCURSALES_ORDER.includes(id)),
-    ];
-    const sections = ids.map(sucId => {
-        const g = byS[sucId];
-        const rows = g.normal.map(row => {
-            const qty = row.cantidad_asignada ?? 0;
-            return {
-                product_name:      row.product_name,
-                laboratorio:       row.laboratorio ?? '',
-                presentacion_tipo: row.presentacion_tipo,
-                es_antibiotico:    row.es_antibiotico,
-                qty,
-                lotes: fefoProject(row.lotes_bodega, qty),
-            };
-        });
-        return {
-            sucId, nombre: ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
-            codigo: null, rows, sinCount: g.sinStock.length, revCount: 0,
-        };
-    });
-    const nombre   = snapshot.nombre ?? 'Borrador_guardado';
-    const filename = `${nombre.replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`;
-    downloadPdf(buildDocDefinition(sections, nombre, meta, logo, addrMap), filename);
-}
 
 export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOverride = null) {
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);

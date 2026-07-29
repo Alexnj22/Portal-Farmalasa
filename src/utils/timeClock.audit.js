@@ -54,35 +54,9 @@ export const INPUT_METHOD = {
 // -------------------------
 export const DETAILS_MAX_BYTES = 20_000;
 
-const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-const jsonSizeBytes = (obj) => {
-  try {
-    return new TextEncoder().encode(JSON.stringify(obj ?? {})).length;
-  } catch {
-    return Number.MAX_SAFE_INTEGER;
-  }
-};
 
-const compactIfTooLarge = (details, maxBytes = DETAILS_MAX_BYTES) => {
-  const bytes = jsonSizeBytes(details);
-  if (bytes <= maxBytes) return details;
 
-  const keys = isPlainObject(details) ? Object.keys(details) : [];
-  return {
-    __truncated: true,
-    __bytes: bytes,
-    __max_bytes: maxBytes,
-    __keys: keys.slice(0, 60),
-    message: 'Details exceden el tamaño permitido. Se guardó un resumen.',
-  };
-};
-
-const pickEnum = (value, allowedSet, fallback) => {
-  const v = asUpper(value);
-  if (!v) return fallback;
-  return allowedSet.has(v) ? v : fallback;
-};
 
 // -------------------------
 // Helpers
@@ -150,111 +124,12 @@ export const normalizeKioskAuditInfo = (raw) => {
   };
 };
 
-export const deriveSeverity = (action) => {
-  const a = asUpper(action) || '';
-  if (
-    a.includes('INTENTO') || a.includes('FRAUDE') || a.includes('DENEG') ||
-    a.includes('ELIMINAR') || a.includes('REVOCAR') || a.includes('VINCULAR_KIOSCO')
-  ) return AUDIT_SEVERITY.CRITICAL;
-  if (
-    a.includes('ERROR') || a.includes('FALLO') || a.includes('EXCEPTION') ||
-    a.includes('BORRAR') || a.includes('VINCULAR')
-  ) return AUDIT_SEVERITY.WARNING;
-  return AUDIT_SEVERITY.INFO;
-};
 
-export const deriveSource = ({ isKiosk } = {}) => {
-  return isKiosk ? AUDIT_SOURCE.KIOSK : AUDIT_SOURCE.ADMIN;
-};
 
-export const buildAuditPayload = ({
-  action,
-  targetId = null,
-  details = {},
-  actor = null,
-  kioskAuditInfo = null,
-  isKiosk = false,
-  source = null,
-  severity = null,
-} = {}) => {
-  const norm = normalizeKioskAuditInfo(kioskAuditInfo);
 
-  const sourceValue = pickEnum(source, new Set(Object.values(AUDIT_SOURCE).map((s) => String(s).toUpperCase())), deriveSource({ isKiosk }));
-  const severityValue = pickEnum(severity, new Set(Object.values(AUDIT_SEVERITY).map((s) => String(s).toUpperCase())), deriveSeverity(action));
-  const inputMethodValue = pickEnum(norm.input_method, new Set(Object.values(INPUT_METHOD).map((s) => String(s).toUpperCase())), INPUT_METHOD.UNKNOWN);
 
-  const payload = {
-    action: asText(action) || 'UNKNOWN',
-    target_id: asText(targetId),
-    user_id: asText(actor?.id),
-    user_name: asText(actor?.name) || (isKiosk ? (norm.employee_name ? `${norm.employee_name} (Vía Kiosco)` : 'Kiosco') : 'Sistema/Anónimo'),
 
-    source: asText(sourceValue),
-    severity: asText(severityValue),
 
-    branch_id: asText(norm.branch_id),
-    branch_name: asText(norm.branch_name),
-    device_name: asText(norm.device_name),
-    input_method: asText(inputMethodValue),
-
-    details: compactIfTooLarge(
-      redactSensitive({
-        __schema: 'audit_details_v1',
-        __ts_client: new Date().toISOString(),
-        ...safeClone(details),
-        audit_info: {
-          employee_id: asText(norm.employee_id),
-          employee_name: asText(norm.employee_name),
-          employee_code: asText(norm.employee_code),
-          action_type: asText(norm.action_type) || asText(action),
-          branch_id: asText(norm.branch_id),
-          branch_name: asText(norm.branch_name),
-          device_name: asText(norm.device_name),
-          input_method: asText(inputMethodValue),
-        },
-      })
-    ),
-  };
-
-  return payload;
-};
-
-export const buildKioskAttendanceDetails = ({
-  employee,
-  actionType,
-  kioskAuditInfo,
-  extra = {},
-} = {}) => {
-  const norm = normalizeKioskAuditInfo(kioskAuditInfo);
-  const inputMethodValue = pickEnum(norm.input_method, new Set(Object.values(INPUT_METHOD).map((s) => String(s).toUpperCase())), INPUT_METHOD.UNKNOWN);
-  return compactIfTooLarge(
-    redactSensitive({
-      __schema: 'attendance_details_v1',
-      __ts_client: new Date().toISOString(),
-      ...safeClone(extra),
-      audit_info: {
-        employee_id: asText(employee?.id ?? norm.employee_id),
-        employee_name: asText(employee?.name ?? norm.employee_name),
-        employee_code: asText(employee?.code ?? norm.employee_code),
-        branch_id: asText(norm.branch_id),
-        branch_name: asText(norm.branch_name),
-        device_name: asText(norm.device_name),
-        input_method: asText(inputMethodValue),
-        action_type: asText(actionType),
-      },
-    })
-  );
-};
-
-export const isSecurityEvent = (action) => {
-  const a = asUpper(action) || '';
-  return (
-    a.includes('INTENTO_PIN_INCORRECTO') ||
-    a.includes('MANIPULACION') ||
-    a.includes('SECURITY') ||
-    a.includes('INTRUSION')
-  );
-};
 
 export const buildKioskAuditInfo = ({
   employee = null,
@@ -320,29 +195,7 @@ export const buildEarlyExitMetadata = ({
   return metadata;
 };
 
-export const buildYesterdayMissedPunchWarning = ({
-  employee = null,
-  now = new Date(),
-} = {}) => {
-  const attendance = employee?.attendance || [];
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = yesterday.toISOString().split('T')[0];
 
-  const yesterdayPunches = attendance.filter((a) => a.timestamp?.startsWith(yStr));
-  if (!yesterdayPunches.length) return '';
-
-  const lastType = yesterdayPunches[yesterdayPunches.length - 1]?.type;
-  
-  // 🚨 CORRECCIÓN: Agregado 'OUT_BUSINESS' a los tipos de cierre válidos
-  const closingTypes = ['OUT', 'OUT_EXTRA', 'OUT_EARLY', 'OUT_BUSINESS'];
-
-  if (!closingTypes.includes(lastType)) {
-    return '⚠️ NOTA: Olvidaste marcar tu salida el día de ayer.';
-  }
-
-  return '';
-};
 
 export const getApplicableAnnouncement = ({ announcements, employee }) => {
   if (!announcements || !employee) return null;

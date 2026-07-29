@@ -34,9 +34,6 @@ export function enqueueAttendancePunch({ employeeId, type, metadata }) {
     writeQueue(queue);
 }
 
-export function getAttendanceQueueSize() {
-    return readQueue().length;
-}
 
 // Procesa la cola EN ORDEN (importa la secuencia cronológica de un empleado:
 // IN antes que OUT, etc.) — se detiene en el primer fallo y deja el resto

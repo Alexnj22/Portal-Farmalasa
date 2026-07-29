@@ -44,40 +44,9 @@ export function fetchEmployeeEventsByTypes(employeeId) {
 
 // ── EmployeeScheduleView.jsx ─────────────────────────────────────────────────
 
-export function fetchPublishedRosterForWeek(employeeId, weekStartDate) {
-    return supabase.from('employee_rosters')
-        .select('schedule_data')
-        .eq('employee_id', employeeId)
-        .eq('week_start_date', weekStartDate)
-        .eq('status', 'PUBLISHED')
-        .maybeSingle();
-}
 
-export function fetchEmployeeEventsByTypesUntil(employeeId, untilDateIso) {
-    return supabase.from('employee_events')
-        .select('type, date, metadata')
-        .eq('employee_id', employeeId)
-        .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
-        .lte('date', untilDateIso);
-}
 
-export function fetchMyVacationPlansMultiYear(employeeId, years) {
-    return supabase.from('vacation_plans')
-        .select('id, year, start_date, end_date, days, status, notes, change_requested_start, change_requested_end')
-        .eq('employee_id', employeeId)
-        .in('status', ['PRE_APPROVED', 'CHANGE_REQUESTED', 'APPROVED', 'CONFIRMED', 'PLANNED'])
-        .in('year', years)
-        .order('year', { ascending: true });
-}
 
-export function fetchPendingVacationChangeRequest(employeeId) {
-    return supabase.from('approval_requests')
-        .select('id, status, metadata, created_at')
-        .eq('employee_id', employeeId)
-        .eq('type', 'VACATION_CHANGE')
-        .eq('status', 'PENDING')
-        .maybeSingle();
-}
 
 // ── EmployeeProfileView.jsx ──────────────────────────────────────────────────
 

@@ -3,15 +3,7 @@ import {
   TrendingUp, ArrowRightLeft, Building2, Watch, LogOut, GraduationCap, ClipboardList, DollarSign, RefreshCw
 } from 'lucide-react';
 
-// Bucket B (DESIGN.md §6) — categórico genuino, sin jerarquía de severidad.
-export const DOCUMENT_TYPES = {
-  CONTRACT: { label: 'Contrato Laboral', icon: FileText, color: 'text-chart-1-text bg-chart-1/10' },
-  ID: { label: 'DUI / Identidad / Pasaporte', icon: IdCard, color: 'text-chart-3-text bg-chart-3/10' },
-  CV: { label: 'Hoja de Vida (CV)', icon: User, color: 'text-success-text bg-success/10' },
-  MEDICAL: { label: 'Incapacidad / Constancia', icon: HeartPulse, color: 'text-chart-6-text bg-chart-6/10' },
-  MEMO: { label: 'Memorándum / Sanción', icon: AlertCircle, color: 'text-chart-4-text bg-chart-4/10' },
-  OTHER: { label: 'Otro Documento', icon: Paperclip, color: 'text-content-2 bg-surface-card-hover' },
-};
+
 
 // Bucket B categórico (tipos de evento) salvo TERMINATION, que es Bucket A
 // (severidad real — es un desenlace negativo/definitivo, no una categoría

@@ -12,16 +12,7 @@ export const buildDateFromTime = (baseDate, timeStr) => {
   return d;
 };
 
-export const format12hWithSeconds = (dateObj) => {
-  if (!dateObj) return '';
 
-  return new Date(dateObj).toLocaleTimeString('es-ES', {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  });
-};
 
 export const format12hNoSeconds = (dateObj) => {
   if (!dateObj) return '';
@@ -58,12 +49,7 @@ export const toLocalISODate = (dateObj = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
-export const toLocalISOFromTimestamp = (timestamp) => {
-  if (!timestamp) return '';
-  const d = new Date(timestamp);
-  if (Number.isNaN(d.getTime())) return '';
-  return toLocalISODate(d);
-};
+
 
 export const checkLateness = (expectedDate, currentDate) => {
   if (!expectedDate || !currentDate) return { isLate: false };
@@ -306,37 +292,4 @@ export const getNextWorkDayText = (employee, referenceDate, shifts, getTodaySche
   return 'pronto';
 };
 
-export const createAuditInfo = ({
-  employee,
-  kioskConfig,
-  actionType,
-  inputMethod,
-}) => ({
-  employee_name: employee?.name || null,
-  employee_code: employee?.code || null,
-  employee_dui: employee?.dui || null,
-  branch_id: kioskConfig?.branchId || null,
-  branch_name: kioskConfig?.branchName || null,
-  device_name: kioskConfig?.deviceName || kioskConfig?.device_name || 'Kiosco Autorizado',
-  input_method: inputMethod || kioskConfig?.inputMethod || 'DESCONOCIDO',
-  action_type: actionType || null,
-});
 
-export const mergeAttendanceMetadata = ({
-  baseMetadata,
-  employee,
-  kioskConfig,
-  actionType,
-  inputMethod,
-}) => {
-  const next = baseMetadata ? { ...baseMetadata } : {};
-
-  next.audit_info = createAuditInfo({
-    employee,
-    kioskConfig,
-    actionType,
-    inputMethod,
-  });
-
-  return next;
-};

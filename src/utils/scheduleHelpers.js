@@ -28,16 +28,7 @@ export const timeToMins = (timeStr) => {
     return h * 60 + m;
 };
 
-export const parseTimeFlexible = (timeStr) => {
-    if (!timeStr) return 0;
-    const clean = timeStr.toLowerCase().replace(/[^0-9:amp]/g, '');
-    let isPM = clean.includes('pm');
-    let isAM = clean.includes('am');
-    let [h, m] = clean.replace(/[amp]/g, '').split(':').map(Number);
-    if (isPM && h < 12) h += 12;
-    if (isAM && h === 12) h = 0;
-    return (h * 60) + (m || 0);
-};
+
 
 export const minsToTimeStr = (mins) => {
     let h = Math.floor(mins / 60);

@@ -31,11 +31,6 @@ export function updateRoleIsSU(roleId, value) {
 
 // ── AuthContext.jsx (2 de sus 3 sitios — refreshPermissions) ────────────────
 
-export function fetchRolePermissionsForRole(roleId) {
-    return supabase.from('role_permissions')
-        .select('module_key, can_view, can_edit, can_approve, scope')
-        .eq('role_id', roleId);
-}
 
 // Bloque 8 — cargo secundario suma permisos (modelo de unión). Trae las filas
 // de role_permissions de varios role_id a la vez (primario + secundario);

@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.179.0';
+export const APP_VERSION = '2.180.0';
+
+// v2.180.0 — auditoria, pasada A: codigo muerto.
+//
+// 34 exports que no importaba nadie, en 13 archivos. Verificado uno por uno:
+// cada nombre aparecia UNA sola vez en todo `src/` — su propia definicion.
+//
+// **Borrar codigo muerto destapa mas codigo muerto.** Al sacar
+// `buildKioskAttendanceDetails` quedaron huerfanos `compactIfTooLarge` y
+// `pickEnum`; al sacar esos, `isPlainObject` y `jsonSizeBytes`. Hizo falta
+// iterar hasta punto fijo (3 vueltas).
+//
+// **Dos guardias que hicieron falta y valen para la proxima:**
+//   1. Que el archivo siga pasando el lint NO alcanza. Al quitar
+//      `ERP_BODEGA_ID` mi extractor se llevo tambien `SUCURSALES` — el archivo
+//      quedaba valido y el BUILD reventaba. Hay que comparar el set de exports
+//      antes/despues y exigir que solo desaparezca el buscado.
+//   2. `export const X = ({...}) => ({...});` termina en `});`, no en `};`.
+//      Buscar el cierre por texto falla; hay que balancear por lineas.
+//
+// Keyframes CSS huerfanos: 0 de 32. Dependencias sin usar: solo
+// `@capacitor/android` e `@capacitor/ios`, que son plataformas nativas y no se
+// importan desde JS — NO son muertas.
 
 // v2.179.0 — auditoria visual: contraste del texto terciario + 8 archivos
 // muertos.

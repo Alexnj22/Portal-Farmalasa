@@ -19,4 +19,4 @@ export function dteTypeLabel(tipoDte) {
     return DTE_TYPE_LABELS[tipoDte] || `Tipo ${tipoDte}`;
 }
 
-export const DTE_TYPE_OPTIONS = Object.entries(DTE_TYPE_LABELS).map(([value, label]) => ({ value, label }));
+

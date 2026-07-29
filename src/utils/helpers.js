@@ -9,13 +9,7 @@ export const toLocalISO = (date) => {
     return new Date(d.getTime() - offset).toISOString().split('T')[0];
 };
 
-export const calculateDays = (start, end) => {
-    if (!start || !end) return 0;
-    // Forzamos horas a 00:00 para evitar decimales por cambios de horario
-    const s = new Date(start + 'T00:00:00');
-    const e = new Date(end + 'T00:00:00');
-    return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
-};
+
 
 export const formatDate = (ds) => {
     if (!ds) return '';
@@ -42,11 +36,7 @@ export const formatPhoneMask = (v) => {
     return n.length > 4 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
 };
 
-export const formatDuiMask = (v) => {
-    if (!v) return '';
-    const n = v.replace(/\D/g, '').slice(0, 9);
-    return n.length > 8 ? `${n.slice(0, 8)}-${n.slice(8)}` : n;
-};
+
 
 export const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
@@ -60,11 +50,6 @@ export const formatTime12h = (time24) => {
     return `${h}:${minutes} ${ampm}`;
 };
 
-export const getMinutesFromTime = (timeStr) => {
-    if (!timeStr) return 0;
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
-};
 
 export const minsToTime = (totalMins) => {
     if (isNaN(totalMins)) return '00:00';
@@ -73,24 +58,11 @@ export const minsToTime = (totalMins) => {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
-export const getStartOfWeek = (dateString) => {
-    // 🚨 MEJORA: Prevenir salto de zona horaria al parsear strings "YYYY-MM-DD"
-    const date = dateString ? new Date(dateString + (dateString.includes('T') ? '' : 'T00:00:00')) : new Date();
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(date.setDate(diff));
-    return toLocalISO(monday);
-};
+
 
 // --- LÓGICA DE NEGOCIO Y HORARIOS ---
 
-export const getEffectiveBranchId = (emp) => {
-    const t = toLocalISO(new Date());
-    const s = emp?.history?.find(h => h.type === 'SUPPORT' && h.date <= t && (h.metadata?.endDate ?? h.endDate) >= t);
-    // targetBranchId vive en metadata (registerEmployeeEvent lo guarda ahí)
-    const bid = s?.metadata?.targetBranchId ?? s?.targetBranchId;
-    return bid != null ? parseInt(bid, 10) : emp?.branchId;
-};
+
 
 const TEMPORAL_TYPES = ['VACATION', 'DISABILITY', 'SUPPORT', 'PERMIT', 'INDUCTION'];
 
@@ -199,81 +171,11 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
         return { status: 'OUT', label: 'Salida Laboral', color: 'bg-surface-card-hover text-content-2 border-divider' };
 };
 
-export const getScheduleForDate = (emp, dateStr, shifts) => {
-    if (!emp || !dateStr) return null;
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    const dayOfWeek = date.getDay();
-    const dbDay = dayOfWeek === 0 ? 7 : dayOfWeek;
-    
-    if (!emp.weeklySchedule || !emp.weeklySchedule[dbDay]) return null;
-    
-    const dayConfig = emp.weeklySchedule[dbDay];
-    if (!dayConfig.shiftId) return null; 
-    
-    // 🚨 MEJORA: Evitar crash por toString()
-    const shift = (shifts || []).find(s => String(s.id) === String(dayConfig.shiftId));
-    return { shift, ...dayConfig };
-};
 
-export const getDaySegments = (config) => {
-    if (!config || !config.shift) return [];
-    let segments = [];
-    const shiftStart = getMinutesFromTime(config.shift.start);
-    let shiftEnd = getMinutesFromTime(config.shift.end);
-    if (shiftEnd < shiftStart) shiftEnd += 24 * 60; 
 
-    let cuts = [];
-    if (config.lunchTime) {
-        let lStart = getMinutesFromTime(config.lunchTime);
-        if (lStart < shiftStart) lStart += 24 * 60;
-        let lEnd = lStart + 60; // 60 mins almuerzo fijo
-        cuts.push({ type: 'lunch', start: lStart, end: lEnd, label: 'Almuerzo' });
-    }
-    if (config.lactationTime) {
-        let bStart = getMinutesFromTime(config.lactationTime);
-        if (bStart < shiftStart) bStart += 24 * 60;
-        let bEnd = bStart + 60; // 60 mins lactancia fijo
-        cuts.push({ type: 'lactation', start: bStart, end: bEnd, label: 'Lactancia' });
-    }
-    
-    cuts.sort((a, b) => a.start - b.start);
-    
-    let cursor = shiftStart;
-    cuts.forEach(cut => {
-        if (cut.start > cursor) {
-            segments.push({ type: 'work', start: cursor, end: cut.start, label: 'Trabajo' });
-        }
-        segments.push(cut);
-        cursor = cut.end;
-    });
-    
-    if (cursor < shiftEnd) {
-        segments.push({ type: 'work', start: cursor, end: shiftEnd, label: 'Trabajo' });
-    }
-    return segments;
-};
 
-export const calculateTotalWeeklyHours = (weeklySchedule, shifts) => {
-    if (!weeklySchedule) return 0;
-    const safeShifts = Array.isArray(shifts) ? shifts : []; // Prevención de errores
-    
-    let totalMinutes = 0;
-    Object.values(weeklySchedule).forEach(dayConfig => {
-        if (dayConfig.shiftId) {
-            const shift = safeShifts.find(s => String(s.id) === String(dayConfig.shiftId));
-            if (shift) {
-                let start = getMinutesFromTime(shift.start);
-                let end = getMinutesFromTime(shift.end);
-                if (end < start) end += 24 * 60;
-                let dailyMinutes = end - start;
-                if (dayConfig.lunchTime) dailyMinutes -= 60; 
-                totalMinutes += dailyMinutes;
-            }
-        }
-    });
-    return Math.round((totalMinutes / 60) * 10) / 10;
-};
+
+
 
 export const getHourlyCode = () => {
     const d = new Date();

@@ -177,45 +177,6 @@ async function mapsProxy(type, params) {
   return data;
 }
 
-// ── REST Distance Matrix optimization (via proxy — no CORS issues) ────────
-export async function optimizeRouteREST(stops, bodega) {
-  if (!stops.length) return [];
-  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) throw new Error('No key');
-
-  const allPoints = [bodega, ...stops];
-  const coords    = allPoints.map(p => `${p.lat},${p.lng}`).join('|');
-
-  const data = await mapsProxy('distancematrix', { origins: coords, destinations: coords });
-  if (data.status !== 'OK') throw new Error(`DM:${data.status}`);
-
-  const n = allPoints.length;
-  const distM = Array.from({ length: n }, () => new Array(n).fill(Infinity));
-  const durS  = Array.from({ length: n }, () => new Array(n).fill(0));
-
-  data.rows.forEach((row, i) => {
-    row.elements.forEach((el, j) => {
-      if (el.status === 'OK') {
-        distM[i][j] = el.distance.value;
-        durS[i][j]  = el.duration.value;
-      } else {
-        distM[i][j] = haversineMeters(allPoints[i].lat, allPoints[i].lng, allPoints[j].lat, allPoints[j].lng);
-        durS[i][j]  = distM[i][j] / 1000 / AVG_SPEED_KMH * 3600;
-      }
-    });
-  });
-
-  const order = stops.length === 1 ? [0] : tspBrute(stops.length, (i, j) => distM[i][j]);
-
-  return order.map((si, pos) => {
-    const prevIdx = pos === 0 ? 0 : order[pos - 1] + 1;
-    return {
-      ...stops[si],
-      orden:   pos + 1,
-      dist_m:  Math.round(distM[prevIdx][si + 1]),
-      dur_min: minsFromSeconds(durS[prevIdx][si + 1]),
-    };
-  });
-}
 
 // ── REST Directions — real-road polyline + return leg (via proxy) ─────────
 // points: [bodega, ...orderedStops, bodega] — bodega is both origin and destination

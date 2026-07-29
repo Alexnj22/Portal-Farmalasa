@@ -1,4 +1,3 @@
-export const ERP_BODEGA_ID = 6;
 
 export const SUCURSALES = [5, 1, 2, 3, 4, 7];
 

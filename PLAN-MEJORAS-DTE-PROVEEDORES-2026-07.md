@@ -178,7 +178,39 @@ va a resolver, y crece ~2/día.
 - [ ] `SupplierMatchCell`: para esos tipos, "No aplica" en gris — sin ⚠️ ni
       botón.
 
-### H5 · 🔨 EN CURSO — BD aplicada (v2.196.1), UI en mockup
+### H5 · ✅ CERRADO (v2.198.0) — 68 de 99 clasificados
+
+BD en v2.196.1, UI en v2.198.0 (aprobada por mockup antes de construirla), y
+las sugerencias **aplicadas en prod**: 68 proveedores clasificados, 31 sin
+categoría esperando criterio del usuario (los ambiguos).
+
+Verificado en la app: el filtro **Clase=Costo → 45** y **Gasto Operativo → 20**
+(coincide exacto con la BD). **Antes devolvían 0 filas siempre.**
+
+Reparto final:
+
+| categoría | clase | proveedores | docs |
+|---|---|---|---|
+| Mercadería para reventa | costo | 45 | 1,505 |
+| Servicios financieros/bancarios | gasto_admin | 3 | 259 |
+| Telecomunicaciones | gasto_operativo | 4 | 59 |
+| Combustible y transporte | gasto_operativo | 6 | 54 |
+| Agua | gasto_operativo | 2 | 44 |
+| Mantenimiento y reparaciones | gasto_operativo | 5 | 26 |
+| Alquileres | gasto_operativo | 2 | 10 |
+| Energía eléctrica | gasto_operativo | 1 | 1 |
+| **sin categoría** | — | **31** | 234 |
+
+**Deshacer**, si hiciera falta: todos estaban en NULL antes, así que
+`UPDATE proveedores_maestro SET categoria_id = NULL;` revierte la tanda entera.
+
+**Hallazgo lateral (abierto):** la tabla de Proveedores **ya desbordaba** su
+contenedor antes de este cambio — 1,276px de contenido en 1,044px disponibles
+(por eso v2.27.4 le quitó la columna Giro). La columna de selección y el
+subtexto la dejaron en 1,302px (+26 netos, acotados con `truncate`+`title`).
+El desborde de fondo es anterior y no se tocó.
+
+### H5 (diseño original) — BD aplicada (v2.196.1), UI en mockup
 
 Migración `20260729140000_proveedor_categoria_sugerida` en prod:
 `suggest_proveedor_categoria_id()` (14 patrones sobre el giro, 68/99 = 89% de

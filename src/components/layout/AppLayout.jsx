@@ -516,7 +516,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]';
+        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--sidebar-item-hover-shadow)]';
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-white/42 group-hover:text-white/80';
         const accentBarInactive = 'bg-white/20';
@@ -527,7 +527,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div
                     key={key}
                     className={`w-full flex items-center gap-2.5 rounded-2xl relative
-                        min-h-[var(--tap-min)] ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
+                        min-h-[var(--tap-min)] ${isExpanded
+                        ? (indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5')
+                        : 'justify-center px-0 gap-0 py-3 xl:py-3.5'}
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-base flex-shrink-0">
@@ -564,8 +566,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}
                 title={(!isExpanded && !isMobile) ? label : undefined}
-                className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden
-                    min-h-[var(--tap-min)] ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
+                className={`w-full flex items-center gap-2.5 rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
+                    min-h-[var(--tap-min)] ${isExpanded
+                        ? (indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5')
+                        : 'justify-center px-0 gap-0 py-3 xl:py-3.5'}
                     ${isActive ? 'text-white' : navItemInactive}
                     ${focusRing}
                     active:scale-[0.99] active:translate-y-0`}
@@ -575,14 +579,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </span>
 
                 {indent && (
-                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition-all ${isActive ? accentBarActive : accentBarInactive}`} />
+                    <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full transition ${isActive ? accentBarActive : accentBarInactive}`} />
                 )}
 
                 <div className="relative z-base flex-shrink-0">
                     <Icon
                         size={indent ? 16 : 20}
                         strokeWidth={isActive ? 2 : 1.5}
-                        className={`transition-all duration-300 ${isActive ? `${iconActiveColor} scale-110` : `${iconInactiveColor} group-hover:scale-110`}`}
+                        className={`transition duration-[var(--dur-slow)] ${isActive ? `${iconActiveColor} scale-110` : `${iconInactiveColor} group-hover:scale-110`}`}
                     />
                     {!isExpanded && alert && (
                         <span className="absolute -top-1 -right-1 flex h-2 w-2">
@@ -672,10 +676,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     aria-controls={isExpanded ? `nav-group-${key}` : undefined}
                     aria-label={!isExpanded ? label : undefined}
                     title={(!isExpanded && !isMobile) ? label : undefined}
-                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 min-h-[var(--tap-min)] rounded-2xl transition-all duration-200 group text-left overflow-hidden
+                    className={`relative w-full flex items-center min-h-[var(--tap-min)] rounded-2xl transition duration-[var(--dur-base)] group text-left overflow-hidden
+                        ${isExpanded ? 'gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3' : 'justify-center gap-0 px-0 py-2.5 xl:py-3'}
                         ${hasActiveChild
                             ? 'text-white'
-                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]'}
+                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
                         ${focusRing}
                         active:scale-[0.99] active:translate-y-0`}
                 >
@@ -685,7 +690,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     <GroupIcon
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
-                        className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
+                        className={`flex-shrink-0 transition duration-[var(--dur-slow)] ${hasActiveChild
                             ? 'text-logo-magenta-soft scale-110'
                             : 'text-white/42 group-hover:text-white/80 group-hover:scale-110'}`}
                     />
@@ -707,7 +712,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             <ChevronDown
                                 size={14}
                                 strokeWidth={2.5}
-                                className={`transition-transform duration-300 flex-shrink-0 text-white/40 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
+                                className={`transition-transform duration-[var(--dur-slow)] flex-shrink-0 text-white/40 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                             />
                         </>
                     )}
@@ -722,7 +727,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div
                     id={`nav-group-${key}`}
                     inert={!(isExpanded && isOpen) ? true : undefined}
-                    className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
+                    className={`grid transition duration-[var(--dur-slow)] ease-[cubic-bezier(0.25,0.8,0.25,1)]
                         ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
                 >
                     <div className="overflow-hidden">
@@ -758,7 +763,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* Mobile backdrop */}
                 {isMobile && isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-scrim z-header lg:hidden animate-in fade-in duration-300"
+                        className="fixed inset-0 bg-scrim z-header lg:hidden animate-in fade-in duration-[var(--dur-slow)]"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
@@ -821,21 +826,21 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             <div className="flex items-center gap-3 relative z-base">
                                 <Link to="/" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-2xl ${focusRing}`}>
-                                    <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
+                                    <div className="absolute -inset-2 rounded-card blur-xl opacity-30 group-hover/logo:opacity-70 transition duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-2xl overflow-hidden
-                                        transition-all duration-300 group-hover/logo:scale-105
+                                        transition duration-[var(--dur-slow)] group-hover/logo:scale-105
                                         bg-white/12 border border-logo-magenta/20
                                         shadow-[var(--shadow-glass-2)]
                                         group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-white/18
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                         <img src="/Logo192.png" alt="FLS"
-                                            className={`object-contain relative z-base transition-transform duration-300 group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
+                                            className={`object-contain relative z-base transition-transform duration-[var(--dur-slow)] group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>
                                 </Link>
 
                                 {isExpanded && (
-                                    <div className="animate-in fade-in zoom-in-95 duration-300 origin-left min-w-0">
+                                    <div className="animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] origin-left min-w-0">
                                         <h1 className="font-black text-subtitle leading-tight tracking-tight text-white">Portal</h1>
                                         <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-white/50">La Salud & La Popular</p>
                                     </div>
@@ -878,10 +883,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 aria-haspopup="dialog"
                                 aria-label="Buscar en el menú"
                                 title={`Buscar en el menú (${SHORTCUT_LABEL})`}
-                                className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden
-                                    px-3 py-3 xl:px-4 xl:py-3.5
+                                className={`w-full flex items-center rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
+                                    ${isExpanded ? 'gap-2.5 px-3 py-3 xl:px-4 xl:py-3.5' : 'justify-center gap-0 px-0 py-3 xl:py-3.5'}
                                     bg-white/[0.045] border border-white/[0.07]
-                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]
+                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[var(--sidebar-item-hover-shadow)]
                                     ${focusRing}
                                     active:scale-[0.99] active:translate-y-0`}
                             >
@@ -889,14 +894,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {isExpanded && (
                                     <>
                                         <span className="text-body-sm xl:text-body font-medium flex-1 whitespace-nowrap">Buscar</span>
-                                        <Badge size="sm" uppercase={false}>{SHORTCUT_LABEL}</Badge>
+                                        <Badge size="sm" uppercase={false} onDark>{SHORTCUT_LABEL}</Badge>
                                     </>
                                 )}
                             </button>
                             <div className="h-px bg-white/[0.07] mx-1 my-2" />
 
                             <div
-                                className={`absolute left-2 right-2 rounded-xl transform-gpu transition-opacity duration-200 pointer-events-none
+                                className={`absolute left-2 right-2 rounded-xl transform-gpu pointer-events-none
+                                    transition-[opacity,top,height] duration-[var(--dur-base)] ease-[var(--ease-spring)]
                                     bg-gradient-to-r from-logo-magenta/[0.22] via-logo-magenta/[0.10] to-logo-green/[0.06]
                                     border border-logo-magenta/[0.20]
                                     shadow-[var(--shadow-glass-2)]
@@ -916,7 +922,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <div aria-hidden="true"
                             className={`pointer-events-none absolute inset-x-0 bottom-0 h-10 z-content
                                 bg-gradient-to-t from-[var(--sidebar-bg)] to-transparent
-                                transition-opacity duration-200 ${navHayMas ? 'opacity-100' : 'opacity-0'}`} />
+                                transition-opacity duration-[var(--dur-base)] ${navHayMas ? 'opacity-100' : 'opacity-0'}`} />
                         </div>
 
                         {/* ── Footer ── */}
@@ -945,9 +951,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">
                                         <Link to="/profile"
-                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
+                                            className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
-                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
+                                                <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
                                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
@@ -988,10 +994,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
                                             onMouseLeave={closeFlyout} aria-label="Mi Perfil" title="Mi Perfil"
-                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:-translate-y-0.5 active:scale-[0.97]
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
                                                 shadow-[var(--shadow-glass-1)]
-                                                hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--shadow-glass-2)] ${focusRing}`}>
+                                                hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
                                             {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
                                         </Link>
                                         {myBirthday && (
@@ -1058,7 +1064,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
                                     <Link to="/profile" aria-label="Mi Perfil"
- className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
+ className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
                                     </Link>
@@ -1090,7 +1096,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     root (SIN ancestros con z-index/overflow que creen contexto de
                     apilamiento — el fixed anidado era lo que standalone no pintaba) */}
                 {hasSelfOnly && (
-                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
+                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-header px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition duration-500 ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-card px-2 py-2 border
                                 bg-white/95 border-white/60 shadow-[var(--shadow-sticky-t)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {
@@ -1099,7 +1105,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     const badge = getBadge(key);
                                     return (
                                         <Link key={key} to={path} aria-current={isActive ? 'page' : undefined}
- className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-200 flex-1 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
+ className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition duration-[var(--dur-base)] flex-1 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
                                             <div className="relative">
                                                 {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
                                                 <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand-text' : 'text-slate-500'} />
@@ -1126,24 +1132,23 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         onMouseLeave={closeFlyout}
                     >
                         {flyout.type === 'item' ? (
-                            <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
+                            <div className="relative animate-in fade-in slide-in-from-left-2 duration-[var(--dur-fast)]">
                                 <Link
                                     to={flyout.path}
                                     onClick={() => setFlyout(null)}
+                                    data-surface="sidebar-popover"
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
-                                        backdrop-blur-2xl backdrop-saturate-150 border shadow-[var(--shadow-glass-3)]
-                                        transition-all duration-150 active:scale-[0.97] group/fi ${focusRing}
-                                        ${flyout.isActive
-                                            ? 'bg-[#1A3560]/85 border-[#2D5499]/60'
-                                            : 'bg-[#0D2040]/80 border-[#1E3A6E]/60 hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60'}`}
+                                        shadow-[var(--shadow-glass-3)]
+                                        transition duration-[var(--dur-fast)] active:scale-[0.97] group/fi ${focusRing}
+                                        ${flyout.isActive ? 'bg-white/[0.10]' : 'hover:bg-white/[0.08]'}`}
                                     type="button"
                                 >
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0
-                                        ${flyout.isActive ? 'bg-[#4D94FF]/25' : 'bg-white/8 group-hover/fi:bg-[#4D94FF]/20'}`}>
+                                        ${flyout.isActive ? 'bg-chart-1/25' : 'bg-white/[0.08] group-hover/fi:bg-chart-1/20'}`}>
                                         <flyout.icon
                                             size={16}
                                             strokeWidth={flyout.isActive ? 2 : 1.5}
-                                            className={flyout.isActive ? 'text-[#7DB8FF]' : 'text-white/55 group-hover/fi:text-[#7DB8FF]'}
+                                            className={flyout.isActive ? 'text-chart-1' : 'text-white/55 group-hover/fi:text-chart-1'}
                                         />
                                     </div>
                                     <span className="text-body font-semibold whitespace-nowrap text-white pr-1">{flyout.label}</span>
@@ -1157,19 +1162,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
                                         </span>
                                     )}
-                                    {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
+                                    {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-chart-1 shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
                                 </Link>
                             </div>
                         ) : flyout.type === 'group' ? (
-                            <div className="relative animate-in fade-in slide-in-from-left-2 duration-150 min-w-[220px]">
-                                <div className="relative rounded-3xl overflow-hidden
-                                    bg-[#0A1628]/80 backdrop-blur-2xl backdrop-saturate-150
-                                    border border-white/12
+                            <div className="relative animate-in fade-in slide-in-from-left-2 duration-[var(--dur-fast)] min-w-[220px]">
+                                <div data-surface="sidebar-popover" className="relative rounded-3xl overflow-hidden
                                     shadow-[var(--shadow-glass-4)]">
 
                                     <div className="px-4 pt-3.5 pb-2.5 border-b border-white/8 flex items-center gap-2">
-                                        <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-[#7DB8FF] to-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)]" />
-                                        <span className="text-white/60 text-caption font-black uppercase tracking-[0.18em]">{flyout.label}</span>
+                                        <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-chart-1 to-brand shadow-[var(--shadow-glow-chart-1-sm)]" />
+                                        <span className="text-white/70 text-caption font-black uppercase tracking-[0.18em]">{flyout.label}</span>
                                     </div>
 
                                     <div className="p-1.5 space-y-0.5">
@@ -1182,7 +1185,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/6">
                                                         <MIcon size={14} strokeWidth={1.5} className="text-white/40" />
                                                     </div>
-                                                    <span className="text-body font-medium text-white/40 flex-1 whitespace-nowrap">{m.label}</span>
+                                                    <span className="text-body font-medium text-white/55 flex-1 whitespace-nowrap">{m.label}</span>
                                                     <Badge variant="warning" size="sm" className="whitespace-nowrap">Próximamente</Badge>
                                                 </div>
                                             );
@@ -1191,23 +1194,23 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     key={m.key}
                                                     to={m.path}
                                                     onClick={() => setFlyout(null)}
-                                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left group/fi active:scale-[0.97] ${focusRing}
+                                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition duration-[var(--dur-fast)] text-left group/fi active:scale-[0.97] ${focusRing}
                                                         ${m.isActive
                                                             ? 'bg-[#1A3560] text-white border border-[#2D5499]/50'
                                                             : 'text-white hover:bg-[#1A3560]'}`}
                                                 >
-                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150
+                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition duration-[var(--dur-fast)]
                                                         ${m.isActive
                                                             ? 'bg-[#4D94FF]/25 shadow-[var(--shadow-glow-chart-1)]'
                                                             : 'bg-white/8 group-hover/fi:bg-white/14'}`}>
                                                         <MIcon
                                                             size={14}
                                                             strokeWidth={m.isActive ? 2 : 1.5}
-                                                            className={m.isActive ? 'text-[#7DB8FF]' : 'text-white/70 group-hover/fi:text-white'}
+                                                            className={m.isActive ? 'text-chart-1' : 'text-white/70 group-hover/fi:text-white'}
                                                         />
                                                     </div>
                                                     <span className="text-body font-medium whitespace-nowrap flex-1">{m.label}</span>
-                                                    {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#4D94FF] shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
+                                                    {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-chart-1 shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
                                                     {m.badge > 0 && (
                                                         <Contador valor={m.badge}
                                                             aria-label={`${m.badge} pendiente${m.badge === 1 ? '' : 's'} en ${m.label}`} />
@@ -1225,14 +1228,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </div>
                             </div>
                         ) : flyout.type === 'user' ? (
-                            <div className="relative animate-in fade-in slide-in-from-left-2 duration-150">
+                            <div className="relative animate-in fade-in slide-in-from-left-2 duration-[var(--dur-fast)]">
                                 <Link
                                     to="/profile"
                                     onClick={() => setFlyout(null)}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl
                                         bg-[#0D2040]/80 backdrop-blur-2xl backdrop-saturate-150 border border-[#1E3A6E]/60
                                         shadow-[var(--shadow-glass-3)]
-                                        hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition-all duration-150 active:scale-[0.97] ${focusRing}`}
+                                        hover:bg-[#1A3560]/85 hover:border-[#2D5499]/60 transition duration-[var(--dur-fast)] active:scale-[0.97] ${focusRing}`}
                                     type="button"
                                 >
                                     <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">

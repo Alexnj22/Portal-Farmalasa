@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Settings, Copy, CheckCircle2, ChevronDown } from 'lucide-react';
 import SidebarSyncStatus from './SidebarSyncStatus';
 import { ThemeAxisPicker } from './ThemeToggle';
+import useMotionConfig from '../../hooks/useMotionConfig';
 
 // Agrupa lo que antes eran 3 bloques sueltos del footer del sidebar (PIN/SU,
 // Sync/Alertas, ThemeToggle) detrás de un solo ícono de Ajustes — a pedido
@@ -23,14 +24,14 @@ function CodeCard({ label, value, copied, onCopy }) {
   return (
     <button type="button" onClick={onCopy}
       className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
-        border border-white/[0.09] bg-white/[0.06] hover:bg-white/[0.11] hover:border-white/[0.14] transition-all active:scale-[0.97]">
+        border border-white/[0.09] bg-white/[0.06] hover:bg-white/[0.11] hover:border-white/[0.14] transition active:scale-[0.97]">
       <div className="flex items-center gap-1 mb-0.5">
-        <span className="text-micro font-bold uppercase tracking-wider text-white/45">{label}</span>
+        <span className="text-micro font-bold uppercase tracking-wider text-white/55">{label}</span>
       </div>
       <div className="relative h-4 flex items-center justify-center w-full">
-        <span className={`absolute text-body-sm font-black tracking-widest font-mono text-white transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
-        <Copy size={12} className={`absolute text-white/50 transition-all duration-300 ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 focus-within:opacity-100 group-hover/code:scale-100'}`} />
-        <CheckCircle2 size={12} className={`absolute text-success transition-all duration-300 ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
+        <span className={`absolute text-body-sm font-black tracking-widest font-mono text-white transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>
+        <Copy size={12} className={`absolute text-white/50 transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-0 scale-90 group-hover/code:opacity-100 focus-within:opacity-100 group-hover/code:scale-100'}`} />
+        <CheckCircle2 size={12} className={`absolute text-success transition duration-[var(--dur-slow)] ${copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
       </div>
     </button>
   );
@@ -44,6 +45,10 @@ export default function SidebarSettingsMenu({
   isCopied, isSuCopied,
   onCopyPin, onCopySuPin,
 }) {
+  // El panel usa la config de movimiento del TEMA: spring completo en liquid,
+  // 130ms lineal en solid, y 0 con prefers-reduced-motion. Antes tenía la
+  // curva de resorte escrita a mano (`[0.23,1,0.32,1]`, 150ms) en los cuatro.
+  const mov = useMotionConfig();
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
   const popoverRef = useRef(null);
@@ -120,17 +125,17 @@ export default function SidebarSettingsMenu({
       key="settings-popover"
       ref={popoverRef}
       style={{ top: coords.top, left: coords.left, width: coords.width + 'px' }}
-      initial={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
+      initial={mov.decorative ? { opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 } : { opacity: 0 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 }}
-      transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+      exit={mov.decorative ? { opacity: 0, scale: 0.97, y: coords.openUp ? 6 : -6 } : { opacity: 0 }}
+      transition={mov.spring}
+      data-surface="sidebar-popover"
       className="fixed z-confirm p-3 flex flex-col gap-3 transform-gpu rounded-3xl
-        bg-[#0A1628]/92 backdrop-blur-2xl backdrop-saturate-150 border border-white/12
         shadow-[var(--shadow-glass-4)]"
     >
       {(showPin || showSu) && (
         <div>
-          <p className="text-[9.5px] font-black uppercase tracking-widest text-white/40 px-0.5 mb-1.5">Códigos</p>
+          <p className="text-[9.5px] font-black uppercase tracking-widest text-white/50 px-0.5 mb-1.5">Códigos</p>
           <div className={`grid gap-1.5 ${showPin && showSu ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {showPin && <CodeCard label="PIN" value={authPin} copied={isCopied} onCopy={onCopyPin} />}
             {showSu && <CodeCard label="SU" value={`${authPin}${suSuffix}`} copied={isSuCopied} onCopy={onCopySuPin} />}
@@ -139,7 +144,7 @@ export default function SidebarSettingsMenu({
       )}
 
       <div>
-        <p className="text-[9.5px] font-black uppercase tracking-widest text-white/40 px-0.5 mb-1.5">Sistema</p>
+        <p className="text-[9.5px] font-black uppercase tracking-widest text-white/50 px-0.5 mb-1.5">Sistema</p>
         <SidebarSyncStatus />
       </div>
 
@@ -158,7 +163,7 @@ export default function SidebarSettingsMenu({
           title="Ajustes"
           aria-expanded={isOpen}
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
-            border transition-colors duration-150 ${className}
+            border transition-colors duration-[var(--dur-fast)] ${className}
             ${isOpen
               ? 'bg-white/12 border-white/20 text-white/90'
               : 'bg-white/6 border-white/12 text-white/60 hover:text-white/90 hover:bg-white/10'}`}
@@ -184,7 +189,7 @@ export default function SidebarSettingsMenu({
         className={className}
         trailing={
           <ChevronDown size={13} strokeWidth={2.5}
-            className={`text-white/35 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            className={`text-white/40 transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
         }
       />
       {createPortal(<AnimatePresence>{isOpen ? popoverContent : null}</AnimatePresence>, document.body)}

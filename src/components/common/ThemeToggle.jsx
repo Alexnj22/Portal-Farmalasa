@@ -44,7 +44,7 @@ function SegmentedRow({ label, options, activeKey, onPick, dark }) {
             type="button"
             onClick={() => onPick(key)}
             className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2 rounded-full
-              text-caption font-black uppercase tracking-wider transition-all duration-200 border border-transparent
+              text-caption font-black uppercase tracking-wider transition duration-[var(--dur-base)] border border-transparent
               ${activeKey === key ? (dark ? activeTabClsDark : activeTabCls) : (dark ? inactiveTabClsDark : inactiveTabCls)}`}
           >
             <Icon size={12} strokeWidth={2.5} />
@@ -178,7 +178,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
           title={`Tema: ${styleLabel} · ${modeLabel}`}
           aria-expanded={isOpen}
           className={`relative w-11 h-11 flex items-center justify-center rounded-2xl
-            border transition-colors duration-150 ${className}
+            border transition-colors duration-[var(--dur-fast)] ${className}
             ${isOpen
               ? 'bg-white/12 border-white/20 text-white/90'
               : 'bg-white/6 border-white/12 text-white/60 hover:text-white/90 hover:bg-white/10'}`}
@@ -205,7 +205,7 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
         className={className}
         trailing={
           <ChevronDown size={13} strokeWidth={2.5}
-            className={`text-white/35 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            className={`text-white/35 transition-transform duration-[var(--dur-base)] ${isOpen ? 'rotate-180' : ''}`} />
         }
       />
       {createPortal(<AnimatePresence>{isOpen ? popoverContent : null}</AnimatePresence>, document.body)}

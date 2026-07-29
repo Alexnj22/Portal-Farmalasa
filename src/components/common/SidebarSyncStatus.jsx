@@ -114,7 +114,7 @@ export default function SidebarSyncStatus() {
           onClick={bellGranted || bellDenied ? undefined : subscribe}
           disabled={bellDenied}
           title={bellDenied ? 'Actívalas en la configuración del navegador' : undefined}
-          className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition-all border
+          className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 cursor-pointer outline-none transition border
             ${bellGranted
               ? 'bg-success/[0.10] border-success/[0.18] cursor-default'
               : bellDenied

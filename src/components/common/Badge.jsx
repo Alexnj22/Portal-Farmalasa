@@ -34,6 +34,30 @@ const SOFT = {
     neutral: 'text-content-2    bg-surface-card-hover border-border-card',
 };
 
+// `onDark`: la MISMA razón por la que existe en `ListRow`. Un badge sobre el
+// sidebar o sus flyouts vive en una superficie **oscura en los cuatro temas**,
+// así que sus colores no pueden salir de tokens de superficie —que sí cambian
+// por tema— sin romperse.
+//
+// Medido en el badge `⌘K` del buscador del sidebar el 2026-07-28, antes de
+// existir esta variante:
+//
+//   liquid      1.58:1   ❌   ← "casi no se distingue el texto"
+//   solid-dark  3.57:1   ❌
+//   dark        7.37:1   ✅
+//   solid       7.24:1   ✅
+//
+// En liquid el `neutral` resolvía a `bg-surface-card-hover` (26% de un celeste
+// pálido) sobre navy = un gris medio, con `text-content-2` que es slate oscuro.
+// El chip se veía; el texto no.
+const ON_DARK = {
+    neutral: 'text-white/80 bg-white/[0.10] border-white/[0.14]',
+    success: 'text-success   bg-success/[0.16] border-success/30',
+    warning: 'text-warning   bg-warning/[0.16] border-warning/30',
+    danger:  'text-danger    bg-danger/[0.16]  border-danger/30',
+    info:    'text-chart-1   bg-chart-1/[0.16] border-chart-1/30',
+};
+
 const SOLID = {
     success: 'text-white bg-success-solid border-transparent',
     warning: 'text-white bg-warning-solid border-transparent',
@@ -98,6 +122,7 @@ const Badge = memo(({
     dot = false,
     icon: Icon,
     uppercase = true,
+    onDark = false,
     className = '',
     children,
     // Sin este `...rest` el componente TRAGABA en silencio cualquier atributo
@@ -107,7 +132,7 @@ const Badge = memo(({
     // habría desaparecido sin que nada fallara.
     ...rest
 }) => {
-    const palette = tone === 'solid' ? SOLID : SOFT;
+    const palette = onDark ? ON_DARK : (tone === 'solid' ? SOLID : SOFT);
     return (
         <span className={`inline-flex items-center rounded-badge border font-black leading-none
             ${uppercase ? 'uppercase tracking-widest' : 'tracking-[-0.005em]'}

@@ -346,9 +346,45 @@
      de la tarjeta. Ese es el valor.
 
      El color NO cambia. Oscuro sigue siendo su identidad. */
-  --sidebar-bg:       rgba(7,3,26,0.72);
-  --sidebar-backdrop: var(--backdrop-card);
-  --sidebar-border:   rgba(255,255,255,0.42);
+  /* ── SIDEBAR ──────────────────────────────────────────────────────────
+     Tres perillas, y todo lo demás sale de ellas. Cambiar el color del
+     sidebar, o cómo se ve en móvil, es tocar UNA línea.
+
+       --sidebar-tint      el color, en canales sueltos (para poder darle alpha)
+       --sidebar-fill      cuánto rellena el panel        · 1 = opaco
+       --sidebar-pop-fill  cuánto rellena el popover      · 1 = opaco
+       --sidebar-rim       cuánta luz tiene el canto      · 0 = sin borde
+
+     Por qué canales sueltos y no un hex: `rgb(7 3 26 / .72)` permite derivar
+     el panel, el popover y el degradado del pie del MISMO color. Con un hex
+     habría que repetirlo con cada alpha, que es exactamente lo que había:
+     cinco literales por tema, y en sólido las dos superficies ya se habían
+     desincronizado —#0B1020 el panel y #111A2E el popover, dos azules
+     distintos que nadie decidió que fueran distintos.
+
+     El popover (menú de Ajustes, flyouts) se queda oscuro —si no, cuelga un
+     panel claro de un panel oscuro— pero lleva más relleno que el panel:
+     flota sobre el contenido de la vista, no sobre el fondo de página, y ahí
+     un 72% deja leer lo de atrás. */
+  --sidebar-tint:     7 3 26;
+  --sidebar-fill:     0.72;
+  --sidebar-pop-fill: 0.88;
+  --sidebar-rim:      0.42;
+
+  --sidebar-bg:           rgb(var(--sidebar-tint) / var(--sidebar-fill));
+  --sidebar-border:       rgb(255 255 255 / var(--sidebar-rim));
+  --sidebar-backdrop:     var(--backdrop-card);
+  --sidebar-pop-bg:       rgb(var(--sidebar-tint) / var(--sidebar-pop-fill));
+  --sidebar-pop-border:   rgb(255 255 255 / var(--sidebar-rim));
+  --sidebar-pop-backdrop: var(--sidebar-backdrop);
+
+  /* Hover de un ítem. Antes usaba `--shadow-glass-2`, que es una sombra para
+     superficie CLARA: línea blanca al 90% arriba y sombra negra al 6% abajo.
+     Sobre el navy eso da un filo duro y una sombra que no se ve — se leía mal
+     justamente porque estaba pensada para el material contrario. Acá el
+     vidrio oscuro se realza al revés: halo de luz tenue arriba y una sombra
+     que sí tiene con qué contrastar. */
+  --sidebar-item-hover-shadow: inset 0 1px 0 rgb(255 255 255 / .14), 0 6px 18px rgb(0 0 0 / .34);
 
   /* Focus ring (invariante por tema hoy) */
   /* Aro de foco — el ÚNICO del proyecto (A16, 2026-07-27).
@@ -754,7 +790,8 @@
        a través del menú. Es el mismo bloque contenedor que ya nos mordió con
        la hoja de filtros (que medía 108px en vez de 390).
        Un menú que tapa la app entera no tiene nada que dejar entrever. */
-    --sidebar-bg:       #07031a;
+    --sidebar-fill:     1;
+    --sidebar-pop-fill: 1;
     --sidebar-backdrop: none;
   }
 }
@@ -846,9 +883,12 @@
   /* El sidebar sigue siendo oscuro —eso es su identidad, no su tema— pero el
      MATERIAL sí obedece: en Solid no hay vidrio en ninguna superficie, así
      que acá tampoco. Opaco y sin blur. */
-  --sidebar-bg:       #0B1020;
+  --sidebar-tint:     11 16 32;
+  --sidebar-fill:     1;
+  --sidebar-pop-fill: 1;
+  --sidebar-rim:      0.08;
   --sidebar-backdrop: none;
-  --sidebar-border:   rgba(255,255,255,0.08);
+  --sidebar-item-hover-shadow: none;
 }
 
 /* ─── Solid Dark ("Solid Modern" oscuro, Fase T2) ─── */
@@ -956,9 +996,12 @@
   /* El sidebar sigue siendo oscuro —eso es su identidad, no su tema— pero el
      MATERIAL sí obedece: en Solid no hay vidrio en ninguna superficie, así
      que acá tampoco. Opaco y sin blur. */
-  --sidebar-bg:       #0B1020;
+  --sidebar-tint:     11 16 32;
+  --sidebar-fill:     1;
+  --sidebar-pop-fill: 1;
+  --sidebar-rim:      0.08;
   --sidebar-backdrop: none;
-  --sidebar-border:   rgba(255,255,255,0.08);
+  --sidebar-item-hover-shadow: none;
 }
 
 
@@ -1105,6 +1148,28 @@
    constante; Solid Modern promete cero backdrop-filter Y sin blobs.
    Liquid/dark los conservan sin cambios.
    ═══════════════════════════════════════════════════════════════ */
+
+/* ── Motion en Solid: el tema RÁPIDO también en el reloj (2026-07-28) ──────
+   D2.4 ya separaba lo decorativo de lo funcional por tema, pero las
+   DURACIONES y la CURVA seguían siendo las mismas en los cuatro. O sea que
+   Solid Modern —el tema que existe para equipos viejos y respuesta inmediata—
+   heredaba los 200ms y una `cubic-bezier(0.23,1,0.32,1)`, que es una curva de
+   resorte: arranca rápido y se demora al final, a propósito, para que se
+   sienta elástica. Eso es exactamente lo que Solid NO quiere.
+
+   Acá lo funcional se queda —un modal que aparece de golpe se lee como roto,
+   no como rápido— pero corto y sin rebote. Mismos tokens, otro valor: nada
+   en los componentes cambia.
+
+   No se toca `--dur-slow` hacia abajo del todo: lo usan las entradas de vista
+   y bajarlo a ~100ms hace que la pantalla parpadee en vez de entrar. */
+[data-theme="solid"], [data-theme="solid-dark"] {
+  --ease-spring: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-out:    cubic-bezier(0.2, 0, 0.2, 1);
+  --dur-fast:  90ms;
+  --dur-base: 120ms;
+  --dur-slow: 180ms;
+}
 
 /* ═══ MOTION COMO EJE DEL TEMA (D2.4, 2026-07-26) ══════════════════════════
    Liquid Glass es el tema EXPRESIVO; Solid Modern es el RÁPIDO. Ya lo era en
@@ -1578,6 +1643,13 @@
 }
 .group:hover > .sweep, .group:hover .sweep { transform: translateX(220%); }
 
+/* El barrido es puro brillo de vidrio: 700ms animando `transform` en cada
+   elemento hover-able. En Solid Modern —el tema de los equipos viejos— no
+   comunica nada de estado, así que no se ejecuta. El hover se sigue leyendo
+   por el cambio de fondo, que es lo funcional. */
+[data-theme="solid"] .sweep,
+[data-theme="solid-dark"] .sweep { display: none; }
+
 /* Estado y selección: acá el COLOR sí lleva significado y varía; lo que no
    tiene por qué variar es la geometría ni el alpha, que se elegían a mano
    (mismo warning con /20, /30, /40, /50 y sólido en cuatro archivos). */
@@ -1693,6 +1765,12 @@
 
 /* El sidebar: superficie bespoke en COLOR (oscura en los 4 temas, igual que
    el kiosco) pero no en MATERIAL. Ver la nota de `--sidebar-*` en `:root`. */
+[data-surface="sidebar-popover"] {
+  background: var(--sidebar-pop-bg);
+  border: 1px solid var(--sidebar-pop-border);
+  backdrop-filter: var(--sidebar-pop-backdrop);
+}
+
 [data-surface="sidebar"] {
   background: var(--sidebar-bg);
   border: 1px solid var(--sidebar-border);

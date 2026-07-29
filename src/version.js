@@ -16,7 +16,59 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.165.0';
+export const APP_VERSION = '2.166.0';
+
+// v2.166.0 — el sidebar en CUATRO perillas, y el movimiento como eje del tema.
+//
+// **1 · El badge ⌘K no se leía, y no lo habia validado.** Medido: liquid
+// **1.58:1**, solid-dark 3.57:1. Causa: un `Badge` con tokens de tema sobre la
+// superficie bespoke oscura — el mismo bug del panel WFM, invertido. En liquid
+// el `neutral` resolvia a un celeste palido al 26% sobre navy (= gris medio)
+// con texto slate oscuro: el chip se veia, el texto no. `Badge` gana `onDark`,
+// la misma prop que `ListRow` ya tenia por el mismo motivo. Ahora 5.24:1.
+//
+// **2 · Movimiento por tema.** D2.4 separaba lo decorativo de lo funcional
+// pero las DURACIONES y la CURVA eran las mismas en los cuatro: Solid Modern
+// —el tema de los equipos viejos— heredaba 200ms y una curva de RESORTE, que
+// se demora al final a proposito. Ahora solid usa 90/120/180ms y una curva sin
+// rebote. Ademas el barrido especular (700ms de transform por hover) no se
+// ejecuta en solid: no comunica estado, es brillo de vidrio.
+//   · el sidebar codificaba sus duraciones a mano — 30 `duration-N` a token
+//   · 25 `transition-all` → `transition` (vigilar TODA propiedad animable es
+//     caro justo en la maquina que menos puede)
+//   · el indicador del item activo SALTABA entre items; ahora desliza
+//
+// **3 · Sidebar compacto:** los iconos estaban 5px a la izquierda del centro
+// —el item conservaba padding y gap horizontales aunque la etiqueta no se
+// renderice—. 14 elementos, ahora 0 descentrados.
+//
+// **4 · El hover estaba pensado para el material contrario:**
+// `--shadow-glass-2` es linea blanca al 90% arriba + sombra negra al 6% abajo,
+// o sea una sombra para superficie CLARA. Sobre navy: filo duro y sombra
+// invisible. Sombra propia del sidebar.
+//
+// **5 · El flyout del menu compacto** estaba pintado con hexes crudos
+// (#0D2040, #1A3560, #4D94FF) y su propio blur, que corria tambien en solid.
+// Ahora usa la superficie `sidebar-popover`, igual que el menu de Ajustes.
+//
+// **6 · Nada hardcodeado (pedido del usuario).** El navy estaba como literal
+// en cinco lugares por tema, y en solido las dos superficies ya se habian
+// desincronizado: #0B1020 el panel y #111A2E el popover, dos azules que nadie
+// decidio que fueran distintos. Todo el sidebar sale ahora de cuatro perillas:
+//
+//     --sidebar-tint      el color, en canales sueltos
+//     --sidebar-fill      cuanto rellena el panel      · 1 = opaco
+//     --sidebar-pop-fill  cuanto rellena el popover    · 1 = opaco
+//     --sidebar-rim       cuanta luz tiene el canto    · 0 = sin borde
+//
+// Cambiar el color del sidebar, o como se ve en movil, es UNA linea. Movil
+// pasa de repetir declaraciones a `--sidebar-fill: 1`.
+//
+// **7 · Menu de Ajustes:** `bg-[#0A1628]/92 backdrop-blur-2xl` a mano (blur
+// que corria en solid) → superficie por token. Tres textos bajo AA medidos y
+// subidos: encabezados 3.63:1, etiqueta del codigo 4.21:1, chevron 3.13:1.
+// Su entrada usa `useMotionConfig` en vez de una curva de resorte escrita a
+// mano en los cuatro temas.
 
 // v2.165.0 — el sidebar usa el vidrio de la tarjeta, y el dedo tiene piso.
 //

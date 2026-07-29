@@ -457,8 +457,16 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
     return (
         <>
+            {/* El disparador es un `<div>` porque adentro lleva su propio texto
+                y chevron; sin `tabIndex`/`onKeyDown` no se podía abrir sin mouse
+                (misma familia que el bug de `LiquidSelect`, v2.157.0). */}
             <div ref={triggerRef} onClick={open}
-                className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-2xl transition-all hover:bg-surface-card-hover group">
+                role="button" tabIndex={0} aria-haspopup="dialog" aria-expanded={isOpen}
+                onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); open(); }
+                }}
+                className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-2xl transition-all hover:bg-surface-card-hover group focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 <CalendarDays size={13}
                     className={fini ? 'text-brand-text' : 'text-content-3 group-hover:text-brand-text transition-colors'}
                     strokeWidth={2.5} />

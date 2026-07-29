@@ -583,7 +583,14 @@ const RangeDatePicker = ({
 
     return (
         <>
-            <div ref={triggerRef} onClick={handleOpen} className="cursor-pointer">
+            {/* Mismo caso que `PeriodPicker`: sin teclado no se podía abrir. */}
+            <div ref={triggerRef} onClick={handleOpen}
+                role="button" tabIndex={0} aria-haspopup="dialog" aria-expanded={isOpen}
+                onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); handleOpen(); }
+                }}
+                className="cursor-pointer rounded-input focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                 {multiRange ? (
                     <div data-surface="input" className={`flex items-center gap-2 ${compact ? 'h-11 px-2.5 rounded-full' : 'h-[40px] px-3'} transition-all ${isOpen ? 'outline outline-2 outline-brand/30' : ''}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-success' : 'text-content-3'} strokeWidth={2.5} />

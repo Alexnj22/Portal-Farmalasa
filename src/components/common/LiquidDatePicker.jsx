@@ -532,10 +532,14 @@ const LiquidDatePicker = ({
                 }}>
                 <IconToRender size={14} className={hasValue ? "text-brand-text" : "text-content-3 group-hover/picker:text-brand-text transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
                 {esTactil ? trioTactil : trioEscritorio}
+                {/* El botón de borrar era un `<div role="button">`: el rol prometía
+                    el contrato de teclado y no había ni `tabIndex` ni `onKeyDown`, así
+                    que borrar la fecha era imposible sin mouse — en los 32 archivos que
+                    usan este canónico. Un `<button>` de verdad lo da gratis. */}
                 {hasValue && (
-                    <div role="button" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className={`flex items-center justify-center rounded-full hover:bg-danger/10 text-content-3 hover:text-danger transition-all shrink-0 cursor-pointer ${esTactil ? 'w-11 h-11 -mr-2' : 'w-6 h-6'}`} title="Borrar fecha">
+                    <button type="button" aria-label="Borrar la fecha" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className={`flex items-center justify-center rounded-full hover:bg-danger/10 text-content-3 hover:text-danger transition-all shrink-0 cursor-pointer ${esTactil ? 'w-11 h-11 -mr-2' : 'w-6 h-6'}`} title="Borrar fecha">
                         <X size={14} strokeWidth={3} />
-                    </div>
+                    </button>
                 )}
             </div>
             {isOpen && createPortal(popoverContent, document.body)}

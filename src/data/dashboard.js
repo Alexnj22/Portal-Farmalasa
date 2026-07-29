@@ -2,6 +2,7 @@
 // del tablero principal). Extraído de DashboardView.jsx: 9 llamadas
 // supabase.from().
 import { supabase } from '../supabaseClient';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 export function fetchUserDashboardPrefs(userId) {
     return supabase.from('user_dashboard_prefs')
@@ -61,9 +62,14 @@ export function fetchRecentCotizaciones(sinceDateStr) {
         .limit(50);
 }
 
+// Paginado desde el 2026-07-28. Medido: el dia mas cargado de los ultimos 120
+// tuvo **865 facturas** — el 86% del cap de 1000 de PostgREST. No estaba roto,
+// pero un feriado o una sucursal mas y el corte llegaba sin aviso: el widget
+// cuenta `rows.length` y suma `total`, asi que se habrian falseado LAS DOS
+// cifras, hacia abajo y sin error.
 export function fetchTodayInvoicesSummary(dateStr) {
-    return supabase.from('sales_invoices')
+    return fetchAllRows(() => supabase.from('sales_invoices')
         .select('id, tipo_documento, total')
         .eq('fecha', dateStr)
-        .neq('estado', 'NULA');
+        .neq('estado', 'NULA'));
 }

@@ -979,17 +979,22 @@ const DashboardView = ({ openModal }) => {
   }, []);
 
   useEffect(() => {
+    // `fetchAllRows` devuelve el array directo (o null si fallo la primera
+    // pagina) — no `{ data }`. Antes se desestructuraba `{ data }` de un
+    // array, que da `undefined`, y el widget habria quedado en cero sin decir
+    // nada. El `.catch` tampoco estaba.
     fetchTodayInvoicesSummary(localDateStr())
-      .then(({ data }) => {
-        const rows = data || [];
+      .then((rows) => {
+        const filas = rows || [];
         setFactStats({
-          count: rows.length,
-          total: rows.reduce((s, r) => s + (parseFloat(r.total) || 0), 0),
-          ccf:   rows.filter(r => r.tipo_documento === 'CCF').length,
-          fcf:   rows.filter(r => r.tipo_documento !== 'CCF').length,
+          count: filas.length,
+          total: filas.reduce((s, r) => s + (parseFloat(r.total) || 0), 0),
+          ccf:   filas.filter(r => r.tipo_documento === 'CCF').length,
+          fcf:   filas.filter(r => r.tipo_documento !== 'CCF').length,
         });
         setFactLoading(false);
-      });
+      })
+      .catch((e) => { console.error('[dashboard] facturación de hoy', e); setFactLoading(false); });
   }, []);
 
   useEffect(() => {

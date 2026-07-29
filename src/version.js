@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.177.0';
+export const APP_VERSION = '2.178.0';
+
+// v2.178.0 — auditoria: los selectores de fecha tampoco tenian teclado.
+//
+// Buscando la familia del bug de `LiquidSelect` (v2.157.0) aparecieron **39
+// controles reales sin acceso por teclado**: un `<div onClick>` sin `tabIndex`
+// ni `onKeyDown`, y sin ningun control enfocable adentro por el que llegar.
+// (De los 70 candidatos crudos, 23 eran envoltorios con un boton adentro y 8
+// overlays de "clic afuera para cerrar" — esos no cuentan.)
+//
+// Los CUATRO primeros son canonicos, o sea que multiplican:
+//
+//   LiquidDatePicker   32 archivos   el boton de BORRAR la fecha era un
+//                                    `<div role="button">` — el rol prometia
+//                                    el contrato y no habia nada detras
+//   PeriodPicker        5 archivos   el disparador, sin teclado
+//   RangeDatePicker     6 archivos   idem
+//   LiquidWeekPicker    0 archivos   ← nadie lo usa (ver abajo)
+//
+// El de `LiquidDatePicker` pasa a ser un `<button type="button">` de verdad,
+// que da el contrato gratis. Los otros dos llevan el mismo patron que
+// `LiquidSelect`: `tabIndex`, Enter/Espacio/Flecha-abajo, la guardia
+// `e.target !== e.currentTarget` y el aro con `outline-solid`.
+//
+// Verificado en vivo: los disparadores de /ventas y /facturas-compra ahora son
+// alcanzables, y todo boton de borrar fecha es un `<button>`.
+//
+// Quedan 35 controles de vista (celdas de calendario, tarjetas KPI clicables,
+// filas expandibles). Van en la proxima tanda.
 
 // v2.177.0 — DESIGN.md cierra la estandarizacion.
 //

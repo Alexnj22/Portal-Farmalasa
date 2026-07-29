@@ -512,15 +512,62 @@ The `[data-surface]` attribute is the canonical way to apply Liquid Glass stylin
 | `input` | LiquidSelect trigger | `--surface-input`, `--border-input`, `--input-radius`. Backdrop/shadow reusan `--backdrop-card` (no existe un `--backdrop-input` propio; box-shadow es un inset hardcodeado). |
 | `dropdown` | LiquidSelect portal dropdown | `--surface-dropdown`. Border/shadow/radio/backdrop reusan los de `card` (`--border-card`, `--modal-shadow`, `--card-radius`, `--backdrop-card`) por decisión — el dropdown es visualmente una extensión del `card`/`input` que lo abre, sin necesidad de identidad propia; no se agregan tokens dedicados salvo que aparezca un caso real que lo requiera. |
 | `tab-track` | ViewTabBar / filter pill track | `--surface-tab-track`, `--border-tab`. Radio hardcodeado `1.25rem` (no token), backdrop reusa `--backdrop-card`. |
-| `sidebar` | AppLayout `<aside>` glass div | Always dark — `bg-[#07031a]/80 backdrop-blur-2xl`. Intentionally ignores theme CSS vars. |
+| `sidebar` | AppLayout, el panel del menú | Oscuro en los cuatro temas. Sale de cuatro perillas: `--sidebar-tint` / `--sidebar-fill` / `--sidebar-pop-fill` / `--sidebar-rim` (§25.5) |
+| `sidebar-popover` | Menú de Ajustes y flyouts del sidebar | Mismo tinte que el sidebar, más relleno (flota sobre el contenido, no sobre el fondo de página) |
 
-Card hover (desktop only, `@media (hover: hover)`):
+Card hover (solo escritorio, `@media (hover: hover)`):
 ```css
 [data-surface="card"]:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-card-hover);
 }
 ```
+
+### 5.1 `data-tono` — la tarjeta marcada por su estado (2026-07-28)
+
+**El canónico era INDECORABLE, y eso explicaba las últimas tarjetas escritas a
+mano.** `index.css` va sin `@layer`, así que `[data-surface="card"]` le gana a
+cualquier utilidad de Tailwind. Medido en el navegador:
+
+| lo que se intenta | resultado |
+|---|---|
+| `data-surface="card"` | borde del tema |
+| `+ border-warning/40` | **sin cambio** |
+| `+ border-2 border-warning/40` | **sin cambio** |
+| `+ ring-2 ring-warning/40` | **sin cambio** — el ring es un `box-shadow` y acá ya se declara uno |
+
+O sea que para marcar una tarjeta *en edición* o *con error* no quedaba más que
+renunciar al canónico y pintarla entera a mano. No era descuido de quien la
+escribió: era la única salida.
+
+Con un atributo la especificidad sube sola —`[data-surface][data-tono]` es
+(0,2,0) contra (0,1,0)— y el estado se lee en el marcado en vez de en una
+ristra de clases condicionales:
+
+```jsx
+<div data-surface="card" data-tono={editando ? 'warning' : undefined}>
+```
+
+| tono | cuándo |
+|---|---|
+| `warning` | la tarjeta que estás editando |
+| `danger` | con error de validación, o urgente |
+| `success` | confirmada / completada |
+| `brand` | seleccionada |
+| `dashed` | la tarjeta **vacía** que invita a llenarla (documento faltante, cargo sin asignar). No es severidad, es ausencia — por eso no lleva color |
+
+**Cuando el tinte es del RELLENO y no del borde, no se emite `data-surface`** —
+por la misma razón de especificidad. Es el mismo idioma que `PortalInput` usa
+con `tono`:
+
+```jsx
+<div data-surface={d.isToday ? undefined : 'card'}
+     className={`… ${d.isToday ? 'bg-brand/5 border-brand/30' : ''}`}>
+```
+
+**No anides tarjetas.** El pie de la tarjeta de rol también era "tarjeta", y al
+darle tono quedaban dos anillos concéntricos. Una franja DENTRO de una tarjeta
+es `bg-surface-card-hover` + borde, no otra `data-surface="card"`.
 
 ---
 
@@ -1602,11 +1649,34 @@ hacer clic en la etiqueta no enfocaba nada.
              type="number" value={monto} onChange={…} />
 ```
 
-**Ranuras, para que no haya que salirse:** `icon` (ícono a la izquierda),
-`prefix` (un `$`, un `#`), `labelAction` (una acción a la derecha de la
-etiqueta), `helperText`, `compact` (32px, para grillas densas),
-`inputClassName`, y `...rest` para todo lo demás (`min`, `max`, `step`,
-`inputMode`, `ref`).
+**Ranuras, para que no haya que salirse.** Cada una existe porque su ausencia
+mandó campos a escribirse a mano; el número es lo que se recuperó al agregarla:
+
+| ranura | qué resuelve | rescató |
+|---|---|---|
+| `label` **opcional** | la celda de grilla no lleva etiqueta visible — el encabezado de su columna ya dice qué es. Era lo ÚNICO que dejaba 43 campos afuera | **43** |
+| `tono` | el campo tintado por semántica o categoría (salario en verde, MIN en naranja) | 33 |
+| `onDark` | superficie oscura bespoke: kiosco. Anatomía del canónico, paleta bespoke — igual que en `ListRow` y `Badge` | 1 |
+| `className` | va al CONTENEDOR (para `inputClassName` está el otro): lo necesitan las celdas de ancho fijo `w-16`, `w-32`, `flex-1` | — |
+| `icon` · `prefix` | el ícono o el `$` que si no se posicionan en absoluto ENCIMA del campo | — |
+| `labelAction` | una acción a la derecha de la etiqueta (`+ Agregar`) | 37 |
+| `compact` | 32px en vez de 40, para grillas densas | — |
+| `helperText` · `inputClassName` · `...rest` | ayuda inline, clases del texto, y `min`/`max`/`step`/`inputMode`/`ref` | — |
+
+**Sin `label` el `aria-label` es obligatorio** y el mensaje de error pasa a
+`sr-only`: la señal visible sigue siendo el borde rojo. El gate lo verifica en
+`input-sin-nombre`, cero absoluto (§25.1).
+
+**La acción va AFUERA del campo.** El ojo de ver/ocultar contraseña y el botón
+de regenerar código estaban posicionados en absoluto encima del `<input>`. Van
+como hermanos, en una fila:
+
+```jsx
+<div className="flex items-end gap-2">
+    <div className="flex-1"><PortalInput label="Cod. Empleado" … /></div>
+    <Button iconOnly icon={RefreshCw} aria-label="Generar un código nuevo" … />
+</div>
+```
 
 **`tono` — el campo tintado.** Cuando el campo lleva un color semántico o de
 categoría (el salario nuevo en verde, el MIN propuesto en naranja y el MAX en
@@ -1622,35 +1692,40 @@ Con `tono`, el contenedor NO emite `data-surface="input"`: esa regla de
 `index.css` va sin `@layer` y le ganaría a las utilidades de Tailwind, así que
 el borde tintado no se vería.
 
-**La acción va AFUERA del campo, no encima.** El ojo de ver/ocultar contraseña
-y el botón de regenerar código estaban posicionados en absoluto sobre el
-`<input>`. Van como hermanos, en una fila:
+### 15.12 Cuándo un `<input>` a mano es correcto — **CUATRO casos**
+
+> Reescrito el 2026-07-28. La versión anterior decía que el caso legítimo era
+> "la celda de una grilla densa" y contaba 61. Preguntado por el usuario —*"¿por
+> qué son excepción? ¿qué criterio tomaste?"*— fui a verificar el criterio que
+> yo mismo había escrito, ancestro por ancestro. **No aguantó.** De los 56, 43
+> eran el campo del canónico sin etiqueta, y de los 7 finales, 4 tampoco eran
+> excepción: dos eran `PortalInput` reconstruido a mano y dos eran
+> `SearchInput expandable` reconstruido. Quedan **4**, y son estos:
+
+| # | dónde | por qué |
+|---|---|---|
+| 1-2 | `LoginView` (dos campos) | Superficie **bespoke**: fuerza tema claro porque corre antes de que exista sesión — no hay tema de usuario que seguir (§25.4) |
+| 3 | `AuthPromptPanel` — el PIN del kiosco | Su borde lleva el **caret virtual animado**, que es el indicador anti-fraude. El canónico dibuja la caja en el CONTENEDOR, no en el `<input>`, así que la animación quedaría invisible |
+| 4 | `MenuSearchModal` | La barra del encabezado de ⌘K. No es un campo en una caja: es una fila a todo el ancho con divisor abajo |
+
+**Ninguna otra.** Si estás por escribir un `<input>`, la respuesta es una de
+estas cuatro cosas:
 
 ```jsx
-<div className="flex items-end gap-2">
-    <div className="flex-1"><PortalInput label="Cod. Empleado" … /></div>
-    <Button iconOnly icon={RefreshCw} aria-label="Generar un código nuevo" … />
-</div>
+<PortalInput label="Monto" … />                    // campo con etiqueta
+<PortalInput aria-label="Cantidad" compact … />     // celda de grilla, sin etiqueta
+<PortalInput aria-label="PIN" onDark … />           // sobre superficie oscura
+<SearchInput … />  ·  <SearchInput expandable … />  // buscar (§24)
 ```
 
-### 15.12 Cuándo un `<input>` a mano es correcto
+**Las celdas de grilla NO son excepción — son `PortalInput compact`.** Lo que
+las mantenía afuera era que el canónico dibujaba el `<label>` siempre, no una
+decisión de diseño. Las dos con navegación por flechas (`data-qty-row`/
+`data-qty-col`, la hoja de cálculo de recepción) mantienen su `onKeyDown`
+propio, que el canónico reenvía por `...rest`.
 
-Quedan 61 y son deliberados. El caso legítimo es uno solo: **la celda de una
-grilla densa**, que no es un campo de formulario.
-
-No lleva etiqueta visible porque el encabezado de su columna ya dice qué es, y
-`PortalInput` siempre dibuja un `<label>` arriba. Varias además llevan
-`data-qty-row`/`data-qty-col` y un `onKeyDown` propio para moverse con las
-flechas entre celdas, como una hoja de cálculo (`RecepcionModal`, el banco de
-horas extra de nómina, `FormEditPayrollEntry`).
-
-**Eso no las exime del nombre accesible** — ver §25.1. `aria-label` obligatorio,
-y el gate lo verifica en cero absoluto.
-
-Los buscadores tampoco son la excepción: hay tres canónicos y uno de ellos
-aplica siempre — `ViewTabBar` (buscador del header de vista), `SearchInput`
-(widgets, modales, tabs internos) y `SearchInput expandable` (toolbar de
-widget). Ver §24.
+**Y ninguna está exenta del nombre accesible** — ver §25.1. `aria-label`
+obligatorio, y el gate lo verifica en cero absoluto.
 
 ---
 
@@ -2881,7 +2956,8 @@ Before creating a new component, verify:
 | Any view wrapper | `GlassViewLayout` + `ViewTabBar` |
 | Any avatar | `LiquidAvatar` |
 | Any toast | `useToastStore` (via `LiquidToast`) |
-| Un campo de formulario | `PortalInput` / `PortalTextarea` (§15.11) |
+| Un campo de formulario | `PortalInput` / `PortalTextarea` (§15.11) — sin etiqueta visible también: `label` es opcional |
+| Una tarjeta / contenedor | `data-surface="card"` (§5), con `data-tono` si lleva estado (§5.1). **Nunca** `bg-surface-card + border + rounded` a mano |
 | Un buscador | `ViewTabBar` (header de vista) · `SearchInput` (widget/modal/tab) · `SearchInput expandable` (toolbar de widget) — §24 |
 | Un botón, de cualquier forma | `Button` (§15.2) · `TabBarAction` dentro de `ViewTabBar` (§15.5) |
 | Una de N opciones | `SegmentedControl` (§15.3) · `FilterBar.Chip` si es un filtro (§17) |
@@ -2910,6 +2986,7 @@ el gate.
 
 | Version | Date | Notes |
 |---|---|---|
+| v2.2 | 2026-07-28 | **Cierre de la estandarización.** `tarjeta-a-mano` 184→**0** e `input-a-mano` 60→**4**, las dos categorías nuevas del gate. Tres ranuras nuevas en los canónicos, y las tres salieron de la misma pregunta —*¿por qué esto está escrito a mano?*—: `label` OPCIONAL en `PortalInput` (rescató 43 campos: era lo único que los dejaba fuera), `onDark` (kiosco: anatomía del canónico, paleta bespoke) y `data-tono` en la tarjeta (§5.1 — el canónico era INDECORABLE: ni un `border-*` ni un `ring-*` le ganaban, así que marcar una tarjeta en edición obligaba a renunciar a él). Reescritas §15.11 (tabla de ranuras con lo que rescató cada una), §15.12 (de "61 celdas de grilla" a **4 excepciones reales**, nombradas y justificadas), §5 (tabla de superficies + §5.1 `data-tono` + la regla de no anidar tarjetas). Lo que se recuperó no es solo dejar de repetir clases: la forma volvió a ser del TEMA — medido, el radio de tarjeta da 28px en Liquid y 12px en Sólido, cuando 150 tarjetas lo tenían fijo en 24px. |
 | v2.1 | 2026-07-28 | **D3/D4** — cierre de `AUDITORIA-DISENO-2026-07-26.md`. Reescritos §15 (agrega §15.8 "cuándo NO es un botón", §15.11 `PortalInput` con `tono`, §15.12 cuándo un `<input>` a mano es correcto), §6.0 (paleta consolidada de 13→9 categóricos, los retirados quedan como ALIAS y no como valores, más los colores del logo integrados), §25 (agrega §25.1 nombre accesible, §25.2 qué atributo de estado y cuándo, §25.3 teclado en tablas; corrige la afirmación de que `LiquidSelect` tenía el patrón combobox completo — tenía los roles, no el teclado) y §30 (tabla extend-vs-create ampliada + la regla de leer las props del canónico antes de migrar). Migrado: 276→60 botones a mano (137 abiertos en D3.3, 77 migrados y 60 que eran el canónico equivocado — §15.8), 101→8 chips, 99→61 inputs, 4 buscadores. Arreglado en el canónico, que es donde estaba el hueco 9 de cada 10 veces: `Badge`/`PortalInput` que tiraban props, 102 `iconOnly` sin nombre, `DataRow` y 62 columnas ordenables sin teclado, `LiquidSelect` inalcanzable con Tab en los 70 archivos que lo usan. Gate: 5 categorías nuevas, 3 de ellas en cero absoluto (`button-name`, `paleta-cerrada`, `input-sin-nombre`). |
 | v2.0 | 2026-07-24 | **T7.4** — cierre de `AUDITORIA-TEMA-2026-07.md` T7. Reescribe §3 (paleta dataviz: 6→9 chart-N, regla de 3 buckets, excepciones documentadas; escala canónica de sombras nueva, 542/967 usos consolidados en 19 tokens) y §6 (tabla "Semantic" de clases crudas reemplazada por los tokens reales de severidad — esa tabla vieja era literalmente la causa del problema que T7.1 cerró). Corrige §2 (default cambió a Solid Modern en T6, ya no es Liquid). Migración de color: 119 archivos, ~1,400+ usos de color crudo → tokens. Decisión de si Liquid Glass sobrevive como tema sigue diferida — ver §2. |
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |

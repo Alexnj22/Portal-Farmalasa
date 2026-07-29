@@ -16,7 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.176.0';
+export const APP_VERSION = '2.177.0';
+
+// v2.177.0 — DESIGN.md cierra la estandarizacion.
+//
+// §15.11 gana la tabla de RANURAS con lo que rescato cada una. Es la lectura
+// util del trabajo: cada ranura existe porque su ausencia mando campos a
+// escribirse a mano.
+//
+//     label OPCIONAL   43 campos   ← era lo UNICO que los dejaba fuera
+//     tono             33
+//     labelAction      37
+//     onDark            1 (kiosco)
+//     className         celdas de ancho fijo
+//
+// §15.12 pasa de "61 celdas de grilla" a **4 excepciones reales**, nombradas
+// con su motivo. La version vieja afirmaba un criterio —"el contenedor ya
+// dibuja la caja"— que al verificarlo ancestro por ancestro no aguantaba en 4
+// de 7 casos.
+//
+// §5 gana la tabla de superficies al dia (`sidebar-popover` nuevo) y §5.1
+// `data-tono`, con la medicion de por que la tarjeta era indecorable y la
+// regla de no anidar tarjetas.
+//
+// Verificado antes de escribirlo: el baseline real dice `input-a-mano: 4` y
+// los 4 son exactamente los que el doc nombra — LoginView x2, AuthPromptPanel
+// y MenuSearchModal.
 
 // v2.176.0 — input-a-mano 15 → 4, y mi criterio de "excepcion" no aguanto.
 //

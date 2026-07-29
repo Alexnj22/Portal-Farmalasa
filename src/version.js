@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.194.0';
+export const APP_VERSION = '2.195.0';
+
+// v2.195.0 — tres suscripciones de Realtime estaban muertas en silencio.
+//
+// La auditoria (P6) proponia SACAR tablas de la publicacion. Medido, eso era
+// incorrecto en dos puntos: role_permissions SI se usa (AuthContext refresca
+// permisos en vivo), y el costo no es decodificar sino el POLL — 651,041
+// llamadas de la funcion de sondeo a 8.9 ms, corra o no un cambio; las 10
+// tablas publicadas suman 241 escrituras en total.
+//
+// Lo que si estaba mal es lo contrario: el frontend se suscribia a tres tablas
+// que no estaban en la publicacion, asi que esos eventos nunca llegaban.
+//   inventory_sync_log  toast + notificacion ante sync fallido (AppLayout)
+//   pedido_items        refresco de items del pedido activo
+//   ventas_perdidas     badge de pendientes
+// No era lento: no funcionaba. Ahora 12 de 12 tablas alineadas.
+//
+// Ademas, primer lote de policies de escritura abierta (F2.1): products,
+// kiosk_devices, timesheets y employee_events pasaron de `true` a
+// auth_can_edit_any con el wrapper (SELECT ...) obligatorio. 26 -> 20.
 
 // v2.194.0 — conteo ciclico mensual: 200 productos por sucursal.
 //

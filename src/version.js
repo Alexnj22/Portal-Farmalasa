@@ -16,8 +16,50 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.210.0';
+export const APP_VERSION = '2.211.0';
 
+// v2.211.0 — dte e inventario entran a las alertas de sync, y se apaga una
+// falsa alarma diaria que llevaba dos semanas.
+//
+// Contexto: al revisar si algo avisaba cuando un sync se caia, la respuesta era
+// NO para los 13 syncs por minuto. check-sync-health-alerts los excluia a
+// proposito "porque ya tenian lo suyo", pero eso no se sostiene:
+//   - dte tenia check-sales-alerts, que alerta de NEGOCIO (ventas sin confirmar
+//     por Hacienda). Si el sync deja de correr no entran ventas, no hay nada
+//     pendiente que detectar, y la alerta se queda MUDA.
+//   - inventory tenia useSyncMonitor, un toast del navegador: solo salta si
+//     alguien tiene el portal abierto, no queda registrado, y necesita una fila
+//     con success=false.
+// El modo de falla real — el cron no consigue conexion y la funcion NUNCA se
+// ejecuta — no escribe ninguna fila, asi que no disparaba nada. Paso 375 veces
+// en dos semanas sin que nadie se enterara.
+//
+// Lo aplicado en check-sync-health-alerts:
+// - dte e inventory con umbral de 15 min, medido en minutos ACTIVOS. Sus crons
+//   duermen 06:00-11:59 UTC (verificado: esas horas tienen CERO filas en
+//   v_sync_health, el resto ~480/hora), asi que con reloj de pared habrian
+//   marcado 6h de antiguedad a las 12:00 y gritado en falso cada mañana.
+//   activeMinutesBetween() descuenta ese hueco: probado con 6 casos, la
+//   reanudacion de las 12:00 da 1 minuto activo (no alerta) y un caido real de
+//   20 min da 20 (alerta).
+// - Los fallos de dte/inventory vienen en RAFAGAS (en 24h: los 47 de dte en 1
+//   sola hora, los 72 de inventory en 2; 0.7% y 0.85% de las corridas), y un
+//   blip suelto se cura al minuto siguiente. Se exigen 2 fallos seguidos.
+//
+// BUG PREEXISTENTE ARREGLADO de paso: la funcion pedia las ultimas 1000 filas
+// de TODOS los dominios juntos, y los ruidosos ahogaban a los tranquilos. Las 7
+// filas de minmax (ultima: 17-jul) caian fuera del corte y el bloque de "ningun
+// registro" concluia "minmax nunca ha corrido" — una falsa alarma DIARIA desde
+// el 16-jul (12 de minmax y 14 de backup en sync_alert_log). Ahora es una
+// consulta por dominio. Verificado en la corrida de las 16:40: alerts=1, no 2.
+//
+// Queda una alerta legitima: backup_sync_log tiene 0 filas desde siempre. El
+// cron backup-critical-tables-weekly corre los domingos y reporta "succeeded"
+// (solo encola el HTTP), pero la funcion tiene verify_jwt=true y el cron manda
+// el secreto como Bearer, no un JWT — el mismo 401 que ya mordio a
+// auto-calculate-minmax. Sin tocar: arreglarlo hace que empiecen a correr
+// backups reales, y eso es decision del usuario.
+//
 // v2.210.0 — el modal solo ofrece sucursales con inventario.
 //
 // Administracion aparecia en la lista y no tiene inventario: elegirla llevaba a

@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import ModuleLockBanner from './common/ModuleLockBanner';
 
 const GlassViewLayout = ({
     icon: Icon,
@@ -172,6 +173,13 @@ const GlassViewLayout = ({
 
                 {/* Content body */}
                 <div className="px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+                    {/* Candado de mantenimiento. Va acá y no en cada vista: resuelve
+                        su módulo desde la ruta y devuelve null cuando no hay candado,
+                        así que cubre las 37 vistas que usan este layout sin que
+                        ninguna tenga que acordarse de montarlo. Fuera de la tarjeta
+                        del body a propósito — es un aviso sobre el módulo, no
+                        contenido de la tabla. */}
+                    <ModuleLockBanner />
                     <div data-surface={transparentBody ? undefined : 'card'}
                         className={`group/table flex flex-col lg:flex-1 ${bodyCardCls}`}>
                         {children}

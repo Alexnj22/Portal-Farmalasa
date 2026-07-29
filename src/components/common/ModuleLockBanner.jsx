@@ -1,61 +1,50 @@
 import React, { useState, memo } from 'react';
-import { Wrench, Lock, Unlock } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Wrench, Unlock } from 'lucide-react';
 import Notice from './Notice';
 import Button from './Button';
 import ConfirmModal from './ConfirmModal';
-import PromptModal from './PromptModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { useStaffStore } from '../../store/staffStore';
-import { lockModule, unlockModule, translateLockError } from '../../data/moduleLocks';
+import { unlockModule, translateLockError } from '../../data/moduleLocks';
+import { MODULE_MAP, moduleKeyForPath } from '../../constants/moduleMap';
 
 /**
- * ModuleLockBanner — candado de mantenimiento de un módulo (F0 del
- * PLAN-MINMAX-Y-CANDADO-2026-07-29).
+ * ModuleLockBanner — el aviso de que este módulo está en mantenimiento.
  *
- * Hace las dos cosas en un solo componente a propósito: muestra el estado Y
- * ofrece tomar/liberar el candado a quien pueda editar el módulo. Un panel de
- * administración aparte obligaría a salir del módulo para bloquearlo, que es
- * justo el momento en que uno quiere bloquearlo.
+ * Se monta UNA vez, dentro de GlassViewLayout, y resuelve solo de qué módulo se
+ * trata a partir de la ruta. Antes se montaba a mano y estaba únicamente en
+ * MinMaxView, así que un candado sobre cualquier otro módulo era invisible: la
+ * gente veía los botones de guardar apagados y ningún cartel que lo explicara.
  *
- * El candado REAL está en la BD (auth_can_edit_any → auth_module_locked, 59
- * policies / 30 tablas / 23 RPCs). Esto es la mitad de UX.
+ * Renderiza null si no hay candado, así que ponerlo en las 37 vistas que usan
+ * GlassViewLayout no le cuesta nada a las que no están bloqueadas.
  *
- * OJO: el candado NO detiene crons ni edge functions — `service_role` saltea RLS.
- * Para frenar un cron hay que desactivar su job en cron.job aparte. Se dice acá
- * mismo para que nadie lo asuma.
+ * TOMAR un candado ya no se hace desde acá: vive en Sistema › Mantenimiento. El
+ * botón estaba bien cuando el banner existía en un solo módulo, pero repetido en
+ * 37 vistas es una superficie de bloqueo accidental. Terminar SÍ sigue acá — el
+ * titular tiene que poder soltarlo donde está trabajando.
  *
- * Uso:  <ModuleLockBanner moduleKey="minmax" label="MIN·MAX" />
+ * El candado REAL está en la BD (auth_can_edit_any → auth_module_locked). Esto es
+ * la mitad de UX: el apagado de los botones lo hace hasPermission() solo.
  */
-const ModuleLockBanner = memo(({ moduleKey, label }) => {
-    const { moduleLock, isModuleLocked, hasPermission, refreshModuleLocks, rolePerms } = useAuth();
-    const [askLock,   setAskLock]   = useState(false);
+const ModuleLockBanner = memo(({ moduleKey: moduleKeyProp }) => {
+    const { pathname } = useLocation();
+    const { moduleLock, isModuleLocked, refreshModuleLocks } = useAuth();
     const [askUnlock, setAskUnlock] = useState(false);
     const [busy,      setBusy]      = useState(false);
 
-    const lock     = moduleLock(moduleKey);
-    const bloqueado = isModuleLocked(moduleKey);   // hay candado y NO soy el titular
-    const soyTitular = !!lock && !bloqueado;
-    const nombre   = label || moduleKey;
+    const moduleKey = moduleKeyProp ?? moduleKeyForPath(pathname);
+    const lock      = moduleKey ? moduleLock(moduleKey) : null;
 
-    // hasPermission ya devuelve false por el candado, así que no sirve para saber
-    // si esta persona podría bloquear: se consulta el permiso crudo.
-    const puedeGestionar = !!rolePerms?.[moduleKey]?.can_edit || hasPermission(moduleKey, 'can_edit');
+    const bloqueado  = !!moduleKey && isModuleLocked(moduleKey);  // hay candado y NO soy el titular
+    const soyTitular = !!lock && !bloqueado;
+    const nombre     = MODULE_MAP[moduleKey]?.label || moduleKey;
 
     const hora = (iso) => {
-        try { return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }); }
+        try { return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: false }); }
         catch { return ''; }
-    };
-
-    const doLock = async (motivo) => {
-        setBusy(true);
-        const { error } = await lockModule(moduleKey, motivo, 4);
-        setBusy(false);
-        setAskLock(false);
-        if (error) { useToastStore.getState().showToast(nombre, translateLockError(error.message), 'error'); return; }
-        useStaffStore.getState().appendAuditLog('MODULE_LOCK_ON', moduleKey, { module: moduleKey, reason: motivo });
-        useToastStore.getState().showToast(nombre, 'Módulo en mantenimiento. Los demás quedan en solo lectura.', 'success');
-        refreshModuleLocks();
     };
 
     const doUnlock = async () => {
@@ -69,37 +58,14 @@ const ModuleLockBanner = memo(({ moduleKey, label }) => {
         refreshModuleLocks();
     };
 
-    // Sin candado: solo el botón para tomarlo, y solo a quien pueda editar.
-    if (!lock) {
-        if (!puedeGestionar) return null;
-        return (
-            <>
-                <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" icon={Lock} onClick={() => setAskLock(true)}>
-                        Poner en mantenimiento
-                    </Button>
-                </div>
-                <PromptModal
-                    isOpen={askLock}
-                    title={`Poner ${nombre} en mantenimiento`}
-                    message="Los demás podrán consultar pero no guardar, durante 4 horas o hasta que lo liberes. No detiene los procesos automáticos (syncs): para eso hay que desactivar su cron aparte."
-                    placeholder="¿En qué estás trabajando? Ej. arreglos de la auditoría"
-                    confirmText="Bloquear"
-                    required
-                    isProcessing={busy}
-                    onConfirm={doLock}
-                    onClose={() => setAskLock(false)}
-                />
-            </>
-        );
-    }
+    if (!lock) return null;
 
     return (
-        <>
+        <div className="mb-3">
             <Notice
                 variant={bloqueado ? 'warning' : 'info'}
                 icon={Wrench}
-                action={puedeGestionar && soyTitular ? (
+                action={soyTitular ? (
                     <Button variant="ghost" size="sm" icon={Unlock} onClick={() => setAskUnlock(true)}>
                         Terminar
                     </Button>
@@ -131,7 +97,7 @@ const ModuleLockBanner = memo(({ moduleKey, label }) => {
                 onConfirm={doUnlock}
                 onClose={() => setAskUnlock(false)}
             />
-        </>
+        </div>
     );
 });
 

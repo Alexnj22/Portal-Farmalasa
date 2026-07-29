@@ -31,6 +31,15 @@ export function unlockModule(moduleKey) {
     return supabase.rpc('unlock_module', { p_module_key: moduleKey });
 }
 
+// Los módulos donde el candado SÍ hace algo. La RPC los deriva de las policies y
+// de los cuerpos de las funciones (los arrays de auth_can_edit_any), no de una
+// lista escrita a mano: hoy son 27 de 93, y bloquear uno de los otros 66 no
+// frenaría nada. Un diccionario acá se desactualizaría con la primera policy
+// nueva, en silencio — que es exactamente el tipo de bug que tenía el módulo.
+export function fetchLockableModules() {
+    return supabase.rpc('get_lockable_modules');
+}
+
 // Mensajes de las excepciones del servidor. Sin esto el usuario ve
 // 'ALREADY_LOCKED: minmax ya está bloqueado...' con el prefijo técnico.
 export function translateLockError(msg) {

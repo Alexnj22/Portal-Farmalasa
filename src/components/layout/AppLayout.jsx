@@ -30,48 +30,9 @@ import PushPromptBanner from '../common/PushPromptBanner';
 import OfflineBanner from '../common/OfflineBanner';
 import ThemeMigrationRibbon, { RIBBON_HEIGHT } from '../common/ThemeMigrationRibbon';
 import Contador from '../common/Contador';
+import { MODULE_MAP } from '../../constants/moduleMap';
 
-// ── Módulos individuales (key → path + label + icon) ────────────────────────
-const MODULE_MAP = {
-    overview:          { path: '/overview',        label: 'Inicio',                   icon: Home          },
-    emp_requests:      { path: '/my-requests',    label: 'Mis Solicitudes',          icon: ClipboardList },
-    emp_announcements: { path: '/my-announcements',label: 'Mis Avisos',               icon: Bell          },
-    emp_profile:       { path: '/profile',         label: 'Mi Perfil',                icon: User          },
-    emp_documents:     { path: '/my-documents',   label: 'Mis Documentos',           icon: FolderOpen    },
-    staff_list:        { path: '/dashboard',       label: 'Listado',                  icon: User          },
-    monitor:           { path: '/monitor',         label: 'Monitor Real-Time',        icon: Monitor       },
-    time_audit:        { path: '/audit',           label: 'Auditoría de Tiempos',     icon: AlertTriangle },
-    schedules:         { path: '/schedules',       label: 'Horarios y Turnos',        icon: Calendar      },
-    requests:          { path: '/requests',        label: 'Gestión de Solicitudes',   icon: ClipboardList },
-    vacation_plan:     { path: '/vacation-plan',   label: 'Plan de Vacaciones',       icon: Palmtree      },
-    payroll:           { path: '/payroll',          label: 'Nómina',                   icon: DollarSign    },
-    branches:          { path: '/branches',        label: 'Sucursales',               icon: Building2     },
-    roles:             { path: '/roles',           label: 'Cargos / Organigrama',     icon: ShieldCheck   },
-    announcements:     { path: '/announcements',   label: 'Gestionar Avisos',         icon: Megaphone     },
-    permissions:       { path: '/permissions',     label: 'Permisos de Acceso',       icon: Lock          },
-    auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
-    ios_test:          { path: '/ios-test',        label: 'Prueba iOS',               icon: Smartphone    },
-    sync_health:       { path: '/sync-health',     label: 'Salud de Syncs',           icon: RadioTower    },
-    orphan_objects:    { path: '/orphan-objects',  label: 'Objetos Huérfanos',        icon: Ghost         },
-    // ── Próximamente ──
-    ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
-    metas:             { path: '/metas',            label: 'Metas',                    icon: Target,       comingSoon: true },
-    facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
-    cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
-    encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },
-    encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icon: PenLine    },
-    bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
-    entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
-    productos:         { path: '/productos',        label: 'Productos',                icon: Package       },
-    laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icon: FlaskConical  },
-    pedidos:           { path: '/pedidos',          label: 'Pedidos a Sucursales',     icon: ClipboardList },
-    minmax:            { path: '/minmax',           label: 'Min / Max',                icon: BarChart2     },
-    ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas Perdidas',          icon: PackageMinus  },
-    compras:           { path: '/compras',           label: 'Compras',                  icon: ShoppingCart  },
-    facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de Compra',       icon: Mail          },
-    proveedores:       { path: '/proveedores',        label: 'Proveedores',              icon: Truck         },
-    conteo_inventario: { path: '/conteo-inventario',  label: 'Conteo de Inventario',     icon: ClipboardCheck },
-};
+// MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
 
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
 // Orden: autoservicio del empleado primero, luego gestión de personal,
@@ -103,7 +64,7 @@ const MENU_GROUPS = [
     { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['minmax', 'ventas_perdidas', 'conteo_inventario'] },
     { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_compra', 'proveedores'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
-    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
+    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
 ];
 
 const SELF_KEYS = ['emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];

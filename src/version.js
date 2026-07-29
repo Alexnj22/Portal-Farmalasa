@@ -16,7 +16,47 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.224.0';
+export const APP_VERSION = '2.225.0';
+
+// v2.225.0 — el candado de mantenimiento sale de MIN·MAX: panel en Sistema y
+// banner en las 37 vistas.
+//
+// Cuatro problemas del estado anterior:
+//  1. El banner estaba montado A MANO y solo en MinMaxView, asi que un candado
+//     sobre cualquier otro modulo era INVISIBLE: la gente veia los botones de
+//     guardar apagados y ningun cartel que lo explicara.
+//  2. Solo se podia soltar desde el modulo bloqueado. La RPC ya permitia que otro
+//     admin liberara, pero no habia pantalla donde hacerlo.
+//  3. No habia forma de responder "¿que hay bloqueado ahora?".
+//  4. Se podia tomar un candado INUTIL. El candado vive dentro de
+//     auth_can_edit_any(ARRAY[...]), asi que bloquear un modulo que ninguna policy
+//     consulta no frena nada — y lock_module aceptaba cualquiera de los 93 de
+//     role_permissions. Se podia bloquear conteo_inventario, ver el banner puesto
+//     y seguir guardando. Un candado que miente es peor que no tenerlo.
+//
+// Ahora:
+// - get_lockable_modules() DERIVA la lista de pg_policies + los cuerpos de las
+//   funciones: hoy 27 de 93. No es un diccionario a mano — cuando alguien agregue
+//   una policy con auth_can_edit_any(ARRAY['x']), x aparece sola. lock_module
+//   valida contra esa lista.
+// - Vista nueva Sistema › Mantenimiento (module_key `maintenance`, permiso copiado
+//   de orphan_objects: mismo publico que las otras vistas de infra). Lista los
+//   candados activos con titular, motivo, desde/vence y cuanto falta; cualquiera
+//   con permiso puede terminar uno ajeno. El limite de los crons se dice ahi, que
+//   es donde se toma la decision.
+// - El banner se monta UNA vez en GlassViewLayout y resuelve su modulo desde la
+//   ruta, asi que cubre las 37 vistas que usan ese layout sin que ninguna tenga
+//   que acordarse. Devuelve null si no hay candado.
+// - TOMAR el candado ya no esta en el banner: 37 vistas con un boton de bloquear
+//   es superficie de bloqueo accidental. Terminar SI sigue ahi — el titular tiene
+//   que poder soltarlo donde esta trabajando.
+// - MODULE_MAP se extrajo de AppLayout a constants/moduleMap.js con el helper
+//   moduleKeyForPath(): un componente de common/ no puede importar el layout.
+//
+// Verificado en el navegador (candado sintetico via page.route, sin escribir en
+// prod): la vista carga con su estado vacio y el aviso, el modal abre, el banner
+// aparece en /payroll con el titular y el motivo, /minmax sin candado no muestra
+// nada, y cero errores de consola.
 
 // v2.224.0 — el foco de los modales, y 421 fallos de contraste que ningun
 // escaner anterior podia ver.

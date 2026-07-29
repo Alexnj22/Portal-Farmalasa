@@ -10,8 +10,8 @@ export const CatalogSelect = ({ value, onChange, options, portalSelectProps, has
     const isOther = isCatalogOther(value, options);
     const selectValue = isOther ? OTRA_ESPECIALIDAD : value;
     return (
-        <div className={`h-[40px] ${hasError && !isOther ? 'outline outline-2 outline-danger/50 rounded-input' : ''}`}>
-            <LiquidSelect
+        <LiquidSelect
+                invalid={hasError && !isOther}
                 value={selectValue}
                 onChange={(val) => onChange(val)}
                 options={options}
@@ -19,7 +19,6 @@ export const CatalogSelect = ({ value, onChange, options, portalSelectProps, has
                 clearable={clearable}
                 {...portalSelectProps}
             />
-        </div>
     );
 };
 

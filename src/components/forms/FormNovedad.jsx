@@ -245,16 +245,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             {/* SELECTOR PRINCIPAL */}
             <div className="relative z-sidebar-desktop">
                 <label className={labelClasses}>Tipo de Acción de Personal</label>
-                <div className="h-[40px]">
-                    <LiquidSelect
-                        value={formData?.type || ''}
-                        onChange={(val) => setFormData(prev => ({ ...prev, type: val }))} 
-                        options={actionOptions}
-                        placeholder="-- Seleccione un Evento --"
-                        icon={GitPullRequest}
-                        menuPosition="fixed"
-                    />
-                </div>
+                <LiquidSelect
+                    value={formData?.type || ''}
+                    onChange={(val) => setFormData(prev => ({ ...prev, type: val }))} 
+                    options={actionOptions}
+                    placeholder="-- Seleccione un Evento --"
+                    icon={GitPullRequest}
+                    menuPosition="fixed"
+                />
             </div>
 
             {/* ALERTAS VISUALES CONTEXTUALES */}
@@ -321,9 +319,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             {isDisability && (
                 <div className="relative z-tabs animate-in fade-in">
                     <label className={labelClasses}>Origen de la Incapacidad</label>
-                    <div className="h-[40px]">
-                        <LiquidSelect value={formData?.disabilityType || ''} onChange={(val) => setFormData(prev => ({ ...prev, disabilityType: val, disabilityDays: null, endDate: null }))} options={disabilityTypes} placeholder="Seleccionar..." icon={Activity} menuPosition="fixed" />
-                    </div>
+                    <LiquidSelect value={formData?.disabilityType || ''} onChange={(val) => setFormData(prev => ({ ...prev, disabilityType: val, disabilityDays: null, endDate: null }))} options={disabilityTypes} placeholder="Seleccionar..." icon={Activity} menuPosition="fixed" />
                 </div>
             )}
 
@@ -496,18 +492,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 onChange={(v) => setFormData(prev => ({...prev, isTransferAndPromotion: v}))}
                                 label={<span className="text-micro font-black uppercase tracking-widest text-content-3">¿Cambia de sucursal?</span>} />
                         </div>
-                        <div className="h-[40px]">
-                            <LiquidSelect value={formData?.newRole || ''} onChange={(val) => setFormData(prev => ({ ...prev, newRole: val }))} options={rolesOptions} placeholder="Seleccionar cargo oficial..." icon={Briefcase} menuPosition="fixed" />
-                        </div>
+                        <LiquidSelect value={formData?.newRole || ''} onChange={(val) => setFormData(prev => ({ ...prev, newRole: val }))} options={rolesOptions} placeholder="Seleccionar cargo oficial..." icon={Briefcase} menuPosition="fixed" />
                     </div>
                 )}
 
                 {isTransfer && (
                     <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in">
                         <label className={labelClasses}>Sucursal Destino</label>
-                        <div className="h-[40px]">
-                            <LiquidSelect value={formData?.targetBranchId || ''} onChange={(val) => setFormData(prev => ({ ...prev, targetBranchId: val }))} options={branchOptions} placeholder="Buscar farmacia..." icon={MapPin} menuPosition="fixed" />
-                        </div>
+                        <LiquidSelect value={formData?.targetBranchId || ''} onChange={(val) => setFormData(prev => ({ ...prev, targetBranchId: val }))} options={branchOptions} placeholder="Buscar farmacia..." icon={MapPin} menuPosition="fixed" />
                     </div>
                 )}
 
@@ -528,7 +520,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 {isTermination && (
                     <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-3xl">
                         <label className="text-caption font-black uppercase tracking-widest text-danger ml-1 mb-1.5 block">Motivo Legal de Baja</label>
-                        <div className="h-[40px] mb-3">
+                        <div className="mb-3">
                             <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
                         </div>
                         <div className="mt-2 bg-surface-card p-3 rounded-xl border border-danger/30 shadow-sm transition-all hover:bg-surface-card-hover">

@@ -552,16 +552,14 @@ const RolesView = ({ openModal }) => {
                                             <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                                 Alcance
                                             </label>
-                                            <div className="h-[44px]">
-                                                <LiquidSelect
-                                                    value={scope}
-                                                    onChange={(val) => setScope(val)}
-                                                    options={SCOPE_OPTIONS}
-                                                    icon={MapPin}
-                                                    menuPosition="fixed"
-                                                    clearable={false}
-                                                />
-                                            </div>
+                                            <LiquidSelect
+                                                value={scope}
+                                                onChange={(val) => setScope(val)}
+                                                options={SCOPE_OPTIONS}
+                                                icon={MapPin}
+                                                menuPosition="fixed"
+                                                clearable={false}
+                                            />
                                         </div>
                                         <div>
                                             <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
@@ -589,34 +587,30 @@ const RolesView = ({ openModal }) => {
                                         <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Dependencia (Reporta a)
                                         </label>
-                                        <div className="h-[44px]">
-                                            <LiquidSelect 
-                                                value={parentRoleId || ''}
-                                                onChange={(val) => { setParentRoleId(val); if(error) setError(''); }}
-                                                options={roleOptions}
-                                                placeholder="-- Nivel Raíz --"
-                                                icon={CornerDownRight}
-                                                clearable={true}
-                                                menuPosition="fixed"
-                                            />
-                                        </div>
+                                        <LiquidSelect 
+                                            value={parentRoleId || ''}
+                                            onChange={(val) => { setParentRoleId(val); if(error) setError(''); }}
+                                            options={roleOptions}
+                                            placeholder="-- Nivel Raíz --"
+                                            icon={CornerDownRight}
+                                            clearable={true}
+                                            menuPosition="fixed"
+                                        />
                                     </div>
 
                                     <div className="relative z-sidebar">
                                         <label className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Reporte Matricial
                                         </label>
-                                        <div className="h-[44px]">
-                                            <LiquidSelect 
-                                                value={secondaryParentRoleId || ''}
-                                                onChange={(val) => { setSecondaryParentRoleId(val); if(error) setError(''); }}
-                                                options={roleOptions}
-                                                placeholder="-- Opcional --"
-                                                icon={GitMerge}
-                                                clearable={true}
-                                                menuPosition="fixed"
-                                            />
-                                        </div>
+                                        <LiquidSelect 
+                                            value={secondaryParentRoleId || ''}
+                                            onChange={(val) => { setSecondaryParentRoleId(val); if(error) setError(''); }}
+                                            options={roleOptions}
+                                            placeholder="-- Opcional --"
+                                            icon={GitMerge}
+                                            clearable={true}
+                                            menuPosition="fixed"
+                                        />
                                     </div>
 
                                     <Button

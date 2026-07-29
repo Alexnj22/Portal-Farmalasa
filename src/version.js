@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.219.0';
+export const APP_VERSION = '2.220.0';
+
+// v2.220.0 — el arreglo del select, cerrado como canonico de verdad.
+//
+// v2.219.0 lo arreglo en 35 sitios, pero eso no era "canonico": nada impedia
+// que volviera y DESIGN.md no lo decia. Ahora:
+//
+// - Regla `select-con-envoltorio` en el gate, en CERO y bloqueante. Detecta por
+//   la FORMA (div con alto fijo que contiene un LiquidSelect), no por la clase.
+//   **Encontro 11 sitios mas que mi grep manual no vio** — entre ellos el
+//   canonico `CatalogSelect`, `RolesView` con h-[44px] y `BranchTabLegal` con
+//   h-[42px]. Ninguno tenia la cadena que yo habia buscado.
+// - DESIGN.md §15.13 con los numeros medidos y el contraejemplo.
+//
+// Y un error propio que vale registrar: el script de migracion desenvolvia por
+// la clase del div sin mirar el contenido, y se llevo 3 `LiquidDatePicker` —
+// ese SI necesita envoltorio porque usa `h-full` (toma la altura del padre) y
+// sin el se colapsa. No lo detecto el gate (su regla exige LiquidSelect
+// adentro, correctamente): lo detecto leer el diff. Revertido y rehecho.
+
 
 // v2.218.0 — candado de mantenimiento por modulo (ver commit cb497d40).
 

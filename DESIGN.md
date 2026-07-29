@@ -37,7 +37,7 @@
 | etiqueta de estado | `Badge` | §16.1 |
 | campo de formulario | `PortalInput` | §29.1 |
 | campo de varias líneas | `PortalTextarea` | §29.2 |
-| desplegable | `LiquidSelect` | §14 |
+| desplegable | `LiquidSelect` | §14 · §15.13 |
 | fecha / rango | `LiquidDatePicker` · `RangeDatePicker` | §14 |
 | barra de vista con buscador | `ViewTabBar` | §24 |
 | vacío · esqueleto · cargando | `StateViews` | §18 |
@@ -1836,6 +1836,58 @@ propio, que el canónico reenvía por `...rest`.
 obligatorio, y el gate lo verifica en cero absoluto.
 
 ---
+
+### 15.13 `LiquidSelect` no se envuelve — el error va en `invalid` (2026-07-29)
+
+`LiquidSelect` se pinta **entero**: lleva `data-surface="input"` (fondo, borde,
+radio, sombra) y `min-h-[max(40px,var(--tap-min))]`. **No se envuelve en un div
+que le dibuje una caja.**
+
+Hasta v2.219.0 había **46 sitios** que sí lo hacían, para darle borde o marcar el
+estado de error. Se veía roto y nadie lo había medido. Los números, tomados del
+navegador:
+
+| | El envoltorio | El control real |
+|---|---|---|
+| Alto | 40 px | **46 px** |
+| Radio | 10 px | 8 px |
+| Borde | 0 px | 1 px |
+| Fondo | rojo 10% (error) | blanco opaco |
+
+El control es 6 px más alto que su caja y con otro radio, así que **el fondo del
+envoltorio asoma alrededor** — el select se ve cortado. Y el
+`hover:border-brand/40` que el envoltorio traía pintaba color sobre un borde de
+ancho cero: nunca se vio nada.
+
+```jsx
+// ❌ dos cajas que no coinciden
+<div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!v ? '!border-danger !bg-danger/10' : ''}`}>
+    <LiquidSelect value={v} … />
+</div>
+
+// ✅ el canónico se pinta solo; el error es una prop
+<LiquidSelect invalid={!v} value={v} … />
+```
+
+`invalid` usa **`outline`**, no `border`/`bg`: en un elemento con
+`data-surface="input"` esas dos pierden por cascade layers (misma razón que el
+anillo de foco, ver `inputStyles.js`). Y emite `aria-invalid` — el rojo solo se
+veía; ahora también se anuncia.
+
+El foco/apertura gana sobre el error: mientras se elige manda el anillo azul, y
+el rojo vuelve al cerrar si sigue vacío.
+
+**`LiquidDatePicker` es el caso contrario y su envoltorio SÍ va.** Su contenedor
+usa `h-full` — toma la altura del padre, no tiene mínimo propio. Quitárselo lo
+colapsa. Pasó al migrar esto: el script desenvolvió por la clase del div sin
+mirar qué había adentro y se llevó 3 datepickers; lo detectó leer el diff, no el
+gate. La regla del gate exige `LiquidSelect` en el cuerpo por eso mismo.
+
+Lo vigila la categoría **`select-con-envoltorio`** de `scripts/design-gate.mjs`,
+en cero y bloqueante. Detecta por la forma (un div con alto fijo que contiene un
+`LiquidSelect`), no por la clase exacta: un grep por `inputHoverClass` se saltaba
+`FormRehireEmployee`, que usaba un alias local — y así se escapan los casos en
+una migración a mano.
 
 ## 16. Badges, avisos e indicadores
 

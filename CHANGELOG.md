@@ -323,6 +323,35 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.220.0 — el arreglo del select, cerrado como canónico de verdad.
+
+v2.219.0 lo arregló en 35 sitios, pero eso no era "canónico": nada impedía que
+volviera y `DESIGN.md` no lo decía. Ahora sí.
+
+**Regla `select-con-envoltorio` en el gate**, en cero y bloqueante. Detecta por la
+**forma** —un div con alto fijo que contiene un `LiquidSelect`—, no por la clase
+exacta. Y ahí está lo importante: **encontró 11 sitios más que el grep manual no
+vio**, ninguno con la cadena que yo había buscado:
+
+| Archivo | Qué usaba |
+|---|---|
+| `CatalogSelect.jsx` (¡canónico!) | `h-[40px]` + outline de error |
+| `RolesView.jsx` × 3 | `h-[44px]` pelado |
+| `FormNovedad.jsx` × 5 | `h-[40px]` pelado |
+| `BranchTabLegal.jsx` × 2 | `rounded-2xl h-[42px]` |
+
+**`DESIGN.md` §15.13** documenta la regla con los números medidos (40 px de caja
+contra 46 px de control) y el contraejemplo.
+
+**Un error propio que vale registrar:** el script de migración desenvolvía por la
+clase del div sin mirar qué había adentro, y se llevó **3 `LiquidDatePicker`**.
+Ese sí necesita envoltorio: su contenedor usa `h-full`, toma la altura del padre,
+y sin él se colapsa. No lo detectó el gate —su regla exige `LiquidSelect` en el
+cuerpo, correctamente— sino leer el diff. Revertido y rehecho exigiendo
+`LiquidSelect` adentro; los 3 datepickers conservan su envoltorio.
+
+---
+
 ## v2.219.0 — el select se veía cortado dentro de una caja que no era la suya.
 
 **35 sitios en 5 formularios** envolvían `LiquidSelect` en un

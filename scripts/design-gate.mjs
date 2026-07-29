@@ -915,6 +915,38 @@ function scanFile(path) {
       }
     }
 
+    // ── `select-con-envoltorio` (2026-07-29) ────────────────────────────
+    // Un `<div>` con altura fija que envuelve a `LiquidSelect` para pintarle
+    // borde, fondo o estado de error. El canónico YA se pinta entero
+    // (`data-surface="input"` + `min-h-[max(40px,var(--tap-min))]`), así que
+    // el envoltorio no aporta nada y además ROMPE: medido en el navegador,
+    // el div daba 40px de alto y 10px de radio contra los 46px y 8px del
+    // control real, y su fondo asomaba alrededor — el select se veía cortado.
+    // Eran 35 sitios en 5 formularios (v2.219.0). El estado de error va en la
+    // prop `invalid` del propio LiquidSelect.
+    //
+    // Detecta por la FORMA (div con h-[Npx] o h-N que contiene un
+    // LiquidSelect), no por la clase exacta: `FormRehireEmployee` usaba un
+    // alias local `inputHover` y otra cadena de error, y un grep por
+    // `inputHoverClass` se lo habría saltado — que es justo cómo se escapan
+    // los casos en una migración a mano.
+    if (!hasException(path, 'select-con-envoltorio')) {
+      const RE_DIV = /<div\b[^>]*className=\{?(?:`[^`]*`|"[^"]*")/g;
+      let md;
+      while ((md = RE_DIV.exec(sinComentarios2))) {
+        const abre = md[0];
+        if (!/\bh-\[\d+px\]|\bh-\d+\b/.test(abre)) continue;
+        // ¿hay un LiquidSelect antes del siguiente <div de apertura?
+        const resto = sinComentarios2.slice(md.index + abre.length, md.index + abre.length + 700);
+        const hastaOtroDiv = resto.split(/<div\b/)[0];
+        if (!/<LiquidSelect\b/.test(hastaOtroDiv)) continue;
+        const linea = sinComentarios2.slice(0, md.index).split('\n').length;
+        findings.push({ line: linea,
+          label: 'LiquidSelect envuelto en un div de alto fijo — el canónico ya se pinta solo; el error va en `invalid`',
+          category: 'select-con-envoltorio', text: abre.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
     // ── `relleno-sin-solid` (2026-07-29) ────────────────────────────────
     // `text-white` sobre un relleno de color que NO es el token `-solid`.
     // Es la regla que N2 dejó escrita en DESIGN.md §6 —teñido usa

@@ -92,14 +92,12 @@ const BranchTabLegal = ({
                                 Regente Asignado
                                 {availableRegents.length === 0 && <Badge variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
                             </label>
-                            <div className={`rounded-2xl h-[42px] ${inputHoverClass}`}>
-                                <LiquidSelect
-                                    value={legal.regentEmployeeId || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'regentEmployeeId', val)}
-                                    options={regentOptions}
-                                    placeholder="-- Seleccionar --"
-                                />
-                            </div>
+                            <LiquidSelect
+                                value={legal.regentEmployeeId || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'regentEmployeeId', val)}
+                                options={regentOptions}
+                                placeholder="-- Seleccionar --"
+                            />
                         </div>
                         <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">
@@ -138,14 +136,12 @@ const BranchTabLegal = ({
                                 Referente Asignado
                                 {availablePharmacovigilance.length === 0 && <Badge variant="warning" size="sm" uppercase={false}>Sin personal</Badge>}
                             </label>
-                            <div className={`rounded-2xl h-[42px] ${inputHoverClass}`}>
-                                <LiquidSelect
-                                    value={legal.pharmacovigilanceEmployeeId || ""}
-                                    onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceEmployeeId', val)}
-                                    options={pharmaOptions}
-                                    placeholder="-- Seleccionar --"
-                                />
-                            </div>
+                            <LiquidSelect
+                                value={legal.pharmacovigilanceEmployeeId || ""}
+                                onChange={(val) => updateNestedSetting('legal', 'pharmacovigilanceEmployeeId', val)}
+                                options={pharmaOptions}
+                                placeholder="-- Seleccionar --"
+                            />
                         </div>
                         <div className="relative focus-within:z-sidebar">
                             <label className="text-caption font-black uppercase text-warning ml-1 mb-2 block flex items-center gap-1.5">

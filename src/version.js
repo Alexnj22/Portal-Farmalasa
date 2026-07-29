@@ -16,7 +16,27 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.198.1';
+export const APP_VERSION = '2.199.0';
+
+// v2.199.0 — se cerro a anon toda la superficie de funciones de negocio.
+//
+// La regla #4 de CLAUDE.md (REVOKE ... FROM PUBLIC, anon) nunca se aplico
+// retroactivamente: ~28 funciones de negocio tenian EXECUTE para PUBLIC, entre
+// ellas close_ventas_month, upsert_customers, generate_wfm_snapshot,
+// get_ventas_stats y get_vendedores_resumen. Ninguna filtraba —son INVOKER, RLS
+// sigue aplicando— pero cualquiera en internet podia invocarlas en bucle sin
+// autenticarse, y cada llamada consume una de las 60 conexiones.
+//
+// CORRECCION a la auditoria: decia "5 funciones SECURITY DEFINER con anon, solo
+// dos justificadas". Las cinco son el set pre-login del kiosco y las cinco son
+// deliberadas — las tres que CLAUDE.md no lista (verify_kiosk_device,
+// verify_kiosk_pin, verify_kiosk_authorization) son justamente las que
+// construimos para reemplazar la comparacion client-side. Lo desactualizado es
+// el doc, no los permisos.
+//
+// Quedan 31 funciones de pg_trgm/pg_net accesibles por anon: son internas de
+// extension (revocarlas rompe los indices de trigram) y salen del namespace
+// publico moviendo la extension, que es otro trabajo.
 
 // v2.198.1 — se borra el conteo abandonado de Bodega (migracion, sin cambios de UI).
 //

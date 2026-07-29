@@ -130,12 +130,24 @@ el wrapper `(SELECT ...)` obligatorio, que es la lección del outage del
 
 ## F3 — Superficie de funciones (S4)
 
-- **F3.1** — 5 funciones `SECURITY DEFINER` ejecutables por `anon`. Solo dos
-  están justificadas (`get_kiosk_boot_payload`, `get_kiosk_coverage_employees`).
-  Revocar el resto.
-- **F3.2** — 67 `SECURITY DEFINER` ejecutables por `authenticated`. No todas
-  sobran, pero ninguna se revisó nunca. Clasificar una por una: las que no las
-  llama el frontend, revocar.
+- ✅ **F3.1 + F3.2 — APLICADO v2.199.0** (`20260729_revoke_anon_function_surface`).
+
+  **Corrección a la auditoría:** decía "5 `SECURITY DEFINER` con `anon`, solo dos
+  justificadas". Las cinco son el set pre-login del kiosco y las cinco son
+  deliberadas — las tres que `CLAUDE.md` no lista (`verify_kiosk_device`,
+  `verify_kiosk_pin`, `verify_kiosk_authorization`) son justamente las que se
+  construyeron en las fases 1/2/4 para reemplazar la comparación client-side.
+  **Lo desactualizado es el doc, no los permisos.**
+
+  El problema real eran ~28 funciones de negocio `INVOKER` con `EXECUTE` para
+  `PUBLIC`. Ninguna filtraba —RLS sigue aplicando— pero cualquiera podía
+  invocarlas en bucle sin autenticarse, consumiendo una de las 60 conexiones por
+  llamada. Se revocaron en bloque preservando las 5 del kiosco y excluyendo las
+  que pertenecen a una extensión (revocarles EXECUTE rompe los índices trigram).
+
+  Verificado: `anon` en `false` para todas las de negocio, `authenticated` y
+  `service_role` conservan acceso, 112 corridas de cron sin fallos. Quedan 31
+  internas de `pg_trgm`/`pg_net`, que salen con F4.5.
 - **F3.3** — `update_proveedor_manual`: dos overloads (7 y 8 args). El viejo es
   código muerto → dropear.
 - **F3.4** — 4 tablas con RLS activo y **cero policies**. Fallan cerrado, pero

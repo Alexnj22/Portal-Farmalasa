@@ -48,7 +48,7 @@ const WEEK_DAYS = [
 ];
 
 const SectionCard = ({ children, className = '' }) => (
-    <div className={`bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal p-5 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 transition-all duration-300 ${className}`}>
+    <div data-surface="card" className={`p-5 transition-all duration-300 ${className}`}>
         {children}
     </div>
 );
@@ -359,7 +359,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
                                     const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
                                     return (
-                                        <div key={vp.id} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : 'bg-surface-card border-border-card'}`}>
+                                        <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : ''}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
                                                 <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={1.8} />
                                             </div>
@@ -520,7 +520,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     return (
                                         <div key={ev.id || `ev-${idx}`} className="relative pl-7 group/ev">
                                             <div className={`absolute -left-[9px] top-2.5 w-[14px] h-[14px] rounded-full bg-white border-2 shadow-sm group-hover/ev:scale-125 transition-transform duration-300 z-base ${theme.dot}`} />
-                                            <div className={`bg-surface-card backdrop-blur-xl rounded-2xl p-4 border border-border-card transition-all duration-300 shadow-sm hover:-translate-y-0.5 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
+                                            <div data-surface="card" className={`p-4 transition-all duration-300 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                                     <Badge variant={theme.variante} size="sm">{label}</Badge>
                                                     <span className="text-caption font-bold text-content-3">{formatDate(ev.date)}</span>

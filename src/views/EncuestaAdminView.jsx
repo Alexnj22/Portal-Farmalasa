@@ -497,11 +497,7 @@ export default function EncuestaAdminView() {
 
                     {/* ── Survey form ─────────────────────────────────────────── */}
                     {leftPanel === 'survey-form' && canManage && (
-                        <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] border p-5 rounded-header transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${
-                            editingSurvey
-                                ? 'border-warning/40 shadow-[var(--shadow-glass-4)]'
-                                : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]'
-                        }`}>
+                        <div data-surface="card" className={`p-5 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] relative overflow-visible ${ editingSurvey ? 'border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]' }`}>
 
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-content flex items-center gap-2 text-body-lg">

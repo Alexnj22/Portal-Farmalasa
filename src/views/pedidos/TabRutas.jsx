@@ -151,9 +151,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
               const isBusy = busyStop === stop.id;
 
               return (
-                <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                  isEntregado ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
-                }`}>
+                <div key={stop.id} data-surface={isEntregado ? undefined : 'card'} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${isEntregado ? 'bg-success/10 border-success/30' : ''}`}>
                   {/* Number */}
                   <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                     isEntregado ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'

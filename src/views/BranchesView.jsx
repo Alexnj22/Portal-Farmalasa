@@ -786,7 +786,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         </div>
                     ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-                            <div className={`bg-surface-card backdrop-blur-xl p-6 rounded-modal mb-5 shadow-[var(--shadow-elevation-md)] border border-border-card transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
+                            <div data-surface="card" className={`p-6 mb-5 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
                             <h3 className="text-title font-black text-content tracking-tight">

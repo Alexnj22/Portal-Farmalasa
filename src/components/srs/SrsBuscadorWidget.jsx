@@ -163,9 +163,7 @@ function SrsResultCard({ product: p, onSelect }) {
 
     return (
         <div
-            className={`rounded-2xl border bg-surface-card p-3.5 flex flex-col gap-2 transition-all ${
-                onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-divider'
-            }`}
+            data-surface="card" className={`p-3.5 flex flex-col gap-2 transition-all ${ onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-divider' }`}
             onClick={onSelect || undefined}
         >
             {/* Header row */}

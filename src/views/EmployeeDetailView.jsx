@@ -637,7 +637,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <div key={ev.id || `evt-${idx}`} className="relative pl-8 group">
                                                         <div className={`absolute -left-[10px] top-1.5 w-4 h-4 rounded-full bg-white border-[4px] shadow-sm group-hover:scale-125 transition-transform duration-300 z-base ${isHiring ? 'border-success' : 'border-brand'}`}></div>
                                                         
-                                                        <div className={`bg-surface-card hover:bg-surface-card rounded-3xl p-5 border border-border-card transition-all duration-300 shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-xs)] ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
+                                                        <div data-surface="card" className={`hover:bg-surface-card p-5 transition-all duration-300 ${ev.metadata?.status === 'CANCELLED' || ev.metadata?.status === 'SUPERSEDED' ? 'opacity-50' : ''}`}>
                                                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
                                                                 <Badge variant={evVariante} size="sm">{label}</Badge>
                                                                 <Badge>{formatDate(ev.date)}</Badge>
@@ -1062,7 +1062,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     const statConf = REQUEST_STATUS[req.status] || { label: req.status, color: 'bg-surface-card-hover text-content-3', border: 'border-divider', dot: 'bg-content-3' };
                                                     const TypeIcon = { VACATION: Palmtree, PERMIT: FileText, SHIFT_CHANGE: RefreshCw, OVERTIME: Coffee, ADVANCE: DollarSign, CERTIFICATE: FileCheck }[req.type] || FileText;
                                                     return (
-                                                        <div key={req.id} className={`flex items-start gap-4 p-4 rounded-3xl border bg-surface-card backdrop-blur-md ${typeConf.border}`}>
+                                                        <div key={req.id} data-surface="card" className={`flex items-start gap-4 p-4 ${typeConf.border}`}>
                                                             <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 ${typeConf.color}`}>
                                                                 <TypeIcon size={16} strokeWidth={2} />
                                                             </div>

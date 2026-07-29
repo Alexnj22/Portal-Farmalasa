@@ -303,11 +303,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
             <div className="p-4">
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-3.5">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                        hasAnyPerm
-                            ? 'bg-gradient-to-br from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] scale-100'
-                            : 'bg-surface-card backdrop-blur-sm border border-border-card text-content-3 scale-90'
-                    }`}>
+                    <div data-surface={hasAnyPerm ? undefined : 'card'} className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${hasAnyPerm ? 'bg-gradient-to-br from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] scale-100' : 'text-content-3 scale-90'}`}>
                         <ModIcon size={15} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -396,11 +392,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                             {tabs.map(tab => {
                                 const tabPerm = tabPerms[tab.key] || { can_view: false };
                                 return (
-                                    <div key={tab.key} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${
-                                        tabPerm.can_view
-                                            ? 'bg-chart-1/10 border-chart-1/30'
-                                            : 'bg-surface-card border-border-card'
-                                    }`}>
+                                    <div key={tab.key} data-surface={tabPerm.can_view ? undefined : 'card'} className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-xl border transition-all duration-300 ${tabPerm.can_view ? 'bg-chart-1/10 border-chart-1/30' : ''}`}>
                                         <span className={`text-caption font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-content-2' : 'text-content-3'}`}>
                                             {tab.label}
                                         </span>
@@ -857,20 +849,12 @@ const PermissionsView = () => {
                             {(() => {
                                 const isRoleSU = !!roleIsSU[selectedRoleId];
                                 return (
-                                <div className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${
-                                    isRoleSU
-                                        ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]'
-                                        : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-glass-1)]'
-                                }`}>
+                                <div data-surface={isRoleSU ? undefined : 'card'} className={`relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out transform-gpu md:col-span-1 ${isRoleSU ? 'bg-gradient-to-br from-warning/20 via-chart-4/10 to-warning/5 backdrop-blur-xl border-warning/40 shadow-[var(--shadow-glass-2)] scale-[1.01]' : ''}`}>
                                     {isRoleSU && <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-warning/30 blur-xl pointer-events-none" />}
                                     <div className="relative p-3.5 flex flex-col gap-3">
                                         {/* Icon + toggle row */}
                                         <div className="flex items-center justify-between">
-                                            <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
-                                                isRoleSU
-                                                    ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)] scale-100'
-                                                    : 'bg-surface-card border border-border-card scale-90'
-                                            }`}>
+                                            <div data-surface={isRoleSU ? undefined : 'card'} className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isRoleSU ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)] scale-100' : 'scale-90'}`}>
                                                 <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={1.8} />
                                                 {isRoleSU && (
                                                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">

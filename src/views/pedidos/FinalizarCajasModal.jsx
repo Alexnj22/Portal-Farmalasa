@@ -221,11 +221,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                             const hasAssignment = assigned.length > 0;
                             return (
                                 <div key={idx}
-                                    className={`rounded-2xl border transition-all ${
-                                        hasAssignment
-                                            ? 'bg-surface-card border-divider'
-                                            : 'bg-warning/10 border-warning/30'
-                                    }`}>
+                                    data-surface={hasAssignment ? 'card' : undefined} className={`rounded-2xl border transition-all ${hasAssignment ? '' : 'bg-warning/10 border-warning/30'}`}>
                                     {/* Page info row */}
                                     <div className="flex items-center gap-3 px-3 pt-3 pb-2">
                                         <div className={`shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-xl min-w-[44px] transition-all ${

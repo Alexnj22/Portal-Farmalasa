@@ -95,7 +95,7 @@ const FormDispositivos = ({ formData }) => {
                                         {/* FILA 1: INFORMACIÓN PRINCIPAL (Nunca se desborda gracias al min-w-0 y truncate) */}
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover border border-divider text-content-3'}`}>
+                                                <div data-surface={isConfirming ? undefined : 'card'} className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isConfirming ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                                     <Laptop size={20} strokeWidth={isConfirming ? 2.5 : 2} />
                                                 </div>
                                                 <div className="min-w-0">

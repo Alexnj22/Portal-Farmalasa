@@ -3,7 +3,7 @@ import { Smartphone, CheckCircle2, AlertCircle, Layers, Move } from 'lucide-reac
 import GlassViewLayout from '../components/GlassViewLayout';
 
 const Card = ({ title, children, accent }) => (
-    <div className={`rounded-2xl border bg-surface-card backdrop-blur-sm p-4 shadow-sm ${accent || 'border-border-card'}`}>
+    <div data-surface="card" className={`p-4 ${accent || 'border-border-card'}`}>
         <p className="text-label font-black uppercase tracking-widest text-content-2 mb-2">{title}</p>
         {children}
     </div>

@@ -449,7 +449,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                             <span className="text-[7.5px] 2xl:text-micro font-black uppercase text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
                                                 {shift?.name || 'Manual'}
                                             </span>
-                                            <div className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover border-divider text-content-3'}`}>
+                                            <div data-surface={isDailyOvertime ? undefined : 'card'} className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
                                                 {isDailyOvertime && <Flame size={7} className="animate-pulse" />}
                                                 <span className="text-micro 2xl:text-[7.5px] font-black tracking-tight">{netShiftDurationHrs}h</span>
                                             </div>

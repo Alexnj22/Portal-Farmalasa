@@ -44,7 +44,7 @@ const BranchTabInmueble = ({
         <div className="space-y-6 w-full" style={gpuLockStyle}>
 
             {/* ISLA 1: INMUEBLE Y ARRENDAMIENTO */}
-            <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+            <div data-surface="card" className={`p-6 transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-border-card pb-5">
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
@@ -185,7 +185,7 @@ const BranchTabInmueble = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ISLA 2: ALCALDÍA */}
-                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text mb-5 flex items-center gap-2">
                         <Landmark size={16} strokeWidth={2.5} /> Permisos Municipales
                     </h4>
@@ -227,7 +227,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {/* ISLA 3: DESECHOS BIOINFECCIOSOS */}
-                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <div className="flex flex-col mb-5">
                         <div className="flex items-center justify-between">
                             <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text flex items-center gap-2">
@@ -294,7 +294,7 @@ const BranchTabInmueble = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* ISLA 4: EXTINTORES */}
-                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-chart-4-text mb-5 flex items-center gap-2">
                         <Flame size={16} strokeWidth={2.5} /> Extintores
                     </h4>
@@ -340,7 +340,7 @@ const BranchTabInmueble = ({
                 </div>
 
                 {/* ISLA 5: CONTROL DE PLAGAS Y FUMIGACIÓN */}
-                <div className={`bg-surface-card rounded-modal p-6 border border-border-card shadow-[var(--shadow-elevation-xs)] flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
+                <div data-surface="card" className={`p-6 flex flex-col transform-gpu ${islandHoverClass}`} style={gpuLockStyle}>
                     <h4 className="text-body-sm font-black uppercase tracking-widest text-success mb-5 flex items-center gap-2">
                         <BugOff size={16} strokeWidth={2.5} /> Control de Plagas y Fumigación
                     </h4>

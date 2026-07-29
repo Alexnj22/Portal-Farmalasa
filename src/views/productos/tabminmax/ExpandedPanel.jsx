@@ -167,11 +167,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
 
                             return (
                                 <div key={erpId}
-                                    className={`rounded-xl px-2 py-2 border transition-colors ${
-                                        isCurrent
-                                            ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/30'
-                                            : 'border-border-card bg-surface-card'
-                                    } ${!hasData ? 'opacity-35' : ''}`}>
+                                    data-surface={isCurrent ? undefined : 'card'} className={`rounded-xl px-2 py-2 border transition-colors ${isCurrent ? 'border-brand/40 bg-chart-1/10 ring-1 ring-brand/30' : ''} ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                                         <span className="text-micro font-black text-content-3 truncate leading-tight">
                                             {erpId === 6 ? 'Bodega' : ERP_NAMES[erpId].replace('Salud ', 'S.')}

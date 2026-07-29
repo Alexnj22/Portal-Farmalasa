@@ -103,7 +103,7 @@ const DocCard = ({ doc }) => {
             : null;
 
     return (
-        <div className={`group relative bg-surface-card backdrop-blur-xl border rounded-card p-5 transition-all duration-300 hover:-translate-y-1 shadow-[var(--shadow-elevation-xs)] ${cfg.glow} ${cfg.border} overflow-hidden`}>
+        <div data-surface="card" className={`group relative p-5 transition-all duration-300 ${cfg.glow} ${cfg.border} overflow-hidden`}>
 
             {/* Accent bar izquierda */}
             <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${cfg.accent} opacity-60`} />

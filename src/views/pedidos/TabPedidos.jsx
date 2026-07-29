@@ -576,7 +576,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div className="relative shrink-0">
                                             {conductorEmp?.photo
                                                 ? <img src={conductorEmp.photo} alt={conductorEmp.name} className="w-7 h-7 rounded-xl object-cover border border-divider" />
-                                                : <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-surface-card-hover border-border-card' : 'bg-chart-3/10 border-chart-3/30'}`}>
+                                                : <div data-surface={isCompletada ? 'card' : undefined} className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-surface-card-hover' : 'bg-chart-3/10 border-chart-3/30'}`}>
                                                     <Truck size={13} className={isCompletada ? 'text-content-3' : 'text-chart-3-text'} />
                                                   </div>
                                             }

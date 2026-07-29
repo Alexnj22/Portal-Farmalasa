@@ -503,10 +503,7 @@ const RolesView = ({ openModal }) => {
 
                         {/* PANEL IZQUIERDA: MODO MASTER-DETAIL (FORMULARIO) */}
                         <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 h-auto group/panel transition-all duration-500 ease-out z-modal lg:sticky top-[140px] md:top-[190px] self-start transform-gpu">
-                            <div className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId
-                                ? 'bg-surface-card border border-warning/40 shadow-[var(--shadow-glass-4)]'
-                                : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'
-                                }`}>
+                            <div data-surface={editingRoleId ? 'card' : undefined} className={`bg-surface-card backdrop-blur-[30px] backdrop-saturate-[180%] p-6 md:p-8 rounded-header transition-all duration-500 group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId ? 'border-warning/40' : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'}`}>
 
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">

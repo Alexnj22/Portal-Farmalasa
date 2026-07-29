@@ -567,7 +567,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                                     </div>
 
                                                                                     <div className={`w-full md:w-[45%] pl-[50px] md:pl-0 z-content ${isLeftDesktop ? 'md:pl-12' : 'md:pr-12'}`}>
-                                                                                        <div className={`relative overflow-hidden bg-surface-card backdrop-blur-[50px] backdrop-saturate-[200%] border border-border-card rounded-3xl p-5 transition-all duration-500 hover:bg-surface-card-hover hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] shadow-[var(--shadow-glass-2)] text-left`}>
+                                                                                        <div data-surface="card" className={`relative overflow-hidden p-5 transition-all duration-500 hover:bg-surface-card-hover text-left`}>
 
                                                                                             <theme.icon className={`absolute -bottom-6 -right-6 w-36 h-36 opacity-[0.03] -rotate-12 ${theme.text} pointer-events-none transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-6`} strokeWidth={1} />
 

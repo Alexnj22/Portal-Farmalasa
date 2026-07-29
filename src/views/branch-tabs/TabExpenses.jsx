@@ -78,7 +78,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
                         <p className="text-micro font-bold text-content-3 truncate">{provider || 'Sin proveedor'}</p>
                     </div>
                 </div>
-                <div className={`px-2.5 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'bg-surface-card border-border-card group-hover:bg-surface-card-hover'}`}>
+                <div data-surface={isPendingReceipt ? undefined : 'card'} className={`px-2.5 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest shadow-sm border transition-colors duration-300 ${isPendingReceipt ? 'bg-chart-6-solid text-white border-chart-6' : 'group-hover:bg-surface-card-hover'}`}>
                     {statusObj.label}
                 </div>
             </div>

@@ -103,9 +103,7 @@ export default function WidgetSrsInventory() {
 
           return (
             <div key={p.id ?? noregistro}
-              className={`rounded-2xl border bg-surface-card p-3.5 flex flex-col gap-2 transition-all ${
-                hasStock ? 'border-success/50 shadow-sm shadow-success/10' : 'border-divider'
-              }`}
+              data-surface="card" className={`p-3.5 flex flex-col gap-2 transition-all ${ hasStock ? 'border-success/50 shadow-sm shadow-success/10' : 'border-divider' }`}
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-2">

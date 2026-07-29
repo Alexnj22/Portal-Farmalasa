@@ -252,9 +252,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                     const hasPausas  = pauseCount > 0;
                                     const isPaused   = stage === 'pausado';
                                     return (
-                                        <div key={suc.erp_sucursal_id} className={`flex items-center gap-2 py-1.5 px-2.5 rounded-xl transition-colors ${
-                                            isPaused ? 'bg-warning/10 border border-warning/30' : 'bg-surface-card-hover/60 border border-divider'
-                                        }`}>
+                                        <div key={suc.erp_sucursal_id} data-surface={isPaused ? undefined : 'card'} className={`flex items-center gap-2 py-1.5 px-2.5 rounded-xl transition-colors ${isPaused ? 'bg-warning/10 border border-warning/30' : 'bg-surface-card-hover/60'}`}>
                                             <Building2 size={11} className="text-content-3 shrink-0" />
                                             <span className="text-label font-semibold text-content-2 w-20 shrink-0">
                                                 {ERP_NAMES[suc.erp_sucursal_id] ?? `Suc. ${suc.erp_sucursal_id}`}

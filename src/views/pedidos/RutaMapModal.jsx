@@ -539,9 +539,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           </p>
           <div className="space-y-1.5">
             {paradas.map((stop, i) => (
-              <div key={stop.id} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${
-                stop.entregado_at ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
-              }`}>
+              <div key={stop.id} data-surface={stop.entregado_at ? undefined : 'card'} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${stop.entregado_at ? 'bg-success/10 border-success/30' : ''}`}>
                 <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                   stop.entregado_at ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                 }`}>{i + 1}</span>

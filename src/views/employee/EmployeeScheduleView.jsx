@@ -260,11 +260,7 @@ const EmployeeScheduleView = () => {
                     {days.map(d => (
                         <div
                             key={d.id}
-                            className={`rounded-card border p-4 transition-all ${
-                                d.isToday
-                                    ? 'bg-brand/5 border-brand/30 shadow-[var(--shadow-ring-brand)]'
-                                    : 'bg-surface-card backdrop-blur-md border-border-card'
-                            }`}
+                            data-surface={d.isToday ? undefined : 'card'} className={`rounded-card border p-4 transition-all ${d.isToday ? 'bg-brand/5 border-brand/30 shadow-[var(--shadow-ring-brand)]' : ''}`}
                         >
                             <div className="flex items-center gap-3">
                                 <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${

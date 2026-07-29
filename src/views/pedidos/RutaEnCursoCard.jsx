@@ -155,9 +155,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                 const done  = !!stop.entregado_at;
                 const busy  = busyStop === stop.id;
                 return (
-                  <div key={stop.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                    done ? 'bg-success/10 border-success/30' : 'bg-surface-card border-divider'
-                  }`}>
+                  <div key={stop.id} data-surface={done ? undefined : 'card'} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${done ? 'bg-success/10 border-success/30' : ''}`}>
                     <span className={`w-5 h-5 rounded-full text-micro font-black flex items-center justify-center shrink-0 ${
                       done ? 'bg-success-solid text-white' : 'bg-chart-3/10 text-chart-3-text'
                     }`}>{stop.orden_entrega}</span>

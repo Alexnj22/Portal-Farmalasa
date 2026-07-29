@@ -101,6 +101,29 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const tooltipCancelRef = useRef(null); // cancela async in-flight si el mouse se va antes de que resuelva
     const loadRef = useRef(0);
 
+    // F3.2 — get_inventory_cost_summary + get_draft_cost_estimate se disparaban
+    // las DOS en cada celda guardada: ~200 ms de base de datos por edición, y
+    // editando con el teclado (Enter salta de fila) eso es una ráfaga. Los dos
+    // recalculan un total de la SUCURSAL, así que solo importa el último: se
+    // debouncean. El tiempo se elige para que el total ya esté actualizado
+    // cuando alguien deja de teclear y mira el encabezado.
+    const costTimer = useRef(null);
+    const refreshCosts = useCallback((sucursalId) => {
+        if (costTimer.current) clearTimeout(costTimer.current);
+        costTimer.current = setTimeout(() => {
+            costTimer.current = null;
+            Promise.all([
+                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: sucursalId }),
+                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: sucursalId }),
+            ]).then(([{ data: cost }, { data: draft }]) => {
+                if (cost)  setCostSummary(cost);
+                if (draft) setDraftCost(draft);
+            });
+        }, 900);
+    }, []);
+
+    useEffect(() => () => { if (costTimer.current) clearTimeout(costTimer.current); }, []);
+
     useEffect(() => {
         if (!toast) return;
         const t = setTimeout(() => setToast(null), 4500);
@@ -467,13 +490,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error');
                 return;
             }
-            Promise.all([
-                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
-                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
-            ]).then(([{ data: cost }, { data: draft }]) => {
-                if (cost)  setCostSummary(cost);
-                if (draft) setDraftCost(draft);
-            });
+            refreshCosts(edit.sucursalId);
             useStaff.getState().appendAuditLog('MINMAX_LIVE_EDIT', String(edit.productId), {
                 field: 'min+max', product: targetRow?.product_name, sucursal_id: edit.sucursalId,
                 old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
@@ -496,13 +513,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error');
                 return;
             }
-            Promise.all([
-                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
-                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
-            ]).then(([{ data: cost }, { data: draft }]) => {
-                if (cost)  setCostSummary(cost);
-                if (draft) setDraftCost(draft);
-            });
+            refreshCosts(edit.sucursalId);
             useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
                 field: 'min+max', product: targetRow?.product_name, sucursal_id: edit.sucursalId,
                 old_min: targetRow?.draft_min ?? targetRow?.effective_min ?? 0,
@@ -511,7 +522,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             });
             warnIfOutrageous(edit.field, numVal, targetRow);
         }
-    }, [data, hasPublishedData]);
+    }, [data, hasPublishedData, refreshCosts]);
 
     // Guarda MIN y MAX en una sola llamada a la BD (par atómico).
     const saveDraftPair = useCallback(async (productId, sucursalId, minValue, maxValue, productName, opts = {}) => {
@@ -595,13 +606,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return;
             }
         }
-        Promise.all([
-            supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: sucursalId }),
-            supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: sucursalId }),
-        ]).then(([{ data: cost }, { data: draft }]) => {
-            if (cost) setCostSummary(cost);
-            if (draft) setDraftCost(draft);
-        });
+        refreshCosts(sucursalId);
         useStaff.getState().appendAuditLog(saveLive ? 'MINMAX_LIVE_EDIT' : 'MINMAX_DRAFT_EDIT', String(productId), {
             field: 'min+max', product: productName,
             old_min: saveLive ? (targetRow?.effective_min ?? 0) : (targetRow?.draft_min ?? targetRow?.effective_min ?? 0),
@@ -610,7 +615,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         });
         warnIfOutrageous('min', minNum, targetRow);
         warnIfOutrageous('max', maxNum, targetRow);
-    }, [data, hasPublishedData]);
+    }, [data, hasPublishedData, refreshCosts]);
 
     const unhideProduct = useCallback(async (productId) => {
         await updateStockParams(productId, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });

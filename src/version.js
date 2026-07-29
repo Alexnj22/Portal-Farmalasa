@@ -16,7 +16,62 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.221.0';
+export const APP_VERSION = '2.222.0';
+
+// v2.222.0 — MIN·MAX F3: la carga baja de 932 ms a 287 ms en Bodega.
+//
+// F3.1 — el CTE `live_sales` de get_stock_analysis escaneaba 574,848 lineas de
+// sales_invoice_items + 133,260 facturas EN CADA CARGA (983 ms de 1,085 ms
+// medidos) y todo para pisar dos columnas. Ahora sale de product_sales_rollup:
+// ~16 K filas, sumadas en vivo por el mismo trigger que ya mantiene
+// product_last_sale y reconciliadas por un job diario a las 06:30 UTC (la cola
+// de la ventana movil no la puede recortar un trigger de INSERT, y ahi tambien
+// se corrigen las anulaciones y los resyncs mensuales).
+//
+// Medido: Salud 1 472 → 186 ms, Bodega 932 → 287 ms. Verificado fila por fila
+// ANTES de tocar la funcion, como pedia el plan: 2,416 filas en Salud 1 y 3,548
+// en Bodega, 0 diferencias en unidades y en velocidad de 30 dias — ni en el
+// texto.
+//
+// Ojo con la verificacion: comparar un hash de la salida antes/despues NO sirve
+// en esta tabla. inventory se sincroniza cada minuto (crecio 70 filas y entraron
+// 2 facturas mientras yo media), asi que el baseline se mueve solo. Hay que
+// comparar las piezas dentro de un MISMO snapshot.
+//
+// F3.2:
+// - inventory se escaneaba dos veces por llamada (inv_base + inv_all_pres). Una
+//   sola pasada. Al compararlas aparecio un no-determinismo PREEXISTENTE: el
+//   `jsonb_agg(... ORDER BY factor DESC)` de `presentations` no desempata, asi
+//   que cuando dos presentaciones comparten factor ("CAJA " y "CAJA X 3", ambas
+//   factor 3) el orden depende del orden de lectura. 8 productos de Bodega. Las
+//   unidades son identicas; es cosmetico y queda anotado.
+// - El indice (erp_sucursal_id, updated_at, erp_product_id) que el comentario de
+//   fetchStockParamsUpdates ya daba por hecho y no existia. El polling de Bodega
+//   corre cada 5 s por pestaña: leia las 2,501 filas de la sucursal y las
+//   descartaba todas por filtro. Buffers 245 → 10.
+// - El bloque de Bodega de publish_stock_params reescribia ~3,385 filas por
+//   publicacion cambiaran o no (prohibido por CLAUDE.md). Con el guard
+//   IS DISTINCT FROM: una publicacion sin cambios reales escribe 0. Y quedo a la
+//   vista que ese bloque es casi siempre redundante — el trigger de Bodega ya
+//   habia escrito los mismos valores durante el UPDATE de la sucursal
+//   (verificado: Bodega 101/150 → 104/153 con bodega_updated = 0).
+// - Los dos RPC de costo se disparaban en CADA celda guardada (~200 ms de BD por
+//   edicion, y con Enter se edita en rafaga). Debounced a 900 ms: los dos
+//   calculan un total de la sucursal, solo importa el ultimo.
+//
+// Lo que NO se hizo de F3.2, con motivo:
+// - `activo = true` en el CTE pres_factors: seria un BUG. pres_factors no es un
+//   catalogo de opciones (ese es catalog_pres, y ahi el filtro si va): es la
+//   tabla de CONVERSION de unidades. Filtrarla haria que una presentacion
+//   desactivada con existencia caiga en COALESCE(factor,1) y una caja de 100 se
+//   cuente como 1 unidad — stock subcontado en silencio. Medido: de 23,675 filas
+//   de inventario, 0 perderian factor hoy, o sea que no arregla nada y deja la
+//   trampa armada.
+// - No devolver las filas is_catalog_only: el cliente NO las descarta siempre
+//   (useMinMaxData:825 las muestra con el filtro "no_data" y al buscar), asi que
+//   excluirlas obliga a re-consultar al filtrar o al teclear una busqueda. No
+//   vale cambiar una busqueda instantanea por 1.5 MB menos en la primera carga.
+
 
 // v2.221.0 — MIN·MAX: el par invalido ya no llega al publish (F1 del
 // PLAN-MINMAX-Y-CANDADO), y el candado tapa su ultimo agujero (cierre de F0).

@@ -240,9 +240,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
                             <div className="md:col-span-2">
                                 <label className={fieldLabel}><span>Sucursal</span>{!form.branch_id && reqBadge}</label>
-                                <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!form.branch_id ? '!border-danger !bg-danger/10' : ''}`}>
-                                    <LiquidSelect value={form.branch_id} onChange={(v) => set('branch_id', v)} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} />
-                                </div>
+                                <LiquidSelect invalid={!form.branch_id} value={form.branch_id} onChange={(v) => set('branch_id', v)} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} />
                             </div>
                         </div>
                     </div>
@@ -276,9 +274,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                             <PortalInput label="Teléfono del Tutor" name="tutor_telefono" value={form.tutor_telefono} onChange={handleChange} icon={Phone} placeholder="0000-0000" maskType="PHONE" />
                             <div className="md:col-span-2">
                                 <label className={fieldLabel}>Supervisor Interno (opcional)</label>
-                                <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                    <LiquidSelect value={form.supervisor_employee_id} onChange={(v) => set('supervisor_employee_id', v)} options={supervisorOpts} placeholder="Empleado responsable..." icon={Users} />
-                                </div>
+                                <LiquidSelect value={form.supervisor_employee_id} onChange={(v) => set('supervisor_employee_id', v)} options={supervisorOpts} placeholder="Empleado responsable..." icon={Users} />
                             </div>
                         </div>
                     </div>
@@ -304,9 +300,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                             <PortalInput label="Horas Requeridas (meta)" name="horas_requeridas" type="number" value={form.horas_requeridas} onChange={handleChange} icon={Clock} placeholder="Ej. 200" />
                             <div>
                                 <label className={fieldLabel}>Estado</label>
-                                <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                    <LiquidSelect value={form.estado} onChange={(v) => set('estado', v)} options={ESTADO_OPTIONS} clearable={false} />
-                                </div>
+                                <LiquidSelect value={form.estado} onChange={(v) => set('estado', v)} options={ESTADO_OPTIONS} clearable={false} />
                             </div>
                         </div>
                     </div>

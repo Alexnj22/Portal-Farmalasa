@@ -323,6 +323,45 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.219.0 — el select se veía cortado dentro de una caja que no era la suya.
+
+**35 sitios en 5 formularios** envolvían `LiquidSelect` en un
+`<div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>` para pintarle borde
+y estado de error. Pero `LiquidSelect` **ya se pinta entero**: lleva
+`data-surface="input"` (fondo, borde, radio, sombra) y
+`min-h-[max(40px,var(--tap-min))]`. Medido en el navegador:
+
+| | Envoltorio | Select real |
+|---|---|---|
+| Alto | **40 px** | **46 px** |
+| Radio | 10 px | 8 px |
+| Borde | 0 px | 1 px |
+| Fondo | rojo 10% (error) | blanco opaco |
+
+El control es **6 px más alto** que su caja y con otro radio, así que el fondo del
+envoltorio asomaba alrededor — ese es el "recorte". Y el `hover:border-brand/40`
+del envoltorio pintaba color sobre un borde de ancho cero: nunca se vio.
+
+**Arreglo:** prop `invalid` en el canónico, que pinta el error **con `outline`**
+sobre el mismo elemento —`border`/`bg` pierden contra `data-surface` por cascade
+layers, igual que el foco (ver `inputStyles.js`)— y agrega `aria-invalid`, que era
+la mitad que faltaba: el rojo solo se veía, ahora también se anuncia. Fuera los 35
+envoltorios.
+
+El foco/apertura gana sobre el error: mientras se elige manda el anillo azul; el
+rojo vuelve al cerrar si sigue vacío.
+
+Verificado en navegador: **0 envoltorios** en pantalla, alturas 46/39/25 (normal,
+compact, nano) y el contorno rojo siguiendo la forma del control — en el modal de
+conteo y en Nuevo Empleado.
+
+El migrador queda en `scripts/migradores/quitar-envoltorio-liquidselect.mjs`: no
+toca un caso que no calce exacto con el patrón. Migró 31; los 4 de
+`FormRehireEmployee` usaban un alias local y otra cadena de error, y se hicieron
+a mano.
+
+---
+
 ## v2.214.0 — el portal tardaba 5 segundos en hacer su primera petición.
 
 En **cada carga de página, para todos los usuarios**. La UI se pintaba a los

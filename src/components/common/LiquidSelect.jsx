@@ -43,6 +43,17 @@ const LiquidSelect = ({
     // `ariaLabelledBy` con el id de esa etiqueta en vez de este.
     ariaLabel,
     ariaLabelledBy,
+    // ── 2026-07-29 ──────────────────────────────────────────────────────
+    // Estado inválido (campo requerido sin elegir). Antes cada formulario lo
+    // pintaba envolviendo el select en un `<div rounded-2xl h-[40px]>` con
+    // `!border-danger !bg-danger/10` — 35 sitios en 5 archivos, y el
+    // resultado se veía roto: ese div mide 40px de alto y 10px de radio,
+    // mientras el control real mide 46 (min-h max(40px, --tap-min) + borde) y
+    // 8px de radio, así que el fondo del envoltorio asomaba alrededor. Va
+    // acá, sobre el mismo elemento con data-surface="input", y con `outline`
+    // por la misma razón que el foco: border/bg pierden contra data-surface
+    // por cascade layers (ver inputStyles.js).
+    invalid = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -445,6 +456,11 @@ const LiquidSelect = ({
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
     } ${bare ? 'bg-transparent' : ''} ${
         !bare && isOpen ? 'outline-solid outline-1 outline-offset-[-1px] outline-brand/60' : ''
+    } ${
+        // El foco/apertura gana sobre el error: mientras se está eligiendo, el
+        // anillo azul dice dónde está el cursor; el rojo vuelve al cerrar si
+        // sigue vacío.
+        invalid && !isOpen ? 'outline-solid outline-2 outline-offset-[-1px] outline-danger' : ''
     }`;
 
     return (
@@ -480,6 +496,9 @@ const LiquidSelect = ({
                 aria-labelledby={ariaLabelledBy}
                 aria-haspopup="listbox"
                 aria-disabled={disabled || undefined}
+                // El rojo solo se ve; esto lo hace audible para un lector de
+                // pantalla, que es la mitad que faltaba del estado de error.
+                aria-invalid={invalid || undefined}
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? listboxId : undefined}
                 aria-activedescendant={isOpen && highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined}

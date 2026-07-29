@@ -16,9 +16,11 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.218.0';
+export const APP_VERSION = '2.219.0';
 
-// v2.218.0 — el select se veia cortado dentro de una caja que no era la suya.
+// v2.218.0 — candado de mantenimiento por modulo (ver commit cb497d40).
+
+// v2.219.0 — el select se veia cortado dentro de una caja que no era la suya.
 //
 // 35 sitios en 5 formularios envolvian LiquidSelect en un
 // `<div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>` para pintarle

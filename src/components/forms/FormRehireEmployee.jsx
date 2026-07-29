@@ -86,10 +86,8 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     {/* Tipo de contrato */}
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Contrato</label>
-                        <div className={`rounded-2xl h-[40px] ${inputHover}`}>
-                            <LiquidSelect value={formData.rehire_contract_type || 'INDEFINIDO'} onChange={handleContractChange}
-                                options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
-                        </div>
+                        <LiquidSelect value={formData.rehire_contract_type || 'INDEFINIDO'} onChange={handleContractChange}
+                            options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalProps} />
                     </div>
 
                     {/* Sucursal */}
@@ -97,10 +95,8 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Sucursal {reqBadge}
                         </label>
-                        <div className={`rounded-2xl h-[40px] ${inputHover} ${!formData.rehire_branch_id ? 'border border-danger bg-danger/10 rounded-2xl' : ''}`}>
-                            <LiquidSelect value={formData.rehire_branch_id || ''} onChange={v => set('rehire_branch_id', v)}
-                                options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalProps} />
-                        </div>
+                        <LiquidSelect invalid={!formData.rehire_branch_id} value={formData.rehire_branch_id || ''} onChange={v => set('rehire_branch_id', v)}
+                            options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalProps} />
                     </div>
 
                     {/* Cargo principal */}
@@ -108,19 +104,15 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                             Cargo Principal {reqBadge}
                         </label>
-                        <div className={`rounded-2xl h-[40px] ${inputHover} ${!formData.rehire_role_id ? 'border border-danger bg-danger/10 rounded-2xl' : ''}`}>
-                            <LiquidSelect value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
-                                options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalProps} />
-                        </div>
+                        <LiquidSelect invalid={!formData.rehire_role_id} value={formData.rehire_role_id || ''} onChange={v => set('rehire_role_id', v)}
+                            options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalProps} />
                     </div>
 
                     {/* Cargo secundario */}
                     <div>
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
-                        <div className={`rounded-2xl h-[40px] ${inputHover}`}>
-                            <LiquidSelect value={formData.rehire_secondary_role_id || ''} onChange={v => set('rehire_secondary_role_id', v)}
-                                options={roleOpts} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
-                        </div>
+                        <LiquidSelect value={formData.rehire_secondary_role_id || ''} onChange={v => set('rehire_secondary_role_id', v)}
+                            options={roleOpts} placeholder="Opcional..." clearable icon={ShieldCheck} {...portalProps} />
                     </div>
 
                     {/* Horas semanales */}

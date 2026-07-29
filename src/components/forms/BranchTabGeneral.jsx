@@ -79,18 +79,16 @@ const BranchTabGeneral = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative z-content"> 
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
-                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                            <LiquidSelect
-                                value={location.department || ""}
-                                onChange={(val) => {
-                                    updateNestedSetting('location', 'department', val);
-                                    updateNestedSetting('location', 'municipality', '');
-                                }}
-                                options={depOptions}
-                                placeholder="-- Seleccionar --"
-                                icon={MapIcon}
-                            />
-                        </div>
+                        <LiquidSelect
+                            value={location.department || ""}
+                            onChange={(val) => {
+                                updateNestedSetting('location', 'department', val);
+                                updateNestedSetting('location', 'municipality', '');
+                            }}
+                            options={depOptions}
+                            placeholder="-- Seleccionar --"
+                            icon={MapIcon}
+                        />
                     </div>
 
                     <div className="relative z-base">
@@ -98,16 +96,14 @@ const BranchTabGeneral = ({
                             Distrito / Municipio
                             {getTabStatus(1) === 'orange' && !location.municipality && <Badge variant="warning" uppercase={false}>Falta info</Badge>}
                         </label>
-                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                            <LiquidSelect
-                                value={location.municipality || ""}
-                                onChange={(val) => updateNestedSetting('location', 'municipality', val)}
-                                options={munOptions}
-                                placeholder={location.department ? '-- Seleccionar --' : 'Elija Depto.'}
-                                icon={Navigation}
-                                disabled={!location.department}
-                            />
-                        </div>
+                        <LiquidSelect
+                            value={location.municipality || ""}
+                            onChange={(val) => updateNestedSetting('location', 'municipality', val)}
+                            options={munOptions}
+                            placeholder={location.department ? '-- Seleccionar --' : 'Elija Depto.'}
+                            icon={Navigation}
+                            disabled={!location.department}
+                        />
                     </div>
 
                     <div>

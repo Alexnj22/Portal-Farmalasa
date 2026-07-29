@@ -1103,9 +1103,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nacionalidad</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.nationality} onChange={(val) => handleSelectChange('nationality', val)} options={NATIONALITY_OPTIONS} placeholder="Nacionalidad..." icon={Globe} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.nationality} onChange={(val) => handleSelectChange('nationality', val)} options={NATIONALITY_OPTIONS} placeholder="Nacionalidad..." icon={Globe} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="relative z-tabs">
@@ -1203,18 +1201,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <span>Género</span>
                                         {!formData.gender && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.gender ? '!border-danger !bg-danger/10' : ''}`}>
-                                        <LiquidSelect value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect invalid={!formData.gender} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Estado Civil</span>
                                         {!formData.marital_status && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.marital_status ? '!border-danger !bg-danger/10' : ''}`}>
-                                        <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect invalid={!formData.marital_status} value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
                             </div>
                         </div>
@@ -1225,18 +1219,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                 </div>
                                 <div className="relative z-base">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Distrito</span>
                                         {formData.department && !formData.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${formData.department && !formData.municipality ? '!border-danger !bg-danger/10' : ''}`}>
-                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect invalid={formData.department && !formData.municipality} value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="md:col-span-2 -mt-2">
@@ -1258,18 +1248,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                         <div>
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
-                                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                                                <LiquidSelect value={addr.department} onChange={(val) => updateAddress(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
-                                                            </div>
+                                                            <LiquidSelect value={addr.department} onChange={(val) => updateAddress(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                                         </div>
                                                         <div>
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">
                                                                 <span>Distrito</span>
                                                                 {addr.department && !addr.municipality && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                             </label>
-                                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${addr.department && !addr.municipality ? '!border-danger !bg-danger/10' : ''}`}>
-                                                                <LiquidSelect value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
-                                                            </div>
+                                                            <LiquidSelect invalid={addr.department && !addr.municipality} value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                         </div>
                                                         <div className="md:col-span-2">
                                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
@@ -1299,9 +1285,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="relative z-tabs">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Nivel Académico</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 {formData.education_level === 'BASICA' && (
@@ -1310,9 +1294,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <span>Grado Finalizado</span>
                                             {!formData.education_grade_completed && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                         </label>
-                                        <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.education_grade_completed ? '!border-danger !bg-danger/10' : ''}`}>
-                                            <LiquidSelect value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
-                                        </div>
+                                        <LiquidSelect invalid={!formData.education_grade_completed} value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 )}
 
@@ -1653,9 +1635,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div className="relative z-base">
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Parentesco</label>
-                                                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                                            <LiquidSelect value={dep.relationship} onChange={(val) => updateDependent(idx, 'relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
-                                                        </div>
+                                                        <LiquidSelect value={dep.relationship} onChange={(val) => updateDependent(idx, 'relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                                     </div>
 
                                                     <div className="md:col-span-3 flex items-center justify-between -mb-1">
@@ -1666,15 +1646,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Departamento</label>
-                                                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                                            <LiquidSelect value={dep.department} onChange={(val) => updateDependent(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
-                                                        </div>
+                                                        <LiquidSelect value={dep.department} onChange={(val) => updateDependent(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Distrito</label>
-                                                        <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                                            <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Distrito...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
-                                                        </div>
+                                                        <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Distrito...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                     </div>
                                                     <div>
                                                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Dirección Detallada</label>
@@ -1699,9 +1675,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative z-base">
                                     <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 block">Tipo de Sangre</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
                                 </div>
                             </div>
 
@@ -1787,9 +1761,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <span>Grado</span>
                                                     {!formData.disability_grade && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                                 </label>
-                                                <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.disability_grade ? '!border-danger !bg-danger/10' : ''}`}>
-                                                    <LiquidSelect value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
-                                                </div>
+                                                <LiquidSelect invalid={!formData.disability_grade} value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                             </div>
                                             <Checkbox
                                 checked={!!formData.disability_has_certification}
@@ -1826,9 +1798,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Avisar a" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Nombre" />
                                 <div className="relative z-base">
                                     <label className="text-caption font-black uppercase tracking-widest text-danger/80 ml-1 mb-1.5 block">Parentesco</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.emergency_contact_relationship} onChange={(val) => handleSelectChange('emergency_contact_relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.emergency_contact_relationship} onChange={(val) => handleSelectChange('emergency_contact_relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div>
@@ -1884,9 +1854,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <>
                                         <div className={`relative z-tabs ${isExterna ? 'md:col-span-2' : ''}`}>
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Área de Trabajo <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
-                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.branch_id ? '!border-danger !bg-danger/10' : ''}`}>
-                                                <LiquidSelect value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
-                                            </div>
+                                            <LiquidSelect invalid={!formData.branch_id} value={formData.branch_id} onChange={(val) => { handleSelectChange('branch_id', val); if (!((branches||[]).find(b=>String(b.id)===String(val))?.type === 'EXTERNA')) setFormData(p=>({...p, assigned_branch_ids:[]})); }} options={branchOpts} placeholder="Seleccionar..." clearable={false} icon={Building2} {...portalSelectProps} />
                                         </div>
                                         {isExterna && (
                                             <div className="relative z-content md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -1917,15 +1885,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                         <div className="relative z-content">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between">Cargo Principal <Badge variant="danger" uppercase={false}>Requerido</Badge></label>
-                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!formData.role_id ? '!border-danger !bg-danger/10' : ''}`}>
-                                                <LiquidSelect value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
-                                            </div>
+                                            <LiquidSelect invalid={!formData.role_id} value={formData.role_id} onChange={(val) => handleSelectChange('role_id', val)} options={roleOpts} placeholder="Cargo..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-base">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
-                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                                <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
-                                            </div>
+                                            <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={false} icon={ShieldCheck} {...portalSelectProps} />
                                         </div>
                                     </>
                                 )}
@@ -1961,9 +1925,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <>
                                         <div className="relative z-tabs">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Contrato</label>
-                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                                <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
-                                            </div>
+                                            <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
                                         </div>
                                         <div className="relative z-tabs">
                                             <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Fecha de Inicio de Contrato</label>
@@ -1993,9 +1955,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 <span>Base Legal del Plazo (Art. 25)</span>
                                                 {temporalBasisMissing && <Badge variant="danger" uppercase={false}>Requerido</Badge>}
                                             </label>
-                                            <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${temporalBasisMissing ? '!border-danger !bg-danger/10' : ''}`}>
-                                                <LiquidSelect value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
-                                            </div>
+                                            <LiquidSelect invalid={temporalBasisMissing} value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
                                         </div>
                                         <PortalInput label="Motivo Concreto" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del puesto" required hasError={temporalReasonMissing} errorMessage="Requerido para justificar el plazo" />
                                         <p className="md:col-span-2 text-caption text-warning/80 font-medium -mt-2 ml-1">La base legal es un catálogo cerrado (solo hay 2 según el Art. 25); el motivo concreto lo redacta la empresa caso por caso — queda como respaldo escrito si el plazo se disputa.</p>
@@ -2018,9 +1978,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className={`grid grid-cols-1 gap-4 mt-4 ${hoursMode === 'OTRO' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
                                 </div>
                                 {hoursMode === 'OTRO' && (
                                     <div className="relative z-content animate-in fade-in zoom-in-95">
@@ -2052,23 +2010,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Institución AFP</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Banco (Planilla)</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar Banco..." icon={Building2} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar Banco..." icon={Building2} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <div className="relative z-content">
                                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Tipo de Cuenta</label>
-                                    <div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.account_type} onChange={(val) => handleSelectChange('account_type', val)} options={ACCOUNT_TYPE_OPTIONS} placeholder="Tipo de cuenta..." icon={CreditCard} clearable={false} {...portalSelectProps} />
-                                    </div>
+                                    <LiquidSelect value={formData.account_type} onChange={(val) => handleSelectChange('account_type', val)} options={ACCOUNT_TYPE_OPTIONS} placeholder="Tipo de cuenta..." icon={CreditCard} clearable={false} {...portalSelectProps} />
                                 </div>
 
                                 <PortalInput label="Número de Cuenta" name="account_number" value={formData.account_number} onChange={handleChange} icon={CreditCard} placeholder="0000-0000-00" maskType="ACCOUNT" />

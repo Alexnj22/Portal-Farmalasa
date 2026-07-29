@@ -4,7 +4,6 @@ import Badge from '../common/Badge';
 import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2 } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
-import { inputHoverClass } from '../../utils/inputStyles';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -181,9 +180,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex flex-col min-h-full w-full px-6 md:px-10 py-6 gap-4">
                     <div className={islandClass}>
                         <label className={fieldLabel}><span>Sucursal</span>{!branchId && reqBadge}</label>
-                        <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${!branchId ? '!border-danger !bg-danger/10' : ''}`}>
-                            <LiquidSelect value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
-                        </div>
+                        <LiquidSelect invalid={!branchId} value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
 
                         {/* Sin wrapper de grilla: SegmentedControl en `layout="block"`
                             YA arma su propia grilla. Envolverlo en un
@@ -275,9 +272,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         {scopeType === 'LABORATORIO' && (
                             <div className="mt-4">
                                 <label className={fieldLabel}><span>Laboratorio</span>{institucionMissing && reqBadge}</label>
-                                <div className={`rounded-2xl h-[40px] ${inputHoverClass} ${institucionMissing ? '!border-danger !bg-danger/10' : ''}`}>
-                                    <LiquidSelect value={laboratorioId} onChange={setLaboratorioId} options={laboratorioOpts} placeholder="Seleccionar laboratorio..." icon={FlaskConical} clearable={false} />
-                                </div>
+                                <LiquidSelect invalid={institucionMissing} value={laboratorioId} onChange={setLaboratorioId} options={laboratorioOpts} placeholder="Seleccionar laboratorio..." icon={FlaskConical} clearable={false} />
                             </div>
                         )}
 

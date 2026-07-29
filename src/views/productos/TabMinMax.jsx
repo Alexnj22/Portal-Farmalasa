@@ -37,6 +37,7 @@ import { upsertStockParams } from '../../data/stockParams';
 import { useMinMaxData } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
+import PhotoLightbox from '../../components/common/PhotoLightbox';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -1550,23 +1551,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 document.body
             )}
 
-            {/* ── Photo zoom overlay ── */}
-            {zoomPhoto && createPortal(
-                <div className="fixed inset-0 z-toast flex items-center justify-center"
-                    style={{ background: 'var(--scrim)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
-                    onClick={() => setZoomPhoto(null)}>
-                    <motion.img
-                        src={zoomPhoto}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                        className="max-w-[320px] max-h-[320px] rounded-2xl shadow-2xl object-contain cursor-zoom-out"
-                        onClick={e => e.stopPropagation()}
-                    />
-                </div>,
-                document.body
-            )}
+            <PhotoLightbox src={zoomPhoto} alt="Foto del producto" onClose={() => setZoomPhoto(null)} zClass="z-toast" />
 
             {/* ── Confirm publish modal ── */}
             <ConfirmModal

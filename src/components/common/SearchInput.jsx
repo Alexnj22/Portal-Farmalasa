@@ -123,7 +123,12 @@ const SearchInput = forwardRef(function SearchInput({
                         type="button"
                         aria-label="Borrar la búsqueda"
                         onClick={e => { e.stopPropagation(); onChange?.(''); inputRef.current?.focus(); }}
-                        className="w-5 h-5 mr-1.5 shrink-0 flex items-center justify-center rounded-full text-content-3 hover:text-danger hover:bg-danger/10 transition-colors"
+                        // El ÁREA TOCABLE llega al piso de §25.6 en táctil; lo
+                        // que se ve sigue siendo el círculo de 20px. Sin esto
+                        // era 20×20 en el teléfono — y como vive en el
+                        // canónico, lo era en TODA vista con buscador
+                        // (auditoría 2026-07-29, medido en WebKit iPhone).
+                        className="w-[max(1.25rem,var(--tap-min))] h-[max(1.25rem,var(--tap-min))] mr-1.5 shrink-0 flex items-center justify-center rounded-full text-content-3 hover:text-danger hover:bg-danger/10 transition-colors"
                     >
                         <X size={12} strokeWidth={2.5} />
                     </button>

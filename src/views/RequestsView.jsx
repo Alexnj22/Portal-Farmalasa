@@ -3,7 +3,6 @@ import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
-import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Inbox, Check, X, ChevronRight, ChevronDown,
@@ -23,6 +22,7 @@ import RangeDatePicker from '../components/common/RangeDatePicker';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import PortalTextarea from '../components/common/PortalTextarea';
+import ModalShell from '../components/common/ModalShell';
 
 const CREATABLE_TYPES = [
     { key: 'VACATION',     icon: Palmtree },
@@ -705,9 +705,9 @@ const RequestsView = () => {
                 )}
             </div>
 
-            {actionModal && ReactDOM.createPortal(
-                <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-scrim backdrop-blur-md" onClick={() => !isActioning && setActionModal(null)} />
+            {/* ModalShell: escrito a mano no atrapaba el foco, no cerraba con
+                Escape y no se anunciaba como diálogo (auditoría 2026-07-29). */}
+            <ModalShell open={!!actionModal} onClose={() => !isActioning && setActionModal(null)} maxWidthClass="max-w-md" zClass="z-toast" closeOnEsc={!isActioning} ariaLabel={actionModal?.mode === 'approve' ? 'Aprobar la solicitud' : 'Rechazar la solicitud'}>
                     <div data-surface="card" className="relative w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className={`w-14 h-14 rounded-card flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
                             {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
@@ -744,13 +744,9 @@ const RequestsView = () => {
                             </Button>
                         </div>
                     </div>
-                </div>,
-                document.body
-            )}
+            </ModalShell>
 
-            {createModalOpen && ReactDOM.createPortal(
-                <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-scrim backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
+            <ModalShell open={createModalOpen} onClose={() => !isCreatingReq && setCreateModalOpen(false)} maxWidthClass="max-w-lg" zClass="z-toast" closeOnEsc={!isCreatingReq} ariaLabel="Nueva solicitud">
                     <div data-surface="card" className="relative w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
@@ -835,9 +831,7 @@ const RequestsView = () => {
                             <Button disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()} onClick={handleCreateRequest}>{isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}</Button>
                         </div>
                     </div>
-                </div>,
-                document.body
-            )}
+            </ModalShell>
         </GlassViewLayout>
     );
 };

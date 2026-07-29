@@ -3,7 +3,6 @@ import Button from '../components/common/Button';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
 import {
@@ -31,6 +30,7 @@ import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SearchInput from '../components/common/SearchInput';
 import { clickable } from '../utils/clickable';
+import ModalShell from '../components/common/ModalShell';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -1138,12 +1138,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 </div>
         </ModalShell>
 
-        {cancelModalRender && createPortal(
-            <div className="fixed inset-0 z-confirm flex items-center justify-center p-4">
-                <div
-                    className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-300 ${showCancelModal ? 'opacity-100' : 'opacity-0'}`}
-                    onClick={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : undefined}
-                />
+        <ModalShell open={cancelModalRender} onClose={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : () => {}} maxWidthClass="max-w-sm" zClass="z-confirm" closeOnEsc={!isCancelling} ariaLabel="Cancelar el evento del expediente">
                 <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-danger"></div>
                     <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
@@ -1192,9 +1187,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             }}>Confirmar Cancelación</Button>
                     </div>
                 </div>
-            </div>,
-            document.body
-        )}
+        </ModalShell>
         </>
     );
 };

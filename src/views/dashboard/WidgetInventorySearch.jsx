@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import { EmptyState } from '../../components/common/StateViews';
-import { createPortal } from 'react-dom';
 import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
@@ -16,6 +15,7 @@ import {
 import { insertVentaPerdida } from '../../data/ventasPerdidas';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
+import PhotoLightbox from '../../components/common/PhotoLightbox';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -159,23 +159,7 @@ function PhotoThumb({ url, onZoom }) {
   );
 }
 
-function Lightbox({ url, onClose }) {
-  if (!url) return null;
-  return createPortal(
-    <div
-      className="fixed inset-0 z-toast bg-scrim backdrop-blur-sm flex items-center justify-center p-8"
-      onClick={onClose}
-    >
-      <img
-        src={url} alt=""
-        className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
-        style={{ maxWidth: '85vw', maxHeight: '80vh' }}
-      />
-      <Button variant="secondary" size="sm" icon={X} iconOnly onClick={onClose} />
-    </div>,
-    document.body
-  );
-}
+
 
 /* ─── Compact SRS card with inline report button ───────────────────────────── */
 function SrsCompactCard({ product: p, searchQuery, user }) {
@@ -562,7 +546,7 @@ export default function WidgetInventorySearch() {
           )}
         </div>
 
-        <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+        <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} zClass="z-toast" />
         <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
       </div>
     );
@@ -721,7 +705,7 @@ export default function WidgetInventorySearch() {
         )}
       </div>
 
-      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      <PhotoLightbox src={lightboxUrl} alt="Foto del producto" onClose={() => setLightboxUrl(null)} zClass="z-toast" />
       <style>{`@keyframes inv-fade-up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );

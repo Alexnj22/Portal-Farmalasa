@@ -29,6 +29,7 @@ import {
     fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
 } from '../../data/productos';
 import PortalInput from '../../components/common/PortalInput';
+import PhotoLightbox from '../../components/common/PhotoLightbox';
 
 
 const PRICE_FIELDS = [
@@ -626,30 +627,6 @@ if (typeof document !== 'undefined' && !document.getElementById('lb-style')) {
     s.id = 'lb-style';
     s.textContent = '@keyframes lightbox-in { from { opacity:0; transform:scale(0.88) } to { opacity:1; transform:scale(1) } }';
     document.head.appendChild(s);
-}
-
-function PhotoLightbox({ src, onClose }) {
-    useEffect(() => {
-        const handler = (e) => { if (e.key === 'Escape') onClose(); };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    }, [onClose]);
-
-    return createPortal(
-        <div
-            className="fixed inset-0 z-flyout flex items-center justify-center"
-            style={{ backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', backgroundColor: 'var(--scrim)' }}
-            onClick={onClose}>
-            <div
-                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-xl)] ring-1 ring-[var(--border-card)]"
-                style={{ animation: 'lightbox-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }}
-                onClick={e => e.stopPropagation()}>
-                <img src={src} alt="" className="block max-w-[90vw] max-h-[90vh] object-contain" />
-                <Button icon={X} iconOnly size="md" variant="ghost" onClick={onClose} />
-            </div>
-        </div>,
-        document.body
-    );
 }
 
 async function pasteImageFromClipboard() {
@@ -1335,7 +1312,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
             </td>
         </tr>
         {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
-        {lightboxSrc && <PhotoLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
+        <PhotoLightbox src={lightboxSrc} alt="Foto del producto" onClose={() => setLightboxSrc(null)} />
         </>
     );
 }

@@ -4,6 +4,7 @@ import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl } from "../utils/storageFiles";
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU } from "../data/permissions";
+import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
 
 const AuthContext = createContext(null);
@@ -92,6 +93,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [rolePerms, setRolePerms] = useState(null);
   const [permsLoading, setPermsLoading] = useState(false);
+  // Candados de mantenimiento: { [module_key]: { locked_by_id, locked_by_name, reason, locked_at, expires_at } }
+  const [moduleLocks, setModuleLocks] = useState({});
   const [maxPriceLevel, setMaxPriceLevel] = useState(null);
 
   const idleIntervalRef  = useRef(null);
@@ -160,6 +163,58 @@ export const AuthProvider = ({ children }) => {
       })
       .catch(() => { setPermsLoading(false); });
   }, []);
+
+  // -------------------------
+  // 🔧 Candados de mantenimiento por módulo
+  // -------------------------
+  const refreshModuleLocks = useCallback(() => {
+    fetchModuleLocks()
+      .then(({ data, error }) => {
+        // En error de red NO se limpian los candados: quedarse con el último
+        // estado conocido es más seguro que asumir "no hay candado" y dejar
+        // escribir durante una migración.
+        if (error || !data) return;
+        const map = {};
+        data.forEach(l => { map[l.module_key] = l; });
+        setModuleLocks(map);
+      })
+      .catch(() => { /* se conserva el estado previo a propósito */ });
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setModuleLocks({}); return; }
+    refreshModuleLocks();
+  }, [user?.id, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Realtime: el candado tiene que llegar al instante — si tarda, alguien sigue
+  // guardando durante la migración. `module_locks` es una tabla diminuta y casi
+  // sin escrituras, así que no repite el problema de decode de WAL que obligó a
+  // sacar `product_stock_params` de la publicación (Bloque 4.3).
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('module_locks_global')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'module_locks' },
+        () => refreshModuleLocks())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Un candado vence solo (expires_at). Sin este barrido la UI seguiría mostrando
+  // el banner y los botones apagados hasta el próximo evento de realtime.
+  useEffect(() => {
+    if (!Object.keys(moduleLocks).length) return;
+    const t = setInterval(() => {
+      const now = Date.now();
+      setModuleLocks(prev => {
+        const vivos = Object.fromEntries(
+          Object.entries(prev).filter(([, l]) => new Date(l.expires_at).getTime() > now)
+        );
+        return Object.keys(vivos).length === Object.keys(prev).length ? prev : vivos;
+      });
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [moduleLocks]);
 
   // Dispara refresh cuando cambia el usuario (id, rol o systemRole)
   // user?.role excluido a propósito: loginWithUsername pone el número, la edge function el nombre
@@ -629,9 +684,27 @@ export const AuthProvider = ({ children }) => {
 
     const getScope = (moduleKey) => rolePerms?.[moduleKey]?.scope ?? 'ALL';
 
+    // Espejo exacto de auth_module_locked() en la BD: vigente + no soy el titular.
+    // Si las dos mitades no coinciden, la UI habilita botones que el servidor
+    // rechaza (o al revés) — por eso el criterio se escribe una sola vez acá.
+    const moduleLock = (moduleKey) => {
+      const l = moduleLocks?.[moduleKey];
+      if (!l) return null;
+      if (new Date(l.expires_at).getTime() <= Date.now()) return null;
+      return l;
+    };
+    const isModuleLocked = (moduleKey) => {
+      const l = moduleLock(moduleKey);
+      return !!l && l.locked_by_id !== user?.id;
+    };
+
     const hasPermission = (moduleKey, action = 'can_view') => {
       if (isSU) return true;
       if (!rolePerms) return false;
+      // El candado deja LEER (decisión de diseño: solo lectura, no bloqueo total).
+      // Solo apaga escritura y aprobación — y con eso se apagan solos todos los
+      // botones que ya consultan canManage/canApprove, sin tocarlos uno por uno.
+      if (action !== 'can_view' && isModuleLocked(moduleKey)) return false;
       return !!(rolePerms[moduleKey]?.[action]);
     };
 
@@ -639,12 +712,13 @@ export const AuthProvider = ({ children }) => {
       user, isAuthenticated: !!user,
       isSU, getScope,
       rolePerms, permsLoading, hasPermission,
+      moduleLocks, moduleLock, isModuleLocked, refreshModuleLocks,
       maxPriceLevel, loading,
       completeLogin, completePasswordChange,
       login, loginWithEmail, loginWithUsername, logout,
       refreshPermissions,
     };
-  }, [user, loading, rolePerms, refreshPermissions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, loading, rolePerms, moduleLocks, refreshPermissions, refreshModuleLocks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

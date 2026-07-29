@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.217.0';
+export const APP_VERSION = '2.218.0';
+
+// v2.218.0 — el select se veia cortado dentro de una caja que no era la suya.
+//
+// 35 sitios en 5 formularios envolvian LiquidSelect en un
+// `<div className={`rounded-2xl h-[40px] ${inputHoverClass}`}>` para pintarle
+// borde y estado de error. Pero LiquidSelect YA se pinta entero: lleva
+// `data-surface="input"` (fondo, borde, radio, sombra) y `min-h-[max(40px,
+// var(--tap-min))]`. Medido en el navegador:
+//
+//   envoltorio  40px de alto · radio 10px · fondo rojo 10% (estado error)
+//   select      46px de alto · radio  8px · fondo blanco opaco
+//
+// El control es 6px mas alto que su caja y con otro radio, asi que el fondo del
+// envoltorio asomaba alrededor — eso es el "recorte" que se ve en la captura.
+// Y el `hover:border-brand/40` del envoltorio pintaba color sobre un borde de
+// ancho cero: nunca se vio.
+//
+// Arreglo: prop `invalid` en el canonico, que pinta el error CON OUTLINE sobre
+// el mismo elemento (border/bg pierden contra data-surface por cascade layers,
+// igual que el foco — ver inputStyles.js) y agrega `aria-invalid`. Fuera los 35
+// envoltorios. El foco/apertura gana sobre el error: mientras se elige manda el
+// anillo azul, el rojo vuelve al cerrar si sigue vacio.
+//
+// Verificado en navegador: 0 envoltorios en pantalla, alturas 46/39/25 (normal,
+// compact, nano) y el contorno rojo siguiendo la forma del control, tanto en el
+// modal de conteo como en Nuevo Empleado.
+
 
 // v2.217.0 — rotado ADMIN_INVOKE_SECRET, la credencial que quedo en claro.
 //

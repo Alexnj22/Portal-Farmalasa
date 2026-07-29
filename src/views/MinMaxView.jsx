@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
+import ModuleLockBanner   from '../components/common/ModuleLockBanner';
 import TabMinMax          from './productos/TabMinMax';
 import TabMinMaxNetwork   from './productos/TabMinMaxNetwork';
 import TabMinMaxRequests  from './productos/TabMinMaxRequests';
@@ -82,6 +83,12 @@ export default function MinMaxView() {
 
     return (
         <GlassViewLayout icon={BarChart2} title="Min / Max" filtersContent={filtersContent}>
+            {/* Candado de mantenimiento: banner cuando otro lo tiene tomado, botón
+                para tomarlo cuando está libre. El apagado de los botones de guardar
+                lo hace hasPermission() solo — no hay que gatearlos acá. */}
+            <div className="mb-3">
+                <ModuleLockBanner moduleKey="minmax" label="MIN·MAX" />
+            </div>
             {configLoaded && activeTab === 'sucursal' && (
                 <TabMinMax
                     searchTerm={debouncedSearch}

@@ -1909,16 +1909,17 @@ body::-webkit-scrollbar { display: none; }
 }
 
 /* Virtual caret animations */
-@keyframes border-pulse-blue {
-  0%, 100% { border-color: rgba(59,130,246,0.3);  box-shadow: 0 0 8px rgba(59,130,246,0.1),  inset 0 2px 15px rgba(0,0,0,0.5); }
-  50%       { border-color: rgba(59,130,246,1);    box-shadow: 0 0 25px rgba(59,130,246,0.6), inset 0 2px 15px rgba(0,0,0,0.5); }
-}
 @keyframes border-pulse-orange {
   0%, 100% { border-color: rgba(249,115,22,0.3);  box-shadow: 0 0 8px rgba(249,115,22,0.1),  inset 0 2px 15px rgba(0,0,0,0.5); }
   50%       { border-color: rgba(249,115,22,1);    box-shadow: 0 0 25px rgba(249,115,22,0.6), inset 0 2px 15px rgba(0,0,0,0.5); }
 }
-.virtual-caret-blue:focus   { animation: border-pulse-blue   1.5s infinite ease-in-out !important; outline: none; }
-.virtual-caret-orange:focus { animation: border-pulse-orange 1.5s infinite ease-in-out !important; outline: none; }
+/* El campo de PIN del kiosco oculta el cursor nativo (`caret-transparent`) y
+   marca el foco pulsando su propio borde. El `outline: none` que había acá era
+   letra muerta: la regla global de foco de más abajo es
+   `input:not(.outline-none):focus-visible`, que out-especifica a esto — o sea
+   que el campo SÍ tenía anillo, al revés de lo que decía DESIGN.md §25.
+   Se quita para no seguir prometiendo algo que no pasa. */
+.virtual-caret-orange:focus { animation: border-pulse-orange 1.5s infinite ease-in-out !important; }
 
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1983,6 +1984,19 @@ a:focus-visible,
   .animate-view-enter {
     animation: none !important;
     will-change: auto !important;
+  }
+
+  /* El pulso del borde del campo de PIN del kiosco. Es un bucle infinito de
+     1.5s y estaba fuera de esta lista, así que seguía corriendo con reduced
+     motion — verificado el 2026-07-28: `animationName` seguía dando
+     `border-pulse-orange` con la preferencia puesta.
+     No se puede apagar a secas: en ese campo la animación ES el indicador de
+     foco (el cursor nativo está oculto). Se congela en el estado encendido,
+     que deja el borde marcado sin movimiento. */
+  .virtual-caret-orange:focus {
+    animation: none !important;
+    border-color: rgba(249,115,22,1) !important;
+    box-shadow: 0 0 25px rgba(249,115,22,0.6), inset 0 2px 15px rgba(0,0,0,0.5) !important;
   }
 
   /* — Reducir a fade 120ms (sin transform ni filter) ————————— */

@@ -2307,7 +2307,52 @@ a:focus-visible,
 }
 ```
 
-Coverage gap: glass inputs carry `outline-none` in their className, which excludes them from this rule. Those inputs implement their own visual ring via `focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)]` — they have a visible indicator but it is not `focus-visible`-gated (fires on mouse click too). `.virtual-caret-blue/orange` inputs suppress the ring entirely via `:focus { outline: none }`.
+Los campos glass llevan `outline-none` y quedan fuera de esa regla a propósito:
+dibujan su propio anillo sobre el **contenedor**, no sobre el `<input>` —
+`inputHoverClass` (`src/utils/inputStyles.js`) pone
+`focus-within:outline-2 outline-brand/30`, que es lo que hace que se ilumine la
+caja entera y no solo el texto.
+
+**Esto NO es un hueco, aunque durante meses estuvo documentado como tal**
+(verificado el 2026-07-28). La nota vieja decía que ese anillo "no está gateado
+por `focus-visible`, se dispara también con clic de mouse", con la idea de que
+gatearlo lo dejaría solo para teclado. Medido: no cambiaría nada.
+
+| elemento | clic de mouse | Tab |
+|---|---|---|
+| `<input type="text">` | anillo ✓ | anillo ✓ |
+| `<button>` | sin anillo | anillo ✓ |
+| `<input type="checkbox">` | sin anillo | anillo ✓ |
+
+**Un campo de texto matchea `:focus-visible` aunque lo enfoques con el mouse** —
+está en la especificación, no es una particularidad del portal: en cuanto hiciste
+clic ahí lo siguiente que va a pasar es que escribas, y el navegador te muestra
+dónde va a caer eso. La condición que agregaríamos ya se cumple siempre.
+Comprobado además sobre el campo real: las capturas con clic y con Tab son el
+mismo archivo byte por byte.
+
+`focus-within` y `focus-visible` solo se separarían si dentro del contenedor
+hubiera **otro** control enfocable — ahí el anillo del campo se encendería al
+clickear ese botón. Hoy no pasa, y §15.11 fija la regla de que la acción va
+AFUERA del campo, no encima. Si algún día se rompe esa regla, esto vuelve a ser
+un hueco de verdad.
+
+**El caso del PIN del kiosco** (`AuthPromptPanel`) también estaba mal descrito.
+La nota vieja decía que `.virtual-caret-blue/orange` "suprimen el anillo por
+completo". No: ese `outline: none` era letra muerta — la regla global de arriba
+es `input:not(.outline-none):focus-visible`, que le out-especifica, así que el
+campo siempre tuvo anillo. Se quitó la declaración muerta.
+
+Lo que sí había ahí era un bug real, encontrado al ir a verificar esto: el pulso
+del borde es un **bucle infinito de 1.5s que seguía corriendo con
+`prefers-reduced-motion: reduce`** (medido: `animationName` seguía dando
+`border-pulse-orange`), pese a que §11 dice que los bucles infinitos se apagan.
+No se podía apagar a secas —en ese campo la animación *es* el indicador de foco,
+porque el cursor nativo está oculto con `caret-transparent`—, así que ahora se
+**congela en el estado encendido**: borde marcado, sin movimiento.
+
+De paso: `.virtual-caret-blue` y su `@keyframes border-pulse-blue` no los usaba
+nadie. Eliminados.
 
 ### Touch targets
 
@@ -2407,10 +2452,8 @@ actúa sobre una fila no tiene estado propio: es una acción.
   flechita quede del lado del número. Arreglado en el canónico: **62 columnas
   en 12 vistas** de una sola vez.
 
-**Still missing:**
-- Glass inputs with `outline-none` still fall outside the global `focus-visible`
-  rule (§ Focus visible above) — they have their own visible ring, but it isn't
-  `focus-visible`-gated.
+**Sin pendientes abiertos.** Lo que esta lista decía sobre los campos glass y
+`focus-visible` estaba mal — ver § Focus visible arriba, donde está la medición.
 
 ### prefers-reduced-motion
 
@@ -2423,6 +2466,24 @@ actúa sobre una fila no tiene estado propio: es una acción.
 `animate-kpi-enter`, `animate-widget-enter`, `animate-widget-settle`, `animate-table-row-enter`.
 
 **Skeleton** — animation stopped; background becomes a solid `rgba(148,163,184,0.15)`.
+
+**Congelada en el estado encendido** (2026-07-28): `.virtual-caret-orange:focus`,
+el pulso del borde del campo de PIN del kiosco. Es el único caso donde la
+animación **es** el indicador de foco —el cursor nativo está oculto con
+`caret-transparent`—, así que apagarla a secas dejaría el campo sin marca. Se
+detiene el movimiento y se deja el borde en su estado más visible. Estuvo fuera
+de esta lista desde que se escribió: era un bucle infinito de 1.5s corriendo con
+la preferencia puesta.
+
+**Cómo verificarlo**, porque leer la lista no alcanza —este caso llevaba meses
+faltando y el documento decía que estaba cubierto—:
+
+```js
+// Playwright: el navegador con la preferencia puesta
+const page = await browser.newPage({ reducedMotion: 'reduce' });
+// …y después, sobre el elemento:
+getComputedStyle(el).animationName   // debe dar 'none'
+```
 
 Hover lifts (`hover:-translate-y-*`) remain unaffected — they are already scoped to `@media (hover: hover)` which only fires on pointer devices.
 

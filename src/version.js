@@ -16,7 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.162.0';
+export const APP_VERSION = '2.163.0';
+
+// v2.163.0 — el "pendiente" de §25 no era un pendiente, y al ir a verificarlo
+// apareció uno de verdad al lado.
+//
+// §25 llevaba meses diciendo que los campos glass tienen un hueco: su anillo
+// de foco usa `focus-within` y no `focus-visible`, o sea "se dispara también
+// con clic de mouse". Medido: **no cambiaría un solo píxel**. Un
+// `<input type="text">` matchea `:focus-visible` aunque lo enfoques con el
+// mouse — está en la especificación, no es del portal: hiciste clic ahí, lo
+// siguiente que va a pasar es que escribas. Un `<button>` y un checkbox sí
+// distinguen; un campo de texto no. Comprobado en pagina aislada y sobre el
+// campo real: las capturas con clic y con Tab son el mismo archivo byte por
+// byte (6.212 bytes).
+//
+// Lo que `focus-within` sí haría distinto es si hubiera OTRO control enfocable
+// dentro del contenedor del campo. Hoy no lo hay, y §15.11 fija que la accion
+// va afuera. Queda anotado por si algún día se rompe esa regla.
+//
+// Y el mismo párrafo decía que `.virtual-caret-blue/orange` "suprimen el
+// anillo por completo". Tampoco: ese `outline: none` era letra muerta, la
+// regla global `input:not(.outline-none):focus-visible` le out-especifica.
+//
+// **El bug real que apareció al verificar:** el pulso del borde del campo de
+// PIN del kiosco es un bucle infinito de 1.5s y estaba FUERA de la lista de
+// `prefers-reduced-motion` — seguía corriendo con la preferencia puesta,
+// aunque §11 dice que los bucles infinitos se apagan. No se puede apagar a
+// secas: ahí la animación ES el indicador de foco (el cursor nativo está
+// oculto con `caret-transparent`). Se congela en el estado encendido: borde
+// marcado, sin movimiento. Verificado con `reducedMotion: 'reduce'` —
+// `animationName` pasa de `border-pulse-orange` a `none`.
+//
+// De paso: `.virtual-caret-blue` y su `@keyframes border-pulse-blue` no los
+// usaba nadie. Eliminados.
 
 // v2.162.0 — D4: DESIGN.md se pone al dia con lo que la auditoria encontro.
 //

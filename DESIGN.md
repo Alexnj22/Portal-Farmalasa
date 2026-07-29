@@ -2364,7 +2364,7 @@ nadie. Eliminados.
 | Mobile bottom tab | `px-3 py-2` + icon 20px + label 9px | ≈ 45px | ✅ |
 | Sidebar collapsed buttons | `w-11 h-11` = 44px | 44px | ✅ |
 
-The 44px minimum follows WCAG 2.5.8 (AA, WCAG 2.2). Nav indented items do not meet it.
+El mínimo de 44px es **WCAG 2.5.5 Target Size (Enhanced), AAA** —y la guía de Apple—, no 2.5.8: ese es 24×24 y es AA. El proyecto sostiene 44 a propósito. Desde 2026-07-28 lo garantiza `--tap-min` (§25.6) y no la buena voluntad de cada tamaño; la tabla de arriba es de antes de ese cambio.
 
 ### ARIA
 
@@ -2486,6 +2486,124 @@ getComputedStyle(el).animationName   // debe dar 'none'
 ```
 
 Hover lifts (`hover:-translate-y-*`) remain unaffected — they are already scoped to `@media (hover: hover)` which only fires on pointer devices.
+
+---
+
+## 25.4 Las tres superficies bespoke — lista CERRADA (2026-07-28)
+
+Regla: **el cuerpo de toda vista sigue el tema, sin excepción.** Modales,
+tarjetas, paneles, chips, gráficos — todo. Un fondo pintado con color fijo y
+texto adentro con tokens de tema es un bug de contraste esperando el tema
+contrario; pasó siete veces y se cerraron todas.
+
+Solo tres superficies quedan fuera, y esta lista **no se amplía**:
+
+| superficie | por qué |
+|---|---|
+| **Sidebar** (`AppLayout` + sus flyouts, ajustes, tema, campana) | Es *chrome*, no contenido. Oscuro es su identidad, igual que la barra lateral de un editor. Sus popovers anclados heredan la paleta bespoke `bg-white/N` — nunca `data-surface="dropdown"`. |
+| **Kiosco** (`components/timeclock/`) | Es una tablet montada en pared, muchas veces en sala con luz fuerte: el contraste alto sobre negro es parte de que se lea de lejos. Además nadie elige tema ahí — no hay sesión con preferencia. |
+| **Login** | Fuerza claro antes de que exista sesión. No puede seguir "el tema del usuario" porque todavía no sabe quién es. |
+
+Agregar una cuarta necesita decisión explícita, no un `bg-slate-900` puesto al
+pasar. La señal de "cuidado, esto es peligroso" se transmite con **color
+semántico** —un `Notice` de tono `warning`, un borde `danger`—, que el tema sabe
+adaptar; una superficie oscura fija no la transmite y además deja de leerse.
+
+**Excepción dentro de la excepción:** una consola de log (`TabStaff`, salida del
+motor de sincronización) se queda oscura con texto mono verde. Ahí lo oscuro no
+es decoración: es lo que la hace leerse como salida de terminal.
+
+### 25.5 Bespoke en COLOR no es bespoke en MATERIAL
+
+El sidebar es oscuro en los cuatro temas, pero eso no lo exime del material del
+tema. Hasta el 2026-07-28 tenía las dos cosas: en liquid glass era un relleno
+del 80% con blur de 28px y un borde de `rgba(255,255,255,0.10)`, al lado de
+tarjetas del 16% con blur de 44px y borde de 0.72. Se leía como una losa opaca
+pegada a la izquierda, no como parte del mismo mundo.
+
+Ahora hereda `--backdrop-card`: **el vidrio del sidebar ES el de la tarjeta**, y
+afinar uno afina el otro.
+
+El relleno bajó a **0.72, y ese número es un límite medido, no una preferencia**.
+Con el punto más claro del degradado de la página detrás:
+
+| relleno | deja pasar | opacidad mínima del texto para AA 4.5:1 |
+|---|---|---|
+| 0.80 | 20% | `white/51` |
+| **0.72** | **28%** | **`white/59`** ← el texto del menú es `white/60` |
+| 0.66 | 34% | `white/68` |
+| 0.60 | 40% | `white/79` |
+
+Bajar más obliga a subir el texto casi a blanco, y ahí se aplana la diferencia
+entre el ítem activo y el resto. 0.72 es el máximo de vidrio que la jerarquía
+del texto aguanta.
+
+El borde subió a **0.42** — comparados 0.10 / 0.28 / 0.42 / 0.60 en captura a 3×
+contra la tarjeta que queda a su derecha: en 0.10 el borde derecho no existe, el
+panel simplemente termina; en 0.42 el canto responde a la luz igual que el de la
+tarjeta. Y el sidebar toma `--card-shadow`: sin ella quedaba pegado al fondo
+aunque el vidrio ya fuera el mismo.
+
+**En móvil sigue opaco y sin blur, y eso no es una regresión** — el panel se
+desliza con `transform`, y un ancestro transformado crea contexto de
+apilamiento: el "backdrop" que el filtro difumina es el de ESE contexto, no la
+página. Medido en un iPhone 13: el filtro se declara, el navegador lo acepta, y
+el texto de la vista se sigue leyendo nítido a través del menú. Un menú que tapa
+la app entera no tiene nada que dejar entrever.
+
+### 25.6 `--tap-min`: el piso del dedo
+
+`--control-h` sube a 44px en táctil, pero los tamaños chicos de `Button` se
+derivan **restándole** (`sm` = `control-h - 6`, `xs` = `control-h - 12`). O sea
+que en un teléfono daban 38px y 32px, por debajo del mínimo — aunque el
+comentario del componente afirmara lo contrario desde que se escribió.
+
+```jsx
+// ❌ el piso se pierde al restar
+sm: 'h-[max(34px,calc(var(--control-h)-6px))]'
+
+// ✅ el piso va DENTRO del max()
+sm: 'h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))]'
+```
+
+`--tap-min` vale `0px` con puntero fino y `44px` con puntero grueso, así que en
+escritorio los tamaños siguen escalando con la densidad y en táctil ninguno baja
+del mínimo. Va por **puntero, no por ancho de viewport**: una laptop táctil
+también tiene dedos.
+
+Medido en un iPhone 13, `/productos`: **20 de 87 controles por debajo de 44px →
+0**. Lo que apareció al arreglarlos:
+
+- **`iconOnly` no tenía altura.** `ICON_ONLY_SIZE` *reemplaza* a `SIZE_CLASSES`,
+  no lo complementa, y solo traía `w-` y `px-0`. Donde el contenedor padre
+  estiraba el botón se veía cuadrado y nadie lo notó; donde no, quedaba una
+  pastilla de 44×15. Afectaba a los 194 `iconOnly` del portal.
+- **El botón de ordenar de `DataTable`** medía el alto del texto (15px). Con
+  `-my-2 py-2 min-h-[var(--tap-min)]` el área tocable ocupa la celda entera sin
+  mover el encabezado.
+- **Un control que NO puede crecer**: el chevron de `LiquidSelect` vive dentro
+  del campo y agrandarlo le comería el texto. Ahí se agranda solo el área
+  tocable con un pseudo-elemento centrado de `var(--tap-min)` — se ve igual de
+  chico y se toca como uno de 44px. Es el único caso del portal que necesita
+  esto; no es una técnica para repartir.
+
+**Corrección de esta misma sección:** §25 decía que el mínimo de 44px "sigue
+WCAG 2.5.8 (AA)". No: **2.5.8 Target Size (Minimum) es 24×24 y es AA**; 44×44 es
+**2.5.5 Target Size (Enhanced), AAA**, y coincide con la guía de Apple. El
+proyecto sostiene 44 a propósito — es un estándar más alto que el exigido, no el
+exigido.
+
+### 25.7 Texto que no puede envolver, se corta
+
+`StatCard` llevaba `whitespace-nowrap` en la etiqueta y el subtítulo, con este
+razonamiento: la tarjeta tiene `flex-1 basis-0`, así que en vez de truncar
+**crece**. Es correcto mientras la FILA tenga de dónde crecer. En un teléfono no
+la tiene, y ahí el `nowrap` deja de empujar el ancho para pasar a cortar:
+"precios o datos cambiados" y "< 15% en algún precio" salían partidos a mitad de
+palabra.
+
+Bajo 560px el texto envuelve (`max-[560px]:whitespace-normal`). El **valor**
+mantiene `nowrap` en todo ancho: un número partido no comunica nada.
 
 ---
 

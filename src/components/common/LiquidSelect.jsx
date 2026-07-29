@@ -75,6 +75,12 @@ const LiquidSelect = ({
     const paddingStyle = nano ? 'pl-2 pr-4 py-1' : compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
     const leftIconPos = compact ? 'left-1 w-6 h-6' : 'left-4 w-8 h-8';
     const rightIconPos = nano ? 'right-0.5 w-3.5 h-3.5' : compact ? 'right-1 w-5 h-5' : 'right-4 w-6 h-6';
+    // El chevron/limpiar vive DENTRO del campo: agrandarlo a 44px le comería
+    // el texto. En vez de eso se agranda solo el área tocable con un
+    // pseudo-elemento — se ve igual de chico y se toca como un control de
+    // 44px. Es el único control del portal por debajo del mínimo del dedo
+    // que no se puede resolver con tamaño real (medido en iPhone 13: 20x20).
+    const areaTocable = "after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-[var(--tap-min)] after:h-[var(--tap-min)]";
     const iconSize = nano ? 10 : compact ? 11 : 14;
     const minHeightClass = nano ? 'min-h-[26px]' : 'min-h-[40px]';
 
@@ -538,7 +544,7 @@ const LiquidSelect = ({
                 <button
                     type="button"
                     onClick={handleClear}
-                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center`}
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center ${areaTocable}`}
                     title="Quitar selección"
                 >
                     <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">
@@ -556,7 +562,7 @@ const LiquidSelect = ({
                     aria-hidden="true"
                     tabIndex={-1}
                     onClick={handleToggle}
-                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center`}
+                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-0.5 cursor-pointer flex items-center justify-center ${areaTocable}`}
                 >
                     <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 ${isOpen
                             ? 'bg-brand/[0.12]'

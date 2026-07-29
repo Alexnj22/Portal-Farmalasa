@@ -39,7 +39,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
  * permanente para una acción que casi no se usa.
  */
 
-const NAV = `w-9 h-9 rounded-btn flex items-center justify-center shrink-0
+const NAV = `w-[max(36px,var(--tap-min))] h-[max(36px,var(--tap-min))] rounded-btn flex items-center justify-center shrink-0
     text-content-3 transition-[background-color,color,transform] duration-150
     hover:bg-surface-card-hover hover:text-brand-text hover:translate-y-[var(--lift-hover)]
     disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent

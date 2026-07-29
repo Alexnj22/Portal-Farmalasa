@@ -16,7 +16,50 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.164.0';
+export const APP_VERSION = '2.165.0';
+
+// v2.165.0 — el sidebar usa el vidrio de la tarjeta, y el dedo tiene piso.
+//
+// Pedido del usuario: los tres bespoke (sidebar, kiosco, login) se quedan y se
+// documentan, pero el sidebar tiene que SENTIRSE integrado en liquid glass.
+//
+// **Bespoke en COLOR no es bespoke en MATERIAL.** El sidebar tenía las dos
+// cosas: relleno 80% con blur de 28px y borde 0.10, al lado de tarjetas de 16%
+// con blur de 44px y borde 0.72. Ahora hereda `--backdrop-card` — el vidrio del
+// sidebar ES el de la tarjeta— y toma su sombra.
+//
+// El relleno baja a 0.72 y ese numero es un LIMITE MEDIDO: con el punto mas
+// claro del degradado detras, el `white/60` que es el 90% del texto del menu
+// queda en 4.61:1 (AA); a 0.66 cae a 3.94:1 y ya no pasa. Bajar mas obliga a
+// subir el texto casi a blanco y se aplana la jerarquia activo/inactivo.
+// Borde a 0.42, elegido comparando 0.10/0.28/0.42/0.60 a 3x contra la tarjeta
+// vecina: en 0.10 el canto derecho no existe, en 0.42 responde a la luz igual.
+// En movil sigue opaco — el transform del drawer mata el backdrop-filter.
+//
+// **Movil, medido en iPhone 13 (WebKit): 20 de 87 controles bajo 44px → 0.**
+// La causa de fondo: `--control-h` sube a 44 en tactil, pero `sm` y `xs` se
+// derivan RESTANDOLE 6 y 12 — daban 38px y 32px, aunque el comentario del
+// componente afirmara lo contrario. Token `--tap-min` nuevo (0 en escritorio,
+// 44 en tactil) DENTRO del max(). Va por puntero, no por viewport: una laptop
+// tactil tambien tiene dedos.
+//
+// Tres hallazgos al arreglarlo:
+//   · `iconOnly` NO TENIA ALTURA. ICON_ONLY_SIZE reemplaza a SIZE_CLASSES y
+//     solo traia `w-`; donde el padre no estiraba quedaba 44x15. Afectaba a
+//     los 194 iconOnly del portal.
+//   · el boton de ordenar de DataTable media el alto del texto (15px).
+//   · el chevron de LiquidSelect no puede crecer sin comerse el campo: se le
+//     agranda solo el area tocable con un pseudo-elemento.
+//
+// **Texto cortado en movil:** `StatCard` forzaba `whitespace-nowrap` con el
+// razonamiento de que la tarjeta crece en vez de truncar. Vale mientras la FILA
+// tenga de donde; en un telefono no la tiene y pasaba a cortar a mitad de
+// palabra. Bajo 560px envuelve. El valor mantiene nowrap: un numero partido no
+// comunica nada.
+//
+// DESIGN.md §25.4-25.7 nuevas. Y §25 decia que el minimo de 44px "sigue WCAG
+// 2.5.8 (AA)" — no: 2.5.8 es 24x24 y es AA; 44x44 es 2.5.5, AAA. El proyecto
+// sostiene 44 a proposito, que es mas alto que lo exigido.
 
 // v2.164.0 — todo elemento del CUERPO sigue el tema. Cero excepciones.
 //

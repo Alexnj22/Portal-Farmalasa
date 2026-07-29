@@ -128,22 +128,33 @@ const VARIANT_CLASSES = {
 //   lg  h-12/48px (13 usos) CTA de hero y botón full-width de móvil
 //
 // La altura sale de --control-h (D2.3): reacciona al viewport con mouse y
-// tiene piso de 44px en táctil, así que NINGÚN tamaño queda bajo el mínimo
-// del dedo — por eso xs y sm usan max() contra su propio piso en vez de un
-// alto fijo. Es la diferencia entre una escala de tamaños y una lista de
-// números sueltos.
+// tiene piso en táctil, así que NINGÚN tamaño queda bajo el mínimo del dedo
+// — por eso cada uno usa max() en vez de un alto fijo. Es la diferencia
+// entre una escala de tamaños y una lista de números sueltos.
+//
+// 2026-07-28: esto ANTES no era cierto, aunque el comentario lo afirmara.
+// `--control-h` sí sube a 44px en táctil, pero `sm` y `xs` se derivan
+// restándole 6 y 12 — así que daban 38px y 32px en un teléfono. El piso real
+// es `--tap-min` (0 en escritorio, 44px en táctil) y va DENTRO del max().
+// Medido en iPhone 13 antes del cambio: 20 de 87 controles bajo 44px.
 const SIZE_CLASSES = {
-    xs: 'h-[max(28px,calc(var(--control-h)-12px))] px-2.5 text-micro gap-1',
-    sm: 'h-[max(34px,calc(var(--control-h)-6px))] px-3.5 text-[12.5px] gap-1.5',
-    md: 'h-[var(--control-h)] px-[18px] text-body gap-1.5',
+    xs: 'h-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] px-2.5 text-micro gap-1',
+    sm: 'h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] px-3.5 text-[12.5px] gap-1.5',
+    md: 'h-[max(var(--tap-min),var(--control-h))] px-[18px] text-body gap-1.5',
     lg: 'h-[max(48px,calc(var(--control-h)+8px))] px-6 text-body-lg gap-2',
 };
 
+// `iconOnly` REEMPLAZA a SIZE_CLASSES, no lo complementa (ver el `?:` de más
+// abajo) — así que estas clases tienen que traer también la ALTURA. Hasta el
+// 2026-07-28 solo traían `w-` y `px-0`: el botón salía con el ancho correcto y
+// el alto del ícono. Donde el contenedor padre lo estiraba se veía cuadrado y
+// nadie lo notó; donde no, quedaba una pastilla de 44×15. Así estaban los tres
+// botones de abrir/cerrar el menú, medidos en un iPhone 13.
 const ICON_ONLY_SIZE = {
-    xs: 'w-[max(28px,calc(var(--control-h)-12px))] px-0',
-    sm: 'w-[max(34px,calc(var(--control-h)-6px))] px-0',
-    md: 'w-[var(--control-h)] px-0',
-    lg: 'w-[max(48px,calc(var(--control-h)+8px))] px-0',
+    xs: 'w-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] h-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] px-0',
+    sm: 'w-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] px-0',
+    md: 'w-[max(var(--tap-min),var(--control-h))] h-[max(var(--tap-min),var(--control-h))] px-0',
+    lg: 'w-[max(48px,calc(var(--control-h)+8px))] h-[max(48px,calc(var(--control-h)+8px))] px-0',
 };
 
 const ICON_PX = { xs: 12, sm: 14, md: 15, lg: 17 };

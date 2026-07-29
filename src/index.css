@@ -325,10 +325,30 @@
 
      Con estos tokens el COLOR sigue siendo el navy de siempre y lo que
      cambia por tema es el MATERIAL: en Solid es opaco y sin blur, como toda
-     otra superficie de ese tema. */
-  --sidebar-bg:       rgba(7,3,26,0.80);
-  --sidebar-backdrop: blur(28px) saturate(180%);
-  --sidebar-border:   rgba(255,255,255,0.10);
+     otra superficie de ese tema.
+
+     ── 2026-07-28 · integración con el material de la tarjeta ──────────
+     El sidebar seguía siendo bespoke en MATERIAL sin necesitarlo: 80% de
+     relleno con blur de 28px y un borde de 0.10, al lado de tarjetas de 16%
+     con blur de 44px y un borde de 0.72. En liquid glass eso lo dejaba como
+     una losa opaca pegada a la izquierda, no como parte del mismo mundo.
+
+     Ahora hereda `--backdrop-card`: el vidrio del sidebar ES el de la
+     tarjeta, y si un día se afina uno se afina el otro. El relleno baja a
+     0.72 —el límite medido: con el fondo más claro del degradado, el
+     `white/60` que es el 90% del texto del menú queda en 4.61:1, todavía AA;
+     a 0.66 cae a 3.94:1 y ya no pasa—. El borde sube a 0.28: no llega al
+     0.72 de la tarjeta porque sobre navy ese valor deja un filo blanco
+     duro, pero sí lee como canto de vidrio en vez de como línea muerta.
+     Comparadas 0.10 / 0.28 / 0.42 / 0.60 en captura a 3x contra la tarjeta
+     que queda a su derecha: en 0.10 el borde derecho no existe —el panel
+     simplemente termina—; en 0.42 el canto responde a la luz igual que el
+     de la tarjeta. Ese es el valor.
+
+     El color NO cambia. Oscuro sigue siendo su identidad. */
+  --sidebar-bg:       rgba(7,3,26,0.72);
+  --sidebar-backdrop: var(--backdrop-card);
+  --sidebar-border:   rgba(255,255,255,0.42);
 
   /* Focus ring (invariante por tema hoy) */
   /* Aro de foco — el ÚNICO del proyecto (A16, 2026-07-27).
@@ -1008,6 +1028,18 @@
   }
 }
 
+/* `--tap-min`: el piso del dedo, y el motivo de que exista.
+   `--control-h` sube a 44px en táctil, pero los tamaños chicos de `Button`
+   se derivan RESTÁNDOLE: `sm` es `control-h - 6` y `xs` es `control-h - 12`.
+   O sea que en un teléfono daban 38px y 32px — por debajo del mínimo— aunque
+   el comentario del componente afirmara lo contrario. Medido en un iPhone 13:
+   20 de 87 controles por debajo de 44px, incluidos los 12 encabezados del
+   menú, que son lo que más se toca.
+   Con este token el piso se aplica DENTRO del max(), así que en escritorio
+   los tamaños siguen escalando con la densidad y en táctil ninguno baja de 44. */
+:root { --tap-min: 0px; }
+@media (pointer: coarse) { :root { --tap-min: 44px; } }
+
 
 /* ═══════════════════════════════════════════════════════════════
    ESTADOS DE INTERACCIÓN — ramps semánticas (Fase T2, §8.4)
@@ -1665,6 +1697,9 @@
   background: var(--sidebar-bg);
   border: 1px solid var(--sidebar-border);
   backdrop-filter: var(--sidebar-backdrop);
+  /* La tarjeta flota por su sombra; sin ella el sidebar quedaba pegado al
+     fondo aunque el vidrio ya fuera el mismo. */
+  box-shadow: var(--card-shadow);
 }
 
 

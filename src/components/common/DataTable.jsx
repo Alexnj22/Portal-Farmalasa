@@ -157,8 +157,13 @@ export function DataTable({
                           // actual: el estado ya lo lleva `aria-sort` en el
                           // `<th>`, y repetirlo acá lo haría sonar dos veces.
                           aria-label={`Ordenar por ${col.label}${isSorted && sortDir === 'asc' ? ', descendente' : ', ascendente'}`}
+                          // `-my-2 py-2 min-h-[var(--tap-min)]`: el área tocable
+                          // ocupa la celda entera, no solo el alto del texto —que
+                          // en un teléfono son 15px—. El margen negativo la agranda
+                          // sin mover el encabezado.
                           className={`inline-flex items-center gap-1.5 cursor-pointer
                             font-black uppercase tracking-widest
+                            -my-2 py-2 min-h-[var(--tap-min)]
                             ${col.align === 'right' ? 'flex-row-reverse' : ''}`}
                         >
                           {col.label}

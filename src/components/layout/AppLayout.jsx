@@ -527,7 +527,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 <div
                     key={key}
                     className={`w-full flex items-center gap-2.5 rounded-2xl relative
-                        ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
+                        min-h-[var(--tap-min)] ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                         opacity-50 cursor-default select-none`}
                 >
                     <div className="relative z-base flex-shrink-0">
@@ -565,7 +565,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 aria-label={!isExpanded ? label : undefined}
                 title={(!isExpanded && !isMobile) ? label : undefined}
                 className={`w-full flex items-center gap-2.5 rounded-2xl transition-all duration-200 group relative text-left overflow-hidden
-                    ${indent ? `px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5${isMobile ? ' min-h-[44px]' : ''}` : 'px-3 py-3 xl:px-4 xl:py-3.5'}
+                    min-h-[var(--tap-min)] ${indent ? 'px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5' : 'px-3 py-3 xl:px-4 xl:py-3.5'}
                     ${isActive ? 'text-white' : navItemInactive}
                     ${focusRing}
                     active:scale-[0.99] active:translate-y-0`}
@@ -672,7 +672,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     aria-controls={isExpanded ? `nav-group-${key}` : undefined}
                     aria-label={!isExpanded ? label : undefined}
                     title={(!isExpanded && !isMobile) ? label : undefined}
-                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-2xl transition-all duration-200 group text-left overflow-hidden
+                    className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 min-h-[var(--tap-min)] rounded-2xl transition-all duration-200 group text-left overflow-hidden
                         ${hasActiveChild
                             ? 'text-white'
                             : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--shadow-glass-2)]'}

@@ -136,7 +136,7 @@ const FilterBar = memo(({
             <>
                 <button type="button" onClick={() => setAbierto(true)}
                     aria-expanded={abierto} aria-controls={idHoja}
-                    className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-card border shrink-0
+                    className={`inline-flex items-center gap-2 h-[max(40px,var(--tap-min))] px-3.5 rounded-card border shrink-0
                         text-body-sm font-bold transition-[background-color,border-color] duration-200
                         ${activeCount > 0
                             ? 'bg-brand/10 border-brand/30 text-brand-text'

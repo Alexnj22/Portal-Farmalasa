@@ -130,7 +130,15 @@ export default function StatCard({
                     // tarjeta crece; con `flex-1 basis-0` las anchas se llevan
                     // más espacio de la fila, que es lo que hacían las 10
                     // versiones a mano antes de migrar.
-                    : <span className="text-caption font-bold text-content-2 leading-none mt-1 whitespace-nowrap">
+                    //
+                    // 2026-07-28: "la tarjeta crece" vale mientras la FILA tenga
+                    // de dónde. En un teléfono no la tiene, y el `nowrap` dejaba
+                    // de empujar el ancho para pasar a cortar: medido en un
+                    // iPhone 13, "precios o datos cambiados" y "< 15% en algún
+                    // precio" salían cortados a mitad de palabra. Bajo 560px el
+                    // texto envuelve — una etiqueta de dos líneas se lee, una
+                    // cortada no.
+                    : <span className="text-caption font-bold text-content-2 leading-none mt-1 whitespace-nowrap max-[560px]:whitespace-normal max-[560px]:leading-tight">
                         {label}
                       </span>
                 }
@@ -141,7 +149,7 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] whitespace-nowrap">
+                <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] whitespace-nowrap max-[560px]:whitespace-normal max-[560px]:leading-tight">
                     {!loading ? sub : ''}
                 </span>
             </div>

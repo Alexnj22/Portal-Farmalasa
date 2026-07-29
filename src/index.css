@@ -665,7 +665,9 @@
 
   --text-primary:   rgba(255,255,255,0.92);
   --text-secondary: rgba(255,255,255,0.62);
-  --text-tertiary:  rgba(255,255,255,0.50); /* corregido 2026-07-25: 0.42 daba 4.00:1, mismo motivo que liquid — 0.50 da 5.14:1 */
+  /* 2026-07-28: sube de 0.50 a 0.58 por el mismo motivo que en Solid — medido
+     en la etiqueta de tab inactiva daba 4.21:1 sobre la página. */
+  --text-tertiary:  rgba(255,255,255,0.58);
 
   --surface-card:       rgba(13,20,48,0.58);
   --surface-card-hover: rgba(17,26,60,0.70);
@@ -804,7 +806,13 @@
 
   --text-primary:   #0f172a;
   --text-secondary: #475569;
-  --text-tertiary:  #64748b; /* corregido Fase T2: #94a3b8 daba 2.56:1 sobre surface-card, FAIL AA (mín 3:1); slate-500 da 4.76:1 */
+  /* 2026-07-28: sube de #64748b a #5b6b80. La corrección de T2 se midió contra
+     `surface-card` (blanco puro) y daba 4.76:1, pero este token también se usa
+     sobre la PÁGINA (#f4f6fb), y ahí daba 4.40:1 — por debajo de AA. Se vio en
+     la etiqueta de tab inactiva de `ViewTabBar`, que no tiene fondo propio: el
+     riel es transparente, así que compone contra la página. Está en toda vista
+     con tabs. Ahora 5.03:1 sobre página y 5.4:1 sobre tarjeta. */
+  --text-tertiary:  #5b6b80;
 
   --surface-card:       rgba(255,255,255,1.00);
   --surface-card-hover: rgba(248,250,252,1.00);

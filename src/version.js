@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.178.0';
+export const APP_VERSION = '2.179.0';
+
+// v2.179.0 — auditoria visual: contraste del texto terciario + 8 archivos
+// muertos.
+//
+// **La etiqueta de tab inactiva fallaba AA en dos temas**, y esta en TODA
+// vista con tabs. La causa: `--text-tertiary` se habia calibrado en T2 contra
+// `surface-card` (blanco puro) y daba 4.76:1 — pero el riel de `ViewTabBar` es
+// TRANSPARENTE, asi que el texto compone contra la PAGINA, que es mas oscura.
+//
+//     solid       4.40 → 4.97   #64748b → #5b6b80
+//     dark        4.21 → 5.16   white/50 → white/58
+//     liquid      5.53 ✅ · solid-dark 5.86 ✅ (ya pasaban)
+//
+// **Y una leccion de metodo que costo tres intentos:** medir contraste con
+// `getComputedStyle().color` MIENTE. Tailwind v4 envuelve los colores en
+// `color-mix(in oklab, …)`, asi que el navegador reporta un RGB que no es el
+// declarado — subir el alfa de white/50 a white/58 "empeoraba" el numero
+// calculado mientras mejoraba de verdad. La unica medicion confiable es
+// **muestrear el pixel renderizado** de una captura.
+//
+// De paso, el barrido de contraste tampoco vale si no descarta los ancestros
+// con `background-image`: un boton con degradado da 1:1 y son todos falsos
+// positivos (ya estaba anotado en memoria y volvi a tropezar).
+//
+// **8 archivos que no importa nadie, 1,830 lineas:** LiquidWeekPicker,
+// BranchChips, SyncHealthBanner, _StatCardPreview, EmployeeScheduleView,
+// TabEnCurso, RutaEnCursoCard, SalyCopilot. Verificado uno por uno: sus unicas
+// menciones estaban en COMENTARIOS, ninguno esta ruteado ni se carga con lazy.
 
 // v2.178.0 — auditoria: los selectores de fecha tampoco tenian teclado.
 //

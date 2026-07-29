@@ -1533,6 +1533,41 @@ Corregido con los cuatro números arriba. **Una alarma que se investiga y se
 descarta también es trabajo — pero hay que descartarla del todo, no dejarla a
 medias.**
 
+## Cierre del plan D0–D4 (2026-07-28)
+
+Las cinco fases están cerradas. El estado final, re-medido —no arrastrado de
+los conteos intermedios, que varias veces midieron otra cosa—:
+
+| fase | de → a | qué queda, y por qué |
+|---|---|---|
+| **D3.3** · botones | 276 → **60** | 137 abiertos, 77 migrados. Los 60 no son deuda: son el canónico equivocado (navegar es `<Link>`, no botón; fila clicable es `ListRow`; uno-de-N es `SegmentedControl`; superficie bespoke de login/kiosco). Documentados uno por uno en DESIGN.md §15.8. |
+| **D3.4** · campos | 99 → **61** | celdas de grilla densa, que NO deben ser `PortalInput` — no llevan etiqueta visible porque el encabezado de su columna ya dice qué son. DESIGN.md §15.12. Todas con `aria-label`. |
+| **D3.5** · chips | 101 → **8** | texto que a veces parece chip, caso por caso. |
+| **paleta** | 13 → **9** categóricos | los 4 retirados quedan como ALIAS, no como valores: se ven idénticos y el conteo baja solo al tocar cada archivo por otro motivo. |
+| **D4** · doc | — | §15.11, §15.12, §25.1–25.3 nuevas; §16.2 y §25 corregidas (enseñaban la deuda o afirmaban algo falso). |
+
+**El patrón que domina el cierre: el hueco estaba en el canónico, no en las
+vistas.** Nueve encontrados y tapados: `Badge` y `PortalInput` tiraban en
+silencio todo prop fuera de su lista fija (`title`, `min`/`max`/`step`, 22
+`aria-label`); `Button`/`TabBarAction` no daban nombre a los `iconOnly` (102 de
+194 sin él); `SegmentedControl` no sabía apilar; `PortalInput` no sabía
+tintarse; `DataRow` y las 62 columnas ordenables de `DataTable` no respondían
+al teclado; `LiquidSelect` **no era enfocable** —0 de sus combobox alcanzables
+con Tab, en los 70 archivos que lo usan—.
+
+**El gate quedó en 20 de 23 categorías en cero absoluto.** Las tres con ratchet
+(`chart-retirado` 430, `input-a-mano` 61, `chip-a-mano` 8) son deuda
+deliberada, documentada arriba. Las tres nuevas y bloqueantes —`button-name`,
+`paleta-cerrada`, `input-sin-nombre`— no van al baseline: una categoría que no
+figura en el JSON arranca bloqueante sola.
+
+**Dos cosas que el gate encontró y la lectura manual no:** `LazyInput` de
+`BranchHelpers` (un helper compartido, sin nombre accesible) y —al ir a
+verificar el último pendiente de §25— que el pulso del borde del PIN del
+kiosco es un bucle infinito que seguía corriendo con `prefers-reduced-motion`.
+
+---
+
 ## Abiertos sin resolver
 
 - **`TabStaff.jsx:243` — panel "Motor de Sincronización WFM" en oscuro fijo.**

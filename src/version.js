@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.207.0';
+export const APP_VERSION = '2.208.0';
+
+// v2.208.0 — el modal de nuevo conteo estaba aplastado a un cuarto de su ancho.
+//
+// El SegmentedControl del alcance iba envuelto en un `md:grid-cols-2`. Pero en
+// `layout="block"` ese control YA arma su propia grilla: el wrapper lo metia en
+// media pantalla y el adentro partia esa mitad en dos, asi que cada pildora
+// terminaba con ~25% del ancho del modal y el texto en TRES lineas sobre una
+// pildora de alto fijo (h-11). Se ve en la captura del usuario.
+//
+// - Fuera el wrapper. Las 5 pildoras quedan de 269x44 uniformes, una linea cada
+//   una (medido en Chromium contra el build de produccion).
+// - Etiquetas de una linea: van en text-caption uppercase con tracking-widest,
+//   que ensancha mucho — "Solo Bajo Receta (antibioticos)" no cabia ni cerca.
+//   El parentesis explicativo se movio al aviso.
+// - El aviso azul eran cuatro renglones en negrita. Queda la regla en el Notice
+//   y la letra chica debajo en tono normal, que es lo que la hace legible.
+// - La vista previa ya no es una isla dentro de otra isla (doble borde, doble
+//   radio): recuadro liviano.
+// - Los badges salian en el orden de claves del JSON del servidor ("B, C, Bajo
+//   Receta, A"). Ahora en el orden en que se sortean.
+// - El estado de carga vive en la MISMA caja que despues muestra los datos, asi
+//   el modal no salta a los ~5s que tarda el sorteo. Con texto y no con
+//   SkeletonText: medido acá, sus barras no contrastan contra
+//   `surface-card-hover` y la caja se leia vacia.
+//
+// Verificado con Playwright contra `vite preview`: capturas de los tres estados
+// y medicion de las pildoras.
+
 
 // v2.207.0 — se recuperaron los JSON originales que se creian perdidos.
 //

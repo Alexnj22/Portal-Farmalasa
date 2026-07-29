@@ -288,6 +288,35 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.208.0 — el modal de nuevo conteo estaba aplastado a un cuarto de su ancho.
+
+El `SegmentedControl` del alcance iba envuelto en un `md:grid-cols-2`. Pero en
+`layout="block"` ese control **ya arma su propia grilla**: el wrapper lo metía en
+media pantalla y él partía esa mitad en dos, así que cada píldora terminaba con
+~25% del ancho del modal y el texto en **tres líneas** sobre una píldora de alto
+fijo (`h-11`).
+
+- Fuera el wrapper. Las 5 píldoras quedan de **269×44 uniformes, una línea cada
+  una** (medido en Chromium contra el build de producción).
+- **Etiquetas de una línea.** Van en `text-caption` uppercase con
+  `tracking-widest`, que ensancha mucho: "Solo Bajo Receta (antibióticos)" no
+  cabía ni cerca. El paréntesis explicativo se movió al aviso.
+- **El aviso azul eran cuatro renglones en negrita.** Queda la regla en el
+  `Notice` y la letra chica debajo en tono normal, que es lo que la hace legible.
+- La vista previa ya no es una isla dentro de otra isla (doble borde, doble
+  radio): recuadro liviano.
+- Los badges salían en el orden de claves del JSON del servidor —"B, C, Bajo
+  Receta, A"—. Ahora en el orden en que se sortean.
+- El estado de carga vive en la **misma caja** que después muestra los datos, así
+  el modal no salta a los ~5s que tarda el sorteo. Con texto y no con
+  `SkeletonText`: medido acá, sus barras no contrastan contra
+  `surface-card-hover` y la caja se leía vacía.
+
+Verificado con Playwright contra `vite preview`: capturas de los tres estados
+(inicial, cargando, cargado) y medición de las píldoras.
+
+---
+
 ## v2.206.0 — el aviso del recálculo mensual ya no miente cuando no calculó nada.
 
 `calculate_stock_params` devuelve `{ ok:false, skipped:true, reason }` cuando se

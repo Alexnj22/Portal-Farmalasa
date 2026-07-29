@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2 } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
@@ -14,12 +14,16 @@ import SegmentedControl from '../common/SegmentedControl';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
 
+// Etiquetas de UNA línea: en `layout="block"` la píldora es de alto fijo (h-11),
+// así que un label que envuelve no crece — se desborda. Van en text-caption
+// uppercase con tracking-widest, que ensancha mucho: lo que en prosa parece
+// corto acá ocupa el doble. El paréntesis explicativo se movió al aviso.
 const SCOPE_OPTIONS = [
-    { value: 'CICLICO', label: 'Cíclico del mes (muestra)', icon: Repeat },
+    { value: 'CICLICO', label: 'Cíclico del mes', icon: Repeat },
     { value: 'TOTAL', label: 'Todo el inventario', icon: ListChecks },
     { value: 'LABORATORIO', label: 'Por laboratorio', icon: FlaskConical },
-    { value: 'BAJO_RECETA', label: 'Solo Bajo Receta (antibióticos)', icon: ShieldAlert },
-    { value: 'MANUAL', label: 'Selección manual de productos', icon: Search },
+    { value: 'BAJO_RECETA', label: 'Bajo Receta', icon: ShieldAlert },
+    { value: 'MANUAL', label: 'Selección manual', icon: Search },
 ];
 
 const TAMANO_DEFAULT = 200;
@@ -32,6 +36,9 @@ const SEGMENTO_LABEL = {
     B: 'Clase B',
     C: 'Clase C / sin clasificar',
 };
+// El servidor devuelve un objeto JSON y su orden de claves es arbitrario — salía
+// "B, C, Bajo Receta, A". Se muestran en el orden en que se sortean.
+const SEGMENTO_ORDEN = ['BAJO_RECETA', 'A', 'B', 'C'];
 
 const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
@@ -165,46 +172,78 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                             <LiquidSelect value={branchId} onChange={setBranchId} options={branchOpts} placeholder="Seleccionar sucursal..." icon={Building2} clearable={false} disabled={isBranchScoped} />
                         </div>
 
+                        {/* Sin wrapper de grilla: SegmentedControl en `layout="block"`
+                            YA arma su propia grilla. Envolverlo en un
+                            `md:grid-cols-2` lo metía en media pantalla, y adentro
+                            él partía esa mitad en dos — cada píldora terminaba con
+                            un cuarto del ancho del modal y el texto en tres líneas. */}
                         <label className={`${fieldLabel} mt-4`}>Alcance del conteo</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            <SegmentedControl
-                                layout="block" columns={2} tone="chart-9"
-                                options={SCOPE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label, icon: opt.icon }))}
-                                value={scopeType} onChange={setScopeType} label="Alcance del conteo" />
-                        </div>
+                        <SegmentedControl
+                            layout="block" columns={2} tone="chart-9"
+                            options={SCOPE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label, icon: opt.icon }))}
+                            value={scopeType} onChange={setScopeType} label="Alcance del conteo" />
 
                         {scopeType === 'CICLICO' && (
                             <div className="mt-4 flex flex-col gap-3">
-                                <div>
-                                    <label className={fieldLabel}><span>Productos a contar este mes</span>{tamanoMissing && reqBadge}</label>
-                                    <PortalInput
-                                        aria-label="Cantidad de productos de la muestra"
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        value={tamano}
-                                        onChange={(e) => setTamano(e.target.value)}
-                                        className="w-32"
-                                        inputClassName="text-body-xl"
-                                    />
+                                {/* Cantidad y su unidad en una fila: el label solo
+                                    ocupaba un renglón entero para acompañar a un
+                                    campo de tres dígitos. */}
+                                <div className="flex items-end gap-3">
+                                    <div className="w-28 shrink-0">
+                                        <label className={fieldLabel}><span>Cantidad</span>{tamanoMissing && reqBadge}</label>
+                                        <PortalInput
+                                            aria-label="Cantidad de productos de la muestra"
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={tamano}
+                                            onChange={(e) => setTamano(e.target.value)}
+                                            inputClassName="text-body-xl"
+                                        />
+                                    </div>
+                                    <p className="text-label text-content-3 pb-2.5 leading-snug">
+                                        productos al mes, por sucursal
+                                    </p>
                                 </div>
 
+                                {/* El aviso decía la regla, el desempate, el caso sin
+                                    ABC y el porqué — cuatro renglones en negrita que
+                                    nadie lee. Queda la regla; la letra chica va abajo
+                                    en tono normal, que es lo que la hace legible. */}
                                 <Notice variant="info" icon={Repeat}>
-                                    La muestra la sortea el servidor: entran <strong>todos</strong> los Bajo Receta y el resto
-                                    se reparte 60% clase A · 25% B · 15% C. Dentro de cada grupo elige primero lo que lleva
-                                    más tiempo sin contarse y desempata al azar — así nada queda sin contarse nunca y nadie
-                                    puede predecir qué cae. Una sucursal sin clasificación ABC publicada rota por antigüedad.
+                                    Entran <strong>todos</strong> los Bajo Receta. El resto se sortea 60% clase A · 25% B · 15% C.
                                 </Notice>
+                                <p className="text-caption text-content-3 leading-snug -mt-1">
+                                    Elige primero lo que lleva más tiempo sin contarse y desempata al azar, así nada queda sin
+                                    contarse nunca y nadie puede predecir qué cae. Una sucursal sin clasificación ABC publicada
+                                    rota por antigüedad.
+                                </p>
 
+                                {/* El mismo recuadro mientras carga y ya cargado: el
+                                    sorteo tarda ~5s contra prod, y una línea suelta
+                                    que después se convierte en una caja hace saltar
+                                    todo el modal. */}
                                 {previewLoading ? (
-                                    <p className="text-label text-content-3">Calculando la muestra…</p>
+                                    // Texto y no SkeletonText: medido en este modal, las
+                                    // barras del skeleton no contrastan contra
+                                    // `surface-card-hover` y la caja se lee VACÍA los ~5s
+                                    // que tarda el sorteo — peor que no poner nada.
+                                    <div className="rounded-2xl bg-surface-card-hover border border-border-card p-3">
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">Vista previa de la muestra</p>
+                                        <p className="text-label text-content-2 flex items-center gap-2">
+                                            <Loader2 size={13} className="animate-spin shrink-0" />
+                                            Sorteando la muestra de esta sucursal…
+                                        </p>
+                                    </div>
                                 ) : preview?.muestra ? (
-                                    <div className={islandClass}>
+                                    // Recuadro liviano, no `islandClass`: esto vive DENTRO
+                                    // de una isla y anidar dos daba doble borde y doble radio.
+                                    <div className="rounded-2xl bg-surface-card-hover border border-border-card p-3">
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">Vista previa de la muestra</p>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {Object.entries(preview.muestra).map(([seg, n]) => (
+                                            {SEGMENTO_ORDEN.filter((seg) => preview.muestra[seg] != null).map((seg) => (
                                                 <Badge key={seg} variant={seg === 'BAJO_RECETA' ? 'danger' : 'chart-9'} uppercase={false}>
-                                                    {SEGMENTO_LABEL[seg] || seg}: {n}
+                                                    {SEGMENTO_LABEL[seg]}: {preview.muestra[seg]}
                                                 </Badge>
                                             ))}
                                         </div>

@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.186.0';
+export const APP_VERSION = '2.187.0';
+
+// v2.187.0 - auditoria de puntos ciegos, P3 + dos reglas nuevas en el gate.
+//
+//   11. prefers-reduced-motion apagaba `animation` clase por clase y NO tocaba
+//       una sola `transition`: ~150 elementos seguian moviendose de verdad (el
+//       barrido de 0.7s de los botones, el -translate-y del hover de cada
+//       tarjeta, el scale de las fotos). Ahora 0. NO se apaga `transition` a
+//       secas: una transicion de COLOR no es movimiento y quitarla empeora la
+//       interfaz - el estado cambiaria de golpe, justo el salto que la
+//       preferencia quiere evitar. Se neutraliza la geometria.
+//   12. 15 iconos en tamanos arbitrarios al escalon de la rampa. Otros 3 se
+//       REVIRTIERON: son marcas de agua decorativas (opacidad <=15%, detras del
+//       contenido) y encogerlas cambiaba un peso visual deliberado.
+//   13/14. 4 `title` que repetian el aria-label. Y la regla que faltaba en
+//       15.10: title NOMBRA un control de solo icono, LiquidTooltip EXPLICA.
+//       Los 208 title del portal no eran deuda - 204 son el unico nombre
+//       accesible del control.
+//
+// DOS CATEGORIAS NUEVAS EN EL GATE, ambas bloqueantes en cero:
+// `try-finally-mudo` y `title-redundante`. Encontraron 3 casos que se me
+// habian pasado (NotificationBell, FacturasCompraView, TabInventario).
+//
+// Queda abierto y medido: 224 targets tactiles bajo 44px en 11 de 33 rutas. No
+// se tocan a ciegas - el grueso son barras de grafico clickeables y celdas de
+// grilla densa, donde 44px es incorrecto y WCAG 2.5.5 tiene excepcion. Es una
+// pasada aparte, caso por caso.
 
 // v2.186.0 - auditoria de los PUNTOS CIEGOS del gate: P1 y P2.
 //

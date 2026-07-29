@@ -372,7 +372,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-2 text-content-3">
-          <Inbox size={34} strokeWidth={1.5} />
+          <Inbox size={32} strokeWidth={1.5} />
           <p className="text-body font-semibold text-content-3">
             {tab === 'pending' ? 'No hay solicitudes pendientes' : 'Sin historial de solicitudes'}
           </p>

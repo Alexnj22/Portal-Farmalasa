@@ -606,7 +606,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 <div className="relative w-16 h-16 flex items-center justify-center mb-6">
                                     <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full animate-spin [animation-duration:4s] blur-[5px] opacity-70"></div>
                                     <div className="relative w-full h-full bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-inner border border-border-card">
-                                        <Sparkles size={30} className="text-white" strokeWidth={2} />
+                                        <Sparkles size={28} className="text-white" strokeWidth={2} />
                                     </div>
                                 </div>
 

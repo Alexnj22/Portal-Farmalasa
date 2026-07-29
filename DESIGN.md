@@ -960,6 +960,30 @@ Current files using framer-motion:
 - Inline / compact: `size={16}` or `size={14}`
 - Badge / chip: `size={12}` or `size={10}`
 
+#### La rampa real (medida 2026-07-29)
+
+Lo de arriba son los **defaults**, no la escala. Durante mucho tiempo esta
+sección se leyó como si fuera la escala completa —cinco valores— y al medir los
+**1,287 íconos** del portal aparecieron **33 tamaños distintos**, con todo
+entero de 5 a 20 en uso: `13` sale 147 veces, `11` sale 89, `9` sale 61. O sea
+que el 48% quedaba "fuera de escala" contra una escala que nunca fue real.
+
+Un doc que describe algo que el código no hace no se arregla migrando 613
+íconos: se arregla diciendo la verdad. La rampa es ésta:
+
+```
+8 · 10 · 11 · 12 · 13 · 14 · 16 · 18 · 20 · 22 · 24 · 26 · 28 · 32 · 36 · 40 · 48 · 56
+```
+
+Fina abajo (donde un punto de diferencia se ve, porque el ícono compite con
+texto de 10-12px) y gruesa arriba (donde ya no). Elegir de ahí; si el tamaño que
+querés no está, casi siempre es que el de al lado sirve igual.
+
+**Excepción: la marca de agua.** Un ícono decorativo de fondo —opacidad ≤15%,
+`pointer-events-none`, detrás del contenido— no es un ícono de interfaz y no
+sigue la rampa: es una textura, y su tamaño lo decide la caja que llena. Hoy son
+tres (`FormWfmAnalytics` 100, `EmployeeDetailView` 80, `FormLeadership` 64).
+
 **Icon squircle** (standard container for view/module icons):
 ```jsx
 // Desktop
@@ -1633,6 +1657,30 @@ El texto secundario *dentro* del tooltip usa `text-content-tooltip-2`, no
 bug real, estaba en varios de los 30 tooltips escritos a mano.
 
 Se muestra también con el foco del teclado, no solo con el puntero.
+
+#### `LiquidTooltip` vs `title=` — la regla que faltaba (2026-07-29)
+
+Al medir salió una desproporción que el doc nunca explicó: **9 `LiquidTooltip`
+contra 208 atributos `title=`**. La lectura fácil sería "hay 208 tooltips sin
+migrar", y es falsa — de esos 208, **204 son el único nombre accesible del
+control**, y `Button` documenta `title` como fuente de nombre válida (mirá
+`nombreAuto` en `Button.jsx`). Quitarlos dejaría 204 controles sin nombre.
+
+Son dos cosas distintas y conviven:
+
+| | `title=` | `LiquidTooltip` |
+|---|---|---|
+| para qué | **nombrar** un control que solo muestra un ícono | **explicar** algo que el control no dice |
+| qué se ve | tooltip del sistema operativo, ~1s de espera, ignora los 4 temas | superficie del portal, inmediata, sigue el tema |
+| en táctil | no existe | tampoco, pero ahí el nombre lo lee el lector de pantalla |
+| coste | cero | envuelve el elemento (puede afectar el layout) |
+
+- Un botón de solo ícono necesita **un nombre**: `aria-label` (preferido) o
+  `title`. Con eso alcanza; no hace falta envolverlo.
+- Si además hay que **explicar** —"se sincronizó hace 3 minutos", "este cálculo
+  excluye las bonificaciones"—, eso es `LiquidTooltip`.
+- **Nunca los dos con el mismo texto.** Había 4 así; el `title` sobraba y solo
+  agregaba un tooltip del sistema encima del nombre que ya existía.
 
 #### Tooltip ≠ hover card — dónde termina la regla 1a
 

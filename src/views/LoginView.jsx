@@ -626,7 +626,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 className="group w-full p-4 rounded-card bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5">
                                 <div className="flex items-center gap-3.5">
                                     <div className="w-11 h-11 rounded-2xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-200 shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
-                                        <Clock size={19} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
+                                        <Clock size={18} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-body-sm font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>

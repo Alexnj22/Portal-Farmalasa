@@ -74,7 +74,11 @@ const LiquidSelect = ({
     const textStyle = nano ? 'text-label font-black' : `${compact ? 'text-body-sm' : 'text-body'} font-bold`;
     const paddingStyle = nano ? 'pl-2 pr-4 py-1' : compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
     const leftIconPos = compact ? 'left-1 w-6 h-6' : 'left-4 w-8 h-8';
+    // El ícono se ve del tamaño de siempre; lo que llega al piso de §25.6 en
+    // táctil es el ÁREA del botón de limpiar (el chevron de al lado es
+    // aria-hidden + tabIndex -1, así que no es un target).
     const rightIconPos = nano ? 'right-0.5 w-3.5 h-3.5' : compact ? 'right-1 w-5 h-5' : 'right-4 w-6 h-6';
+    const clearTap = 'min-w-[var(--tap-min)] min-h-[var(--tap-min)]';
     // El chevron/limpiar vive DENTRO del campo: agrandarlo a 44px le comería
     // el texto. En vez de eso se agranda solo el área tocable con un
     // pseudo-elemento — se ve igual de chico y se toca como un control de
@@ -544,7 +548,7 @@ const LiquidSelect = ({
                 <button
                     type="button"
                     onClick={handleClear}
-                    className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center ${areaTocable}`}
+                    className={`absolute ${rightIconPos} ${clearTap} top-1/2 -translate-y-1/2 z-base outline-none p-1 cursor-pointer flex items-center justify-center ${areaTocable}`}
                     title="Quitar selección"
                 >
                     <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger-solid text-danger hover:text-white">

@@ -140,7 +140,7 @@ export default function TablePagination({
             <span className="flex items-center px-1">
                 <button type="button" className={NAV} disabled={page <= 1}
                     onClick={() => navegar(() => onPageChange(page - 1))}
-                    title="Página anterior" aria-label="Página anterior">
+                    aria-label="Página anterior">
                     <ChevronLeft size={16} strokeWidth={2.5} />
                 </button>
 
@@ -177,7 +177,7 @@ export default function TablePagination({
 
                 <button type="button" className={NAV} disabled={page >= totalPages}
                     onClick={() => navegar(() => onPageChange(page + 1))}
-                    title="Página siguiente" aria-label="Página siguiente">
+                    aria-label="Página siguiente">
                     <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
             </span>

@@ -968,6 +968,52 @@ function scanFile(path) {
       }
     }
 
+    // ── `try-finally-mudo` (2026-07-29, CERO ABSOLUTO) ──────────────────
+    // Un `try { … } finally { setLoading(false) }` SIN `catch`. Si la promesa
+    // tira, el spinner se apaga, la lista queda vacía y el usuario lee "no hay
+    // datos" cuando en realidad la operación falló. Es el bug de UX más barato
+    // de escribir y el más caro de diagnosticar: no deja rastro en pantalla.
+    //
+    // Medido el 2026-07-29: 7 reales. Se cuenta equilibrando llaves hacia
+    // atrás desde el `finally` hasta SU `try` — un detector por líneas los
+    // sobrecontaba a 19 (agarraba el `try` de otra función).
+    {
+      const RE_FIN = /\}\s*finally\s*\{/g;
+      let mf;
+      while ((mf = RE_FIN.exec(sinComentarios2))) {
+        const antes = sinComentarios2.slice(0, mf.index);
+        let prof = 0, ini = -1;
+        for (let k = antes.length - 1; k >= 0; k--) {
+          if (antes[k] === '}') prof++;
+          else if (antes[k] === '{') {
+            if (prof === 0) { if (/\btry\s*$/.test(antes.slice(Math.max(0, k - 6), k))) ini = k; break; }
+            prof--;
+          }
+        }
+        if (ini < 0) continue;
+        if (/\}\s*catch\s*[({]/.test(antes.slice(ini))) continue;
+        findings.push({ line: antes.split('\n').length, category: 'try-finally-mudo',
+          label: 'try/finally sin catch: si falla, el usuario no se entera',
+          text: sinComentarios2.slice(mf.index, mf.index + 60).replace(/\s+/g, ' ') });
+      }
+    }
+
+    // ── `title-redundante` (2026-07-29, CERO ABSOLUTO) ──────────────────
+    // El MISMO texto en `aria-label` y en `title`. El `aria-label` ya nombra el
+    // control; el `title` solo suma un tooltip del sistema operativo que
+    // ignora los cuatro temas y tarda un segundo. Ver DESIGN.md §15.10.
+    {
+      const RE_T = /title=["']([^"']{3,})["']/g;
+      let mt;
+      while ((mt = RE_T.exec(sinComentarios2))) {
+        const cerca = sinComentarios2.slice(Math.max(0, mt.index - 250), mt.index + 250);
+        if (!cerca.includes(`aria-label="${mt[1]}"`)) continue;
+        findings.push({ line: sinComentarios2.slice(0, mt.index).split('\n').length,
+          category: 'title-redundante', label: 'title= repite el aria-label — sobra el tooltip nativo',
+          text: mt[0] });
+      }
+    }
+
     // ── `button-name` (2026-07-28) ──────────────────────────────────────
     // Hermano del anterior, para el otro lado del formulario: un `<button>`
     // cuyo contenido son SOLO íconos, sin `aria-label` ni `title`. Un lector

@@ -261,6 +261,9 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         setApplying(true);
         try {
             await onFound(result.match);
+        } catch (e) {
+            console.error('FacturasCompraView: aplicar el match fallo:', e);
+            useToastStore.getState().showToast('No se pudo aplicar', 'El documento no quedo enlazado. Intenta de nuevo.', 'error');
         } finally {
             setApplying(false);
         }

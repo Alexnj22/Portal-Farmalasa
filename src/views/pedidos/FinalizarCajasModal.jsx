@@ -152,8 +152,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-chart-3/10 border border-chart-3/20">
                         <div className="w-12 h-12 rounded-2xl bg-chart-3 shadow-[var(--shadow-glow-chart-3)] flex items-center justify-center shrink-0">
                             {loadingPages
-                                ? <Loader2 size={19} className="animate-spin text-white" />
-                                : <Package size={19} className="text-white" />
+                                ? <Loader2 size={18} className="animate-spin text-white" />
+                                : <Package size={18} className="text-white" />
                             }
                         </div>
                         <div className="flex-1 min-w-0">

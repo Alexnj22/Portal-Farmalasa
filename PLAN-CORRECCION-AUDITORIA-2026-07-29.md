@@ -57,3 +57,47 @@ De 503 hallazgos en bruto, éstos se cayeron al verificarlos:
 P1 completo → P2 completo → P3 completo. Cada punto: corregir, `npm run build`,
 `npx eslint src/`, `npm run gate:design`, y verificación en vivo donde cambie
 comportamiento. Categorías nuevas del gate al cerrar, para que no vuelvan.
+
+
+---
+
+# Estado de ejecución (2026-07-29)
+
+## P1 — hecho
+| # | qué | verificación |
+|---|---|---|
+| 1 | 7 `try/finally` sin `catch` → toast | los 7 con `catch`; el gate ahora lo vigila en cero |
+| 2 | 4 modales a mano → `ModalShell` | Escape cierra, `role="dialog"`, `aria-modal` |
+| 3 | 3 visores de foto → `common/PhotoLightbox` | uno solo, con Escape y `alt` obligatorio |
+| 4 | botón de limpiar 20×20 → piso `--tap-min` | `SearchInput` y `LiquidSelect` |
+| 5 | COEP del dev server | 58 bloqueadas → **0**, fotos cargando |
+| 6 | foco en los 3 segmentos de fecha | pasada C: **0** enfocables sin indicador |
+
+## P2 — hecho
+6 estados vacíos → `EmptyState` · 3 spinners → `LoadingState`/`Skeleton`/`AiThinkingState` ·
+paginación → `TablePagination` · 6 `<th>` de sub-tabla unificados + regla nueva en §14.
+
+## P3 — hecho
+`prefers-reduced-motion` ya no deja moverse nada (**~150 → 0**), conservando las
+transiciones de color · 4 `title` redundantes quitados · 15 íconos arbitrarios
+al escalón de la rampa (3 revertidos: son marcas de agua decorativas) · §12 y
+§15.10 corregidas · **2 categorías nuevas en el gate**, ambas bloqueantes en
+cero: `try-finally-mudo` y `title-redundante` — encontraron 3 casos que se me
+habían pasado.
+
+## Lo que queda abierto, medido y a propósito
+
+**224 targets táctiles bajo 44px, en 11 de 33 rutas** (WebKit iPhone, tamaño
+computado — el rect miente cuando un ancestro tiene `scale`; eso solo ya
+descartó 22). No se corrigen a ciegas porque el grueso son dos cosas donde
+44px es incorrecto, no un descuido:
+
+- **barras de gráfico clickeables** (`27×20`, `38×74`): una barra de 44px de
+  ancho deja de ser un gráfico.
+- **celdas de grilla densa** (`93×25`, `68×28`, `26×29`): son las mismas que
+  §15.12 ya reconoce como artesanales a propósito.
+
+WCAG 2.5.8 (AA) pide 24×24 y casi todas lo cumplen; el piso de 44 es 2.5.5
+(AAA), que el proyecto sostiene por decisión propia y que tiene excepción
+explícita para presentación esencial. Corregirlas es una pasada aparte, caso
+por caso, con criterio de diseño — no un `sed`.

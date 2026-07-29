@@ -204,12 +204,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [isSuCopied, setIsSuCopied] = useState(false);
 
-    const [flyout, setFlyout] = useState(null); 
+    const [flyout, setFlyout] = useState(null);
     const flyoutTimerRef = useRef(null);
     const asideRef = useRef(null);
 
     const navRef = useRef(null);
-    const groupHeaderRefs = useRef(new Map()); 
+    const groupHeaderRefs = useRef(new Map());
     const itemRefs = useRef(new Map());
     const [pill, setPill] = useState({ top: 0, height: 44, show: false });
     const lastGoodPillRef = useRef({ top: 0, height: 44, show: false });
@@ -1015,12 +1015,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
-                                            onMouseLeave={closeFlyout} aria-label="Mi Perfil" title="Mi Perfil"
+                                            onMouseLeave={closeFlyout} aria-label="Mi Perfil"
                                             className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:-translate-y-0.5 active:scale-[0.97]
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
                                                 shadow-[var(--shadow-glass-1)]
                                                 hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
-                                            {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
+                                            {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
                                         </Link>
                                         {myBirthday && (
                                             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -1261,7 +1261,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     type="button"
                                 >
                                     <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
-                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} className="text-[#7DB8FF]" />}
+                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-[#7DB8FF]" />}
                                     </div>
                                     <div className="flex flex-col items-start pr-1">
                                         <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>
@@ -1272,7 +1272,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         ) : null}
                     </div>
                 )}
-                
+
             </div>
 
             <PushPromptBanner />

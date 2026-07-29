@@ -2169,6 +2169,30 @@ a:focus-visible,
     background: rgba(148,163,184,0.15) !important;
   }
 
+  /* — Las TRANSICIONES que mueven ————————————————————————————
+     Medido el 2026-07-29: este bloque apagaba `animation` clase por clase y
+     no tocaba una sola `transition`. Con la preferencia activa quedaban ~150
+     elementos moviéndose de verdad — el barrido de 0.7s sobre los botones, el
+     `-translate-y` del hover de cada tarjeta, el `scale` de las fotos.
+
+     La distinción importa y por eso NO se apaga `transition` a secas: una
+     transición de COLOR (fondo, borde, texto) no es movimiento y quitarla
+     empeora la interfaz — el estado cambiaría de golpe, que es justo el tipo
+     de salto que la preferencia quiere evitar. Lo que se neutraliza es la
+     geometría: transform, y las propiedades de caja que reacomodan la página.
+
+     `transition-property` sigue declarada; lo que se anula es la DURACIÓN, así
+     que el estado final es idéntico y llega de inmediato. */
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+  }
+  /* Devolverle su duración a lo que solo cambia de color: es lo que hace que
+     un hover se sienta vivo sin mover nada de lugar. */
+  a, button, [role="button"], [data-surface], input, select, textarea, .transition-colors {
+    transition-property: color, background-color, border-color, outline-color, fill, stroke, opacity, box-shadow;
+    transition-duration: 150ms !important;
+  }
+
   @keyframes rm-fade-in {
     from { opacity: 0; }
     to   { opacity: 1; }

@@ -17,6 +17,7 @@ import {
     fetchExpiredInventoryCount, fetchInventoryDetail,
 } from '../../data/inventarioTab';
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
+import { useToastStore } from '../../store/toastStore';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -203,6 +204,9 @@ export default function TabInventario({ searchTerm = '' }) {
             ]);
             setExpandedData(prev => ({ ...prev, [key]: data || [] }));
             setExpandedVencidos(prev => ({ ...prev, [key]: vData || [] }));
+        } catch (e) {
+            console.error('TabInventario: detalle de inventario fallo:', e);
+            useToastStore.getState().showToast('No se pudo abrir el detalle', 'El inventario del producto no cargo. Intenta de nuevo.', 'error');
         } finally {
             setExpandLoading(prev => { const s = new Set(prev); s.delete(key); return s; });
         }

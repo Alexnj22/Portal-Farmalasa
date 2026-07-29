@@ -39,7 +39,7 @@ const AccessDeniedView = () => {
                 <span className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-chart-3/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                 <span className="absolute -inset-6 rounded-full bg-chart-3/10 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.8s' }} />
                 <div className="relative w-24 h-24 rounded-modal bg-surface-card border border-chart-3/20 shadow-[var(--shadow-glow-chart-3)] flex items-center justify-center">
-                    <Lock size={38} className="text-chart-3" strokeWidth={1.2} />
+                    <Lock size={36} className="text-chart-3" strokeWidth={1.2} />
                 </div>
             </div>
 

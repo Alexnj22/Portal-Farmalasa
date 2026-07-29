@@ -801,7 +801,7 @@ const PermissionsView = () => {
                                             <ShieldCheck size={13} className="text-white" strokeWidth={2} />
                                             {isSURol && (
                                                 <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
-                                                    <Sparkles size={7} className="text-warning" strokeWidth={2.5} />
+                                                    <Sparkles size={8} className="text-warning" strokeWidth={2.5} />
                                                 </div>
                                             )}
                                         </div>
@@ -858,7 +858,7 @@ const PermissionsView = () => {
                                                 <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={1.8} />
                                                 {isRoleSU && (
                                                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">
-                                                        <Sparkles size={7} className="text-warning" strokeWidth={2.5} />
+                                                        <Sparkles size={8} className="text-warning" strokeWidth={2.5} />
                                                     </div>
                                                 )}
                                             </div>

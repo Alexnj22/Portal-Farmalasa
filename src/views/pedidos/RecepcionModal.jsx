@@ -826,7 +826,7 @@ export default function RecepcionModal({
 
                         {extras.length === 0 && (
                             <div className="py-12 text-center">
-                                <PackagePlus size={30} className="text-brand-text/40 mx-auto mb-2" />
+                                <PackagePlus size={28} className="text-brand-text/40 mx-auto mb-2" />
                                 <p className="text-body font-semibold text-content-3">Sin productos extra</p>
                                 <p className="text-label text-content-3 mt-1">Buscá un producto abajo para agregarlo</p>
                             </div>

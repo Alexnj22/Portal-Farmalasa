@@ -307,7 +307,6 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             {/* ── Botón campana ── */}
             <button
                 onClick={() => setIsOpen(o => !o)}
-                title="Notificaciones"
                 aria-label="Notificaciones"
                 className={`relative flex items-center justify-center w-11 h-11 rounded-2xl backdrop-blur-2xl border
                     hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200

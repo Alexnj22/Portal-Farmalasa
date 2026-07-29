@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.213.0';
+export const APP_VERSION = '2.214.0';
+
+// v2.214.0 — el portal tardaba 5 SEGUNDOS en hacer su primera peticion.
+//
+// En cada carga de pagina, para todos los usuarios. La UI se pintaba a los
+// 324 ms y la primera llamada a Supabase salia a los **5,145 ms**. Todo lo que
+// la app pedia en el medio quedaba encolado.
+//
+// **Causa: el callback de `onAuthStateChange` llamaba a supabase.** auth-js
+// espera a que cada suscriptor termine antes de dar por inicializado el
+// cliente, y toda llamada a supabase espera esa inicializacion — pedir algo
+// desde adentro del callback es un bloqueo mutuo consigo mismo. Medido:
+//   139 ms  SIGNED_IN -> el callback invoca ensure_user_by_code -> se cuelga
+//  5139 ms  salta el timeout de 5000 ms de withTimeout -> se destraba
+//  5145 ms  INITIAL_SESSION -> recien ahora sale TODA la red encolada
+// Los 5,000 ms exactos entre un evento y otro eran la firma del timeout.
+//
+// El arreglo: el callback queda SINCRONO y el trabajo async se dispara con
+// setTimeout(0) sin await, para que retorne de inmediato.
+//
+//   primera peticion   5,145 ms -> **150 ms**   (34x)
+//   sorteo del ciclico  ~5,000 ms -> **785 ms**
+//   login 2.1 s · permisos OK · 0 errores JS
+//
+// Seis hipotesis descartadas antes con medicion, y vale anotarlas porque cada
+// una parecia la buena: la base (35 ms), CPU (sin long tasks), la carrera de
+// Web Locks (0-3 ms), el service worker (identico con y sin, en navegador
+// real), `validateSession()` (se quito y no cambio), y varios clientes de
+// supabase (hay uno solo). El A/B del service worker daba 152 ms sin el —
+// pero solo en headless: en navegador real era igual de lento.
+
 
 // v2.213.0 — el backup semanal llevaba 17 dias sin correr, en silencio.
 //

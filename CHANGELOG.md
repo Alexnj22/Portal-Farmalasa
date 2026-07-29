@@ -323,6 +323,44 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.214.0 — el portal tardaba 5 segundos en hacer su primera petición.
+
+En **cada carga de página, para todos los usuarios**. La UI se pintaba a los
+324 ms y la primera llamada a Supabase salía a los **5,145 ms**. Todo lo que la
+app pedía en el medio quedaba encolado.
+
+**Causa: el callback de `onAuthStateChange` llamaba a supabase.** auth-js espera
+a que cada suscriptor termine antes de dar por inicializado el cliente, y toda
+llamada a supabase espera esa inicialización — pedir algo desde adentro del
+callback es un bloqueo mutuo consigo mismo:
+
+```
+  139 ms  SIGNED_IN → el callback invoca ensure_user_by_code → se cuelga
+ 5139 ms  salta el timeout de 5000 ms de withTimeout → se destraba
+ 5145 ms  INITIAL_SESSION → recién ahora sale toda la red encolada
+```
+
+Los **5,000 ms exactos** entre un evento y el otro eran la firma del timeout.
+
+El arreglo: el callback queda **síncrono** y el trabajo async se dispara con
+`setTimeout(0)` **sin `await`**, para que retorne de inmediato.
+
+| | Antes | Ahora |
+|---|---|---|
+| Primera petición | 5,145 ms | **150 ms** |
+| Sorteo del cíclico visible | ~5,000 ms | **785 ms** |
+
+Login 2.1 s, permisos aplicados, 0 errores JS.
+
+**Seis hipótesis descartadas antes con medición**, y vale anotarlas porque cada
+una parecía la buena: la base de datos (35 ms), CPU (sin long tasks), la carrera
+de Web Locks de supabase-js (0-3 ms de espera), el **service worker** (idéntico
+con y sin, en navegador real), `validateSession()` (se quitó y no cambió nada) y
+varios clientes de supabase (hay uno solo). El A/B del service worker daba 152 ms
+sin él — pero solo en headless; en navegador real era igual de lento.
+
+---
+
 ## v2.210.0 — el modal solo ofrece sucursales con inventario.
 
 Administración aparecía en la lista y no tiene inventario: elegirla llevaba a que

@@ -361,7 +361,50 @@ export const AuthProvider = ({ children }) => {
     validateSession();
 
     // Listener maestro: INITIAL_SESSION, TOKEN_REFRESHED, SIGNED_OUT
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+    //
+    // El callback es SÍNCRONO y no llama a supabase, a propósito. auth-js espera
+    // a que cada suscriptor termine antes de dar por inicializado el cliente, y
+    // toda llamada a supabase espera esa inicialización: pedir algo desde acá
+    // adentro es un bloqueo mutuo consigo mismo. Medido en el portal —
+    // SIGNED_IN llegaba a los 139 ms, el callback llamaba a
+    // `ensure_user_by_code`, se colgaba, y recién a los 5,000 ms (el timeout)
+    // se destrababa: INITIAL_SESSION salía a los 5,145 ms y TODA la app
+    // esperaba detrás. La UI se pintaba a los 324 ms y la primera petición no
+    // salía hasta los 5,1 s.
+    //
+    // El trabajo async se dispara con setTimeout(0) y SIN await: así el callback
+    // retorna de inmediato y auth-js termina de inicializar.
+    const procesarSesion = (session) => {
+      (async () => {
+        try {
+          const meta = session.user?.user_metadata;
+          const code = meta?.code || (session.user.email ? session.user.email.split('@')[0] : '');
+          const cleanCode = String(code || '').trim().toUpperCase();
+          if (!cleanCode) return;
+
+          const { data: ensured, error: fnErr } = await withTimeout(
+            supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanCode } }),
+            5000,
+            'ensure_user_by_code timeout',
+          );
+
+          if (fnErr || !ensured?.ok || !ensured?.user) return;
+          if (!aliveRef.current) return;
+
+          const u = await withSignedPhoto(ensured.user);
+          if (isExpiredByIdle(u)) { doLogout(); return; }
+
+          setUser(u);
+          localStorage.setItem(LS_USER, JSON.stringify(u));
+          startIdleWatcher(u);
+          refreshPermissions(u);
+        } catch {
+          // silencioso
+        }
+      })();
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       try {
         if (skipAuthListener.current) return;
 
@@ -382,25 +425,7 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        const code = meta?.code || (session.user.email ? session.user.email.split('@')[0] : '');
-        const cleanCode = String(code || '').trim().toUpperCase();
-        if (!cleanCode) return;
-
-        const { data: ensured, error: fnErr } = await withTimeout(
-          supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanCode } }),
-          5000,
-          'ensure_user_by_code timeout',
-        );
-
-        if (fnErr || !ensured?.ok || !ensured?.user) return;
-
-        const u = await withSignedPhoto(ensured.user);
-        if (isExpiredByIdle(u)) { doLogout(); return; }
-
-        setUser(u);
-        localStorage.setItem(LS_USER, JSON.stringify(u));
-        startIdleWatcher(u);
-        refreshPermissions(u);
+        setTimeout(() => procesarSesion(session), 0);
       } catch {
         // silencioso
       }

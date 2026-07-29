@@ -8,6 +8,7 @@ import LiquidSelect from '../../../components/common/LiquidSelect';
 import TimePicker12 from '../../../components/common/TimePicker12'; 
 import { useStaffStore } from '../../../store/staffStore'; 
 import { timeToMins, formatHourAMPM } from '../../../utils/scheduleHelpers';
+import { clickable } from '../../../utils/clickable';
 
 // Helper para convertir 24h string ("16:00") a 12h string ("4:00 pm")
 const formatTime12hStr = (time24) => {
@@ -410,7 +411,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className="space-y-3 relative z-base animate-in fade-in duration-300">
                             
                             <div 
-                                onClick={() => setHasLunch(!hasLunch)}
+                                {...clickable(() => setHasLunch(!hasLunch))}
                                 className="flex items-center justify-between bg-surface-card-hover border border-chart-4/30 p-3 rounded-2xl hover:border-chart-4/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
@@ -418,14 +419,14 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                     <span className="text-body-sm font-bold text-chart-4-text group-hover/row:text-chart-4-text transition-colors">Almuerzo</span>
                                 </div>
                                 {hasLunch && (
-                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" onClick={(e) => e.stopPropagation()}>
+                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" {...clickable((e) => e.stopPropagation())}>
                                         <TimePicker12 value={lunchStart} onChange={setLunchStart} />
                                     </div>
                                 )}
                             </div>
 
                             <div 
-                                onClick={() => setHasLactation(!hasLactation)}
+                                {...clickable(() => setHasLactation(!hasLactation))}
                                 className="flex items-center justify-between bg-surface-card-hover border border-chart-6/20 p-3 rounded-2xl hover:border-chart-6/40 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
@@ -433,7 +434,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                                     <span className="text-body-sm font-bold text-chart-6-text group-hover/row:text-chart-6-text transition-colors">Lactancia</span>
                                 </div>
                                 {hasLactation && (
-                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" onClick={(e) => e.stopPropagation()}>
+                                    <div className="w-[100px] animate-in fade-in slide-in-from-right-2 duration-300" {...clickable((e) => e.stopPropagation())}>
                                         <TimePicker12 value={lactationStart} onChange={setLactationStart} />
                                     </div>
                                 )}

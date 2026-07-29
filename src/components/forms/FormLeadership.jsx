@@ -8,6 +8,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
 import Button from '../common/Button';
 import SearchInput from '../common/SearchInput';
+import { clickable } from '../../utils/clickable';
 
 const getTenure = (dateString) => {
     if (!dateString) return 'N/A';
@@ -100,7 +101,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         return (
                             <div 
                                 key={emp.id} 
-                                onClick={() => setFormData({...formData, selectedEmpId: emp.id})}
+                                {...clickable(() => setFormData({...formData, selectedEmpId: emp.id}))}
                                 className={`flex flex-col gap-2 p-3 rounded-2xl cursor-pointer border relative transition-colors ${
                                     isSelected 
                                     ? 'bg-surface-card border-brand shadow-[var(--shadow-glow-brand)] ring-1 ring-brand/30' 

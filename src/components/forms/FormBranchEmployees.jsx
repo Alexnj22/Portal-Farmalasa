@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { Users, Shield, Star, Stethoscope, Briefcase, ArrowUpRight, AlertCircle, Building2, Globe, CalendarDays, MapPin } from 'lucide-react';
+import { clickable } from '../../utils/clickable';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
@@ -148,7 +149,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group relative overflow-hidden cursor-pointer rounded-3xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
+                            <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group relative overflow-hidden cursor-pointer rounded-3xl bg-surface-card backdrop-blur-md border border-border-card shadow-[var(--shadow-elevation-xs)] h-[100px] active:scale-[0.97] transition-all">
                                 {/* Frente Normal */}
                                 <div className="absolute inset-0 p-5 flex items-center gap-4 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-4 group-hover:opacity-0">
                                     <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center font-black text-xl shrink-0 overflow-hidden shadow-inner ${!photoUrl ? COLOR_MAP[slot.color] : 'bg-surface-card-hover p-0'}`}>
@@ -206,7 +207,7 @@ const hasInjections = legal.injections === true;
                         }
 
                         return (
-                            <div key={slot.id} onClick={(e) => handleViewEmployee(e, emp)} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
+                            <div key={slot.id} {...clickable((e) => handleViewEmployee(e, emp))} className="group cursor-pointer p-3 rounded-2xl bg-surface-card-hover/50 backdrop-blur-sm border border-border-card shadow-sm hover:bg-surface-card-hover hover:border-brand/20 hover:shadow-md transition-all duration-300 flex items-center gap-3 active:scale-[0.97] h-[72px]">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-caption border shadow-sm group-hover:scale-105 transition-transform shrink-0 overflow-hidden ${!photoUrl ? (COLOR_MAP[slot.color] || COLOR_MAP.slate) : 'bg-surface-card-hover border-divider p-0'}`}>
                                     {photoUrl ? <img src={photoUrl} alt={emp.name} className="w-full h-full object-cover" /> : getInitials(emp.name)}
                                 </div>

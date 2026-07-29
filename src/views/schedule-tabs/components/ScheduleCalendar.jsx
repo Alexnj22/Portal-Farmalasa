@@ -9,6 +9,7 @@ import { tokenMatch } from '../../../utils/searchUtils';
 import { shortEmployeeName } from '../../../utils/nameUtils';
 
 import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
+import { clickable } from '../../../utils/clickable';
 
 // ============================================================================
 // 🛠️ ICONOS CUSTOM
@@ -405,11 +406,11 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                 const apoyoBranch = apoyoDaysByDow?.[dId];
 
                 return (
-                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-base hover:z-sidebar-desktop'}`} onClick={(e) => {
+                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-base hover:z-sidebar-desktop'}`} {...clickable((e) => {
                         if (conf || isReadOnly || apoyoBranch) return;
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
-                    }}>
+                    })}>
                         <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
                             ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)]' :
@@ -555,7 +556,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
 
                 return (
                     <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-base hover:z-sidebar-desktop"
-                        onClick={e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)}>
+                        {...clickable(e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch))}>
                         <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
                             ${isCoverageDay
                                 ? 'bg-chart-3/10 border border-chart-3/40 shadow-[var(--shadow-glow-chart-3-md)]'

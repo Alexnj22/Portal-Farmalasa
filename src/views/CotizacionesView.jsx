@@ -22,6 +22,7 @@ import {
     fetchCotizacionItems, deleteCotizacionItems,
 } from '../data/cotizaciones';
 import { fetchBranchesBasic } from '../data/system';
+import { clickable } from '../utils/clickable';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -720,7 +721,7 @@ export default function CotizacionesView() {
 
                         {/* Retención */}
                         <div className="flex flex-col gap-2">
-                            <div onClick={() => isCCFMode && setAppliesRetention(p => !p)}
+                            <div {...clickable(() => isCCFMode && setAppliesRetention(p => !p))}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer select-none transition-all ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'bg-warning/10 border-warning/40' : 'bg-surface-card border-border-card hover:bg-surface-card'}`}>
                                 <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${appliesRetention ? 'bg-warning border-warning' : 'border-border-card'}`}>
                                     {appliesRetention && <CheckCircle2 size={12} strokeWidth={3} className="text-white" />}
@@ -732,7 +733,7 @@ export default function CotizacionesView() {
                                 {appliesRetention && <Badge variant="warning" size="sm" uppercase={false} className="ml-auto">ACTIVA</Badge>}
                             </div>
                             {suggestRetention && (
-                                <div onClick={() => setAppliesRetention(true)}
+                                <div {...clickable(() => setAppliesRetention(true))}
                                     className="flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/30 rounded-xl cursor-pointer hover:bg-warning/10 transition-all">
                                     <AlertTriangle size={12} className="text-warning shrink-0" />
                                     <span className="text-caption font-bold text-warning-text">Base &gt; $100 en CCF. ¿Aplicar retención?</span>

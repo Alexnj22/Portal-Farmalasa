@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.180.0';
+export const APP_VERSION = '2.181.0';
+
+// v2.181.0 — auditoria, pasada B: teclado en controles que no son <button>.
+//
+// `clickable()` (src/utils/clickable.js) en 29 sitios: filas, celdas y tarjetas
+// con `onClick` sobre un <div>, sin tabIndex ni onKeyDown y sin nada enfocable
+// adentro. Con mouse andaban; con teclado no existian.
+//
+// **Y tres regresiones que introdujo esta misma auditoria, ya corregidas.** Las
+// tres del mismo molde: una migracion automatica de JSX que quedo verde en
+// build + lint + gate y aun asi cambio lo que el control hacia.
+//
+//   1. `clickable()` devolvia el contrato de teclado pero NO `onClick`, y el
+//      migrador reemplazo el `onClick` original por el spread: los 34 sitios
+//      quedaron accesibles con teclado y MUERTOS con mouse.
+//   2. 5 de esos sitios eran `onClick={e => e.stopPropagation()}` — barreras de
+//      evento, no controles. Revertidos: un `role="button"` que no hace nada es
+//      una parada de tabulacion falsa.
+//   3. El migrador de PortalInput descarto en silencio los dos `onKeyDown` de
+//      la grilla min/max (su regex de props soporta 2 niveles de llaves; esos
+//      handlers anidan mas). Ahi vivia la navegacion tipo hoja de calculo:
+//      `->` de MIN a MAX, `Enter`/`v` guarda el par y salta al siguiente
+//      producto, `<-` vuelve, `Esc` cancela. Recuperados de `aca2ef0f^`.
+//
+// Lo reporto el usuario, no el gate. Documentado en DESIGN.md §25.8.
 
 // v2.180.0 — auditoria, pasada A: codigo muerto.
 //

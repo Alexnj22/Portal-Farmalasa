@@ -31,6 +31,7 @@ import {
     fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
     fetchProductPreciosDetail, fetchProductPreciosHistory,
 } from '../data/ventas';
+import { clickable } from '../utils/clickable';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -211,7 +212,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     const isFilter = !!onClick;
     const card = (
         <div
-            onClick={onClick}
+            {...clickable(onClick)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
                 ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-surface-card' : 'cursor-default bg-surface-card'}
                 ${active

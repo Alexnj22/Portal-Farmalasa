@@ -5,6 +5,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
+import { clickable } from '../../utils/clickable';
 
 const CATEGORIES = [
     { value: 'Permisos y Licencias', label: 'Permisos y Licencias' },
@@ -124,7 +125,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                 <div className="flex flex-col gap-3">
                     <div 
                         className="flex items-center justify-between cursor-pointer group"
-                        onClick={() => updateField('hasIssueDate', !data.hasIssueDate)}
+                        {...clickable(() => updateField('hasIssueDate', !data.hasIssueDate))}
                     >
                         <div>
                             <p className="text-body font-black text-content-2 group-hover:text-brand-text transition-colors">¿Tiene fecha de expedición?</p>
@@ -148,7 +149,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                 <div className="flex flex-col gap-3">
                     <div 
                         className="flex items-center justify-between cursor-pointer group"
-                        onClick={() => updateField('hasExpiration', !data.hasExpiration)}
+                        {...clickable(() => updateField('hasExpiration', !data.hasExpiration))}
                     >
                         <div>
                             <p className="text-body font-black text-content-2 group-hover:text-warning transition-colors">¿Tiene fecha de vencimiento?</p>

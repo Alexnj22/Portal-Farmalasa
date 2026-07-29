@@ -9,6 +9,7 @@ import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { smartFilter } from '../../utils/searchUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
+import { clickable } from '../../utils/clickable';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin Leer' },
@@ -46,7 +47,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         <div
             data-surface="card" data-tono={isUrgent ? 'danger' : undefined}
                     className="p-6 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1"
-            onClick={() => { if (!isRead) onRead(ann.id); }}
+            {...clickable(() => { if (!isRead) onRead(ann.id); })}
         >
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">

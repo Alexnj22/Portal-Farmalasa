@@ -15,6 +15,7 @@ import {
 } from '../../data/inventory';
 import { insertVentaPerdida } from '../../data/ventasPerdidas';
 import PortalInput from '../../components/common/PortalInput';
+import { clickable } from '../../utils/clickable';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -281,7 +282,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                   <div
                     className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
                     style={{ background: 'var(--surface-card)', border: '1px solid var(--border-card)', boxShadow: 'var(--shadow-glass-1)' }}
-                    onClick={() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
+                    {...clickable(() => onDrill({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo }))}
                   >
                     <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-surface-card transition-colors">
                       {prod.fotoUrl && <PhotoThumb url={prod.fotoUrl} onZoom={onZoom} />}

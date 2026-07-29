@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import Button from '../../../components/common/Button';
 import { TrendingUp, ChevronLeft, BarChart2, Maximize2 } from 'lucide-react';
 import SegmentedControl from '../../../components/common/SegmentedControl';
+import { clickable } from '../../../utils/clickable';
 
 const ScheduleChart = ({
     chartTitle,
@@ -75,7 +76,7 @@ const ScheduleChart = ({
                 ) : (
                     currentChartData.map((item, i) => (
                         <div key={i}
-                            onClick={() => { if (chartView === 'DAYS') setChartView(item.day); }}
+                            {...clickable(() => { if (chartView === 'DAYS') setChartView(item.day); })}
                             className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
 
                             {/* Tooltip */}

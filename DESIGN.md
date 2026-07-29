@@ -2680,6 +2680,48 @@ palabra.
 Bajo 560px el texto envuelve (`max-[560px]:whitespace-normal`). El **valor**
 mantiene `nowrap` en todo ancho: un número partido no comunica nada.
 
+### 25.8 `clickable()` — y qué se rompió al aplicarlo
+
+`src/utils/clickable.js` le da el contrato de teclado a un elemento que se
+comporta como botón pero no lo es (una fila, una celda, una tarjeta que envuelve
+otros controles):
+
+```jsx
+<div {...clickable(abrirEditor)} className="…">
+```
+
+Devuelve `role="button"`, `tabIndex={0}`, **`onClick`** y un `onKeyDown` que
+dispara con Enter/Espacio y **ignora las teclas que burbujean desde adentro**
+(`e.target !== e.currentTarget`), para que el Enter de un input interno no
+active además la acción del contenedor.
+
+**Las dos cosas que rompió su primera aplicación (2026-07-29), que valen más que
+el helper:**
+
+1. **Devolvía el teclado pero no el clic.** El migrador que lo aplicó reemplazó
+   el `onClick={fn}` de cada sitio por el spread, y como el helper no devolvía
+   `onClick`, los **34 controles quedaron alcanzables con teclado y muertos con
+   mouse**. Build, lint y `gate:design` en verde. Se vio en min/max: tocar la
+   caja MIN expandía la fila en vez de abrir el editor. → *un helper que RECIBE
+   el handler tiene que cablear los dos caminos.*
+
+2. **No todo `onClick` sobre un `<div>` es un botón.** Cinco sitios eran
+   `onClick={e => e.stopPropagation()}` — barreras de evento, no controles.
+   Convertirlas les dio `role="button"` y una parada de tabulación que no hace
+   nada. Esas van con `onClick` pelado.
+
+**Y la tercera, del mismo día y del mismo tipo de migración automática:** el
+migrador de `PortalInput` extraía props con un regex que soporta dos niveles de
+llaves anidadas. Los dos `onKeyDown` de la grilla de min/max (3.7KB y 6.5KB, con
+la navegación tipo hoja de cálculo: `→` de MIN a MAX, `Enter`/`↓` guarda y salta
+al siguiente producto, `←` vuelve, `Esc` cancela) anidan mucho más, así que se
+**descartaron en silencio** — el input migró sin ellos y nada falló. Se
+recuperaron de `git show aca2ef0f^`.
+
+Las tres comparten causa: **una migración masiva que reescribe JSX solo se puede
+dar por buena si se ejercita el resultado**. Verde en build + lint + gate
+significa que compila, no que el control sigue haciendo lo que hacía.
+
 ---
 
 ## 26. Performance

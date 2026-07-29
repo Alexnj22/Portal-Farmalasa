@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 import Badge from '../common/Badge';
 import SearchInput from '../common/SearchInput';
+import { clickable } from '../../utils/clickable';
 
 // Direct fetch wrapper using supabase session token
 async function srsFetch(q, page = 1) {
@@ -164,7 +165,7 @@ function SrsResultCard({ product: p, onSelect }) {
     return (
         <div
             data-surface="card" className={`p-3.5 flex flex-col gap-2 transition-all ${ onSelect ? 'cursor-pointer hover:border-brand/40 hover:shadow-md hover:shadow-blue-50 hover:-translate-y-px' : 'border-divider' }`}
-            onClick={onSelect || undefined}
+            {...clickable(onSelect || undefined)}
         >
             {/* Header row */}
             <div className="flex items-start justify-between gap-2">

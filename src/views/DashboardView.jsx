@@ -37,6 +37,7 @@ import {
     fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
     fetchBranchHourlySalesRange, fetchRecentCotizaciones, fetchTodayInvoicesSummary,
 } from '../data/dashboard';
+import { clickable } from '../utils/clickable';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -277,7 +278,7 @@ const SalesBranchSkeleton = () => (
 );
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
-  <div data-surface="card" onClick={onClick}
+  <div data-surface="card" {...clickable(onClick)}
     className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
@@ -1346,7 +1347,7 @@ const DashboardView = ({ openModal }) => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
                   if (!chartData?.length) return <EmptyState compact icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
-                    <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
+                    <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div data-surface="tooltip" className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 px-2.5 py-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-modal translate-y-2 group-hover:-translate-y-1 flex flex-col items-center">
                         <p className="font-black text-micro uppercase tracking-widest text-content-tooltip-2 mb-1 border-b border-white/15 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(

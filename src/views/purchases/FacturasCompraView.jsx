@@ -29,6 +29,7 @@ import {
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
     findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview,
 } from '../../data/facturasCompra';
+import { clickable } from '../../utils/clickable';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -1030,7 +1031,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                 const isClassifyOpen = expandedAction?.rowId === row.id && expandedAction.kind === 'classify';
                                 const anyOpen = isMatchOpen || isClassifyOpen;
                                 return (
-                                    <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-center gap-1.5" {...clickable((e) => e.stopPropagation())}>
                                         {row.kind === 'orphan_pdf' && (
                                             <>
                                                 {!anyOpen && (

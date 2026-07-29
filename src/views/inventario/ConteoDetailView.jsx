@@ -97,6 +97,7 @@ function LiveBadge() {
 }
 
 function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, currentUserName }) {
+    const { showToast } = useToastStore();
     const [fisico, setFisico] = useState(item.fisico_cantidad ?? '');
     const [nota, setNota] = useState(item.nota ?? '');
     const [sistema, setSistema] = useState(item.sistema_cantidad);
@@ -124,6 +125,15 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
     const dif = fisico !== '' ? Number(fisico) - sistema : null;
     const isLive = item.fisico_cantidad == null && !item.es_agregado_manual;
 
+    // Devuelve la celda al último valor confirmado por el servidor. Se usa en
+    // todo camino de fallo: dejar el número tecleado en pantalla haría que el
+    // contador lo diera por guardado y nunca volviera a esa línea.
+    const revertToLastSaved = () => {
+        const prev = lastSaved.current;
+        setFisico(prev.fisico ?? '');
+        setNota(prev.nota ?? '');
+    };
+
     const commit = async () => {
         if (!editable) return;
         const nextFisico = fisico === '' ? null : Number(fisico);
@@ -131,6 +141,15 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
         const nextEstado = nextFisico !== null ? 'CONTADO' : 'PENDIENTE';
         const prev = lastSaved.current;
         if (prev.fisico === nextFisico && prev.nota === nextNota && prev.estado === nextEstado) return;
+
+        // Un conteo físico es un entero no negativo. Sin esto, "5.5" o "-3"
+        // llegaban a un parámetro integer y reventaban en el servidor.
+        if (nextFisico !== null && (!Number.isInteger(nextFisico) || nextFisico < 0)) {
+            showToast('Cantidad inválida', 'El conteo físico debe ser un número entero de 0 o más.', 'error');
+            revertToLastSaved();
+            return;
+        }
+
         setSaving(true);
         try {
             const result = await onSave(item.id, {
@@ -143,6 +162,9 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
             setEstadoItem(nextEstado);
             setContadoPorNombre(currentUserName);
             setContadoAt(new Date().toISOString());
+        } catch (err) {
+            revertToLastSaved();
+            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -313,6 +335,7 @@ function ItemHistoryModal({ item, onClose }) {
 }
 
 function EditLoteModal({ item, onClose, onSave }) {
+    const { showToast } = useToastStore();
     const [lote, setLote] = useState('');
     const [fecha, setFecha] = useState('');
     const [saving, setSaving] = useState(false);
@@ -328,6 +351,8 @@ function EditLoteModal({ item, onClose, onSave }) {
         try {
             await onSave(item.id, { lote: lote.trim() || null, fechaVencimiento: fecha || null });
             onClose();
+        } catch (err) {
+            showToast('No se corrigió el lote', err.message, 'error');
         } finally {
             setSaving(false);
         }

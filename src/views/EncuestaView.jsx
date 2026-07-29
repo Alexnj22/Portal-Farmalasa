@@ -20,6 +20,7 @@ import {
     fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
     fetchSurveyAiSummaries, updateSurvey,
 } from '../data/encuestas';
+import { clickable } from '../utils/clickable';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -1259,7 +1260,7 @@ export default function EncuestaView() {
                                                     <React.Fragment key={i}>
                                                     <tr
                                                         className={`border-b border-divider last:border-0 hover:bg-surface-card-hover/40 cursor-pointer ${isExpanded ? 'bg-chart-1/10' : ''}`}
-                                                        onClick={() => setExpandedPersonIdx(isExpanded ? null : i)}>
+                                                        {...clickable(() => setExpandedPersonIdx(isExpanded ? null : i))}>
                                                         <td className="px-4 py-2.5">
                                                             <div className="flex items-center gap-2.5">
                                                                 <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
@@ -1400,7 +1401,7 @@ export default function EncuestaView() {
                             return (
                             <div
                                 key={seg.key}
-                                onClick={() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] }))}
+                                {...clickable(() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })))}
                                 className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] backdrop-blur-2xl bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-200 ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
                             >
                                 {/* Segment header bar */}

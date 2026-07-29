@@ -36,6 +36,7 @@ import LabsPanel from './tabminmax/LabsPanel';
 import { upsertStockParams } from '../../data/stockParams';
 import { useMinMaxData } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
+import { clickable } from '../../utils/clickable';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -946,7 +947,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             {/* Product photo — click to zoom; alert dot badge */}
                                             <div
                                                 className={`shrink-0 relative w-7 h-7 rounded-md overflow-visible bg-surface-card-hover/80 border border-divider flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
-                                                onClick={row.foto_url ? e => { e.stopPropagation(); setZoomPhoto(row.foto_url); } : undefined}
+                                                {...clickable(row.foto_url ? e => { e.stopPropagation(); setZoomPhoto(row.foto_url); } : undefined)}
                                                 title={alert.label}
                                             >
                                                 {row.foto_url
@@ -1078,6 +1079,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                                if (e.key === 'Tab' || e.key === 'ArrowRight') {
+                                                                    e.preventDefault(); skipBlurSave.current = true;
+                                                                    if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
+                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? ((row.draft_max > 0 || row.draft_min > 0) ? String(row.draft_max ?? 0) : '') : ((row.effective_max > 0 || row.effective_min > 0) ? String(row.effective_max ?? 0) : ''), pendingMin: inlineDraftEdit.value });
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
+                                                                    const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) });
+                                                                    else setInlineDraftEdit(null); return;
+                                                                }
+                                                                if (e.key === 'ArrowUp') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
+                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) });
+                                                                    else setInlineDraftEdit(null); return;
+                                                                }
+                                                            }}
                                                             onBlur={() => {
                                                                 if (skipBlurSave.current) { skipBlurSave.current = false; return; }
                                                                 if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
@@ -1110,6 +1134,35 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                                if (e.key === 'ArrowLeft') {
+                                                                    e.preventDefault(); skipBlurSave.current = true;
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin }); }
+                                                                    else { if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? ((row.draft_min > 0 || row.draft_max > 0) ? String(row.draft_min ?? 0) : '') : ((row.effective_min > 0 || row.effective_max > 0) ? String(row.effective_min ?? 0) : '') }); }
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value === '') { const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id)); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) }); else setInlineDraftEdit(null); return; }
+                                                                    const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
+                                                                    skipBlurSave.current = true;
+                                                                    const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
+                                                                    else { saveDraftCell(inlineDraftEdit); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) }); else setInlineDraftEdit(null); }
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'ArrowUp') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value === '') { const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id)); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) }); else setInlineDraftEdit(null); return; }
+                                                                    const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
+                                                                    skipBlurSave.current = true;
+                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
+                                                                    else { saveDraftCell(inlineDraftEdit); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) }); else setInlineDraftEdit(null); }
+                                                                    return;
+                                                                }
+                                                            }}
                                                             autoFocus
                                                             compact
                                                             className="w-20"
@@ -1128,7 +1181,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { openBodegaEdit(row, 'max', isBodega); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? ((row.draft_max > 0 || row.draft_min > 0) ? String(row.draft_max ?? 0) : '') : ((dead || noHistory) ? '' : ((row.effective_max > 0 || row.effective_min > 0) ? String(row.effective_max ?? 0) : '')) }); } : undefined;
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
-                                                <div onClick={clickFn}
+                                                <div {...clickable(clickFn)}
                                                     className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-100 ${colorCls} ${borderCls} ${clickFn ? 'cursor-pointer hover:brightness-95' : ''}`}>
                                                     {val}
                                                 </div>

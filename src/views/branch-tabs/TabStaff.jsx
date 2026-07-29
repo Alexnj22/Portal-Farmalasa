@@ -14,6 +14,7 @@ import { calculateMinimumStaff } from '../../utils/staffHelpers';
 
 import { supabase } from '../../supabaseClient';
 import { fetchBranchHourlySalesAll } from '../../data/schedules';
+import { clickable } from '../../utils/clickable';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
@@ -70,7 +71,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
     if (isMissing) {
         return (
-            <div onClick={onEditRole} data-surface="card" className="group relative overflow-hidden flex flex-col items-center justify-center p-5 border-2 border-dashed border-danger/30 bg-danger/10 hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 min-h-[260px]">
+            <div {...clickable(onEditRole)} data-surface="card" className="group relative overflow-hidden flex flex-col items-center justify-center p-5 border-2 border-dashed border-danger/30 bg-danger/10 hover:bg-surface-card cursor-pointer transition-all duration-300 hover:border-danger/50 min-h-[260px]">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-surface-card border border-danger/30 text-danger group-hover:bg-danger/10 group-hover:text-danger transition-colors mb-3 shadow-sm">
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
@@ -773,7 +774,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     ))}
 
                                     {(wfmApplied || isNewBranch || isStaffDeficit) && Array.from({ length: minStaff > coverageStaffCount ? minStaff - coverageStaffCount : 0 }).map((_, i) => (
-                                        <div key={`deficit-${i}`} onClick={handleEditHROperative} className="group flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
+                                        <div key={`deficit-${i}`} {...clickable(handleEditHROperative)} className="group flex flex-col items-center justify-center p-5 rounded-3xl border-2 border-dashed border-warning/30 bg-warning/10 backdrop-blur-sm cursor-pointer transition-all hover:bg-warning/10 min-h-[220px]">
                                             <div className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-tab-active border border-warning/30 text-warning group-hover:bg-warning/10 transition-colors mb-2 shadow-sm">
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>

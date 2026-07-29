@@ -7,6 +7,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
+import { clickable } from '../../utils/clickable';
 
 const FormNursingRegents = ({ formData, setFormData }) => {
     const employees = useStaff(state => state.employees);
@@ -192,7 +193,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     ))}
                     
                     {nursingRegents.length === 0 && (
-                        <div onClick={addNurse} className="cursor-pointer border-2 border-dashed border-divider rounded-modal transition-all duration-500 hover:-translate-y-1 hover:shadow-md mt-4">
+                        <div {...clickable(addNurse)} className="cursor-pointer border-2 border-dashed border-divider rounded-modal transition-all duration-500 hover:-translate-y-1 hover:shadow-md mt-4">
                             <EmptyState compact icon={Plus} title="Sin profesionales asignados"
                                 subtitle="Hacé clic aquí o en Añadir Profesional para comenzar." />
                         </div>

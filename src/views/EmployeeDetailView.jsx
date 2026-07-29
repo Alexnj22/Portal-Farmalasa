@@ -30,6 +30,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 import PortalTextarea from '../components/common/PortalTextarea';
 import SearchInput from '../components/common/SearchInput';
+import { clickable } from '../utils/clickable';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -806,7 +807,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     return (
                                                         <div key={ds}
                                                             className={`relative group/cal flex flex-col items-center justify-center rounded-lg transition-all duration-200 ${hasEvents ? 'cursor-pointer hover:scale-110 hover:z-content hover:shadow-md' : 'cursor-default'} ${cellBg}`}
-                                                            onClick={() => hasEvents && setAusenciasSelectedDay(prev => prev === ds ? null : ds)}>
+                                                            {...clickable(() => hasEvents && setAusenciasSelectedDay(prev => prev === ds ? null : ds))}>
                                                             <span className={`text-body-sm font-bold leading-none select-none ${isSelected || isToday ? 'text-white' : hasEvents ? 'text-content-2' : 'text-content-3'}`}>
                                                                 {day}
                                                             </span>

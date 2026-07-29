@@ -101,3 +101,22 @@ WCAG 2.5.8 (AA) pide 24×24 y casi todas lo cumplen; el piso de 44 es 2.5.5
 (AAA), que el proyecto sostiene por decisión propia y que tiene excepción
 explícita para presentación esencial. Corregirlas es una pasada aparte, caso
 por caso, con criterio de diseño — no un `sed`.
+
+---
+
+## CERRADO el mismo día (2026-07-29, v2.204.0)
+
+Esa pasada se hizo: `PLAN-CIERRE-DISENO-2026-07-29.md`, fase **F5**.
+
+**Y el conteo de 224 estaba inflado.** Al medirlo de nuevo con un criterio
+explícito de qué cuenta como target, la mayoría no lo eran: 50 chevrons
+`aria-hidden`+`tabIndex={-1}` que duplican una fila ya clicable, 26 inputs
+`sr-only` cuyo target es su etiqueta visible, y botones de 44px **declarados**
+que el rect reportaba en 42 porque un ancestro está en `scale-[0.95]`.
+
+Resultado: **989 controles medidos en 22 rutas, 7 bajo 44px**, y los 7 son las
+barras del gráfico de ventas —donde el ancho *es* el dato—. La deuda real que
+apareció estaba en tres canónicos (`SegmentedControl`, `LiquidSelect`,
+`PeriodStepper`), no en las vistas. Criterio y números en DESIGN.md §25.9.
+
+Con esto el plan no tiene ítems abiertos.

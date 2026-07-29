@@ -23,7 +23,9 @@ descartadas por decisión del usuario, o absorbidas por un plan posterior.
 | `PLAN-MOBILE-2026-07.md` | 2026-07-24 | Fases 1–3 aplicadas (v2.30.0–v2.32.1). Fase 4 (pasada por vistas) se fundió en T4 y Fase 5 (matriz de QA) en T7 del plan de tema — ambas cerradas ahí. |
 | `AUDITORIA-TEMA-2026-07.md` | 2026-07-24 | T1–T7 cerrado (DESIGN.md v2.0 §historial: "T7.4 — cierre de AUDITORIA-TEMA-2026-07.md T7"). El checklist §8 quedó sin marcar — su deuda restante la absorbió y cerró la auditoría de diseño de julio 26. |
 | `AUDITORIA-DISENO-2026-07-26.md` | 2026-07-28 | Su plan derivado (`PLAN-DISENO-PENDIENTE.md`) cerró las 5 fases. |
-| `PLAN-DISENO-PENDIENTE.md` | 2026-07-28 | Sección "Cierre del plan D0–D4". Gate en 20 de 23 categorías en cero absoluto; las 3 con ratchet son deuda deliberada y documentada. |
+| `PLAN-DISENO-PENDIENTE.md` | 2026-07-28 | Sección "Cierre del plan D0–D4". Gate en 20 de 23 categorías en cero absoluto; las 3 con ratchet son deuda deliberada y documentada. ⚠️ Sus dos abiertos (A1 densidad, `Skeleton` sin adopción) y los 3 ratchet los cerró `PLAN-CIERRE-DISENO-2026-07-29.md`. |
+| `PLAN-CORRECCION-AUDITORIA-2026-07-29.md` | 2026-07-29 | P1/P2/P3 aplicados (v2.183–2.187). Su único abierto —224 targets táctiles— lo cerró `PLAN-CIERRE-DISENO-2026-07-29.md` F5 el mismo día, **y de paso corrigió el conteo**: eran 46, no 224. |
+| `PLAN-CIERRE-DISENO-2026-07-29.md` | 2026-07-29 | Sección "Resultado (v2.204.0)". F0–F6 cerradas. **Baseline del gate VACÍO**: 25 categorías bloqueantes en cero, contraste 0/0 en 29 rutas, 7 targets bajo 44px y los 7 con motivo escrito. Es el plan que deja el sistema de diseño sin ítems abiertos. |
 | `PLAN-PROVEEDORES-2026-07.md` | 2026-07-18 | Cabecera: "CERRADO — Fases 0-5 aplicadas en prod (v2.21.0-v2.22.0)". Los checkboxes de §1–3 quedaron sin marcar; son stale. |
 | `PLAN-FACTURAS-COMPRA-2026-07.md` | 2026-07-29 | Fases 1–5 verificadas en prod. Su último bloqueante era reactivar el cron: `sync-purchase-emails-daily` (jobid 183) está `active=true` en prod — verificado el 2026-07-29. |
 

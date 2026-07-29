@@ -145,6 +145,34 @@ clasificar.
 3. Barrido en vivo en los **4 temas** + móvil WebKit.
 4. Confirmación al usuario con los números re-medidos.
 
+### Resultado (v2.204.0)
+
+| | |
+|---|---|
+| `gate:design` | **0 hallazgos en 25 categorías**, baseline vacío |
+| `gate:doc` · `eslint` · `build` | limpios |
+| Contraste, 29 rutas | **0 superficies blancas · 0 nodos bajo AA** |
+| Targets táctiles, 22 rutas | 989 medidos · **7** bajo 44px, los 7 con motivo |
+| Movimiento | liquid 105 · solid 12 · con `reduce` **0 en ambos** |
+| Consola | 0 errores de página en las 4 rutas de humo |
+
+**La auditoría final encontró un defecto que las cinco fases no:**
+`Button.TONE_CLASSES` usaba `bg-chart-N` **crudo** con `text-white` para las
+seis tonalidades de gráfico — 4.23:1 contra el 4.5 que pide AA, en **82 usos**
+de `tone="chart-N"`. Los tokens `-solid` que N2 creó para exactamente esto
+existían desde semanas antes; el canónico no los usaba, y
+`SegmentedControl` estaba migrado a medias (chart-3/8/9 sí, chart-1/4/6 no).
+
+El escáner solo vio 2 de los 82 porque el resto vive en modales cerrados y
+ramas condicionales — **el mismo motivo por el que N2 tuvo que buscarlos por
+código y no por captura**. Que un escáner dé 2 no significa que haya 2.
+
+Gate nuevo: `relleno-sin-solid`. Evalúa el par **por variante**, no sobre la
+cadena entera: el primer intento marcó 15 hallazgos y **los 15 eran falsos**
+—`bg-danger/10 text-danger hover:bg-danger-solid hover:text-white` es el patrón
+correcto y muy usado—. Una regla nueva se prueba con una fixture antes de
+darla por buena; las tres de este plan se probaron así.
+
 ---
 
 # Registro de ejecución (2026-07-29)

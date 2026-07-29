@@ -12,6 +12,42 @@ retomar; acá está todo.
 
 ---
 
+## v2.185.1 — `roles` se podía escribir desde cualquier cuenta.
+
+`roles` tenía INSERT y UPDATE con `true`: **cualquier usuario autenticado**,
+incluido el rol más bajo del portal, podía crear roles nuevos o modificar los
+existentes. Como los permisos se resuelven contra `role_permissions` a partir del
+rol del empleado, poder editar `roles` es poder reescribir quién puede qué — sin
+ninguna vulnerabilidad de código, bastaba un PostgREST directo con la sesión de
+cualquier empleado.
+
+El gate correcto ya existía en la **misma tabla**: `roles_delete` usa
+`auth_can_edit_any(ARRAY['roles','permissions'])`. El hardening del 2026-07-02
+cubrió lecturas y DELETE y dejó INSERT/UPDATE afuera; ahora se alinean con su
+propia policy de borrado, con el wrapper `(SELECT ...)` obligatorio desde el
+incidente del 2026-07-08.
+
+Además `read_all` era `TO {anon, authenticated}`: el catálogo de roles —23 filas,
+con `is_su` incluido— se leía sin login. Es el mapa que alguien querría antes de
+intentar algo contra el portal. Verificado que ningún flujo pre-login consulta
+`roles`: `refreshPermissions` sale temprano sin usuario, y el kiosco recibe los
+nombres resueltos dentro de `get_kiosk_boot_payload`, que es `SECURITY DEFINER`.
+
+Barrido final con la anon key pública: `employees`, `employees_safe`, `roles`,
+`customers` y `products` devuelven 0 filas; `kiosk_credentials`,
+`kiosk_pin_attempts` y `sales_invoices` responden 401. Solo `branches` sigue
+abierta — es el `kiosk_read` intencional del kiosco pre-login, anotado en el
+informe.
+
+**`audit_logs` se dejó con INSERT `true` a propósito.** `user_id` lo pone el
+cliente y puede ser `null`, y el kiosco escribe desde un contexto de auth que no
+se pudo verificar sin el dispositivo físico. Un `WITH CHECK` mal calibrado ahí
+rompe la bitácora entera, que es justo lo que la regla del proyecto exige que
+siempre funcione. El fix real es mover el logging al servidor, dentro de las RPC
+que ejecutan cada acción: es un cambio de arquitectura, no una línea de policy.
+
+---
+
 ## v2.185.0 — la autorización del kiosco se movió al servidor.
 
 Cierra las fases 1, 2 y 4 del rediseño de credenciales abierto en v2.184.0.

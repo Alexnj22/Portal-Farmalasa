@@ -5,6 +5,7 @@ import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
 import SegmentedControl from '../common/SegmentedControl';
+import { useToastStore } from '../../store/toastStore';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -152,6 +153,9 @@ const FormPurchaseDteViewer = ({ formData }) => {
         try {
             const url = await getSignedFileUrl(invalidacionSource.file_path);
             if (url) window.open(url, '_blank', 'noopener');
+        } catch (e) {
+            console.error('FormPurchaseDteViewer.jsx: ', e);
+            useToastStore.getState().showToast('No se pudo abrir el PDF', 'El documento de invalidación no está disponible. Intentá de nuevo.', 'error');
         } finally {
             setOpeningInvalidacionPdf(false);
         }

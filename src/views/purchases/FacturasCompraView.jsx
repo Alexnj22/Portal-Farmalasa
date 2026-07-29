@@ -572,6 +572,9 @@ function TabDocumentos({
         try {
             const data = await fetchPurchaseDteDocuments(dateStart, dateEnd);
             setRows(data);
+        } catch (e) {
+            console.error('FacturasCompraView.jsx: ', e);
+            useToastStore.getState().showToast('No se pudieron cargar los documentos', 'Revisá la conexión e intentá de nuevo.', 'error');
         } finally {
             setLoading(false);
         }
@@ -928,6 +931,9 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
         try {
             const data = await fetchPurchaseDteReviewQueue('pendiente');
             setRows(data);
+        } catch (e) {
+            console.error('FacturasCompraView.jsx: ', e);
+            useToastStore.getState().showToast('No se pudo cargar la cola de revisión', 'Revisá la conexión e intentá de nuevo.', 'error');
         } finally {
             setLoading(false);
         }

@@ -282,6 +282,9 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
     try {
       await onSave({ type: newType, time: newTime, reason: reason.trim() });
       setNewType(''); setNewTime(''); setReason('');
+    } catch (e) {
+        console.error('AttendanceAuditView.jsx: ', e);
+        useToastStore.getState().showToast('No se pudo guardar', 'La marca no se registró. Intentá de nuevo.', 'error');
     } finally { setSaving(false); }
   };
 

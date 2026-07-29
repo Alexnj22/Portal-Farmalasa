@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.185.0';
+export const APP_VERSION = '2.185.1';
+
+// v2.185.1 — se cierran las escrituras abiertas de `roles` y su lectura anonima.
+//
+// `roles` tenia INSERT y UPDATE con `true`: cualquier autenticado, incluido el
+// rol mas bajo, podia crear o modificar roles. Como los permisos del portal se
+// resuelven contra role_permissions a partir del rol del empleado, eso es
+// escalada de privilegios por la via de los datos — sin necesidad de ninguna
+// vulnerabilidad de codigo, bastaba un PostgREST directo. El gate correcto ya
+// existia en la MISMA tabla (roles_delete): ahora INSERT/UPDATE se alinean con
+// el.
+//
+// Ademas `read_all` era TO {anon, authenticated}: el catalogo de roles, con
+// `is_su` incluido, se leia sin login. Verificado que ningun flujo pre-login
+// consulta roles (refreshPermissions sale temprano sin usuario; el kiosco los
+// recibe resueltos dentro de get_kiosk_boot_payload, que es DEFINER).
+//
+// Barrido final con la anon key publica: employees, employees_safe, roles,
+// customers y products devuelven 0 filas; kiosk_credentials, kiosk_pin_attempts
+// y sales_invoices dan 401. Solo `branches` sigue abierta (kiosk_read
+// intencional del kiosco pre-login), anotado en el informe.
+//
+// audit_logs sigue con INSERT `true` A PROPOSITO: user_id lo pone el cliente y
+// puede ser null, y el kiosco escribe desde un contexto de auth que no se pudo
+// verificar sin el dispositivo. Un WITH CHECK mal calibrado ahi rompe la
+// bitacora entera. El fix real es mover el logging al servidor, dentro de las
+// RPC que ejecutan cada accion — es arquitectura, no una linea de policy.
 
 // v2.185.0 — la autorizacion del kiosco se movio al servidor.
 //

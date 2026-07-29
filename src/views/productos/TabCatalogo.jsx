@@ -1639,6 +1639,9 @@ export default function TabCatalogo({
             if (firstErr) console.error('toggleRow: expand product failed:', firstErr.message);
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }, { data: precioHistory }] = results;
             setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] } }));
+        } catch (e) {
+            console.error('TabCatalogo.jsx: ', e);
+            useToastStore.getState().showToast('No se pudo abrir el detalle', 'El detalle del producto no cargó. Intentá de nuevo.', 'error');
         } finally { setLoadingExpandedId(null); }
     }, [expandedId, expandedCache, cancelPrefetch, canSeeCosts]);
 

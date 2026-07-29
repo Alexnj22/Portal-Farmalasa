@@ -13,6 +13,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { fetchSuppliersBasic } from '../../data/compras';
 import { fetchProveedoresMaestro, fetchProveedorCategorias } from '../../data/proveedores';
 import FilterBar from '../../components/common/FilterBar';
+import { useToastStore } from '../../store/toastStore';
 
 const SIN_CATEGORIA = '__sin_categoria__';
 const SIN_MATCH_ERP = '__sin_match__';
@@ -99,6 +100,9 @@ export default function ProveedoresView({ openModal }) {
         try {
             const data = await fetchProveedoresMaestro();
             setRows(data);
+        } catch (e) {
+            console.error('ProveedoresView.jsx: ', e);
+            useToastStore.getState().showToast('No se pudieron cargar los proveedores', 'Revisá la conexión e intentá de nuevo.', 'error');
         } finally {
             setLoading(false);
         }

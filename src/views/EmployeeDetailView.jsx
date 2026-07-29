@@ -1102,9 +1102,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             />
         )}
 
-        {resetResult && createPortal(
-            <div className="fixed inset-0 z-confirm flex items-center justify-center p-4">
-                <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={() => setResetResult(null)} />
+        {/* ModalShell aporta scrim, Escape, role="dialog"/aria-modal y bloqueo
+            de scroll. Escrito a mano no tenía ninguna de las cuatro cosas
+            (auditoría 2026-07-29). El cuerpo queda igual: `AlertModal` solo
+            acepta title+message y acá hay una contraseña con botón de copiar. */}
+        <ModalShell open={!!resetResult} onClose={() => setResetResult(null)} maxWidthClass="max-w-sm" zClass="z-confirm" ariaLabel="Contraseña temporal generada">
                 <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)]">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-success" />
                     <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
@@ -1134,9 +1136,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         <Button variant="secondary" onClick={() => setResetResult(null)}>Listo</Button>
                     </div>
                 </div>
-            </div>,
-            document.body
-        )}
+        </ModalShell>
 
         {cancelModalRender && createPortal(
             <div className="fixed inset-0 z-confirm flex items-center justify-center p-4">

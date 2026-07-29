@@ -11,6 +11,7 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
 } from '../data/ventasPerdidas';
+import { useToastStore } from '../store/toastStore';
 
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },
@@ -59,6 +60,9 @@ export default function VentasPperdidasView() {
                 const { data, error } = await fetchVentasPerdidas(activeTab);
                 if (error) console.error('VentasPperdidasView: fetch ventas_perdidas failed:', error.message);
                 if (!cancelled) setRows(data || []);
+            } catch (e) {
+                console.error('VentasPperdidasView.jsx: ', e);
+                useToastStore.getState().showToast('No se pudieron cargar las ventas perdidas', 'Revisá la conexión e intentá de nuevo.', 'error');
             } finally {
                 if (!cancelled) setLoading(false);
             }

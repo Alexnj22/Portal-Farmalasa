@@ -919,7 +919,10 @@ function scanFile(path) {
         const mc = tag.match(/className=[{`"]+([^`"}]*)/);
         if (!mc) continue;
         const c = mc[1];
-        if (!/bg-surface-card\b/.test(c)) continue;
+        // `\b` después de "card" también matchea `bg-surface-card-hover`, que es
+        // OTRO token (la superficie de realce, no la de tarjeta). Se vio al
+        // migrar el pie de RolesView y marcaba como tarjeta algo que no lo es.
+        if (!/bg-surface-card(?!-)/.test(c)) continue;
         if (!/\bborder\b|border-(divider|border-card)/.test(c)) continue;
         if (!/rounded-(2xl|3xl|card|modal|header)/.test(c)) continue;
         if (!/\bp-[3-9]|\bp-1[0-9]|\bpx-[4-9]|\bpy-[3-9]/.test(c)) continue;

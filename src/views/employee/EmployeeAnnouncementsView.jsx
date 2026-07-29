@@ -44,15 +44,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
     return (
         <div
-            className={`p-6 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1 ${
-                isUrgent && !isRead
-                    ? 'border-danger/40 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] bg-surface-card backdrop-blur-xl'
-                    : isUrgent && isRead
-                    ? 'border-danger/30 shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
-                    : isRead
-                    ? 'border-divider shadow-sm hover:shadow-md bg-surface-card backdrop-blur-xl'
-                    : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl'
-            }`}
+            data-surface="card" data-tono={isUrgent ? 'danger' : undefined}
+                    className="p-6 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu cursor-pointer hover:-translate-y-1"
             onClick={() => { if (!isRead) onRead(ann.id); }}
         >
             {/* Badges row */}

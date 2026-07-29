@@ -42,17 +42,13 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
   return (
     <div
-      className={`p-6 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
-        isEditingThis
-          ? 'bg-surface-card backdrop-blur-xl border border-warning/40 shadow-[var(--shadow-elevation-sm)] animate-subtle-shake z-base'
-          : ann.isCompleted
-            ? 'border-border-card opacity-80 hover:opacity-100 shadow-sm bg-surface-card backdrop-blur-md hover:-translate-y-1 hover:shadow-md'
-            : isScheduled
-              ? 'border-chart-3/30 shadow-[var(--shadow-glow-chart-3-lg)] bg-chart-3/10 backdrop-blur-2xl hover:-translate-y-1'
-              : ann.priority === 'URGENT'
-                ? 'border-danger/40 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] bg-surface-card backdrop-blur-xl hover:-translate-y-1'
-                : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
-        }`}
+      data-surface="card"
+                    data-tono={isEditingThis ? 'warning' : ann.priority === 'URGENT' ? 'danger' : undefined}
+                    className={`p-6 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu hover:-translate-y-1 ${
+                        isEditingThis ? 'animate-subtle-shake z-base'
+                        : ann.isCompleted ? 'opacity-80 hover:opacity-100'
+                        : isScheduled ? 'border-chart-3/30 shadow-[var(--shadow-glow-chart-3-lg)] bg-chart-3/10' : ''
+                    }`}
     >
       <div className={`absolute top-5 right-5 flex items-center gap-2 transition-opacity duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isEditingThis ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'}`}>
         {canEdit && !ann.isCompleted && (

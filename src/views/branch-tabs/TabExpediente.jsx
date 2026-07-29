@@ -42,10 +42,8 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
     const isMissing = status.type === 'MISSING';
 
     return (
-        <div className={`group relative flex flex-col p-5 rounded-3xl transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl hover:z-sidebar ${isMissing
-            ? 'bg-surface-card border-2 border-dashed border-divider hover:border-brand/40 hover:bg-surface-card min-h-[160px]'
-            : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] min-h-[160px]'
-            }`}>
+        <div data-surface="card" data-tono={isMissing ? 'dashed' : undefined}
+                            className="group relative flex flex-col p-5 transition-all duration-300 ease-out transform hover:-translate-y-1 hover:z-sidebar">
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">

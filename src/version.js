@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.173.0';
+export const APP_VERSION = '2.174.0';
+
+// v2.174.0 — `tarjeta-a-mano` en CERO, y el porque de las ultimas 10.
+//
+// **La tarjeta canonica era INDECORABLE.** Las 10 que quedaban compartian
+// forma: la superficie es siempre la tarjeta y solo cambia el BORDE por
+// estado (en edicion, con error, urgente). Al intentar migrarlas quedo a la
+// vista por que habian quedado a mano — medido en el navegador:
+//
+//     data-surface="card"                        → borde blanco 0.72
+//     + border-warning/40                        → borde blanco 0.72  ❌
+//     + border-2 border-warning/40               → borde blanco 0.72  ❌
+//     + ring-2 ring-warning/40                   → sin cambio        ❌
+//
+// `index.css` va sin @layer, asi que `[data-surface="card"]` le gana a toda
+// utilidad de Tailwind. Y el ring tampoco entra porque es un `box-shadow` y
+// ahi ya se declara uno. O sea: para marcar una tarjeta en edicion no quedaba
+// mas que renunciar al canonico y pintarla entera a mano. No era descuido.
+//
+// **`data-tono` nuevo.** Con un atributo la especificidad sube sola
+// ([data-surface][data-tono] es (0,2,0) contra (0,1,0)) y el estado se lee en
+// el marcado en vez de en una ristra de clases condicionales:
+//
+//     <div data-surface="card" data-tono={editando ? 'warning' : undefined}>
+//
+// Valores: warning · danger · success · brand · dashed. El ultimo es la
+// tarjeta VACIA que invita a llenarla (documento faltante) — no es severidad,
+// es ausencia, por eso no lleva color.
+//
+// **Un anidado que el cambio dejo ver:** el pie de la tarjeta de rol tambien
+// era "tarjeta", y al darle tono quedaban dos anillos naranjas concentricos.
+// No es una tarjeta: es una franja DENTRO de una. Vuelve a superficie de
+// realce con relleno suave.
+//
+// **Y un bug en mi propia regla del gate:** `bg-surface-card\b` tambien
+// matchea `bg-surface-card-hover`, que es OTRO token. Corregido a
+// `bg-surface-card(?!-)`.
+//
+// Verificado en vivo: 12 vistas sin errores, y el tono naranja renderizado de
+// verdad al entrar en edicion de un rol.
 
 // v2.173.0 — 38 tarjetas mas y 20 inputs al canonico.
 //

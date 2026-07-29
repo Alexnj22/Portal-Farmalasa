@@ -653,11 +653,10 @@ const RolesView = ({ openModal }) => {
                                     return (
                                         <div
                                             key={role.id}
-                                            className={`p-5 rounded-modal flex flex-col group relative transition-all duration-500 transform-gpu ${isEditingThis
-                                                ? 'bg-surface-card backdrop-blur-2xl border border-warning/40 shadow-[var(--shadow-elevation-md)] animate-subtle-shake z-base' : isExternal
-                                                    ? 'bg-surface-card backdrop-blur-sm border-2 border-dashed border-divider shadow-sm hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1'
-                                                    : 'bg-surface-card backdrop-blur-xl border border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:bg-surface-card hover:-translate-y-1'
-                                                }`}
+                                            data-surface="card" data-tono={isEditingThis ? 'warning' : undefined}
+                                className={`p-5 flex flex-col group relative transition-all duration-500 transform-gpu ${
+                                    isEditingThis ? 'animate-subtle-shake z-base' : 'hover:-translate-y-1'
+                                }`}
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}
                                             {role.max_limit < 99 && (
@@ -717,7 +716,14 @@ const RolesView = ({ openModal }) => {
                                                 </div>
                                             </div>
 
-                                            <div className={`flex-1 rounded-2xl p-3 border mt-auto flex items-center justify-between transition-colors ${isEditingThis ? 'bg-warning/10 border-warning/30' : isExternal ? 'bg-surface-card border-border-card' : 'bg-surface-card border-border-card shadow-[var(--shadow-shine)] group-hover:bg-surface-card'}`}>
+                                            {/* El pie NO es una tarjeta: es una franja DENTRO de la
+                                                tarjeta del rol. Darle `data-surface="card"` anidaba una
+                                                tarjeta en otra, y con `data-tono` quedaban dos anillos
+                                                naranjas concéntricos al editar. Superficie de realce +
+                                                relleno suave, que es lo que era antes. */}
+                                            <div className={`flex-1 p-3 mt-auto rounded-card flex items-center justify-between border transition-colors ${
+                                                isEditingThis ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-divider'
+                                            }`}>
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-xl bg-surface-card border border-border-card flex items-center justify-center text-content-3 shadow-sm">
                                                         <Users size={14} strokeWidth={2.5} />

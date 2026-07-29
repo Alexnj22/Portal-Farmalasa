@@ -1688,6 +1688,31 @@
   transition: transform var(--dur-base) var(--ease-spring),
               box-shadow var(--dur-base) var(--ease-spring);
 }
+
+/* ── `data-tono`: la tarjeta MARCADA por su estado (2026-07-28) ──────────
+   Esta regla existe porque el canónico era INDECORABLE, y eso explicaba las
+   últimas 10 tarjetas escritas a mano. `index.css` va sin @layer, así que
+   `[data-surface="card"]` le gana a cualquier utilidad de Tailwind: medido,
+   ni `border-warning/40` ni `ring-2 ring-warning/40` cambiaban nada —el ring
+   tampoco, porque es un `box-shadow` y acá ya se declara uno—. Para marcar
+   una tarjeta en edición o con error no quedaba más que renunciar al
+   canónico y pintarla entera a mano.
+
+   Con un atributo la especificidad sube sola ([data-surface][data-tono] es
+   (0,2,0) contra (0,1,0)) y el estado se lee en el marcado en vez de en una
+   ristra de clases condicionales:
+
+       <div data-surface="card" data-tono={editando ? 'warning' : undefined}>
+
+   Los valores son los de la paleta CERRADA. El anillo va ANTES de la sombra
+   de tarjeta para que se dibuje pegado al borde y la elevación quede afuera. */
+[data-surface="card"][data-tono="warning"] { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning), var(--card-shadow); }
+[data-surface="card"][data-tono="danger"]  { border-color: var(--danger);  box-shadow: 0 0 0 1px var(--danger),  var(--card-shadow); }
+[data-surface="card"][data-tono="success"] { border-color: var(--success); box-shadow: 0 0 0 1px var(--success), var(--card-shadow); }
+[data-surface="card"][data-tono="brand"]   { border-color: var(--brand);   box-shadow: 0 0 0 1px var(--brand),   var(--card-shadow); }
+/* `dashed`: la tarjeta VACÍA que invita a llenarla (documento faltante, cargo
+   sin asignar). No es severidad, es ausencia — por eso no lleva color. */
+[data-surface="card"][data-tono="dashed"]  { border-style: dashed; border-color: var(--divider); background: transparent; }
 @media (hover: hover) {
   [data-surface="card"]:hover {
     box-shadow: var(--card-shadow-hover);

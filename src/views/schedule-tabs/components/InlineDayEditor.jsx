@@ -378,7 +378,8 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-surface-card-hover border rounded-2xl relative z-base animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-danger/50 shadow-[var(--shadow-glow-danger-md)]' : 'border-border-card'}`}>
+                        <div data-surface="card" data-tono={timeAuditErrors.length > 0 ? 'danger' : undefined}
+                    className="flex flex-col gap-3 p-3 relative z-base animate-in zoom-in-95 duration-[var(--dur-base)]">
                             
                             <div className="flex items-center justify-between border-b border-divider pb-2">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">

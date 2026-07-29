@@ -246,7 +246,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     const renderHeaderActions = () => {
         return (
-            <div className={`flex items-center overflow-x-auto hide-scrollbar backdrop-blur-2xl backdrop-saturate-[180%] border border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] rounded-header h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors duration-500 transform-gpu shrink-0 w-max max-w-full hover:-translate-y-[2px] ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
+            <div data-surface="card" className={`flex items-center overflow-x-auto hide-scrollbar h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-colors ${showProfile ? 'bg-surface-card' : 'bg-surface-card'}`}>
 
                 {showProfile ? (
                     <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-300 w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>

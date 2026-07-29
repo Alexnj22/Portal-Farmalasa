@@ -92,13 +92,12 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
     }, [group]);
 
     return (
-        <div className={`p-5 rounded-header border flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
-            isEditingThis
-                ? 'bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] border-warning/40 shadow-[var(--shadow-glass-3)] animate-subtle-shake z-tabs'
-                : isArchived
-                    ? 'border-border-card opacity-80 hover:opacity-100 shadow-[var(--shadow-elevation-xs)] bg-surface-card backdrop-blur-xl hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] z-base'
-                    : 'border-border-card shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-3xl backdrop-saturate-[180%] z-base hover:z-content'
-        }`}>
+        <div data-surface="card" data-tono={isEditingThis ? 'warning' : undefined}
+                    className={`p-5 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
+                        isEditingThis ? 'animate-subtle-shake z-tabs'
+                        : isArchived ? 'opacity-80 hover:opacity-100 hover:-translate-y-1 z-base'
+                        : 'hover:-translate-y-1 z-base hover:z-content'
+                    }`}>
 
             {confirmAction && (
                 <div className="absolute inset-0 z-sidebar-desktop bg-surface-card backdrop-blur-xl flex flex-col items-center justify-center gap-3 animate-in zoom-in-95 duration-300 p-5 rounded-header">

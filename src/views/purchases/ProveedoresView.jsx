@@ -4,7 +4,6 @@ import { Truck, Tag, Layers, AlertTriangle, X, CheckCircle2, Building2 } from 'l
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
-import Badge from '../../components/common/Badge';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
@@ -31,7 +30,13 @@ const SIN_CATEGORIA = '__sin_categoria__';
 const BASE_COLS = [
     { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]', sortable: true },
     { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: 'md' },
-    { key: 'tipo',       label: 'Tipo',       align: 'left', hideBelow: 'lg' },
+    // "Tipo" (régimen fiscal) se quitó de la tabla el 2026-07-29: mostraba el
+    // MISMO badge "Contribuyente IVA" en los 99 proveedores (verificado en
+    // prod — 99 de 99 tienen NRC), o sea información cero por 175px, en una
+    // tabla que ya desbordaba su contenedor. Es la segunda columna que sale
+    // por lo mismo, después de Giro en v2.27.4. El dato sigue en el detalle
+    // (FormProveedorDetail), donde además explica la consecuencia fiscal, y
+    // el día que aparezca un Sujeto Excluido se verá ahí.
     { key: 'categoria',  label: 'Categoría',  align: 'left', sortable: true },
     // Se ocultaba entera con `xl`, incluso a 1440px — o sea, en la pantalla
     // donde se trabaja. Quitar una columna en silencio no es arreglar el ancho.
@@ -42,21 +47,6 @@ const BASE_COLS = [
     { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md', sortable: true },
     { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg', sortable: true },
 ];
-
-// Tipo de Proveedor real (régimen fiscal, Código Tributario) — derivado
-// server-side en get_proveedores_maestro (regimen_fiscal), NO es la clase de
-// gasto/costo de la categoría asignada (eso es "Categoría", campo distinto).
-const REGIMEN_LABELS = { contribuyente: 'Contribuyente IVA', sujeto_excluido: 'Sujeto Excluido' };
-
-function RegimenCell({ row }) {
-    if (!row.regimen_fiscal) return <span className="text-content-3 text-label">—</span>;
-    const isExcluido = row.regimen_fiscal === 'sujeto_excluido';
-    return (
-        <span title={isExcluido ? 'Sin NRC (Art. 119 CT) — no da crédito fiscal; retención de Renta 10% si es persona natural por un servicio (Art. 156 CT)' : 'Tiene NRC — da derecho a crédito fiscal de IVA'}>
-            <Badge variant={isExcluido ? 'warning' : 'success'}>{REGIMEN_LABELS[row.regimen_fiscal]}</Badge>
-        </span>
-    );
-}
 
 const fmtDate = (d) => {
     if (!d) return '—';
@@ -442,9 +432,6 @@ export default function ProveedoresView({ openModal }) {
                             <DataCell hideBelow="md">
                                 <p className="font-mono text-caption text-content-2">{row.nit || row.dui || '—'}</p>
                                 {row.nrc && <p className="font-mono text-caption text-content-3">NRC {row.nrc}</p>}
-                            </DataCell>
-                            <DataCell hideBelow="lg">
-                                <RegimenCell row={row} />
                             </DataCell>
                             <DataCell>
                                 <CategoriaCell row={row} />

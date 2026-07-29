@@ -1311,7 +1311,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false, backfill_total_iva = false } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false, backfill_total_iva = false, backfill_orig_json = false, after_id = 0, limit: p_limit = null } = body;
 
     // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
     // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
@@ -1494,6 +1494,128 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         backfill_total_iva: true, checked, updated, foundIva,
         hasMore: cutOff, errors: errors.slice(0, 50),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Recuperación del JSON ORIGINAL para los documentos anteriores a Fase 3.1
+    // (2026-07-22), que se guardaron solo normalizados. Los bytes crudos nunca
+    // se perdieron: siguen en Gmail, y cada documento conserva su
+    // `source_message_id`. Decreto 487 Art. 3 — la conservación del DTE
+    // electrónico "garantizando su consulta e integridad" es responsabilidad
+    // EXCLUSIVA del contribuyente; sin el original no se puede demostrar
+    // integridad byte-a-byte contra la firma del emisor.
+    //
+    // `p_limit` existe para poder correr una muestra chica y revisarla ANTES
+    // de tocar los 1,169 (se usó con 8 la primera vez).
+    //
+    // Cursor `after_id` obligatorio, no filtro por "sigue en NULL": un
+    // documento que llegó por link o dentro de un ZIP no tiene un adjunto
+    // JSON suelto que recuperar, así que fallaría para siempre y bloquearía
+    // la cola en su cabeza — es exactamente el bug E6/H7 que ya mordió dos
+    // veces en este archivo.
+    if (backfill_orig_json === true) {
+      const CHUNK = 50;
+      let checked = 0, recovered = 0, sinAdjunto = 0;
+      let lastId: number = after_id;
+      const errors: string[] = [];
+      const startTime = Date.now();
+      let cutOff = false;
+
+      // Un access token por cuenta, reutilizado toda la corrida (refrescarlo
+      // por documento sería una llamada a Google por fila).
+      const tokenPorCuenta = new Map<number, string>();
+      const { data: cuentas, error: cuentasErr } = await admin
+        .from('email_sync_accounts').select('*').eq('active', true);
+      if (cuentasErr) throw new Error(`email_sync_accounts: ${cuentasErr.message}`);
+      for (const acc of (cuentas ?? [])) {
+        try {
+          tokenPorCuenta.set(acc.id, await refreshAccessToken(
+            Deno.env.get(acc.client_id_secret_name ?? '') ?? '',
+            Deno.env.get(acc.client_secret_secret_name ?? '') ?? '',
+            Deno.env.get(acc.vault_secret_name ?? '') ?? '',
+          ));
+        } catch (e: any) {
+          errors.push(`cuenta ${acc.email}: no se pudo autenticar — ${e.message}`);
+        }
+      }
+
+      outerOrig:
+      for (;;) {
+        if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+        const { data: docs, error: docsErr } = await admin
+          .from('purchase_dte_documents')
+          .select('id, account_id, source_message_id, codigo_generacion, fecha_emision, created_at')
+          .is('orig_json_path', null)
+          .not('source_message_id', 'is', null)
+          .not('json_path', 'is', null)
+          .gt('id', lastId)
+          .order('id', { ascending: true })
+          .limit(CHUNK);
+        if (docsErr) throw new Error(`purchase_dte_documents: ${docsErr.message}`);
+        if (!docs || docs.length === 0) break;
+
+        for (const doc of docs) {
+          if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break outerOrig; }
+          if (p_limit !== null && checked >= p_limit) { break outerOrig; }
+          checked++;
+          lastId = doc.id; // avanza SIEMPRE, incluso si esta fila no se puede recuperar
+          try {
+            const token = tokenPorCuenta.get(doc.account_id);
+            if (!token) { errors.push(`doc ${doc.id}: sin token para la cuenta ${doc.account_id}`); continue; }
+
+            const msg = await getMessage(token, doc.source_message_id);
+            const parts: AttachmentPart[] = [];
+            collectAttachmentParts(msg.payload, parts);
+            const jsonParts = parts.filter(p => p.filename.toLowerCase().endsWith('.json'));
+
+            // Se busca el adjunto cuyo codigoGeneracion COINCIDE, no "el
+            // primer .json": un mismo correo puede traer varios DTE.
+            let bytes: Uint8Array | null = null;
+            for (const jp of jsonParts) {
+              try {
+                const b = await resolveAttachmentBytes(token, doc.source_message_id, jp);
+                const parsed = JSON.parse(new TextDecoder().decode(b));
+                const cod = parsed?.identificacion?.codigoGeneracion
+                  ?? parsed?.dteJson?.identificacion?.codigoGeneracion
+                  ?? parsed?.codigoGeneracion;
+                if (cod && String(cod) === String(doc.codigo_generacion)) { bytes = b; break; }
+              } catch { /* adjunto ilegible: probar el siguiente */ }
+            }
+
+            if (!bytes) {
+              // Llegó por link o dentro de un ZIP: no hay adjunto JSON suelto
+              // que recuperar. No es un error, es un caso que no aplica.
+              sinAdjunto++;
+              continue;
+            }
+
+            const fecEmi: string | null = doc.fecha_emision ?? null;
+            const now = new Date(doc.created_at);
+            const [yyyy, mm] = fecEmi
+              ? String(fecEmi).split('-')
+              : [String(now.getUTCFullYear()), String(now.getUTCMonth() + 1).padStart(2, '0')];
+            const origJsonPath = `${yyyy}/${mm}/${doc.codigo_generacion}.orig.json`;
+
+            const { error: upErr } = await admin.storage.from(BUCKET)
+              .upload(origJsonPath, bytes, { contentType: 'application/json', upsert: false });
+            if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) {
+              errors.push(`doc ${doc.id}: upload — ${upErr.message}`); continue;
+            }
+            const { error: setErr } = await admin.from('purchase_dte_documents')
+              .update({ orig_json_path: publicUrl(origJsonPath) }).eq('id', doc.id);
+            if (setErr) { errors.push(`doc ${doc.id}: update — ${setErr.message}`); continue; }
+            recovered++;
+          } catch (e: any) {
+            errors.push(`doc ${doc.id}: ${e.message}`);
+          }
+        }
+        if (cutOff) break;
+        if (docs.length < CHUNK) break;
+      }
+
+      return new Response(JSON.stringify({
+        backfill_orig_json: true, checked, recovered, sinAdjunto,
+        nextAfterId: lastId, hasMore: cutOff, errors: errors.slice(0, 50),
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

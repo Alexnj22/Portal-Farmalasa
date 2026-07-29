@@ -16,7 +16,49 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.206.0';
+export const APP_VERSION = '2.207.0';
+
+// v2.207.0 — se recuperaron los JSON originales que se creian perdidos.
+//
+// Hasta Fase 3.1 (2026-07-22) el sync guardaba solo el JSON normalizado
+// (unwrapDteEnvelope + repairMojibakeDeep), descartando los bytes crudos del
+// adjunto — y con ellos el sobre de Hacienda (selloRecibido + firmaElectronica)
+// cuando el proveedor lo mandaba. La auditoria lo dio por NO backfilleable
+// ("los bytes originales solo viven en Gmail"). Era falso: viven en Gmail, si,
+// pero cada documento conserva su `source_message_id`, asi que se pueden
+// volver a pedir.
+//
+// Nuevo modo `backfill_orig_json`. Resultado sobre los 1,169 pendientes:
+// **1,336 de 1,343 documentos con original = 99.5% de cobertura**, cero
+// errores. Los 7 que faltan son todos de Movistar, que manda el DTE como LINK
+// y no como adjunto — no hay adjunto que recuperar, y el modo los cuenta
+// aparte (`sinAdjunto`) en vez de tratarlos como falla.
+//
+// Verificado antes de correr los 1,169: muestra de 8, y los originales pesan
+// consistentemente MAS que el normalizado (de 3 a 1,066 bytes) — o sea que son
+// archivos genuinamente distintos y no una copia; los de +800 bytes son los que
+// traen el sobre. Se compara `codigoGeneracion` del adjunto contra el del
+// documento antes de guardar, asi que un correo con varios DTE no cruza
+// archivos.
+//
+// Cursor `after_id` obligatorio (no filtrar por "sigue en NULL"): los 7 de
+// Movistar fallan SIEMPRE, y sin cursor se quedan en la cabeza de la cola y el
+// backfill no converge nunca. Es el mismo bug de E6 y H7, que ya mordio dos
+// veces en este archivo.
+//
+// Costo: +17 MB de storage (339 -> 356 MB). El bucket sigue en 0.36% de los
+// 100 GB que incluye el plan Pro — verificado contra la documentacion, no de
+// memoria. El limite real del proyecto no es el storage sino la BASE (8 GB
+// incluidos por proyecto, hoy ~1 GB).
+//
+// Ademas: se quito la columna "Tipo" (regimen fiscal) de la tabla de
+// Proveedores. Mostraba el MISMO badge "Contribuyente IVA" en los 99 —
+// verificado, 99 de 99 tienen NRC—, o sea informacion cero por 175px en una
+// tabla que ya desbordaba. Segunda columna que sale por lo mismo, despues de
+// Giro en v2.27.4; el dato sigue en el detalle, donde ademas explica la
+// consecuencia fiscal. La tabla paso de 1,288px a 1,113px contra 1,044
+// disponibles: practicamente entra, y son 163px MENOS que al empezar la
+// sesion, habiendo sumado una columna de seleccion y el ordenamiento.
 
 // v2.206.0 — el aviso del recalculo mensual ya no miente cuando no calculo nada.
 //

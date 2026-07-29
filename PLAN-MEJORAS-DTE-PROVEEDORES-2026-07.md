@@ -373,10 +373,16 @@ recortes de `max-w` quedó en **1,288px** con las 8 columnas visibles, contra
 **1,276px** originales: se sumó una columna entera de selección más el
 ordenamiento por **+12px netos**.
 
-El desborde de fondo (1,288 en 1,044 disponibles) **no se puede arreglar sin
-sacar una columna**, y eso es decisión del usuario — como lo fue quitar Giro en
-v2.27.4. Candidatas, en orden: `Tipo` (175px, el régimen fiscal ya se ve en el
-detalle) y `NIT / NRC` (132px).
+**Resuelto en v2.207.0:** el usuario aprobó sacar `Tipo` (régimen fiscal), que
+mostraba el **mismo badge "Contribuyente IVA" en los 99** — verificado, 99 de
+99 tienen NRC. Información cero por 175px. Es la segunda columna que sale por
+lo mismo, después de Giro en v2.27.4; el dato sigue en el detalle, donde además
+explica la consecuencia fiscal.
+
+**1,113px** contra 1,044 disponibles — prácticamente entra, y son **163px menos
+que al empezar la sesión** (1,276), habiendo sumado una columna de selección y
+el ordenamiento. Si algún día se quiere scroll cero, la siguiente candidata
+sería `NIT / NRC` (132px), que es buscable desde el buscador.
 
 ---
 
@@ -471,10 +477,13 @@ Consecuencias de esta corrección:
   *todo* el trabajo del módulo, ahorrar segundos a cambio de cualquier riesgo
   de perder un documento que solo venía por link es mal negocio. El
   comportamiento conservador actual es el correcto.
-- **Gana peso la fidelidad del archivo:** 1,169 de 1,343 documentos no tienen
-  el JSON original crudo (`orig_json_path` NULL). Se arregló el 2026-07-22, así
-  que de ahí en adelante sí se guarda; lo anterior solo vive en Gmail y es
-  recuperable mientras esos correos sigan ahí. **Decisión abierta.**
+- **Fidelidad del archivo: ✅ RESUELTA (v2.207.0).** La auditoría dio los 1,169
+  JSON originales por **no backfilleables**; era falso. Cada documento conserva
+  su `source_message_id`, así que se pudieron volver a pedir a Gmail con el
+  nuevo modo `backfill_orig_json`. Resultado: **1,336 de 1,343 = 99.5%**, cero
+  errores, +17 MB. Los 7 restantes son todos de **Movistar**, que manda el DTE
+  como link y no como adjunto — no hay adjunto que recuperar, y el modo los
+  cuenta aparte (`sinAdjunto`) en vez de tratarlos como falla.
 
 ### Estado del almacenamiento (medido 2026-07-29)
 

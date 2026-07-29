@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import PortalInput from '../../components/common/PortalInput';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
@@ -444,8 +445,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                             {/* Fields */}
                             {(isBodegaBranch || section === 'bodega') ? (
                                 <div className="space-y-2">
-                                    <GlassInput label="Estante" value={draft.bodega_numero}  onChange={v => setF('bodega_numero',  v)} placeholder="Ej: B3"  accent="amber" />
-                                    <GlassInput label="Peldaño" value={draft.bodega_peldano} onChange={v => setF('bodega_peldano', v)} placeholder="Ej: 2"   accent="amber" />
+                                    <GlassInput label="Estante" value={draft.bodega_numero}  onChange={v => setF('bodega_numero',  v)} placeholder="Ej: B3" />
+                                    <GlassInput label="Peldaño" value={draft.bodega_peldano} onChange={v => setF('bodega_peldano', v)} placeholder="Ej: 2" />
                                 </div>
                             ) : (
                                 <div className="space-y-2">
@@ -469,9 +470,8 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                         value={salaType === 'vitrina' ? draft.vitrina : draft.estante}
                                         onChange={v => setF(salaType, v)}
                                         placeholder={salaType === 'vitrina' ? 'Ej: V2' : 'Ej: A3'}
-                                        accent="teal"
                                     />
-                                    <GlassInput label="Peldaño" value={draft.peldano} onChange={v => setF('peldano', v)} placeholder="Ej: 3" accent="teal" />
+                                    <GlassInput label="Peldaño" value={draft.peldano} onChange={v => setF('peldano', v)} placeholder="Ej: 3" />
                                 </div>
                             )}
 
@@ -518,18 +518,19 @@ function GlassChip({ icon, label, sub, color }) {
     );
 }
 
-function GlassInput({ label, value, onChange, placeholder, accent }) {
-    const focus = accent === 'amber'
- ? ' focus:border-warning/40'
- : ' focus:border-chart-9/40';
+// `accent` se fue el 2026-07-28. Solo teñía el borde AL ENFOCAR —ámbar en
+// bodega, teal en sala— y el canónico enfoca con el azul de marca en todo el
+// portal. Que dos campos se enfoquen de distinto color según la columna es
+// justo la divergencia por vista que esta auditoría vino a quitar; la
+// diferencia bodega/sala ya la comunica el encabezado de su sección.
+function GlassInput({ label, value, onChange, placeholder }) {
     return (
         <div className="flex items-center gap-2.5">
             <span className="text-label font-bold text-content-3 w-12 flex-shrink-0 text-right">{label}</span>
-            <input aria-label={label}
-                value={value}
-                onChange={e => onChange(e.target.value)}
+            <PortalInput
+                aria-label={label} className="flex-1" compact
+                value={value} onChange={e => onChange(e.target.value)}
                 placeholder={placeholder}
-                className={`flex-1 text-body-xl px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card backdrop-blur-sm outline-none ${focus} text-content-2 placeholder-content-3 transition-all font-medium`}
             />
         </div>
     );

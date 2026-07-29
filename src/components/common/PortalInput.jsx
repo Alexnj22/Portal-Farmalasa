@@ -20,6 +20,18 @@ const TONOS = {
     'chart-9': { caja: 'border-chart-9/30 bg-chart-9/5',   texto: 'text-chart-9-text', icono: 'text-chart-9' },
 };
 
+// `onDark`: la MISMA razón por la que existe en `ListRow` y `Badge`. Un campo
+// sobre el kiosco —oscuro en los cuatro temas— no puede sacar su superficie de
+// los tokens de tema sin quedar claro sobre negro. La ANATOMÍA es la del
+// canónico (alto, radio, aro de foco, área tocable); lo único bespoke es la
+// paleta, igual que en los flyouts del sidebar.
+const ON_DARK = {
+    caja:   'bg-white/[0.06] border border-white/[0.12]',
+    texto:  'text-white placeholder:text-white/35',
+    icono:  'text-white/50',
+    label:  'text-white/60',
+};
+
 const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "text", placeholder, colSpan = 1, required = false, helperText, prefix, readOnly = false, maskType, hasError, errorMessage,
     // ── 2026-07-27 ──────────────────────────────────────────────────────
     // `labelAction`: una acción a la derecha de la etiqueta (`+ Agregar` en
@@ -48,6 +60,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     // Los valores son los de la paleta CERRADA (DESIGN.md §6.0): no agrega
     // ningún color, solo hace alcanzables desde el canónico los que ya existen.
     tono,
+    onDark = false,
     // ── 2026-07-28: sin esto, D3.4 era una migración con trampa ──────────
     // El componente aceptaba una lista FIJA de props y tiraba todo lo demás.
     // Medido sobre los 104 `<input>` que faltan migrar: **54 (51%) usan al
@@ -75,6 +88,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     };
 
     const t = TONOS[tono];
+    const od = onDark ? ON_DARK : null;
     const isMissing = required && !value?.trim();
     const isInvalid = hasError || isMissing;
     const errorClasses = isInvalid ? 'outline outline-2 outline-danger/50' : '';
@@ -95,7 +109,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 mensaje de error pasa a ser solo para lectores de pantalla: la
                 señal visible es el borde rojo, que ya estaba. */}
             {label ? (
-                <label htmlFor={name} className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between transition-colors">
+                <label htmlFor={name} className={`text-caption font-black uppercase tracking-widest ${od ? od.label : 'text-content-3'} ml-1 mb-1.5 flex items-center justify-between transition-colors`}>
                     <span className="flex items-center gap-1.5">
                         {label} {helperText && <span className="text-micro text-brand-text">{helperText}</span>}
                         {labelAction}
@@ -112,8 +126,8 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 Con `tono` NO se emite: esa regla de index.css va sin @layer, así
                 que le gana a cualquier utilidad de Tailwind — el borde tintado
                 no se vería. Tintado ⇒ el contenedor se pinta entero acá. */}
-            <div data-surface={t ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : 'h-[40px]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
-                {Icon && <div className={`absolute left-3 ${t?.icono ?? 'text-content-3'}`}><Icon size={14} strokeWidth={2.5} /></div>}
+            <div data-surface={(t || od) ? undefined : 'input'} className={`relative flex items-center ${compact ? 'h-8' : 'h-[40px]'} z-base ${t ? `border rounded-input ${t.caja}` : ''} ${od ? `rounded-input ${od.caja}` : ''} ${readOnly ? 'opacity-80 cursor-not-allowed' : `${inputHoverClass} ${errorClasses}`}`}>
+                {Icon && <div className={`absolute left-3 ${t?.icono ?? od?.icono ?? 'text-content-3'}`}><Icon size={14} strokeWidth={2.5} /></div>}
                 {prefix && <div className="absolute left-3 text-content-3 font-black text-body">{prefix}</div>}
                 <input
                     {...rest}
@@ -129,7 +143,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     aria-required={required || undefined}
                     aria-invalid={isInvalid || undefined}
                     aria-describedby={isInvalid ? messageId : rest['aria-describedby']}
-                    className={`w-full h-full bg-transparent ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold ${t?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    className={`w-full h-full bg-transparent ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold ${t?.texto ?? od?.texto ?? 'text-content'} outline-none ${inputClassName} ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-content-3" />}
             </div>

@@ -8,6 +8,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; // 🚨 Asegúrate de que esta ruta sea correcta
+import PortalInput from '../common/PortalInput';
 
 const KioskConfigModal = ({
   isOpen,
@@ -116,22 +117,16 @@ const KioskConfigModal = ({
                 </div>
               </div>
 
-              {/* Input de Nombre del Equipo */}
-              <div className="flex flex-col gap-1.5 relative z-base">
-                <label className="text-white/50 text-micro sm:text-caption font-semibold uppercase tracking-widest ml-2">
-                  Identificador del Equipo
-                </label>
-                <div className="relative">
-                  <Laptop size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" strokeWidth={2} />
-                  <input aria-label="Identificador del equipo"
-                    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-3xl p-3.5 sm:p-4 pl-12 outline-none focus:bg-black/40 focus:border-chart-1/50 transition-all font-medium text-body-xl shadow-[var(--shadow-shine-lg)] placeholder:text-white/20"
-                    placeholder="Ej: Tablet Entrada"
-                    value={deviceNameInput}
-                    onChange={(e) => onChangeDeviceName?.(e.target.value)}
-                    disabled={isProcessing}
-                    autoComplete="off"
-                  />
-                </div>
+              {/* Input de Nombre del Equipo — la etiqueta la dibuja el canónico */}
+              <div className="relative z-base">
+                <PortalInput
+                  label="Identificador del Equipo" name="kiosk-device" onDark icon={Laptop}
+                  value={deviceNameInput}
+                  onChange={(e) => onChangeDeviceName?.(e.target.value)}
+                  placeholder="Ej: Tablet Entrada"
+                  readOnly={isProcessing}
+                  autoComplete="off"
+                />
               </div>
 
               {/* Botón Guardar */}

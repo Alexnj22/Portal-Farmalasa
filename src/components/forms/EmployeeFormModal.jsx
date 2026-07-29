@@ -2203,11 +2203,24 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                             {extraDocs.length === 0 && <p className="text-label text-content-3 font-medium">Sin documentos adicionales.</p>}
                             <div className="flex flex-col gap-3">
+                                {/* La tarjeta de cada documento era
+                                    `p-3 rounded-2xl border border-divider bg-surface-card-hover/60`:
+                                    la superficie de tarjeta reconstruida a mano. El radio fijo
+                                    (`rounded-2xl`) además ignoraba el tema — en Solid las tarjetas
+                                    son más tensas. */}
                                 {extraDocs.map(doc => (
-                                    <div key={doc.category} className="p-3 rounded-2xl border border-divider bg-surface-card-hover/60">
+                                    <div key={doc.category} data-surface="card" className="p-3">
                                         <div className="flex items-center justify-between mb-2 gap-2">
-                                            <input aria-label="Nombre del documento" type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
-                                                className="flex-1 bg-transparent text-body-xl font-bold text-content-2 outline-none border-b border-divider pb-1" />
+                                            {/* Era el ÚNICO campo subrayado del portal. El subrayado evitaba
+                                                anidar caja dentro de caja —vive dentro de una tarjeta—, pero
+                                                una tarjeta que contiene campos es lo normal en todas las demás
+                                                vistas, y un patrón que existe una sola vez no es un patrón. */}
+                                            <PortalInput
+                                                aria-label="Nombre del documento" className="flex-1" compact
+                                                value={doc.title}
+                                                onChange={(e) => updateDoc(doc.category, { title: e.target.value })}
+                                                placeholder="Nombre del documento"
+                                            />
                                             <Button variant="ghost" icon={X} title="Quitar documento" iconOnly onClick={() => removeExtraDoc(doc.category)} />
                                         </div>
                                         {renderDocUploadArea(doc.category)}

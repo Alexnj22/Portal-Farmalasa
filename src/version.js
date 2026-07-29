@@ -16,7 +16,42 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.170.0';
+export const APP_VERSION = '2.171.0';
+
+// v2.171.0 — el kiosco entra al canonico, y aparece `tarjeta-a-mano`.
+//
+// **`PortalInput` gana `onDark`**, la misma prop que ya tienen `ListRow` y
+// `Badge` por el mismo motivo: la ANATOMIA es la del canonico (alto, radio,
+// aro de foco, area tocable) y lo unico bespoke es la paleta. Con eso el campo
+// del kiosco deja de reconstruir `bg-black/30 border-white/10` a mano.
+//
+// El PIN de `AuthPromptPanel` NO migra y es deliberado: su borde lleva el
+// caret virtual animado —el indicador anti-fraude— y el canonico dibuja la
+// caja en el contenedor, no en el `<input>`, asi que la animacion quedaria
+// invisible. Ahi la excepcion es real, no comodidad.
+//
+// **Los 6 "sin caja" resultaron ser 5 con caja.** Solo usaban `flex-1` en vez
+// de `w-full`, que es lo que los separaba en mi agrupacion. Migrados con
+// `className="flex-1"`. El sexto —`EmployeeFormModal`— era el UNICO campo
+// subrayado del portal: el subrayado evitaba anidar caja dentro de caja, pero
+// una tarjeta que contiene campos es lo normal en todas las demas vistas, y un
+// patron que existe una sola vez no es un patron.
+//
+// **`GlassInput` de TabLaboratorios pierde `accent`.** Solo tenia ambar/teal en
+// el borde AL ENFOCAR; el canonico enfoca con el azul de marca en todo el
+// portal. Que dos campos se enfoquen de distinto color segun la columna es la
+// divergencia por vista que esta auditoria vino a quitar.
+//
+// **El hallazgo grande vino de una pregunta del usuario:** *"eso de dibujar la
+// tarjeta no es canonico"*. Tenia razon — canonizar un campo y dejar su
+// contenedor a mano es arreglar la mitad. Medido: **184 tarjetas dibujadas a
+// mano en 64 archivos**, todas reconstruyendo `data-surface="card"`. Lo que se
+// pierde no es solo repeticion: el radio queda FIJO (`rounded-3xl` = 24px)
+// cuando `--card-radius` cambia por tema, y el `backdrop-filter` queda escrito
+// aunque Solid prometa cero blur. Categoria `tarjeta-a-mano` nueva en el gate
+// con ratchet, para que no crezcan mientras se migran.
+//
+// input-a-mano: 60 → 48.
 
 // v2.170.0 — `PortalInput` acepta no tener etiqueta.
 //

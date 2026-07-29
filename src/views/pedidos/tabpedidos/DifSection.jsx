@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle2, X, Loader2, UserCircle2 } from 'lucide-react
 import LiquidSelect from '../../../components/common/LiquidSelect';
 import { calcSolicitado, fmtRelative } from './helpers';
 import Badge from '../../../components/common/Badge';
+import PortalInput from '../../../components/common/PortalInput';
 
 const ERROR_TIPO_LABEL = {
     faltante:     { label: 'Faltante',        variante: 'danger'           },
@@ -141,11 +142,10 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                         clearable={false}
                                     />
                                     <div className="flex gap-2">
-                                        <input aria-label="Nota de lo seleccionado"
-                                            type="text" placeholder="Nota (opcional)…"
-                                            value={notaSel[item.id] ?? ''}
-                                            onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
-                                            className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:border-chart-3 bg-surface-card placeholder-content-3"
+                                        <PortalInput
+                                            aria-label="Nota de lo seleccionado" className="flex-1" tono="chart-3" compact
+                                            value={notaSel[item.id] ?? ''} onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
+                                            placeholder="Nota (opcional)…"
                                         />
                                         <Button tone="chart-3" disabled={isBusy || !selTipo} onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}</Button>
                                     </div>
@@ -173,16 +173,11 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                     {isBranch && (
                                         rejectOpen[item.id] ? (
                                             <div className="flex gap-2">
-                                                <input aria-label="Razón del rechazo"
-                                                    type="text" placeholder="Razón del rechazo…" autoFocus
-                                                    value={notaRec[item.id] ?? ''}
-                                                    onChange={e => setNotaRec(p => ({ ...p, [item.id]: e.target.value }))}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
-                                                        if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
-                                                    }}
-                                                    className="flex-1 text-body-xl border border-danger/30 rounded-lg px-2.5 py-1.5 focus:border-danger bg-surface-card placeholder-content-3"
-                                                />
+                                                <PortalInput
+                                            aria-label="Razón del rechazo" className="flex-1" tono="danger" compact
+                                            value={notaRec[item.id] ?? ''} onChange={e => setNotaRec(p => ({ ...p, [item.id]: e.target.value }))}
+                                            placeholder="Razón del rechazo…"
+                                        />
                                                 <Button variant="destructive" disabled={isBusy} onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}>{isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}</Button>
                                                 <Button variant="ghost" onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))}>✕</Button>
                                             </div>
@@ -234,11 +229,10 @@ export default function DifSection({ row, difItems = [], eventos = [], isBranch,
                                 <div className="space-y-2">
                                     <p className="text-caption text-content-2 font-semibold">Todas las diferencias fueron resueltas — marca la corrección como completa</p>
                                     <div className="flex gap-2">
-                                        <input aria-label="Nota de la corrección"
-                                            type="text" placeholder="Nota (opcional)…"
-                                            value={corrNota}
-                                            onChange={e => setCorrNota(e.target.value)}
-                                            className="flex-1 text-body-xl border border-divider rounded-lg px-2.5 py-1.5 focus:border-success bg-surface-card placeholder-content-3"
+                                        <PortalInput
+                                            aria-label="Nota de la corrección" className="flex-1" tono="success" compact
+                                            value={corrNota} onChange={e => setCorrNota(e.target.value)}
+                                            placeholder="Nota (opcional)…"
                                         />
                                         <Button tone="success" disabled={busyAction === 'corr_bodega'} onClick={() => onCorregirBodega?.(corrNota || null)}>{busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}</Button>
                                     </div>

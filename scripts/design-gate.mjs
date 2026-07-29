@@ -217,6 +217,9 @@ const EXCEPTIONS = {
   // viva en el canónico es mejor, pero el blanco sigue siendo literal a
   // propósito y por eso la excepción se mueve acá.
   'src/components/common/ListRow.jsx': ['white'],
+  // Misma razón: `PortalInput.onDark` es la paleta bespoke del kiosco viviendo
+  // en el canónico en vez de copiada en cada pantalla (2026-07-28).
+  "src/components/common/PortalInput.jsx": ['white'],
   'src/components/common/NotificationBell.jsx': ['white'],
   'src/views/productos/TabCatalogo.jsx': ['hex'],
   'src/views/productos/tabminmax/constants.js': ['hex'],
@@ -886,6 +889,44 @@ function scanFile(path) {
         const linea = sinComentarios2.slice(0, mi2.index).split('\n').length;
         findings.push({ line: linea, label: 'input fuera de `PortalInput` (DESIGN.md §15)',
           category: 'input-a-mano', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
+      }
+    }
+
+    // ── `tarjeta-a-mano` (2026-07-28) ───────────────────────────────────
+    // Un `<div>` que reconstruye `data-surface="card"`: superficie de tarjeta
+    // + borde + radio de tarjeta + padding de tarjeta, sin el atributo.
+    //
+    // Salió de una pregunta del usuario mientras se canonizaba un `<input>`
+    // que estaba dentro de una de estas: *"eso de dibujar la tarjeta no es
+    // canónico"*. Tenía razón, y era el problema más grande: **185 en 64
+    // archivos**. Migrar el campo y dejar su contenedor a mano es arreglar
+    // la mitad.
+    //
+    // Lo que se pierde escribiéndola a mano no es solo repetición: el radio
+    // queda FIJO (`rounded-3xl` = 24px siempre) cuando `--card-radius` cambia
+    // por tema —en Solid las tarjetas son más tensas—, y el `backdrop-filter`
+    // queda escrito aunque Solid prometa cero blur.
+    //
+    // Exige las cuatro señales juntas y descarta las cajas de ícono
+    // (`w-10 h-10`) para no marcar píldoras ni avatares. No mira las
+    // superficies bespoke: sidebar, kiosco y login (DESIGN.md §25.4).
+    if (!/timeclock\/|LoginView|AppLayout/.test(path)) {
+      const RE_DIV = /<div\b(?:(?!>).)*?>/gs;
+      let md;
+      while ((md = RE_DIV.exec(sinComentarios2))) {
+        const tag = md[0];
+        if (tag.includes('data-surface')) continue;
+        const mc = tag.match(/className=[{`"]+([^`"}]*)/);
+        if (!mc) continue;
+        const c = mc[1];
+        if (!/bg-surface-card\b/.test(c)) continue;
+        if (!/\bborder\b|border-(divider|border-card)/.test(c)) continue;
+        if (!/rounded-(2xl|3xl|card|modal|header)/.test(c)) continue;
+        if (!/\bp-[3-9]|\bp-1[0-9]|\bpx-[4-9]|\bpy-[3-9]/.test(c)) continue;
+        if (/\bw-\d{1,2}\b|\bh-\d{1,2}\b/.test(c)) continue;
+        const linea = sinComentarios2.slice(0, md.index).split('\n').length;
+        findings.push({ line: linea, label: 'tarjeta a mano — usar `data-surface="card"` (DESIGN.md §5)',
+          category: 'tarjeta-a-mano', text: tag.replace(/\s+/g, ' ').slice(0, 120) });
       }
     }
 

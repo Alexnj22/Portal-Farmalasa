@@ -16,7 +16,28 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.190.0';
+export const APP_VERSION = '2.191.0';
+
+// v2.191.0 — buscar una factura tardaba 7.5 segundos.
+//
+// La auditoria reporto esto como dos hallazgos separados: "6 GIN de trigram
+// muertos, dropearlos" y "RPC de analitica lenta, 7,669 ms". Era el MISMO bug:
+// los indices estaban muertos PORQUE la query no podia usarlos. Seguir la
+// recomendacion al pie de la letra habria dejado la busqueda rota para siempre.
+//
+// search_ventas_ids filtraba con `norm_search(si.cliente) LIKE ALL (v_pats)`.
+// LIKE ALL(array) es un ScalarArrayOpExpr y el opclass gin_trgm_ops solo
+// resuelve LIKE contra un patron ESCALAR; encima los patrones venian de un CTE
+// unido por producto cartesiano. Seq scan sobre 336,592 filas evaluando
+// norm_search() tres veces por fila. Ahora es plpgsql con los patrones en
+// variables locales: llegan al plan como parametros y el indice si matchea.
+//
+//   7,494 ms -> 313 ms en produccion, mismas 2,072 filas.
+//   equivalencia probada por diferencia de conjuntos en 7 casos: 0 diferencias.
+//
+// Se dropearon solo los 4 indices realmente redundantes (64 MB): los 3 trigram
+// sobre la columna cruda, superados por sus gemelos _norm que son los que la
+// RPC consulta, y un prefijo estricto de idx_si_branch_fecha_full.
 
 // v2.190.0 — recuento de variaciones por supervisor.
 //

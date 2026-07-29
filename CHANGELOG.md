@@ -12,6 +12,47 @@ retomar; acá está todo.
 
 ---
 
+## v2.191.0 — buscar una factura tardaba 7.5 segundos.
+
+La auditoría de Supabase reportó esto como **dos hallazgos separados**: *"6 GIN de
+trigram muertos, 0 scans, dropearlos (~117 MB)"* y *"las RPCs de analítica más
+lentas (7,669 ms de media)"*. Era el mismo bug. Los índices estaban muertos
+**porque la query no podía usarlos**, y la query era lenta por esa razón. Seguir
+la recomendación al pie de la letra habría dejado la búsqueda de facturas en 7.5
+segundos de forma permanente.
+
+`search_ventas_ids` filtraba con:
+
+```sql
+public.norm_search(si.cliente) LIKE ALL (pats.v_pats)
+```
+
+`LIKE ALL (array)` es un `ScalarArrayOpExpr`, y el opclass `gin_trgm_ops` solo
+sabe resolver `LIKE` contra un patrón **escalar**. Encima los patrones venían de
+un CTE unido por producto cartesiano, así que el predicado referenciaba otra
+relación y dejaba de ser indexable por construcción. El resultado era un seq scan
+sobre 336,592 filas evaluando `norm_search()` tres veces por fila.
+
+Ahora la función es plpgsql con los patrones en variables locales: llegan al plan
+como parámetros escalares y `norm_search(col) LIKE $n` sí matchea el índice de
+expresión. El AND multi-token se conserva aplicando el `LIKE ALL` sobre el heap,
+después de que el índice ya recortó los candidatos.
+
+**7,494 ms → 313 ms**, mismas 2,072 filas. Equivalencia verificada por diferencia
+de conjuntos de ids en 7 casos (multi-token, 2 caracteres, vacío, acentos,
+barra): 0 diferencias. Los tres índices `_norm` pasaron de 0 scans a usarse.
+
+Se dropearon solo los **4 realmente redundantes** (64 MB): los 3 trigram sobre la
+columna cruda —superados por sus gemelos `_norm`, que son los que la RPC
+consulta— y `idx_sales_invoices_branch_fecha`, prefijo estricto de
+`idx_si_branch_fecha_full`. Se conservan a propósito
+`sales_invoices_codigo_generacion_key` (UNIQUE del DTE: integridad, no
+optimización) y dos índices de 10 MB cuyo uso en reportes mensuales no se pudo
+descartar.
+
+Con esto la base quedó en **1,071 MB**, contra los 1,463 MB del inicio de la
+auditoría.
+
 ## v2.189.0 — el 26.5% del CPU de la base era un INSERT que no insertaba nada.
 
 La query #1 de `pg_stat_statements` —127,170 llamadas, 8,281 s, 65 ms de media—

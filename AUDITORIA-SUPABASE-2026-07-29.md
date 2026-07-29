@@ -13,9 +13,17 @@ La base está **bien fundamentada en lo estructural** (numeric para dinero, RLS 
 
 > **Estado al cierre del 2026-07-29.** La fuga está cerrada (v2.184.0–2.185.1).
 > Del CPU inútil, el bloque grande —el 26.5% del upsert de `products`— está
-> resuelto y verificado en producción; queda Realtime (18.6%). La base bajó de
-> 1,463 MB a **1,134 MB**. Sigue abierto: las 21 tablas con escritura abierta,
-> los índices muertos, el compute mínimo, PITR, y toda la arquitectura del POS.
+> resuelto y verificado en producción; queda Realtime (18.6%). Buscar una factura
+> pasó de 7.5 s a 313 ms. La base bajó de 1,463 MB a **1,071 MB (−27%)**.
+> Sigue abierto: las 21 tablas con escritura abierta, el compute mínimo, PITR, y
+> toda la arquitectura del POS.
+>
+> **Dos de los diagnósticos de este informe estaban mal**, y se descubrió al ir a
+> arreglarlos: el origen del 27% de CPU (era `sync-dte-sales`, no
+> `sync-erp-purchases`) y la afirmación de que `cron.job_run_details` no se
+> purgaba. Un tercero era peor que estar mal: seguir la recomendación de P3 al pie
+> de la letra habría dejado la búsqueda de facturas rota en 7.5 s de forma
+> permanente. Están corregidos en sus secciones, no borrados.
 
 ---
 
@@ -365,6 +373,56 @@ sync-inv-suc4-1min      25      dte-salud3-min       17   (+11 jobs más)
 
 Con `max_connections = 60` y ~30 jobs disparando **cada minuto**, pg_cron compite con el pool de PostgREST, Auth, Realtime y Storage, y pierde. **Cada fallo es un minuto de ventas o inventario no sincronizado** — no es cosmético, es pérdida de datos operativos.
 
+## ✅ P3 + P5 — eran el MISMO bug: buscar una factura tardaba 7.5 s (RESUELTO 2026-07-29)
+
+Este informe reportó dos hallazgos separados que resultaron ser uno solo:
+
+- **P3** — "6 GIN de trigram muertos, 0 scans, dropearlos (~117 MB)"
+- **P5** — "las RPCs de analítica más lentas (7,669 ms de media)"
+
+Los índices estaban muertos **porque la query no podía usarlos**, y la query era
+lenta por exactamente esa razón. **Seguir la recomendación de P3 al pie de la
+letra habría dejado la búsqueda de facturas en 7.5 segundos para siempre.**
+
+`search_ventas_ids` filtraba así:
+
+```sql
+public.norm_search(si.cliente) LIKE ALL (pats.v_pats)
+```
+
+`LIKE ALL (array)` es un `ScalarArrayOpExpr`, y el opclass `gin_trgm_ops` solo
+sabe resolver `LIKE` contra un patrón **escalar**. Encima `pats` venía de un CTE
+unido por producto cartesiano, así que el predicado referenciaba otra relación y
+dejaba de ser indexable por construcción. Resultado: seq scan sobre 336,592
+filas evaluando `norm_search()` tres veces por fila.
+
+**Arreglo** (`20260729_search_ventas_ids_indexable`): pasar la función a plpgsql
+y dejar los patrones en variables locales, para que lleguen al plan como
+parámetros escalares. El AND multi-token se conserva aplicando el `LIKE ALL`
+sobre el heap, después de que el índice ya recortó los candidatos.
+
+| | antes | después |
+|---|---|---|
+| `search_ventas_ids('rodriguez', 7 meses)` | 7,494 ms | **313 ms** |
+| `idx_si_*_norm_trgm` (3) | 0 scans | **usados** |
+
+Equivalencia verificada por diferencia de conjuntos de ids en 7 casos
+—multi-token, 2 caracteres, vacío, acentos, barra—: **0 diferencias**, mismas
+2,072 filas.
+
+**Dropeados** (64 MB): los 3 trigram sobre la columna *cruda*
+(`idx_si_cliente_trgm`, `idx_si_correlativo_trgm`, `idx_si_erp_invoice_trgm`),
+superados por sus gemelos `_norm` que son los que la RPC consulta; y
+`idx_sales_invoices_branch_fecha`, prefijo estricto de `idx_si_branch_fecha_full`.
+
+**Conservados a propósito**: los 3 `_norm` (ahora vivos),
+`sales_invoices_codigo_generacion_key` (UNIQUE del DTE: integridad, no
+optimización), y `idx_sales_invoices_cod_vendedor` + `idx_si_branch_fecha_no_anulada`
+— 0 scans en 9 días y 10 MB entre los dos, pero no se pudo probar que ningún
+reporte mensual los use, así que se dejan.
+
+### Listado original
+
 ## 🟠 P3 — 150 índices sin un solo uso = 140 MB
 
 En `sales_invoices` sola hay **~117 MB tirados** (la tabla son 137 MB y sus índices 279 MB):
@@ -533,7 +591,7 @@ Lo que sí hay que resolver antes de mover ventas:
 ### Esta semana (estabilidad y costo)
 6. ✅ **Hecho** — upserts incondicionales. El origen real era `sync-dte-sales`, no `sync-erp-purchases`; el costo no era escribir sino la inserción especulativa de `ON CONFLICT`. 65.1 ms → 4.2 ms verificado en prod.
 7. ✅ **Hecho** — retención asimétrica de `cron.job_run_details` (éxitos 7 días, fallos 90) + `VACUUM FULL` de esa tabla y de `net._http_response`. **1,463 MB → 1,134 MB.**
-8. ⬜ Dropear los 6 GIN de trigram muertos y los 3 índices redundantes de `sales_invoices` → ~117 MB y menos amplificación de escritura.
+8. ✅ **Hecho, pero NO como decía este informe.** Los 6 GIN no estaban muertos: 3 eran los correctos y la query no podía usarlos. Se arregló `search_ventas_ids` (7,494 ms → **313 ms**) y se dropearon solo los 4 realmente redundantes (64 MB).
 9. ⬜ Subir compute → resuelve los 275 fallos de cron.
 10. ⬜ Confirmar/activar PITR.
 

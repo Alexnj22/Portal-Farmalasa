@@ -15,6 +15,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
+import { Skeleton } from '../../components/common/StateViews';
 
 const STATUS_CFG = {
   pending:  { label: 'Pendiente', variante: 'warning' },
@@ -366,7 +367,9 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
       {/* ── Grid de cards ── */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-content-3" /></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} h={132} rounded="var(--radius-card)" />)}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-2 text-content-3">
           <Inbox size={34} strokeWidth={1.5} />

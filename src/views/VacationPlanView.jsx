@@ -897,7 +897,7 @@ const VacationPlanView = () => {
                                         <thead>
                                             <tr className="border-b border-divider">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-micro font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -936,7 +936,7 @@ const VacationPlanView = () => {
                                         <thead>
                                             <tr className="border-b border-divider">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-micro font-black uppercase tracking-widest text-content-2 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>

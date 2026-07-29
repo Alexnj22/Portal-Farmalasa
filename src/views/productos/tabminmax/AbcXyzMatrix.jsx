@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { BarChart2, X } from 'lucide-react';
 import { normXyz } from './helpers';
 import Button from '../../../components/common/Button';
+import { EmptyState } from '../../../components/common/StateViews';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
 const ABC_KEYS = ['A', 'B', 'C'];
@@ -48,10 +49,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-4 gap-1.5 text-content-3">
-                        <BarChart2 size={22} className="text-content-3" />
-                        <span className="text-micro font-semibold">Sin datos — presioná Calcular</span>
-                    </div>
+                    <EmptyState compact icon={BarChart2} title="Sin datos" subtitle="Presioná Calcular para armar la matriz ABC × XYZ." />
                 )}
             </div>
         );

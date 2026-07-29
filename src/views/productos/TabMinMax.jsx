@@ -518,18 +518,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
 
             {!loading && neverCalc && (
-                <div data-surface="card" className={`${glass} py-16 text-center`}>
-                    <Package size={36} className="opacity-30 mx-auto mb-4 text-content-3" />
-                    <p className="text-subtitle font-bold text-content-2 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
-                    <p className="text-body-sm text-content-3 mb-6 max-w-sm mx-auto leading-relaxed">
-                        {isBodega
-                            ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Seleccioná una sucursal, calculá y publicá sus borradores.'
-                            : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
-                    </p>
-                    {!isBodega && (
-                        <Button disabled={calculating} onClick={handleRecalcular}>{calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                            Calcular {ERP_NAMES[selectedErp]}</Button>
-                    )}
+                <div data-surface="card" className={glass}>
+                    <EmptyState
+                        icon={Package}
+                        title={`Sin datos para ${ERP_NAMES[selectedErp]}`}
+                        subtitle={isBodega
+                            ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Seleccioná una sucursal para calcular.'
+                            : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los MIN/MAX.`}
+                        action={!isBodega ? (
+                            <Button disabled={calculating} onClick={handleRecalcular}>{calculating ? <Loader2 size={14} className="animate-spin" /> : null}
+                                Calcular {ERP_NAMES[selectedErp]}</Button>
+                        ) : undefined}
+                    />
                 </div>
             )}
 

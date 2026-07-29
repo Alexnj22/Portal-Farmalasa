@@ -752,10 +752,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-surface-card-hover/80 border-b border-divider">
-                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
-                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Proveedor</th>
-                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-center text-content-2">Cant.</th>
-                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-right text-content-2">Costo unit.</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Fecha</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Proveedor</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Costo unit.</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-divider">
@@ -817,8 +817,8 @@ function PriceHistorySection({ history, allowedPriceFields }) {
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-surface-card-hover/80 border-b border-divider">
-                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Fecha</th>
-                            <th className="px-3 py-2 text-micro font-black uppercase tracking-wider text-left text-content-2">Presentación</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Fecha</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Presentación</th>
                             {allowedPriceFields.map(f => (
                                 <th key={f.key} className="px-3 py-2 text-micro font-black uppercase tracking-wider text-right text-content-2">{f.label}</th>
                             ))}

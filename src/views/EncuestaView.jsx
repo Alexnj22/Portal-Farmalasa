@@ -1084,9 +1084,9 @@ export default function EncuestaView() {
                                     <thead>
                                         <tr className="bg-brand/5 border-b border-brand/10">
                                             <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Bloque</th>
-                                            <th className="text-center px-3 py-2 text-caption font-black uppercase tracking-wider text-chart-3-text">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
-                                            <th className="text-center px-3 py-2 text-caption font-black uppercase tracking-wider text-content-2">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
-                                            <th className="text-center px-3 py-2 text-caption font-black uppercase tracking-wider text-content-2" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1163,7 +1163,7 @@ export default function EncuestaView() {
                             <table className="w-full text-xs min-w-[600px]">
                                 <thead>
                                     <tr className="bg-brand/5 border-b border-brand/10">
-                                        <th className="text-left px-2 py-2 text-micro font-black uppercase tracking-wider text-content-2 whitespace-nowrap">Sucursal</th>
+                                        <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 whitespace-nowrap">Sucursal</th>
                                         {BLOQUES.map(b => (
                                             <th key={b.id} className="text-center px-2 py-2 text-micro font-black uppercase tracking-wider text-content-2 whitespace-nowrap">
                                                 B{b.id}
@@ -1238,13 +1238,13 @@ export default function EncuestaView() {
                                     <table className="w-full min-w-[560px] text-sm">
                                         <thead>
                                             <tr className="bg-brand/5 border-b border-brand/10">
-                                                <th className="text-left px-4 py-2.5 text-caption font-black uppercase tracking-wider text-content-3">Empleado</th>
-                                                <th className="text-center px-3 py-2.5 text-caption font-black uppercase tracking-wider text-content-3 w-16">Rol</th>
+                                                <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Empleado</th>
+                                                <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Rol</th>
                                                 {BLOQUES.map(b => (
                                                     <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-micro font-black uppercase tracking-wider text-content-2 cursor-help">B{b.id}</th>
                                                 ))}
-                                                <th className="text-center px-3 py-2.5 text-caption font-black uppercase tracking-wider text-content-3">Auto</th>
-                                                <th className="text-center px-3 py-2.5 text-caption font-black uppercase tracking-wider text-content-3">Global</th>
+                                                <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Auto</th>
+                                                <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Global</th>
                                             </tr>
                                         </thead>
                                         <tbody>

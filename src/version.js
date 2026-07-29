@@ -16,7 +16,55 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.185.1';
+export const APP_VERSION = '2.186.0';
+
+// v2.186.0 - auditoria de los PUNTOS CIEGOS del gate: P1 y P2.
+//
+// Reglas que DESIGN.md manda y design-gate.mjs no mide. 308 archivos + 33
+// rutas reales en Chromium + 14 en WebKit iPhone. De 503 hallazgos en bruto
+// quedaron ~40 reales; el resto eran detectores mintiendo (ver abajo).
+//
+// P1 - lo que rompe o engana al usuario
+//   1. try/finally sin catch, 7 de 19. Si la RPC tira, el spinner se apaga y
+//      la lista queda vacia: el usuario lee "no hay datos" cuando en realidad
+//      fallo. Ahora los 7 avisan con toast.
+//   2. Cuatro modales a mano -> ModalShell (EmployeeDetailView x2,
+//      RequestsView x2): sin foco atrapado, sin Escape, sin role="dialog".
+//   3. TRES visores de foto distintos y DOS sin Escape -> common/PhotoLightbox
+//      (promovido del de TabCatalogo, que era el completo). `alt` obligatorio:
+//      los tres traian alt="" para una imagen que el usuario abrio a proposito.
+//   4. SearchInput: el boton de limpiar medía 20x20 en tactil (piso 25.6 = 44).
+//      Vive en el canonico, o sea que era asi en TODA vista con buscador.
+//   5. COEP del dev server bloqueaba 58 fotos de empleados por sesion. Solo
+//      dev - vercel.json nunca mando COEP - pero significa que meses de
+//      verificacion visual local corrieron con las fotos rotas.
+//   6. LiquidDatePicker: los 3 segmentos DD/MM/AAAA eran outline-none y ningun
+//      ancestro pintaba el foco. Unico hallazgo real de la pasada de foco.
+//
+// P2 - no sigue el canonico
+//   7. Seis estados vacios a mano -> EmptyState. El de TabExpediente ya
+//      distinguia "tu filtro no encontro" de "no hay nada que atender", que es
+//      justo lo que 18.1 pide; le faltaba el canonico y la salida.
+//   8. Tres spinners de seccion -> LoadingState / Skeleton / AiThinkingState.
+//   9. Paginacion a mano de AnnouncementsView -> TablePagination.
+//  10. Las 7 tablas dentro de tarjeta NO pueden ser DataTable (el propio doc
+//      prohibe doble-tarjeta). El defecto real era que el doc no decia que
+//      hacer con ellas, asi que cada una invento su encabezado: seis <th>
+//      distintos para lo mismo. Unificados + regla nueva en DESIGN.md 14.
+//
+// Descartado tras verificar - los detectores mienten:
+//   foco visible 1006 -> 0 (el .focus() programatico no dispara :focus-visible;
+//   con Tab de verdad y contando :focus-within del contenedor, solo el
+//   datepicker), apilamiento 36 rutas -> 0 (los z vivos son exactamente la
+//   escala 9), button-sin-type 5 -> 0 (el type estaba en la linea siguiente),
+//   title= 278 -> 4 (70 son prop de componente; de los 208 que llegan al DOM,
+//   204 son el UNICO nombre accesible y Button documenta title como fuente
+//   valida), iconos 613 -> 26 (12 documenta 5 tamanos y el codigo usa 33: el
+//   doc esta mal, no el codigo), scroll horizontal movil 0, img sin alt 0.
+//
+// Mi lista de rutas estaba en espanol y App.jsx las tiene en ingles: 17 de 36
+// caian al fallback, asi que las primeras pasadas midieron media app. Rehecho.
+
 
 // v2.185.1 — se cierran las escrituras abiertas de `roles` y su lectura anonima.
 //

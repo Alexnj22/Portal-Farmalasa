@@ -8,6 +8,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
 import { timeToMins } from '../../utils/scheduleHelpers';
+import { AiThinkingState } from '../common/StateViews';
 
 const DAYS_MAP = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo' };
 const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -351,10 +352,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-content-3 relative z-base">
-                        <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-brand-text" />
-                        <p className="text-label font-black uppercase tracking-widest animate-pulse">Analizando operaciones con Sparkles...</p>
-                    </div>
+                    <AiThinkingState title="Analizando la operación" className="flex-1 relative z-base" />
                 ) : chartData.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-content-2 text-label font-bold uppercase tracking-widest relative z-base">
                         <Activity size={32} />

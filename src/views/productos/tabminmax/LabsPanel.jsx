@@ -12,6 +12,7 @@ import {
     fetchProductIdsByLaboratorio, unhideStockParamsForProducts,
 } from '../../../data/minmaxLabs';
 import SearchInput from '../../../components/common/SearchInput';
+import { EmptyState } from '../../../components/common/StateViews';
 
 export default function LabsPanel({ onClose, onChanged }) {
     const [labs,      setLabs]      = useState([]);
@@ -135,10 +136,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                     {loading ? (
                         <div className="flex items-center justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                     ) : visible.length === 0 ? (
-                        <div className="flex flex-col items-center py-8 gap-2 text-content-3">
-                            <FlaskConical size={22} />
-                            <span className="text-caption font-semibold">Sin resultados</span>
-                        </div>
+                        <EmptyState compact icon={FlaskConical} title="Sin resultados" subtitle="Ningún laboratorio coincide con la búsqueda." />
                     ) : visible.map(lab => {
                         const hidden = lab.ocultar_en_minmax;
                         const count  = counts[lab.id] ?? 0;

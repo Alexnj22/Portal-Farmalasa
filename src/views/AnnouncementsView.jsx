@@ -22,6 +22,7 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import PortalTextarea from '../components/common/PortalTextarea';
 import PortalInput from '../components/common/PortalInput';
+import TablePagination from '../components/common/TablePagination';
 
 
 // ============================================================================
@@ -751,13 +752,19 @@ const AnnouncementsView = ({ openModal }) => {
               )}
             </div>
 
+            {/* §17.2: "nunca escribir la paginación a mano". Escrita a mano no
+                traía <nav>, ni aria-live en el rango, ni el rango mismo — solo
+                "Pág 1 de 4", que dice dónde estás pero no cuántos hay. */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-6 mt-2 border-t border-divider shrink-0 px-3 md:px-4">
-                <Badge>Pág {currentPage} de {totalPages}</Badge>
-                <div className="flex gap-2">
-                  <Button variant="secondary" icon={ChevronLeft} disabled={currentPage === 1} iconOnly onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
-                  <Button variant="secondary" icon={ChevronRight} disabled={currentPage === totalPages} iconOnly onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
-                </div>
+              <div className="pt-6 mt-2 border-t border-divider shrink-0 px-3 md:px-4">
+                <TablePagination
+                  page={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  pageSize={itemsPerPage}
+                  total={totalItems}
+                  unit="avisos"
+                />
               </div>
             )}
           </div>

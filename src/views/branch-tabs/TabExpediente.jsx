@@ -9,6 +9,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import SearchInput from '../../components/common/SearchInput';
+import { EmptyState } from '../../components/common/StateViews';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
@@ -379,24 +380,29 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             </div>
 
             {/* ESTADO VACÍO */}
-            {isSearchEmpty && (
-                <div data-surface="card" className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white animate-in fade-in duration-500">
-                    {searchTerm ? (
-                        <>
-                            <Search size={40} className="text-content-3 mb-3" strokeWidth={1.5} />
-                            <p className="text-sm font-black text-content-2">No se encontraron documentos</p>
-                            <p className="text-label font-bold text-content-3 mt-1">Ningún documento coincide con "{searchTerm}"</p>
-                        </>
-                    ) : (
-                        <>
-                            <CheckCircle2 size={40} className="text-success mb-3" strokeWidth={1.5} />
-                            <p className="text-sm font-black text-success">Expediente impecable</p>
-                            <p className="text-label font-bold text-success/70 mt-1">No hay alertas ni documentos pendientes en este momento.</p>
-                            <Button tone="chart-1" onClick={() => setShowAllDocs(true)}>Ver Documentos Al Día</Button>
-                        </>
-                    )}
-                </div>
-            )}
+            {/* Los DOS vacíos que §18.1 pide distinguir, cada uno con su salida:
+                "tu filtro no encontró nada" (limpiar la búsqueda) vs. "no hay
+                nada que atender" (ver los que están al día). Estaban escritos a
+                mano — la distinción ya era correcta, le faltaba el canónico. */}
+            {isSearchEmpty && (searchTerm ? (
+                <EmptyState
+                    compact
+                    icon={Search}
+                    title="No se encontraron documentos"
+                    subtitle={`Ningún documento coincide con "${searchTerm}".`}
+                    action={<Button variant="secondary" onClick={() => setSearchTerm('')}>Limpiar la búsqueda</Button>}
+                />
+            ) : (
+                <EmptyState
+                    compact
+                    icon={CheckCircle2}
+                    iconClass="text-success"
+                    glowClass="bg-success/30"
+                    title="Expediente impecable"
+                    subtitle="No hay alertas ni documentos pendientes."
+                    action={<Button tone="chart-1" onClick={() => setShowAllDocs(true)}>Ver documentos al día</Button>}
+                />
+            ))}
 
             {/* SECCIÓN 1: LICENCIAS Y PERMISOS */}
             {(permisosDocs.length > 0 || customDocsByCategory['Permisos y Licencias']?.length > 0) && (

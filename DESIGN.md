@@ -1140,6 +1140,37 @@ Props: `data`, `columns`, `loading`, `skeletonRows`, `empty` (`{ icon, message }
 
 **Never wrap `DataTable` in an extra card container.** `DataTable` already renders its own `rounded-2xl` card via `tk.cardBg`/`cardBorder`/`cardShadow` — wrapping it in a second `data-surface="card"` div (or any custom `bg-white/... backdrop-blur... rounded-[Nrem]` wrapper) double-cards it and makes the view look inconsistent with every other table view in the app (visible regression fixed in `StaffManagementView` v2.4.2 — it had grown a `data-surface="card"` wrapper with its own internal `overflow-y-auto` scroll region, which also fought `GlassViewLayout`'s own scroll container). Reference implementation: `VentasView` — `<DataTable>...</DataTable>` and `<TablePagination>` are plain siblings directly in the page's `space-y-*` flow, no wrapping div, no toolbar row for a row-count label (the count lives only in `TablePagination`'s own total badge).
 
+#### La sub-tabla: cuándo NO va `DataTable` (2026-07-29)
+
+`DataTable` es la tabla de una **vista de lista**: trae su propia tarjeta, su
+paginación, su orden y su vacío. Por eso la regla de arriba —*nunca envolverla
+en otra tarjeta*— también significa lo contrario: **una tabla que ya vive dentro
+de una tarjeta, un panel o un modal no puede ser `DataTable`**, porque quedaría
+doble-tarjeta.
+
+Al auditar aparecieron **7 tablas así** (`ComprasView`, `EncuestaView`,
+`VacationPlanView`, `TabMetricas`, `TabCatalogo`, `FormPurchaseDteViewer`,
+`ScheduleCalendar`), y como el doc no decía qué hacer con ellas, **cada una
+inventó su propio encabezado**: `text-left py-2`, `px-3 py-2 font-semibold`,
+`px-4 py-2.5`, `text-micro tracking-widest`, `text-caption tracking-wider`…
+seis formas para lo mismo.
+
+El encabezado de una sub-tabla es **uno solo** — la misma etiqueta en
+versalitas que usan `PortalInput` y `DataTable`:
+
+```jsx
+<th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">
+```
+
+Se le puede sumar alineación (`text-right`/`text-center` para numéricas, que
+reemplazan a `text-left`) y ancho (`min-w-*`, `w-[*]`), nada más. Si necesitás
+además orden, paginación o estado vacío, no era una sub-tabla: sacala del panel
+y usá `DataTable`.
+
+`ScheduleCalendar` queda fuera a propósito: no es una tabla de datos sino una
+matriz de calendario con columna fija y `border-separate`. Es geometría, no
+lista.
+
 ### LiquidSelect
 
 File: `src/components/common/LiquidSelect.jsx`

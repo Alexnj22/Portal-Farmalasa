@@ -94,14 +94,14 @@ function ItemsExpand({ receiptId }) {
                 <table className="w-full text-label">
                     <thead>
                         <tr className="border-b border-divider bg-surface-card-hover/60">
-                            <th className="text-left px-3 py-2 font-semibold text-content-3">#</th>
-                            <th className="text-left px-3 py-2 font-semibold text-content-3">ID Producto</th>
-                            <th className="text-left px-3 py-2 font-semibold text-content-3">Descripción</th>
-                            <th className="text-center px-3 py-2 font-semibold text-content-3">Cant.</th>
-                            <th className="text-right px-3 py-2 font-semibold text-content-3">P. Unit.</th>
-                            <th className="text-right px-3 py-2 font-semibold text-content-3">Total línea</th>
-                            <th className="text-center px-3 py-2 font-semibold text-content-3 hidden md:table-cell">Lote</th>
-                            <th className="text-center px-3 py-2 font-semibold text-content-3 hidden md:table-cell">Vencimiento</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">#</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">ID Producto</th>
+                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Descripción</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">P. Unit.</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Total línea</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center hidden md:table-cell">Lote</th>
+                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center hidden md:table-cell">Vencimiento</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-divider">

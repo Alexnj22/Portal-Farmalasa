@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Button from '../../components/common/Button';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
 import { smartFilter } from '../../utils/searchUtils';
 import {
@@ -158,10 +158,13 @@ export default function TabMetricas({ searchTerm = '' }) {
             </div>
 
             {kpis.length === 0 ? (
-                <div className={`${GLASS} flex flex-col items-center justify-center py-12 gap-2 text-content-3`}>
-                    <BarChart2 size={32} className="opacity-40" />
-                    <p className="text-body">Sin datos para el período seleccionado.</p>
-                    <p className="text-label text-content-3">Los tiempos se registran al despachar y recibir pedidos.</p>
+                <div className={GLASS}>
+                    <EmptyState
+                        compact
+                        icon={BarChart2}
+                        title="Sin datos para el período"
+                        subtitle="Los tiempos se registran al despachar y recibir pedidos."
+                    />
                 </div>
             ) : (
                 <>
@@ -186,13 +189,13 @@ export default function TabMetricas({ searchTerm = '' }) {
                             <table className="w-full text-label">
                                 <thead>
                                     <tr className="border-b border-divider">
-                                        <th className="text-left px-4 py-2.5 font-semibold text-content-3">Sucursal</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pedidos</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-chart-3-text">Prep. neto</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-warning">Pausa</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-chart-3-text">Tránsito</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-chart-9-text">Recuento</th>
-                                        <th className="text-center px-3 py-2.5 font-semibold text-content-3">Pausas</th>
+                                        <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Sucursal</th>
+                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Pedidos</th>
+                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Prep. neto</th>
+                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Pausa</th>
+                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Tránsito</th>
+                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Recuento</th>
+                                        <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Pausas</th>
                                     </tr>
                                 </thead>
                                 <tbody>

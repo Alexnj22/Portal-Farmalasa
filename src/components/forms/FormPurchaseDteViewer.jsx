@@ -6,6 +6,7 @@ import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../
 import { dteTypeLabel } from '../../utils/dteTypes';
 import SegmentedControl from '../common/SegmentedControl';
 import { useToastStore } from '../../store/toastStore';
+import { LoadingState } from '../common/StateViews';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -283,10 +284,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 {tab === 'pdf' && pdfUrl ? (
                     <PdfZoomViewer src={pdfUrl} />
                 ) : loading ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm">
-                        <Loader2 size={32} className="animate-spin mb-3 text-brand-text" />
-                        <p className="font-bold text-label uppercase tracking-widest">Cargando detalle…</p>
-                    </div>
+                    <LoadingState variant="content" label="Cargando el detalle…" className="flex-1 min-h-0" />
                 ) : error ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5} />
@@ -306,11 +304,11 @@ const FormPurchaseDteViewer = ({ formData }) => {
                                 <table className="w-full text-label">
                                     <thead>
                                         <tr className="border-b border-divider text-content-3 font-semibold">
-                                            <th className="text-left py-2">#</th>
-                                            <th className="text-left py-2">Descripción</th>
-                                            <th className="text-center py-2">Cant.</th>
-                                            <th className="text-right py-2">P. Unit.</th>
-                                            <th className="text-right py-2">Total</th>
+                                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">#</th>
+                                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Descripción</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">P. Unit.</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-divider">

@@ -12,6 +12,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { upsertShift, updateShiftFlags } from '../../data/system';
 import PortalInput from '../../components/common/PortalInput';
+import { EmptyState } from '../common/StateViews';
 
 const FormTurnos = ({ branches }) => {
     // 1. Conexión directa con Supabase para acciones de persistencia
@@ -349,10 +350,12 @@ const FormTurnos = ({ branches }) => {
                             {visibleShifts.map(shift => <TurnoCard key={shift.id} shift={shift} />)}
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-content-3 gap-3 opacity-60">
-                            {statusFilter === 'ARCHIVED' ? <Package size={32} /> : <BookOpen size={32} strokeWidth={1.5} />}
-                            <p className="text-caption font-black uppercase tracking-widest text-center">No hay turnos registrados en esta vista</p>
-                        </div>
+                        <EmptyState
+                            compact
+                            icon={statusFilter === 'ARCHIVED' ? Package : BookOpen}
+                            title={statusFilter === 'ARCHIVED' ? 'Sin turnos archivados' : 'Sin turnos registrados'}
+                            subtitle={statusFilter === 'ARCHIVED' ? 'Los turnos que archivés van a aparecer acá.' : 'Creá el primero para empezar a armar los horarios.'}
+                        />
                     )}
                 </div>
             </div>

@@ -16,7 +16,7 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.227.0';
+export const APP_VERSION = '2.228.0';
 
 // v2.227.0 — se cierran los pendientes, y DOS de los tres "fallos" que
 // quedaban eran de mi medidor, no del portal.

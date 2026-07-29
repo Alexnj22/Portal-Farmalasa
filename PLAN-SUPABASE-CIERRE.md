@@ -9,12 +9,20 @@ F3.1, F3.4, F4.1, F4.3, F4.4 y F4.6. Advisor de seguridad **110 → 86**;
 | | |
 |---|---|
 | ✅ Cerrado | P1, P3+P5, P4, F1, F2, F3.1/3.4, F4.1/4.3/4.4/4.6, **C1, C3, C4, C5** |
-| ⏸️ Tu decisión | **C2** (rebaseline de migraciones), PITR (se hará antes de facturar) |
+| ⏸️ Pausado | **C2** — tooling terminado y validado; falta correrlo (5 pasos) |
+| ⏸️ Tu decisión | PITR (se hará antes de facturar) |
 | ✅ Cerrado (v2.217.0) | rotar el secreto de cron |
 | ✅ Cerrado (v2.209.0) | slots de conexión al 87%, `collation version mismatch` (ambos en C4) |
 | 📋 Proyecto | POS |
 
-Queda **un solo punto técnico abierto (C2)**, y es de decisión, no de ejecución.
+Queda **un solo punto técnico abierto (C2)**. Ya no es de decisión: la
+arquitectura quedó definida (baseline solo + historia archivada) y el generador,
+el ensamblador y el verificador están terminados y validados contra prod. Falta
+ejecutar los 5 pasos, y para eso hace falta que **nadie más esté aplicando
+migraciones** — por eso se pausó.
+
+Pendiente menor aparte: borrar de Vault `admin_invoke_secret_prev_20260729`
+cuando pase un día sin incidentes desde la rotación (2026-07-29 17:31 UTC).
 
 ---
 
@@ -126,21 +134,141 @@ extraído solo trae tablas y secuencias; le faltan los 369 índices, 218 policie
 187 funciones, 11 triggers y 361 constraints, que venían de las migraciones que
 ya no se pueden aplicar.
 
-**Lo único que falta para cerrarlo: `pg_dump --schema-only` de producción**, que
-necesita la contraseña de la base. `libpq` ya está instalado
-(`/opt/homebrew/opt/libpq/bin`, pg_dump 18.4). El CLI **no** revela esa
-contraseña (`supabase branches get main` la devuelve enmascarada), así que la
-tiene que aportar el usuario — y no debe pegarse en el chat: se escribe a un
-archivo desde su propia terminal y se consume con `PGPASSWORD=$(cat ...)`.
+### Tercer intento: el baseline SÍ se puede generar sin contraseña
 
-**Lo que bloqueó terminar hoy** (tooling, no diseño): esta máquina no tiene
-Docker, ni `pg_dump`, ni `psql`. `supabase db dump` los necesita, así que no se
-pudo generar el baseline por squash, que era la vía alterna.
+**Corrección de lo escrito arriba: `pg_dump` y la contraseña de producción NO
+hacen falta.** `supabase db query --linked` va por la Management API y no pide
+credenciales de base, así que el DDL completo se genera desde el catálogo de
+prod y se vuelca a disco sin que pase por el contexto del agente.
 
-**Para retomarlo hace falta**, en orden de preferencia:
-- `brew install libpq` (≈10 MB, solo cliente, sin demonio) → habilita `pg_dump`
-  y con eso el squash a un baseline único, que es la solución más limpia; o
-- Docker Desktop → habilita `supabase db dump` y `db reset` local, gratis.
+El generador está en `scratchpad/gen_ddl.sql` y emite el esquema en orden de
+dependencias, con `SET check_function_bodies = off` al inicio para que las
+funciones no exijan que sus referencias existan todavía:
+
+| ord | qué | fragmentos |
+|---|---|---|
+| 10 | extensiones | 8 |
+| 20 | secuencias | 39 |
+| 30 | tablas | 109 |
+| 40 | funciones | 187 |
+| 50 | vistas y matviews | 13 |
+| 60 | PK y unique | 148 |
+| 70 | FK y CHECK | 213 |
+| 80 | índices | 221 |
+| 90 | triggers | 11 |
+| 95 | RLS habilitado | 109 |
+| 96 | policies | 218 |
+
+**1,276 fragmentos, ~533 KB, cero nulos.** Y los conteos cuadran EXACTO con la
+huella de producción en las 7 categorías comparables: tablas 109, funciones 187,
+vistas 13, policies 218, triggers 11, constraints 148+213 = **361**, índices
+221+148 = **369**.
+
+**Estado al cierre de la sesión del 2026-07-29:**
+
+- ✅ `scratchpad/ddl.json` — los 663 KB del DDL, ya volcados de prod.
+- ✅ `scratchpad/build_baseline.py` — ensambla el baseline y archiva la historia.
+- ✅ `scratchpad/fingerprint.sql` — la huella para comparar rama contra prod.
+- ⏸️ **Bloqueado por infraestructura**, no por diseño: el clasificador de
+  seguridad de Bash de Claude Code estuvo caído (deja pasar `echo`/`ls` pero
+  bloquea todo lo que tenga efectos secundarios). 8 reintentos, mismo error.
+
+**Nada quedó a medio aplicar**: `supabase/migrations/` intacto, sin
+`migrations-legacy/`, sin baseline parcial, y las dos ramas de verificación
+borradas (costo total: menos de 3 centavos).
+
+### Cuarta sesión (2026-07-29, tarde): generador y verificador TERMINADOS
+
+**El bloqueo de tooling ya no existe**: `libpq` está instalado —`pg_dump`/`psql`
+18.4 en `/opt/homebrew/opt/libpq/bin`, fuera del `PATH`— y el CLI de Supabase
+funciona. No hace falta Docker.
+
+**Se encontraron y corrigieron cuatro huecos del generador v1** que habrían
+producido un baseline que *parece* correcto y no lo es:
+
+| hueco en v1 | por qué importa |
+|---|---|
+| **ACLs ausentes** (188 relaciones + 189 funciones con grants explícitos) | En `public` hay `ALTER DEFAULT PRIVILEGES` que le da ALL a `anon` sobre cada tabla nueva. Reconstruir sin ACLs **reabre exactamente la superficie de `anon` que el proyecto cerró** (CLAUDE.md regla #4). Es el hueco grave. |
+| **Publicaciones ausentes** | Las 13 tablas de `supabase_realtime` perdían Realtime en silencio. |
+| **`reloptions` de tablas ausentes** | Se perdía el autovacuum agresivo de `sales_invoices` / `sales_invoice_items`. |
+| **Secuencias sin parámetros** | `CREATE SEQUENCE` a secas descartaba tipo/increment/start de 16 secuencias. |
+
+Y dos bugs de correctitud, ambos detectados midiendo, no leyendo:
+
+1. **Las claves se truncaban a 63 caracteres.** `ext.extname` es de tipo `name` y
+   es la primera rama del `UNION`, así que **todo** el `UNION` se casteaba a
+   `name`: 188 claves colisionaban y el `ORDER BY` quedaba ambiguo entre
+   overloads. Un re-volcado podía reordenarlos y producir un diff fantasma.
+   Corregido con `::text` en la primera rama.
+2. **Las 31 funciones de `pg_trgm` se emitían como propias.** Su dueño es
+   `supabase_admin`; un `CREATE OR REPLACE` las saca de la extensión o falla por
+   permisos, y el `GRANT`/`REVOKE` falla por no ser dueño. Ahora se excluyen los
+   miembros de extensión (`pg_depend.deptype='e'`) del DDL, de los ACLs y de la
+   huella. Verificado: ninguna tabla/vista/secuencia de `public` es miembro de
+   extensión, así que la exclusión solo aplica a funciones — 190 → **159 propias**.
+
+**Estado del tooling — los tres artefactos están terminados y validados**, en
+`~/.claude/projects/-Users-alexnunez-Documents-Portal-Farmalasa/c2-baseline/`
+(fuera del repo a propósito, para no colisionar con trabajo en curso):
+
+| archivo | qué hace | estado |
+|---|---|---|
+| `gen_ddl2.sql` | vuelca el DDL de prod en 15 secciones ordenadas por dependencia | ✅ corre contra prod, **1,666 fragmentos, cero nulos, cero claves duplicadas** |
+| `build_baseline2.py` | ensambla el baseline | ✅ **735 KB, 12,685 líneas**; aborta solo si hay fragmentos vacíos o claves duplicadas |
+| `fingerprint2.sql` | huella de 15 categorías para comparar rama vs prod | ✅ corre contra prod; huella t0 en `fp_prod.csv` |
+
+`build_baseline2.py` **por defecto no toca el repo** (v1 movía los 333 archivos
+*antes* de verificar nada). Solo archiva con `--apply`.
+
+Conteos del baseline, todos cuadrados contra la huella de prod: tablas 110,
+columnas 1,284, funciones 159, vistas 13, policies 219, RLS 110, constraints 362
+(149+213), índices 372 (223+149), triggers 11, ACLs 4,519 filas de privilegio
+sobre 188 relaciones + 464 sobre 159 funciones, publicaciones 13, comentarios 49.
+
+### ⏸️ PAUSADO por trabajo concurrente en prod (no por un problema)
+
+Mientras se generaba el baseline, **otra sesión aplicó
+`20260729_module_locks_panel_soporte` a prod** (registrada 21:24:00 UTC, archivo
+escrito 15:23:36 local). Se detectó porque el conteo de funciones subió 189 → 190
+entre dos volcados separados por 3 minutos, y se rastreó hasta esa migración.
+
+El siguiente paso movía los 333 archivos de `supabase/migrations/` a
+`migrations-legacy/` — **incluyendo ese archivo recién escrito**, que habría
+quedado archivado como "historia previa" mientras se estaba creando. Se paró ahí
+por decisión del usuario.
+
+**Nada quedó a medias**: repo sin cambios (334 archivos en `migrations/`, sin
+`migrations-legacy/`, sin baseline), `.env` intacto, **cero ramas creadas**, cero
+costo.
+
+**Para retomar — 5 pasos, ~20 minutos.** Requisito: que no haya otra sesión
+aplicando migraciones, porque el baseline es una foto de prod.
+
+```sh
+D=~/.claude/projects/-Users-alexnunez-Documents-Portal-Farmalasa/c2-baseline
+```
+
+1. **Re-volcar** (la foto de hoy queda vieja apenas entra otra migración):
+   `supabase db query --linked -f $D/gen_ddl2.sql -o json > $D/ddl2.json`
+   y `-f $D/fingerprint2.sql -o csv > $D/fp_prod.csv` (huella t0).
+2. **Ensamblar**: `python3 $D/build_baseline2.py $D/ddl2.json --out $D/base.sql`
+   (dry-run, no toca el repo).
+3. **Rama de verificación**: `create_branch` (~$0.0134/hora) y esperar
+   `ACTIVE_HEALTHY`. La rama nace **vacía** — `create_branch` no aplica nada.
+   Aplicar con `psql -v ON_ERROR_STOP=1 -f $D/base.sql`.
+4. **Comparar** `fingerprint2.sql` en la rama contra `fp_prod.csv`. Las 15 filas
+   deben coincidir. Después re-medir prod: si su huella se movió respecto a t0,
+   entró una migración concurrente y hay que volver al paso 1.
+5. Solo si coincide: `--apply` para archivar la historia, commitear, y
+   **`supabase migration repair --status applied 20260101000000`** para que prod
+   registre el baseline sin ejecutarlo.
+
+⚠️ El paso 5 no es opcional. El baseline lleva una versión anterior a todo lo
+aplicado; sin el `repair`, el próximo `db push` intentaría correrlo contra la
+base viva.
+
+Recordar en todos los pasos: mover el `.env` fuera del camino antes de invocar el
+CLI (el CLI lo lee y falla), y borrar la rama al terminar.
 
 **Datos operativos aprendidos** (para no re-descubrirlos):
 - `create_branch` **NO** aplica las migraciones: la rama nace vacía. Hay que
@@ -156,6 +284,13 @@ pudo generar el baseline por squash, que era la vía alterna.
 
 **El árbol se dejó limpio**: los 708 archivos generados se revirtieron y los 316
 heredados volvieron a su lugar. Un rebaseline sin verificar no se commitea.
+
+### 🔎 Hallazgo lateral: otro overload muerto, igual que C1
+
+`get_puntos_canjeados` tiene dos versiones —3 args y 4 args (agrega
+`p_hora_corte`)— exactamente el mismo patrón que el `update_proveedor_manual` de
+C1. Salió al chequear claves duplicadas en el volcado. No se tocó: hay que
+verificar primero cuál llama el frontend. Vale revisar si hay más pares así.
 
 ### C2 — decisión estructural pendiente (NO ejecutada)
 

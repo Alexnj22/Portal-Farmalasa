@@ -12,6 +12,51 @@ retomar; acá está todo.
 
 ---
 
+## v2.228.0 — 339 migraciones que no reconstruían nada, y un baseline que sí.
+
+Cierre de C2. El repo tenía 339 migraciones y el servidor 700+, pero el problema
+no era el desfase: era que **la historia registrada no se puede replayear**. Las
+19 migraciones `baseline_*` del 2026-07-11 no ejecutan DDL —su cuerpo concatena
+texto dentro de `schema_migrations`— así que "aplican" sin error y dejan la base
+con 0 tablas; y con un baseline moderno puesto, las migraciones de abril fallan
+porque esperan columnas que ya no existen (`employees.is_admin`). "Baseline
+reciente + historia vieja" no es una combinación válida. Lo confirmó la propia
+rama de verificación: `create_branch` intentó replayear y quedó en
+`MIGRATIONS_FAILED`.
+
+Ahora `supabase/migrations/` tiene **un** archivo, generado desde el catálogo de
+producción, y las 339 anteriores viven en `supabase/migrations-legacy/`.
+
+Lo que costó que fuera fiel de verdad — cada uno habría dado un baseline que
+parece correcto y no lo es:
+
+- **Los privilegios.** `public` tiene `ALTER DEFAULT PRIVILEGES` que le regala
+  ALL a `anon` sobre cada tabla nueva, así que un baseline sin ACLs **reabre la
+  superficie de `anon` que el proyecto cerró**, y ni el advisor ni un reset en
+  verde lo delatan. Van 348 bloques `REVOKE ALL` + los GRANT exactos.
+- **Realtime**: las 13 tablas de `supabase_realtime` perdían la publicación en
+  silencio. Y el autovacuum tuneado de las dos tablas de ventas.
+- **Las funciones antes que las tablas**: cinco tablas tienen columnas
+  `GENERATED ALWAYS AS (norm_search(...))`. Es seguro porque cero funciones
+  tienen un tipo de tabla en su firma — medido, no supuesto.
+- **`pg_get_viewdef()` ya trae el `;`**, así que el `WITH NO DATA` de las
+  matviews quedaba como sentencia suelta.
+- **Las 31 funciones de `pg_trgm`** se emitían como propias; su dueño es
+  `supabase_admin` y recrearlas las saca de la extensión.
+- **Una secuencia con el nombre fosilizado**: `product_precios` se llamó antes
+  `product_presentations` y `ALTER TABLE ... RENAME` no renombra la secuencia.
+
+Verificado aplicando las 1,671 sentencias a una rama limpia: **0 errores, 0
+índices inválidos, y las 15 categorías de la huella con md5 idéntico a
+producción** (110 tablas, 1,285 columnas, 160 funciones, 219 policies, 373
+índices, 363 constraints, 4,519 privilegios de relación). Prod re-medido después
+para confirmar que no se movió durante la comparación.
+
+Dos diferencias del primer intento resultaron ser hallazgos sobre prod, no bugs:
+la secuencia fosilizada, y 18 comentarios que "difieren" solo porque prod tiene
+columnas borradas y los `attnum` quedan con huecos — el verificador comparaba por
+número de columna en vez de por nombre.
+
 ## v2.212.0 — auditoría con los modales ABIERTOS: seis capas que no eran diálogos.
 
 Al confirmar el cierre de v2.204.0 quedó claro que todo lo medido hasta ahí era

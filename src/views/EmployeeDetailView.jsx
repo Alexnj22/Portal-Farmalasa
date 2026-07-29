@@ -6,7 +6,6 @@ import { EmptyState } from '../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '../utils/searchUtils';
-import { useSearchToggle } from '../hooks/useSearchToggle';
 import {
     Edit, Mail, Phone, Shield,
     Clock, FileText, Paperclip,
@@ -30,6 +29,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
 import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 import PortalTextarea from '../components/common/PortalTextarea';
+import SearchInput from '../components/common/SearchInput';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -113,16 +113,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const branch = branches.find(b => String(b.id) === String(emp?.branchId || emp?.branch_id));
 
     const [ausenciasSearch, setAusenciasSearch]           = useState('');
-    const [ausenciasSearchOpen, setAusenciasSearchOpen]   = useState(false);
 
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: ausenciasSearchContainerRef } = useSearchToggle({
-        active: ausenciasSearchOpen,
-        value: ausenciasSearch,
-        onClear: () => setAusenciasSearch(''),
-        onClose: () => setAusenciasSearchOpen(false),
-    });
+    // El contrato de §24 (Escape cierra y limpia, clic afuera cierra solo si
+    // está vacío) ya lo trae `SearchInput expandable` adentro — acá estaba
+    // cableado a mano junto con el toggle y el `<input>`.
     const [ausenciasSelectedDay, setAusenciasSelectedDay] = useState(null);
     const [ausenciasCalMonth, setAusenciasCalMonth]       = useState(() => new Date());
 
@@ -733,15 +727,17 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 {ausenciasSelectedDay && (
                                                     <Button variant="destructive" icon={X} onClick={() => setAusenciasSelectedDay(null)}>{ausenciasSelectedDay}</Button>
                                                 )}
-                                                <div {...ausenciasSearchContainerRef} className={`flex items-center gap-1.5 rounded-full border transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${ausenciasSearchOpen ? 'bg-surface-card border-divider px-2.5 py-1 w-40' : 'bg-surface-card border-divider w-8 h-8 justify-center'}`}>
-                                                    <Button variant="ghost" onClick={() => { setAusenciasSearchOpen(v => !v); if (ausenciasSearchOpen) setAusenciasSearch(''); }}>{ausenciasSearchOpen ? <X size={11} strokeWidth={2.5}/> : <Search size={12} strokeWidth={2.5}/>}</Button>
-                                                    {ausenciasSearchOpen && (
-                                                        <input aria-label="Buscar en las ausencias" autoFocus type="text" value={ausenciasSearch}
-                                                            onChange={e => setAusenciasSearch(e.target.value)}
-                                                            placeholder="Buscar..."
-                                                            className="flex-1 min-w-0 text-body-xl font-medium text-content-2 placeholder-content-3 outline-none bg-transparent" />
-                                                    )}
-                                                </div>
+                                                {/* Era `SearchInput expandable` reconstruido: contenedor con su propio
+                                                    toggle, botón de lupa/X y un `<input>` suelto adentro. El
+                                                    canónico ya trae los tres, más el contrato de Escape y clic
+                                                    afuera (DESIGN.md §24). */}
+                                                <SearchInput
+                                                    expandable size="sm"
+                                                    value={ausenciasSearch}
+                                                    onChange={setAusenciasSearch}
+                                                    placeholder="Buscar..."
+                                                    ariaLabel="Buscar en las ausencias"
+                                                />
                                             </div>
                                         </div>
 

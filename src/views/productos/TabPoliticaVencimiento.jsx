@@ -492,17 +492,18 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                 </div>
 
                 <div className={`flex items-center gap-1 shrink-0 ${draft.devolutivo ? '' : 'opacity-40 pointer-events-none'}`}>
-                    <input aria-label="Meses para devolución"
+                    <PortalInput
+                        aria-label="Meses para devolución"
                         type="number"
                         min="0"
                         value={draft.meses_devolucion}
                         onChange={e => setF('meses_devolucion', e.target.value)}
                         placeholder="0"
-                        disabled={!draft.devolutivo}
                         title="Meses antes de vencer por política de devolución"
- className={`w-12 text-body-xl font-semibold px-1.5 py-1.5 rounded-lg border bg-surface-card text-content-2 text-center ${
-                            draft.devolutivo && draft.meses_devolucion === '' ? 'border-danger/40 focus:border-danger/40' : 'border-border-card focus:border-chart-9/40'
-                        }`}
+                        readOnly={!draft.devolutivo}
+                        compact
+                        className="w-12"
+                        inputClassName="text-center font-semibold"
                     />
                     <span className="text-micro font-semibold text-content-3 whitespace-nowrap">meses</span>
                 </div>

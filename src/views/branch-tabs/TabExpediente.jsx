@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, {useState} from 'react';
 import Button from '../../components/common/Button';
 import {
     FolderOpen, FileText, CheckCircle2, AlertTriangle, Eye, UploadCloud,
@@ -6,9 +6,9 @@ import {
 } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
-import { useSearchToggle } from '../../hooks/useSearchToggle';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
+import SearchInput from '../../components/common/SearchInput';
 
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
@@ -165,33 +165,16 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 // ============================================================================
 const TabExpediente = ({ liveBranch, openModal }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [showAllDocs, setShowAllDocs] = useState(false);
-    const searchInputRef = useRef(null);
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [docToDelete, setDocToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState('');
 
-    const handleSearchClick = () => {
-        setIsSearchExpanded(true);
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-    };
 
-    const handleSearchClose = () => {
-        setSearchTerm('');
-        setIsSearchExpanded(false);
-    };
 
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
-    const { containerProps: searchContainerRef } = useSearchToggle({
-        active: isSearchExpanded,
-        value: searchTerm,
-        onClear: () => setSearchTerm(''),
-        onClose: () => setIsSearchExpanded(false),
-    });
+    // El contrato de §24 lo trae `SearchInput expandable` adentro.
 
     const confirmDeleteDoc = async () => {
         if (!docToDelete) return;
@@ -361,9 +344,13 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                     </div>
                 </div>
 
-                <div className={`flex items-center justify-end relative h-10 transition-all duration-500 ease-in-out ${isSearchExpanded ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full md:w-auto'}`}>
+                <div className="flex items-center justify-end relative h-10 w-full md:w-auto">
 
-                    <div inert={isSearchExpanded ? true : undefined} className={`flex flex-wrap md:flex-nowrap items-center gap-2 shrink-0 transition-all duration-300 ease-in-out absolute right-0 w-full md:w-auto justify-end ${isSearchExpanded ? 'opacity-0 scale-95 pointer-events-none translate-x-10' : 'opacity-100 scale-100 translate-x-0'}`}>
+                    {/* El envoltorio ocultaba los botones al abrir el buscador, porque
+                        el buscador a mano tapaba la fila. `SearchInput expandable` crece
+                        hacia el espacio VACÍO de la izquierda (DESIGN.md §24), así que
+                        los botones se quedan donde están. */}
+                    <div className="flex flex-wrap md:flex-nowrap items-center gap-2 shrink-0 w-full md:w-auto justify-end">
 
                         <Button
                             size="md"
@@ -376,24 +363,17 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                         <div className="w-px h-6 bg-content-3/60 mx-1"></div>
 
-                        <Button icon={Search} title="Buscar Documento" iconOnly onClick={handleSearchClick} />
-                    </div>
-
-                    <div inert={!(isSearchExpanded) ? true : undefined} {...searchContainerRef} className={`relative transition-all duration-500 ease-out origin-right w-full max-w-[240px] ml-auto ${isSearchExpanded ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0 pointer-events-none'}`}>
-                        <div className="relative w-full shadow-[var(--shadow-glow-brand)] rounded-full overflow-hidden border border-brand/20 bg-surface-card backdrop-blur-xl">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Search size={16} className="text-brand-text" />
-                            </div>
-                            <input aria-label="Buscar un documento"
-                                ref={searchInputRef}
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Buscar documento..."
- className="w-full h-10 pl-11 pr-10 bg-transparent text-body-xl font-bold text-content-2 placeholder:text-content-3 transition-all"
-                            />
-                            <Button variant="secondary" size="xs" icon={X} iconOnly onClick={handleSearchClose} />
-                        </div>
+                        {/* Era `SearchInput expandable` reconstruido: botón de lupa, un
+                            contenedor con su propio toggle/scale-x, el `<input>` suelto y
+                            la X de cerrar. El canónico trae los cuatro, más el contrato de
+                            Escape y clic afuera (DESIGN.md §24). */}
+                        <SearchInput
+                            expandable
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            placeholder="Buscar documento..."
+                            ariaLabel="Buscar un documento"
+                        />
                     </div>
                 </div>
             </div>

@@ -237,8 +237,6 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Despido con Responsabilidad', label: 'Despido CON Responsabilidad' },
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
-
- const inputClasses = "w-full bg-surface-card border border-border-card rounded-2xl h-[40px] px-4 text-body-xl font-bold text-content-2 transition-all duration-300 hover:shadow-md hover:border-brand/40 focus:border-brand/50 placeholder:text-content-3";
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
@@ -559,10 +557,14 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             </div>
 
                             <div className="flex-1">
-                                <label className={labelClasses}>Nuevo Código</label>
-                                <div className="relative">
-                                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-text/50" size={14} strokeWidth={2.5}/>
-                                    <input aria-label="Nuevo código de empleado" type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-brand-text text-center focus:!ring-brand/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                {/* El ícono iba en absoluto sobre el campo y `inputClasses` era la caja
+                                        escrita a mano; el canónico trae las dos cosas. */}
+                                    <PortalInput
+                                        label="Nuevo Código" name="nov-nuevo-codigo" icon={Fingerprint} tono="brand"
+                                        inputMode="numeric" placeholder="Ej. 1024"
+                                        inputClassName="font-black tracking-widest text-center"
+                                        value={formData?.newCode || ''}
+                                        onChange={(e) => {
                                         // El código es SOLO numérico (regla de negocio + trigger en BD)
                                         const cleanVal = e.target.value.replace(/\D/g, '');
                                         setFormData(prev => ({ ...prev, newCode: cleanVal }));
@@ -578,8 +580,8 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         } else {
                                             setCodeConflict(null);
                                         }
-                                    }} />
-                                </div>
+                                    }}
+                                    />
                             </div>
                         </div>
 

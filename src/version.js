@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.175.0';
+export const APP_VERSION = '2.176.0';
+
+// v2.176.0 — input-a-mano 15 → 4, y mi criterio de "excepcion" no aguanto.
+//
+// Preguntado por el usuario: *"por que esos 9 son excepcion? que criterio
+// tomaste?"*. El criterio que yo habia dado era "el contenedor ya dibuja la
+// caja". Al ir a verificarlo ancestro por ancestro, **4 de 7 no lo cumplian**:
+//
+//   FormRehireEmployee x2  el contenedor SI dibuja la caja… pero es
+//                          `PortalInput` reconstruido a mano: etiqueta, caja,
+//                          icono e input suelto. No es excepcion, es el
+//                          canonico copiado.
+//   EmployeeDetailView     buscador expandible a mano (contenedor con toggle
+//                          propio, boton lupa/X, input suelto) → ya existe
+//                          `SearchInput expandable`.
+//   TabExpediente          lo mismo, mas un envoltorio que OCULTABA los demas
+//                          botones al abrir. Con el canonico no hace falta:
+//                          crece hacia el espacio vacio (DESIGN.md §24).
+//
+// Los tres traian ademas su propio `useSearchToggle` cableado a mano — el
+// contrato de Escape/clic-afuera que el canonico ya trae adentro.
+//
+// **Las 4 que SI son excepcion**, con su motivo:
+//   LoginView x2       superficie bespoke (fuerza claro, sin sesion)
+//   AuthPromptPanel    el PIN del kiosco: su borde lleva el caret virtual
+//                      animado y el canonico dibuja la caja en el contenedor,
+//                      asi que la animacion quedaria invisible
+//   MenuSearchModal    la barra de busqueda del encabezado de ⌘K: no es un
+//                      campo en una caja, es una fila con divisor abajo
+//
+// Verificado en vivo: el buscador del expediente colapsa (ancho 0, tabIndex
+// -1), abre a 190px con foco, y los botones se quedan visibles.
 
 // v2.175.0 — 13 inputs mas al canonico. input-a-mano 28 → 15.
 //

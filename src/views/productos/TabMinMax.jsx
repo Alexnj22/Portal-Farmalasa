@@ -35,6 +35,7 @@ import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
 import { upsertStockParams } from '../../data/stockParams';
 import { useMinMaxData } from './tabminmax/useMinMaxData';
+import PortalInput from '../../components/common/PortalInput';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -1070,7 +1071,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isEditMin) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <input aria-label="Nuevo valor" autoFocus type="number" min="0"
+                                                        <PortalInput
+                                                            aria-label="Nuevo valor"
+                                                            type="number"
+                                                            min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}
@@ -1081,31 +1085,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                                 saveDraftCell(inlineDraftEdit);
                                                             }}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
-                                                                if (e.key === 'Tab' || e.key === 'ArrowRight') {
-                                                                    e.preventDefault(); skipBlurSave.current = true;
-                                                                    if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
-                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? ((row.draft_max > 0 || row.draft_min > 0) ? String(row.draft_max ?? 0) : '') : ((row.effective_max > 0 || row.effective_min > 0) ? String(row.effective_max ?? 0) : ''), pendingMin: inlineDraftEdit.value });
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                                                                    e.preventDefault();
-                                                                    if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
-                                                                    const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) });
-                                                                    else setInlineDraftEdit(null); return;
-                                                                }
-                                                                if (e.key === 'ArrowUp') {
-                                                                    e.preventDefault();
-                                                                    if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
-                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) });
-                                                                    else setInlineDraftEdit(null); return;
-                                                                }
-                                                            }}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 border-2 ${hasDraft ? 'text-warning-text bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`} />
+                                                            autoFocus
+                                                            compact
+                                                            className="w-20"
+                                                            inputClassName="text-center font-black tabular-nums"
+                                                        />
                                                         {sep}
                                                         <div data-surface={hasDraft ? undefined : 'card'} className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
@@ -1119,48 +1103,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     <div className="flex items-center gap-1.5">
                                                         <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—')}</div>
                                                         {sep}
-                                                        <input aria-label="Nuevo valor" autoFocus type="number" min="0"
+                                                        <PortalInput
+                                                            aria-label="Nuevo valor"
+                                                            type="number"
+                                                            min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                             onFocus={e => e.target.select()}
-                                                            onBlur={() => {
-                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                                if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
-                                                                const errB = validateEditForRow(inlineDraftEdit, row);
-                                                                if (errB) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, errB, 'error'); setInlineDraftEdit(null); return; }
-                                                                if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; skipBlurSave.current = true; setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); } else { saveDraftCell(inlineDraftEdit); }
-                                                            }}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
-                                                                if (e.key === 'ArrowLeft') {
-                                                                    e.preventDefault(); skipBlurSave.current = true;
-                                                                    if (inlineDraftEdit.pendingMin !== undefined) { setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin }); }
-                                                                    else { if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? ((row.draft_min > 0 || row.draft_max > 0) ? String(row.draft_min ?? 0) : '') : ((row.effective_min > 0 || row.effective_max > 0) ? String(row.effective_min ?? 0) : '') }); }
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                                                                    e.preventDefault();
-                                                                    if (inlineDraftEdit.value === '') { const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id)); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) }); else setInlineDraftEdit(null); return; }
-                                                                    const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                                    skipBlurSave.current = true;
-                                                                    const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
-                                                                    else { saveDraftCell(inlineDraftEdit); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? ((next.draft_min > 0 || next.draft_max > 0) ? String(next.draft_min ?? 0) : '') : (next.is_dead_stock || next.is_catalog_only || (next.effective_min === null && !next.effective_max) ? '' : String(next.effective_min ?? 0)) }); else setInlineDraftEdit(null); }
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'ArrowUp') {
-                                                                    e.preventDefault();
-                                                                    if (inlineDraftEdit.value === '') { const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id)); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) }); else setInlineDraftEdit(null); return; }
-                                                                    const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                                    skipBlurSave.current = true;
-                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
-                                                                    else { saveDraftCell(inlineDraftEdit); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? ((prev.draft_min > 0 || prev.draft_max > 0) ? String(prev.draft_min ?? 0) : '') : (prev.is_dead_stock || prev.is_catalog_only || (prev.effective_min === null && !prev.effective_max) ? '' : String(prev.effective_min ?? 0)) }); else setInlineDraftEdit(null); }
-                                                                    return;
-                                                                }
-                                                            }}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-body-xl font-black rounded-md px-1 py-0.5 border-2 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-success-text bg-success/10 border-success'}`} />
+                                                            autoFocus
+                                                            compact
+                                                            className="w-20"
+                                                            inputClassName="text-center font-black tabular-nums"
+                                                        />
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-micro font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-chart-1-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                 </div>

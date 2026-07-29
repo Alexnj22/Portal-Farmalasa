@@ -5,6 +5,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidAvatar from '../common/LiquidAvatar';
 import PortalTextarea from '../common/PortalTextarea';
+import PortalInput from '../common/PortalInput';
 
 const CONTRACT_TYPE_OPTIONS = [
     { value: 'INDEFINIDO',   label: 'Indefinido (Fijo)' },
@@ -123,24 +124,20 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     </div>
 
                     {/* Horas semanales */}
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Horas Semanales</label>
-                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
-                            <div className="absolute left-3 text-content-3"><Clock size={14} strokeWidth={2.5} /></div>
-                            <input aria-label="Horas semanales" type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
-                                className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-9 pr-4" />
-                        </div>
-                    </div>
+                    <PortalInput
+                        label="Horas Semanales" name="rehire-horas" icon={Clock}
+                        type="number"
+                        value={formData.rehire_weekly_hours || '44'}
+                        onChange={e => set('rehire_weekly_hours', e.target.value)}
+                    />
 
                     {/* Salario base */}
-                    <div>
-                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Salario Base</label>
-                        <div className={`relative bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center h-[40px] ${inputHover}`}>
-                            <div className="absolute left-3 text-content-3 font-black text-body">$</div>
-                            <input aria-label="Salario base al recontratar" type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
-                                placeholder="0.00" className="w-full h-full bg-transparent text-body-xl font-bold text-content-2 outline-none pl-8 pr-4" />
-                        </div>
-                    </div>
+                    <PortalInput
+                        label="Salario Base" name="rehire-salario" prefix="$"
+                        type="number" placeholder="0.00"
+                        value={formData.rehire_base_salary || ''}
+                        onChange={e => set('rehire_base_salary', e.target.value)}
+                    />
 
                     {/* Motivo */}
                     <div className="md:col-span-2">

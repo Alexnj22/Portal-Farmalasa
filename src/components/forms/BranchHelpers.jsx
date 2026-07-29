@@ -1,6 +1,7 @@
 import CanonSwitch from '../common/Switch';
 import React, { useState, useEffect } from 'react';
 import FileField from '../common/FileField';
+import PortalInput from '../common/PortalInput';
 
 // eslint-disable-next-line react-refresh/only-export-components -- este archivo ya mezcla constantes/helpers con un componente (LazyInput); solo afecta Fast Refresh en dev
 export const EL_SALVADOR_GEO = {
@@ -83,32 +84,29 @@ export const FileUploader = ({ label, file, url, onChange }) => (
 // ============================================================================
 // ⌨️ LAZY INPUT LIQUIDGLASS (Reacciona al Focus como los modales)
 // ============================================================================
+// `LazyInput` era `PortalInput` reconstruido: mismo campo, mismo ícono a la
+// izquierda, misma superficie. Lo único propio es el estado local que evita
+// re-renderizar el formulario entero en cada tecla — eso se queda; el resto lo
+// dibuja el canónico (2026-07-28).
 export const LazyInput = ({ value, onChange, className = "", placeholder, required, pattern, minLength, maxLength, type = "text", icon: Icon, ariaLabel }) => {
     const [localValue, setLocalValue] = useState(value || '');
-    
+
     useEffect(() => { setLocalValue(value || ''); }, [value]); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el input local con el prop controlado
 
     return (
-        <div className="relative group flex items-center w-full">
-            {Icon && (
-                <div className="absolute left-4 z-base w-8 h-8 rounded-xl bg-surface-card flex items-center justify-center text-content-3 shadow-[var(--shadow-elevation-xs)] transition-colors duration-300 group-focus-within:text-brand-text group-focus-within:bg-chart-1/10 pointer-events-none">
-                    <Icon size={16} strokeWidth={2.5}/>
-                </div>
-            )}
-            <input
-                type={type}
-                aria-label={ariaLabel ?? placeholder}
-                required={required}
-                pattern={pattern}
-                minLength={minLength}
-                maxLength={maxLength}
-                // 🚨 Fusión de la clase enviada (className) con la estética base Liquidglass
-                className={`w-full py-3.5 bg-surface-card border border-border-card rounded-2xl text-body-xl font-bold text-content-2 placeholder-content-3 outline-none transition-all duration-300 shadow-[var(--shadow-shine-lg)] focus:bg-surface-card focus:border-brand/30 focus:shadow-[var(--shadow-ring-brand)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
-                placeholder={placeholder}
-                value={localValue}
-                onChange={(e) => setLocalValue(e.target.value)}
-                onBlur={(e) => onChange(e.target.value)}
-            />
-        </div>
+        <PortalInput
+            type={type}
+            icon={Icon}
+            aria-label={ariaLabel ?? placeholder}
+            required={required}
+            pattern={pattern}
+            minLength={minLength}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            className={className}
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={() => onChange(localValue)}
+        />
     );
 };

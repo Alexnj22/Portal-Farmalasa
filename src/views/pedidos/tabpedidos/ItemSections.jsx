@@ -17,6 +17,7 @@ import { calcSolicitado } from './helpers';
 import SearchInput from '../../../components/common/SearchInput';
 import { useSearchToggle } from '../../../hooks/useSearchToggle';
 import { fetchStockParamsForRevision, updateStockParams, effectiveMinMax } from '../../../data/stockParams';
+import PortalInput from '../../../components/common/PortalInput';
 
 const MINI_PAGE = 15;
 
@@ -452,10 +453,6 @@ export default function ItemSections({ allItems, loading }) {
         const isSaved  = savedId  === row.id;
         const err      = errorMap[row.id] ?? null;
         const v6m      = psp?.units_sold_6m ?? null;
-        const inputCls = (hasErr) =>
-            `w-14 text-label font-bold border rounded-lg px-2 py-1 bg-surface-card text-content-2 text-center disabled:opacity-40 transition-colors ${
-                hasErr ? 'border-danger/40 focus:border-danger bg-danger/10' : 'border-border-card focus:border-brand'
-            }`;
         return (
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
@@ -466,26 +463,36 @@ export default function ItemSections({ allItems, loading }) {
                         </span>
                         <div className="w-px h-4 bg-divider shrink-0 mx-0.5" />
                         <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
-                        <input
+                        <PortalInput
                             aria-label="Mínimo"
-                            type="number" min="0" value={edit.min} disabled={isSaving}
+                            tono={!!err && err !== 'MAX inválido' && !err.startsWith('MAX') ? 'danger' : undefined}
+                            type="number"
+                            min="0"
+                            value={edit.min}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
                             onBlur={() => {
                                 const e = validateEdit(editMap[row.id] ?? {});
                                 setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
-                            className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
+                            readOnly={isSaving}
+                            compact
+                            inputClassName="text-center font-bold tabular-nums"
                         />
                         <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MAX</span>
-                        <input
+                        <PortalInput
                             aria-label="Máximo"
-                            type="number" min="0" value={edit.max} disabled={isSaving}
+                            tono={!!err && err !== 'MIN inválido' ? 'danger' : undefined}
+                            type="number"
+                            min="0"
+                            value={edit.max}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
                             onBlur={() => {
                                 const e = validateEdit(editMap[row.id] ?? {});
                                 setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
-                            className={inputCls(!!err && err !== 'MIN inválido')}
+                            readOnly={isSaving}
+                            compact
+                            inputClassName="text-center font-bold tabular-nums"
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-brand-text shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}

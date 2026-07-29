@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.167.0';
+export const APP_VERSION = '2.168.0';
+
+// v2.168.0 — el modulo Promociones se retira tambien de la BD y del servidor.
+//
+// Aplicado tras confirmar que lo unico almacenado era 1 promocion de PRUEBA:
+// "OMEGA 3 1000MG", creada el 8 de junio con un rango del 1 al 15 de enero
+// —ya vencido al crearla— y sin `stock_inicial`, mas su producto y las 6
+// sucursales. `promotion_sales_cache` nunca tuvo una fila: sin promos activas
+// la funcion salia antes de consultar ventas. 8 filas en total.
+//
+// Migracion `20260728_drop_promotions_module`:
+//   1. `cron.unschedule('sync-promo-sales-daily')` — ANTES de tocar tablas
+//   2. `backup_dump_table` sin las 5 tablas de su lista blanca (si no, el
+//      backup nocturno reportaria 5 fallos por noche — los captura por tabla
+//      y sigue, asi que no se rompia, pero era ruido permanente)
+//   3. DROP de las 6 tablas, hijas primero
+//
+// Verificado ANTES de aplicar: cero FKs entrantes desde fuera del modulo y
+// cero tipos enum propios. Y verificado DESPUES: 0 tablas, 0 crons, la funcion
+// de backup responde (23 roles).
+//
+// **`employee_timeline` menciona 'promotion' y NO se toco**: ahi es un
+// `event_type` de RRHH — "Ascenso / Cambio de cargo"—, otra cosa por completo.
+// Comprobado despues del drop: la vista devuelve 74 filas, una de ellas de
+// tipo PROMOTION. Son dos conceptos con el mismo nombre.
+//
+// Edge function `sync-promo-sales` eliminada del servidor (estaba ACTIVE v6)
+// y su carpeta local borrada.
+//
+// Bonificaciones se construira despues con su propio esquema. Ojo que
+// `promotion_bonifications` y `promotion_payments` existian vacias: parte de
+// ese modelo ya estaba pensado y se fue con el drop.
 
 // v2.167.0 — se retira la vista de Promociones; queda el slot de
 // Bonificaciones para construirla despues.

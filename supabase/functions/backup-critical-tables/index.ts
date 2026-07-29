@@ -10,8 +10,7 @@ const TABLES = [
   "employees", "roles", "role_permissions", "branches", "shifts", "holidays",
   "employee_branches", "employee_events", "employee_documents", "employee_rosters",
   "product_stock_params", "dispatch_rules", "stock_config", "minmax_ignored",
-  "product_categories", "erp_sucursal_map", "promotions", "promotion_products",
-  "promotion_branches", "promotion_bonifications", "promotion_payments",
+  "product_categories", "erp_sucursal_map",
   "kiosk_devices", "overtime_bank", "payroll_periods", "payroll_entries",
   "vacation_plan_headers", "vacation_plans", "audit_logs",
 ];

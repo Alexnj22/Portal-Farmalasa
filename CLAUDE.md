@@ -204,8 +204,8 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
   | categoría | baseline | por qué no es 0 |
   |---|---|---|
   | `chart-retirado` | 430 | referencias a los 4 categóricos retirados en la consolidación de paleta; son ALIAS, se ven idénticos, y el número baja solo al tocar cada archivo por otro motivo |
-  | `input-a-mano` | 61 | celdas de grilla densa, que NO deben ser `PortalInput` (DESIGN.md §15.12) |
-  | `chip-a-mano` | 8 | texto que a veces parece chip, documentado caso por caso |
+  | `input-a-mano` | 60 | celdas de grilla densa, que NO deben ser `PortalInput` (DESIGN.md §15.12) |
+  | `chip-a-mano` | 7 | texto que a veces parece chip, documentado caso por caso |
 
   Las tres bloqueantes agregadas en D3/D4 — `button-name`, `paleta-cerrada`,
   `input-sin-nombre` — no van al baseline: una categoría que no figura en el

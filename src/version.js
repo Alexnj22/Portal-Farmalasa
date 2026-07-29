@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.193.0';
+export const APP_VERSION = '2.194.0';
+
+// v2.194.0 — conteo ciclico mensual: 200 productos por sucursal.
+//
+// En vez de un evento anual de ~4,800 lineas, una muestra chica todos los meses.
+// El ERP nunca se aleja mucho y las diferencias aparecen cuando todavia se
+// pueden investigar.
+//
+// Reparto de los 200:
+//   BAJO RECETA  100%   — control sanitario, van TODOS (23-54 segun sucursal)
+//   del resto:   60% A · 25% B · 15% C
+//
+// Con eso cada clase A cae cada ~4-5 meses y cada B ~1 vez al ano. La clase C no
+// se cubre por ciclo — eso lo cubre el conteo TOTAL anual, que sigue existiendo.
+//
+// **No es azar puro.** Prioriza lo que lleva mas tiempo sin contarse (nunca
+// contado primero) y desempata al azar: asi nada queda sin contarse jamas y a la
+// vez nadie puede predecir que cae este mes. La muestra se sortea EN EL
+// SERVIDOR — si la eligiera el cliente, elegir que se cuenta dejaria de ser un
+// control y pasaria a ser una preferencia. La composicion sorteada queda
+// guardada en scope_filter: un ciclico que no dice como se armo no se audita.
+//
+// **Solo cuenta el ABC publicado, no el borrador de MinMax.** Decidir que se
+// audita con numeros que nadie aprobo convierte un control en una corazonada.
+// Medido: Bodega tiene 0 publicadas y 2,540 en borrador. Ahi la muestra pasa a
+// ser "bajo receta 100% + rotacion por antiguedad", que es lo correcto para un
+// almacen sin ABC — y respeta que Bodega no se maneje por ABC ni por obligacion
+// mensual.
+
 
 // v2.193.0 — la grilla del conteo se ordena como esta el anaquel.
 //

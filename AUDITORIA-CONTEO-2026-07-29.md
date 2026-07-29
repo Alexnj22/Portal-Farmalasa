@@ -166,4 +166,19 @@ necesita.
   diferencia" los productos vienen ordenados por el valor del desvío, no
   alfabéticos. No se implementó un **umbral de materialidad** automático: el
   supervisor decide qué recontar, y el orden por dinero le pone lo caro primero.
-- **Conteos cíclicos por ABC**, reusando la clasificación que MinMax ya calcula.
+- ~~**Conteos cíclicos por ABC**~~ — **aplicado 2026-07-29 en v2.194.0**
+  (`20260729_conteo_m1*`). Alcance `CICLICO`: 200 productos al mes por sucursal,
+  con bajo receta al 100% y el resto 60/25/15 entre A/B/C. Prioriza lo que lleva
+  más tiempo sin contarse y desempata al azar; se sortea en el servidor y la
+  composición queda guardada en `scope_filter`.
+
+  Dos decisiones que salieron de los datos: **solo se usa el ABC publicado, no el
+  borrador de MinMax** (Bodega tiene 0 publicadas y 2,540 en borrador), y
+  **Bodega no queda obligada a un ciclo mensual ni se maneja por ABC** — por
+  decisión del usuario, ellos llevan su propio control. Para una sucursal sin ABC
+  publicado el alcance sigue funcionando como "bajo receta 100% + rotación por
+  antigüedad".
+
+  Queda pendiente revisar el ABC de **Salud 5**: solo 309 productos clasificados
+  de 1,914, contra ~1,400 en las demás farmacias. Hasta que se publique, su
+  muestra cae casi toda en "sin clase".

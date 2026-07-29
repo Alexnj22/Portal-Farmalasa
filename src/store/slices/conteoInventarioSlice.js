@@ -11,6 +11,7 @@ const ERRORES = {
     ALCANCE_INVALIDO: 'El alcance del conteo no es válido.',
     SUCURSAL_SIN_MAPEO_ERP: 'Esta sucursal no está mapeada al ERP: no se puede tomar el inventario.',
     CONTEO_ABIERTO_EN_SUCURSAL: 'Ya hay un conteo abierto en esta sucursal. Finalizalo antes de empezar otro.',
+    MUESTRA_CICLICA_VACIA: 'No hay productos con existencia para sortear la muestra de esta sucursal.',
     CONTEO_CERRADO_NO_EDITABLE: 'El conteo ya está cerrado y no admite cambios.',
     CONTEO_NO_ENCONTRADO: 'No se encontró el conteo.',
     CONTEO_NO_ENCONTRADO_O_YA_FINALIZADO: 'El conteo ya fue finalizado.',
@@ -73,6 +74,16 @@ export const createConteoInventarioSlice = (set, get) => ({
         });
 
         await get().fetchConteosInventario();
+        return data;
+    },
+
+    // Qué va a caer en la muestra del mes y cómo está la cobertura. Sin esto se
+    // arma un conteo a ciegas sobre productos que uno no eligió a mano.
+    previewMuestraCiclica: async (branchId, tamano) => {
+        const { data, error } = await supabase.rpc('preview_muestra_ciclica', {
+            p_branch_id: branchId, p_tamano: tamano,
+        });
+        if (error) throw traducirError(error);
         return data;
     },
 

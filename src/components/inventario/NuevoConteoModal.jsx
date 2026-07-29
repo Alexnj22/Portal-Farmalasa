@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
@@ -11,13 +11,27 @@ import { useToastStore } from '../../store/toastStore';
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import { searchActiveProductsForConteo } from '../../data/conteoInventario';
 import SegmentedControl from '../common/SegmentedControl';
+import PortalInput from '../common/PortalInput';
+import Notice from '../common/Notice';
 
 const SCOPE_OPTIONS = [
+    { value: 'CICLICO', label: 'Cíclico del mes (muestra)', icon: Repeat },
     { value: 'TOTAL', label: 'Todo el inventario', icon: ListChecks },
     { value: 'LABORATORIO', label: 'Por laboratorio', icon: FlaskConical },
     { value: 'BAJO_RECETA', label: 'Solo Bajo Receta (antibióticos)', icon: ShieldAlert },
     { value: 'MANUAL', label: 'Selección manual de productos', icon: Search },
 ];
+
+const TAMANO_DEFAULT = 200;
+
+// El reparto lo decide el servidor; acá solo se explica, para que quien arma el
+// conteo sepa qué está pidiendo antes de pedirlo.
+const SEGMENTO_LABEL = {
+    BAJO_RECETA: 'Bajo Receta',
+    A: 'Clase A',
+    B: 'Clase B',
+    C: 'Clase C / sin clasificar',
+};
 
 const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
 const fieldLabel = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 flex items-center justify-between";
@@ -39,6 +53,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const { user, hasPermission, getScope } = useAuth();
     const branches = useStaffStore((s) => s.branches);
     const crearConteoInventario = useStaffStore((s) => s.crearConteoInventario);
+    const previewMuestraCiclica = useStaffStore((s) => s.previewMuestraCiclica);
 
     const isBranchScoped = getScope('conteo_inventario') === 'BRANCH';
 
@@ -49,15 +64,36 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const [manualResults, setManualResults] = useState([]);
     const [manualSelected, setManualSelected] = useState([]);
     const [saving, setSaving] = useState(false);
+    const [tamano, setTamano] = useState(String(TAMANO_DEFAULT));
+    const [preview, setPreview] = useState(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
 
     useEffect(() => {
         if (!isOpen) return;
         setBranchId(isBranchScoped ? String(user?.branchId || '') : '');
-        setScopeType('TOTAL');
+        setScopeType('CICLICO');
         setLaboratorioId('');
         setManualResults([]);
         setManualSelected([]);
+        setTamano(String(TAMANO_DEFAULT));
+        setPreview(null);
     }, [isOpen, isBranchScoped, user?.branchId]);
+
+    // La muestra se sortea en el servidor; esta llamada solo la muestra. Cada
+    // sorteo es distinto (prioriza lo más viejo y desempata al azar), así que la
+    // vista previa es indicativa de la COMPOSICIÓN, no de los productos exactos.
+    const tamanoNum = parseInt(tamano, 10);
+    useEffect(() => {
+        if (!isOpen || scopeType !== 'CICLICO' || !branchId) { setPreview(null); return; }
+        if (!Number.isInteger(tamanoNum) || tamanoNum < 1) { setPreview(null); return; }
+        let cancelado = false;
+        setPreviewLoading(true);
+        previewMuestraCiclica(parseInt(branchId, 10), tamanoNum)
+            .then((data) => { if (!cancelado) setPreview(data); })
+            .catch((err) => { if (!cancelado) { console.error('preview muestra ciclica:', err.message); setPreview(null); } })
+            .finally(() => { if (!cancelado) setPreviewLoading(false); });
+        return () => { cancelado = true; };
+    }, [isOpen, scopeType, branchId, tamanoNum, previewMuestraCiclica]);
 
     useEffect(() => {
         if (!isOpen || scopeType !== 'LABORATORIO') return;
@@ -80,7 +116,8 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const canEdit = hasPermission('conteo_inventario', 'can_edit');
     const institucionMissing = scopeType === 'LABORATORIO' && !laboratorioId;
     const manualMissing = scopeType === 'MANUAL' && manualSelected.length === 0;
-    const isValid = branchId && scopeType && !institucionMissing && !manualMissing;
+    const tamanoMissing = scopeType === 'CICLICO' && (!Number.isInteger(tamanoNum) || tamanoNum < 1);
+    const isValid = branchId && scopeType && !institucionMissing && !manualMissing && !tamanoMissing;
 
     const handleCreate = async () => {
         if (!isValid) return;
@@ -89,7 +126,9 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
             const conteoId = await crearConteoInventario({
                 branchId: parseInt(branchId, 10),
                 scopeType,
-                scopeFilter: scopeType === 'LABORATORIO' ? { laboratorio_id: parseInt(laboratorioId, 10) } : null,
+                scopeFilter: scopeType === 'LABORATORIO' ? { laboratorio_id: parseInt(laboratorioId, 10) }
+                    : scopeType === 'CICLICO' ? { tamano: tamanoNum }
+                        : null,
                 erpProductIds: scopeType === 'MANUAL' ? manualSelected.map((p) => p.id) : null,
             });
             showToast('Conteo iniciado', 'Se generó el snapshot de inventario', 'success');
@@ -133,6 +172,53 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 options={SCOPE_OPTIONS.map(opt => ({ value: opt.value, label: opt.label, icon: opt.icon }))}
                                 value={scopeType} onChange={setScopeType} label="Alcance del conteo" />
                         </div>
+
+                        {scopeType === 'CICLICO' && (
+                            <div className="mt-4 flex flex-col gap-3">
+                                <div>
+                                    <label className={fieldLabel}><span>Productos a contar este mes</span>{tamanoMissing && reqBadge}</label>
+                                    <PortalInput
+                                        aria-label="Cantidad de productos de la muestra"
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={tamano}
+                                        onChange={(e) => setTamano(e.target.value)}
+                                        className="w-32"
+                                        inputClassName="text-body-xl"
+                                    />
+                                </div>
+
+                                <Notice variant="info" icon={Repeat}>
+                                    La muestra la sortea el servidor: entran <strong>todos</strong> los Bajo Receta y el resto
+                                    se reparte 60% clase A · 25% B · 15% C. Dentro de cada grupo elige primero lo que lleva
+                                    más tiempo sin contarse y desempata al azar — así nada queda sin contarse nunca y nadie
+                                    puede predecir qué cae. Una sucursal sin clasificación ABC publicada rota por antigüedad.
+                                </Notice>
+
+                                {previewLoading ? (
+                                    <p className="text-label text-content-3">Calculando la muestra…</p>
+                                ) : preview?.muestra ? (
+                                    <div className={islandClass}>
+                                        <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">Vista previa de la muestra</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {Object.entries(preview.muestra).map(([seg, n]) => (
+                                                <Badge key={seg} variant={seg === 'BAJO_RECETA' ? 'danger' : 'chart-9'} uppercase={false}>
+                                                    {SEGMENTO_LABEL[seg] || seg}: {n}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                        {preview.cobertura && (
+                                            <p className="text-caption text-content-3 mt-2 leading-snug">
+                                                Universo de la sucursal: <strong className="tabular-nums">{preview.cobertura.universo}</strong> productos ·{' '}
+                                                <strong className="tabular-nums">{preview.cobertura.nunca_contados}</strong> nunca contados ·{' '}
+                                                <strong className="tabular-nums">{preview.cobertura.mas_de_6_meses}</strong> sin contarse hace más de 6 meses.
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : null}
+                            </div>
+                        )}
 
                         {scopeType === 'LABORATORIO' && (
                             <div className="mt-4">

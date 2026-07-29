@@ -258,6 +258,43 @@ sistema de registro del POS— está en el informe.
 
 ---
 
+## v2.194.0 — conteo cíclico mensual: 200 productos por sucursal.
+
+En vez de un evento anual de ~4,800 líneas, una muestra chica todos los meses:
+el ERP nunca se aleja mucho y las diferencias aparecen cuando todavía se pueden
+investigar.
+
+**Reparto de los 200:**
+
+| Segmento | Cuota | Frecuencia que da |
+|---|---|---|
+| Bajo receta | **100%** (23-54) | mensual — control sanitario, no es muestra |
+| Clase A | 60% del resto (~100) | cada ~4-5 meses |
+| Clase B | 25% del resto (~40) | ~1 vez al año |
+| Clase C / sin clase | 15% del resto (~25) | sondeo, no cobertura |
+
+La clase C no se cubre por ciclo, y está bien: eso lo cubre el **conteo TOTAL
+anual**, que sigue existiendo. El ciclo le baja la sorpresa.
+
+**No es azar puro.** Prioriza lo que lleva más tiempo sin contarse (nunca contado
+primero) y desempata al azar: así nada queda sin contarse jamás y a la vez nadie
+puede predecir qué cae este mes. La muestra se sortea **en el servidor** — si la
+eligiera el cliente, elegir qué se cuenta dejaría de ser un control y pasaría a
+ser una preferencia. La composición sorteada queda guardada en `scope_filter`:
+un cíclico que no dice cómo se armó no se puede auditar después.
+
+**Solo cuenta el ABC publicado, no el borrador de MinMax.** Decidir qué se audita
+con números que nadie aprobó convierte un control en una corazonada. Medido:
+Bodega tiene 0 clasificaciones publicadas y 2,540 en borrador, y Salud 5 solo 309
+de 1,914. Ahí la muestra pasa a ser "bajo receta 100% + rotación por antigüedad",
+que es lo correcto para un almacén sin ABC — y respeta que Bodega no se maneje
+por ABC ni por obligación mensual.
+
+El modal muestra la composición y la cobertura antes de crear el conteo
+(universo, nunca contados, sin contarse hace más de 6 meses).
+
+---
+
 ## v2.193.0 — la grilla del conteo se ordena como está el anaquel.
 
 En las sucursales el producto está acomodado **por laboratorio**. La grilla

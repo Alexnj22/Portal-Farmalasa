@@ -21,7 +21,7 @@ const ESTADO_CFG = {
     CERRADO:     { icon: CheckCircle2, label: 'Cerrado',     variante: 'success' },
 };
 
-const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual' };
+const SCOPE_LABEL = { TOTAL: 'Total', LABORATORIO: 'Por laboratorio', BAJO_RECETA: 'Bajo Receta', MANUAL: 'Manual', CICLICO: 'Cíclico del mes' };
 
 const COLS = [
     { key: 'fecha', label: 'Fecha', align: 'left' },

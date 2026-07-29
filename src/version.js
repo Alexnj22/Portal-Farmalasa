@@ -16,7 +16,16 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.198.0';
+export const APP_VERSION = '2.198.1';
+
+// v2.198.1 — se borra el conteo abandonado de Bodega (migracion, sin cambios de UI).
+//
+// Conteo TOTAL abierto el 10-jul: 4,782 lineas y CERO contadas en 19 dias. No es
+// un registro de trabajo, es ruido — y con la regla de un solo conteo abierto
+// por sucursal (C4) bloqueaba crear el ciclico en Bodega. Borrado autorizado por
+// el usuario; va como migracion porque el modulo no tiene ruta de borrado
+// (append-only a proposito), con guarda que aborta si alguien alcanzo a contar.
+
 
 // v2.198.0 — H5, segunda mitad: la UI para clasificar 99 proveedores sin
 // hacerlo de a uno. Aprobada por mockup antes de construirla.

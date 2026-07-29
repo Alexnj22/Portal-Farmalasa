@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import ModuleLockBanner from './common/ModuleLockBanner';
+import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
 
 const GlassViewLayout = ({
     icon: Icon,
@@ -73,7 +73,12 @@ const GlassViewLayout = ({
                             oscuro. Ahora usa --header-sheen (token por tema, ver index.css). */}
                         <div className="absolute inset-0 rounded-header pointer-events-none" style={{ background: 'linear-gradient(to bottom, var(--header-sheen), transparent)' }} />
 
-                        <div className="relative z-base flex flex-row items-center justify-between gap-4">
+                        {/* Candado de mantenimiento (opción B): la ficha va al lado del
+                            título y el detalle en una línea, los dos DENTRO del encabezado
+                            porque es sticky — en el cuerpo se iban de pantalla al bajar por
+                            una tabla larga. Las dos piezas devuelven null si no hay candado. */}
+                        <div className="relative z-base flex flex-col">
+                        <div className="flex flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-2.5 min-w-0 shrink-0">
                                 {headerLeft ? headerLeft : (
                                     <div className="flex items-center gap-2.5">
@@ -91,6 +96,7 @@ const GlassViewLayout = ({
                                         <h2 className="font-bold text-body-xl xl:text-title-sm tracking-tight text-content">
                                             {title}
                                         </h2>
+                                        <ModuleLockChip />
                                     </div>
                                 )}
                             </div>
@@ -124,6 +130,8 @@ const GlassViewLayout = ({
                                 </div>
                             )}
                         </div>
+                        <ModuleLockNotice />
+                        </div>
                     </div>
 
                 {/* Mobile: title inline */}
@@ -154,6 +162,7 @@ const GlassViewLayout = ({
                                 <h2 className="font-bold text-body-xl tracking-tight truncate text-content">
                                     {title}
                                 </h2>
+                                <ModuleLockChip />
                             </>
                         )}
                     </div>
@@ -162,6 +171,7 @@ const GlassViewLayout = ({
                             {filtersContent}
                         </div>
                     )}
+                    <div className="basis-full min-w-0"><ModuleLockNotice /></div>
                 </div>
 
                 {/* Sub-content: between header and body (e.g. chart + filter pill) */}
@@ -173,13 +183,6 @@ const GlassViewLayout = ({
 
                 {/* Content body */}
                 <div className="px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
-                    {/* Candado de mantenimiento. Va acá y no en cada vista: resuelve
-                        su módulo desde la ruta y devuelve null cuando no hay candado,
-                        así que cubre las 37 vistas que usan este layout sin que
-                        ninguna tenga que acordarse de montarlo. Fuera de la tarjeta
-                        del body a propósito — es un aviso sobre el módulo, no
-                        contenido de la tabla. */}
-                    <ModuleLockBanner />
                     <div data-surface={transparentBody ? undefined : 'card'}
                         className={`group/table flex flex-col lg:flex-1 ${bodyCardCls}`}>
                         {children}

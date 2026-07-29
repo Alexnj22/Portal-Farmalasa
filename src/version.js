@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.231.0';
+export const APP_VERSION = '2.232.0';
+
+// v2.232.0 — Mantenimiento en tarjetas, y el aviso del candado se muda al
+// encabezado (opcion B, elegida por Alex).
+//
+// TARJETAS. La lista pasa a rejilla (3 columnas en escritorio, 1 en telefono),
+// agrupada como en Permisos. La tarjeta activa tiene cuerpo propio: COMENTARIO y
+// DURACION con etiqueta y ancho de verdad, mas la linea de titular/vencimiento —
+// en fila iban apretados contra el switch. `items-start` y sin `h-full` a
+// proposito: si no, las tarjetas libres se estiran al alto de la activa y la
+// rejilla queda con huecos enormes (se vio en la primera captura).
+//
+// EL AVISO SE VA AL ENCABEZADO. Antes era un bloque en el cuerpo. El encabezado
+// es sticky, asi que el estado ya no se va de pantalla al bajar por una tabla
+// larga — que era el caso feo: botones de guardar apagados y ninguna explicacion
+// a la vista. Ahora son dos piezas: la ficha "Solo lectura" al lado del titulo y
+// una linea con quien, por que y hasta cuando (con Terminar si el candado es
+// tuyo). Las dos las monta GlassViewLayout, cubren las 37 vistas y devuelven null
+// si no hay candado. Montadas tambien en el encabezado movil.
+//
+// Lo que NO se hizo de la opcion B: el candadito en cada boton apagado. Eso
+// exige que `Button` sepa de la ruta y del candado, o sea un useAuth() +
+// useLocation() en CADA boton de la app — justo despues de un reporte de
+// lentitud, no. Queda como pendiente por vista si hace falta.
+//
+// Verificado en navegador con lock_module/unlock_module interceptadas (sin
+// escribir candados en prod): 27 tarjetas, la ficha y la linea salen en el
+// encabezado de /payroll y NO en el cuerpo, el switch llama a la RPC, el
+// comentario vuelve a llamarla con el motivo, y apagar libera. El buscador
+// filtra: "nomina" deja 1 tarjeta, "sucursal" deja 6. Cero errores de consola.
 
 // v2.231.0 — el conteo ciego era un interruptor, y un click de más inventaba
 // faltantes.

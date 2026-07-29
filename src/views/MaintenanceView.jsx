@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Wrench, Clock, Lock } from 'lucide-react';
+import { Wrench, Clock, Lock, Unlock } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -7,6 +7,7 @@ import Badge from '../components/common/Badge';
 import Switch from '../components/common/Switch';
 import LiquidSelect from '../components/common/LiquidSelect';
 import PortalInput from '../components/common/PortalInput';
+import Button from '../components/common/Button';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useAuth } from '../context/AuthContext';
@@ -195,83 +196,104 @@ export default function MaintenanceView() {
                     </div>
 
                     {grupos.map(([grupo, keys]) => (
-                        <div key={grupo} className="flex flex-col gap-2">
+                        <div key={grupo} className="flex flex-col gap-2.5">
                             <span className="text-micro font-black uppercase tracking-widest text-content-2 px-1">{grupo}</span>
 
-                            {keys.map(key => {
-                                const meta   = info(key);
-                                const lock   = activos[key];
-                                const activo = !!lock;
-                                // isModuleLocked es false cuando el titular soy yo.
-                                const esMio  = activo && !isModuleLocked(key);
-                                const puedo  = !!rolePerms?.[key]?.can_edit;
-                                const Icono  = meta.icon || Lock;
+                            {/* Rejilla: 3 columnas en escritorio, 1 en teléfono. La tarjeta
+                                activa necesita cuerpo propio para el comentario y las horas —
+                                en fila quedaban apretados contra el switch. */}
+                            <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 items-start">
+                                {keys.map(key => {
+                                    const meta   = info(key);
+                                    const lock   = activos[key];
+                                    const activo = !!lock;
+                                    // isModuleLocked es false cuando el titular soy yo.
+                                    const esMio  = activo && !isModuleLocked(key);
+                                    const puedo  = !!rolePerms?.[key]?.can_edit;
+                                    const Icono  = meta.icon || Lock;
 
-                                return (
-                                    <div key={key} data-surface="card" className="p-3.5 flex flex-col gap-3">
-                                        <div className="flex items-start gap-3">
-                                            <div className="shrink-0 mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center bg-surface-card-hover border border-border-card">
-                                                <Icono size={15} className={activo ? 'text-warning-text' : 'text-content-3'} />
-                                            </div>
-                                            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-body-sm font-black text-content">{meta.label}</span>
-                                                    {activo && <Badge variant="warning" size="sm">En mantenimiento</Badge>}
-                                                    {esMio  && <Badge variant="info"    size="sm">Tuyo</Badge>}
+                                    return (
+                                        <div key={key} data-surface="card"
+                                            className={`p-3.5 flex flex-col gap-3 ${activo ? 'border border-warning/40' : ''}`}>
+
+                                            <div className="flex items-start gap-2.5">
+                                                <div className={`shrink-0 mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center border
+                                                    ${activo ? 'bg-warning/10 border-warning/40' : 'bg-surface-card-hover border-border-card'}`}>
+                                                    <Icono size={15} className={activo ? 'text-warning-text' : 'text-content-3'} />
                                                 </div>
-                                                {meta.desc && <p className="text-caption text-content-3 leading-snug">{meta.desc}</p>}
-                                                {activo && (
-                                                    <p className="text-caption text-content-2 tabular-nums">
-                                                        {lock.locked_by_name} · desde {hora(lock.locked_at)} · vence {hora(lock.expires_at)} · {restante(lock.expires_at)}
-                                                    </p>
-                                                )}
+                                                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-body-sm font-black text-content leading-tight">{meta.label}</span>
+                                                        {activo && <Badge variant="warning" size="sm">En mantenimiento</Badge>}
+                                                        {esMio  && <Badge variant="info"    size="sm">Tuyo</Badge>}
+                                                    </div>
+                                                    {meta.desc && <p className="text-caption text-content-3 leading-snug">{meta.desc}</p>}
+                                                </div>
+                                                <div className="shrink-0">
+                                                    <Switch
+                                                        checked={activo}
+                                                        disabled={busy === key || (!puedo && !activo)}
+                                                        onChange={activo ? () => setALiberar(key) : () => encender(key)}
+                                                        label={activo
+                                                            ? `Terminar el mantenimiento de ${meta.label}`
+                                                            : `Poner ${meta.label} en mantenimiento`}
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="shrink-0 pt-0.5">
-                                                <Switch
-                                                    checked={activo}
-                                                    disabled={busy === key || (!puedo && !activo)}
-                                                    onChange={activo ? () => setALiberar(key) : () => encender(key)}
-                                                    label={activo
-                                                        ? `Terminar el mantenimiento de ${meta.label}`
-                                                        : `Poner ${meta.label} en mantenimiento`}
-                                                />
-                                            </div>
+
+                                            {!activo && !puedo && (
+                                                <Badge variant="neutral" size="sm" className="self-start">Sin permiso para bloquear</Badge>
+                                            )}
+
+                                            {/* Los dos cuadros del candado: aparecen al encender y son su
+                                                estado — se editan sobre el candado ya puesto. */}
+                                            {activo && (
+                                                <>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_7.5rem] gap-2">
+                                                        <div className="flex flex-col gap-1 min-w-0">
+                                                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Comentario</span>
+                                                            <PortalInput
+                                                                ref={el => { motivoRef.current[key] = el; }}
+                                                                value={motivoDraft[key] ?? lock.reason ?? ''}
+                                                                onChange={e => setMotivoDraft(d => ({ ...d, [key]: e.target.value }))}
+                                                                onBlur={() => guardarMotivo(key, lock)}
+                                                                onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                                                                placeholder="¿En qué estás trabajando?"
+                                                                aria-label={`Comentario del mantenimiento de ${meta.label}`}
+                                                                readOnly={!esMio}
+                                                                compact
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Duración</span>
+                                                            <LiquidSelect
+                                                                value={horasDe(lock)}
+                                                                onChange={h => cambiarHoras(key, lock, h)}
+                                                                options={HORAS}
+                                                                icon={Clock}
+                                                                clearable={false}
+                                                                compact
+                                                                disabled={!esMio}
+                                                                ariaLabel={`Duración del mantenimiento de ${meta.label}`}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                        <span className="text-caption text-content-2 tabular-nums min-w-0">
+                                                            {lock.locked_by_name} · vence {hora(lock.expires_at)} · {restante(lock.expires_at)}
+                                                        </span>
+                                                        {!esMio && (
+                                                            <Button variant="ghost" size="sm" icon={Unlock}
+                                                                onClick={() => setALiberar(key)}>Terminar</Button>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
-
-                                        {/* Los dos cuadros: aparecen al encender y SON el estado del
-                                            candado — se editan sobre el candado ya puesto. */}
-                                        {activo && (
-                                            <div className="flex flex-col sm:flex-row gap-2 sm:pl-11">
-                                                <div className="flex-1 min-w-0">
-                                                    <PortalInput
-                                                        ref={el => { motivoRef.current[key] = el; }}
-                                                        value={motivoDraft[key] ?? lock.reason ?? ''}
-                                                        onChange={e => setMotivoDraft(d => ({ ...d, [key]: e.target.value }))}
-                                                        onBlur={() => guardarMotivo(key, lock)}
-                                                        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                                                        placeholder="Motivo — ¿en qué estás trabajando?"
-                                                        aria-label={`Motivo del mantenimiento de ${meta.label}`}
-                                                        readOnly={!esMio}
-                                                        compact
-                                                    />
-                                                </div>
-                                                <div className="w-full sm:w-44 shrink-0">
-                                                    <LiquidSelect
-                                                        value={horasDe(lock)}
-                                                        onChange={h => cambiarHoras(key, lock, h)}
-                                                        options={HORAS}
-                                                        icon={Clock}
-                                                        clearable={false}
-                                                        compact
-                                                        disabled={!esMio}
-                                                        ariaLabel={`Duración del mantenimiento de ${meta.label}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     ))}
                 </div>

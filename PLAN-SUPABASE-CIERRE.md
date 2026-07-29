@@ -9,17 +9,18 @@ F3.1, F3.4, F4.1, F4.3, F4.4 y F4.6. Advisor de seguridad **110 → 86**;
 | | |
 |---|---|
 | ✅ Cerrado | P1, P3+P5, P4, F1, F2, F3.1/3.4, F4.1/4.3/4.4/4.6, **C1, C3, C4, C5** |
-| ⏸️ Pausado | **C2** — tooling terminado y validado; falta correrlo (5 pasos) |
+| ✅ Cerrado (v2.228.0) | **C2** — baseline verificado 15/15 contra prod; falta el `migration repair` |
 | ⏸️ Tu decisión | PITR (se hará antes de facturar) |
 | ✅ Cerrado (v2.217.0) | rotar el secreto de cron |
 | ✅ Cerrado (v2.209.0) | slots de conexión al 87%, `collation version mismatch` (ambos en C4) |
 | 📋 Proyecto | POS |
 
-Queda **un solo punto técnico abierto (C2)**. Ya no es de decisión: la
-arquitectura quedó definida (baseline solo + historia archivada) y el generador,
-el ensamblador y el verificador están terminados y validados contra prod. Falta
-ejecutar los 5 pasos, y para eso hace falta que **nadie más esté aplicando
-migraciones** — por eso se pausó.
+**C2 quedó ejecutado y verificado** (v2.228.0): `supabase/migrations/` tiene un
+baseline generado del catálogo de prod, verificado aplicándolo a una rama limpia
+con las 15 categorías de la huella en md5 idéntico. Falta **un** paso, que es un
+write a prod y espera OK: `migration repair --status applied`.
+
+Con eso **no queda ningún punto técnico abierto en este plan.**
 
 Pendiente menor aparte: borrar de Vault `admin_invoke_secret_prev_20260729`
 cuando pase un día sin incidentes desde la rotación (2026-07-29 17:31 UTC).
@@ -225,7 +226,71 @@ columnas 1,284, funciones 159, vistas 13, policies 219, RLS 110, constraints 362
 (149+213), índices 372 (223+149), triggers 11, ACLs 4,519 filas de privilegio
 sobre 188 relaciones + 464 sobre 159 funciones, publicaciones 13, comentarios 49.
 
-### ⏸️ PAUSADO por trabajo concurrente en prod (no por un problema)
+### ✅ EJECUTADO Y VERIFICADO (v2.228.0, commit `114068b7`)
+
+`supabase/migrations/` quedó con **un** archivo —
+`20260101000000_baseline_schema.sql`, 1,671 sentencias, 737 KB— y las **339**
+anteriores en `supabase/migrations-legacy/`. Git lo registró como 334 renombres
+puros (`R100`) + 5 archivos que nunca habían estado trackeados.
+
+**Verificación medida en una rama limpia** (`verif-baseline-c2`, ya borrada):
+
+| | |
+|---|---|
+| sentencias aplicadas | 1,671 |
+| errores | **0** (6 notices de `extension already exists`) |
+| índices inválidos | **0** |
+| categorías de la huella con md5 idéntico a prod | **15 de 15** |
+| deriva de prod durante la comparación | **ninguna** (re-medido t0 → t2) |
+
+Las 15: tablas 110, columnas 1,285, secuencias 65, reloptions 12, índices 373,
+funciones 160, vistas 13, constraints 363, triggers 11, RLS 110, policies 219,
+privilegios de relación 4,519, privilegios de función 467, publicaciones 13,
+comentarios 49.
+
+**`create_branch` confirmó el diagnóstico de paso**: la rama quedó en
+`MIGRATIONS_FAILED` porque intentó replayear la historia local. O sea el CLI
+tampoco puede reconstruir prod desde esos archivos — que era justamente la tesis.
+
+**Seis correcciones hicieron falta para que el baseline fuera fiel.** Las cuatro
+primeras estaban en el generador v1 y ninguna daba error: producían un archivo que
+parece correcto. Las dos últimas salieron de los dos ciclos de verificación:
+
+| # | hallazgo | cómo salió |
+|---|---|---|
+| 1 | **ACLs ausentes** — sin ellos se reabre la superficie de `anon` | leyendo el catálogo antes de generar |
+| 2 | publicaciones de Realtime y `reloptions` ausentes | ídem |
+| 3 | claves truncadas a 63 chars (`name` en la 1ª rama del `UNION`) | chequeo de claves duplicadas |
+| 4 | las 31 funciones de `pg_trgm` emitidas como propias | medición de dueños |
+| 5 | **funciones después de las tablas** — 5 tablas tienen columnas `GENERATED` que llaman a `norm_search()` | 1er intento: 122 errores |
+| 6 | `pg_get_viewdef()` ya trae el `;` → el `WITH NO DATA` quedaba suelto | ídem |
+
+Y **dos "diferencias" del 2º intento resultaron ser hallazgos sobre prod, no bugs
+del baseline** — vale la pena registrarlas porque volverán a aparecer:
+
+- **`product_presentations_id_seq`**: la tabla se renombró a `product_precios` y
+  `ALTER TABLE ... RENAME` **no renombra la secuencia asociada**. El nombre viejo
+  quedó fosilizado en prod. Se reproduce con un `ALTER SEQUENCE ... RENAME TO`
+  (ord 32), sin tocar prod. Arrastraba además 12 privilegios que fallaban.
+- **18 comentarios "distintos" con el md5 de la descripción idéntico**: prod tiene
+  columnas borradas, que dejan huecos en `attnum`; una tabla recién creada numera
+  compacto. Era un bug del **verificador**, que comparaba por número de columna en
+  vez de por nombre — medía el layout físico, no el esquema.
+
+### ⏸️ Falta un paso, y es un write a prod
+
+**`supabase migration repair --status applied 20260101000000`.** Registra el
+baseline como aplicado **sin ejecutarlo**: una fila en
+`supabase_migrations.schema_migrations`, sin tocar esquema ni datos. Sin ese paso,
+un `db push` intentaría correr el baseline contra la base viva (el archivo lleva
+la advertencia en la cabecera). Pendiente de OK explícito, por la regla de
+[[project_migration_baseline_and_staging]].
+
+Opcional aparte, no hace falta para nada: purgar las 700+ filas viejas del
+registro de prod. Recomendado **no** tocarlas — cada write a prod es riesgo y esas
+filas son inertes.
+
+### Nota histórica: por qué se pausó a mitad
 
 Mientras se generaba el baseline, **otra sesión aplicó
 `20260729_module_locks_panel_soporte` a prod** (registrada 21:24:00 UTC, archivo
@@ -241,8 +306,9 @@ por decisión del usuario.
 `migrations-legacy/`, sin baseline), `.env` intacto, **cero ramas creadas**, cero
 costo.
 
-**Para retomar — 5 pasos, ~20 minutos.** Requisito: que no haya otra sesión
-aplicando migraciones, porque el baseline es una foto de prod.
+**El procedimiento, si alguna vez hay que regenerarlo.** Requisito: que no haya
+otra sesión aplicando migraciones, porque el baseline es una foto de prod.
+`verificar.sh` automatiza los pasos 3 y 4.
 
 ```sh
 D=~/.claude/projects/-Users-alexnunez-Documents-Portal-Farmalasa/c2-baseline

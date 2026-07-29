@@ -97,12 +97,30 @@ el wrapper `(SELECT ...)` obligatorio, que es la lección del outage del
   `timesheets` → `time_audit`, `employee_events` → `staff_detail`.
   El módulo de cada una se sacó de dónde escribe el frontend, verificado uno por
   uno con grep, no supuesto. **26 → 20 policies abiertas.**
-- **F2.2** — el resto de RRHH: `attendance`, `holidays`, `shifts`,
-  `schedule_coverage`, `employee_documents`, `vacation_plan_headers`.
-- **F2.3** — operación: `branch_expenses`, `branch_documents`,
-  `product_locations`, `ventas_perdidas`, `survey_responses`,
-  `sales_payment_confirmations`, `education_catalog_entries`.
-- **F2.4** — `user_dashboard_prefs` → dueño real, no `public`.
+- ✅ **F2.2 + F2.3 + F2.4 — APLICADO v2.196.0** (`20260729_write_policies_batch2`).
+  **26 → 2 policies abiertas.** Dos trampas que la migración evitó:
+
+  1. `product_locations` y `schedule_coverage` tenían UNA sola policy, `ALL` con
+     `true` — y `ALL` cubre también SELECT. Reemplazarla por una gateada con
+     `can_edit` habría dejado **sin lectura** a todo el que solo puede ver. Se
+     partieron: SELECT permisivo (igual a la lectura efectiva de hoy) +
+     INSERT/UPDATE/DELETE gateados.
+  2. `user_dashboard_prefs` se llamaba `owner_*` pero sus tres policies eran
+     `TO public` con `true`: **cualquiera leía y escribía las preferencias de
+     cualquiera**. Ahí no corresponde módulo sino dueño real
+     (`user_id = (SELECT auth.uid())`).
+
+  Verificado además que los 15 módulos usados tengan al menos un rol con
+  `can_edit` — gatear contra un módulo que nadie puede editar habría dejado a
+  todos afuera.
+
+- 🚫 **`attendance` (INSERT) queda abierta a propósito.** El kiosco marca por esa
+  vía (`useTimeClockEngine` → `registerAttendance` → INSERT directo) y marca por
+  **otros** empleados, porque la tablet es compartida. No sirve ni un gate por
+  módulo ni uno por dueño: cualquiera de los dos rompe el marcaje de toda la
+  cadena. El fix correcto es una RPC SECURITY DEFINER que valide el device token,
+  como `verify_kiosk_authorization`. Es arquitectura, no una línea de policy —
+  exactamente el mismo caso que `audit_logs`.
 - **F2.5** — `audit_logs`: **queda como está a propósito**. Ya se decidió que el
   fix correcto es mover el logging al servidor dentro de las RPC, porque el
   `user_id` lo pone el cliente y el kiosco escribe sin sesión verificable. Es

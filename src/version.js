@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.196.1';
+export const APP_VERSION = '2.197.0';
+
+// v2.197.0 — se cerraron 24 de las 26 policies de escritura abierta.
+//
+// El hardening del 2026-07-02 cubrio las LECTURAS pero dejo INSERT/UPDATE en
+// `true`: cualquier empleado con el rol mas bajo podia escribir 18 tablas.
+// Ahora quedan 2, las dos a proposito.
+//
+// Dos trampas que esto evito:
+//
+//  1. product_locations y schedule_coverage tenian UNA sola policy, ALL con
+//     `true` — y ALL cubre tambien SELECT. Reemplazarla por una gateada con
+//     can_edit habria dejado SIN LECTURA a todo el que solo puede ver. Se
+//     partieron: SELECT permisivo + escritura gateada.
+//  2. user_dashboard_prefs se llamaba "owner_*" pero era TO public con `true`:
+//     cualquiera leia y escribia las preferencias de cualquiera. Ahi el gate
+//     correcto es dueño real (user_id = auth.uid()), no modulo.
+//
+// attendance.INSERT queda abierta a proposito: el kiosco marca por esa via y
+// marca por OTROS empleados (tablet compartida), asi que ni gate por modulo ni
+// por dueño sirven — cualquiera de los dos rompe el marcaje. Necesita una RPC
+// que valide el device token, igual que audit_logs necesita logging server-side.
+// Es arquitectura, no una linea de policy.
 
 // v2.196.1 — H5, primera mitad: la regla que sabe clasificar proveedores.
 //

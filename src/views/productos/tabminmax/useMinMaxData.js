@@ -382,10 +382,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     }, [hasPublishedData]);
 
     const handleZeroAllBranches = useCallback(async (row) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Ya no hace falta pedir el usuario: la RPC resuelve published_by con
+        // auth.email() (F4.2), asi que este getUser() era un round-trip para nada.
         const { error } = await supabase.rpc('zero_out_product_all_branches', {
             p_erp_product_id: row.erp_product_id,
-            p_published_by: user?.email ?? null,
         });
         if (error) {
             useToastStore.getState().showToast(row.product_name, translateDbError(error.message), 'error');
@@ -772,7 +772,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         setPublishing(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            const rpcParams = { p_erp_sucursal_id: selectedErp, p_published_by: user?.email ?? null };
+            const rpcParams = { p_erp_sucursal_id: selectedErp };   // sin p_published_by (F4.2: muerto)
             if (productIds) rpcParams.p_erp_product_ids = productIds;
             const { data: res, error: e } = await supabase.rpc('publish_stock_params', rpcParams);
             if (e) throw e;

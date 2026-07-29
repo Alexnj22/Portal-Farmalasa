@@ -7,7 +7,6 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import { fetchAllMinMaxChangeRequests } from '../../data/minmaxRequests';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { useAuth } from '../../context/AuthContext';
 import { notifyEmployees } from '../../utils/notify';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -133,7 +132,6 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
 
 // ─── Tab principal ───────────────────────────────────────────────────────────
 export default function TabMinMaxRequests({ searchTerm = '' }) {
-  const { user }       = useAuth();
   const appendAuditLog = useStaff(s => s.appendAuditLog);
   const employees      = useStaff(s => s.employees);
   const empMap = useMemo(() => {
@@ -187,7 +185,10 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
   // Lógica de decisión sin gestión de UI (reutilizable por individual y masivo)
   const runDecision = useCallback(async (r, approve, note) => {
     const fn = approve ? 'approve_minmax_request' : 'reject_minmax_request';
-    const { error } = await supabase.rpc(fn, { p_request_id: r.id, p_decided_by: user?.email ?? null, p_note: note });
+    // F4.2 — la autoria ya NO se manda: decided_by lo resuelve la RPC con
+      // auth.email(). Mandarlo desde el navegador permitia firmar la decision
+      // con el correo de otra persona por PostgREST directo.
+      const { error } = await supabase.rpc(fn, { p_request_id: r.id, p_note: note });
     if (error) throw error;
     // target_id = producto (no la solicitud) — es lo que el historial MIN/MAX de
     // Productos usa para buscar cambios de un producto puntual (M-5). request_id
@@ -197,7 +198,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       requested_min: r.requested_min, requested_max: r.requested_max, note,
     });
     await notifyRequester(r, approve, note);
-  }, [user, appendAuditLog, notifyRequester]);
+  }, [appendAuditLog, notifyRequester]);
 
   const decide = useCallback(async (r, approve, note = null) => {
     setBusyId(r.id); setError(null);
@@ -263,7 +264,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     setBulkBusy(true); setError(null);
     try {
       const { data, error } = await supabase.rpc('approve_minmax_requests_bulk', {
-        p_request_ids: pend.map(r => r.id), p_decided_by: user?.email ?? null,
+        p_request_ids: pend.map(r => r.id),   // sin p_decided_by (F4.2)
       });
       if (error) throw error;
 
@@ -317,7 +318,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     } catch (e) {
       setError(e.message || 'Error al aprobar en lote');
     } finally { setBulkBusy(false); setConfirmBulkOpen(false); }
-  }, [filtered, user, appendAuditLog, load]);
+  }, [filtered, appendAuditLog, load]);
 
   const pendingInView = filtered.filter(r => r.status === 'pending').length;
 

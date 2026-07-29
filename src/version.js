@@ -16,7 +16,60 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.222.0';
+export const APP_VERSION = '2.223.0';
+
+// v2.223.0 — MIN·MAX F4: el candado por sucursal existia SOLO en el cliente.
+//
+// F4.1 — psp_insert/psp_update usaban auth_can_edit_any(['minmax','pedidos'])
+// sin mirar erp_sucursal_id: con can_edit en CUALQUIERA de los dos modulos se
+// podia escribir el MIN/MAX de CUALQUIER sucursal por PostgREST. Lo unico que lo
+// impedia era `lockedErpId` en el frontend.
+//
+// El plan hablaba del rol 12 (1 empleado). Medido en prod son 27: rol 12 (minmax
+// BRANCH), rol 19 Jefe/a de Sala (pedidos BRANCH, 6) y rol 30 Dependiente de
+// Farmacia (pedidos BRANCH, 20). Los dos ultimos no tienen can_edit en minmax,
+// pero auth_can_edit_any es un OR sobre el array: les alcanzaba con pedidos.
+//
+// El scope se expresa con un helper nuevo, auth_can_edit_scope_all, y NO con
+// `auth_module_scope(...) = 'ALL'`: auth_module_scope devuelve 'ALL' por defecto
+// cuando el rol no tiene fila para ese modulo, asi que habria dado acceso total a
+// quien solo tiene minmax BRANCH. El helper exige can_edit Y scope='ALL' en la
+// MISMA fila. Todas las llamadas auth_* envueltas en (SELECT ...) — sin el
+// initplan se evaluan por fila, que es el outage del 2026-07-08.
+//
+// Y el trigger de Bodega pasa a SECURITY DEFINER. Sin eso el scope rompia el
+// guardado de esas 27 personas: escribir su propia sucursal dispara el trigger,
+// el trigger escribe la fila de la sucursal 6 — que no es la de nadie — y la
+// policy lo rechazaba con "new row violates row-level security policy". La fila
+// de Bodega no es un dato del usuario: es una suma que mantiene el sistema.
+// Probado con el empleado real de cada caso: su sucursal 1 fila, otra sucursal 0,
+// Bodega a mano 0.
+//
+// Un detalle que aparecio probando: scope_all(['minmax']) es FALSE para el rol 12
+// (su minmax es BRANCH) y su branch mapea a Bodega, asi que el guard con el array
+// corto lo dejaba descartando borradores unicamente de Bodega — que ni se calcula
+// ahi. El array correcto es el de las policies, ['minmax','pedidos'].
+// Con ese array el guard de las RPCs es INERTE hoy (los 6 roles con can_edit en
+// minmax resuelven todos a ALL); se agrega igual porque son SECURITY DEFINER y
+// saltean las policies por completo.
+//
+// F4.2 — decided_by venia del navegador mientras published_by, en la misma tabla,
+// ya se resolvia con auth.email(). Ahora las dos salen del token. El parametro
+// p_decided_by se recibe e IGNORA: cambiar la firma antes de que el frontend deje
+// de mandarlo rompe la aprobacion entre el deploy de BD y el de Vercel — el
+// cliente deja de mandarlo en este commit y la firma se limpia despues.
+// zero_out_product_all_branches deja de hardcodear VALUES (1)…(7) y lee
+// erp_sucursal_map (con el hardcode, sumar una sucursal dejaba el producto
+// retirado "en todas las salas" menos en la nueva, en silencio).
+//
+// F4.3 — la decision de ABC/XYZ documentada en CLAUDE.md: son SOLO clasificacion
+// (reorder plano en 25 dias, buffers en 0, lead_time NULL en las 18,364 filas),
+// no mueven ningun numero, y no hay que "arreglarlo".
+//
+// F4.4 — el recalculo mensual disparaba a las 15:00 UTC, en plena ventana de los
+// syncs por minuto (12-23,0-5). Movido a 09:00 UTC: dentro de 06:00-11:59 y
+// despues del refresh del rollup de ventas (06:30), asi arranca con las unidades
+// reconciliadas.
 
 // v2.222.0 — MIN·MAX F3: la carga baja de 932 ms a 287 ms en Bodega.
 //

@@ -1,4 +1,5 @@
 import React from 'react';
+import { webpSignedUrl } from '../../utils/storageFiles';
 import { User, ShieldCheck } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore'; // ✅ Corregido para usar Zustand
 
@@ -42,7 +43,7 @@ const FormRoleEmployees = ({ formData }) => {
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border-2 border-border-card shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-content-3">
                                     {emp.photo ? (
-                                        <img src={emp.photo} className="w-full h-full object-cover" alt="Perfil" />
+                                        <img src={webpSignedUrl(emp.photo)} className="w-full h-full object-cover" alt="Perfil" />
                                     ) : (
                                         emp.name.charAt(0)
                                     )}

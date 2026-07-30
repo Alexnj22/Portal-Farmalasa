@@ -16,7 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.233.0';
+export const APP_VERSION = '2.234.0';
+
+// v2.234.0 — Personal › Listado bajaba 4.1 MB en fotos. Ahora baja 534 kB.
+//
+// Primera entrega de la tarea de rendimiento. Medido con el navegador: al abrir
+// Personal › Listado se descargaban **25 fotos de perfil de 168 a 199 kB cada
+// una — 4,143 kB de 4,163 kB del total de la vista** para pintarlas en circulos
+// de 36 px. Era, de lejos, la carga mas pesada del portal.
+//
+// Correccion de un diagnostico previo mio: habia reportado esas 25 peticiones
+// como "N+1 de firmas de storage". NO lo eran. Una URL firmada VIVE en la ruta
+// /object/sign/..., asi que al clasificar por ruta confundi las descargas de las
+// imagenes (GET) con llamadas de firma (POST). El firmado ya era en lote y
+// estaba bien; el problema eran los bytes.
+//
+// La solucion no cuesta ni una peticion extra: se sigue firmando en lote (UNA
+// llamada) y se reescribe la URL al endpoint de render, que convierte a WEBP
+// segun el Accept del navegador. 168 kB PNG → 20 kB WEBP.
+//
+// Lo que NO funciona, probado contra prod antes de elegir:
+//   · `transform` en el cuerpo del firmado EN LOTE: el servidor lo ignora,
+//     responde 200 y devuelve la URL sin transformar (168 kB).
+//   · `width` / `height` / `resize` / `quality` en la URL firmada: TAMBIEN se
+//     ignoran. Las cuatro combinaciones devuelven exactamente 20 kB a 400×400,
+//     igual que sin parametros. Redimensionar de verdad exige firmar de a una
+//     (`createSignedUrl(..., { transform })`) y eso son otra vez 25 peticiones
+//     para ahorrar unos pocos kB — no vale la pena, las fotos ya se suben a
+//     400×400.
+//
+// Va en LiquidAvatar (canonico, 11 vistas) y en las 4 fotos de usuario del
+// sidebar, que se cargan en TODAS las pantallas. Si el render fallara, el avatar
+// reintenta con la URL original antes de caer a iniciales.
+//
+// Verificado: 27 de 27 fotos cargan, las 27 por el endpoint de render, cero
+// fallos; /dashboard, /minmax y /payroll siguen abriendo.
+//
+// Pendiente de la misma tarea: los 9-22 archivos JS por primera entrada a cada
+// modulo (prefetch al pasar el mouse), y `roles` + `role_permissions` pedidas 4
+// veces cada una al recargar la pagina.
 
 // v2.233.0 — la convencion de migraciones deja de ser prosa: `gate:migrations`.
 //

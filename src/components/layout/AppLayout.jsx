@@ -31,6 +31,7 @@ import OfflineBanner from '../common/OfflineBanner';
 import ThemeMigrationRibbon, { RIBBON_HEIGHT } from '../common/ThemeMigrationRibbon';
 import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
+import { webpSignedUrl } from '../../utils/storageFiles';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
 
@@ -944,7 +945,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             className={`flex-1 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
                                             <div className="relative h-9 w-9 flex-shrink-0">
                                                 <div className="h-9 w-9 rounded-xl overflow-hidden flex items-center justify-center transition border border-white/12 shadow-[var(--shadow-elevation-xl)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
-                                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
+                                                    {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
                                                     <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -988,7 +989,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
                                                 shadow-[var(--shadow-glass-1)]
                                                 hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
-                                            {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
+                                            {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
                                         </Link>
                                         {myBirthday && (
                                             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -1056,7 +1057,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     <Link to="/profile" aria-label="Mi Perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
-                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
+                                        {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
                                     </Link>
                                     {myBirthday && (
                                         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -1233,7 +1234,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     type="button"
                                 >
                                     <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
-                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-[#7DB8FF]" />}
+                                        {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-[#7DB8FF]" />}
                                     </div>
                                     <div className="flex flex-col items-start pr-1">
                                         <span className="text-body font-semibold text-[#7DB8FF] whitespace-nowrap leading-tight">{user?.name || 'Usuario'}</span>

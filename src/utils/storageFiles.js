@@ -16,6 +16,33 @@ export const getStoragePathFromUrl = (storedUrl) => {
     return { bucket: m[1], path: decodeURIComponent(m[2]) };
 };
 
+// Versión LIGERA de una URL ya firmada, sin pedir nada al servidor.
+//
+// Medido el 2026-07-29 sobre Personal › Listado: la vista bajaba **4.1 MB en 25
+// fotos de perfil** (168–199 kB cada una) para pintarlas en círculos de 36 px.
+// Era, de lejos, la carga más pesada del portal.
+//
+// El truco: firmar en lote como hoy —UNA petición— y reescribir la URL al
+// endpoint de render, que convierte a WEBP solo, según el `Accept` del
+// navegador. El token sigue valiendo porque está firmado sobre el path.
+//   /object/sign/…?token=…  →  /render/image/sign/…?token=…
+//   168 kB PNG → 20 kB WEBP.
+//
+// OJO, medido y contraintuitivo: en una URL FIRMADA el render **ignora**
+// `width`, `height`, `resize` y `quality`. Se probaron las cuatro combinaciones
+// contra la misma foto y las cuatro devuelven exactamente 20 kB a 400×400 —
+// idéntico a no pasar ningún parámetro. Para que el redimensionado se aplique,
+// la transformación tiene que ir en el momento de FIRMAR
+// (`createSignedUrl(path, exp, { transform })`), y eso firma de a una: volverían
+// las 25 peticiones para ahorrar unos pocos kB más. No vale la pena — las fotos
+// ya se suben comprimidas a 400×400.
+export const webpSignedUrl = (signedUrl) => {
+    if (!signedUrl || typeof signedUrl !== 'string') return signedUrl;
+    if (!signedUrl.includes('/storage/v1/object/sign/')) return signedUrl;   // pública, externa o ya render
+    if (!signedUrl.includes('token=')) return signedUrl;                     // sin token no hay render
+    return signedUrl.replace('/storage/v1/object/sign/', '/storage/v1/render/image/sign/');
+};
+
 export const getSignedFileUrl = async (storedUrl, expiresIn = 3600) => {
     if (!storedUrl) return null;
     const str = String(storedUrl);

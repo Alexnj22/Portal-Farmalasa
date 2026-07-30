@@ -601,8 +601,15 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     return (
         <div className="p-5 md:p-6 space-y-5">
             {/* Stats strip + inline filters */}
-            <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
+            {/* Dos columnas: tarjetas a la izquierda, píldora pegada a la DERECHA.
+                Antes era un `flex-wrap` a secas, así que la píldora se quedaba
+                donde terminaran las tarjetas — medido a 1512px: su borde derecho
+                caía en 938 y el contenido llegaba a 1472, o sea **534px libres**
+                a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
+                al fondo; `min-w` es lo que evita que la columna se estruje tanto
+                que las tarjetas caigan de a una por fila (ver §17). */}
+            <div className="flex flex-col lg:flex-row lg:items-start gap-3">
+                <div className="flex items-stretch gap-2 flex-wrap flex-1 min-w-[312px]">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
                         <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-surface-card">
@@ -628,6 +635,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
+                <div className="flex justify-end min-w-0">
                 <FilterControls
                     monthRange={monthRange} setMonthRange={setMonthRange}
                     filterBranch={filterBranch} setFilterBranch={setFilterBranch}
@@ -638,6 +646,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     branchLocked={getScope('ventas') === 'BRANCH'}
                     privacyMode={privacyMode} setPrivacyMode={setPrivacyMode}
                 />
+                </div>
             </div>
 
             <DataTable
@@ -1063,8 +1072,15 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     return (
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats + inline filters */}
-            <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
+            {/* Dos columnas: tarjetas a la izquierda, píldora pegada a la DERECHA.
+                Antes era un `flex-wrap` a secas, así que la píldora se quedaba
+                donde terminaran las tarjetas — medido a 1512px: su borde derecho
+                caía en 938 y el contenido llegaba a 1472, o sea **534px libres**
+                a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
+                al fondo; `min-w` es lo que evita que la columna se estruje tanto
+                que las tarjetas caigan de a una por fila (ver §17). */}
+            <div className="flex flex-col lg:flex-row lg:items-start gap-3">
+                <div className="flex items-stretch gap-2 flex-wrap flex-1 min-w-[312px]">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const periodLabel = `${fmtShort(prevFini)}→${fmtShort(prevFfin)}`;
@@ -1079,7 +1095,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
+                <div className="flex justify-end min-w-0"><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
@@ -1776,8 +1792,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     return (
         <div className="p-4 md:p-6 space-y-4">
             {/* Stats + inline filters */}
-            <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
+            {/* Dos columnas: tarjetas a la izquierda, píldora pegada a la DERECHA.
+                Antes era un `flex-wrap` a secas, así que la píldora se quedaba
+                donde terminaran las tarjetas — medido a 1512px: su borde derecho
+                caía en 938 y el contenido llegaba a 1472, o sea **534px libres**
+                a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
+                al fondo; `min-w` es lo que evita que la columna se estruje tanto
+                que las tarjetas caigan de a una por fila (ver §17). */}
+            <div className="flex flex-col lg:flex-row lg:items-start gap-3">
+                <div className="flex items-stretch gap-2 flex-wrap flex-1 min-w-[312px]">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const curDaysP  = countDays(fini, ffin);
@@ -1797,7 +1820,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
+                <div className="flex justify-end min-w-0"><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
             {error && (

@@ -16,7 +16,18 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.252.1';
+export const APP_VERSION = '2.252.2';
+
+// v2.252.2 — la pildora de Ventas no estaba justificada a la derecha.
+//
+// Medidas las 14 vistas con pildora a 1512px comparando su borde derecho con el
+// del contenido: 10 estaban a ras y **Ventas se quedaba a 534px del borde** —
+// su fila era un `flex-wrap` a secas, asi que la pildora caia donde terminaran
+// las tarjetas. Sus tres pestanas (Ventas, Vendedores, Productos) comparten el
+// mismo contenedor, asi que las tres tenian el mismo defecto.
+//
+// Pasa al patron de dos columnas que ya usa el Listado: `flex-1` en la columna
+// de tarjetas empuja la pildora al fondo.
 
 // v2.252.1 — la pildora de Ventas, de 852 a 609px. Y el ojo se ve.
 //

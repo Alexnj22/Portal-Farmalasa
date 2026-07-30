@@ -232,15 +232,16 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     const card = (
         <div
             {...clickable(onClick)}
+            // El MISMO material que cualquier otra tarjeta: `data-surface="card"`
+            // y el estado por `data-tono`. Antes elegía su fondo con clases —
+            // `bg-warning/10` al ser filtro, `bg-surface-card` si no— y por eso en
+            // la fila de Ventas convivían dos fondos distintos.
+            data-surface="card"
+            data-tono={active ? 'warning' : undefined}
             className={`basis-[148px] grow shrink-0 min-w-0 max-w-[200px]
-                flex items-center gap-2 px-3 py-2 rounded-card border select-none transition-[box-shadow,border-color,background-color]
-                ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-surface-card' : 'cursor-default bg-surface-card'}
-                ${active
-                    ? 'border-warning ring-2 ring-warning/45 shadow-md bg-warning/10'
-                    : isFilter
-                        ? 'border-warning/30 bg-warning/10 hover:bg-warning/10'
-                        : 'border-divider bg-surface-card'
-                }`}
+                flex items-center gap-2 px-3 py-2 border select-none transition-[box-shadow,border-color]
+                ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help' : 'cursor-default'}
+                ${active ? '-translate-y-px' : ''}`}
         >
             <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                 <Icon size={11} className="text-white" strokeWidth={2.5} />

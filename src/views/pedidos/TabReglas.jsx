@@ -577,16 +577,14 @@ export default function TabReglas({ searchTerm = '' }) {
 
                     <StatCard
                         icon={Package} iconBg="bg-chart-1/10" iconCls="text-brand-text"
-                        label="Productos activos" value={allCount.toLocaleString()}
+                        label="Activos" value={allCount.toLocaleString()}
                         loading={statsLoading}
                     />
 
                     <StatCard label="Con regla" value={rulesCount}
                         icon={Check} iconBg={filterRule === 'con' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
                         valueCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
-                        active={filterRule === 'con'}
-                        activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
-                        inactiveBg="bg-surface-card border-divider hover:border-success/30 hover:bg-success/10"
+                        tono="success" active={filterRule === 'con'}
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'con' ? '' : 'con')}
                     />
@@ -594,19 +592,15 @@ export default function TabReglas({ searchTerm = '' }) {
                     <StatCard label="Sin regla" value={sinRegla}
                         icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger"
                         valueCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
-                        active={filterRule === 'sin'}
-                        activeBg="bg-danger/10 border-danger/40 shadow-md shadow-danger/20 -translate-y-px"
-                        inactiveBg="bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10"
+                        tono="danger" active={filterRule === 'sin'}
                         loading={loadingRules}
                         onClick={() => setFilterRule(f => f === 'sin' ? '' : 'sin')}
                     />
 
-                    <StatCard label="Nuevos este mes" sub={`agregados en ${mesActual}`} value={thisMonthCount}
+                    <StatCard label="Nuevos" sub={`agregados en ${mesActual}`} value={thisMonthCount}
                         icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
                         valueCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
-                        active={filterRule === 'nuevo'}
-                        activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
-                        inactiveBg="bg-surface-card border-divider hover:border-success/30 hover:bg-success/10"
+                        tono="success" active={filterRule === 'nuevo'}
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
                     />

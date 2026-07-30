@@ -483,11 +483,11 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
 });
 
 const STAT_CARD_COLORS = {
-  blue:    { activeBg: 'bg-chart-1/10 border-chart-1/40 shadow-md shadow-chart-1/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-1/30 hover:bg-chart-1/10',       iconBg: 'bg-chart-1/10',    iconColor: 'text-chart-1-text',  textColor: 'text-content-2'   },
-  emerald: { activeBg: 'bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px', inactiveBg: 'bg-surface-card border-border-card hover:border-success/30 hover:bg-success/10', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
-  cyan:    { activeBg: 'bg-chart-9/10 border-chart-9/40 shadow-md shadow-chart-9/20 -translate-y-px',       inactiveBg: 'bg-surface-card border-border-card hover:border-chart-9/30 hover:bg-chart-9/10',       iconBg: 'bg-chart-9/10',    iconColor: 'text-chart-9-text',   textColor: 'text-chart-9-text'    },
-  amber:   { activeBg: 'bg-warning/10 border-warning/40 shadow-md shadow-warning/20 -translate-y-px',     inactiveBg: 'bg-surface-card border-border-card hover:border-warning/30 hover:bg-warning/10',     iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning'   },
-  violet:  { activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-md shadow-chart-3/20 -translate-y-px',   inactiveBg: 'bg-surface-card border-border-card hover:border-chart-3/30 hover:bg-chart-3/10',   iconBg: 'bg-chart-3/10',  iconColor: 'text-chart-3-text', textColor: 'text-chart-3-text'  },
+  blue: { tono: 'brand', iconBg: 'bg-chart-1/10',    iconColor: 'text-chart-1-text',  textColor: 'text-content-2' },
+  emerald: { tono: 'success', iconBg: 'bg-success/10', iconColor: 'text-success', textColor: 'text-success' },
+  cyan: { tono: 'success', iconBg: 'bg-chart-9/10',    iconColor: 'text-chart-9-text',   textColor: 'text-chart-9-text' },
+  amber: { tono: 'warning', iconBg: 'bg-warning/10',   iconColor: 'text-warning',  textColor: 'text-warning' },
+  violet: { tono: 'brand', iconBg: 'bg-chart-3/10',  iconColor: 'text-chart-3-text', textColor: 'text-chart-3-text' },
 };
 
 // `StaffStatCard` era el canónico `StatCard` con otro nombre: misma caja de
@@ -501,7 +501,7 @@ function StaffStatCard({ icon, label, value, active, onClick, color, loading, co
       icon={icon} iconBg={active ? 'bg-surface-card' : c.iconBg} iconCls={c.iconColor}
       label={label}
       value={loading ? '–' : value.toLocaleString()} valueCls={c.textColor}
-      active={active} activeBg={c.activeBg} inactiveBg={c.inactiveBg}
+      tono={c.tono} active={active}
       loading={loading} onClick={onClick} compacta={compacta}
     />
   );

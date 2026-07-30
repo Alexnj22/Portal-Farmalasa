@@ -128,8 +128,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Con pérdida',
             sub: 'precio < costo',
             count: perdidaCount,
-            activeBg: 'bg-danger/10 border-danger/40 shadow-red-100/80',
-            inactiveBg: 'bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10',
+            tono: 'danger',
             iconBg: filterMargin === 'perdida'
                 ? 'bg-surface-card'
                 : 'bg-danger/10',
@@ -144,8 +143,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             label: 'Margen bajo',
             sub: '< 15% en algún precio',
             count: bajoCount,
-            activeBg: 'bg-warning/10 border-warning/40 shadow-amber-100/80',
-            inactiveBg: 'bg-surface-card border-divider hover:border-warning/30 hover:bg-warning/10',
+            tono: 'warning',
             iconBg: filterMargin === 'bajo'
                 ? 'bg-surface-card'
                 : 'bg-warning/10',
@@ -156,11 +154,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
         },
     ];
 
-    // Nuevos card
-    const nuevosBg = filterNuevos
-        ? 'bg-success/10 border-success/50 shadow-md shadow-success/20 -translate-y-px'
-        : 'bg-surface-card border-border-card hover:border-success/30 hover:bg-success/10';
-
+    // El fondo de la tarjeta ya no se elige acá: lo pone `data-surface="card"` y
+    // el estado va por `tono`. Queda solo el color del ÍCONO, que sí es dato.
     const nuevosIconBg = filterNuevos
         ? 'bg-surface-card'
         : 'bg-success/10';
@@ -173,7 +168,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 en la fila convivía con otro radio y otro ancho. */}
             <StatCard
                 icon={Package} iconBg={statIconBg} iconCls="text-brand-text"
-                label="Productos activos"
+                label="Activos"
                 value={(productStats?.activos ?? 0).toLocaleString()} valueCls={statText}
                 sub={(productStats?.inactivos ?? 0) > 0
                     ? `${(productStats.inactivos).toLocaleString()} inactivos` : undefined}
@@ -184,23 +179,20 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                 a mano. `StatCard` ya la tenía, con la × al estar activa incluida. */}
             <StatCard
                 icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success-text"
-                label="Nuevos este mes"
-                sub={`agregados en ${new Date().toLocaleDateString('es-SV', { month: 'long' })}`}
+                label="Nuevos"                 sub={`agregados en ${new Date().toLocaleDateString('es-SV', { month: 'long' })}`}
                 value={productStatsLoading ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
                 valueCls="text-success-text"
-                active={filterNuevos} inactiveBg={nuevosBg}
-                activeBg={nuevosBg}
+                tono="brand" active={filterNuevos}
                 loading={productStatsLoading}
                 onClick={onFilterNuevos}
             />
 
             <StatCard
                 icon={History} iconBg={filterModificados ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning-text"
-                label="Modificados este mes" sub="precios o datos cambiados"
+                label="Modificados" sub="precios o datos cambiados"
                 value={modificadosLoading ? '–' : (modificadosStats?.count ?? 0).toLocaleString()}
                 valueCls={(modificadosStats?.count ?? 0) > 0 ? 'text-warning-text' : 'text-content-3'}
-                active={filterModificados}
-                activeBg="bg-warning/10 border-warning/40 shadow-md"
+                tono="warning" active={filterModificados}
                 loading={modificadosLoading}
                 onClick={onFilterModificados}
             />
@@ -215,8 +207,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                         icon={c.Icon} iconBg={c.iconBg} iconCls={c.iconColor}
                         label={c.label} sub={c.sub}
                         value={loading ? '–' : c.count.toLocaleString()} valueCls={c.countColor}
-                        active={active}
-                        activeBg={`${c.activeBg} shadow-md`} inactiveBg={c.inactiveBg}
+                        tono={c.tono} active={active}
                         loading={loading}
                         onClick={() => onFilter(c.id)}
                     />

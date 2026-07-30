@@ -256,8 +256,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         icon={AlertTriangle} iconBg={filterVencidos ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
                         label="Vencidos" sub="por fecha"
                         value={loading ? '–' : expiredTotal.toLocaleString()} valueCls="text-danger-text"
-                        active={filterVencidos}
-                        activeBg="bg-danger/10 border-danger/40 shadow-md"
+                        tono="danger" active={filterVencidos}
                         onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
                     />
 
@@ -265,8 +264,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         icon={CalendarClock} iconBg={filterSixMonths ? 'bg-surface-card' : 'bg-chart-4/10'} iconCls="text-chart-4-text"
                         label="Próx. a vencer" sub="en 6 meses"
                         value={loading ? '–' : sixMonthsTotal.toLocaleString()} valueCls="text-chart-4-text"
-                        active={filterSixMonths}
-                        activeBg="bg-chart-4/10 border-chart-4/40 shadow-md"
+                        tono="warning" active={filterSixMonths}
                         onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); setFilterAreaVenc(false); }}
                     />
 
@@ -275,8 +273,7 @@ export default function TabInventario({ searchTerm = '' }) {
                             icon={PackageX} iconBg={filterAreaVenc ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
                             label="Área vencidos" sub="ubicación bodega"
                             value={loading ? '–' : Object.keys(vencidosMap).length.toLocaleString()} valueCls="text-danger-text"
-                            active={filterAreaVenc}
-                            activeBg="bg-danger/10 border-danger/50 shadow-md"
+                            tono="danger" active={filterAreaVenc}
                             onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}
                         />
                     )}

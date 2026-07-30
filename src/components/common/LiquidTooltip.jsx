@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useId, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useId, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 /**
@@ -46,13 +46,28 @@ export default function LiquidTooltip({
     const show = useCallback(() => {
         if (!ref.current || !content) return;
         const r = ref.current.getBoundingClientRect();
-        const medio = variant === 'rich' ? 180 : 140;
-        const cx = Math.min(Math.max(r.left + r.width / 2, medio + 8), window.innerWidth - medio - 8);
         const cy = Math.min(Math.max(r.top + r.height / 2, 28), window.innerHeight - 28);
-        setPos({ cx, cy, top: r.top, bottom: r.bottom, left: r.left, right: r.right });
-    }, [content, variant]);
+        // `cx` va CENTRADO en el disparador, sin recortar todavía: el recorte
+        // necesita el ancho real del tooltip, y ese solo se sabe una vez montado.
+        setPos({ cx: r.left + r.width / 2, cy, top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+    }, [content]);
 
     const hide = useCallback(() => setPos(null), []);
+
+    // ── El recorte usa el ancho REAL, no uno supuesto (2026-07-30) ─────────
+    // Antes se recortaba contra un medio-ancho fijo —140px para el tooltip de
+    // texto, 180 para el rico— sin importar cuánto midiera de verdad. Un tooltip
+    // corto cerca del borde derecho se corría hacia adentro **más de 100px** y
+    // quedaba flotando lejos de su botón, con la flecha apuntando al aire: el
+    // usuario lo vio en el ojo de Ventas. El tooltip es `w-max`, así que su ancho
+    // depende del texto y no hay constante que lo represente.
+    const cuerpoRef = useRef(null);
+    useLayoutEffect(() => {
+        if (!pos || !cuerpoRef.current) return;
+        const medio = cuerpoRef.current.getBoundingClientRect().width / 2;
+        const limitado = Math.min(Math.max(pos.cx, medio + 8), window.innerWidth - medio - 8);
+        if (Math.abs(limitado - pos.cx) > 0.5) setPos(p => (p ? { ...p, cx: limitado } : p));
+    }, [pos]);
 
     // Escape cierra, y el scroll también: la posición se calcula una sola vez
     // al abrir, así que si la página se mueve el tooltip queda flotando lejos
@@ -102,7 +117,7 @@ export default function LiquidTooltip({
                     className="fixed z-toast pointer-events-none animate-in fade-in zoom-in-95 duration-150 ease-out"
                     style={estilo}>
 
-                    <div data-surface="tooltip"
+                    <div ref={cuerpoRef} data-surface="tooltip"
                         className={`w-max font-semibold leading-snug
                             ${variant === 'rich'
                                 ? 'px-4 py-3 max-w-[360px] text-body-sm'

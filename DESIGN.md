@@ -1856,6 +1856,13 @@ el disparador es la imagen misma y el resultado va a otro flujo.
 </LiquidTooltip>
 ```
 
+**El recorte contra el borde usa el ancho REAL** (2026-07-30). Antes se recortaba
+contra un medio-ancho fijo —140px el de texto, 180 el rico— sin importar cuánto
+midiera. Un tooltip corto cerca del borde derecho se corría hacia adentro más de
+100px y quedaba flotando lejos de su botón, con la flecha apuntando al aire. El
+cuerpo es `w-max`: su ancho depende del texto y ninguna constante lo representa,
+así que se mide ya montado (`useLayoutEffect`) y recién ahí se recorta.
+
 **El tooltip es oscuro en los cuatro temas** (decisión 1a, 2026-07-27). No es
 una superficie de la pantalla, es una nota flotando encima, y esa distancia
 visual es lo que deja leerla de un vistazo.
@@ -2584,6 +2591,40 @@ degradada: un botón sin rótulo mide `w-9` = 36px siempre.
 contenido —o sea a la píldora—, así que medirlo es un bucle: crece, se mide más
 grande, entra otra ranura, crece otra vez. Medido con el padre: la píldora
 quedaba clavada en 748px y 2 ranuras de 1280 a 2240px.
+
+#### Cuándo lleva color una tarjeta
+
+**Por defecto NO lleva.** Todas las tarjetas del portal comparten el mismo
+vidrio: `data-surface="card"`, siempre. Que una fila mezcle fondos hace que se
+lea como cinco componentes distintos en vez de una métrica repetida cinco veces.
+
+| pieza | ¿color? | por qué |
+|---|---|---|
+| el **número** (`valueCls`) | sí | rojo si es pérdida, verde si es meta: ahí el color ES el dato |
+| el **ícono** (`iconBg`+`iconCls`) | sí | identifica la categoría de un vistazo |
+| el **fondo** y el **borde** | **no** | solo el estado seleccionado, vía `tono` |
+
+`tono` marca la tarjeta SELECCIONADA y nada más. Se dibuja con `data-tono`
+(§5.1) — un anillo del color pegado al borde, no un relleno— y su paleta es
+cerrada: `brand`, `success`, `warning`, `danger`.
+
+**Se retiraron `activeBg` e `inactiveBg`**, que recibían clases sueltas de cada
+vista: 19 call sites, cada uno con su tinte de fondo y de hover. Y cuando una
+vista pasaba `inactiveBg` la tarjeta **perdía `data-surface`**, así que en la
+misma fila había tarjetas con vidrio y tarjetas casi transparentes.
+
+#### El rótulo: dos palabras, tres a lo sumo
+
+El rótulo nombra la métrica; el matiz va al `sub`. "Modificados este mes" en una
+tarjeta de 148px sale "Modificados e…", que no nombra nada — es `Modificados` +
+sub `precios o datos cambiados`.
+
+#### El número encoge antes que cortarse
+
+`$249,456.38` no entra a `text-title-sm` en 148px, y truncado queda `$249,4…`.
+El cuerpo baja a `text-body-lg` sobre 6 caracteres y a `text-body` sobre 9: el
+número se lee **entero** sin que la tarjeta cambie de ancho, que es lo que
+mantiene la fila pareja.
 
 #### `CarrilCards`
 

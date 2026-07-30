@@ -149,7 +149,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                 <>
                     {/* Summary cards */}
                     <CarrilCards ariaLabel="Métricas de pedidos">
-                        <StatCard icon={TrendingUp}   label="Pedidos con datos" value={totalPedidos} iconBg="bg-chart-1/10" iconCls="text-chart-1-text"    />
+                        <StatCard icon={TrendingUp}   label="Con datos" value={totalPedidos} iconBg="bg-chart-1/10" iconCls="text-chart-1-text"    />
                         <StatCard icon={Clock}        label="Prep. neto prom."  value={avgPrep} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"  sub="sin contar pausas" />
                         <StatCard icon={Truck}        label="Tránsito prom."    value={avgTransito} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"  />
                         <StatCard icon={PackageCheck} label="Recuento prom."    value={avgRecuento} iconBg="bg-chart-9/10" iconCls="text-chart-9-text"    />

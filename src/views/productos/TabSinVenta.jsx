@@ -45,8 +45,7 @@ const MODES = [
         sub:    'se venden pero sin parámetros',
         Icon:   AlertTriangle,
         rpc:    'get_products_sold_no_minmax',
-        activeBg:   'bg-warning/10 border-warning/40 shadow-warning/20 -translate-y-px',
-        inactiveBg: 'bg-surface-card border-divider hover:border-warning/30 hover:bg-warning/10',
+        tono: 'warning',
         numColor:   'text-warning',
         iconColor:  'text-warning',
     },
@@ -56,8 +55,7 @@ const MODES = [
         sub:    'stock físico sin venta 6m',
         Icon:   Archive,
         rpc:    'get_stagnant_inventory',
-        activeBg:   'bg-surface-card-hover border-divider shadow-slate-100/80 -translate-y-px',
-        inactiveBg: 'bg-surface-card border-divider hover:border-divider hover:bg-surface-card-hover',
+        tono: 'brand',
         numColor:   'text-content-2',
         iconColor:  'text-content-3',
     },
@@ -257,27 +255,27 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
 
     const CARDS = [
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
-          activeBg: 'bg-success/10 border-success/40 shadow-[var(--shadow-glow-success)] -translate-y-1',
+          tono: 'success',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
-          activeBg: 'bg-warning/10 border-warning/40 shadow-[var(--shadow-glow-warning)] -translate-y-1',
+          tono: 'warning',
           iconBgActive: 'bg-warning/10', iconColor: 'text-warning',
           numColor: n => n > 0 ? 'text-warning' : 'text-content-3' },
         { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
-          activeBg: 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4)] -translate-y-1',
+          tono: 'warning',
           iconBgActive: 'bg-chart-4/10', iconColor: 'text-chart-4-text',
           numColor: n => n > 0 ? 'text-chart-4-text' : 'text-content-3' },
         { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
-          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[var(--shadow-glow-chart-3-md)] -translate-y-1',
+          tono: 'brand',
           iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
           numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
-          activeBg: 'bg-surface-card-hover/80 border-divider shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
+          tono: 'brand',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-3',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
         { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
-          activeBg: 'bg-surface-card-hover/80 border-chart-8 shadow-[var(--shadow-glow-chart-8)] -translate-y-1',
+          tono: 'brand',
           iconBgActive: 'bg-surface-card-hover', iconColor: 'text-content-2',
           numColor: n => n > 0 ? 'text-content-2' : 'text-content-3' },
     ];
@@ -296,7 +294,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
                         label={c.label}
                         value={loading ? '–' : counts[c.id].toLocaleString()}
                         valueCls={c.numColor(counts[c.id])}
-                        active={active} activeBg={c.activeBg} inactiveBg={GLASS_CARD}
+                        tono={c.tono} active={active}
                         loading={loading}
                         onClick={() => onFilter(c.id)}
                     />
@@ -315,15 +313,15 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
 
     const CARDS = [
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
-          activeBg: 'bg-success/10 border-success/40 shadow-[var(--shadow-glow-success)] -translate-y-1',
+          tono: 'success',
           iconBgActive: 'bg-success/10', iconColor: 'text-success',
           numColor: n => n > 0 ? 'text-success' : 'text-content-3' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
-          activeBg: 'bg-chart-3/10 border-chart-3/40 shadow-[var(--shadow-glow-chart-3)] -translate-y-1',
+          tono: 'brand',
           iconBgActive: 'bg-chart-3/10', iconColor: 'text-chart-3-text',
           numColor: n => n > 0 ? 'text-chart-3-text' : 'text-content-3' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
-          activeBg: 'bg-danger/10 border-danger/40 shadow-[var(--shadow-glow-danger)] -translate-y-1',
+          tono: 'danger',
           iconBgActive: 'bg-danger/10', iconColor: 'text-danger',
           numColor: n => n > 0 ? 'text-danger' : 'text-content-3' },
     ];
@@ -341,7 +339,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
                         label={c.label}
                         value={loading ? '–' : counts[c.id].toLocaleString()}
                         valueCls={c.numColor(counts[c.id])}
-                        active={active} activeBg={c.activeBg} inactiveBg={GLASS_CARD}
+                        tono={c.tono} active={active}
                         loading={loading}
                         onClick={() => onFilter(c.id)}
                     />

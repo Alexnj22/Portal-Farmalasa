@@ -754,9 +754,9 @@ function TabDocumentos({
             {/* Cards contables (izquierda, se reparten el ancho) + pill de
                 fecha/descarga/sync (derecha, ancho fijo) — mismo patrón que
                 VentasView/StaffManagementView. */}
-            <div className={`flex items-stretch gap-3 flex-wrap ${showCards ? '' : 'justify-end'}`}>
+            <div className="flex items-center gap-3">
                 {showCards && (
-                <CarrilCards ariaLabel="Resumen de facturas">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de facturas">
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
                         sub={`${rows.length.toLocaleString()} documento${rows.length !== 1 ? 's' : ''}`}
@@ -764,7 +764,7 @@ function TabDocumentos({
                         loading={loading}
                     />
                     <StatCard
-                        icon={Receipt} label="Crédito Fiscal IVA" value={fmt$(cardStats.creditoFiscal)}
+                        icon={Receipt} label="Crédito IVA" value={fmt$(cardStats.creditoFiscal)}
                         sub="excluye invalidados"
                         iconBg="bg-success/10" iconCls="text-success" valueCls="text-success-text"
                         loading={loading}
@@ -779,22 +779,21 @@ function TabDocumentos({
                         icon={XCircle} label="Invalidados" value={cardStats.invalidadosCount}
                         sub={cardStats.invalidadosCount > 0 ? fmt$(cardStats.invalidadosMonto) : 'sin invalidados'}
                         iconBg="bg-danger/10" iconCls="text-danger" valueCls="text-danger-text"
-                        activeBg="bg-danger/10 border-danger/40 shadow-md"
                         onClick={cardStats.invalidadosCount > 0 ? () => setFilterInvalidados(v => !v) : undefined}
-                        active={filterInvalidados}
+                        tono="danger" active={filterInvalidados}
                         loading={loading}
                     />
                     <StatCard
                         icon={UserX} label="Sin Proveedor" value={cardStats.sinProveedorCount}
                         sub="pendiente de emparejar"
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
-                        activeBg="bg-warning/10 border-warning/40 shadow-md"
                         onClick={cardStats.sinProveedorCount > 0 ? () => setFilterSinProveedor(v => !v) : undefined}
-                        active={filterSinProveedor}
+                        tono="warning" active={filterSinProveedor}
                         loading={loading}
                     />
                 </CarrilCards>
                 )}
+                {!showCards && <div className="flex-1" />}
 
             {/* §17 — la barra FILTRA; las acciones van fuera de ella.
                 Acá estaban las dos adentro ("Descargar" y "Sincronizar"), así

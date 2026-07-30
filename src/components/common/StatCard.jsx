@@ -51,9 +51,30 @@ import { Loader2, X } from 'lucide-react';
  *   sub        (string, opcional)       -- texto terciario; altura SIEMPRE reservada
  *   active     (boolean)               -- estado seleccionado
  *   onClick    (fn, opcional)           -- si se pasa: card clickable con hover lift
- *   activeBg   (string)                 -- clases de fondo activo
- *   inactiveBg (string)                 -- clases de fondo inactivo
+ *   tono       ('brand'|'success'|'warning'|'danger') -- ver la regla de abajo
  *   loading    (boolean)               -- muestra skeleton en numero y label
+ *
+ * ── CUÁNDO se le pone color a una tarjeta (2026-07-30) ────────────────────
+ * **Por defecto NO se le pone.** Todas las tarjetas del portal comparten el
+ * mismo vidrio: `data-surface="card"`, siempre, sin excepción. Que una fila
+ * mezcle fondos distintos no comunica nada — hace que la fila se lea como cinco
+ * componentes distintos en vez de una sola métrica repetida.
+ *
+ * Lo que SÍ lleva color, porque ahí el color es el dato:
+ *
+ *   · el NÚMERO (`valueCls`) — rojo si es una pérdida, verde si es una meta
+ *   · el ÍCONO (`iconBg` + `iconCls`) — identifica la categoría de un vistazo
+ *
+ * Lo que NO: el fondo y el borde de la tarjeta. Para eso está `tono`, que marca
+ * el estado SELECCIONADO y nada más — se dibuja con `data-tono` (index.css), o
+ * sea un anillo del color pegado al borde, no un relleno. La paleta es cerrada:
+ * `brand`, `success`, `warning`, `danger`.
+ *
+ * Antes existían `activeBg` e `inactiveBg`, que recibían clases sueltas de cada
+ * vista: 19 call sites, cada uno con su propio tinte de fondo y de hover. Y
+ * cuando una vista pasaba `inactiveBg`, la tarjeta **perdía `data-surface`** —
+ * por eso en la misma fila había tarjetas con vidrio y tarjetas casi
+ * transparentes, que es lo que el usuario reportó. Las dos props se retiraron.
  */
 export default function StatCard({
     icon: Icon,
@@ -65,12 +86,8 @@ export default function StatCard({
     sub,
     active     = false,
     onClick,
-    activeBg   = 'bg-brand/5 border-brand/30 shadow-md',
-    // Sin override: data-surface="card" (reactivo por tema). Con override
-    // (4 call sites con tinte de hover propio, ej. TabReglas.jsx), se
-    // respeta la clase pasada tal cual — data-surface no se añade porque
-    // ganaría por cascade layers y taparía ese tinte custom.
-    inactiveBg,
+    // El color del estado SELECCIONADO. Ver la regla del encabezado.
+    tono       = 'brand',
     loading    = false,
     // `className` y `style` existen por el stagger de entrada de TabSinVenta:
     // sus tarjetas escalonan la aparición con `animationDelay`. Sin esto la
@@ -82,9 +99,6 @@ export default function StatCard({
 }) {
     const isClickable = !!onClick;
     const Tag = isClickable ? 'button' : 'div';
-    const hasCustomInactiveBg = inactiveBg !== undefined;
-
-    const colorCls = active ? `${activeBg} -translate-y-px` : (inactiveBg ?? '');
 
     // Hover solo en clickable. Nota: el scope @media (hover:hover) es
     // trabajo transversal pendiente (B2); las clases hover: de Tailwind
@@ -104,14 +118,20 @@ export default function StatCard({
             aria-label={loading ? `${label}: cargando` : `${label}: ${value ?? 0}${sub ? `, ${sub}` : ''}`}
             aria-busy={loading || undefined}
             disabled={isClickable && loading ? true : undefined}
-            {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
+            // `data-surface` SIEMPRE. Antes se le quitaba a la tarjeta activa y a
+            // la que traía fondo propio, y ahí perdía el vidrio del tema: en la
+            // misma fila convivían tarjetas con `backdrop-filter` y tarjetas
+            // planas. El estado va por `data-tono`, que es un anillo sobre el
+            // MISMO material, no otro material.
+            data-surface="card"
+            data-tono={active ? tono : undefined}
             className={`
                 basis-[148px] grow shrink-0 min-w-0 max-w-[200px] h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-card border
                 transition-[box-shadow,border-color,background-color,transform] duration-200
                 ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
-                ${colorCls}
+                ${active ? '-translate-y-px' : ''}
                 ${hoverCls}
                 ${className}
             `.replace(/\s+/g, ' ').trim()}
@@ -153,7 +173,15 @@ export default function StatCard({
                     // número SE SALÍA de la tarjeta y se montaba sobre la de al
                     // lado. Contenido y cortado se lee mal; desbordado rompe la
                     // fila. Con 200px de máximo el corte es el caso raro.
-                    : <span className={`block truncate text-title-sm font-black tabular-nums leading-none ${valueCls}`}>
+                    // ── El cuerpo del número se adapta a su largo ──────────
+                    // `$249,417.30` no entra en 148px a `text-title-sm`, y
+                    // truncado queda `$249,4…`, que no dice nada. Encoger la
+                    // tipografía lo deja LEGIBLE y entero sin tocar el ancho de
+                    // la tarjeta, que es lo que mantiene la fila pareja.
+                    : <span className={`block truncate tabular-nums font-black leading-none ${
+                        String(value ?? '').length > 9 ? 'text-body'
+                        : String(value ?? '').length > 6 ? 'text-body-lg'
+                        : 'text-title-sm'} ${valueCls}`}>
                         {value ?? 0}
                       </span>
                 }

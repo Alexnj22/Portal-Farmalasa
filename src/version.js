@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.256.0';
+export const APP_VERSION = '2.257.0';
+
+// v2.257.0 — las tarjetas, todas iguales; y el tooltip dejo de correrse.
+//
+// **La regla de color, escrita en el canonico.** Por defecto una tarjeta NO
+// lleva color: todas comparten `data-surface="card"`. Lo que si lleva color es
+// el NUMERO y el ICONO —ahi el color ES el dato—; el fondo y el borde no. El
+// estado seleccionado va por `tono` (`data-tono`, paleta cerrada), que es un
+// anillo sobre el MISMO material y no otro material.
+//
+// Se retiraron `activeBg` e `inactiveBg`: **19 call sites**, cada uno con su
+// tinte propio. Y cuando una vista pasaba `inactiveBg` la tarjeta **perdia
+// `data-surface`** — por eso en la misma fila habia tarjetas con vidrio y
+// tarjetas casi transparentes, que es lo que el usuario reporto ("hay uno que no
+// tiene fondo", "lo veo mas transparente"). Medido despues: **un solo fondo por
+// fila** en Productos, Facturas de Compra, Personal y Ventas.
+//
+// **El numero encoge antes que cortarse.** `$249,456.38` salia `$249,4…`. El
+// cuerpo baja a `text-body-lg` sobre 6 caracteres y a `text-body` sobre 9: se lee
+// entero sin que la tarjeta cambie de ancho. Cero truncados medidos.
+//
+// **Rotulos de dos palabras.** "Modificados este mes" en 148px salia
+// "Modificados e…", que no nombra nada. El matiz baja al `sub`.
+//
+// **El tooltip se recortaba contra un ancho SUPUESTO.** 140px de medio-ancho para
+// el de texto, sin importar cuanto midiera de verdad. Uno corto cerca del borde
+// derecho se corria **mas de 100px** y quedaba con la flecha apuntando al aire.
+// Ahora se mide ya montado: desfase medido **0px**, 9px debajo del boton.
 
 // v2.256.0 — nada a mano: los ultimos bloques y el ultimo pill legacy, al canonico.
 //

@@ -211,8 +211,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 icon={Building2} iconBg={active ? 'bg-surface-card' : 'bg-chart-3/10'} iconCls="text-chart-3-text"
                                 label={name} sub="pedidos este mes"
                                 value={total} valueCls={active ? 'text-chart-3-text' : 'text-content-2'}
-                                active={active}
-                                activeBg="bg-chart-3/10 border-chart-3/40 shadow-md"
+                                tono="brand" active={active}
                                 onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
                             />
                         );

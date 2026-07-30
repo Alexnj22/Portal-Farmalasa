@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import StatCard from '../../components/common/StatCard';
+import CarrilCards from '../../components/common/CarrilCards';
 import { SkeletonText } from '../../components/common/StateViews';
 import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
@@ -64,25 +66,6 @@ const presStyle = (tipo) => {
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
-function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, activeBg, inactiveBg, loading, onClick }) {
-    const Tag = onClick ? 'button' : 'div';
-    return (
-        <Tag onClick={onClick} disabled={loading}
-            className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${active ? activeBg : inactiveBg}`}>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-                {loading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Icon size={15} className={iconCls} />}
-            </div>
-            <div className="text-left min-w-0">
-                <div className={`text-title-lg font-black leading-none tabular-nums ${countCls}`}>
-                    {loading ? <span className="text-content-3">–</span> : (value ?? 0).toLocaleString()}
-                </div>
-                <div className="text-caption font-bold leading-tight text-content-2">{label}</div>
-                {sub && <div className="text-micro text-content-3">{sub}</div>}
-            </div>
-            {active && onClick && <X size={11} className="text-content-3 ml-auto shrink-0" />}
-        </Tag>
-    );
-}
 
 // ── Panel edición — basado en presentaciones reales del producto ──────────────
 function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel, presCache }) {
@@ -590,7 +573,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
             {/* ── Stat cards + filtros ───────────────────────────────────────── */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-3 flex-wrap">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de reglas">
 
                     <div data-surface="card" className="flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
@@ -605,8 +588,8 @@ export default function TabReglas({ searchTerm = '' }) {
                     </div>
 
                     <StatCard label="Con regla" value={rulesCount}
-                        Icon={Check} iconBg={filterRule === 'con' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
-                        countCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
+                        icon={Check} iconBg={filterRule === 'con' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
+                        valueCls={rulesCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'con'}
                         activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
                         inactiveBg="bg-surface-card border-divider hover:border-success/30 hover:bg-success/10"
@@ -615,8 +598,8 @@ export default function TabReglas({ searchTerm = '' }) {
                     />
 
                     <StatCard label="Sin regla" value={sinRegla}
-                        Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger"
-                        countCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
+                        icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger"
+                        valueCls={sinRegla > 0 ? 'text-danger' : 'text-content-3'}
                         active={filterRule === 'sin'}
                         activeBg="bg-danger/10 border-danger/40 shadow-md shadow-danger/20 -translate-y-px"
                         inactiveBg="bg-surface-card border-divider hover:border-danger/30 hover:bg-danger/10"
@@ -625,15 +608,15 @@ export default function TabReglas({ searchTerm = '' }) {
                     />
 
                     <StatCard label="Nuevos este mes" sub={`agregados en ${mesActual}`} value={thisMonthCount}
-                        Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
-                        countCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
+                        icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"
+                        valueCls={thisMonthCount > 0 ? 'text-success' : 'text-content-3'}
                         active={filterRule === 'nuevo'}
                         activeBg="bg-success/10 border-success/40 shadow-md shadow-success/20 -translate-y-px"
                         inactiveBg="bg-surface-card border-divider hover:border-success/30 hover:bg-success/10"
                         loading={statsLoading}
                         onClick={() => setFilterRule(f => f === 'nuevo' ? '' : 'nuevo')}
                     />
-                </div>
+                </CarrilCards>
 
                 {/* Botón limpiar filtro regla */}
                 {filterRule && (

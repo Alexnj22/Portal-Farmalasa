@@ -93,7 +93,14 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 className="flex items-stretch gap-2 overflow-x-auto scroll-smooth
                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5"
             >
-                {tarjetas.map((t, i) => cloneElement(t, { key: t.key ?? i, compacta }))}
+                {/* `compacta` solo se le inyecta a COMPONENTES. Un hijo que sea un
+                    elemento del DOM —el divisor de Catálogo, por ejemplo— lo
+                    recibiría como atributo y React avisaría de una prop
+                    desconocida; y de paso no tiene detalle que esconder. */}
+                {tarjetas.map((t, i) =>
+                    typeof t.type === 'string'
+                        ? cloneElement(t, { key: t.key ?? i })
+                        : cloneElement(t, { key: t.key ?? i, compacta }))}
             </div>
 
             {/* Las flechas van por encima del borde, fuera del flujo. `-left-3`

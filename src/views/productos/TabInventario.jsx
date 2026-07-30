@@ -9,6 +9,7 @@ import {
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
 import StatCard from '../../components/common/StatCard';
+import CarrilCards from '../../components/common/CarrilCards';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { normSearch } from '../../utils/searchUtils';
@@ -239,7 +240,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
             {/* ── Stats + filter pill ── */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex items-center gap-3 flex-wrap">
+                <CarrilCards ariaLabel="Resumen de inventario">
 
                     <div data-surface="card" className="flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
@@ -295,7 +296,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         valueCls="text-success-text"
                     />
 
-                </div>
+                </CarrilCards>
 
                 {/* `ml-auto`: sin él la barra se queda pegada a la izquierda
                     cuando las tarjetas envuelven a otra línea (§17 la quiere a

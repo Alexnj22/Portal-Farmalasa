@@ -5,6 +5,7 @@ import Badge from '../components/common/Badge';
 import { SkeletonText } from '../components/common/StateViews';
 import { useSearchParams } from 'react-router-dom';
 import LiquidTooltip from '../components/common/LiquidTooltip';
+import CarrilCards from '../components/common/CarrilCards';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
@@ -221,12 +222,18 @@ function FilterControls({
 
 
 // Stat card with % change vs previous period + optional sub label
-function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active, blurred, conIva }) {
+// Esta tarjeta NO es el `StatCard` canónico: tiene tres cosas que aquél no
+// —el delta contra el período anterior, el desenfoque del modo privacidad y el
+// tooltip de IVA—, así que fusionarlas es un trabajo aparte. Lo que sí adopta son
+// las MEDIDAS canónicas (§17.0): 148 mínimo, 200 máximo, y el detalle cede cuando
+// el carril la deja angosta.
+function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active, blurred, conIva, compacta }) {
     const isFilter = !!onClick;
     const card = (
         <div
             {...clickable(onClick)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
+            className={`basis-[148px] grow shrink-0 min-w-0 max-w-[200px]
+                flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
                 ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-surface-card' : 'cursor-default bg-surface-card'}
                 ${active
                     ? 'border-warning ring-2 ring-warning/45 shadow-md bg-warning/10'
@@ -249,7 +256,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                         </span>
                     )}
                 </div>
-                {sub && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
+                {sub && !compacta && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
             {isFilter && !active && <ChevronDown size={11} className="text-warning-text ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-warning-text ml-0.5 shrink-0" />}
@@ -608,8 +615,8 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
-            <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-                <div className="flex items-stretch gap-2 flex-wrap flex-1 min-w-[312px]">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {loadingStats ? (
                     [120, 160, 140, 150].map(w => (
                         <div key={w} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-divider bg-surface-card">
@@ -634,7 +641,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: () => setFilterPuntos(v => !v), active: filterPuntos },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
-                </div>
+                </CarrilCards>
                 <div className="flex justify-end min-w-0">
                 <FilterControls
                     monthRange={monthRange} setMonthRange={setMonthRange}
@@ -1079,8 +1086,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
-            <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-                <div className="flex items-stretch gap-2 flex-wrap flex-1 min-w-[312px]">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const periodLabel = `${fmtShort(prevFini)}→${fmtShort(prevFfin)}`;
@@ -1094,7 +1101,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
-                </div>
+                </CarrilCards>
                 <div className="flex justify-end min-w-0"><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 
@@ -1799,8 +1806,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 a su derecha. `flex-1` en la columna de tarjetas empuja la píldora
                 al fondo; `min-w` es lo que evita que la columna se estruje tanto
                 que las tarjetas caigan de a una por fila (ver §17). */}
-            <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-                <div className="flex items-stretch gap-2 flex-wrap flex-1 min-w-[312px]">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de ventas">
                 {(() => {
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const curDaysP  = countDays(fini, ffin);
@@ -1819,7 +1826,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         ] : []),
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
-                </div>
+                </CarrilCards>
                 <div className="flex justify-end min-w-0"><FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} /></div>
             </div>
 

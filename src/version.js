@@ -16,7 +16,28 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.254.0';
+export const APP_VERSION = '2.255.0';
+
+// v2.255.0 — el canonico de medidas, aplicado a TODAS las vistas con tarjetas.
+//
+// Migradas al carril: Facturas de Compra, Productos·Inventario, Ventas (sus tres
+// pestanas), Pedidos·Metricas y Pedidos·Reglas. Ya lo estaban Personal, Conteo y
+// Productos·Catalogo.
+//
+// **Dos `StatCard` duplicados menos.** `TabReglas` tenia una copia con las MISMAS
+// props que el canonico (solo cambiaban `Icon`→`icon` y `countCls`→`valueCls`) y
+// `TabMetricas` otra con un eje `color` propio; las dos se reemplazaron por el
+// canonico. Queda una sola copia viva, la de Ventas, y no por descuido: tiene el
+// delta contra el periodo anterior, el desenfoque del modo privacidad y el
+// tooltip de IVA, que el canonico no tiene. Adopta las MEDIDAS (148/200 y el
+// detalle que cede) sin fusionarse — fusionarlas es un trabajo aparte.
+//
+// **Bug propio del carril:** `cloneElement` le inyectaba `compacta` a CUALQUIER
+// hijo, incluidos los que son elementos del DOM —el divisor de Catalogo—, y React
+// avisa de prop desconocida. Ahora solo se le pasa a componentes.
+//
+// Pendiente: `TabSinVenta`, cuya fila mezcla tarjetas, un divisor y fragmentos
+// condicionales; envolverla necesita mano y no un reemplazo mecanico.
 
 // v2.254.0 — el canonico de medidas, aprobado sobre mockup e implementado.
 //

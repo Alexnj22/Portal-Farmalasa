@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import StatCard from '../../components/common/StatCard';
+import CarrilCards from '../../components/common/CarrilCards';
 import Button from '../../components/common/Button';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
 import { supabase } from '../../supabaseClient';
@@ -34,29 +36,6 @@ function avg(arr) {
     const valid = arr.filter(v => v != null && v >= 0);
     if (!valid.length) return null;
     return Math.round(valid.reduce((s, v) => s + v, 0) / valid.length);
-}
-
-function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
-    const colors = {
-        blue:    'text-chart-1-text bg-chart-1/10 border-chart-1/30',
-        teal:    'text-chart-9-text bg-chart-9/10 border-chart-9/20',
-        indigo:  'text-chart-3-text bg-chart-3/10 border-chart-3/30',
-        amber:   'text-warning bg-warning/10 border-warning/30',
-        emerald: 'text-success bg-success/10 border-success/30',
-        violet:  'text-chart-3-text bg-chart-3/10 border-chart-3/20',
-    };
-    return (
-        <div className={`${GLASS} px-4 py-3 flex items-center gap-3`}>
-            <span className={`p-2 rounded-xl border ${colors[color]}`}>
-                <Icon size={16} />
-            </span>
-            <div>
-                <p className="text-label text-content-3">{label}</p>
-                <p className="text-title-sm font-bold text-content-2 leading-tight">{value}</p>
-                {sub && <p className="text-caption text-content-3">{sub}</p>}
-            </div>
-        </div>
-    );
 }
 
 export default function TabMetricas({ searchTerm = '' }) {
@@ -169,13 +148,13 @@ export default function TabMetricas({ searchTerm = '' }) {
             ) : (
                 <>
                     {/* Summary cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <StatCard icon={TrendingUp}   label="Pedidos con datos" value={totalPedidos}   color="blue"    />
-                        <StatCard icon={Clock}        label="Prep. neto prom."  value={avgPrep}        color="violet"  sub="sin contar pausas" />
-                        <StatCard icon={Truck}        label="Tránsito prom."    value={avgTransito}    color="indigo"  />
-                        <StatCard icon={PackageCheck} label="Recuento prom."    value={avgRecuento}    color="teal"    />
-                        <StatCard icon={Pause}        label="Pausa prom."       value={avgPausado}     color="amber"   sub={`${totalPausas} pausas totales`} />
-                    </div>
+                    <CarrilCards ariaLabel="Métricas de pedidos">
+                        <StatCard icon={TrendingUp}   label="Pedidos con datos" value={totalPedidos} iconBg="bg-chart-1/10" iconCls="text-chart-1-text"    />
+                        <StatCard icon={Clock}        label="Prep. neto prom."  value={avgPrep} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"  sub="sin contar pausas" />
+                        <StatCard icon={Truck}        label="Tránsito prom."    value={avgTransito} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"  />
+                        <StatCard icon={PackageCheck} label="Recuento prom."    value={avgRecuento} iconBg="bg-chart-9/10" iconCls="text-chart-9-text"    />
+                        <StatCard icon={Pause}        label="Pausa prom."       value={avgPausado} iconBg="bg-warning/10" iconCls="text-warning-text"   sub={`${totalPausas} pausas totales`} />
+                    </CarrilCards>
 
                     {/* Tabla por sucursal */}
                     <div className={GLASS}>

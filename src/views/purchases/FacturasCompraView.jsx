@@ -11,6 +11,7 @@ import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import StatCard from '../../components/common/StatCard';
+import CarrilCards from '../../components/common/CarrilCards';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import FilterBar from '../../components/common/FilterBar';
@@ -755,7 +756,7 @@ function TabDocumentos({
                 VentasView/StaffManagementView. */}
             <div className={`flex items-stretch gap-3 flex-wrap ${showCards ? '' : 'justify-end'}`}>
                 {showCards && (
-                <div className="flex items-stretch gap-3 flex-wrap">
+                <CarrilCards ariaLabel="Resumen de facturas">
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
                         sub={`${rows.length.toLocaleString()} documento${rows.length !== 1 ? 's' : ''}`}
@@ -792,7 +793,7 @@ function TabDocumentos({
                         active={filterSinProveedor}
                         loading={loading}
                     />
-                </div>
+                </CarrilCards>
                 )}
 
             {/* §17 — la barra FILTRA; las acciones van fuera de ella.

@@ -2,6 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
+import useMediaQuery from '../hooks/useMediaQuery';
 
 const GlassViewLayout = ({
     icon: Icon,
@@ -34,6 +35,25 @@ const GlassViewLayout = ({
     // data-surface="card" en index.css — verificado que gana la cascada
     // sobre cualquier clase Tailwind equivalente aquí (Fase T2).
     const bodyCardCls = transparentBody ? 'bg-transparent' : '';
+
+    // ── En teléfono la card del cuerpo NO va (2026-07-30) ──────────────────
+    // Medida la cadena de anchos en un iPhone de 320px: del viewport al primer
+    // texto se iban **92px (29%)** en cromo anidado, y la card del cuerpo era
+    // parte del problema por dos vías — su borde, y el `px-2` que la separa del
+    // borde de la pantalla. Encima envuelve contenido que casi siempre trae su
+    // propia card (las tarjetas por producto del conteo, los widgets del
+    // Inicio), o sea el doble borde y doble radio que este proyecto ya nombró
+    // "una isla dentro de otra isla".
+    //
+    // Con mouse la card sí sirve: delimita el área de trabajo dentro de una
+    // pantalla ancha. En un teléfono la pantalla ES el área de trabajo.
+    //
+    // `data-surface` es un atributo, no una clase, así que no se puede apagar
+    // con un breakpoint de Tailwind: la decisión pasa por el hook. Y tiene que
+    // ser `data-surface` ausente y no una clase que lo pise — el material de
+    // `data-surface` gana la cascada contra cualquier clase equivalente (T2).
+    const esMovil = useMediaQuery('(max-width: 767px)');
+    const cuerpoConCard = !transparentBody && !esMovil;
 
     const floatBtn = 'w-10 h-10 rounded-2xl flex items-center justify-center';
     const floatStyle = {
@@ -182,8 +202,8 @@ const GlassViewLayout = ({
                 )}
 
                 {/* Content body */}
-                <div className="px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
-                    <div data-surface={transparentBody ? undefined : 'card'}
+                <div className="px-0 md:px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+                    <div data-surface={cuerpoConCard ? 'card' : undefined}
                         className={`group/table flex flex-col lg:flex-1 ${bodyCardCls}`}>
                         {children}
                     </div>

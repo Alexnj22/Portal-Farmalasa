@@ -12,6 +12,67 @@ retomar; acá está todo.
 
 ---
 
+## v2.245.0 — en el teléfono, la card del cuerpo se comía el 29% del ancho.
+
+La pregunta fue "¿es necesaria la card contenedora en móvil?". Medida la cadena de
+anchos en un iPhone de 320px, del viewport al primer texto:
+
+```
+320px  −16px   shell externo (AppLayout)   px-2
+304px  −16px   cuerpo del layout            px-2
+288px  − 2px   card del cuerpo              ← borde
+286px  −32px   padding de la vista          p-4
+254px  −26px   tarjeta del producto         p-3
+       = 201px útiles de 320  ·  92px (29%) en cromo
+```
+
+**Cinco niveles de anidado para llegar a un nombre de producto.** Y la card del
+cuerpo envuelve contenido que casi siempre trae su propia card —las tarjetas por
+producto del conteo, los widgets del Inicio—, o sea el doble borde y doble radio
+que el proyecto ya llama "una isla dentro de otra isla".
+
+Con mouse esa card sí sirve: delimita el área de trabajo dentro de una pantalla
+ancha. **En un teléfono la pantalla ES el área de trabajo.**
+
+### Canónico, y solo para móvil
+
+Debajo de **768px** `GlassViewLayout` deja de dibujar la card del cuerpo y suelta
+su gutter horizontal. De 768 para arriba no cambia absolutamente nada — verificado
+en 1440 / 900 / 768 / 767: la card aparece y desaparece exactamente en el
+breakpoint, con el mismo fondo, borde y gutter que antes.
+
+Va en el layout y no en una vista porque el problema es del layout: son 37 vistas
+las que lo usan, y arreglarlo en una sola habría dejado el conteo a borde de
+pantalla mientras Productos y MIN·MAX siguen con doble card.
+
+`transparentBody` **no** servía para esto: solo quita el fondo, no el padding ni
+el borde. Y como `data-surface` es un atributo y no una clase, no se puede apagar
+con un breakpoint de Tailwind — la decisión pasa por `useMediaQuery`, y tiene que
+ser el atributo AUSENTE y no una clase que lo pise, porque el material de
+`data-surface` gana la cascada contra cualquier clase equivalente (T2).
+
+De paso, el `p-4` propio de la vista de conteo baja a `px-2` en teléfono: con la
+card del layout fuera, ese padding más los 8px de `AppLayout` era todo lo que
+separaba el contenido del borde, y 24px de aire dejaban las tarjetas flotando
+angostas.
+
+**Resultado: 92px → 58px. De 29% a 18% en un 320px**, y dos niveles de anidado
+menos.
+
+### Verificación
+
+Seis vistas en WebKit con perfil de iPhone a 390px (Inicio, Productos, MIN·MAX,
+Ventas, Conteo, Personal): cero desborde horizontal y **cero texto sin fondo
+opaco detrás** — o sea que ninguna dependía de la card del cuerpo para leerse.
+
+Anotado porque casi lo reporto mal: la primera corrida marcó **45 elementos sin
+fondo en Productos**, y era falso. Mi sonda subía solo 8 ancestros buscando un
+fondo opaco, y el anidado de esa tabla es más profundo: la card estaba, no la veía.
+Antes de reportar un hallazgo de contraste, verificar que el detector alcance la
+profundidad real del árbol.
+
+---
+
 ## v2.244.0 — el select de laboratorio en el teléfono no estaba chico: estaba mal.
 
 Reportado como "ese select no sale correctamente y no sale el listado". Medido en

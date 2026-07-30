@@ -872,6 +872,7 @@ Props:
 | `headerLeft` | JSX | Override for entire left slot |
 | `subContent` | JSX | Between header and body (charts, filter pills) |
 | `transparentBody` | boolean | Body card is transparent (DashboardView) |
+| — | — | **En teléfono (<768px) la card del cuerpo no se dibuja**, sin importar esta prop: ver la nota abajo |
 | `fixedScrollMode` | boolean | Disables y-scroll on container |
 
 ### Max widths
@@ -2394,6 +2395,25 @@ línea por línea contra el código actual el 2026-07-25:
 | `AlertModal` / `ConfirmModal` | Sin prop `theme`, sin `isDark` — 100% tokens (`text-danger`, `bg-brand`, `text-content-3`) |
 | `ViewTabBar` pill | Usa `data-surface="tab-track"`, mapeado a `--surface-tab-track` por tema en `index.css` |
 | `GlassViewLayout` body card | Ya usa `data-surface={transparentBody ? undefined : 'card'}` |
+
+**En teléfono la card del cuerpo no va (2026-07-30).** Medida la cadena de anchos
+en un iPhone de 320px, del viewport al primer texto se iban **92px (29%)** en
+cromo anidado: `px-2` del shell, `px-2` del cuerpo, el borde de la card, el
+padding de la vista y el de la tarjeta del contenido. Y esa card envuelve
+contenido que casi siempre trae su propia card —las tarjetas por producto del
+conteo, los widgets del Inicio—, o sea el doble borde y doble radio que este
+documento ya llama "una isla dentro de otra isla".
+
+Con mouse la card sí sirve: delimita el área de trabajo dentro de una pantalla
+ancha. **En un teléfono la pantalla ES el área de trabajo.** Debajo de 768px el
+cuerpo pierde la card y el gutter horizontal; de 768 para arriba no cambia nada
+(verificado en 1440/900/768/767).
+
+`data-surface` es un atributo, no una clase, así que no se apaga con un
+breakpoint de Tailwind: la decisión pasa por `useMediaQuery`. Y tiene que ser el
+atributo AUSENTE, no una clase que lo pise — el material de `data-surface` gana
+la cascada contra cualquier clase equivalente (T2).
+
 
 No queda ninguna acción pendiente de esta lista. Si aparece un blindspot
 real nuevo, documentarlo aquí con fecha — no reabrir esta tabla completa

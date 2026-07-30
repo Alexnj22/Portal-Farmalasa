@@ -1412,7 +1412,7 @@ export default function ConteoDetailView() {
 
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
-            <div className="p-4 md:p-6 lg:p-8 space-y-6">
+            <div className="px-2 py-4 md:p-6 lg:p-8 space-y-6">
                 {conteo && (
                     <div data-surface="card" className="p-4 md:p-5">
                         {/* Volver vive acá y no en una fila propia arriba: era un botón

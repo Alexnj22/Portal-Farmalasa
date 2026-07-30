@@ -39,6 +39,7 @@
 | campo de varias líneas | `PortalTextarea` | §29.2 |
 | desplegable | `LiquidSelect` | §14 · §15.13 |
 | desplegable de lista LARGA en táctil | `SelectorTactil` (lo abre `LiquidSelect` solo) | §14.1 |
+| controles de la vista en táctil | `BarraFlotante` | §17.3 |
 | fecha / rango | `LiquidDatePicker` · `RangeDatePicker` | §14 |
 | barra de vista con buscador | `ViewTabBar` | §24 |
 | vacío · esqueleto · cargando | `StateViews` | §18 |
@@ -2207,6 +2208,61 @@ aplicados.
 El divisor también tenía dos escrituras —`h-5 w-px bg-divider` y `w-px h-6
 bg-divider`— y por eso una auditoría por grep veía la mitad. Con `FilterBar` el
 divisor lo pone el contenedor y esa divergencia deja de ser posible.
+
+### 17.3 `BarraFlotante` — los controles al alcance del pulgar (solo táctil)
+
+`FilterBar` vive en el cuerpo de la vista, y en una pantalla de captura larga
+—el conteo son 2,500 renglones— eso significa que después de tres pantallas de
+scroll el filtro y el botón de agregar **dejaron de existir**. Con mouse no pasa:
+la píldora está a la vista junto con la tabla.
+
+Un clúster fijo abajo a la derecha con **buscador, acciones y la acción
+principal**, que se esconde al bajar y vuelve al subir. La vista le pasa
+`soloEscritorio` a su `FilterBar` para no tener dos accesos a los mismos filtros.
+
+```jsx
+<BarraFlotante
+    buscador={{ value: q, onChange: setQ, placeholder: 'Producto o lote' }}
+    acciones={[{ key: 'filtros', icon: SlidersHorizontal, label: 'Filtros',
+                 badge: filtrosActivos, tituloPanel: 'Filtrar', panel: <>…</> }]}
+    principal={{ icon: Plus, label: 'Agregar', onClick: abrir }}
+/>
+```
+
+**Elegida sobre cinco anatomías mockupeadas.** Gana por ser la más compacta (94px
+con rótulos, pegada a la derecha) y por lo tanto la que menos lista tapa. Dos
+reglas la sacan de ser el antipatrón de "tres íconos iguales":
+
+| | |
+|---|---|
+| **La principal se ve distinta** | Rellena y más grande. Crea algo; las otras ABREN algo. Dibujarlas iguales las hace leer como pares cuando una es la principal. |
+| **Los disclosures llevan su estado** | Un ícono dice dónde está el control, no qué está aplicado. El buscador se estira a campo con el término visible; las acciones llevan `Contador`. Sin esto la barra muestra la puerta y esconde el contenido. |
+
+**Los rótulos bajo el ícono aparecen solos cuando hay más de un botón** — con uno
+el ícono no compite con nada y el rótulo es ruido. Van debajo y no en un `title`:
+en táctil no hay hover, así que un `title` no existe.
+
+**El buscador se estira, no cambia de modo.** El campo crece en el lugar y los
+otros botones se quedan; la alternativa (una fila propia arriba) se descartó por
+lo mismo que otra variante: dos anatomías en la misma barra. Medido, el área de
+tecleo es **160px a 390px de viewport y 90px a 320px** — los 90 de un iPhone SE
+son ~6 caracteres, y es lo que da la física con tres controles rotulados. Alcanza
+porque es búsqueda incremental. Y el buscador **no** va en hoja: mientras se
+escribe hay que ver la lista filtrarse, o no se sabe cuándo parar de teclear. Los
+filtros sí, porque se aplican y se cierran.
+
+Tres cosas que costaron y conviene no re-descubrir:
+
+- **Portal al `body`, obligatorio.** Un `fixed` dentro de un ancestro con
+  `transform`, `filter` o `z-index` queda contenido por ese ancestro. El
+  comentario de la nav inferior de `AppLayout` ya lo decía: *"hermano directo del
+  root … el fixed anidado era lo que standalone no pintaba"*.
+- **El corte es 719px, el de `FilterBar`** — no `md` (768). Si divergen queda una
+  franja de 50px con las dos cosas visibles, o ninguna.
+- **`type="text"` con `inputMode="search"`, nunca `type="search"`:** WebKit le
+  dibuja al segundo su propia ✕ y salían **dos** botones de limpiar, el nativo
+  gris y el del portal. Es la regla cero-nativo — el cromo del navegador no se
+  estiliza, se evita.
 
 ### 17.1 `PeriodStepper` — correr el período
 

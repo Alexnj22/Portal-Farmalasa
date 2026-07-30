@@ -12,6 +12,74 @@ retomar; acá está todo.
 
 ---
 
+## v2.247.0 — `BarraFlotante`: los controles al alcance del pulgar, elegida sobre cinco anatomías.
+
+En el conteo los controles vivían arriba. Con mouse no molesta —la píldora de
+filtros está a la vista junto con la tabla— pero en un teléfono, después de tres
+pantallas de scroll sobre 2,500 renglones, **el filtro y el botón de agregar
+dejaron de existir**.
+
+### Se mockupearon cinco y se eligió una
+
+Un clúster fijo abajo a la derecha con buscador, filtros y la acción principal,
+que se esconde al bajar y vuelve al subir. Gana por ser la más compacta —**94px
+con rótulos**, pegada a la derecha— y por lo tanto la que menos lista tapa, que en
+una pantalla de captura es lo que más importa.
+
+Tres íconos iguales sí serían un antipatrón. Dos reglas lo evitan:
+
+| | |
+|---|---|
+| **La principal se ve distinta** | Rellena, más grande, círculo teal. Crea algo; las otras dos ABREN algo. Dibujarlas iguales las hace leer como pares cuando una es la principal. |
+| **Los disclosures llevan su estado** | Un ícono dice dónde está el control, no qué está aplicado — y "verlos siempre" era el pedido. El buscador se estira a campo con el término a la vista; los filtros llevan `Contador`. |
+
+Los **rótulos bajo el ícono** aparecen solos cuando hay más de un botón: con uno
+el ícono no compite con nada y el rótulo es ruido. Van debajo y no en un `title`,
+porque en táctil no hay hover y un `title` no existe.
+
+**El buscador se estira, no cambia de modo.** El campo crece en el lugar y los
+otros dos se quedan. La alternativa —una fila propia arriba— se descartó por lo
+mismo que otra de las cinco variantes: dos anatomías en la misma barra. Medido, el
+área de tecleo es **160px a 390 de viewport y 90px a 320**; los 90 de un iPhone SE
+son ~6 caracteres y es lo que da la física con tres controles rotulados. Alcanza
+porque es búsqueda incremental. Y el buscador **no** va en hoja: mientras se
+escribe hay que ver la lista filtrarse, o no se sabe cuándo parar de teclear. Los
+filtros sí, porque se aplican y se cierran.
+
+El buscador del header se apaga en teléfono (`showSearch={!compacto}`) y la
+`FilterBar` recibe **`soloEscritorio`**: dos accesos al mismo filtro, uno de ellos
+arriba y que se va con el scroll, es peor que uno bien puesto.
+
+### Tres defectos encontrados al medir, no al leer
+
+- **El “+” salía cuadrado.** Pedido explícito de círculo, y en tema solid
+  `--btn-radius` son 8px: un botón normal es un cuadrado redondeado. Necesita
+  `rounded-full` declarado.
+- **Había DOS botones de limpiar** en el buscador: el nativo gris de
+  `type="search"` (WebKit lo dibuja solo) y el del portal. Pasa a `type="text"` con
+  `inputMode="search"`, que conserva la tecla Buscar del teclado sin traer la
+  decoración. Es la regla cero-nativo: el cromo del navegador no se estiliza, se
+  evita.
+- **El rótulo “AGREGAR” se cortaba** contra el borde: es más ancho que sus 48px de
+  ícono. Cada botón pasa a ser una columna de 60px con el ícono centrado.
+
+Y una que el proyecto ya había aprendido y se respetó de entrada: **portal al
+`body`**. Un `fixed` dentro de un ancestro con `transform`, `filter` o `z-index`
+queda contenido por ese ancestro — el comentario de la nav inferior de `AppLayout`
+lo dice textual: *“hermano directo del root … el fixed anidado era lo que
+standalone no pintaba”*.
+
+### Verificación
+
+Contra el build de producción, en WebKit con perfil de iPhone a 320 y 390: barra
+en el `body` con capa 40, 94px, dentro del viewport y pegada a la derecha; tres
+botones con rótulo; el buscador se estira, filtra en vivo y **los otros dos siguen
+visibles**; la hoja de filtros abre con su título, el select de laboratorio y los
+cuatro estados en 2×2; se oculta al bajar y vuelve al subir. **Cero errores de
+consola.** En escritorio a 1440 no aparece y la `FilterBar` sigue en el cuerpo.
+
+---
+
 ## v2.246.0 — la lista de conteos, y un snippet del propio DESIGN.md que enseñaba la deuda 15 veces.
 
 ### La causa: el documento se contradecía

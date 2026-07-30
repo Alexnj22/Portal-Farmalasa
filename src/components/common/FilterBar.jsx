@@ -123,6 +123,11 @@ const FilterBar = memo(({
     // sabe qué cuenta como "aplicado" en su dominio.
     activeCount = 0,
     title = 'Filtros',
+    // `soloEscritorio`: la vista resuelve el móvil con `BarraFlotante`, así que
+    // acá no hay que dibujar el botón + hoja. Sin esto quedarían DOS accesos a
+    // los mismos filtros, y el de la píldora se va con el scroll — que es
+    // justamente lo que la barra flotante vino a arreglar.
+    soloEscritorio = false,
     className = '',
     ...rest
 }) => {
@@ -146,6 +151,8 @@ const FilterBar = memo(({
             window.removeEventListener('keydown', alTeclear);
         };
     }, [abierto]);
+
+    if (compacto && soloEscritorio) return null;
 
     // ── Móvil: botón + hoja inferior ──────────────────────────────────────
     if (compacto) {

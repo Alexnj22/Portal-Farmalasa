@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
     Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
-    FileSpreadsheet, Download,
+    FileSpreadsheet, Download, SlidersHorizontal,
 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -16,6 +16,7 @@ import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidModal from '../../components/common/LiquidModal';
+import ModalShell from '../../components/common/ModalShell';
 import PromptModal from '../../components/common/PromptModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -33,6 +34,7 @@ import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
+import BarraFlotante from '../../components/common/BarraFlotante';
 import Contador from '../../components/common/Contador';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
@@ -1400,6 +1402,56 @@ export default function ConteoDetailView() {
         ] : []),
     ];
 
+    // Una sola definición de los filtros para los dos sitios donde viven: en el
+    // cuerpo con mouse, dentro de la barra flotante con el pulgar.
+    const barraFiltros = (
+        <FilterBar activeCount={filtrosActivos} onClear={limpiarFiltros} soloEscritorio>
+            {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
+                sucursal, y cambiarla sería abrir otro conteo. */}
+            <FilterBar.Section
+                active={laboratorioId != null}
+                onClear={() => setLaboratorioId(null)}
+                label="laboratorio"
+            >
+                <div className="w-[190px]">
+                    <LiquidSelect
+                        value={laboratorioId == null ? null : String(laboratorioId)}
+                        onChange={(v) => setLaboratorioId(v == null ? null : Number(v))}
+                        options={labOpciones}
+                        placeholder="Laboratorio"
+                        ariaLabel="Filtrar por laboratorio"
+                        icon={FlaskConical}
+                        compact bare
+                    />
+                </div>
+            </FilterBar.Section>
+            {/* 4 · estado */}
+            <FilterBar.Section active={filtro !== 'TODOS'} onClear={() => setFiltro('TODOS')} label="estado">
+                <SegmentedControl
+                    label="Filtrar los renglones"
+                    size="sm"
+                    tone="chart-9"
+                    value={filtro}
+                    onChange={setFiltro}
+                    // En el teléfono el riel es `inline-flex` con opciones
+                    // `whitespace-nowrap`: las cuatro no caben y se salían de
+                    // la hoja de filtros arrastrando scroll horizontal. En
+                    // bloque a 2 columnas quedan 2×2, que es lo que el ancho
+                    // del pulgar permite leer.
+                    layout={compacto ? 'block' : 'inline'}
+                    columns={2}
+                    // Ni "con diferencia" ni "no ubicados" se ofrecen si el
+                    // conteo es ciego: la RPC los trata como TODOS, así que
+                    // serían controles que no controlan — y ofrecerlos ya
+                    // insinúa que hay algo ahí que mirar.
+                    options={FILTRO_PILLS
+                        .filter((f) => verSistema || !f.soloConSistema)
+                        .map((f) => ({ value: f.key, label: f.label }))}
+                />
+            </FilterBar.Section>
+        </FilterBar>
+    );
+
     // D3.9 (2026-07-27): barra reescrita a mano → canónico. Aquí era buscador
     // puro: 26 líneas para lo que el componente ya hace.
     const filtersContent = (
@@ -1407,12 +1459,16 @@ export default function ConteoDetailView() {
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar producto, laboratorio o lote..."
+            // En teléfono el buscador vive en la barra flotante, junto a los
+            // filtros: dos accesos al mismo buscador —uno de ellos arriba, que se
+            // va con el scroll— es peor que uno solo bien puesto.
+            showSearch={!compacto}
         />
     );
 
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
-            <div className="px-2 py-4 md:p-6 lg:p-8 space-y-6">
+            <div className="px-2 py-4 pb-28 md:p-6 md:pb-6 lg:p-8 space-y-6">
                 {conteo && (
                     <div data-surface="card" className="p-4 md:p-5">
                         {/* Volver vive acá y no en una fila propia arriba: era un botón
@@ -1531,56 +1587,15 @@ export default function ConteoDetailView() {
                             </span>
                         </label>
                     )}
-                    {editable && canEdit && (
-                        <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm((v) => !v)}>Agregar Producto/Lote</Button>
+                    {/* En teléfono este botón NO va acá: vive en la barra flotante,
+                        porque después de tres pantallas de scroll un botón que está
+                        arriba dejó de existir. */}
+                    {editable && canEdit && !compacto && (
+                        <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm(true)}>Agregar Producto/Lote</Button>
                     )}
                     </div>
 
-                    <FilterBar activeCount={filtrosActivos} onClear={limpiarFiltros}>
-                        {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
-                            sucursal, y cambiarla sería abrir otro conteo. */}
-                        <FilterBar.Section
-                            active={laboratorioId != null}
-                            onClear={() => setLaboratorioId(null)}
-                            label="laboratorio"
-                        >
-                            <div className="w-[190px]">
-                                <LiquidSelect
-                                    value={laboratorioId == null ? null : String(laboratorioId)}
-                                    onChange={(v) => setLaboratorioId(v == null ? null : Number(v))}
-                                    options={labOpciones}
-                                    placeholder="Laboratorio"
-                                    ariaLabel="Filtrar por laboratorio"
-                                    icon={FlaskConical}
-                                    compact bare
-                                />
-                            </div>
-                        </FilterBar.Section>
-                        {/* 4 · estado */}
-                        <FilterBar.Section active={filtro !== 'TODOS'} onClear={() => setFiltro('TODOS')} label="estado">
-                            <SegmentedControl
-                                label="Filtrar los renglones"
-                                size="sm"
-                                tone="chart-9"
-                                value={filtro}
-                                onChange={setFiltro}
-                                // En el teléfono el riel es `inline-flex` con opciones
-                                // `whitespace-nowrap`: las cuatro no caben y se salían de
-                                // la hoja de filtros arrastrando scroll horizontal. En
-                                // bloque a 2 columnas quedan 2×2, que es lo que el ancho
-                                // del pulgar permite leer.
-                                layout={compacto ? 'block' : 'inline'}
-                                columns={2}
-                                // Ni "con diferencia" ni "no ubicados" se ofrecen si el
-                                // conteo es ciego: la RPC los trata como TODOS, así que
-                                // serían controles que no controlan — y ofrecerlos ya
-                                // insinúa que hay algo ahí que mirar.
-                                options={FILTRO_PILLS
-                                    .filter((f) => verSistema || !f.soloConSistema)
-                                    .map((f) => ({ value: f.key, label: f.label }))}
-                            />
-                        </FilterBar.Section>
-                    </FilterBar>
+                    {!compacto && barraFiltros}
                 </div>
 
                 {!verSistema && (
@@ -1599,7 +1614,7 @@ export default function ConteoDetailView() {
                     </Notice>
                 )}
 
-                {showAddForm && editable && conteo && (
+                {showAddForm && editable && conteo && !compacto && (
                     <AddManualItemForm
                         branchId={conteo.branch_id}
                         onAdd={async (payload) => {
@@ -1684,6 +1699,95 @@ export default function ConteoDetailView() {
                     <TablePagination pageSize={PAGE_SIZE} onPageSizeChange={() => {}} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
                 )}
             </div>
+
+            {/* Teléfono: el clúster al alcance del pulgar. Buscador, filtros y la
+                acción principal — los tres con rótulo, porque son más de uno. */}
+            {conteo && (
+                <BarraFlotante
+                    ariaLabel="Buscar, filtrar y agregar en el conteo"
+                    buscador={{
+                        value: search,
+                        onChange: setSearch,
+                        placeholder: 'Producto, laboratorio o lote',
+                    }}
+                    acciones={[{
+                        key: 'filtros',
+                        icon: SlidersHorizontal,
+                        label: 'Filtros',
+                        tituloPanel: 'Filtrar el conteo',
+                        badge: filtrosActivos,
+                        panel: (
+                            <div className="flex flex-col gap-4">
+                                <div>
+                                    <span className="text-caption font-black uppercase tracking-widest text-content-3">Laboratorio</span>
+                                    <div className="mt-1.5">
+                                        <LiquidSelect
+                                            value={laboratorioId == null ? null : String(laboratorioId)}
+                                            onChange={(v) => setLaboratorioId(v == null ? null : Number(v))}
+                                            options={labOpciones}
+                                            placeholder="Todos los laboratorios"
+                                            ariaLabel="Filtrar por laboratorio"
+                                            icon={FlaskConical}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-caption font-black uppercase tracking-widest text-content-3">Estado del renglón</span>
+                                    <div className="mt-1.5">
+                                        <SegmentedControl
+                                            label="Filtrar los renglones"
+                                            tone="chart-9"
+                                            value={filtro}
+                                            onChange={setFiltro}
+                                            layout="block"
+                                            columns={2}
+                                            options={FILTRO_PILLS
+                                                .filter((f) => verSistema || !f.soloConSistema)
+                                                .map((f) => ({ value: f.key, label: f.label }))}
+                                        />
+                                    </div>
+                                </div>
+                                {filtrosActivos > 0 && (
+                                    <Button variant="secondary" icon={X} onClick={limpiarFiltros}>
+                                        Limpiar {filtrosActivos} filtro{filtrosActivos === 1 ? '' : 's'}
+                                    </Button>
+                                )}
+                            </div>
+                        ),
+                    }]}
+                    principal={editable && canEdit ? {
+                        icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true),
+                    } : null}
+                />
+            )}
+
+            {/* El alta en hoja inferior, el mismo material que la de filtros: en
+                teléfono el formulario inline empujaba la lista tres pantallas hacia
+                abajo y había que volver a subir para seguir contando. */}
+            {compacto && editable && conteo && (
+                <ModalShell
+                    open={showAddForm}
+                    onClose={() => setShowAddForm(false)}
+                    align="bottom"
+                    maxWidthClass="max-w-none"
+                    surface={null}
+                    ariaLabel="Agregar producto o lote al conteo"
+                >
+                    <div data-surface="modal" className="max-h-[88dvh] overflow-y-auto rounded-t-modal
+                        px-3 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
+                        <div aria-hidden="true" className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mb-3" />
+                        <AddManualItemForm
+                            branchId={conteo.branch_id}
+                            onAdd={async (payload) => {
+                                await agregarProductoManualConteo(id, payload);
+                                setShowAddForm(false);
+                                await load();
+                            }}
+                            onCancel={() => setShowAddForm(false)}
+                        />
+                    </div>
+                </ModalShell>
+            )}
 
             <PrintChooserModal
                 open={printChooserOpen}

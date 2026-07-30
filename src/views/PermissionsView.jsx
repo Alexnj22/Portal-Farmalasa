@@ -149,7 +149,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 {/* Header */}
                 <div className="flex items-start gap-3 mb-3.5">
                     <div data-surface={hasAnyPerm ? undefined : 'card'} className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${hasAnyPerm ? 'bg-gradient-to-br from-brand to-brand-purple text-white shadow-[var(--shadow-glow-brand)] scale-100' : 'text-content-3 scale-90'}`}>
-                        <ModIcon size={15} strokeWidth={1.8} />
+                        <ModIcon size={15} strokeWidth={2} />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -701,7 +701,7 @@ const PermissionsView = () => {
                                         {/* Icon + toggle row */}
                                         <div className="flex items-center justify-between">
                                             <div data-surface={isRoleSU ? undefined : 'card'} className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isRoleSU ? 'bg-gradient-to-br from-warning to-chart-4 shadow-[var(--shadow-glow-chart-4-md)] scale-100' : 'scale-90'}`}>
-                                                <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={1.8} />
+                                                <ShieldAlert size={15} className={isRoleSU ? 'text-white' : 'text-content-3'} strokeWidth={2} />
                                                 {isRoleSU && (
                                                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white shadow flex items-center justify-center">
                                                         <Sparkles size={8} className="text-warning" strokeWidth={2.5} />
@@ -760,7 +760,7 @@ const PermissionsView = () => {
                                 <div data-surface="card" className="p-4 md:col-span-2">
                                     <div className="flex items-center gap-3 mb-4">
                                         <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${activeOpt.grad} flex items-center justify-center flex-shrink-0 shadow-[var(--shadow-elevation-xl)] transition-all duration-300`}>
-                                            <ActiveIcon size={18} className="text-white" strokeWidth={1.8} />
+                                            <ActiveIcon size={18} className="text-white" strokeWidth={2} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-body font-black text-content leading-tight">Nivel de Precio Máximo</p>

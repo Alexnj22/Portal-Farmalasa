@@ -122,7 +122,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                                     <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
                                         isSelected ? 'bg-brand/10 border-brand/20 text-brand-text' : 'bg-surface-card-hover border-border-card text-content-3'
                                     }`}>
-                                        {Icon && <Icon size={16} strokeWidth={2.25} />}
+                                        {Icon && <Icon size={16} strokeWidth={2.5} />}
                                     </span>
                                     <span className="flex-1 min-w-0">
                                         <span className={`block text-body font-semibold truncate ${isSelected ? 'text-content' : 'text-content-2'}`}>

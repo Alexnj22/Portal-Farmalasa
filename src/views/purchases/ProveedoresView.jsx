@@ -416,7 +416,7 @@ export default function ProveedoresView({ openModal }) {
                             <DataCell>
                                 <div className="flex items-center gap-2 min-w-0">
                                     <div className="w-8 h-8 rounded-xl bg-surface-card-hover/80 border border-divider flex items-center justify-center shrink-0">
-                                        <Building2 size={14} className="text-content-3" strokeWidth={1.8} />
+                                        <Building2 size={14} className="text-content-3" strokeWidth={2} />
                                     </div>
                                     <div className="min-w-0 max-w-[168px]">
                                         <p className="text-body-sm font-bold text-content-2 truncate" title={row.nombre}>{row.nombre}</p>

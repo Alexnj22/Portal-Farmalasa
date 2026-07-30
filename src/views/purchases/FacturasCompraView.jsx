@@ -96,7 +96,7 @@ function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disa
             title={title || label}
             className={`flex flex-col items-center justify-center gap-0.5 w-14 h-12 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${ACTION_COLORS[color]}`}
         >
-            <Icon size={15} strokeWidth={2.25} />
+            <Icon size={15} strokeWidth={2.5} />
             <span className="text-micro font-bold uppercase tracking-wide leading-none text-center">{label}</span>
         </button>
     );

@@ -48,7 +48,7 @@ const NoAccessView = () => {
                     <span className="absolute inset-0 m-auto w-28 h-28 rounded-full bg-danger/15 animate-ping" style={{ animationDuration: '2.5s' }} />
                     <span className="absolute -inset-6 rounded-full bg-danger/10 animate-ping" style={{ animationDuration: '3.5s', animationDelay: '0.6s' }} />
                     <div className="relative w-28 h-28 rounded-header bg-surface-card border border-danger/30 shadow-[var(--shadow-glow-danger)] flex items-center justify-center">
-                        <ShieldOff size={48} className="text-danger" strokeWidth={1.2} />
+                        <ShieldOff size={48} className="text-danger" strokeWidth={1.5} />
                     </div>
                 </div>
 

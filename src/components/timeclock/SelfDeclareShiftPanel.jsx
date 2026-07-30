@@ -18,7 +18,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
 
                 <div className="flex flex-col items-center text-center mb-6">
                     <div className="inline-flex p-4 rounded-3xl mb-3 bg-warning/10 border border-warning/40 shadow-[var(--shadow-glow-warning-lg)]">
-                        <Clock size={42} className="text-warning drop-shadow-[var(--shadow-glow-warning)] sm:w-12 sm:h-12" strokeWidth={1.5} />
+                        <Clock size={40} className="text-warning drop-shadow-[var(--shadow-glow-warning)] sm:w-12 sm:h-12" strokeWidth={1.5} />
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5">
                         Declara tu Horario

@@ -223,7 +223,7 @@ const FileField = memo(({
                         <button type="button" onClick={ver} title="Ver archivo"
                             className="w-8 h-8 rounded-btn flex items-center justify-center text-content-3
                                 hover:text-brand-text hover:bg-surface-card-hover transition-colors duration-200">
-                            <Eye size={15} strokeWidth={2.25} />
+                            <Eye size={15} strokeWidth={2.5} />
                         </button>
                         {!disabled && (
                             <button type="button" onClick={limpiar} title="Quitar archivo"

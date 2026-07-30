@@ -16,7 +16,50 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.242.0';
+export const APP_VERSION = '2.243.0';
+
+// v2.243.0 — F4 de identidad: la rampa de iconos se habia medido MAL, y el trazo
+// tenia 14 valores contra un doc que declaraba uno.
+//
+// **El numero del doc estaba mal.** §12 decia "1,287 iconos, 33 tamanos". La
+// medicion contaba props `size` de componentes que NO son iconos:
+// `<VendorAvatar size={5}>` es una clave de escala (`5 → w-5 h-5`), no pixeles, y
+// `<PersonAvatar size={34}>` tampoco es un icono. De ahi salian los `5`, `30` y
+// `34` "fuera de rampa" que nunca existieron. Contando solo `lucide-react`:
+// **1,249 iconos, 24 tamanos**.
+//
+// (Bug propio en la medicion nueva, del mismo tipo: mi primer filtro solo aceptaba
+// `from 'lucide-react'` con comillas SIMPLES, y 4 archivos las usan dobles — asi
+// se me escaparon Clock, Building2 y Check como "no iconos".)
+//
+// **La rampa:** 8·9·10·11·12·13·14·15·16·18·20·22·24·26·28·32·36·40·48. Entran `9`
+// (61 usos) y `15` (55): la version anterior los excluia sin decir por que,
+// dejando 116 iconos reales fuera de una escala escrita el mismo dia. Sale `56`
+// (cero usos). Migrados: 17→16 y 42→40 (6, los paneles del kiosco).
+//
+// **El trazo va con el tamano, y el doc decia lo contrario.** §12 declaraba `1.5`
+// de reposo; en el tramo 15-20px el `2.5` gana **146 a 12**. Lo que si es un
+// sistema —optica, no gusto— es que el trazo se afina cuando el icono crece:
+//     interfaz 8-28px  → 2 · **2.5 default** · 3
+//     despliegue 29-48 → 1 · 1.5
+//     ilustracion ≥49  → lo que pida la caja
+// 28 sitios migrados al vecino de SU banda (1.8→2, 2.2→2, 2.25→2.5, 2.75→2.5,
+// 1.75→2, 1.2→1.5, 1.6→1.5). Los canonicos primero, que es donde mas pesa: Button,
+// ListRow, FileField y MenuSearchModal estaban en 2.25 y FilterBar y TabBarAction
+// en 2.75 — el peso optico del portal cambiaba segun que componente te tocara.
+//
+// **Arriba de 48px son DOS cosas, no una.** El doc decia "tres marcas de agua:
+// 100, 80, 64". Marcas de agua hay dos (FormWfmAnalytics 100 con `/15`,
+// EmployeeDetailView 80 con `opacity-10`); el 96 del kiosco, el 70 del wallboard y
+// el 64 de FormLeadership son iconos de DESPLIEGUE — el 64 es la ilustracion de
+// "Esperando candidato", con titulo y subtitulo, sin opacidad propia.
+//
+// Gates nuevos `icono-rampa` e `icono-stroke`, bloqueantes en cero (30
+// categorias). Dos excepciones con motivo: el `4` del Checkbox (un check de 2.5
+// dentro de una caja de 16px se pierde, y ese glifo ES el estado del control) y el
+// `0.5` de la marca de agua.
+//
+// Cuarta fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`.
 
 // v2.241.0 — F3 de identidad: los 50 `title=` sobre elementos no interactivos eran
 // CUATRO patrones, no uno. Y 22 puntos de estado que ningun lector de pantalla

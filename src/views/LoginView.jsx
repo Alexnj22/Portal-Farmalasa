@@ -390,11 +390,11 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                            'bg-surface-card border-border-card shadow-[var(--shadow-shine)]',
                     ].join(' ')}>
                         {st === 'reading' || isLoading
-                            ? <Loader2 size={compact?17:19} className="text-brand-text animate-spin" strokeWidth={2.2} />
+                            ? <Loader2 size={compact?17:19} className="text-brand-text animate-spin" strokeWidth={2} />
                             : st === 'success'
-                                ? <CheckCircle2 size={compact?17:19} className="text-success" strokeWidth={2.2} />
+                                ? <CheckCircle2 size={compact?17:19} className="text-success" strokeWidth={2} />
                                 : st === 'error'
-                                    ? <AlertCircle size={compact?17:19} className="text-danger" strokeWidth={2.2} />
+                                    ? <AlertCircle size={compact?17:19} className="text-danger" strokeWidth={2} />
                                     : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-content-3' : 'text-brand-text'} strokeWidth={2} />}
                         {active && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
@@ -559,7 +559,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 className="group w-full p-3 rounded-3xl bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-sm)]">
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors shadow-sm">
-                                        <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2.2} />
+                                        <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
                                     </div>
                                     <div className="text-left">
                                         <p className="text-caption font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>

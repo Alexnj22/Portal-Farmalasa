@@ -227,7 +227,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     {emp.photo || emp.photo_url
                         ? <img src={emp.photo || emp.photo_url} className="w-full h-full object-cover" alt="" />
                         : <div className="w-full h-full bg-gradient-to-br from-chart-8 to-chart-8-text flex items-center justify-center text-white">
-                            <User size={18} strokeWidth={1.8} />
+                            <User size={18} strokeWidth={2} />
                           </div>
                     }
                 </div>
@@ -307,7 +307,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     {/* Próximas vacaciones */}
                     {nextVacation && (
                         <div className="flex items-center gap-2.5 bg-success/10 border border-success/30 rounded-2xl px-4 py-3">
-                            <Palmtree size={14} className="text-success shrink-0" strokeWidth={1.8} />
+                            <Palmtree size={14} className="text-success shrink-0" strokeWidth={2} />
                             <div className="min-w-0">
                                 <p className="text-micro font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
                                 <p className="text-body-sm font-black text-success-text truncate">
@@ -361,7 +361,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                     return (
                                         <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : ''}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
-                                                <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={1.8} />
+                                                <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={2} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-body-sm font-black text-content-2 truncate">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>

@@ -311,7 +311,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: cat.accent, border: `1px solid ${cat.border}` }}>
-            <Icon size={13} style={{ color: cat.color }} strokeWidth={2.2} />
+            <Icon size={13} style={{ color: cat.color }} strokeWidth={2} />
           </div>
           <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
         </div>
@@ -1696,7 +1696,7 @@ const DashboardView = ({ openModal }) => {
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-brand/10 border border-brand/15 flex items-center justify-center">
-                  <Gift size={13} className="text-brand-text" strokeWidth={2.2}/>
+                  <Gift size={13} className="text-brand-text" strokeWidth={2}/>
                 </div>
                 <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
               </div>

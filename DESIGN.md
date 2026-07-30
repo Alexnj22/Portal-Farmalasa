@@ -983,35 +983,85 @@ Current files using framer-motion:
 
 **Library:** Lucide React v0.575.0 — sole icon library. No other sets.
 
-**Default props:**
-- Rest: `size={20}` `strokeWidth={1.5}`
-- Active/emphasized: `size={20}` `strokeWidth={2}`
-- Inline / compact: `size={16}` or `size={14}`
-- Badge / chip: `size={12}` or `size={10}`
+#### La rampa, medida de verdad (F4, 2026-07-29)
 
-#### La rampa real (medida 2026-07-29)
+La versión anterior de esta sección decía "se midieron 1,287 íconos y hay 33
+tamaños distintos". **Los dos números estaban mal**, y por el mismo motivo: la
+medición contaba props `size` de componentes que no son íconos.
+`<VendorAvatar size={5}>` es una clave de escala (`5 → w-5 h-5`), no píxeles, y
+`<PersonAvatar size={34}>` tampoco es un ícono. De ahí salían los `5`, `30` y `34`
+que figuraban como "fuera de rampa" y que nunca existieron.
 
-Lo de arriba son los **defaults**, no la escala. Durante mucho tiempo esta
-sección se leyó como si fuera la escala completa —cinco valores— y al medir los
-**1,287 íconos** del portal aparecieron **33 tamaños distintos**, con todo
-entero de 5 a 20 en uso: `13` sale 147 veces, `11` sale 89, `9` sale 61. O sea
-que el 48% quedaba "fuera de escala" contra una escala que nunca fue real.
-
-Un doc que describe algo que el código no hace no se arregla migrando 613
-íconos: se arregla diciendo la verdad. La rampa es ésta:
+Contando solo componentes importados de `lucide-react`: **1,249 íconos, 24
+tamaños**. La rampa es ésta:
 
 ```
-8 · 10 · 11 · 12 · 13 · 14 · 16 · 18 · 20 · 22 · 24 · 26 · 28 · 32 · 36 · 40 · 48 · 56
+8 · 9 · 10 · 11 · 12 · 13 · 14 · 15 · 16 · 18 · 20 · 22 · 24 · 26 · 28 · 32 · 36 · 40 · 48
 ```
 
-Fina abajo (donde un punto de diferencia se ve, porque el ícono compite con
-texto de 10-12px) y gruesa arriba (donde ya no). Elegir de ahí; si el tamaño que
-querés no está, casi siempre es que el de al lado sirve igual.
+Fina abajo —de 8 a 16 va de uno en uno, porque ahí el ícono compite con texto de
+10-12px y un punto de diferencia se ve— y gruesa arriba, donde ya no. `9` (61
+usos) y `15` (55) **entran**: la rampa anterior los excluía sin decir por qué,
+dejando 116 íconos reales fuera de una escala escrita el mismo día. `56` **sale**:
+cero usos, y una rampa que ofrece un valor que nadie eligió nunca es el mismo
+defecto que esta sección tenía.
 
-**Excepción: la marca de agua.** Un ícono decorativo de fondo —opacidad ≤15%,
-`pointer-events-none`, detrás del contenido— no es un ícono de interfaz y no
-sigue la rampa: es una textura, y su tamaño lo decide la caja que llena. Hoy son
-tres (`FormWfmAnalytics` 100, `EmployeeDetailView` 80, `FormLeadership` 64).
+Si el tamaño que querés no está, casi siempre es que el de al lado sirve igual.
+
+#### El trazo va con el tamaño
+
+`strokeWidth` tenía **14 valores distintos** (`1.2`, `1.6`, `1.75`, `1.8`, `2.2`,
+`2.25`, `2.75`…) y el doc declaraba `1.5` como el default de reposo. La medición
+dice lo contrario, y con claridad:
+
+| tamaño | trazos en uso | dominante |
+|---|---|---|
+| 8-14 | 1.5(2) · 2(57) · **2.5(197)** · 3(57) | `2.5` |
+| 15-20 | 1.5(12) · 2(31) · **2.5(146)** · 3(5) | `2.5` |
+| 21-28 | **1.5(14)** · 2(15) · 2.5(28) | transición |
+| 29-48 | 1(1) · **1.5(21)** · 2(16) | `1.5` |
+| ≥49 | 0.5 · 1 · 1.5 | fino |
+
+En el tramo 15-20px el `2.5` le gana al `1.5` **146 a 12**. O sea que el "default
+1.5" no describía nada. Lo que sí es un sistema —y es óptica, no gusto— es que
+**el trazo se afina cuando el ícono crece**: a 12px un trazo de 1.5 desaparece; a
+40px uno de 2.5 se ve tosco.
+
+La escala es cerrada, cinco valores:
+
+| Banda | Trazo | Para qué |
+|---|---|---|
+| **Interfaz** (8-28px) | `2` reposo · **`2.5` default** · `3` énfasis | el 90% de los íconos del portal |
+| **Despliegue** (29-48px) | `1` · `1.5` | estados vacíos, wallboard, pantallas de bloqueo |
+| **Ilustración** (≥49px) | lo que pida la caja | ver abajo |
+
+Dos excepciones, ambas con motivo y ambas en `EXCEPTIONS` del gate:
+
+- **`Checkbox` usa `4`.** Dentro de una caja de 16px un trazo de 2.5 se pierde, y
+  ese glifo *es* el estado del control: si no se ve, el checkbox no comunica nada.
+- **La marca de agua de `FormWfmAnalytics` usa `0.5`.** A 100px un trazo de la
+  escala se lee como un dibujo en vez de una textura.
+
+#### Arriba de 48px ya no es un ícono de interfaz
+
+A partir de 49px el tamaño lo decide la caja que llena, no la rampa. Son cinco en
+todo el portal, y la sección anterior los describía mal —decía "tres marcas de
+agua: 100, 80 y 64"—. Son **dos** cosas distintas:
+
+| | Qué es | Dónde |
+|---|---|---|
+| **Marca de agua** | Decorativa: opacidad ≤15%, `pointer-events-none`, detrás del contenido. Es una textura | `FormWfmAnalytics` 100 (`/15`) · `EmployeeDetailView` 80 (`opacity-10`) |
+| **Ícono de despliegue** | El protagonista de una pantalla o de un estado vacío. Se ve, no decora | `FeedbackOverlay` 96 (kiosco) · `AttendanceMonitorView` 70 (wallboard) · `FormLeadership` 64 (estado vacío) |
+
+El `64` de `FormLeadership` figuraba como marca de agua y no lo es: no tiene
+opacidad propia, es la ilustración de "Esperando candidato", con título y
+subtítulo debajo. Y el 96 y el 70 no estaban listados.
+
+**Defaults, ahora que la rampa es real:**
+- Interfaz suelto: `size={16}` `strokeWidth={2.5}`
+- Dentro de un botón o una fila: `size={14}` `strokeWidth={2.5}`
+- Badge / chip / contador: `size={10}` o `size={12}`, `strokeWidth={2.5}`
+- Estado vacío: `size={36}`–`48`, `strokeWidth={1.5}`
 
 **Icon squircle** (standard container for view/module icons):
 ```jsx

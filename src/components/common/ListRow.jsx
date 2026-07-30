@@ -142,7 +142,7 @@ const ListRow = memo(forwardRef(({
                     ${iconBoxClass ?? (onDark ? 'bg-white/10 border-white/[0.08]'
                         : (tone && TONO[tone] ? TONO[tone].caja : 'bg-surface-card-hover border-border-card'))}
                     ${onDark ? 'text-white/70' : (tone && TONO[tone] ? TONO[tone].icono : iconClass)}`}>
-                    {Icono ? <Icono size={d.icono} strokeWidth={2.25} /> : leading}
+                    {Icono ? <Icono size={d.icono} strokeWidth={2.5} /> : leading}
                 </span>
             )}
 

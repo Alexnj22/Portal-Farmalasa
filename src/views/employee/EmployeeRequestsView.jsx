@@ -200,7 +200,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>
-                    <TypeIcon size={16} strokeWidth={1.8} />
+                    <TypeIcon size={16} strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5 mb-0.5">

@@ -376,9 +376,9 @@ deuda de una vez; éste es la razón por la que podría haber más deuda invisib
 | F1 | Cifras: `formatMoney`/`formatQty`/`formatPct`/`formatMoneyCorto` + el bug del Dashboard | 2.237.0 | `formato-cifra` | **APLICADA** |
 | F2 | Voz: §26 + ~45 strings | 2.239.0 | `copy-vacio`, `copy-trato` | **APLICADA** |
 | F3 | Los 50 `title=` no interactivos | 2.241.0 | `tooltip-no-control` | **APLICADA** |
-| F4 | Rampa + trazo + marcas de agua | 2.242.0 | `icono-rampa`, `icono-stroke` | |
-| F5 | Mapa semántico de íconos | 2.243.0 | `icono-semantico` | |
-| F6 | Fuga de excepciones del gate | 2.244.0 | — (arregla el gate) | |
+| F4 | Rampa + trazo + marcas de agua | 2.243.0 | `icono-rampa`, `icono-stroke` | **APLICADA** |
+| F5 | Mapa semántico de íconos | 2.244.0 | `icono-semantico` | |
+| F6 | Fuga de excepciones del gate | 2.245.0 | — (arregla el gate) | |
 
 > Las versiones se corrieron una vez: el plan reservó 2.235.0–2.240.0, pero otra
 > sesión commiteó 2.235.0, 2.235.1 y 2.236.0 mientras F1 estaba en curso. **Este

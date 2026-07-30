@@ -23,7 +23,7 @@ const DocumentRow = ({ doc }) => {
         <div data-surface="card" className="flex items-center gap-3 p-3.5 transition-all duration-200">
             <div className="w-9 h-9 rounded-xl bg-surface-card-hover border border-border-card flex items-center justify-center shrink-0">
                 {/* eslint-disable-next-line react-hooks/static-components -- Icon selecciona entre 4 íconos ya importados (docIcon), no crea un componente nuevo */}
-                <Icon size={15} className="text-content-3" strokeWidth={1.8} />
+                <Icon size={15} className="text-content-3" strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-bold text-content truncate">{doc.title || doc.category}</p>

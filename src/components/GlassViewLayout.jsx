@@ -84,7 +84,7 @@ const GlassViewLayout = ({
                                     <div className="flex items-center gap-2.5">
                                         {Icon && (
                                             <div className="bg-gradient-to-tr from-brand to-brand-purple rounded-xl shadow-[var(--shadow-glow-brand)] p-2 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer">
-                                                <Icon className="text-white" size={17} strokeWidth={1.5} />
+                                                <Icon className="text-white" size={16} strokeWidth={1.5} />
                                                 {liveIndicator && (
                                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />

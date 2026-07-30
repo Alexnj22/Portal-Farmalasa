@@ -74,6 +74,97 @@ h-auto` en la hoja. Medido en WebKit a 320 y 390: dos ranuras (46px y 98px),
 
 ---
 
+## v2.243.0 — F4 de identidad: la rampa de íconos se había medido mal, y el trazo tenía 14 valores contra un doc que declaraba uno.
+
+Cuarta fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`.
+
+### El número del doc estaba mal
+
+§12 decía: "se midieron **1,287 íconos** y hay **33 tamaños** distintos". Los dos
+números estaban mal, y por el mismo motivo: la medición contaba props `size` de
+componentes que **no son íconos**. `<VendorAvatar size={5}>` es una clave de
+escala (`5 → w-5 h-5`), no píxeles; `<PersonAvatar size={34}>` tampoco es un
+ícono. De ahí salían los `5`, `30` y `34` que figuraban como "fuera de rampa" y
+que nunca existieron.
+
+Contando solo componentes importados de `lucide-react`: **1,249 íconos, 24
+tamaños**.
+
+Bug propio en la medición nueva, del mismo tipo y vale registrarlo: mi primer
+filtro solo aceptaba `from 'lucide-react'` con comillas **simples**, y 4 archivos
+las usan dobles — así se me escaparon `Clock`, `Building2` y `Check` como si no
+fueran íconos.
+
+### La rampa
+
+```
+8 · 9 · 10 · 11 · 12 · 13 · 14 · 15 · 16 · 18 · 20 · 22 · 24 · 26 · 28 · 32 · 36 · 40 · 48
+```
+
+Entran **`9`** (61 usos) y **`15`** (55): la versión anterior los excluía sin decir
+por qué, dejando 116 íconos reales fuera de una escala escrita el mismo día. Sale
+**`56`** — cero usos, y una rampa que ofrece un valor que nadie eligió nunca es
+exactamente el defecto que esta sección tenía. Migrados: `17`→16 y `42`→40 (6, los
+paneles del kiosco).
+
+### El trazo va con el tamaño, y el doc decía lo contrario
+
+`strokeWidth` tenía **14 valores distintos** (`1.2`, `1.6`, `1.75`, `1.8`, `2.2`,
+`2.25`, `2.75`…) contra un doc que declaraba `1.5` como el default de reposo. La
+medición lo desmiente:
+
+| tamaño | trazos en uso | dominante |
+|---|---|---|
+| 8-14 | 1.5(2) · 2(57) · **2.5(197)** · 3(57) | `2.5` |
+| 15-20 | 1.5(12) · 2(31) · **2.5(146)** · 3(5) | `2.5` |
+| 21-28 | **1.5(14)** · 2(15) · 2.5(28) | transición |
+| 29-48 | 1(1) · **1.5(21)** · 2(16) | `1.5` |
+
+En el tramo 15-20px el `2.5` le gana al `1.5` **146 a 12**. Lo que *sí* es un
+sistema —y es óptica, no gusto— es que **el trazo se afina cuando el ícono
+crece**: a 12px un trazo de 1.5 desaparece, a 40px uno de 2.5 se ve tosco. Escala
+cerrada por banda:
+
+| Banda | Trazo |
+|---|---|
+| **Interfaz** (8-28px) | `2` reposo · **`2.5` default** · `3` énfasis |
+| **Despliegue** (29-48px) | `1` · `1.5` |
+| **Ilustración** (≥49px) | lo que pida la caja |
+
+**28 sitios migrados al vecino de _su_ banda** (1.8→2, 2.2→2, 2.25→2.5, 2.75→2.5,
+1.75→2, 1.2→1.5, 1.6→1.5). Los canónicos primero, que es donde más pesa: `Button`,
+`ListRow`, `FileField` y `MenuSearchModal` estaban en `2.25`, y `FilterBar` y
+`TabBarAction` en `2.75` — **el peso óptico del portal cambiaba según qué
+componente te tocara**, y eso no era descuido de las vistas.
+
+### Arriba de 48px son dos cosas, no una
+
+El doc decía "tres marcas de agua: 100, 80 y 64". Marcas de agua hay **dos**
+(`FormWfmAnalytics` 100 con `text-[#F79009]/15`, `EmployeeDetailView` 80 con
+`opacity-10`). El `96` del kiosco, el `70` del wallboard y el `64` de
+`FormLeadership` son íconos de **despliegue**: se ven, no decoran. El `64` en
+particular es la ilustración de "Esperando candidato", con título y subtítulo
+debajo y sin opacidad propia — nunca fue una marca de agua, y el 96 y el 70 no
+estaban listados.
+
+### Gates
+
+**`icono-rampa`** e **`icono-stroke`**, bloqueantes en cero — **30 categorías**.
+Para saber si un `size={N}` es de un ícono, el gate lee el import de
+`lucide-react` del propio archivo (aceptando las dos comillas) y descuenta
+`ListRow`, `PersonAvatar` y `VendorAvatar`. Arriba de 48px no chequea la rampa: ahí
+el tamaño lo decide la caja.
+
+Dos excepciones con su motivo escrito:
+
+- **`Checkbox` usa `strokeWidth={4}`.** Dentro de una caja de 16px un trazo de 2.5
+  se pierde, y ese glifo *es* el estado del control: si no se ve, el checkbox no
+  comunica nada.
+- **La marca de agua de `FormWfmAnalytics` usa `0.5`.** A 100px un trazo de la
+  escala se lee como un dibujo en vez de una textura.
+
+`npm run gate:design` en verde, build y lint limpios.
+
 ## v2.241.0 — F3 de identidad: los 50 `title=` no interactivos eran **cuatro** patrones, y 22 puntos de estado que ningún lector de pantalla anunciaba.
 
 Tercera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. El plan decía: "los 50 son el

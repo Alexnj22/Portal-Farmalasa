@@ -248,7 +248,7 @@ const FilterBar = memo(({
                                 text-danger-text/70 bg-danger/10 ring-1 ring-inset ring-danger/25
                                 hover:bg-danger/20 hover:text-danger-text
                                 transition-[background-color,color] duration-200">
-                            <X size={15} strokeWidth={2.75} />
+                            <X size={15} strokeWidth={2.5} />
                         </button>
                     </div>
                 </>

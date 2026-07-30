@@ -106,7 +106,16 @@ const EXCEPTIONS = {
   // la primera en silencio. Lo verifica `assertSinClavesDuplicadas`.)
   'src/components/layout/MenuSearchModal.jsx': ['input-a-mano'],
   'src/views/branch-tabs/TabStaff.jsx': ['color', 'native'], // panel WFM dark + shimmer IA
-  'src/components/forms/FormWfmAnalytics.jsx': ['color'], // tooltip flotante dark
+  // `color`: tooltip flotante dark. `icono-stroke`: el `Sparkles size={100}
+  // strokeWidth={0.5}` es la marca de agua del panel (`text-[#F79009]/15`,
+  // `pointer-events-none`) — a 100px un trazo de la escala se ve como un dibujo,
+  // no como una textura. Es el mismo criterio con que §12 saca a las marcas de
+  // agua de la rampa de tamaños.
+  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke'],
+  // El check y el guion del Checkbox van a `strokeWidth={4}`: dentro de una caja
+  // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
+  // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
+  'src/components/common/Checkbox.jsx': ['icono-stroke'],
   'src/components/timeclock/IdleScanPanel.jsx': ['color'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
@@ -623,6 +632,36 @@ const VOSEO_RE = new RegExp(`(?<![${LETRA}])(${VOSEO.join('|')})(?![${LETRA}])`,
 const TAGS_INTERACTIVOS = new Set(['button','a','input','select','textarea','label','option','optgroup',
   // `title` en éstos es legítimo o requerido por accesibilidad
   'iframe','img','area']);
+
+// ── Categorías `icono-rampa` e `icono-stroke` (F4, DESIGN.md §12) ───────────
+// La rampa de §12 se escribió el 2026-07-29 a partir de una medición que contaba
+// **props `size` de componentes que no son íconos** — `<VendorAvatar size={5}>`
+// es una clave de escala (`5 → w-5 h-5`), no píxeles, y `<PersonAvatar size={34}>`
+// tampoco es un ícono. De ahí salían los "1,287 íconos / 33 tamaños". Contando
+// solo componentes de `lucide-react` son **1,249 y 24 tamaños**, y los `5`, `30`
+// y `34` que figuraban como fuera de rampa nunca existieron.
+//
+// Para saber si un `size={N}` es de un ícono se lee el import de `lucide-react`
+// del propio archivo. **Ojo con las comillas:** 4 archivos importan con comillas
+// dobles, y una regex que solo aceptaba simples los daba por no-íconos (así se me
+// escaparon `Clock`, `Building2`, `Check`… en la primera pasada).
+const LUCIDE_IMPORT_RE = /import\s*\{([^}]*)\}\s*from\s*['"]lucide-react['"]/gs;
+const NO_SON_ICONOS = new Set(['ListRow', 'PersonAvatar', 'VendorAvatar']);
+
+// La rampa: fina abajo (donde un punto se ve porque el ícono compite con texto de
+// 10-12px) y gruesa arriba. `9` y `15` entran porque son 116 usos reales en la
+// zona fina — la versión anterior los excluía sin decir por qué. `56` sale: cero
+// usos, y una rampa que ofrece un valor que nadie usa es el mismo defecto que
+// tenía el doc.
+const RAMPA_ICONO = new Set([8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,32,36,40,48]);
+// A partir de 49px ya no es un ícono de interfaz: es una ilustración o una marca
+// de agua, y su tamaño lo decide la caja que llena, no la rampa (§12).
+const ILUSTRACION_DESDE = 49;
+
+// El trazo: escala CERRADA de cinco. El doc declaraba `1.5` como default y la
+// medición dice lo contrario — en el tramo 15-20px el `2.5` gana **146 a 12**.
+// Lo que sí es un sistema: trazo fino para ícono grande. Ver §12.
+const STROKE_ESCALA = new Set(['1', '1.5', '2', '2.5', '3']);
 const MONEDA_A_MANO_RE = /\$\$\{[^}]*\.toFixed\(\s*[12]\s*\)/g;
 
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
@@ -1414,6 +1453,46 @@ function scanFile(path) {
       if (palabras <= 4 && TITLE_CASE_RE.test(texto)) {
         findings.push({ line: linea, label: `Title Case en una etiqueta: "${texto}" — sentence case (§26.4)`,
           category: 'copy-vacio', text: texto.slice(0, 110) });
+      }
+    }
+  }
+
+  if (!hasException(path, 'icono-rampa') || !hasException(path, 'icono-stroke')) {
+    // Nombres de íconos que este archivo importa de lucide-react
+    const deLucide = new Set();
+    LUCIDE_IMPORT_RE.lastIndex = 0;
+    let mi;
+    while ((mi = LUCIDE_IMPORT_RE.exec(text))) {
+      for (const parte of mi[1].split(',')) {
+        const n = parte.trim().split(/\s+as\s+/).pop()?.trim();
+        if (n) deLucide.add(n);
+      }
+    }
+    const esIcono = (comp) =>
+      !NO_SON_ICONOS.has(comp) &&
+      (deLucide.has(comp) || comp.includes('Icon') || comp.includes('icon') || comp.includes('.'));
+
+    for (const m of text.matchAll(/<([A-Za-z][A-Za-z0-9.]*)\b([^>]{0,400}?)\/?>/gs)) {
+      const [, comp, attrs] = m;
+      if (!esIcono(comp)) continue;
+      const linea = text.slice(0, m.index).split('\n').length;
+      if (isComment[linea - 1]) continue;
+
+      const talla = /size=\{(\d+)\}/.exec(attrs);
+      if (talla && !hasException(path, 'icono-rampa')) {
+        const n = Number(talla[1]);
+        if (n < ILUSTRACION_DESDE && !RAMPA_ICONO.has(n)) {
+          findings.push({ line: linea, label: `size={${n}} fuera de la rampa de §12 — elegí el vecino`,
+            category: 'icono-rampa', text: `<${comp} size={${n}}>` });
+        }
+      }
+      const trazo = /strokeWidth=\{([0-9.]+)\}/.exec(attrs);
+      if (trazo && !hasException(path, 'icono-stroke')) {
+        if (!STROKE_ESCALA.has(trazo[1])) {
+          findings.push({ line: linea,
+            label: `strokeWidth={${trazo[1]}} fuera de la escala 1 · 1.5 · 2 · 2.5 · 3 (§12)`,
+            category: 'icono-stroke', text: `<${comp} strokeWidth={${trazo[1]}}>` });
+        }
       }
     }
   }

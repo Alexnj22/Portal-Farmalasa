@@ -218,7 +218,7 @@ const Button = memo(({
             {loading ? (
                 <Loader2 size={ICON_PX[size] ?? 15} className="relative animate-spin" />
             ) : (
-                Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.25} className="relative" />
+                Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.5} className="relative" />
             )}
             {!iconOnly && <span className="relative">{children}</span>}
         </button>

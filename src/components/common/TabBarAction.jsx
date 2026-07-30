@@ -82,7 +82,7 @@ const TabBarAction = memo(({
             {/* En `quiet` el color vive solo acá: identifica la categoría sin
                 competir con la acción primaria. En `primary` el botón entero ya
                 es del color, así que el ícono va en blanco con el texto. */}
-            {Icon && <Icon size={14} strokeWidth={2.75}
+            {Icon && <Icon size={14} strokeWidth={2.5}
                 className={isPrimary ? '' : (TONE_ICON[tone] || TONE_ICON.brand)} />}
             {children && <span className="hidden sm:inline">{children}</span>}
         </Tag>

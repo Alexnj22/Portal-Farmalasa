@@ -111,7 +111,7 @@ const DocCard = ({ doc }) => {
             <div className="flex items-start gap-4 pl-3">
                 {/* Ícono */}
                 <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${cfg.iconBg} border ${cfg.border} shadow-sm`}>
-                    <DocIcon size={18} className={cfg.text} strokeWidth={1.8} />
+                    <DocIcon size={18} className={cfg.text} strokeWidth={2} />
                 </div>
 
                 {/* Contenido */}

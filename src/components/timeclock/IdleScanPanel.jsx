@@ -19,8 +19,8 @@ function ScanReadyRing({ specialMode }) {
         <div className={`absolute inset-0 rounded-full border ${ring} animate-[scanPulse_2.2s_cubic-bezier(0.4,0,0.6,1)_infinite]`} style={{ animationDelay: '1.1s' }} />
         <div className={`relative w-16 h-16 [@media(max-height:800px)]:w-10 [@media(max-height:800px)]:h-10 rounded-full border flex items-center justify-center ${core}`}>
           {specialMode
-            ? <ShieldAlert size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={1.75} />
-            : <ScanBarcode size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={1.75} />}
+            ? <ShieldAlert size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={2} />
+            : <ScanBarcode size={26} className={`${iconColor} [@media(max-height:800px)]:w-4 [@media(max-height:800px)]:h-4`} strokeWidth={2} />}
         </div>
       </div>
       <p className="text-body [@media(max-height:800px)]:text-label font-bold text-white/85 text-center">
@@ -51,8 +51,8 @@ export default function IdleScanPanel({
           <div className={`inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-300 border backdrop-blur-md group-hover/icon:scale-105 group-hover/icon:-translate-y-1 ${specialMode ? 'bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]' : 'bg-chart-1/10 border-chart-1/40 shadow-[var(--shadow-glow-chart-1-lg)] group-hover/icon:shadow-[var(--shadow-glow-chart-1-lg)]'
             }`}>
             {specialMode
-              ? <ShieldAlert size={42} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
-              : <ScanBarcode size={42} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />}
+              ? <ShieldAlert size={40} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
+              : <ScanBarcode size={40} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />}
           </div>
           <h1 className="text-2xl sm:text-4xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1 [@media(max-height:800px)]:mb-0.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
           <p className={`text-micro sm:text-xs [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>

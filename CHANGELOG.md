@@ -12,6 +12,80 @@ retomar; acá está todo.
 
 ---
 
+## v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard dejó de mostrar `$1234,56`.
+
+Primera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`, el plan que cierra las
+dimensiones que el gate de diseño no puede ver por construcción: la palabra, la
+cifra y el significado de un ícono. Esta fase es la cifra, y va primera porque
+era la única con un defecto de corrección en producción.
+
+**El defecto.** Seis lugares del Dashboard —incluidos los KPI "Monto cotizado" y
+"Facturado hoy"— formateaban con `toLocaleString('es')`, que da coma decimal y
+**sin** separador de miles: `$1234,56`. `EmployeeAnnouncementsView` usaba
+`es-VE`: `$1.234,56`. El resto del portal mostraba `$1,234.56`. El mismo monto
+con tres caras según la pantalla, y en la más vista con la convención equivocada
+para El Salvador.
+
+Las locales no son intercambiables, y conviene tenerlo escrito:
+
+```
+es-SV   1,234.56      ← la convención de El Salvador
+en-US   1,234.56
+es      1234,56       ← coma decimal, SIN separador de miles
+es-ES   1234,56
+es-VE   1.234,56      ← punto de miles + coma decimal
+```
+
+**El canónico.** `src/utils/formatNumber.js`, locale **fijo** `es-SV` — no se
+hereda del navegador, porque un navegador configurado en `es-ES` no debería
+cambiarle los separadores al ERP entero. Cuatro funciones: `formatMoney`,
+`formatQty` (con `decimalesMax` para las columnas que no quieren `.00`),
+`formatPct` y `formatMoneyCorto`. Nulo, `NaN` e `Infinity` → `—`, nunca `$NaN`,
+que antes era alcanzable.
+
+**Tres cosas que aparecieron migrando y no estaban en el plan:**
+
+1. `formatMoneyCorto` existía **dos veces y distinto**. `TabSinVenta` y
+   `tabminmax/helpers` tenían la misma escalera de abreviación copiada, pero a la
+   de `TabSinVenta` le faltaba el peldaño de los miles: $5,400 salía `$5.4k` en
+   MIN·MAX y `$5,400.00` en Sin Venta. Queda la escalera completa, en un solo
+   lugar.
+2. `svToday()` de `WidgetAnnulmentRequest` usaba
+   `toLocaleString('en-US')` reparseado con `new Date()`. Eso **no es formato**:
+   es leer el reloj en la zona de El Salvador, y funcionaba de casualidad — con
+   `es-SV` da `Invalid Date` (verificado). Pasa al idiom `en-CA` que el proyecto
+   ya usaba en `useTimeClockEngine.js`.
+3. El reloj del kiosco mostraba `03:30 PM` (`en-US`) contra el `p. m.` del resto
+   del portal.
+
+**El barrido de fechas:** 47 sitios en 18 archivos pasan a `es-SV`. Honestidad
+sobre su valor: con `hour12: true` explícito, `es-ES` renderiza **idéntico** a
+`es-SV`, así que este barrido es de consistencia y de hacer la regla exigible, no
+de corrección. Lo único visible era `es-VE`, que abrevia los meses con punto
+(`ene.`). Lo que sí elimina es una trampa real: `es-ES` cae a reloj de 24 h si
+alguien omite `hour12`.
+
+**Gate nuevo `formato-cifra`**, bloqueante en cero — 25 categorías. Penaliza un
+locale distinto de `es-SV` y la plantilla de moneda a mano
+`` `$${x.toFixed(2)}` ``. Un `toFixed()` a secas no se penaliza: redondear es
+cálculo, no formato.
+
+Dos decisiones del gate que vale la pena registrar:
+
+- **`en-CA` se excluye en el regex, no como excepción por archivo.**
+  `toLocaleDateString('en-CA')` es el idiom estándar para leer una fecha como
+  `YYYY-MM-DD` — es una clave de dato, no algo que el usuario vea. Lo usan
+  `AppLayout`, `systemSlice`, `useTimeClockEngine`, `FormNovedad` y
+  `WidgetAnnulmentRequest`; excepcionar esos 5 archivos habría apagado la
+  categoría entera en ellos, y un monto mal formateado ahí pasaría sin que nadie
+  lo vea. Es el mismo error que F6 va a arreglar en el par `color`/`hex`.
+- **Excepciones con motivo escrito:** la boleta y la planilla de `PayrollView`
+  (documentos legales que se imprimen, y la línea que arma el archivo de banco en
+  CSV, donde un separador de miles rompe la carga) y el PDF del conteo. La
+  pantalla de `PayrollView` sí pasa por `formatMoney`.
+
+`npm run gate:design` en verde, build y lint limpios.
+
 ## v2.235.0 — hook de pre-commit, y la regla de que este árbol es compartido.
 
 **El hook** vive en `.githooks/pre-commit` — versionado a propósito, porque

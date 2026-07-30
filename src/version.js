@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.236.0';
+export const APP_VERSION = '2.237.0';
+
+// v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard
+// dejo de mostrar `$1234,56`.
+//
+// El defecto real: seis lugares del Dashboard (incluidos los KPI "Monto cotizado"
+// y "Facturado hoy") formateaban con `toLocaleString('es')`, que da coma decimal
+// y SIN separador de miles → `$1234,56`. EmployeeAnnouncementsView usaba `es-VE`
+// → `$1.234,56`. El resto del portal mostraba `$1,234.56`. Mismo monto, tres
+// caras segun la pantalla.
+//
+// Nuevo canonico `src/utils/formatNumber.js` con locale FIJO `es-SV` (no se
+// hereda del navegador: un navegador en `es-ES` no deberia cambiarle los
+// separadores al ERP). Cuatro funciones: `formatMoney`, `formatQty`,
+// `formatPct`, `formatMoneyCorto`. Nulo → `—`, nunca `$NaN`.
+//
+// Lo que se encontro migrando, que no estaba en el plan:
+//  - `formatMoneyCorto` existia DOS veces y distinto: TabSinVenta y
+//    tabminmax/helpers tenian la misma escalera copiada, pero a la de
+//    TabSinVenta le faltaba el peldano de los miles. $5,400 salia `$5.4k` en
+//    MIN·MAX y `$5,400.00` en Sin Venta. Queda la escalera completa.
+//  - `svToday()` de WidgetAnnulmentRequest usaba `toLocaleString('en-US')`
+//    reparseado con `new Date()`. NO es formato: es leer el reloj en la zona de
+//    El Salvador, y funcionaba de casualidad (con `es-SV` da **Invalid Date**).
+//    Pasa al idiom `en-CA` que ya usaba `useTimeClockEngine.js`.
+//  - El reloj del kiosco mostraba `03:30 PM` (en-US) contra el `p. m.` del resto.
+//
+// 47 sitios de fecha en 18 archivos pasan a `es-SV`. Con `hour12: true` explicito
+// `es-ES` renderiza IGUAL que `es-SV`, asi que ese barrido es de consistencia, no
+// de correccion — lo que si elimina es la trampa de que `es-ES` cae a 24 h si
+// alguien omite `hour12`.
+//
+// Gate nuevo `formato-cifra`, bloqueante en cero (25 categorias). Penaliza locale
+// distinto de `es-SV` y la plantilla `` `$${x.toFixed(2)}` ``. `toFixed()` a secas
+// no: redondear es calculo, no formato. `en-CA` se excluye EN EL REGEX y no como
+// excepcion por archivo, para que la categoria siga viva en esos 5 archivos.
+// Excepciones con motivo: la boleta/planilla de PayrollView (documento legal + el
+// CSV del banco, donde un separador de miles rompe la carga) y el PDF del conteo.
+//
+// Primera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`.
 
 // v2.236.0 — prefetch del menú: la vista se carga al pasar el mouse, no al hacer clic.
 //

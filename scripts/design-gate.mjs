@@ -117,7 +117,10 @@ const EXCEPTIONS = {
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
   'src/views/CotizacionesView.jsx': ['color'],
   'src/views/pedidos/CrearRutaModal.jsx': ['color'], // marcadores Leaflet (L.divIcon HTML)
-  'src/views/PayrollView.jsx': ['color'], // plantilla de impresión (boleta HTML)
+  // La boleta y la planilla son documentos legales que se imprimen, y la línea
+  // 461 arma el archivo de banco (CSV): un separador de miles ahí rompe la
+  // carga. La pantalla de la vista SÍ pasa por `formatMoney` (el helper `fmt`).
+  'src/views/PayrollView.jsx': ['color', 'formato-cifra'],
   // Tooltips flotantes dark (DESIGN.md §6 — no siguen el tema activo por diseño)
   'src/components/forms/FormEditPayrollEntry.jsx': ['color'],
   'src/components/common/SidebarSyncStatus.jsx': ['color'],
@@ -164,7 +167,9 @@ const EXCEPTIONS = {
   // por eso nunca aparecieron. Son hex por naturaleza de la tecnología,
   // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
   'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
-  'src/utils/conteoInventarioPrint.js': ['hex'],  // pdfmake: docDefinition, no CSS
+  // pdfmake: docDefinition, no CSS. `formato-cifra`: el PDF del conteo tiene su
+  // propio `fmtMoney` porque va a papel, no a pantalla.
+  'src/utils/conteoInventarioPrint.js': ['hex', 'formato-cifra'],
   // <meta name="theme-color"> necesita un color SÓLIDO; --bg-page es un
   // gradiente, así que no se puede derivar del token con getComputedStyle.
   'src/context/ThemeContext.jsx': ['hex'],
@@ -532,6 +537,31 @@ const SCALE_TAP_RE = /active:scale-(90|95)\b/g;
 // parcial vía animate-spin), no un indicador — no se penaliza esa forma.
 const LEFT_BORDER_RE = /\bborder-l-[248]\b/g;
 const RIGHT_BORDER_RE = /\bborder-r(-[248])?\b/;
+
+// ── Categoría `formato-cifra` (F1 de PLAN-IDENTIDAD-2026-07-29) ─────────────
+// Toda cifra que ve el usuario pasa por `src/utils/formatNumber.js`
+// (`formatMoney` / `formatQty` / `formatPct`), con locale fijo `es-SV`.
+//
+// Al medirlo había 50 `toFixed(2)`, 15 combinaciones de opciones `Intl` y 4
+// locales en uso. Y las locales NO son equivalentes: `es`/`es-ES` dan coma
+// decimal (`1234,56`) y `es-VE` punto de miles (`1.234,56`), contra el
+// `1,234.56` de `es-SV`. El Dashboard mostraba `$1234,56` en seis lugares.
+//
+// Dos formas se penalizan:
+//   1. `toLocaleString`/`toLocaleDateString`/`toLocaleTimeString` con un locale
+//      que no sea `es-SV`.
+//   2. La plantilla de moneda a mano: `` `$${x.toFixed(2)}` ``.
+// `toFixed()` a secas NO se penaliza: redondear es cálculo, no formato.
+//
+// **`en-CA` está excluido a propósito, y no es una excepción por archivo.**
+// `toLocaleDateString('en-CA')` es el idiom estándar para LEER una fecha como
+// `YYYY-MM-DD` (opcionalmente en otra zona con `timeZone`) — es una clave de
+// dato, no algo que el usuario vea. Lo usan `AppLayout`, `systemSlice`,
+// `useTimeClockEngine`, `FormNovedad` y `WidgetAnnulmentRequest`. Excluirlo acá
+// en vez de excepcionar esos 5 archivos mantiene la categoría viva en ellos: si
+// mañana uno formatea un monto mal, el gate lo ve igual.
+const LOCALE_AJENO_RE = /toLocale(?:Date|Time)?String\(\s*['"](?!es-SV|en-CA)[a-z]{2}(?:-[A-Z]{2})?['"]/g;
+const MONEDA_A_MANO_RE = /\$\$\{[^}]*\.toFixed\(\s*[12]\s*\)/g;
 
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
 // completo en una sola línea) para no confundir código prohibido mencionado
@@ -1270,6 +1300,23 @@ function scanFile(path) {
       let m;
       while ((m = LEFT_BORDER_RE.exec(line))) {
         findings.push({ line: i + 1, label: `border-l decorativo: ${m[0]}`, category: 'left-border', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'formato-cifra')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      LOCALE_AJENO_RE.lastIndex = 0;
+      let m;
+      while ((m = LOCALE_AJENO_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `locale ajeno: ${m[0]} — el portal formatea en 'es-SV' vía utils/formatNumber`,
+          category: 'formato-cifra', text: line.trim().slice(0, 120) });
+      }
+      MONEDA_A_MANO_RE.lastIndex = 0;
+      while ((m = MONEDA_A_MANO_RE.exec(line))) {
+        findings.push({ line: i + 1, label: 'moneda a mano (`$${…toFixed(2)}`) — usar `formatMoney` (utils/formatNumber)',
+          category: 'formato-cifra', text: line.trim().slice(0, 120) });
       }
     });
   }

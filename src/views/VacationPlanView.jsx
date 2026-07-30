@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -926,10 +927,9 @@ const VacationPlanView = () => {
                             ) : (
                                 <>
                                 {isVacSearchFuzzy && searchTerm && (
-                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                                        Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
-                                    </div>
+                                    <Notice variant="warning" icon={Search} className="mb-3">
+                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                </Notice>
                                 )}
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[600px] text-body-sm">

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import RangeDatePicker from '../../components/common/RangeDatePicker';
@@ -462,10 +463,9 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     ) : (
                         <div className="relative z-base w-full pt-2">
                             {isHistorySearchFuzzy && searchQuery && (
-                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
-                                </div>
+                                <Notice variant="warning" icon={Search} className="mb-3">
+                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                </Notice>
                             )}
                             {groupedHistory.map((yearGroup) => {
                                 const isYearCollapsed = collapsedYears[yearGroup.year] || false;

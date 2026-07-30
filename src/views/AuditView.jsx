@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -379,10 +380,9 @@ const filtrosCuerpo = (
                 ) : null}
             >
                 {isLogSearchFuzzy && debouncedSearchTerm && (
-                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                        Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
-                    </div>
+                    <Notice variant="warning" icon={Search} className="mb-3">
+                    Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
+                </Notice>
                 )}
                 {paginatedLogs.map((log) => {
                     const foundPhoto = employeePhotoMap[log.user_id] || employeePhotoMap[log.target_id];

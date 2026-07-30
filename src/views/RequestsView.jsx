@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
+import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import TabBarAction from '../components/common/TabBarAction';
@@ -662,10 +663,9 @@ const RequestsView = () => {
                 ) : (
                     <>
                     {isReqSearchFuzzy && rawSearch.trim() && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                            Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
-                        </div>
+                        <Notice variant="warning" icon={Search} className="mb-3">
+                    Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
+                </Notice>
                     )}
                     {groupedByType.map(([type, cards]) => {
                         const TypeIcon  = TYPE_ICONS[type] || FileText;

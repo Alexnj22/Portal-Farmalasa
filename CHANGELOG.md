@@ -12,6 +12,65 @@ retomar; acá está todo.
 
 ---
 
+## v2.246.0 — la lista de conteos, y un snippet del propio DESIGN.md que enseñaba la deuda 15 veces.
+
+### La causa: el documento se contradecía
+
+`DESIGN.md` §15.6 dice que un aviso inline con ícono **es** `Notice`, y usa como
+ejemplo exactamente *"Resultados similares — no hubo coincidencias exactas"*.
+Pero §25, la sección del estándar de búsqueda, enseñaba ese mismo banner como un
+`<div>` a mano. **Ganó el snippet de §25: se copió en 15 vistas, ninguna usaba
+`Notice`.**
+
+Es el mismo modo de falla que el snippet de §16.2, que llegó a 9 copias. Un doc
+desactualizado no es un doc incompleto: es un doc que **enseña la deuda**.
+
+Y el snippet traía un error propio: `text-warning`, que es el color de RELLENO.
+Sobre `bg-warning/10` da **2.16:1** — falla AA. `Notice` usa `text-warning-text`
+(5.98:1). Curiosamente las 12 copias vivas escribieron `-text` por su cuenta: las
+vistas estaban mejor que el documento, y quien lo hubiera copiado tal cual habría
+publicado el fallo de contraste.
+
+Arreglado el snippet y migradas las 15 a `Notice`. Cuatro de ellas ya lo usaban.
+
+### La lista de conteos
+
+**§17 incumplido.** El filtro de sucursal vivía en `ViewTabBar.trailingActions`,
+y §17 es explícito: *"la barra de filtros va en el CUERPO de la vista, bajo el
+título. Nunca en el header"*. El comentario que estaba en su lugar citaba la
+regla del "toolbar de widget", que es otra cosa — precisamente la confusión que
+§17 documenta como la trampa de la prop mal nombrada `filtersContent`. Ahora es
+una `FilterBar` en el cuerpo, con sucursal y estado.
+
+**No decía nada agregado.** Cuatro `StatCard` arriba, y **tres de ellas son
+filtros**: la pregunta de esta pantalla no es "cuántos conteos hay" sino "cuál me
+está esperando". Un finalizado sin aprobar bloquea a alguien, y un **cerrado con
+diferencias y sin ajuste registrado es trabajo a medias** — la diferencia está
+medida y firmada pero el stock del ERP sigue mintiendo, y eso antes solo se veía
+fila por fila. La primera tarjeta (el total) NO es filtro y por eso no lleva
+`active`: con `active`, `StatCard` dibuja una × de "quitar este filtro", y quitar
+"todos" no significa nada.
+
+**En teléfono la tabla desbordaba 298px a 320** con solo 4 de sus 8 columnas
+visibles (medido). Pasa a una fila por conteo con `ListRow`, que es el canónico de
+esa anatomía exacta — caja al principio, contenido, algo al final —, con `tone`
+en peligro cuando falta el ajuste del ERP. Medido después: **0px de desborde** a
+320 y 390.
+
+**El vacío** gana subtítulo y acción, y distingue "no hay conteos" de "nada cae en
+este filtro", que necesitan salidas distintas: crear uno, o volver a "Todos".
+
+De paso: fuera el alias `fmtMoney = (n) => formatMoney(n)` y un comentario
+huérfano sobre el contrato del buscador toggleable, que esta vista no tiene.
+
+### Anotado, sin resolver
+
+Quedan **38 avisos escritos a mano** de otros tipos (`bg-warning/10 border
+border-warning/30` y familia) en el resto del portal. No son el banner fuzzy —
+son otra clase de aviso— y merecen su propia pasada con la misma regla.
+
+---
+
 ## v2.245.0 — en el teléfono, la card del cuerpo se comía el 29% del ancho.
 
 La pregunta fue "¿es necesaria la card contenedora en móvil?". Medida la cadena de

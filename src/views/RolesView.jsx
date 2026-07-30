@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Badge from '../components/common/Badge';
@@ -631,10 +632,9 @@ const RolesView = ({ openModal }) => {
                         <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-base">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
                                 {isRoleSearchFuzzy && searchQuery && (
-                                    <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                                        Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
-                                    </div>
+                                    <Notice variant="warning" icon={Search} className="mb-3">
+                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                </Notice>
                                 )}
                                 {filteredAndSortedRoles.map((role) => {
                                     const isRoot = !role.parent_role_id;

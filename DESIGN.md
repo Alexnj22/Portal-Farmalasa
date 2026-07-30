@@ -2577,13 +2577,28 @@ const { results, isFuzzy } = !searchTerm.trim()
 **Banner fuzzy estándar** — inmediatamente antes de la tabla/lista, cuando `isFuzzy && searchTerm`:
 ```jsx
 {isFuzzy && searchTerm && (
-    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl
-                    bg-warning/10 border border-warning/30 text-label text-warning font-semibold">
-        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+    <Notice variant="warning" icon={Search} className="mb-3">
         Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
-    </div>
+    </Notice>
 )}
 ```
+
+> **Corregido el 2026-07-30.** Esta sección enseñaba el banner como un `<div>` a
+> mano —`bg-warning/10 border border-warning/30 text-label text-warning
+> font-semibold`— mientras §15.6 dice que un aviso inline con ícono **es**
+> `Notice`, y usa esta misma frase como su ejemplo. El documento se contradecía, y
+> el snippet de acá ganó: se copió en **15 vistas**, ninguna usaba `Notice`. Es el
+> mismo modo de falla que el snippet de §16.2, que llegó a 9 copias — un doc
+> desactualizado no es un doc incompleto, es un doc que **enseña la deuda**.
+>
+> Y el snippet traía un error propio: `text-warning`, que es el color de RELLENO.
+> Sobre `bg-warning/10` da **2.16:1** — falla AA, que pide 4.5. `Notice` usa
+> `text-warning-text` (5.98:1), y su propio comentario documenta esa medición.
+> Curiosamente las 12 copias vivas escribieron `-text` por su cuenta: acá las
+> vistas estaban mejor que el documento, y quien lo hubiera copiado tal cual
+> habría publicado el fallo de contraste.
+>
+> Lo vigila la categoría **`aviso-a-mano`** del gate.
 
 ---
 

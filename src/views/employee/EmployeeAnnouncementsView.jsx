@@ -1,4 +1,5 @@
 import React, { useMemo, useState, memo, useRef, useCallback, useEffect } from 'react';
+import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -731,10 +732,9 @@ const EmployeeAnnouncementsView = () => {
                     /* ── Mazo interactivo para Sin Leer ── */
                     <>
                     {isAnnFuzzy && searchQuery && (
-                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                            Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
-                        </div>
+                        <Notice variant="warning" icon={Search} className="mb-3">
+                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                </Notice>
                     )}
                     {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">

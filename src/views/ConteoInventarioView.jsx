@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import TabBarAction from '../components/common/TabBarAction';
@@ -11,7 +12,13 @@ import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
-import { formatMoney } from '../utils/formatNumber';
+import FilterBar from '../components/common/FilterBar';
+import StatCard from '../components/common/StatCard';
+import ListRow from '../components/common/ListRow';
+import { SkeletonText } from '../components/common/StateViews';
+import SegmentedControl from '../components/common/SegmentedControl';
+import useMediaQuery from '../hooks/useMediaQuery';
+import { formatMoney, formatQty } from '../utils/formatNumber';
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
 // 'CERRADO'. Las claves bg/text/border tampoco: solo se usaba `variante`, que es
@@ -41,7 +48,6 @@ const fmtDate = (iso) => {
     const d = new Date(iso);
     return d.toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
 };
-const fmtMoney = (n) => formatMoney(n);
 
 export default function ConteoInventarioView() {
     const navigate = useNavigate();
@@ -61,6 +67,10 @@ export default function ConteoInventarioView() {
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [branchFilter, setBranchFilter] = useState(isBranchScoped ? String(user?.branchId || '') : '');
+    // Qué necesita atención. Es un filtro y no solo un rótulo: la pregunta real de
+    // esta pantalla no es "cuántos conteos hay" sino "cuál me está esperando".
+    const [foco, setFoco] = useState('TODOS');
+    const compacto = useMediaQuery('(max-width: 719px)');
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
@@ -71,16 +81,38 @@ export default function ConteoInventarioView() {
             .map((b) => ({ value: String(b.id), label: b.name }));
     }, [branches, conteos, isBranchScoped]);
 
-    // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
-    // cierra Y limpia; click afuera cierra SOLO si está vacío.
+    // Un conteo CERRADO con diferencias y sin ajuste registrado es trabajo a
+    // medias: la diferencia está medida y firmada, pero el stock del ERP sigue
+    // mintiendo. Antes solo se veía fila por fila.
+    const faltaAjuste = (c) => c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado;
 
-    const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
+    const resumen = useMemo(() => {
         const base = branchFilter
             ? (conteos || []).filter((c) => String(c.branch_id) === branchFilter)
-            : conteos;
+            : (conteos || []);
+        return {
+            total: base.length,
+            abiertos: base.filter((c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status)).length,
+            porAprobar: base.filter((c) => c.status === 'FINALIZADO').length,
+            sinAjuste: base.filter(faltaAjuste).length,
+        };
+    }, [conteos, branchFilter]);
+
+    const FOCOS = {
+        ABIERTOS: (c) => ['BORRADOR', 'EN_PROGRESO'].includes(c.status),
+        POR_APROBAR: (c) => c.status === 'FINALIZADO',
+        SIN_AJUSTE: faltaAjuste,
+    };
+
+    const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
+        let base = branchFilter
+            ? (conteos || []).filter((c) => String(c.branch_id) === branchFilter)
+            : (conteos || []);
+        if (FOCOS[foco]) base = base.filter(FOCOS[foco]);
         if (!search.trim()) return { results: base, isFuzzy: false };
         return smartFilter(search, base, (c) => [c.branches?.name]);
-    }, [conteos, search, branchFilter]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- FOCOS es un literal estable por render y no cambia el resultado
+    }, [conteos, search, branchFilter, foco]);
 
     // D3.9 (2026-07-27): barra reescrita a mano → canónico.
     const filtersContent = (
@@ -88,41 +120,166 @@ export default function ConteoInventarioView() {
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar por sucursal..."
-            trailingActions={(
-                <>
-                    {/* Los filtros van a la derecha, con el resto de las acciones
-                        (DESIGN.md — toolbar de widget). En táctil ViewTabBar los
-                        recoge solo en la hoja inferior. */}
-                    <div className="w-52 shrink-0">
-                        <LiquidSelect
-                            value={branchFilter || null}
-                            onChange={(v) => setBranchFilter(v || '')}
-                            options={branchOpts}
-                            placeholder="Todas las sucursales"
-                            icon={Building2}
-                            disabled={isBranchScoped}
-                            clearable={!isBranchScoped}
-                        />
-                    </div>
-                    {canEdit && (
-                        <TabBarAction icon={Plus} variant="primary" onClick={() => setShowModal(true)}>
-                            Nuevo Conteo
-                        </TabBarAction>
-                    )}
-                </>
-            )}
+            // El filtro de sucursal NO va acá: §17 es explícito en que la barra de
+            // filtros vive en el CUERPO de la vista y nunca en el header, cuyo
+            // ocupante es la barra de pestañas. El comentario que estaba en su
+            // lugar citaba la regla del "toolbar de widget", que es otra cosa —
+            // exactamente la confusión que §17 documenta como la trampa de la
+            // prop mal nombrada `filtersContent`.
+            trailingActions={canEdit ? (
+                <TabBarAction icon={Plus} variant="primary" onClick={() => setShowModal(true)}>
+                    Nuevo Conteo
+                </TabBarAction>
+            ) : null}
         />
     );
 
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
+            {/* Resumen arriba, y cada tarjeta es un FILTRO. La pregunta de esta
+                pantalla no es "cuántos conteos hay" sino "cuál me está esperando":
+                un finalizado sin aprobar bloquea a alguien, y un cerrado sin ajuste
+                registrado es trabajo a medias que antes solo se veía fila por fila. */}
+            <div className="flex items-stretch gap-3 flex-wrap mb-4">
+                {/* Ésta NO es un filtro: es el total, y por eso no lleva `active` ni
+                    `onClick`. Con `active` StatCard dibuja una × de "quitar este
+                    filtro", y quitar "todos" no significa nada. */}
+                <StatCard
+                    icon={ClipboardCheck} label="Conteos" value={formatQty(resumen.total)}
+                    sub={branchFilter ? 'en esta sucursal' : 'en total'}
+                />
+                <StatCard
+                    icon={Clock} label="Abiertos" value={formatQty(resumen.abiertos)}
+                    iconBg="bg-warning/10" iconCls="text-warning-text"
+                    valueCls={resumen.abiertos ? 'text-warning-text' : 'text-content'}
+                    sub="contándose ahora"
+                    active={foco === 'ABIERTOS'} onClick={() => setFoco((f) => (f === 'ABIERTOS' ? 'TODOS' : 'ABIERTOS'))}
+                />
+                <StatCard
+                    icon={FileCheck2} label="Por aprobar" value={formatQty(resumen.porAprobar)}
+                    iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
+                    valueCls={resumen.porAprobar ? 'text-chart-1-text' : 'text-content'}
+                    sub="esperan otra firma"
+                    active={foco === 'POR_APROBAR'} onClick={() => setFoco((f) => (f === 'POR_APROBAR' ? 'TODOS' : 'POR_APROBAR'))}
+                />
+                <StatCard
+                    icon={FileSpreadsheet} label="Sin ajustar" value={formatQty(resumen.sinAjuste)}
+                    iconBg="bg-danger/10" iconCls="text-danger"
+                    valueCls={resumen.sinAjuste ? 'text-danger' : 'text-content'}
+                    sub="el ERP sigue sin corregir"
+                    active={foco === 'SIN_AJUSTE'} onClick={() => setFoco((f) => (f === 'SIN_AJUSTE' ? 'TODOS' : 'SIN_AJUSTE'))}
+                />
+            </div>
+
+            {/* §17: los filtros de la vista, en UNA píldora, en el cuerpo y a la
+                derecha. El segmentado pasa a bloque de 2 columnas en teléfono — en
+                riel sus cuatro opciones no caben en la hoja inferior. */}
+            <div className="flex justify-end mb-4">
+                <FilterBar activeCount={(branchFilter && !isBranchScoped ? 1 : 0) + (foco !== 'TODOS' ? 1 : 0)}
+                    onClear={() => { if (!isBranchScoped) setBranchFilter(''); setFoco('TODOS'); }}>
+                    <FilterBar.Section
+                        active={!!branchFilter && !isBranchScoped}
+                        onClear={() => setBranchFilter('')}
+                        label="sucursal"
+                    >
+                        <div className="w-[190px]">
+                            <LiquidSelect
+                                value={branchFilter || null}
+                                onChange={(v) => setBranchFilter(v || '')}
+                                options={branchOpts}
+                                placeholder="Todas"
+                                ariaLabel="Filtrar por sucursal"
+                                icon={Building2}
+                                disabled={isBranchScoped}
+                                clearable={!isBranchScoped}
+                                compact bare
+                            />
+                        </div>
+                    </FilterBar.Section>
+                    <FilterBar.Section active={foco !== 'TODOS'} onClear={() => setFoco('TODOS')} label="estado">
+                        <SegmentedControl
+                            label="Filtrar por lo que necesita atención"
+                            size="sm"
+                            value={foco}
+                            onChange={setFoco}
+                            layout={compacto ? 'block' : 'inline'}
+                            columns={2}
+                            options={[
+                                { value: 'TODOS', label: 'Todos' },
+                                { value: 'ABIERTOS', label: 'Abiertos' },
+                                { value: 'POR_APROBAR', label: 'Por aprobar' },
+                                { value: 'SIN_AJUSTE', label: 'Sin ajustar' },
+                            ]}
+                        />
+                    </FilterBar.Section>
+                </FilterBar>
+            </div>
+
             {isSearchFuzzy && search && (
-                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-xl bg-warning/10 border border-warning/30 text-label text-warning-text font-semibold">
-                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                <Notice variant="warning" icon={Search} className="mb-3">
                     Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
-                </div>
+                </Notice>
             )}
-            <DataTable columns={COLS} loading={loading} empty={{ icon: ClipboardCheck, message: 'Sin conteos de inventario' }}>
+            {/* Teléfono: una fila por conteo. La tabla son 8 columnas y aun con 4
+                visibles desbordaba 298px a 320 (medido) — `DataTable` no reflowa a
+                tarjetas (§32), así que se cierra acá igual que en el detalle. Se usa
+                `ListRow`, que es el canónico de esta anatomía exacta: caja al
+                principio, contenido, algo al final. */}
+            <div className="md:hidden space-y-2">
+                {loading ? (
+                    <div data-surface="card" className="p-4"><SkeletonText lines={5} /></div>
+                ) : filtered.length === 0 ? (
+                    <div data-surface="card" className="p-8 text-center">
+                        <ClipboardCheck size={28} className="mx-auto text-content-3 mb-2" />
+                        <p className="text-body-sm font-bold text-content-3">
+                            {foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá'}
+                        </p>
+                    </div>
+                ) : filtered.map((c) => {
+                    const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
+                    const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);
+                    return (
+                        <ListRow
+                            key={c.id}
+                            icon={es.icon}
+                            // El tono de la fila dice el estado sin gastar una línea:
+                            // lo que falta ajustar es lo urgente de esta pantalla.
+                            tone={faltaAjuste(c) ? 'peligro' : null}
+                            title={c.branches?.name || '—'}
+                            subtitle={`${fmtDate(c.created_at)} · ${SCOPE_LABEL[c.scope_type] || c.scope_type}`}
+                            onClick={() => navigate(`/conteo-inventario/${c.id}`)}
+                            trailing={(
+                                <span className="flex flex-col items-end gap-1">
+                                    <Badge variant={es.variante} size="sm">{es.label}</Badge>
+                                    {c.total_diferencias > 0 && (
+                                        <span className="text-caption font-bold text-warning-text tabular-nums">
+                                            {c.total_diferencias} dif · {formatMoney(valorNeto)}
+                                        </span>
+                                    )}
+                                    {faltaAjuste(c) && (
+                                        <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste</Badge>
+                                    )}
+                                    {c.total_pendientes > 0 && !c.pendientes_como_cero && (
+                                        <Badge variant="danger" size="sm" uppercase={false}>Parcial</Badge>
+                                    )}
+                                </span>
+                            )}
+                        />
+                    );
+                })}
+            </div>
+
+            <div className="hidden md:block">
+            <DataTable columns={COLS} loading={loading} empty={{
+                icon: ClipboardCheck,
+                message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá',
+                subtext: foco === 'TODOS'
+                    ? 'Un conteo toma una foto del inventario del ERP y la compara con lo que hay en el anaquel.'
+                    : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
+                action: foco !== 'TODOS'
+                    ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }
+                    : (canEdit ? { label: 'Nuevo Conteo', onClick: () => setShowModal(true) } : undefined),
+            }}>
                 {filtered.map((c, i) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
                     const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);
@@ -150,7 +307,7 @@ export default function ConteoInventarioView() {
                                 ) : <span className="text-content-3">—</span>}
                             </DataCell>
                             <DataCell align="right" hideBelow="lg">
-                                <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{fmtMoney(valorNeto)}</span>
+                                <span className={`text-label font-bold tabular-nums ${valorNeto < 0 ? 'text-danger' : valorNeto > 0 ? 'text-chart-1-text' : 'text-content-3'}`}>{formatMoney(valorNeto)}</span>
                             </DataCell>
                             <DataCell align="center">
                                 <div className="flex flex-col items-center gap-1">
@@ -169,6 +326,7 @@ export default function ConteoInventarioView() {
                     );
                 })}
             </DataTable>
+            </div>
 
             <NuevoConteoModal
                 isOpen={showModal}

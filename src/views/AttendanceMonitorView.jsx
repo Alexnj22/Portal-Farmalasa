@@ -573,16 +573,8 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     >
       {/* El valor "sin filtrar" acá es la cadena 'ALL', no '' */}
       <FilterBar.Section active={filterBranch !== 'ALL'} onClear={() => setFilterBranch('ALL')} label="sucursal">
-        <div className="w-[190px]">
-          <LiquidSelect
-            value={filterBranch}
-            onChange={val => setFilterBranch(val || 'ALL')}
-            options={branchOptions}
-            placeholder="Todas"
-            icon={Building2}
-            compact bare clearable={false}
-          />
-        </div>
+        <FilterBar.Sucursal value={filterBranch}
+          onChange={val => setFilterBranch(val || 'ALL')} options={branchOptions} />
       </FilterBar.Section>
     </FilterBar>
   );

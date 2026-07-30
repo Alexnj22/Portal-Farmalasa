@@ -702,8 +702,11 @@ const EmployeeAnnouncementsView = () => {
             activeCount={typeFilter !== 'ALL' ? 1 : 0}
         >
             <FilterBar.Section active={typeFilter !== 'ALL'} onClear={() => setTypeFilter('ALL')} label="tipo">
-                <SegmentedControl
-                    size="sm"
+                {/* `readFilters` es dinámico: van de 2 a 6 según lo que haya
+                    recibido el empleado. `FilterBar.Opciones` elige el control por
+                    la cantidad, así que ya no hay un caso en que seis segmentos se
+                    coman la píldora. */}
+                <FilterBar.Opciones
                     label="Filtrar por tipo"
                     value={typeFilter}
                     onChange={setTypeFilter}

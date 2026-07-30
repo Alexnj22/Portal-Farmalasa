@@ -2233,6 +2233,54 @@ controles de 44px fuera del viewport a 390px.
 de estado, un `LiquidSelect` de "copiar desde". Va al final de la píldora y a la
 hoja de acciones en táctil.
 
+`soloIcono: true` deja el botón sin texto **en escritorio** (el rótulo sigue vivo
+en `label`/`title` para el aria y el tooltip). Es para la acción secundaria y
+reconocible —Exportar, con el `Download` que ya es el ícono canónico de exportar
+en el portal— que con texto le come a la píldora el ancho que necesitan los
+filtros. En el clúster táctil sigue rotulado: ahí hay sitio y no hay hover que lo
+revele.
+
+#### `FilterBar.Opciones` — uno de N, sin elegir el control
+
+**Hasta 3 opciones es `SegmentedControl`; de 4 en adelante, `LiquidSelect`.** Los
+dos son lo mismo semánticamente y la diferencia es de ancho: un segmentado de 5
+se come la píldora entera y deja al resto de las ranuras sin sitio. El umbral es
+del canónico y no del llamador por el motivo de siempre — una decisión que se
+toma vista por vista se toma distinto en cada vista.
+
+```jsx
+<FilterBar.Section active={estado !== ''} onClear={() => setEstado('')} label="estado">
+    <FilterBar.Opciones value={estado} onChange={setEstado} label="Estado" icon={FileCheck}
+        options={[{ value: '', label: 'Todos' }, …]} />
+</FilterBar.Section>
+```
+
+Se lleva por delante los apaños de móvil: `ConteoDetailView` y
+`ConteoInventarioView` forzaban `layout="block" columns={2}` porque el riel de
+cuatro no entraba en la hoja del teléfono y arrastraba scroll horizontal. Y con
+listas dinámicas —los subfiltros de "Mis Avisos" van de 2 a 6— el control se
+adapta solo. `umbral` baja a 2 si las etiquetas son larguísimas; subirlo, casi
+nunca.
+
+#### `FilterBar.Sucursal` — la ranura de ámbito
+
+La primera del orden y la que más se reescribía: estaba a mano en **9 vistas con
+4 textos distintos** ("Todas las Sucursales", "Todas las sucursales", "Todas",
+ninguno) y anchos de 150 a 220px, así que la misma ranura se veía diferente en
+cada pantalla.
+
+```jsx
+<FilterBar.Sucursal value={sucursal} onChange={setSucursal} options={branchOptions} />
+```
+
+El texto canónico es **"Sucursales"**: nombra el filtro en vez de describir su
+estado vacío, así se lee igual esté puesto o no, y ocupa la mitad — que es el
+espacio que la píldora le devuelve a los filtros. **Normaliza también la opción
+"todas" que venga dentro de `options`**, que es la mitad del arreglo: casi todas
+las vistas la traen ahí con su propio texto, así que el select mostraba ese label
+y no el placeholder, y "Todas las Sucursales" en 150px se corta a "Todas las
+Suc…". El valor no se toca, solo cómo se lee.
+
 **El divisor las separa de los filtros**, y por eso ahora pueden convivir: lo que
 en su día echó a "Publicar" de acá fue que, mezclado entre las ranuras, leía como
 un filtro más.

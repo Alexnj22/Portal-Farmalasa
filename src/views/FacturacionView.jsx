@@ -2128,11 +2128,8 @@ export default function FacturacionView() {
             acciones={accionesFacturacion}>
             {puedeElegirSucursal && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
-                    <div className="w-[200px]">
-                        <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
-                            options={branchOptions} placeholder="Todas las sucursales" icon={Building2}
-                            compact bare clearable={false} />
-                    </div>
+                    <FilterBar.Sucursal value={filterBranch}
+                        onChange={val => setFilterBranch(val || '')} options={branchOptions} />
                 </FilterBar.Section>
             )}
         </FilterBar>

@@ -749,11 +749,8 @@ const SchedulesView = ({ openModal, setView }) => {
             acciones={accionesHorarios}
         >
             <FilterBar.Section label="sucursal">
-                <div className="w-[175px]">
-                    <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                        options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
-                        compact clearable={false} icon={Building2} bare />
-                </div>
+                <FilterBar.Sucursal value={filterBranch} onChange={setFilterBranch}
+                    options={validBranches.map(b => ({ value: String(b.id), label: b.name }))} />
             </FilterBar.Section>
 
             <FilterBar.Section active={!isDefaultWeek} onClear={handleResetFilters} label="semana">

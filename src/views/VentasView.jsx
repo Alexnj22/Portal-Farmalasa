@@ -149,11 +149,6 @@ function FilterControls({
     };
 
 
-    const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
-    const branchW = selectedBranch
-        ? Math.max(130, Math.min(250, 86 + selectedBranch.label.length * 8))
-        : 145;
-
     const showLab = !!setFilterLab && labOptions?.length > 0;
     const selectedLab = showLab ? labOptions.find(o => String(o.value) === String(filterLab)) : null;
     const labW = selectedLab
@@ -185,10 +180,8 @@ function FilterControls({
                 que cambia el significado de todos los demás. */}
             {!branchLocked && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
-                    <div style={{ width: branchW + 'px' }} className="transition-all duration-200">
-                        <LiquidSelect value={filterBranch} onChange={setFilterBranch}
-                            options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
-                    </div>
+                    <FilterBar.Sucursal value={filterBranch} onChange={setFilterBranch}
+                        options={branchOptions} />
                 </FilterBar.Section>
             )}
 

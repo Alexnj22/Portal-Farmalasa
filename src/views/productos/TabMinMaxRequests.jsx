@@ -350,11 +350,8 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           <FilterBar onClear={() => setSucFilter('all')} activeCount={sucFilter !== 'all' ? 1 : 0}>
             {/* Valor "sin filtrar": la cadena 'all' */}
             <FilterBar.Section active={sucFilter !== 'all'} onClear={() => setSucFilter('all')} label="sucursal">
-              <div className="w-[170px]">
-                <LiquidSelect value={sucFilter === 'all' ? '' : sucFilter}
-                  onChange={v => setSucFilter(v || 'all')}
-                  options={sucOptions} placeholder="Todas las sucursales" icon={Building2} compact bare />
-              </div>
+              <FilterBar.Sucursal value={sucFilter === 'all' ? '' : sucFilter}
+                onChange={v => setSucFilter(v || 'all')} options={sucOptions} />
             </FilterBar.Section>
           </FilterBar>
         </div>

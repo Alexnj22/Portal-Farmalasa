@@ -309,16 +309,11 @@ export default function TabInventario({ searchTerm = '' }) {
                     activeCount={[selectedErp !== null, filterLab !== null, filterCat !== null].filter(Boolean).length}
                 >
                     <FilterBar.Section active={selectedErp !== null} onClear={() => setSelectedErp(null)} label="sucursal">
-                        <div className="w-[175px]">
-                            <LiquidSelect
-                                value={selectedErp !== null ? String(selectedErp) : ''}
-                                onChange={v => setSelectedErp(v ? parseInt(v) : null)}
-                                options={erpOptions}
-                                placeholder="Todas las sucursales"
-                                icon={Building2}
-                                clearable={false} compact bare
-                            />
-                        </div>
+                        <FilterBar.Sucursal
+                            value={selectedErp !== null ? String(selectedErp) : ''}
+                            onChange={v => setSelectedErp(v ? parseInt(v) : null)}
+                            options={erpOptions}
+                        />
                     </FilterBar.Section>
 
                     {labOptions.length > 0 && (

@@ -441,13 +441,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     >
                         {!lockedErpId && (
                             <FilterBar.Section label="sucursal">
-                                <div className="w-[175px]">
-                                    <LiquidSelect
-                                        value={String(selectedErp)}
-                                        onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setFilterHidden(false); } }}
-                                        options={erpOptions} icon={Building2} clearable={false} compact bare
-                                    />
-                                </div>
+                                <FilterBar.Sucursal
+                                    value={String(selectedErp)}
+                                    onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setFilterHidden(false); } }}
+                                    options={erpOptions}
+                                />
                             </FilterBar.Section>
                         )}
 

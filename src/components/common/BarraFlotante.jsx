@@ -64,10 +64,23 @@ import ModalShell from './ModalShell';
  * y si los cortes divergen queda una franja de 50px con las dos cosas visibles o
  * ninguna. Una sola fuente de verdad.
  *
- * ── z-header y no z-modal ──────────────────────────────────────────────────
+ * ── `z-tabs` (30), y antes estaba mal en `z-header` (2026-07-30) ───────────
  * Es cromo de la vista, no un diálogo: va DEBAJO de cualquier hoja que se abra
  * desde ella (`z-modal` = 100) y encima del encabezado pegajoso de una tabla
- * (`z-base` = 10). `z-header` (40) es la capa donde ya vive la nav del layout.
+ * (`z-base` = 10). `z-tabs` es, textualmente, la capa de "tab bars / floating
+ * pills" en la escala de §9 — o sea esto.
+ *
+ * Estaba en `z-header` (40), que es la capa del **scrim del sidebar**. Con el
+ * mismo z-index gana el orden del DOM, y como esta barra va por portal al final
+ * del `body` quedaba ENCIMA: al abrir el menú se atenuaba la vista entera y el
+ * clúster seguía brillando arriba de todo. Lo reportó el usuario.
+ *
+ * ── Y se aparta de la nav inferior ─────────────────────────────────────────
+ * En las vistas de autogestión (`hasSelfOnly`) `AppLayout` dibuja una nav fija
+ * abajo, en el mismo sitio que esta barra. `--alto-nav-inferior` lo publica ese
+ * layout —vale `0px` donde no hay nav—, así que la barra se sube justo lo que
+ * mide y no hay que enterarse de nada desde acá. "Mis Documentos" es
+ * exactamente ese caso: autogestión y con `FilterBar`.
  *
  * ── Uso ───────────────────────────────────────────────────────────────────
  *   <BarraFlotante
@@ -219,9 +232,15 @@ const BarraPortal = ({
             <div
                 role="toolbar"
                 aria-label={ariaLabel}
-                className="fixed inset-x-0 bottom-0 z-header
-                    px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]
-                    flex justify-end pointer-events-none"
+                // `display` por variable y no por clase: quien sabe si hay un
+                // overlay global abierto es `AppLayout`, y esta barra cuelga del
+                // `body` por portal, así que no es descendiente suya. El valor por
+                // defecto es `flex` para que fuera de `AppLayout` —o antes del
+                // primer efecto— la barra se dibuje igual.
+                className="fixed inset-x-0 bottom-0 z-tabs
+                    px-3 pt-2
+                    pb-[calc(var(--alto-nav-inferior,0px)+max(12px,env(safe-area-inset-bottom)))]
+                    [display:var(--barra-flotante-display,flex)] justify-end pointer-events-none"
             >
                 {/* El clúster: una sola pieza con su propio material, para que los
                     controles no compitan con el texto de la lista que pasa por

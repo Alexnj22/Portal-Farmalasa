@@ -16,7 +16,6 @@ import StatCard from '../components/common/StatCard';
 import ListRow from '../components/common/ListRow';
 import { SkeletonText } from '../components/common/StateViews';
 import SegmentedControl from '../components/common/SegmentedControl';
-import useMediaQuery from '../hooks/useMediaQuery';
 import { formatMoney, formatQty } from '../utils/formatNumber';
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
@@ -69,7 +68,6 @@ export default function ConteoInventarioView() {
     // Qué necesita atención. Es un filtro y no solo un rótulo: la pregunta real de
     // esta pantalla no es "cuántos conteos hay" sino "cuál me está esperando".
     const [foco, setFoco] = useState('TODOS');
-    const compacto = useMediaQuery('(max-width: 719px)');
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
@@ -177,28 +175,21 @@ export default function ConteoInventarioView() {
                         onClear={() => setBranchFilter('')}
                         label="sucursal"
                     >
-                        <div className="w-[190px]">
-                            <LiquidSelect
-                                value={branchFilter || null}
-                                onChange={(v) => setBranchFilter(v || '')}
-                                options={branchOpts}
-                                placeholder="Todas"
-                                ariaLabel="Filtrar por sucursal"
-                                icon={Building2}
-                                disabled={isBranchScoped}
-                                clearable={!isBranchScoped}
-                                compact bare
-                            />
-                        </div>
+                        <FilterBar.Sucursal
+                            value={branchFilter || null}
+                            onChange={(v) => setBranchFilter(v || '')}
+                            options={branchOpts}
+                            disabled={isBranchScoped}
+                        />
                     </FilterBar.Section>
                     <FilterBar.Section active={foco !== 'TODOS'} onClear={() => setFoco('TODOS')} label="estado">
-                        <SegmentedControl
+                        {/* Cuatro opciones: `FilterBar.Opciones` las da como select.
+                            Con eso se va el `layout=block/columns=2`, que existía solo
+                            porque en el teléfono el riel de cuatro no entraba. */}
+                        <FilterBar.Opciones
                             label="Filtrar por lo que necesita atención"
-                            size="sm"
                             value={foco}
                             onChange={setFoco}
-                            layout={compacto ? 'block' : 'inline'}
-                            columns={2}
                             options={[
                                 { value: 'TODOS', label: 'Todos' },
                                 { value: 'ABIERTOS', label: 'Abiertos' },

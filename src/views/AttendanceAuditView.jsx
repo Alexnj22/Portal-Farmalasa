@@ -1231,11 +1231,8 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     >
       {getScope('time_audit') !== 'BRANCH' && (
         <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
-          <div className="w-[185px]">
-            <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
-              options={sortedBranchOptions} placeholder="Todas las sucursales"
-              compact clearable={false} icon={Building2} bare />
-          </div>
+          <FilterBar.Sucursal value={filterBranch}
+            onChange={val => setFilterBranch(val || '')} options={sortedBranchOptions} />
         </FilterBar.Section>
       )}
 

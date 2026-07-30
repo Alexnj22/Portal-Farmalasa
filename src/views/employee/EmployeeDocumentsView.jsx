@@ -14,8 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { fetchOwnApprovalRequests } from '../../data/employeeSelfService';
 import { openStoredFile } from '../../utils/storageFiles';
 import GlassViewLayout from '../../components/GlassViewLayout';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
-import SegmentedControl from '../../components/common/SegmentedControl';
+import PeriodPicker from '../../components/common/PeriodPicker';
 
 // ─── Configuración por tipo ────────────────────────────────────────────────
 const DOC_CFG = {
@@ -255,25 +254,36 @@ const EmployeeDocumentsView = () => {
             onClear={clearFilters}
             activeCount={[!!filterStatus, !!filterFrom, !!filterTo].filter(Boolean).length}
         >
+            {/* `PeriodPicker` y no dos `LiquidDatePicker` coordinados a mano: trae los
+                atajos que acá se piden todo el tiempo —este mes, mes anterior,
+                últimos 3 y 6 meses— y ocupa una ranura en vez de dos. Su contrato
+                es un solo string `"desde|hasta"`, así que la vista lo arma y lo
+                parte; el estado sigue siendo dos campos porque el filtrado los usa
+                por separado. */}
             <FilterBar.Section active={!!filterFrom || !!filterTo}
                 onClear={() => { setFilterFrom(''); setFilterTo(''); }} label="período">
-                <div className="flex items-center gap-2">
-                    <div className="w-[130px]">
-                        <LiquidDatePicker compact shortcuts value={filterFrom} onChange={setFilterFrom} placeholder="Desde" />
-                    </div>
-                    <span className="text-content-3 text-body-sm font-bold shrink-0">→</span>
-                    <div className="w-[130px]">
-                        <LiquidDatePicker compact shortcuts value={filterTo} onChange={setFilterTo} placeholder="Hasta" />
-                    </div>
-                </div>
+                <PeriodPicker
+                    value={filterFrom || filterTo ? `${filterFrom}|${filterTo}` : ''}
+                    onChange={(v) => {
+                        const [desde, hasta] = (v || '').split('|');
+                        setFilterFrom(desde || '');
+                        setFilterTo(hasta || '');
+                    }}
+                    placeholder="Cualquier fecha"
+                />
             </FilterBar.Section>
 
+            {/* Cinco opciones (Todos + los 4 estados): `FilterBar.Opciones` las
+                resuelve como select solo. En segmentado se comían la píldora. */}
             <FilterBar.Section active={!!filterStatus} onClear={() => setFilterStatus('')} label="estado">
-                <SegmentedControl
-                    size="sm"
+                <FilterBar.Opciones
+                    label="Estado"
+                    icon={FileCheck}
+                    value={filterStatus}
+                    onChange={setFilterStatus}
                     options={[{ value: '', label: 'Todos' },
                         ...Object.entries(STATUS_CFG).map(([k, v]) => ({ value: k, label: v.label }))]}
-                    value={filterStatus} onChange={setFilterStatus} label="Estado" />
+                />
             </FilterBar.Section>
         </FilterBar>
     );

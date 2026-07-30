@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.249.3';
+export const APP_VERSION = '2.250.0';
+
+// v2.250.0 — la pildora, corregida sobre la revision del usuario.
+//
+// **`FilterBar.Opciones`** — hasta 3 opciones es `SegmentedControl`; de 4 en
+// adelante, `LiquidSelect`. Los dos son uno-de-N y la diferencia es de ancho: un
+// segmentado de 5 se come la pildora entera. El umbral es del canonico, no del
+// llamador. Se lleva por delante los apanos de movil: Conteo y ConteoDetail
+// forzaban `layout="block" columns={2}` porque el riel de cuatro no entraba en la
+// hoja del telefono. Aplicado tambien a "Mis Avisos", cuyos subfiltros son
+// dinamicos (de 2 a 6) y ahora eligen control solos.
+//
+// **`FilterBar.Sucursal`** — estaba a mano en 9 vistas con 4 textos distintos
+// ("Todas las Sucursales", "Todas las sucursales", "Todas", ninguno) y anchos de
+// 150 a 220px. El texto canonico es "Sucursales": nombra el filtro en vez de
+// describir su estado vacio. Normaliza ademas la opcion "todas" que viene DENTRO
+// de `options` —que es la mitad del arreglo—: el select mostraba ese label y no
+// el placeholder, y en 150px se cortaba a "Todas las Suc…".
+//
+// **`soloIcono`** en un descriptor de accion. Exportar en el Listado; `Download`
+// ya era el icono canonico de exportar en el portal.
+//
+// **Listado en dos columnas**: tarjetas a la izquierda, pildora a la derecha.
+// Medido a 1512px: la columna de tarjetas quedaba en 310px y las 5 caian en
+// vertical, una por fila, porque dos necesitan 312 (2×150 + gap). Con
+// `min-w-[312px]` entran de a dos y la pildora envuelve sus dos bloques
+// —filtros arriba, acciones abajo— en vez de desbordar.
+//
+// **El z-index de la barra flotante NO se arreglaba con z-index.** Con el menu
+// abierto el cluster quedaba encima del sidebar. El sidebar es `z-sidebar` (50) y
+// la barra `z-tabs` (30), y aun asi ganaba la barra: el z del sidebar vive dentro
+// del contexto de apilamiento del layout, y la barra —colgada del `body` por
+// portal— compite en el contexto raiz. Comparar los dos numeros no significa
+// nada. Asi que no se apila: se apaga con `--barra-flotante-display`. Por la
+// misma via se aparta de la nav inferior de autogestion
+// (`--alto-nav-inferior`), que ocupa el mismo sitio en "Mis Documentos".
+//
+// **Mis Documentos**: el rango de fechas pasa a `PeriodPicker` (trae "este mes",
+// "mes anterior", "ultimos 3 y 6 meses") en vez de dos `LiquidDatePicker`
+// coordinados a mano.
 
 // v2.249.3 — dos vistas crasheaban al ABRIRLAS, y las dos por el mismo motivo.
 //

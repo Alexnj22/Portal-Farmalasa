@@ -843,8 +843,12 @@ const StaffManagementView = ({
       disabled: !canEdit, onClick: handleOpenNewEmployee },
     { key: 'practicante', icon: GraduationCap, label: 'Nuevo Practicante', tone: 'chart-3',
       disabled: !canEdit, onClick: handleOpenNewPracticante },
+    // Solo ícono en escritorio: `Download` es el ícono canónico de exportar en el
+    // portal (Auditoría y el historial de sucursal usan el mismo) y con texto le
+    // comía a la píldora el ancho que necesitan los dos filtros. En el clúster
+    // táctil sigue rotulado.
     { key: 'exportar', icon: Download, label: 'Exportar', tone: 'success',
-      onClick: handleExportCSV },
+      soloIcono: true, onClick: handleExportCSV },
   ];
 
   return (
@@ -855,8 +859,16 @@ const StaffManagementView = ({
     >
       <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-700">
 
-        <div className="flex items-start gap-3 flex-wrap shrink-0">
-          <div className="flex items-center gap-3 flex-wrap">
+        {/* Dos columnas: tarjetas a la izquierda, píldora a la derecha (pedido del
+            usuario, 2026-07-30). Antes iban una debajo de otra y la píldora
+            terminaba ocupando un renglón entero para sí sola.
+            Las tarjetas ya traen `flex-1 basis-0 min-w-[150px]` del canónico
+            `StatCard`, así que reparten el ancho de SU columna solas: con cinco
+            quedan iguales, con tres se ensanchan. Y envuelven dentro de su propia
+            columna cuando no entran, que es lo que permite que la píldora se quede
+            a la derecha a cualquier ancho en vez de empujarse abajo. */}
+        <div className="flex flex-col lg:flex-row lg:items-start gap-3">
+          <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-[312px]">
             <StaffStatCard
               icon={Users} color="blue" label="Total" value={stats.total}
               active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
@@ -884,7 +896,7 @@ const StaffManagementView = ({
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex justify-end min-w-0">
                             {/* Filtros y acciones, en la misma píldora (§17).
                                 `activeCount` contaba `activeStatFilter` pero la
                                 píldora no lo ofrecía: en el teléfono la hoja decía
@@ -898,32 +910,23 @@ const StaffManagementView = ({
                                 acciones={accionesPersonal}
                             >
                                 <FilterBar.Section active={selectedBranch !== 'ALL'} label="sucursal">
-                                    <div style={{ width: '220px' }}>
-                                        <LiquidSelect
-                                            value={selectedBranch}
-                                            onChange={setSelectedBranch}
-                                            options={branchOptions}
-                                            placeholder="Todas las Sucursales"
-                                            icon={Building2}
-                                            clearable={false}
-                                            compact bare
-                                        />
-                                    </div>
+                                    <FilterBar.Sucursal
+                                        value={selectedBranch}
+                                        onChange={setSelectedBranch}
+                                        options={branchOptions}
+                                    />
                                 </FilterBar.Section>
 
                                 <FilterBar.Section active={activeStatFilter !== 'ALL'}
                                     onClear={() => setActiveStatFilter('ALL')} label="estado">
-                                    <div style={{ width: '190px' }}>
-                                        <LiquidSelect
-                                            value={activeStatFilter}
-                                            onChange={val => setActiveStatFilter(val || 'ALL')}
-                                            options={STAT_FILTER_OPTIONS}
-                                            placeholder="Todos"
-                                            icon={ShieldCheck}
-                                            clearable={false}
-                                            compact bare
-                                        />
-                                    </div>
+                                    <FilterBar.Opciones
+                                        label="Estado"
+                                        icon={ShieldCheck}
+                                        value={activeStatFilter}
+                                        onChange={val => setActiveStatFilter(val || 'ALL')}
+                                        options={STAT_FILTER_OPTIONS}
+                                        ancho="150px"
+                                    />
                                 </FilterBar.Section>
                             </FilterBar>
                         </div>

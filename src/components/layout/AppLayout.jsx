@@ -488,6 +488,36 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         visibleGroups.flatMap(g => g.visibleModules.filter(m => SELF_KEYS.includes(m.key))),
     [visibleGroups]);
 
+    // ── Dos avisos para lo que se dibuja fijo abajo (hoy, `BarraFlotante`) ──
+    // Los dos van por variable CSS en la raíz y no por contexto de React porque
+    // esa barra va por PORTAL al `body`: no es descendiente de este layout, así
+    // que no hay árbol por el que enterarse.
+    //
+    // `--alto-nav-inferior` — en autogestión hay una nav fija abajo, en el mismo
+    // sitio que el clúster. Vale `0px` donde no la hay, y así el consumidor no
+    // necesita condicionales. Los 5.5rem son los mismos que ya se le restan al
+    // scroll del main, más abajo.
+    //
+    // `--barra-flotante-display` — con el menú abierto el clúster quedaba ENCIMA
+    // del sidebar. No se arregla con z-index: el sidebar es `z-sidebar` (50) y la
+    // barra `z-tabs` (30), y aun así ganaba la barra, porque el z del sidebar
+    // vive DENTRO del contexto de apilamiento de este layout mientras que la
+    // barra, colgada del `body`, compite en el contexto raíz. Comparar los dos
+    // números no significa nada — es la misma trampa de contextos que este
+    // proyecto ya tiene documentada para `backdrop-filter`.
+    // Así que no se apila: se apaga. Con un overlay global encima, el cromo de la
+    // vista no tiene nada que hacer ahí, y `display:none` además lo saca del árbol
+    // de accesibilidad y del orden de tabulación.
+    useEffect(() => {
+        const raiz = document.documentElement;
+        raiz.style.setProperty('--alto-nav-inferior', hasSelfOnly && isMobile ? '5.5rem' : '0px');
+        raiz.style.setProperty('--barra-flotante-display', isMobile && isSidebarOpen ? 'none' : 'flex');
+        return () => {
+            raiz.style.removeProperty('--alto-nav-inferior');
+            raiz.style.removeProperty('--barra-flotante-display');
+        };
+    }, [hasSelfOnly, isMobile, isSidebarOpen]);
+
     const renderNavItem = (module, indent = false) => {
         const { key, path, label, icon: Icon, comingSoon } = module;
         const pathSeg = path.replace(/^\//, '').split('/')[0];

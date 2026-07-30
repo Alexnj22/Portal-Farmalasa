@@ -494,11 +494,8 @@ const PayrollView = ({ openModal }) => {
         >
             {getScope('payroll') !== 'BRANCH' && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
-                    <div className="w-[185px]">
-                        <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
-                            options={branchOptions} placeholder="Todas las sucursales"
-                            compact clearable={false} icon={Building2} bare />
-                    </div>
+                    <FilterBar.Sucursal value={filterBranch}
+                        onChange={val => setFilterBranch(val || '')} options={branchOptions} />
                 </FilterBar.Section>
             )}
 

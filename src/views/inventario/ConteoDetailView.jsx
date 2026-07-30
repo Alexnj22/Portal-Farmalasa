@@ -1435,23 +1435,18 @@ export default function ConteoDetailView() {
             </FilterBar.Section>
             {/* 4 · estado */}
             <FilterBar.Section active={filtro !== 'TODOS'} onClear={() => setFiltro('TODOS')} label="estado">
-                <SegmentedControl
+                {/* `FilterBar.Opciones` elige el control por la cantidad: con las
+                    cuatro es un select, y en el conteo ciego —donde quedan menos—
+                    vuelve solo al segmentado. Antes había que forzar
+                    `layout=block/columns=2` porque el riel de cuatro se salía de la
+                    hoja del teléfono arrastrando scroll horizontal.
+                    Ni "con diferencia" ni "no ubicados" se ofrecen si el conteo es
+                    ciego: la RPC los trata como TODOS, así que serían controles que
+                    no controlan — y ofrecerlos ya insinúa que hay algo que mirar. */}
+                <FilterBar.Opciones
                     label="Filtrar los renglones"
-                    size="sm"
-                    tone="chart-9"
                     value={filtro}
                     onChange={setFiltro}
-                    // En el teléfono el riel es `inline-flex` con opciones
-                    // `whitespace-nowrap`: las cuatro no caben y se salían de
-                    // la hoja de filtros arrastrando scroll horizontal. En
-                    // bloque a 2 columnas quedan 2×2, que es lo que el ancho
-                    // del pulgar permite leer.
-                    layout={compacto ? 'block' : 'inline'}
-                    columns={2}
-                    // Ni "con diferencia" ni "no ubicados" se ofrecen si el
-                    // conteo es ciego: la RPC los trata como TODOS, así que
-                    // serían controles que no controlan — y ofrecerlos ya
-                    // insinúa que hay algo ahí que mirar.
                     options={FILTRO_PILLS
                         .filter((f) => verSistema || !f.soloConSistema)
                         .map((f) => ({ value: f.key, label: f.label }))}

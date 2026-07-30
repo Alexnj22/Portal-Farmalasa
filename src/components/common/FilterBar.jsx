@@ -1,10 +1,12 @@
 import React, { memo, Children, isValidElement, useState, useEffect, useId, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
-import { X, SlidersHorizontal, MoreHorizontal } from 'lucide-react';
+import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import Contador from './Contador';
 import BarraFlotante from './BarraFlotante';
 import TabBarAction from './TabBarAction';
+import SegmentedControl from './SegmentedControl';
+import LiquidSelect from './LiquidSelect';
 import { useBuscadorDeVista, usePublicarBarraFlotante } from './CanalDeVista';
 
 /**
@@ -159,6 +161,89 @@ const Chip = memo(({ active, onToggle, tone = 'danger', children, ...rest }) => 
     </button>
 ));
 Chip.displayName = 'FilterBar.Chip';
+
+/**
+ * FilterBar.Opciones — un filtro de UNA de N opciones, sin que la vista tenga
+ * que elegir el control.
+ *
+ * **Hasta 3 opciones es `SegmentedControl`; de 4 en adelante, `LiquidSelect`.**
+ * Los dos son lo mismo semánticamente —uno de N— y la diferencia es de ancho:
+ * un segmentado de 5 opciones se come la píldora entera y deja a las demás
+ * ranuras sin sitio, que es lo que pasaba en "Mis Documentos" (Todos + los 4
+ * estados). El umbral es del canónico y no del llamador por el mismo motivo de
+ * siempre: si es una decisión que se toma vista por vista, se toma distinto en
+ * cada vista.
+ *
+ * `umbral` existe para el caso raro de etiquetas larguísimas donde ya con 3 no
+ * entra — bajarlo a 2 es legítimo; subirlo, casi nunca.
+ */
+const Opciones = memo(({
+    options = [],
+    value,
+    onChange,
+    label,
+    icon,
+    placeholder = 'Todos',
+    umbral = 3,
+    ancho = '170px',
+}) => {
+    if (options.length <= umbral) {
+        return <SegmentedControl size="sm" options={options} value={value} onChange={onChange} label={label} />;
+    }
+    return (
+        <div style={{ width: ancho }}>
+            <LiquidSelect
+                value={value}
+                onChange={onChange}
+                options={options}
+                placeholder={placeholder}
+                icon={icon}
+                label={label}
+                clearable={false}
+                compact bare
+            />
+        </div>
+    );
+});
+Opciones.displayName = 'FilterBar.Opciones';
+
+/**
+ * FilterBar.Sucursal — la ranura de ámbito, que es la primera de §17 y la que
+ * más se repetía a mano.
+ *
+ * Estaba escrita en 9 vistas con 4 textos distintos ("Todas las Sucursales",
+ * "Todas las sucursales", "Todas", ninguno) y anchos entre 150 y 220px, así que
+ * la misma ranura se veía diferente en cada pantalla. El texto canónico es
+ * **"Sucursales"**: nombra el filtro en vez de describir su estado vacío, que es
+ * lo que hace que se lea igual esté puesto o no — y de paso ocupa la mitad, que
+ * es lo que le devuelve el espacio a la píldora.
+ */
+const Sucursal = memo(({ value, onChange, options = [], ancho = '150px', ...rest }) => {
+    // La opción "todas" también se normaliza, y es la mitad del arreglo: casi
+    // todas las vistas la traen DENTRO de `options` con su propio texto ("Todas
+    // las Sucursales", "Todas las sucursales", "Todas"), así que el select
+    // mostraba ese label y no el placeholder — y "Todas las Sucursales" en 150px
+    // se corta a "Todas las Suc…". El valor no se toca, solo cómo se lee.
+    const opciones = options.map(o =>
+        /^todas?\b/i.test(String(o?.label ?? '')) ? { ...o, label: 'Sucursales' } : o);
+
+    return (
+        <div style={{ width: ancho }}>
+            <LiquidSelect
+                value={value}
+                onChange={onChange}
+                options={opciones}
+                placeholder="Sucursales"
+                label="Sucursal"
+                icon={Building2}
+                clearable={false}
+                compact bare
+                {...rest}
+            />
+        </div>
+    );
+});
+Sucursal.displayName = 'FilterBar.Sucursal';
 
 const FilterBar = memo(({
     children,
@@ -456,13 +541,21 @@ const FilterBar = memo(({
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
                     <div className="flex items-center gap-1.5 h-9 px-2">
                         {acciones.map(a => (
+                            // `soloIcono`: el ícono solo, con el rótulo vivo en
+                            // `label`/`title` para el aria y el tooltip. Es para la
+                            // acción secundaria y reconocible —Exportar— que si va
+                            // con texto le come a la píldora el ancho que necesitan
+                            // los filtros. En el clúster táctil sigue con rótulo:
+                            // ahí hay sitio y no hay hover que lo revele.
                             <TabBarAction key={a.key} size="sm" icon={a.icon}
                                 variant={a.variant} tone={a.tone}
                                 as={a.as} href={a.href} target={a.target} rel={a.rel}
                                 disabled={a.disabled} onClick={a.onClick}
-                                title={a.title}
+                                label={a.label}
+                                title={a.title || a.label}
+                                className={a.soloIcono ? 'px-0 w-9 justify-center' : ''}
                                 aria-pressed={a.activo != null ? !!a.activo : undefined}>
-                                {a.label}
+                                {a.soloIcono ? null : a.label}
                             </TabBarAction>
                         ))}
                         {accionesExtra}
@@ -476,6 +569,8 @@ const FilterBar = memo(({
 
 FilterBar.Section = Section;
 FilterBar.Chip = Chip;
+FilterBar.Opciones = Opciones;
+FilterBar.Sucursal = Sucursal;
 FilterBar.displayName = 'FilterBar';
 
 export default FilterBar;

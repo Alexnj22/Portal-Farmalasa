@@ -665,15 +665,8 @@ const VacationPlanView = () => {
         >
             {getScope('vacation_plan') !== 'BRANCH' && (
                 <FilterBar.Section active={branchFilter !== 'ALL'} onClear={() => setBranchFilter('ALL')} label="sucursal">
-                    <div className="w-[190px]">
-                        <LiquidSelect
-                            value={branchFilter}
-                            onChange={val => setBranchFilter(val || 'ALL')}
-                            options={branchOptions}
-                            placeholder="Todas las sucursales"
-                            compact clearable={false} icon={Building2} bare
-                        />
-                    </div>
+                    <FilterBar.Sucursal value={branchFilter}
+                        onChange={val => setBranchFilter(val || 'ALL')} options={branchOptions} />
                 </FilterBar.Section>
             )}
 

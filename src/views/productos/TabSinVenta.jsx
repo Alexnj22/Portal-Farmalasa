@@ -618,15 +618,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     <FilterBar.Section label="sucursal">
                         {activeRefreshing && <Loader2 size={13} className="animate-spin text-content-3 shrink-0" />}
-                        <div className="w-[170px]">
-                            <LiquidSelect
-                                value={String(selectedErp)}
-                                onChange={v => setSelectedErp(Number(v))}
-                                options={erpOptions}
-                                icon={Building2}
-                                clearable={false} compact bare
-                            />
-                        </div>
+                        <FilterBar.Sucursal
+                            value={String(selectedErp)}
+                            onChange={v => setSelectedErp(Number(v))}
+                            options={erpOptions}
+                        />
                     </FilterBar.Section>
                 </FilterBar>
             </div>

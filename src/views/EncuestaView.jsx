@@ -597,16 +597,8 @@ export default function EncuestaView() {
         >
             {/* 1 · ámbito — la sucursal va primero (§17) */}
             <FilterBar.Section active={!!filterSucursal} onClear={() => setFilterSucursal('')} label="sucursal">
-                <div style={{ width: filterSucursal ? Math.max(130, 80 + filterSucursal.length * 7) + 'px' : '175px' }}>
-                    <LiquidSelect
-                        value={filterSucursal}
-                        onChange={setFilterSucursal}
-                        options={sucursales.map(s => ({ value: s, label: s }))}
-                        placeholder="Todas las sucursales"
-                        icon={Building2}
-                        compact bare
-                    />
-                </div>
+                <FilterBar.Sucursal value={filterSucursal} onChange={setFilterSucursal}
+                    options={sucursales.map(s => ({ value: s, label: s }))} />
             </FilterBar.Section>
 
             {/* 2 · entidad */}

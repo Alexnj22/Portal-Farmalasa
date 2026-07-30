@@ -35,10 +35,46 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  *
  * `compacta` se le inyecta a cada hija: el carril es quien sabe el ancho real,
  * y bajo 176px la línea de detalle se corta a mitad de palabra.
+ *
+ * ── El borde se DESVANECE, no corta ───────────────────────────────────────
+ * La tarjeta que asoma quedaba rebanada con un canto recto, como si la vista se
+ * hubiera roto ahí. Se descartaron dos caminos antes del que quedó:
+ *
+ * · **Una cortina de color** no sirve: el fondo del portal es un gradiente, así
+ *   que tendría que adivinar qué color tapar y en cualquier otra pantalla se
+ *   vería como una mancha.
+ * · **Una franja con `backdrop-filter`** —escarchar el canto en vez de taparlo—
+ *   se escribió y se midió: **no pinta nada**. `div.group/table`, que envuelve
+ *   toda vista, tiene `transform`, y un ancestro con transform mata el
+ *   `backdrop-filter` de todo lo que cuelga de él. Cuarta vez que muerde.
+ *
+ * Queda la máscara sobre la propia pista, que desvanece las tarjetas por alfa.
+ * Lo que normalmente lo impide es que `mask-image` crea un *backdrop root* y
+ * dejaría sin vidrio a lo de adentro — acá no cuesta nada: **las tarjetas del
+ * carril no tienen `backdrop-filter`** (medido: `none` en las cuatro vistas con
+ * carril), y bajo ese `transform` tampoco podrían tenerlo.
+ *
+ * Va en `style` y no en una clase porque Lightning CSS colapsa los prefijos
+ * `-webkit-` escritos a mano, y `-webkit-mask-*` sigue siendo obligatorio en
+ * Safari; React emite las dos propiedades tal cual desde el objeto.
  */
 
 // El umbral bajo el cual la tarjeta suelta su línea de detalle. Ver `StatCard`.
 const ANCHO_CON_DETALLE = 176;
+
+// El desvanecido de los bordes. `#000`/`transparent` acá no son color: una
+// máscara solo mira el canal alfa, así que esto no toca la paleta.
+//
+// 56px de recorrido, con la mitad todavía casi opaca: así el desvanecido se
+// concentra donde está el corte en vez de repartirse y aclarar la tarjeta
+// entera. Se compone al vuelo porque depende de qué lado tiene algo cortado.
+const RAMPA = 'transparent 0, rgba(0,0,0,0.28) 22px, rgba(0,0,0,0.78) 40px, #000 56px';
+const mascaraDe = (izq, der) => {
+    const partes = [];
+    if (izq) partes.push(`linear-gradient(to right, ${RAMPA})`);
+    if (der) partes.push(`linear-gradient(to left, ${RAMPA})`);
+    return partes.length ? partes.join(', ') : undefined;
+};
 
 const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de la vista' }) => {
     const pistaRef = useRef(null);
@@ -48,6 +84,11 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
     const [compacta, setCompacta] = useState(false);
 
     const tarjetas = Children.toArray(children).filter(isValidElement);
+
+    // Solo se desvanece el lado que tiene algo cortado: al principio del carril
+    // el borde izquierdo es el borde de la vista, y difuminarlo ahí haría que la
+    // primera tarjeta se viera a medio pintar sin motivo.
+    const mascara = desliza ? mascaraDe(!alInicio, !alFinal) : undefined;
 
     const medir = useCallback(() => {
         const el = pistaRef.current;
@@ -92,6 +133,20 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 aria-label={ariaLabel}
                 className="flex items-stretch gap-2 overflow-x-auto scroll-smooth
                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5"
+                style={{
+                    maskImage: mascara,
+                    WebkitMaskImage: mascara,
+                    // Dos gradientes que se solapan en el centro: sin esto el
+                    // `mask-composite` por defecto los suma y el medio queda
+                    // opaco, que es justo lo que se quiere — pero el modo de
+                    // repetición sí hay que fijarlo o el segundo se mosaiquea.
+                    maskRepeat: 'no-repeat, no-repeat',
+                    WebkitMaskRepeat: 'no-repeat, no-repeat',
+                    maskPosition: 'left center, right center',
+                    WebkitMaskPosition: 'left center, right center',
+                    maskComposite: 'intersect',
+                    WebkitMaskComposite: 'source-in',
+                }}
             >
                 {/* `compacta` solo se le inyecta a COMPONENTES. Un hijo que sea un
                     elemento del DOM —el divisor de Catálogo, por ejemplo— lo

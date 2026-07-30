@@ -16,8 +16,41 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.260.0';
+export const APP_VERSION = '2.261.0';
 
+// v2.261.0 — El borde del carril se desvanece; los ocho estados son UN select.
+//
+// **La tarjeta que asoma ya no queda rebanada.** Terminaba en un canto recto,
+// como si la vista se hubiera roto ahi. Se descartaron dos caminos antes del que
+// quedo: una cortina de color no sirve —el fondo del portal es un gradiente, asi
+// que tendria que adivinar que color tapar—, y una franja con `backdrop-filter`
+// se escribio, se midio y **no pinta nada**: `div.group/table`, que envuelve
+// toda vista, tiene `transform`, y un ancestro con transform mata el
+// `backdrop-filter` de todo lo que cuelga. Cuarta vez que muerde.
+//
+// Queda la mascara sobre la propia pista. Normalmente no se puede —`mask-image`
+// crea un backdrop root y deja sin vidrio a lo de adentro— pero aca no cuesta
+// nada: las tarjetas del carril **no tienen `backdrop-filter`** (medido: `none`
+// en las cuatro vistas con carril), y bajo ese `transform` tampoco podrian. La
+// rampa es de 56px con la mitad todavia casi opaca, para que el desvanecido se
+// concentre en el corte en vez de aclarar la tarjeta entera. Solo el lado que
+// tiene algo cortado.
+//
+// **Los ocho filtros de estado de MIN·MAX pasan a un select.** Eran chips en
+// linea, y antes una tira suelta de 44px. Las dos formas fallan en lo mismo:
+// contestan UNA pregunta —que recorte de la lista quiero ver— y estaban
+// dibujadas como ocho preguntas independientes. Como chips ademas rompian el
+// cupo de la pildora, porque el reparto cuenta RANURAS y ocho chips son una sola
+// de ~700px. Con el select la pildora bajo de 809 a 640px y el carril paso de
+// 338 a 474 (de 2 tarjetas visibles a 3). Cada opcion lleva su conteo, que es el
+// dato por el que se elige.
+//
+// **"Restaurar ocultos" solo aparece con la opcion "Ocultos" puesta.** Antes
+// salia siempre que hubiera alguno oculto: una accion permanente en la pildora
+// sobre filas que no estan en pantalla, o sea un cambio a ciegas.
+//
+// `FilterBar.Chips` se retira: nacio en v2.260.0 y el select lo reemplaza.
+//
 // v2.260.0 — Min/Max: la fila de controles, canonica de verdad.
 //
 // Dos cosas reportadas sobre la vista, y la segunda tenia una causa que no

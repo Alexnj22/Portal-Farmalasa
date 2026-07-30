@@ -10,7 +10,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download, Trash2,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
-    TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, FlaskConical, Search, MoreHorizontal,
+    TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, FlaskConical, Search, MoreHorizontal, Filter,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -340,9 +340,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     } = useMinMaxData({ searchTerm, lockedErpId });
 
     // ─── Render ───────────────────────────────────────────────────────────────
-    // Los seis filtros de estado, como un solo bloque para el `active`/`onClear`
-    // de su ranura: si alguno está puesto la ranura se marca, y limpiarla los
-    // suelta todos de una.
+    // Los filtros de estado, como UN control. Todos contestan la misma pregunta
+    // —¿qué recorte de la lista quiero ver?— y estaban dibujados como ocho
+    // interruptores independientes; en la práctica nadie combina "excesos" con
+    // "sin historial", así que el select dice la verdad sobre cómo se usan.
     const estadoActivo = hasAnyFilter || filterHidden;
     const limpiarEstado = () => {
         setFilterAlert('all');
@@ -351,6 +352,40 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         setFilterDispatchRisk(false);
         setFilterHidden(false);
         setPage(1);
+    };
+
+    // Cada opción lleva su conteo, que es el dato por el que se elige: "261
+    // excesos" pesa distinto que "2 excesos". Las que dan cero no se listan.
+    const opcionesEstado = [
+        ...STAT_CFGS.filter(c => VISIBLE_STAT_KEYS.includes(c.key))
+            .map(cfg => ({ value: cfg.key, label: `${loading ? '–' : stats[cfg.key]} ${cfg.label}` })),
+        ...(hasPublishedData && criticalACount > 0 && !loading
+            ? [{ value: 'criticoA', label: `${criticalACount} Crítico A` }] : []),
+        ...(sparseCount > 0 && !loading
+            ? [{ value: 'sparse', label: `${sparseCount} Poca venta` }] : []),
+        ...(!isBodega && dispatchRiskCount > 0 && !loading
+            ? [{ value: 'riesgo', label: `${dispatchRiskCount} Riesgo regla` }] : []),
+        ...(hiddenIds.size > 0
+            ? [{ value: 'ocultos', label: `${hiddenIds.size} Ocultos` }] : []),
+    ];
+
+    // Cuál está puesto. El orden importa poco porque el select apaga los otros
+    // al elegir, pero `filterHidden` va primero: es el único que AGREGA filas en
+    // vez de recortarlas, así que manda sobre lo demás.
+    const estadoSel = filterHidden ? 'ocultos'
+        : filterSparse ? 'sparse'
+        : filterDispatchRisk ? 'riesgo'
+        : filterAlert !== 'all' ? filterAlert
+        : filterAbc === 'A' ? 'criticoA'
+        : '';
+
+    const setEstadoSel = v => {
+        limpiarEstado();
+        if (v === 'criticoA') setFilterAbc('A');
+        else if (v === 'sparse') setFilterSparse(true);
+        else if (v === 'riesgo') setFilterDispatchRisk(true);
+        else if (v === 'ocultos') setFilterHidden(true);
+        else if (v) setFilterAlert(v);
     };
 
     // ── Las acciones de la vista, en la píldora (§17) ────────────────────
@@ -409,7 +444,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         // anidado que aparecía al activarlo. Un botón dentro de un filtro es dos
         // cosas en el mismo control; acá es una acción, y solo existe cuando hay
         // algo que restaurar.
-        ...(hiddenIds.size > 0 && canManage ? [{
+        // Solo cuando se están MIRANDO los ocultos. Antes salía siempre que
+        // hubiera alguno, o sea una acción permanente en la píldora para un
+        // estado que no se está viendo — y restaurar algo que no está en
+        // pantalla es un cambio a ciegas.
+        ...(filterHidden && hiddenIds.size > 0 && canManage ? [{
             key: 'restaurar', icon: RotateCcw,
             label: `Restaurar ${hiddenIds.size} oculto${hiddenIds.size === 1 ? '' : 's'}`,
             soloIcono: true, onClick: unhideAll,
@@ -501,39 +540,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             </FilterBar.Section>
                         )}
 
-                        {/* Los seis filtros de estado. Eran una tira suelta de 44px
-                            ENTRE la matriz y la tabla, así que para saber qué
-                            recortaba la lista había que mirar en dos sitios. */}
-                        {!neverCalc && (
+                        {/* Los ocho filtros de estado, en UN control.
+                            Eran una tira suelta de 44px entre la matriz y la
+                            tabla; después ocho chips en línea. Las dos formas
+                            fallaban en lo mismo: contestan **una sola pregunta**
+                            —¿qué estado quiero ver?— y estaban dibujadas como
+                            ocho preguntas independientes. Como select, además,
+                            elegir uno apaga a los otros, que es lo que la lista
+                            hacía de todos modos. */}
+                        {!neverCalc && opcionesEstado.length > 0 && (
                             <FilterBar.Section
                                 active={estadoActivo}
                                 onClear={limpiarEstado}
                                 label="estado">
-                                <FilterBar.Chips label="filtros de estado" items={[
-                                    ...STAT_CFGS.filter(c => VISIBLE_STAT_KEYS.includes(c.key)).map(cfg => ({
-                                        key: cfg.key, tone: 'brand',
-                                        label: `${loading ? '–' : stats[cfg.key]} ${cfg.label}`,
-                                        active: filterAlert === cfg.key,
-                                        onToggle: () => setFilterAlert(p => p === cfg.key ? 'all' : cfg.key),
-                                    })),
-                                    ...(hasPublishedData && criticalACount > 0 && !loading ? [{
-                                        key: 'criticoA', tone: 'danger', label: `${criticalACount} Crítico A`,
-                                        active: filterAbc === 'A',
-                                        onToggle: () => setFilterAbc(p => p === 'A' ? 'all' : 'A'),
-                                    }] : []),
-                                    ...(sparseCount > 0 && !loading ? [{
-                                        key: 'sparse', tone: 'warning', label: `${sparseCount} Poca venta`,
-                                        active: filterSparse, onToggle: () => setFilterSparse(v => !v),
-                                    }] : []),
-                                    ...(!isBodega && dispatchRiskCount > 0 && !loading ? [{
-                                        key: 'riesgo', tone: 'warning', label: `${dispatchRiskCount} Riesgo regla`,
-                                        active: filterDispatchRisk, onToggle: () => setFilterDispatchRisk(v => !v),
-                                    }] : []),
-                                    ...(hiddenIds.size > 0 ? [{
-                                        key: 'ocultos', tone: 'brand', label: `${hiddenIds.size} Ocultos`,
-                                        active: filterHidden, onToggle: () => setFilterHidden(v => !v),
-                                    }] : []),
-                                ]} />
+                                <FilterBar.Opciones
+                                    icon={Filter}
+                                    label="Estado"
+                                    placeholder="Estado"
+                                    ancho="185px"
+                                    umbral={0}
+                                    value={estadoSel}
+                                    onChange={setEstadoSel}
+                                    options={opcionesEstado}
+                                />
                             </FilterBar.Section>
                         )}
                     </FilterBar>

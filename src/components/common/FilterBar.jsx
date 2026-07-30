@@ -164,93 +164,6 @@ const Chip = memo(({ active, onToggle, tone = 'danger', children, ...rest }) => 
 ));
 Chip.displayName = 'FilterBar.Chip';
 
-/**
- * FilterBar.Chips — una ranura con MUCHOS interruptores.
- *
- * Media docena de chips en una ranura rompe el cupo de la píldora: el reparto
- * cuenta RANURAS, y seis chips son una sola —de 700px—, así que la píldora
- * crecía hasta llenar la fila entera sin que el desborde llegara a activarse
- * nunca. Se veía como una barra de borde a borde en vez de una píldora.
- *
- * Acá el desborde es por CHIP: **los aplicados se quedan siempre en línea** y el
- * resto se guarda tras un `+N` que los despliega. Es la misma regla de la
- * píldora, un nivel más abajo.
- */
-const Chips = memo(({ items = [], visibles = 2, label = 'filtros' }) => {
-    const [abierto, setAbierto] = useState(false);
-    const [caja, setCaja] = useState(null);
-    const btnRef = useRef(null);
-    const id = useId();
-    const { compacto } = useContext(BarraCtx);
-
-    useEffect(() => {
-        if (!abierto) return undefined;
-        const medir = () => {
-            const r = btnRef.current?.getBoundingClientRect();
-            if (r) setCaja({ top: r.bottom + 8, right: window.innerWidth - r.right });
-        };
-        medir();
-        const alTeclear = e => { if (e.key === 'Escape') setAbierto(false); };
-        const alClic = e => {
-            if (!btnRef.current?.contains(e.target) && !e.target.closest?.(`[data-chips="${id}"]`)) setAbierto(false);
-        };
-        window.addEventListener('keydown', alTeclear);
-        window.addEventListener('resize', medir);
-        window.addEventListener('scroll', medir, true);
-        document.addEventListener('mousedown', alClic);
-        return () => {
-            window.removeEventListener('keydown', alTeclear);
-            window.removeEventListener('resize', medir);
-            window.removeEventListener('scroll', medir, true);
-            document.removeEventListener('mousedown', alClic);
-        };
-    }, [abierto, id]);
-
-    const pintar = it => (
-        <Chip key={it.key} tone={it.tone} active={it.active} onToggle={it.onToggle}>
-            {it.label}
-        </Chip>
-    );
-
-    // En la hoja del teléfono hay ancho de sobra en vertical: van todos.
-    if (compacto) return <div className="flex flex-wrap gap-1.5 w-full">{items.map(pintar)}</div>;
-
-    const activos = items.filter(i => i.active);
-    const resto   = items.filter(i => !i.active);
-    const enLinea = [...activos, ...resto.slice(0, Math.max(0, visibles - activos.length))];
-    const guardados = items.filter(i => !enLinea.includes(i));
-
-    return (
-        <>
-            {enLinea.map(pintar)}
-            {guardados.length > 0 && (
-                <button ref={btnRef} type="button" onClick={() => setAbierto(v => !v)}
-                    aria-expanded={abierto} aria-haspopup="dialog"
-                    aria-label={`Ver otros ${guardados.length} ${label}`}
-                    className={`inline-flex items-center h-8 px-2.5 rounded-btn shrink-0 border
-                        text-caption font-black tracking-widest whitespace-nowrap
-                        transition-[background-color,border-color,color] duration-200
-                        ${abierto
-                            ? 'bg-brand/10 border-brand/30 text-brand-text'
-                            : 'bg-transparent border-transparent text-content-3 hover:bg-surface-card-hover hover:text-content-2'}`}>
-                    +{guardados.length}
-                </button>
-            )}
-
-            {abierto && caja && createPortal(
-                <div data-chips={id} role="dialog" aria-label={`Otros ${label}`}
-                    data-surface="dropdown"
-                    style={{ top: caja.top, right: caja.right }}
-                    className="fixed z-dropdown w-[260px] p-3 flex flex-wrap gap-1.5
-                        animate-in fade-in zoom-in-95 duration-150 ease-out">
-                    {guardados.map(pintar)}
-                </div>,
-                document.body,
-            )}
-        </>
-    );
-});
-Chips.displayName = 'FilterBar.Chips';
 
 /**
  * FilterBar.Opciones — un filtro de UNA de N opciones, sin que la vista tenga
@@ -916,7 +829,6 @@ const FilterBar = memo(({
 
 FilterBar.Section = Section;
 FilterBar.Chip = Chip;
-FilterBar.Chips = Chips;
 FilterBar.Opciones = Opciones;
 FilterBar.Sucursal = Sucursal;
 FilterBar.displayName = 'FilterBar';

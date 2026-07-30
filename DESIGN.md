@@ -2340,34 +2340,30 @@ listas dinámicas —los subfiltros de "Mis Avisos" van de 2 a 6— el control s
 adapta solo. `umbral` baja a 2 si las etiquetas son larguísimas; subirlo, casi
 nunca.
 
-#### `FilterBar.Chips` — media docena de interruptores en UNA ranura
+#### Muchos chips en una ranura: casi siempre son UN select
 
-Cuando una ranura lleva más de dos o tres chips, `FilterBar.Chip` sueltos no
-alcanzan: el cupo de la píldora reparte **ranuras**, y seis chips son una sola
-—de unos 700px—, así que la píldora crecía hasta llenar la fila entera sin que
-el desborde llegara a activarse nunca. Medido en MIN·MAX el 2026-07-30: 809px de
-píldora contra una fila de 1159, con `flex-wrap` alrededor; se veía pegada a la
-izquierda, de borde a borde, y sin control de desborde.
+Cuando una ranura junta media docena de chips, la pregunta previa es si son de
+verdad filtros independientes. Casi nunca lo son: si todos contestan **la misma
+pregunta** —"¿qué recorte de la lista quiero ver?"— entonces son un
+`FilterBar.Opciones` con `umbral={0}`, no seis interruptores.
 
-```jsx
-<FilterBar.Section active={filterAlert !== 'all'} onClear={…} label="estado">
-    <FilterBar.Chips label="filtros de estado" items={[
-        { key: 'exceso', tone: 'brand', label: `${n} Excesos`,
-          active: filterAlert === 'exceso', onToggle: () => … },
-        …
-    ]} />
-</FilterBar.Section>
-```
+Se probaron las dos formas en MIN·MAX el 2026-07-30 y la de chips falla en dos
+planos a la vez:
 
-El desborde es **por chip** y con la misma regla que la píldora un nivel más
-arriba: **los aplicados no se esconden nunca**, se quedan en línea, y el resto se
-guarda tras un `+N` que los despliega en un popover. `visibles` (2 por defecto)
-es cuántos se muestran cuando no hay ninguno aplicado. En el teléfono no hay
-`+N`: la ranura ya vive dentro de la hoja de filtros de la barra flotante, que
-tiene alto de sobra, así que van todos.
+* **Rompe el cupo de la píldora.** El reparto cuenta *ranuras*, y ocho chips son
+  UNA sola de ~700px: la píldora crecía hasta llenar la fila sin que el desborde
+  llegara a activarse. Medido: 809px de píldora contra 1159 de fila.
+* **Miente sobre cómo se usan.** Dibujados como ocho interruptores, dicen que se
+  combinan; en la práctica nadie mira "excesos" y "sin historial" a la vez, y
+  elegir uno apaga a los otros. El select dice eso, y ocupa 185px en vez de 700.
 
-`items` son **descriptores, no JSX** — misma razón que `acciones` (§17.3): un
-array se puede contar, ordenar y partir; un `children` de JSX no.
+Cada opción lleva **su conteo en la etiqueta** (`261 Excesos`), que es el dato
+por el que se elige, y las que dan cero no se listan.
+
+**La acción que solo sirve dentro de una opción se muestra solo ahí.**
+"Restaurar ocultos" salía en la píldora siempre que hubiera alguno oculto — o
+sea, una acción permanente sobre filas que no están en pantalla, que es un
+cambio a ciegas. Ahora aparece cuando la opción "Ocultos" está puesta.
 
 #### `FilterBar.Sucursal` — la ranura de ámbito
 

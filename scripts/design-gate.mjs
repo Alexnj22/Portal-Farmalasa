@@ -77,6 +77,13 @@ const EXCEPTIONS = {
   // y 'hex') y repetir la clave habría borrado una de las dos. Llevan
   // 'chart-retirado' en aquella. Ver `assertSinClavesDuplicadas`.
   'src/index.css': ['chart-retirado'],
+  // `hex`/`inline-color` en CarrilCards NO son color: son las paradas alfa de la
+  // máscara que desvanece la tarjeta cortada del borde del carril. `mask-image`
+  // solo lee el canal alfa del gradiente —el matiz es irrelevante, `#000` es
+  // "opaco" y `transparent` es "invisible"— así que no hay ningún color que
+  // pueda salir de un token ni que cambie con el tema. Un token para esto sería
+  // un token que no significa nada.
+  'src/components/common/CarrilCards.jsx': ['hex', 'inline-color'],
   'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
   'src/components/common/TabBarAction.jsx': ['chart-retirado'],
   'src/components/common/Contador.jsx': ['chart-retirado'],

@@ -12,6 +12,36 @@ retomar; acá está todo.
 
 ---
 
+## v2.261.0 — El borde del carril se desvanece; los ocho estados son un select
+
+**La tarjeta que asoma ya no queda rebanada.** Terminaba en un canto recto, como
+si la vista se hubiera roto ahí. Se descartaron dos caminos: una cortina de color
+no sirve —el fondo del portal es un gradiente, tendría que adivinar qué color
+tapar—, y una franja con `backdrop-filter` se escribió, se midió y **no pinta
+nada**: `div.group/table`, que envuelve toda vista, tiene `transform`, y un
+ancestro con transform mata el `backdrop-filter` de todo lo que cuelga. Cuarta
+vez que muerde.
+
+Queda la máscara sobre la propia pista. Normalmente no se puede —`mask-image`
+crea un *backdrop root*— pero acá no cuesta nada: las tarjetas del carril no
+tienen `backdrop-filter` (medido: `none` en las cuatro vistas con carril), y bajo
+ese `transform` tampoco podrían. Rampa de 56px con la mitad casi opaca, solo del
+lado que tiene algo cortado.
+
+**Los ocho filtros de estado de MIN·MAX pasan a un select.** Contestan UNA
+pregunta —qué recorte de la lista quiero ver— y estaban dibujados como ocho
+preguntas independientes. Como chips además rompían el cupo de la píldora: el
+reparto cuenta *ranuras*, y ocho chips son una sola de ~700px. La píldora bajó de
+809 a 640px y el carril pasó de 338 a 474 (de 2 tarjetas visibles a 3).
+
+**"Restaurar ocultos" solo aparece con la opción "Ocultos" puesta.** Antes salía
+siempre que hubiera alguno: una acción permanente sobre filas que no están en
+pantalla.
+
+`FilterBar.Chips` se retira — nació en v2.260.0 y el select lo reemplaza.
+
+---
+
 ## v2.260.0 — Min/Max: la fila de controles, canónica de verdad
 
 Dos cosas reportadas sobre la vista, y la segunda tenía una causa que no estaba

@@ -119,6 +119,11 @@ Cómo quedó (`PLAN-SUPABASE-CIERRE.md` C2, v2.228.0):
   supabase_migrations.schema_migrations`. El `name` del `apply_migration` debe ser
   idéntico al del archivo — sin resumir, sin combinar varias migraciones en uno — y
   el archivo se crea en la misma sesión: nunca "lo consolido después".
+- **Si el SQL se redacta antes de aplicarlo, el borrador va al scratchpad, NO a
+  `supabase/migrations/`.** La versión la asigna el servidor al aplicar, así que un
+  archivo ahí adentro antes de aplicar no puede tener nombre válido — y el gate lo
+  marca con razón: es indistinguible de la deriva vieja. Primero `apply_migration`,
+  después el archivo con la versión que devolvió.
 - **Al cerrar cualquier trabajo con migraciones, correr `npm run gate:migrations`**
   (chequeos locales, sin red) y `npm run gate:migrations -- --remote` para cruzar
   contra el registro de prod — es el que detecta la migración aplicada sin archivo.

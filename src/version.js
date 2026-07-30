@@ -16,7 +16,16 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.235.0';
+export const APP_VERSION = '2.235.1';
+
+// v2.235.1 — el borrador de una migracion va al scratchpad, no a migrations/.
+//
+// Aclaracion de la regla, salida de un caso real: otra sesion dejo
+// `supabase/migrations/20260729_conteo_v5_filtro_lab_y_orden.sql` (nombre viejo de
+// 8 digitos) y el gate lo marco — correctamente, pero la migracion todavia no esta
+// aplicada en prod, asi que el nombre valido no existe aun: la version la asigna el
+// servidor al aplicar. Entonces el borrador no va dentro de `supabase/migrations/`.
+// Primero `apply_migration`, despues el archivo con la version que devolvio.
 
 // v2.235.0 — hook de pre-commit, y la regla de que este arbol es compartido.
 //

@@ -16,7 +16,51 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.248.0';
+export const APP_VERSION = '2.249.0';
+
+// v2.249.0 — FilterBar es filtros Y acciones, y el vidrio de la barra flotante
+// estaba roto por un `transform` ancestro.
+//
+// **La auditoria.** 22 vistas usan `FilterBar`. Pasandole el buscador y la accion
+// principal para la barra flotante tactil: **1**. No fue descuido — el mismo dato
+// habia que escribirlo dos veces (una en `ViewTabBar`, otra en `FilterBar`) y la
+// copia que falta no se ve rota hasta abrir la vista en un telefono. En las 5
+// pestanas de Productos era ademas imposible: el estado del buscador vive en
+// `ProductosView` y las pestanas solo reciben el termino ya rebotado.
+//
+// **`trailingActions` se retiro.** Era un cajon de sastre: acciones de verdad
+// ("Nuevo Empleado", "Publicar", "Exportar"), pero tambien FILTROS — el rango de
+// fechas y el tipo de `TabHistory`, el `SegmentedControl` de
+// `EmployeeAnnouncementsView`—. O sea que la pildora del HEADER estaba filtrando,
+// justo lo que §17 dice que no hace. Y en tactil eran dos botones
+// `SlidersHorizontal`: uno arriba abria "Filtros y acciones", otro abajo abria
+// "Filtros". Dos puertas, el mismo icono, contenidos distintos.
+//
+// Ahora: header = navegacion + buscador. `FilterBar` = filtros + acciones, como
+// DESCRIPTORES y no JSX (el mismo boton se dibuja `TabBarAction` en escritorio y
+// boton de clusteren el telefono; con JSX suelto la barra flotante solo podia
+// re-renderizarlo tal cual).
+//
+// **El canal.** Las dos pildoras son HERMANAS —`ViewTabBar` llega por
+// `filtersContent`, `FilterBar` por `children`—, asi que un contexto declarado en
+// una no llega a la otra. `CanalDeVista.js` publica en los dos sentidos desde
+// `GlassViewLayout`, que es el unico ancestro comun: `ViewTabBar` publica su
+// buscador y `FilterBar` anuncia que existe la barra flotante para que el header
+// suelte su lupa. Cero cableado por vista.
+//
+// **El vidrio.** El contenedor `fixed` animaba con `translate-y-*`, y un ancestro
+// con `translate` establece un *backdrop root*: el `backdrop-filter` del cluster
+// muestreaba un fondo VACIO. Tercera vez que este proyecto se tropieza con la
+// misma regla. Explica el rodeo anterior: `card` (16%) dejaba leer el nombre del
+// producto a traves —claro, sin blur el 16% es ver el texto— y se subio a
+// `dropdown` (72%), que es un panel opaco. La animacion se movio al elemento que
+// lleva el vidrio (un `transform` PROPIO no rompe nada) y la superficie volvio a
+// `card`. De paso: `transition: transform` NO anima la propiedad `translate` —son
+// independientes—, asi que index.css la nombra aparte.
+//
+// **Dos `activeCount` que mentian.** FacturasCompra contaba `sinProveedor` e
+// `invalidados`, StaffManagement contaba `activeStatFilter`: controles que no
+// estaban en la pildora. En el telefono la hoja decia "3 filtros" y ofrecia uno.
 
 // v2.243.0 — F4 de identidad: la rampa de iconos se habia medido MAL, y el trazo
 // tenia 14 valores contra un doc que declaraba uno.

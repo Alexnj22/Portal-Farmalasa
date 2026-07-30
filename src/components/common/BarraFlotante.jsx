@@ -197,48 +197,64 @@ const BarraPortal = ({
 }) => {
     return (
         <>
+            {/* ── El contenedor NO se transforma. Es el bug del vidrio ──────────
+                Esta capa animaba la entrada y salida con `translate-y-0` /
+                `translate-y-[135%]`, y eso rompía el `backdrop-filter` del
+                clúster de adentro: un ancestro con `transform`/`translate`
+                establece un *backdrop root*, así que el hijo muestreaba un fondo
+                VACÍO y no difuminaba nada. El clúster quedaba plano — el usuario
+                lo reportó como "el liquidglass del filterpill no es liquidglass,
+                no se ve a través de él como el header u otra card".
+
+                Es la tercera vez que este proyecto se tropieza con la misma
+                regla. Y explica el rodeo anterior: al probar `data-surface="card"`
+                (16%) "el nombre del producto se leía a través del clúster" —claro,
+                sin blur el 16% es literalmente ver el texto—, y se subió a
+                `dropdown` (72%) para taparlo. La opacidad nunca fue el problema.
+
+                El arreglo es mover la animación al elemento que lleva el vidrio:
+                un `transform` PROPIO no crea backdrop root, solo uno ANCESTRO.
+                Es exactamente por eso que el vidrio de `ViewTabBar` sí funciona
+                teniendo `transform-gpu` en el mismo div que su `data-surface`. */}
             <div
                 role="toolbar"
                 aria-label={ariaLabel}
-                className={`fixed inset-x-0 bottom-0 z-header
+                className="fixed inset-x-0 bottom-0 z-header
                     px-3 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]
-                    flex justify-end pointer-events-none
-                    transition-transform duration-200 ease-out
-                    ${visible || campoAbierto ? 'translate-y-0' : 'translate-y-[135%]'}`}
+                    flex justify-end pointer-events-none"
             >
                 {/* El clúster: una sola pieza con su propio material, para que los
                     controles no compitan con el texto de la lista que pasa por
                     detrás. `items-start` para que los rótulos queden alineados
                     aunque el botón principal sea más alto. */}
-                {/* `data-surface="card"` y NO `bg-surface-card border border-border-card`.
+                {/* `data-surface` y NO `bg-surface-card border border-border-card`.
                     Es la lección que este proyecto ya tiene escrita en
                     GlassViewLayout: el MATERIAL —fondo, borde, sombra, radio y sobre
                     todo `backdrop-filter`— lo aplica `data-surface` en index.css. Las
                     clases Tailwind solo dan el color de fondo, así que con
                     `bg-surface-card` el clúster salía SIN vidrio: translúcido, no glass.
 
-                    Y la superficie es `dropdown`, no `card`. En Liquid Glass `card` es
-                    16% de opacidad, pensada para algo que se apoya en la página; acá el
-                    clúster flota sobre una lista densa y **el nombre del producto se
-                    leía a través de él**. Es el mismo fallo que index.css ya documenta
-                    para las hojas táctiles: "se leían 'Filtros' y los cuatro estados A
-                    TRAVÉS del calendario", con el criterio de elegir "una opacidad donde
-                    lo de atrás es luz, no texto". `dropdown` es 72% con el mismo blur y
-                    el mismo radio, que es la superficie de lo que flota sobre contenido.
+                    Y la superficie es `card`: el mismo vidrio que cualquier otra
+                    tarjeta del portal, que es lo que se pidió. Con el blur ya
+                    funcionando (ver la nota del contenedor de arriba) los 44px de
+                    `--backdrop-card` convierten lo de atrás en luz y no en texto, que
+                    es el criterio que index.css fija para las superficies flotantes.
+                    `dropdown` (72%) era la compensación de un blur roto y se veía
+                    como un panel opaco.
 
-                    Se probó `sheet` (98.5%, la que index.css creó para ese fallo) y no
-                    sirve acá: **su radio es 0** —está pensada para una hoja que llega a
-                    los bordes de la pantalla y el llamador le pone el suyo—, así que el
-                    clúster salía rectangular. Con `dropdown` queda un resto de sangrado
-                    del texto de atrás, muy atenuado; se acepta porque lo que tiene que
-                    leerse son los rótulos DEL clúster, y esos quedan nítidos.
+                    La animación de entrada/salida vive ACÁ y no en el contenedor: un
+                    `transform` propio no rompe el `backdrop-filter`, uno ancestro sí.
+                    `transition-transform` la declara `[data-surface="card"]` en
+                    index.css (gana la cascada sobre las utilidades de Tailwind), así
+                    que la barra entra con la duración y el spring del tema.
 
                     Al buscar toma todo el ancho en vez de ajustarse al contenido, así
                     el campo se queda con lo que sobra sin mover los otros dos. */}
                 <div
-                    data-surface="dropdown"
+                    data-surface="card"
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
-                        ${campoAbierto ? 'w-full' : 'max-w-full'}`}
+                        ${campoAbierto ? 'w-full' : 'max-w-full'}
+                        ${visible || campoAbierto ? 'translate-y-0' : 'translate-y-[135%]'}`}
                 >
 
                     {buscador && (campoAbierto ? (

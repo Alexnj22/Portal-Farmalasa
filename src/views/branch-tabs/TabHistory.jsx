@@ -4,6 +4,7 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import RangeDatePicker from '../../components/common/RangeDatePicker';
 import ViewTabBar from '../../components/common/ViewTabBar';
+import FilterBar from '../../components/common/FilterBar';
 import { AiThinkingState } from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
@@ -291,23 +292,39 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     <p className="text-label font-bold text-content-3 uppercase tracking-widest">Expediente Centralizado Interactivo</p>
                 </div>
 
-                {/* D3.9 (2026-07-27): esta barra estaba reescrita a mano y con
-                    renderizado condicional (isSearchOpen ? A : B) en vez de las dos
-                    mitades colapsables — por eso su forma no calzaba con las otras
-                    doce. Ahora sale del canónico; todos los controles (IA, exportar,
-                    filtro de tipo, rango de fechas y reset) van en `trailingActions`. */}
+                {/* §17 (2026-07-30): esta barra llevaba en `trailingActions` el
+                    filtro de tipo, el rango de fechas y su reset. O sea que la
+                    píldora del HEADER estaba filtrando, que es exactamente lo que
+                    §17 dice que no hace — y en el teléfono esos tres controles
+                    quedaban tras un ícono rotulado "Filtros y acciones" arriba de
+                    todo, que se va con el scroll. Ahora el header es navegación y
+                    buscador, y filtros y acciones viven juntos en `FilterBar`. */}
                 <ViewTabBar
                     searchValue={searchQuery}
                     onSearchChange={setSearchQuery}
                     placeholder="Buscar en historial..."
-                    trailingActions={
-                        <>
-                            {/* 🤖 BOTÓN MAESTRO DE IA ESTANDARIZADO (A LA IZQUIERDA) 🤖 */}
-                            <button 
+                />
+            </div>
+
+            {/* §17: los filtros del historial y sus acciones, en una sola píldora.
+                El botón de IA y el menú de exportar van por `accionesExtra` porque
+                no son un descriptor de botón: el primero es una pieza bespoke con
+                su gradiente giratorio, el segundo un desplegable con dos formatos. */}
+            <div className="flex justify-end mb-4 no-print">
+                <FilterBar
+                    onClear={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }}
+                    activeCount={[typeFilter !== 'ALL', !!(dateFilter.start || dateFilter.end)].filter(Boolean).length}
+                    title="Filtros del historial"
+                    accionesExtra={(
+                        <div className="flex items-center gap-1.5">
+                            {/* 🤖 BOTÓN MAESTRO DE IA ESTANDARIZADO 🤖 */}
+                            <button
+                                type="button"
                                 onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateGlobalAiSummary}
                                 disabled={printHistory.length === 0 && !aiMode}
+                                aria-pressed={aiMode}
+                                aria-label={aiMode ? 'Cerrar el resumen de IA' : 'Resumen inteligente del historial'}
                                 className={`relative group/ai-btn w-10 h-10 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] z-sidebar animate-in zoom-in-95 ${(printHistory.length === 0 && !aiMode) ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:-translate-y-1 active:scale-[0.97]'}`}
-                                title={aiMode ? "Cerrar Resumen IA" : "Resumen Inteligente del Historial"}
                             >
                                 {aiMode ? (
                                     <div className="absolute inset-[1px] bg-chart-3/10 backdrop-blur-sm rounded-full z-0 flex items-center justify-center border border-chart-3/30">
@@ -322,6 +339,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </>
                                 )}
                             </button>
+
                             <div className="relative z-toast" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                                 <Button variant="ghost" size="sm" icon={Download}>
                                     <span className="hidden sm:inline">Exportar</span>
@@ -333,42 +351,37 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                     </div>
                                 </div>
                             </div>
-                            <Filter size={14} className="text-brand-text ml-1 shrink-0 hidden sm:block" strokeWidth={2.5} />
-                            <div className="w-[140px] sm:w-[160px] shrink-0">
-                                <div className="w-[140px] sm:w-[160px] shrink-0">
-                                    <LiquidSelect value={typeFilter} onChange={(value) => setTypeFilter(value)} options={[{ value: 'ALL', label: 'Todo' }, { value: 'LEGAL', label: 'Legal' }, { value: 'HR', label: 'Personal' }, { value: 'OPERATIVE', label: 'Operativo' }, { value: 'FINANCE', label: 'Finanzas' }]} clearable={false} />
-                                </div>
-                            </div>
+                        </div>
+                    )}
+                >
+                    <FilterBar.Section active={typeFilter !== 'ALL'} onClear={() => setTypeFilter('ALL')} label="tipo">
+                        <Filter size={12} className="text-content-3 shrink-0" strokeWidth={2.5} />
+                        <div className="w-[150px]">
+                            <LiquidSelect value={typeFilter} onChange={(value) => setTypeFilter(value)}
+                                options={[{ value: 'ALL', label: 'Todo' }, { value: 'LEGAL', label: 'Legal' }, { value: 'HR', label: 'Personal' }, { value: 'OPERATIVE', label: 'Operativo' }, { value: 'FINANCE', label: 'Finanzas' }]}
+                                clearable={false} compact bare />
+                        </div>
+                    </FilterBar.Section>
 
-                            <div className="w-px h-5 bg-content-3/40 mx-1 shrink-0"></div>
-
-                            {/* D3.11 (2026-07-27): esto eran DOS LiquidDatePicker
-                                coordinados a mano —"Desde" y "Hasta"— que es
-                                exactamente el trabajo de RangeDatePicker. Uno de los
-                                10 rangos escritos así en el proyecto. Un control en
-                                vez de dos: se arrastra en vez de abrir dos
-                                calendarios y acordarse del primero, y libera ~140px
-                                de barra. `months={1}` porque el panel de dos meses
-                                (596px) es de pedir vacaciones, no de filtrar. */}
-                            <div className="w-[200px] shrink-0">
-                                <RangeDatePicker
-                                    startDate={dateFilter.start}
-                                    endDate={dateFilter.end}
-                                    onRangeChange={(start, end) => setDateFilter({ start, end })}
-                                    months={1}
-                                    compact
-                                    shortcuts
-                                    placeholder="Cualquier fecha"
-                                    label="historial"
-                                />
-                            </div>
-
-                            {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
-                                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={() => { setDateFilter({ start: '', end: '' }); setTypeFilter('ALL'); }} />
-                            )}
-                        </>
-                    }
-                />
+                    {/* D3.11: un `RangeDatePicker` en vez de dos `LiquidDatePicker`
+                        coordinados a mano. `months={1}` porque el panel de dos meses
+                        (596px) es de pedir vacaciones, no de filtrar. */}
+                    <FilterBar.Section active={!!(dateFilter.start || dateFilter.end)}
+                        onClear={() => setDateFilter({ start: '', end: '' })} label="fecha">
+                        <div className="w-[200px]">
+                            <RangeDatePicker
+                                startDate={dateFilter.start}
+                                endDate={dateFilter.end}
+                                onRangeChange={(start, end) => setDateFilter({ start, end })}
+                                months={1}
+                                compact
+                                shortcuts
+                                placeholder="Cualquier fecha"
+                                label="historial"
+                            />
+                        </div>
+                    </FilterBar.Section>
+                </FilterBar>
             </div>
 
             {/* ============================================================================ */}

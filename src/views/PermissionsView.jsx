@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Badge from '../components/common/Badge';
 import { MODULE_GROUPS } from '../constants/permissionModules';
 import SegmentedControl from '../components/common/SegmentedControl';
-import TabBarAction from '../components/common/TabBarAction';
+import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { EmptyState } from '../components/common/StateViews';
 import {
@@ -533,30 +533,38 @@ const PermissionsView = () => {
         </div>
     );
 
-    // D3.9 (2026-07-27): barra reescrita a mano → canónico. "Activar todo" y el
-    // selector de copiar-desde pasan a `trailingActions`.
     const filtersContent = (
         <ViewTabBar
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             placeholder="Buscar cargo..."
-            trailingActions={selectedRoleId && canEdit && (
-                <>
-                    <TabBarAction icon={activatingAll ? Loader2 : Zap} tone="warning"
-                        onClick={() => setConfirmActivate(true)}
-                        disabled={activatingAll || copyingFrom}>
-                        Activar todo
-                    </TabBarAction>
-                    <div className="w-44 shrink-0">
-                        <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }}
-                            options={copyOptions}
-                            placeholder={copyingFrom ? 'Copiando…' : 'Copiar desde…'}
-                            compact bare clearable={false} disabled={!!copyingFrom} />
-                    </div>
-                </>
-            )}
         />
     );
+
+    // §17: las dos acciones sobre el cargo elegido bajan a la píldora del cuerpo.
+    // "Copiar desde…" es un `LiquidSelect` y no cabe en un descriptor de botón,
+    // así que va por `accionesExtra` — que existe exactamente para esto.
+    const puedeEditarCargo = selectedRoleId && canEdit;
+    const filtrosCuerpo = puedeEditarCargo ? (
+        <FilterBar
+            acciones={[{
+                key: 'activar',
+                icon: activatingAll ? Loader2 : Zap,
+                label: 'Activar todo',
+                tone: 'warning',
+                disabled: activatingAll || !!copyingFrom,
+                onClick: () => setConfirmActivate(true),
+            }]}
+            accionesExtra={(
+                <div className="w-44 shrink-0">
+                    <LiquidSelect value="" onChange={val => { if (val) setConfirmCopy(Number(val)); }}
+                        options={copyOptions}
+                        placeholder={copyingFrom ? 'Copiando…' : 'Copiar desde…'}
+                        compact bare clearable={false} disabled={!!copyingFrom} />
+                </div>
+            )}
+        />
+    ) : null;
 
     return (
         <>
@@ -687,6 +695,11 @@ const PermissionsView = () => {
                         ) : (
                         /* Grid de módulos */
                         <div className="space-y-6 pb-10">
+
+                            {/* Las acciones sobre el cargo elegido (§17). Van acá y no
+                                en la columna de cargos porque operan sobre ESTA
+                                columna: es lo que están por reescribir. */}
+                            {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}
 
                             {/* ── Cards: Super Usuario (1/3) + Nivel de Precio (2/3) ── */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">

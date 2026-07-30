@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
-import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import {
@@ -277,26 +276,32 @@ const filtersContent = (
         searchValue={rawSearchTerm}
         onSearchChange={setRawSearchTerm}
         placeholder="Buscar por usuario, acción o detalle..."
-        trailingActions={
-            <>
-                <TabBarAction
-                    icon={isLive ? Radio : Power}
-                    tone={isLive ? 'danger' : 'brand'}
-                    variant={isLive ? 'primary' : 'quiet'}
-                    onClick={() => setIsLive(!isLive)}>
-                    {isLive ? 'En vivo' : 'En vivo (off)'}
-                </TabBarAction>
-                <TabBarAction
-                    icon={isExporting ? Check : Download}
-                    tone={isExporting ? 'success' : 'brand'}
-                    disabled={processedLogs.length === 0 || isExporting}
-                    onClick={exportToCSV}>
-                    {isExporting ? 'Listo' : 'Exportar'}
-                </TabBarAction>
-            </>
-        }
     />
 );
+
+// Las acciones de la vista viven en la píldora del cuerpo (§17). "En vivo" es
+// un interruptor, no un disparador: lleva `activo` para que emita `aria-pressed`
+// y para que en el teléfono el botón del clúster se vea encendido.
+const accionesAuditoria = [
+    {
+        key: 'vivo',
+        icon: isLive ? Radio : Power,
+        label: isLive ? 'En vivo' : 'En vivo (off)',
+        tone: isLive ? 'danger' : 'brand',
+        variant: isLive ? 'primary' : 'quiet',
+        activo: isLive,
+        principal: false,
+        onClick: () => setIsLive(!isLive),
+    },
+    {
+        key: 'exportar',
+        icon: isExporting ? Check : Download,
+        label: isExporting ? 'Listo' : 'Exportar',
+        tone: isExporting ? 'success' : 'brand',
+        disabled: processedLogs.length === 0 || isExporting,
+        onClick: exportToCSV,
+    },
+];
 
 // ── Cuerpo: la barra de filtros (§17) ────────────────────────────────────
 // Orden de ranuras: entidad (acción) → tiempo (rango). No hay ámbito acá: la
@@ -305,6 +310,7 @@ const filtrosCuerpo = (
     <FilterBar
         onClear={clearFilters}
         activeCount={[actionFilter !== 'ALL', !!startDate, !!endDate].filter(Boolean).length}
+        acciones={accionesAuditoria}
     >
         <FilterBar.Section active={actionFilter !== 'ALL'} onClear={() => setActionFilter('ALL')} label="acción">
             <div className="w-[170px]">

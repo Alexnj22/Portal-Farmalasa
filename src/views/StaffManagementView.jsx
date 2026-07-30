@@ -2,7 +2,6 @@ import React, { useMemo, useState, useEffect, useCallback, memo, useRef } from '
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import ViewTabBar from '../components/common/ViewTabBar';
-import TabBarAction from '../components/common/TabBarAction';
 import Badge from '../components/common/Badge';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
@@ -56,6 +55,17 @@ import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
+
+// Las mismas cinco vistas que ofrecen las tarjetas de arriba. Existen también acá
+// porque la píldora de filtros tiene que ofrecer todo lo que cuenta en su badge:
+// las tarjetas son el atajo visual, no el único acceso (§17).
+const STAT_FILTER_OPTIONS = [
+    { value: 'ALL',          label: 'Todos' },
+    { value: 'Activo',       label: 'Activos' },
+    { value: 'En Apoyo',     label: 'Apoyo' },
+    { value: 'Otros',        label: 'Otros' },
+    { value: 'PRACTICANTES', label: 'Practicantes' },
+];
 
 // Código de empleado es numérico crudo (ej. "201") — si se mezcla con nombre/rol/
 // sucursal en un solo texto para el match por tokens, un dígito suelto como "2" hace
@@ -821,20 +831,21 @@ const StaffManagementView = ({
       searchValue={searchTerm}
       onSearchChange={setSearchTerm}
       placeholder="Buscar por nombre, código o cargo..."
-      trailingActions={
-        <>
-          <TabBarAction icon={UserPlus} variant="primary"
-            onClick={handleOpenNewEmployee} disabled={!canEdit}>
-            Nuevo Empleado
-          </TabBarAction>
-          <TabBarAction icon={GraduationCap} tone="chart-3"
-            onClick={handleOpenNewPracticante} disabled={!canEdit}>
-            Nuevo Practicante
-          </TabBarAction>
-        </>
-      }
     />
   );
+
+  // Las tres acciones de la vista, juntas y en la píldora del cuerpo (§17).
+  // "Exportar" estaba suelto AL LADO de la píldora, con `iconOnly` y sin texto
+  // —o sea invisible en el teléfono, donde ni siquiera hay hover para leer su
+  // `title`—. Ahora es una acción como las otras dos.
+  const accionesPersonal = [
+    { key: 'empleado', icon: UserPlus, label: 'Nuevo Empleado', variant: 'primary',
+      disabled: !canEdit, onClick: handleOpenNewEmployee },
+    { key: 'practicante', icon: GraduationCap, label: 'Nuevo Practicante', tone: 'chart-3',
+      disabled: !canEdit, onClick: handleOpenNewPracticante },
+    { key: 'exportar', icon: Download, label: 'Exportar', tone: 'success',
+      onClick: handleExportCSV },
+  ];
 
   return (
     <GlassViewLayout
@@ -874,12 +885,17 @@ const StaffManagementView = ({
           </div>
 
           <div className="flex items-center gap-2">
-                            {/* La ACCIÓN sale de la píldora (§17): filtrar y exportar
-                                son cosas distintas, y meterlas en el mismo contenedor
-                                hacía que "Exportar" pareciera un filtro más. */}
+                            {/* Filtros y acciones, en la misma píldora (§17).
+                                `activeCount` contaba `activeStatFilter` pero la
+                                píldora no lo ofrecía: en el teléfono la hoja decía
+                                "2 filtros" y traía uno solo, y el otro vivía en unas
+                                tarjetas que en esa pantalla quedan arriba del todo.
+                                Ahora la ranura "estado" está acá; las tarjetas siguen
+                                siendo el atajo, no el único camino. */}
                             <FilterBar
                                 onClear={clearFilters}
                                 activeCount={[selectedBranch !== 'ALL', activeStatFilter !== 'ALL'].filter(Boolean).length}
+                                acciones={accionesPersonal}
                             >
                                 <FilterBar.Section active={selectedBranch !== 'ALL'} label="sucursal">
                                     <div style={{ width: '220px' }}>
@@ -894,10 +910,22 @@ const StaffManagementView = ({
                                         />
                                     </div>
                                 </FilterBar.Section>
-                            </FilterBar>
 
-                            <Button tone="success" size="sm" icon={Download} title="Exportar a Excel"
-                                iconOnly onClick={handleExportCSV} />
+                                <FilterBar.Section active={activeStatFilter !== 'ALL'}
+                                    onClear={() => setActiveStatFilter('ALL')} label="estado">
+                                    <div style={{ width: '190px' }}>
+                                        <LiquidSelect
+                                            value={activeStatFilter}
+                                            onChange={val => setActiveStatFilter(val || 'ALL')}
+                                            options={STAT_FILTER_OPTIONS}
+                                            placeholder="Todos"
+                                            icon={ShieldCheck}
+                                            clearable={false}
+                                            compact bare
+                                        />
+                                    </div>
+                                </FilterBar.Section>
+                            </FilterBar>
                         </div>
         </div>
 

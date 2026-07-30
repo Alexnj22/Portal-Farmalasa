@@ -1780,7 +1780,13 @@
   box-shadow: var(--card-shadow);
   border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
+  /* `translate` va aparte de `transform`: son propiedades independientes desde
+     CSS Transforms 2, y Tailwind v4 compila `translate-y-*` a `translate`, no a
+     `transform`. Sin nombrarla acá, una tarjeta que se desplaza salta en vez de
+     deslizarse — lo descubrió la barra flotante de `FilterBar`, que anima su
+     entrada así para no romper su propio `backdrop-filter`. */
   transition: transform var(--dur-base) var(--ease-spring),
+              translate var(--dur-base) var(--ease-spring),
               box-shadow var(--dur-base) var(--ease-spring);
 }
 

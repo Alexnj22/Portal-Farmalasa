@@ -17,7 +17,6 @@ import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
-import TabBarAction from '../components/common/TabBarAction';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 import TimePicker12 from '../components/common/TimePicker12';
@@ -1192,23 +1191,31 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       searchValue={search}
       onSearchChange={setSearch}
       placeholder="Buscar empleado…"
-      trailingActions={!isDemoMode && isQuincenaPast && (
-        quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED') ? (
-          <>
-            <Badge variant="success" icon={ShieldCheck} uppercase={false}>Quincena cerrada</Badge>
-            <TabBarAction icon={ArrowRight} tone="success" onClick={() => navigate('/payroll')}>
-              Ver planilla
-            </TabBarAction>
-          </>
-        ) : quincenaTS.length > 0 ? (
-          <TabBarAction icon={isClosingQuincena ? Loader2 : LockKeyhole} variant="primary"
-            disabled={isClosingQuincena} onClick={handleCloseQuincena}>
-            {isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena'}
-          </TabBarAction>
-        ) : null
-      )}
     />
   );
+
+  // ── Las acciones de la quincena, en la píldora del cuerpo (§17) ──────────
+  // Solo aparecen sobre una quincena pasada con marcajes: es cuando cerrarla
+  // significa algo. El `Badge` de "Quincena cerrada" no es un botón, así que va
+  // por `accionesExtra` — la escotilla para lo que no es una acción.
+  const quincenaCerrada = quincenaTS.length > 0 && quincenaTS.every(ts => ts.status === 'APPROVED');
+  const hayAccionQuincena = !isDemoMode && isQuincenaPast && quincenaTS.length > 0;
+
+  const accionesAsistencia = !hayAccionQuincena ? [] : quincenaCerrada ? [{
+    key: 'planilla', icon: ArrowRight, label: 'Ver planilla', tone: 'success',
+    onClick: () => navigate('/payroll'),
+  }] : [{
+    key: 'cerrar',
+    icon: isClosingQuincena ? Loader2 : LockKeyhole,
+    label: isClosingQuincena ? 'Cerrando…' : 'Cerrar quincena',
+    variant: 'primary',
+    disabled: isClosingQuincena,
+    onClick: handleCloseQuincena,
+  }];
+
+  const extraAsistencia = hayAccionQuincena && quincenaCerrada ? (
+    <Badge variant="success" icon={ShieldCheck} uppercase={false}>Quincena cerrada</Badge>
+  ) : null;
 
   // ── Cuerpo: la barra de filtros (§17) ────────────────────────────────────
   // Quincena y sucursal RECORTAN los datos: son filtros, no navegación. El
@@ -1219,6 +1226,8 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     <FilterBar
       onClear={() => { setFilterBranch(''); setSelectedQuincena(getCurrentQuincenaStart()); }}
       activeCount={[!!filterBranch, !isCurrentQuincena].filter(Boolean).length}
+      acciones={accionesAsistencia}
+      accionesExtra={extraAsistencia}
     >
       {getScope('time_audit') !== 'BRANCH' && (
         <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">

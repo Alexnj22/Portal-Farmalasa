@@ -4,7 +4,6 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
-import TabBarAction from '../components/common/TabBarAction';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { AiThinkingState, Skeleton, SkeletonText } from '../components/common/StateViews';
 import { useNavigate, Link } from "react-router-dom";
@@ -710,18 +709,13 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
     // (feedback_liquid_select). Pasa a LiquidSelect, igual que Facturación,
     // Monitor y Auditoría — y con eso desaparece el tercer estado.
     //
-    // §17 (v2.99.1): el filtro de estado bajó al CUERPO. El header queda con lo
-    // que le corresponde: buscador y la acción principal.
+    // §17: el filtro de estado vive en el CUERPO, y desde el 2026-07-30 la acción
+    // también. El header queda con lo que le corresponde: el buscador.
     const renderFiltersContent = () => (
         <ViewTabBar
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
             placeholder="Buscar sucursal o dirección..."
-            trailingActions={canEdit && (
-                <TabBarAction icon={Plus} variant="primary" onClick={() => openModal?.("newBranch")}>
-                    Nueva Sucursal
-                </TabBarAction>
-            )}
         />
     );
 
@@ -729,6 +723,10 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
         <FilterBar
             onClear={() => setFilterStatus('ALL')}
             activeCount={filterStatus !== 'ALL' ? 1 : 0}
+            acciones={canEdit ? [{
+                key: 'nueva', icon: Plus, label: 'Nueva Sucursal', variant: 'primary',
+                onClick: () => openModal?.('newBranch'),
+            }] : []}
         >
             {/* Valor "sin filtrar": la cadena 'ALL' */}
             <FilterBar.Section active={filterStatus !== 'ALL'} onClear={() => setFilterStatus('ALL')} label="estado">

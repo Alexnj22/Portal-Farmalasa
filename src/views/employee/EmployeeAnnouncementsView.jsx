@@ -2,6 +2,7 @@ import React, { useMemo, useState, memo, useRef, useCallback, useEffect } from '
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import FilterBar from '../../components/common/FilterBar';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, ChevronLeft, ChevronRight, RefreshCw, Palmtree, FileText, DollarSign, FileCheck, Stethoscope, CalendarDays, ArrowLeftRight, Sparkles, ChevronsRight, Pencil } from 'lucide-react';
@@ -679,10 +680,11 @@ const EmployeeAnnouncementsView = () => {
     // cierra solo si está vacío) y, de regalo, el colapso táctil en hoja
     // inferior que esta copia no tenía.
     //
-    // Los subfiltros de "Leídos" —que se deslizaban dentro de la misma barra—
-    // son un uno-de-N: van en `trailingActions` como `SegmentedControl`, que
-    // los anuncia como grupo. Antes eran botones sueltos con `inert` y un
-    // `max-w-0` que los escondía a medias.
+    // Los subfiltros de "Leídos" son un uno-de-N: `SegmentedControl`, que los
+    // anuncia como grupo. Antes eran botones sueltos con `inert` y un `max-w-0`
+    // que los escondía a medias. Y hasta el 2026-07-30 vivían en
+    // `trailingActions`, o sea en la píldora del HEADER — pero filtran, así que
+    // su sitio es `FilterBar` (§17).
     const filtersContent = (
         <ViewTabBar
             tabs={TABS.map(t => ({ key: t.key, label: t.label }))}
@@ -691,7 +693,15 @@ const EmployeeAnnouncementsView = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             placeholder="Buscar avisos…"
-            trailingActions={tab === 'READ' && readFilters.length > 1 && (
+        />
+    );
+
+    const filtrosCuerpo = tab === 'READ' && readFilters.length > 1 ? (
+        <FilterBar
+            onClear={() => setTypeFilter('ALL')}
+            activeCount={typeFilter !== 'ALL' ? 1 : 0}
+        >
+            <FilterBar.Section active={typeFilter !== 'ALL'} onClear={() => setTypeFilter('ALL')} label="tipo">
                 <SegmentedControl
                     size="sm"
                     label="Filtrar por tipo"
@@ -699,13 +709,14 @@ const EmployeeAnnouncementsView = () => {
                     onChange={setTypeFilter}
                     options={readFilters.map(({ key, label, icon }) => ({ value: key, label, icon }))}
                 />
-            )}
-        />
-    );
+            </FilterBar.Section>
+        </FilterBar>
+    ) : null;
 
     return (
         <GlassViewLayout icon={Bell} title="Mis Avisos" filtersContent={filtersContent} transparentBody={true}>
             <div className="pb-8">
+                {filtrosCuerpo && <div className="flex justify-end mb-4">{filtrosCuerpo}</div>}
                 {isStoreLoading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {Array.from({ length: 6 }).map((_, i) => (

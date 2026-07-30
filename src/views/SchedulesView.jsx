@@ -19,7 +19,6 @@ import TabShifts from './schedule-tabs/TabShifts';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import ViewTabBar from '../components/common/ViewTabBar';
-import TabBarAction from '../components/common/TabBarAction';
 import FilterBar from '../components/common/FilterBar';
 import PeriodStepper from '../components/common/PeriodStepper';
 
@@ -704,21 +703,23 @@ const SchedulesView = ({ openModal, setView }) => {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={searchPlaceholder}
-            // "Publicar" vivía DENTRO de la píldora de filtros, donde leía como
-            // un filtro más (§17: la barra es para filtrar; las acciones van al
-            // otro lado). Es la acción principal de la vista, así que va acá.
-            trailingActions={viewMode === 'calendar' && canEdit && getScope('schedules') !== 'BRANCH' && (
-                <TabBarAction
-                    icon={isPublishing ? Loader2 : weekIsPublished ? CheckCircle : Save}
-                    variant={weekIsPublished ? 'quiet' : 'primary'}
-                    tone="success"
-                    disabled={isPublishing || weekIsPublished || employeesInView.length === 0 || isPastWeek}
-                    onClick={weekIsPublished ? undefined : triggerPublishAudit}>
-                    {isPublishing ? 'Publicando…' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                </TabBarAction>
-            )}
         />
     );
+
+    // "Publicar" volvió a la píldora de filtros el 2026-07-30, y esta vez sin el
+    // problema que la había echado: entonces se mezclaba con las ranuras y leía
+    // como un filtro más; ahora las acciones van tras un divisor y en su propio
+    // bloque, que es lo que las distingue.
+    const puedePublicar = viewMode === 'calendar' && canEdit && getScope('schedules') !== 'BRANCH';
+    const accionesHorarios = puedePublicar ? [{
+        key: 'publicar',
+        icon: isPublishing ? Loader2 : weekIsPublished ? CheckCircle : Save,
+        label: isPublishing ? 'Publicando…' : weekIsPublished ? 'Publicado' : 'Publicar',
+        variant: weekIsPublished ? 'quiet' : 'primary',
+        tone: 'success',
+        disabled: isPublishing || weekIsPublished || employeesInView.length === 0 || isPastWeek,
+        onClick: weekIsPublished ? undefined : triggerPublishAudit,
+    }] : [];
 
     let currentChartData = [];
     let chartTitle = 'Tx promedio · últimos 3 meses';
@@ -745,6 +746,7 @@ const SchedulesView = ({ openModal, setView }) => {
         <FilterBar
             onClear={handleResetFilters}
             activeCount={[!isDefaultWeek].filter(Boolean).length}
+            acciones={accionesHorarios}
         >
             <FilterBar.Section label="sucursal">
                 <div className="w-[175px]">

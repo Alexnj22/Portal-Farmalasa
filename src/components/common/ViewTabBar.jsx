@@ -1,14 +1,37 @@
 import { useState, useRef } from 'react';
-import { Search, X, ChevronRight, SlidersHorizontal } from 'lucide-react';
-import ModalShell from './ModalShell';
-import useCoarsePointer from '../../hooks/useCoarsePointer';
+import { Search, X, ChevronRight } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
+import { usePublicarBuscador, useHayBarraFlotante } from './CanalDeVista';
 
 const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
 
 /**
- * Reusable floating tab-pill with search expand/collapse.
+ * La píldora del HEADER de una vista: navegación y buscador. Nada más.
+ *
+ * ── `trailingActions` se retiró el 2026-07-30 ─────────────────────────────
+ * Esta barra llegó a tener una prop `trailingActions` con los botones de acción
+ * de la vista, y ahí se mezclaron tres cosas distintas: acciones de verdad
+ * ("Nuevo Empleado", "Publicar", "Exportar"), **filtros** —el rango de fechas de
+ * `TabHistory`, el `SegmentedControl` de tipo de `EmployeeAnnouncementsView`— y
+ * hasta un `LiquidSelect` de "Copiar desde…". O sea que la píldora del header
+ * terminó filtrando, que es exactamente lo que §17 dice que no hace.
+ *
+ * Peor en táctil: las acciones se guardaban tras un botón `SlidersHorizontal`
+ * que abría una hoja rotulada *"Filtros y acciones"*, mientras la barra
+ * flotante de abajo abría OTRA hoja rotulada *"Filtros"* con los filtros
+ * reales. Dos puertas, el mismo ícono, contenidos distintos.
+ *
+ * Hoy los filtros y las acciones viven juntos en `FilterBar` (§17), que es el
+ * único lugar donde el usuario mira para saber qué está recortando y qué puede
+ * hacer con lo que quedó. Acá quedan las pestañas y el buscador.
+ *
+ * ── En táctil el buscador se va abajo ─────────────────────────────────────
+ * Si hay una `FilterBar` flotante en la vista, ella se queda con el buscador y
+ * esta barra no dibuja su lupa: en un teléfono el header se va con el scroll,
+ * así que un segundo acceso al mismo buscador allá arriba es un acceso que a
+ * los tres deslizamientos ya no existe. Lo resuelve el canal de `CanalDeVista`,
+ * no la vista.
  *
  * Props:
  *   tabs            – Array<{ key, label, icon? | Icon? }>
@@ -18,9 +41,6 @@ const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
  *   onSearchChange  – (value: string) => void
  *   placeholder     – string
  *   showSearch      – bool
- *   trailingActions – ReactNode, opcional — botones extra entre los tabs y el
- *                     buscador (ej. toggle de privacidad de VentasView). Se
- *                     separa del bloque de tabs con el mismo divisor.
  */
 export default function ViewTabBar({
   tabs = [],
@@ -30,17 +50,30 @@ export default function ViewTabBar({
   onSearchChange,
   placeholder = 'Buscar...',
   showSearch = true,
-  trailingActions = null,
 }) {
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [hojaFiltros, setHojaFiltros] = useState(false);
-  const esTactil = useCoarsePointer();
   const inputRef = useRef(null);
+
+  // La barra flotante de `FilterBar` se anuncia por el canal; si está, el
+  // buscador es suyo. Sin proveedor (`FilterBar` fuera de `GlassViewLayout`)
+  // esto es `false` y la barra conserva su lupa, como antes.
+  const hayBarraFlotante = useHayBarraFlotante();
+  const mostrarLupa = showSearch && !hayBarraFlotante;
+  // El modo búsqueda solo existe si la lupa vive acá. Si la barra flotante se la
+  // lleva —al girar a vertical con el campo abierto, por ejemplo— la mitad de
+  // búsqueda tiene que colapsar sola o quedan los tabs escondidos tras un campo
+  // que ya nadie puede cerrar.
+  const buscando = isSearchMode && mostrarLupa;
+
+  // Se publica aunque la lupa siga acá: la barra flotante decide si lo usa.
+  usePublicarBuscador(showSearch && onSearchChange
+    ? { value: searchValue, onChange: onSearchChange, placeholder }
+    : null);
 
   // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
   // cierra Y limpia; click afuera cierra SOLO si está vacío.
   const { containerProps } = useSearchToggle({
-    active: isSearchMode,
+    active: buscando,
     value: searchValue,
     onClear: () => onSearchChange?.(''),
     onClose: () => setIsSearchMode(false),
@@ -80,10 +113,10 @@ export default function ViewTabBar({
           aterrizaba una y otra vez en este campo sin poder mostrar el aro.
           `inert` —no `tabIndex={-1}`— porque también hay que sacar los botones de
           limpiar y cerrar, y de paso lo oculta a los lectores de pantalla. */}
-      <div inert={!isSearchMode ? true : undefined}
+      <div inert={!buscando ? true : undefined}
         className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden
         transition-all duration-700 ${spring} origin-left
-        ${isSearchMode
+        ${buscando
           ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3'
           : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
 
@@ -116,10 +149,10 @@ export default function ViewTabBar({
 
       {/* Normal mode — mismo caso al revés: con la búsqueda abierta, los tabs
           colapsados seguían tabulables. */}
-      <div inert={isSearchMode ? true : undefined}
+      <div inert={buscando ? true : undefined}
         className={`flex items-center h-full shrink-0 transform-gpu overflow-visible
         transition-all duration-700 ${spring} origin-right
-        ${isSearchMode
+        ${buscando
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'
           : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
@@ -160,29 +193,14 @@ export default function ViewTabBar({
           </div>
         )}
 
-        {tabs.length > 0 && (trailingActions || showSearch) && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
-
-        {/* D3.12 (2026-07-27): en táctil las acciones NO caben en línea. Medido en
-            /auditview a 390px: 10 controles quedaban FUERA del viewport —el segundo
-            campo de fecha y el botón de buscar eran inalcanzables—. La barra es
-            `w-max`, así que crecía más allá de la pantalla en vez de adaptarse.
-            Ahora se guardan tras un botón y se despliegan en una hoja inferior a
-            ancho completo, donde cada control tiene sitio de sobra. */}
-        {trailingActions && (esTactil ? (
-          <button type="button" onClick={() => setHojaFiltros(true)}
-            aria-label="Filtros y acciones"
-            className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0
-              transition-colors border ${closeBtnCls} border-transparent`}>
-            <SlidersHorizontal size={18} strokeWidth={2.5} />
-          </button>
-        ) : trailingActions)}
+        {tabs.length > 0 && mostrarLupa && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
 
         {/* D3.10: el botón de buscar iba con `--shadow-glow-brand` y
             `rounded-btn`. El halo se dibuja igual sobre fondo claro que oscuro
             —en los temas sólidos no se ve luminoso, se ve sucio— y el radio de
             14px chocaba con las píldoras del resto de la barra. Ahora es
             relleno plano y píldora, igual que `TabBarAction variant="primary"`. */}
-        {showSearch && (
+        {mostrarLupa && (
           <button aria-label="Buscar" onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
               transition-[background-color,transform] duration-200 hover:-translate-y-px active:scale-[0.97] transform-gpu relative
@@ -195,44 +213,6 @@ export default function ViewTabBar({
         )}
       </div>
 
-      {/* La hoja va por PORTAL a propósito: la barra tiene `transform-gpu`, y un
-          ancestro transformado crea un bloque contenedor para `position: fixed`.
-          Sin el portal la hoja se anclaba a la barra —medía 108px de ancho en vez
-          de los 390 de la pantalla— y sus controles quedaban fuera. */}
-      {/* 2026-07-29: la hoja se montaba a mano con su propio portal, y por eso
-          NO declaraba `role="dialog"` ni `aria-modal`, y no cerraba con Escape.
-          Es el mismo defecto que tenían los tres modales de F1 — cuarta
-          instancia del patrón, y esta vez dentro de un canónico que usan 28
-          vistas. Ahora lo monta `ModalShell` con `align="bottom"`.
-          El portal sigue siendo necesario y lo hace el canónico: la barra tiene
-          `transform-gpu`, y un ancestro transformado crea bloque contenedor
-          para `position: fixed` — sin portal la hoja medía 108px de ancho. */}
-      {esTactil && (
-        <ModalShell
-          open={hojaFiltros}
-          onClose={() => setHojaFiltros(false)}
-          align="bottom"
-          zClass="z-confirm"
-          maxWidthClass="max-w-none"
-          surface="dropdown"
-          panelClassName="rounded-t-modal rounded-b-none px-4 pt-3
-            pb-[max(1rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto"
-          ariaLabel="Filtros y acciones"
-        >
-          <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-body-sm font-black uppercase tracking-widest text-content-2">Filtros</p>
-            <button type="button" aria-label="Cerrar los filtros" onClick={() => setHojaFiltros(false)}
-              className="w-9 h-9 min-w-[var(--tap-min)] min-h-[var(--tap-min)] rounded-full flex items-center justify-center text-content-3 hover:text-content">
-              <X size={16} strokeWidth={2.5} />
-            </button>
-          </div>
-          {/* Los mismos controles, en columna y a ancho completo. */}
-          <div className="flex flex-col gap-3 [&>*]:w-full [&_button]:w-full">
-            {trailingActions}
-          </div>
-        </ModalShell>
-      )}
     </div>
   );
 }

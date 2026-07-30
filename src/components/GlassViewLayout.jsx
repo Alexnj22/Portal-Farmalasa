@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
 import useMediaQuery from '../hooks/useMediaQuery';
+import { CanalDeVistaCtx, useCanalesDeVista } from './common/CanalDeVista';
 
 const GlassViewLayout = ({
     icon: Icon,
@@ -36,6 +37,9 @@ const GlassViewLayout = ({
     // sobre cualquier clase Tailwind equivalente aquí (Fase T2).
     const bodyCardCls = transparentBody ? 'bg-transparent' : '';
 
+    // Los dos canales entre las píldoras hermanas de la vista. Ver CanalDeVista.js.
+    const canalesDeVista = useCanalesDeVista();
+
     // ── En teléfono la card del cuerpo NO va (2026-07-30) ──────────────────
     // Medida la cadena de anchos en un iPhone de 320px: del viewport al primer
     // texto se iban **92px (29%)** en cromo anidado, y la card del cuerpo era
@@ -65,6 +69,11 @@ const GlassViewLayout = ({
     };
 
     return (
+        /* El proveedor envuelve las DOS píldoras de la vista. Tiene que estar acá
+           y no dentro de ninguna de ellas: `ViewTabBar` llega por `filtersContent`
+           y `FilterBar` por `children`, así que son hermanas y el único ancestro
+           común es este layout. Ver `CanalDeVista.js`. */
+        <CanalDeVistaCtx.Provider value={canalesDeVista}>
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans relative">
 
             {/* ── Scroll container ── */}
@@ -246,6 +255,7 @@ const GlassViewLayout = ({
                 )}
             </AnimatePresence>
         </div>
+        </CanalDeVistaCtx.Provider>
     );
 };
 

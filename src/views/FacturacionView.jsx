@@ -19,7 +19,6 @@ import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
 import ListRow from '../components/common/ListRow';
-import TabBarAction from '../components/common/TabBarAction';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
@@ -2097,11 +2096,10 @@ export default function FacturacionView() {
     // prop `tabs` (y de paso ganan el dropdown de móvil, que esta vista no tenía:
     // con 4 tabs de label largo la fila competía por ancho).
     //
-    // §17 (v2.99.1): el filtro de sucursal bajó al CUERPO; en el header queda el
-    // enlace a Admin Facturas, que es una acción. Ese enlace además estaba
-    // reconstruyendo `TabBarAction` clase por clase —los mismos 9 tokens— porque
-    // el canónico renderiza `<button>` y esto tiene que ser un `<a>`. Ahora el
-    // canónico acepta `as`, que es lo que faltaba.
+    // §17: filtros y acciones viven en el CUERPO; el header queda con pestañas y
+    // buscador. El enlace a Admin Facturas sigue siendo un `<a>` de verdad
+    // —`as: 'a'`— para que se pueda abrir en otra pestaña y un lector de pantalla
+    // lo anuncie como enlace y no como botón.
     const filtersContent = (
         <ViewTabBar
             tabs={allowedTabs.map(t => ({ key: t.key, label: t.label }))}
@@ -2111,25 +2109,32 @@ export default function FacturacionView() {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={searchPlaceholder}
-            trailingActions={
-                <TabBarAction as="a" icon={ExternalLink}
-                    href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php"
-                    target="_blank" rel="noopener noreferrer">
-                    Admin Facturas
-                </TabBarAction>
-            }
         />
     );
 
-    const filtrosCuerpo = getScope('facturacion') !== 'BRANCH' && (
-        <FilterBar onClear={() => setFilterBranch('')} activeCount={filterBranch ? 1 : 0}>
-            <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
-                <div className="w-[200px]">
-                    <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
-                        options={branchOptions} placeholder="Todas las sucursales" icon={Building2}
-                        compact bare clearable={false} />
-                </div>
-            </FilterBar.Section>
+    const accionesFacturacion = [{
+        key: 'admin', icon: ExternalLink, label: 'Admin Facturas', as: 'a',
+        href: 'https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php',
+        target: '_blank', rel: 'noopener noreferrer',
+    }];
+
+    // La píldora se dibuja SIEMPRE: quien tiene alcance de una sola sucursal no
+    // ve la ranura de sucursal, pero sí la acción. Antes la condición envolvía la
+    // barra entera, así que al mover la acción acá se le habría desaparecido a
+    // todo el personal de sucursal.
+    const puedeElegirSucursal = getScope('facturacion') !== 'BRANCH';
+    const filtrosCuerpo = (
+        <FilterBar onClear={() => setFilterBranch('')} activeCount={filterBranch ? 1 : 0}
+            acciones={accionesFacturacion}>
+            {puedeElegirSucursal && (
+                <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
+                    <div className="w-[200px]">
+                        <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val || '')}
+                            options={branchOptions} placeholder="Todas las sucursales" icon={Building2}
+                            compact bare clearable={false} />
+                    </div>
+                </FilterBar.Section>
+            )}
         </FilterBar>
     );
 

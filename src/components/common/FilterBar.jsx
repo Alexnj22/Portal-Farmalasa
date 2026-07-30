@@ -1,9 +1,11 @@
 import React, { memo, Children, isValidElement, useState, useEffect, useId, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
-import { X, SlidersHorizontal } from 'lucide-react';
+import { X, SlidersHorizontal, MoreHorizontal } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import Contador from './Contador';
 import BarraFlotante from './BarraFlotante';
+import TabBarAction from './TabBarAction';
+import { useBuscadorDeVista, usePublicarBarraFlotante } from './CanalDeVista';
 
 /**
  * FilterBar — la píldora donde vive TODO el filtro de la vista actual.
@@ -36,10 +38,47 @@ import BarraFlotante from './BarraFlotante';
  *   una `h-14` y otra `h-[4rem]`, así que se veía distinta en cada vista. Ahora
  *   son 52px pase lo que pase, y la barra se alinea con el título en todas.
  *
+ * ── Los BOTONES DE ACCIÓN también viven acá (2026-07-30) ─────────────────
+ * `FilterBar` lleva los filtros de la vista **y sus acciones**. La píldora del
+ * header es navegación y buscador, nada más.
+ *
+ * Hasta esta fecha las acciones vivían en `ViewTabBar.trailingActions`, y esa
+ * ranura se había vuelto un cajón de sastre: además de acciones de verdad
+ * ("Nuevo Empleado", "Publicar", "Exportar") guardaba **filtros** —el rango de
+ * fechas de `TabHistory`, el `SegmentedControl` de tipo de
+ * `EmployeeAnnouncementsView`, el selector "Copiar desde…" de `PermissionsView`—.
+ * O sea que el header terminó filtrando, que es justo lo que §17 dice que no
+ * hace. Juntar filtro y acción en un solo contenedor cierra esa puerta: no
+ * queda otro sitio donde poner un filtro por descuido.
+ *
+ * Las acciones son DESCRIPTORES, no JSX, porque el mismo botón tiene que
+ * dibujarse de dos maneras muy distintas: `TabBarAction` en la píldora de
+ * escritorio y un botón del clúster en la barra flotante táctil. Con JSX suelto
+ * la barra flotante solo podría re-renderizarlo tal cual, que es como se llegó
+ * a tener controles de 44px fuera del viewport a 390px.
+ *
+ *   <FilterBar
+ *       activeCount={n} onClear={limpiar}
+ *       acciones={[
+ *           { key: 'nuevo',  icon: Plus,     label: 'Nuevo Empleado', variant: 'primary', onClick: crear },
+ *           { key: 'export', icon: Download, label: 'Exportar', tone: 'success', onClick: exportar },
+ *       ]}
+ *   >
+ *       <FilterBar.Section label="sucursal">…</FilterBar.Section>
+ *   </FilterBar>
+ *
+ * `accionesExtra` es la escotilla para lo que no entra en un descriptor (un
+ * `Badge` de estado, un `LiquidSelect` de "copiar desde"). Va al final de la
+ * píldora en escritorio y a la hoja de acciones en táctil.
+ *
  * ── Móvil ────────────────────────────────────────────────────────────────
- * Bajo 720px colapsa a un botón con la cuenta de filtros aplicados y se abre
- * como hoja inferior, que es donde llega el pulgar. Antes se partía en tres
- * filas y empujaba la tabla fuera de la pantalla.
+ * Bajo 720px `FilterBar` **es** la barra flotante (§17.3), con los tres
+ * elementos juntos al alcance del pulgar: buscador, filtros y acción principal.
+ *
+ * El buscador NO hay que pasárselo: lo publica `ViewTabBar` por el canal de
+ * `CanalDeVista` y esta barra lo encuentra sola. Cuando era una prop opt-in la
+ * pasaba **1 vista de 22** — y en las 5 pestañas de Productos era imposible,
+ * porque el estado del buscador vive en la vista padre.
  */
 
 /**
@@ -67,8 +106,12 @@ const Section = memo(({
     className = '',
 }) => {
   const { compacto } = useContext(BarraCtx);
+  // `h-9` y no `h-full`: desde que la píldora puede envolver (las acciones entran
+  // en el mismo contenedor) su alto ya no es fijo, y un `height:100%` contra un
+  // contenedor de alto automático es indefinido — la ranura se colapsaba a 0.
+  // Los 36px son los mismos de antes: 52 = 36 + 8 + 8.
   return (
-    <div className={`flex items-center px-2 min-w-0 ${compacto ? 'h-auto w-full' : 'h-full'} ${className}`}>
+    <div className={`flex items-center px-2 min-w-0 ${compacto ? 'h-auto w-full' : 'h-9'} ${className}`}>
         <div className={`flex items-center gap-1.5 px-1 rounded-btn border transition-[background-color,border-color] duration-200
             ${compacto ? 'min-h-9 h-auto w-full flex-wrap' : 'h-9'}
             ${active ? 'bg-brand/10 border-brand/30' : 'border-transparent'}`}>
@@ -124,18 +167,24 @@ const FilterBar = memo(({
     // sabe qué cuenta como "aplicado" en su dominio.
     activeCount = 0,
     title = 'Filtros',
-    // ── En táctil esto ES la barra flotante (2026-07-30) ──────────────────
+    // ── Acciones de la vista (2026-07-30) ─────────────────────────────────
+    // Descriptores, no JSX — ver el encabezado del archivo. Campos: `key`,
+    // `icon`, `label`, `onClick`, `variant` ('primary' | 'quiet'), `tone`,
+    // `disabled`, `activo` (para un toggle), `as`/`href`/`target`/`rel` (para
+    // una acción que navega), y `soloEscritorio` para la que no tiene sentido
+    // con el pulgar.
+    acciones = [],
+    // Escotilla para lo que no es un botón: un `Badge` de estado, un select.
+    accionesExtra = null,
+    // ── En táctil esto ES la barra flotante ───────────────────────────────
     // El canónico decide, no el llamador — igual que `LiquidSelect` abre
-    // `SelectorTactil` solo. Antes cada vista tenía que cablear `BarraFlotante` a
-    // mano y pasarle `soloEscritorio` a su `FilterBar`: dos pasos que se pueden
-    // olvidar, y 22 vistas que se olvidarían.
+    // `SelectorTactil` solo.
     //
-    // `buscador` y `accionPrincipal` son opcionales y solo existen en táctil: en
-    // escritorio el buscador vive en `ViewTabBar` y la acción en sus
-    // `trailingActions`, que es donde §17/§24 los ponen. En un teléfono los tres
-    // tienen que estar en el mismo lugar y no irse con el scroll.
+    // `buscador` normalmente NO se pasa: lo publica `ViewTabBar` por el canal
+    // de `CanalDeVista`. Queda como override explícito para la vista que tenga
+    // un buscador que no sea el del header (`ConteoDetailView` lo usaba así
+    // antes de que existiera el canal).
     buscador = null,
-    accionPrincipal = null,
     // Escotilla: `false` vuelve al botón + hoja inline. Hace falta si algún día un
     // `FilterBar` vive DENTRO de un modal — la barra va por portal al `body` en
     // capa 40 y quedaría detrás del modal (capa 100), invisible. Hoy ninguna lo
@@ -150,6 +199,15 @@ const FilterBar = memo(({
     const idHoja = useId();
 
     const secciones = Children.toArray(children).filter(isValidElement);
+    const esFlotante = compacto && flotante;
+
+    // Los hooks del canal van ANTES de cualquier retorno temprano.
+    // Publicar que la barra flotante existe es lo que hace que `ViewTabBar`
+    // suelte su lupa: si esto no se anunciara, en el teléfono habría dos
+    // buscadores para el mismo término y uno de ellos se iría con el scroll.
+    usePublicarBarraFlotante(esFlotante);
+    const buscadorDeVista = useBuscadorDeVista();
+    const buscadorEfectivo = buscador ?? buscadorDeVista;
 
     // Escape cierra la hoja, y mientras está abierta el fondo no scrollea:
     // sin esto, arrastrar dentro de la hoja mueve la tabla de atrás y al
@@ -167,14 +225,61 @@ const FilterBar = memo(({
     }, [abierto]);
 
     // ── Táctil: la barra flotante ─────────────────────────────────────────
-    if (compacto && flotante) {
+    if (esFlotante) {
+        // El clúster no puede crecer sin límite: a 320px entran tres columnas de
+        // 60px y poco más. Así que la principal se dibuja aparte (rellena y más
+        // grande, §17.3), UNA secundaria puede tener su propio botón, y de dos
+        // para arriba se agrupan tras "Acciones". `accionesExtra` fuerza el
+        // grupo porque es JSX y solo cabe en una hoja.
+        const enTactil = acciones.filter(a => !a.soloEscritorio);
+        // Por defecto la principal del clúster es la que se dibuja `primary` en
+        // escritorio. `principal: false` lo desactiva: un interruptor puede
+        // ponerse `primary` al encenderse (el "En vivo" de Auditoría) y no por eso
+        // debe convertirse en el botón grande de crear cada vez que se prende.
+        const principal = enTactil.find(a => a.principal ?? a.variant === 'primary') || null;
+        const secundarias = enTactil.filter(a => a !== principal);
+        const agrupar = secundarias.length > 1 || (!!accionesExtra && secundarias.length > 0);
+
+        const botonesSueltos = agrupar ? [] : secundarias.map(a => ({
+            key: a.key,
+            icon: a.icon,
+            label: a.label,
+            activo: a.activo,
+            onClick: a.disabled ? undefined : a.onClick,
+        }));
+
+        const grupo = (agrupar || (accionesExtra && !secundarias.length)) ? [{
+            key: '__acciones',
+            icon: MoreHorizontal,
+            label: 'Acciones',
+            tituloPanel: 'Acciones',
+            panel: (
+                <div className="flex flex-col gap-2">
+                    {secundarias.map(a => (
+                        <TabBarAction key={a.key} icon={a.icon} tone={a.tone}
+                            as={a.as} href={a.href} target={a.target} rel={a.rel}
+                            disabled={a.disabled} onClick={a.onClick}
+                            aria-pressed={a.activo != null ? !!a.activo : undefined}
+                            className="w-full justify-start">
+                            {a.label}
+                        </TabBarAction>
+                    ))}
+                    {accionesExtra && <div className="flex flex-col gap-2 [&>*]:w-full">{accionesExtra}</div>}
+                </div>
+            ),
+        }] : [];
+
         return (
             <BarraCtx.Provider value={{ compacto: true }}>
                 <BarraFlotante
                     ariaLabel={`${title} y acciones`}
-                    buscador={buscador}
-                    principal={accionPrincipal}
-                    acciones={secciones.length ? [{
+                    buscador={buscadorEfectivo}
+                    principal={principal && !principal.disabled ? {
+                        icon: principal.icon,
+                        label: principal.label,
+                        onClick: principal.onClick,
+                    } : null}
+                    acciones={[...(secciones.length ? [{
                         key: 'filtros',
                         icon: SlidersHorizontal,
                         // El rótulo del botón es corto y fijo: `title` puede ser
@@ -208,7 +313,7 @@ const FilterBar = memo(({
                                 )}
                             </div>
                         ),
-                    }] : []}
+                    }] : []), ...botonesSueltos, ...grupo]}
                 />
             </BarraCtx.Provider>
         );
@@ -268,6 +373,21 @@ const FilterBar = memo(({
                                     <div key={i} className="[&_*]:!max-w-full">{s}</div>
                                 ))}
                             </div>
+
+                            {(acciones.length > 0 || accionesExtra) && (
+                                <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-divider">
+                                    {acciones.map(a => (
+                                        <TabBarAction key={a.key} icon={a.icon} variant={a.variant} tone={a.tone}
+                                            as={a.as} href={a.href} target={a.target} rel={a.rel}
+                                            disabled={a.disabled} onClick={a.onClick}
+                                            aria-pressed={a.activo != null ? !!a.activo : undefined}
+                                            className="w-full justify-start">
+                                            {a.label}
+                                        </TabBarAction>
+                                    ))}
+                                    {accionesExtra && <div className="flex flex-col gap-2 [&>*]:w-full">{accionesExtra}</div>}
+                                </div>
+                            )}
                         </div>
                     </div>,
                     document.body,
@@ -280,10 +400,14 @@ const FilterBar = memo(({
     return (
         <BarraCtx.Provider value={{ compacto: false }}>
         <div
-            // `h-[52px]` fijo. No es un número al azar: 36 del chip + 8 de aire
-            // arriba y abajo. El divisor mide 22 y todo se centra, así que la
-            // barra mide lo mismo tenga una ranura o cinco.
-            className={`inline-flex items-center h-[52px] px-1 rounded-card border border-border-card
+            // 52px: 36 del control + 8 de aire arriba y abajo. Los mismos de
+            // siempre, pero ahora como `min-h` + `py-2` en vez de `h` fija —
+            // desde que las acciones comparten el contenedor, una vista con
+            // cinco ranuras y dos botones ya no entra en una línea a 1280px, y
+            // envolver es mejor que desbordar. Mientras entre en una línea la
+            // píldora mide exactamente lo mismo que antes y sigue alineada con
+            // el título, que es lo que §17 pedía.
+            className={`inline-flex flex-wrap items-center gap-y-1 min-h-[52px] py-2 px-1 rounded-card border border-border-card
                 bg-surface-card shadow-[var(--shadow-glass-1)] max-w-full
                 transition-[border-color,box-shadow] duration-200 ${className}`}
             {...rest}
@@ -302,7 +426,7 @@ const FilterBar = memo(({
             {onClear && activeCount > 1 && (
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-                    <div className="flex items-center h-full px-2">
+                    <div className="flex items-center h-9 px-2">
                         {/* Ícono solo, a pedido del usuario, para ahorrar
                             espacio. El rótulo se conserva en `title` y
                             `aria-label` con la CUENTA adentro, que es lo que lo
@@ -317,6 +441,31 @@ const FilterBar = memo(({
                                 transition-[background-color,color] duration-200">
                             <X size={15} strokeWidth={2.5} />
                         </button>
+                    </div>
+                </>
+            )}
+
+            {/* Las acciones, después de un divisor. El orden no es libre: primero
+                lo que RECORTA la lista y recién después lo que se HACE con ella
+                —el usuario mira la píldora de izquierda a derecha y ese es el
+                orden en que lo diría—. El divisor es lo que las separa de los
+                filtros para que "Exportar" no se lea como una ranura más, que
+                fue el motivo por el que en su día se las sacó de acá. */}
+            {(acciones.length > 0 || accionesExtra) && (
+                <>
+                    <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
+                    <div className="flex items-center gap-1.5 h-9 px-2">
+                        {acciones.map(a => (
+                            <TabBarAction key={a.key} size="sm" icon={a.icon}
+                                variant={a.variant} tone={a.tone}
+                                as={a.as} href={a.href} target={a.target} rel={a.rel}
+                                disabled={a.disabled} onClick={a.onClick}
+                                title={a.title}
+                                aria-pressed={a.activo != null ? !!a.activo : undefined}>
+                                {a.label}
+                            </TabBarAction>
+                        ))}
+                        {accionesExtra}
                     </div>
                 </>
             )}

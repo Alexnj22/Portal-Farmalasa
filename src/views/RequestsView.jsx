@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo, useMemo } from 'react';
 import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
-import TabBarAction from '../components/common/TabBarAction';
+import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -610,17 +610,24 @@ const RequestsView = () => {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder="Buscar empleado..."
-            trailingActions={canCreate && (
-                <TabBarAction icon={Plus} variant="primary" onClick={() => openCreateModal()}>
-                    Nueva Solicitud
-                </TabBarAction>
-            )}
         />
     );
+
+    // §17: la acción vive en la píldora del CUERPO, no en el header. Esta vista
+    // no tenía `FilterBar` —sus estados son pestañas, no filtros— así que la
+    // píldora existe justo para esto: es el lugar donde el usuario busca lo que
+    // puede hacer, y en el teléfono es lo único que no se va con el scroll.
+    const filtrosCuerpo = canCreate ? (
+        <FilterBar acciones={[{
+            key: 'nueva', icon: Plus, label: 'Nueva Solicitud', variant: 'primary',
+            onClick: () => openCreateModal(),
+        }]} />
+    ) : null;
 
     return (
         <GlassViewLayout icon={Inbox} title="Bandeja de Aprobaciones" filtersContent={filtersContent} transparentBody={true}>
             <div className="pt-4 px-2 md:px-0 pb-8 space-y-6">
+                {filtrosCuerpo && <div className="flex justify-end">{filtrosCuerpo}</div>}
 
                 {isLoadingReqs ? (
                     <div className="space-y-6">

@@ -134,6 +134,7 @@ function FilterControls({
     filterLab, setFilterLab,
     labOptions,
     branchLocked,
+    privacyMode, setPrivacyMode,
 }) {
     const defaultRange = (() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })();
 
@@ -166,6 +167,19 @@ function FilterControls({
             onClear={resetAll}
             activeCount={[!branchLocked && filterBranch, showLab && filterLab, dateDirty,
                 filterAnuladas, showAntibiotico && filterAntibiotico].filter(Boolean).length}
+            // El toggle de privacidad era un `<button>` escrito a mano en el
+            // header, con sus 11 clases y su propio lenguaje de forma. Como
+            // descriptor lo dibuja el canónico, y `activo` le da el `aria-pressed`
+            // y el estado encendido en el clúster del teléfono.
+            acciones={setPrivacyMode ? [{
+                key: 'privacidad',
+                icon: privacyMode ? EyeOff : Eye,
+                label: privacyMode ? 'Mostrar montos' : 'Ocultar montos',
+                tone: 'chart-8',
+                activo: privacyMode,
+                principal: false,
+                onClick: () => setPrivacyMode(v => !v),
+            }] : []}
         >
             {/* 1 · ámbito — la sucursal va PRIMERO siempre (§17): es el filtro
                 que cambia el significado de todos los demás. */}
@@ -294,7 +308,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 }
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
-function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions, privacyMode }) {
+function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions, privacyMode, setPrivacyMode }) {
     const { getScope } = useAuth();
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
@@ -625,6 +639,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     filterAntibiotico={filterAntibiotico} setFilterAntibiotico={setFilterAntibiotico}
                     showAntibiotico={antibioticIds.size > 0}
                     branchLocked={getScope('ventas') === 'BRANCH'}
+                    privacyMode={privacyMode} setPrivacyMode={setPrivacyMode}
                 />
             </div>
 
@@ -893,7 +908,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 }
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
-function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
+function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode, setPrivacyMode }) {
     const { getScope } = useAuth();
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
@@ -1067,7 +1082,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} />
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
             </div>
 
             {isVendSearchFuzzy && searchTerm && (
@@ -1338,7 +1353,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     );
 }
 
-function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
+function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode, setPrivacyMode }) {
     const { maxPriceLevel, getScope, user: currentUser } = useAuth();
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
@@ -1785,7 +1800,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} />
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
             </div>
 
             {error && (
@@ -2363,8 +2378,6 @@ export default function VentasView() {
 
     // Antes: copia hand-rolled del pill de ViewTabBar (DESIGN.md §32/§23,
     // "duplicado conocido") — consolidado al componente compartido real.
-    // El único agregado real de VentasView (toggle de privacidad) ahora vive
-    // en trailingActions, el slot que ViewTabBar expone para este caso.
     const filtersContent = (
         <ViewTabBar
             tabs={allowedTabs}
@@ -2373,19 +2386,6 @@ export default function VentasView() {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={searchPlaceholder}
-            trailingActions={
-                <button type="button"
-                    aria-pressed={privacyMode}
-                    aria-label={privacyMode ? 'Mostrar los montos' : 'Ocultar los montos'}
-                    onClick={() => setPrivacyMode(v => !v)}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu border ${
-                        privacyMode
-                            ? 'bg-chart-8-solid text-white border-chart-8 shadow-[var(--shadow-elevation-xl)]'
-                            : 'bg-surface-card text-content-3 border-border-card hover:bg-surface-card-hover hover:shadow-md hover:text-content-2'
-                    }`}>
-                    {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
-                </button>
-            }
         />
     );
 
@@ -2395,7 +2395,7 @@ export default function VentasView() {
             <div className={activeTab === 'ventas' ? '' : 'hidden'}>
                 <TabVentas branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
-                    employees={employees} branchOptions={branchOptions} privacyMode={privacyMode} />
+                    employees={employees} branchOptions={branchOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
             </div>
 
             {/* Vendedores + Productos: unmount when not active so their useEffects don't
@@ -2404,12 +2404,12 @@ export default function VentasView() {
             {activeTab === 'vendedores' && (
                 <TabVendedores branches={salesBranches} filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     employees={employees} searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
-                    branchOptions={branchOptions} privacyMode={privacyMode} />
+                    branchOptions={branchOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
             )}
             {activeTab === 'productos' && (
                 <TabProductos filterBranch={filterBranch} setFilterBranch={setFilterBranch}
                     searchTerm={debouncedSearch} monthRange={monthRange} setMonthRange={setMonthRange}
-                    branchOptions={branchOptions} privacyMode={privacyMode} />
+                    branchOptions={branchOptions} privacyMode={privacyMode} setPrivacyMode={setPrivacyMode} />
             )}
         </GlassViewLayout>
     );

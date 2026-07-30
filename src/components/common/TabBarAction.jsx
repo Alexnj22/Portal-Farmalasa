@@ -38,7 +38,7 @@ const TONE_ICON = {
     'chart-8': 'text-chart-8-text',
 };
 
-const BASE = `h-11 px-4 md:px-[18px] rounded-full shrink-0 whitespace-nowrap
+const BASE = `rounded-full shrink-0 whitespace-nowrap
     inline-flex items-center justify-center gap-2 border
     text-micro md:text-caption font-black uppercase tracking-widest
     transition-[background-color,border-color,color,transform] duration-200
@@ -46,11 +46,26 @@ const BASE = `h-11 px-4 md:px-[18px] rounded-full shrink-0 whitespace-nowrap
     hover:-translate-y-px active:translate-y-0 active:scale-[0.97]
     disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:translate-y-0`;
 
+/**
+ * `sm` existe desde que las acciones se mudaron a `FilterBar` (2026-07-30). La
+ * píldora de filtros mide 52px y esa altura es su contrato con §17 —"son 52px
+ * tenga una ranura o cinco"—: 36 del control + 8 de aire arriba y abajo. Un
+ * botón de 44 la habría estirado a 60 y desalineado de todas las demás.
+ *
+ * No baja del mínimo táctil porque en táctil esta píldora NO se dibuja: ahí
+ * `FilterBar` es la barra flotante, donde los botones miden 44 y 48.
+ */
+const SIZE = {
+    md: 'h-11 px-4 md:px-[18px]',
+    sm: 'h-9 px-3.5',
+};
+
 const TabBarAction = memo(({
     icon: Icon,
     children,
     variant = 'quiet',
     tone = 'brand',
+    size = 'md',
     label,
     className = '',
     // `as="a"` para las acciones que NAVEGAN fuera del portal. Agregado el
@@ -73,7 +88,7 @@ const TabBarAction = memo(({
                 // Mismo piso que `Button` (v2.117.0): si no hay etiqueta ni texto,
                 // el nombre sale del ícono en vez de quedar en nada.
                 || NOMBRE_POR_ICONO[Icon?.displayName ?? Icon?.name]}
-            className={`${BASE} ${className}
+            className={`${BASE} ${SIZE[size] || SIZE.md} ${className}
                 ${isPrimary
                     ? 'bg-brand border-brand text-white hover:bg-brand-hover hover:border-brand-hover'
                     : 'bg-[var(--tabaction-bg)] border-[var(--tabaction-border)] text-content-2 hover:bg-[var(--tabaction-hover)] hover:text-content'}`}

@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
-import TabBarAction from '../components/common/TabBarAction';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2 } from 'lucide-react';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -120,17 +119,9 @@ export default function ConteoInventarioView() {
             searchValue={search}
             onSearchChange={setSearch}
             placeholder="Buscar por sucursal..."
-            // El filtro de sucursal NO va acá: §17 es explícito en que la barra de
-            // filtros vive en el CUERPO de la vista y nunca en el header, cuyo
-            // ocupante es la barra de pestañas. El comentario que estaba en su
-            // lugar citaba la regla del "toolbar de widget", que es otra cosa —
-            // exactamente la confusión que §17 documenta como la trampa de la
-            // prop mal nombrada `filtersContent`.
-            trailingActions={canEdit ? (
-                <TabBarAction icon={Plus} variant="primary" onClick={() => setShowModal(true)}>
-                    Nuevo Conteo
-                </TabBarAction>
-            ) : null}
+            // Ni el filtro de sucursal ni la acción van acá: §17 es explícito en
+            // que los dos viven en el CUERPO de la vista, y el header es
+            // navegación y buscador.
         />
     );
 
@@ -176,7 +167,11 @@ export default function ConteoInventarioView() {
                 riel sus cuatro opciones no caben en la hoja inferior. */}
             <div className="flex justify-end mb-4">
                 <FilterBar activeCount={(branchFilter && !isBranchScoped ? 1 : 0) + (foco !== 'TODOS' ? 1 : 0)}
-                    onClear={() => { if (!isBranchScoped) setBranchFilter(''); setFoco('TODOS'); }}>
+                    onClear={() => { if (!isBranchScoped) setBranchFilter(''); setFoco('TODOS'); }}
+                    acciones={canEdit ? [{
+                        key: 'nuevo', icon: Plus, label: 'Nuevo Conteo', variant: 'primary',
+                        onClick: () => setShowModal(true),
+                    }] : []}>
                     <FilterBar.Section
                         active={!!branchFilter && !isBranchScoped}
                         onClear={() => setBranchFilter('')}

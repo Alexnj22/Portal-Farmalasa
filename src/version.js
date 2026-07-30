@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.253.0';
+export const APP_VERSION = '2.254.0';
+
+// v2.254.0 — el canonico de medidas, aprobado sobre mockup e implementado.
+//
+// v2.253.0 fue el primer intento (tarjeta de 200px fija y cupo de 3 ranuras);
+// esto lo reemplaza con lo que el usuario aprobo mirando el mockup interactivo.
+//
+// **`StatCard`**: minimo 148, maximo 200, el detalle cede bajo 176.
+// **`CarrilCards`** (nuevo): las tarjetas van en UNA fila y lo que no entra se
+// desliza. El sobrante queda como asomo de la siguiente, y las flechas FLOTAN:
+// en el flujo se comian 64px de los 438 disponibles a 1512, media tarjeta.
+// **`FilterBar`**: el cupo de ranuras es el que entre en el ancho REAL, no 3
+// fijo — con 3 fijo se escondian filtros en un 27" teniendo 1.400px libres. El
+// control de desborde toma la forma de una ranura, no de un cuadrito aparte.
+//
+// **El ancho se MIDE, no se estima.** Modelar cada accion en 150px erraba por 62
+// en una sola pildora: las reales son 166, 186 y 36 segun su rotulo. Se miden las
+// piezas en un `useLayoutEffect` —corre antes del pintado, sin parpadeo— y se
+// observa la FILA, no el envoltorio de la pildora: el padre ajusta al contenido,
+// o sea a la pildora, asi que medirlo es un bucle. Medido con el padre, quedaba
+// clavada en 748px y 2 ranuras de 1280 a 2240.
+//
+// Prioridad: detalle de tarjeta → texto de acciones → el carril desliza →
+// ranuras vacias. NUNCA una ranura aplicada. Y el texto de las acciones solo se
+// reclama de vuelta si el carril ya muestra las cinco; sin esa regla el carril
+// RETROCEDIA al agrandar la ventana.
+//
+// Medido en Personal: 1280→2 tarjetas · 1440→3 · 1512→4 · 1728→5 · 1920→5 con
+// detalle. Monotono.
 
 // v2.253.0 — medidas FIJAS: la tarjeta y el cupo de ranuras.
 //

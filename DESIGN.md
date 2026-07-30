@@ -2541,7 +2541,66 @@ Tres cosas que costaron y conviene no re-descubrir:
   en `display:none` no intersecta, y cambiar de tab no desmonta nada, así que hace
   falta enterarse en los dos sentidos.
 
-### 17.0 Medidas fijas: la tarjeta y el cupo de ranuras (2026-07-30)
+### 17.0 Medidas fijas: la tarjeta, el carril y el cupo de ranuras (2026-07-30)
+
+**Aprobado sobre mockup antes de escribir código.** Las tres piezas y su orden
+de prioridad salieron de simular la vista más cargada del portal (Personal: 5
+tarjetas, 3 filtros, 3 acciones) entre 1024 y 2560px.
+
+| pieza | medida |
+|---|---|
+| `StatCard` | mínimo **148**, máximo **200**, separación 8, tope 5 |
+| detalle de la tarjeta | cede bajo **176** |
+| `CarrilCards` | **una sola fila**, siempre; lo que no entra se desliza |
+| ranura de `FilterBar` | 150 (el control) + 8 de relleno |
+| píldora | sin techo: **lo que mida mostrando todo** |
+
+**Quién cede el ancho, en orden:**
+
+1. el **detalle** de la tarjeta (dato terciario)
+2. el **texto** de las acciones — y solo lo reclama de vuelta si el carril ya
+   muestra las cinco
+3. el **carril** se desliza
+4. las **ranuras vacías** van al control de desborde
+5. **nunca** una ranura aplicada
+
+Medido después de implementarlo, en Personal: 1280→2 tarjetas · 1440→3 ·
+1512→4 · 1728→5 · 1920→5 con detalle. Monótono: al agrandar la ventana nunca se
+ve menos que antes.
+
+#### El ancho se MIDE, no se estima
+
+El primer intento modelaba cada acción en 150px y **se equivocaba por 62 en una
+sola píldora**: las medidas reales en Personal son "Nuevo Empleado" 166, "Nuevo
+Practicante" 186, "Exportar" (solo ícono) 36. El ancho de una acción es el de su
+rótulo, así que ninguna constante lo representa.
+
+`FilterBar` mide las piezas reales en un `useLayoutEffect` —que corre **antes**
+del pintado, así que el usuario nunca ve el estado sin degradar— y guarda la
+medida hasta que cambien los rótulos. Lo único que sí es constante es la forma
+degradada: un botón sin rótulo mide `w-9` = 36px siempre.
+
+**Se observa la FILA, no el envoltorio de la píldora.** El padre ajusta al
+contenido —o sea a la píldora—, así que medirlo es un bucle: crece, se mide más
+grande, entra otra ranura, crece otra vez. Medido con el padre: la píldora
+quedaba clavada en 748px y 2 ranuras de 1280 a 2240px.
+
+#### `CarrilCards`
+
+Las tarjetas vivían en un `flex-wrap` y eso hacía dos cosas mal: envolvían
+—Ventas daba 1, 2, 3 y 4 por fila entre 1280 y 1920— y **la huérfana de la
+última fila crecía hasta llenarla sola** (en Personal a 1920: cuatro de 172px y
+una de **726**).
+
+- El sobrante **no se tira**: la pista ocupa todo el carril, así que lo que queda
+  después de las tarjetas enteras se ve como el borde de la próxima. Un asomo
+  dice "hay más" mejor que las flechas solas.
+- **Las flechas flotan**, no ocupan. En el flujo se comían 64px de los 438
+  disponibles a 1512px: media tarjeta.
+- Reserva fija de 2 tarjetas: una sola cortada parece un error de maquetación,
+  no un carril.
+
+### 17.0.0 Medidas fijas — versión anterior (2026-07-30)
 
 **La `StatCard` mide 200px SIEMPRE.** Antes era `flex-1 basis-0 min-w-[150px]`,
 o sea que se repartía el espacio disponible — y la MISMA tarjeta medía distinto

@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
+import CarrilCards from '../components/common/CarrilCards';
 import ListRow from '../components/common/ListRow';
 import { SkeletonText } from '../components/common/StateViews';
 import SegmentedControl from '../components/common/SegmentedControl';
@@ -129,7 +130,7 @@ export default function ConteoInventarioView() {
                 pantalla no es "cuántos conteos hay" sino "cuál me está esperando":
                 un finalizado sin aprobar bloquea a alguien, y un cerrado sin ajuste
                 registrado es trabajo a medias que antes solo se veía fila por fila. */}
-            <div className="flex items-stretch gap-3 flex-wrap mb-4">
+            <CarrilCards className="mb-4" ariaLabel="Resumen de conteos">
                 {/* Ésta NO es un filtro: es el total, y por eso no lleva `active` ni
                     `onClick`. Con `active` StatCard dibuja una × de "quitar este
                     filtro", y quitar "todos" no significa nada. */}
@@ -158,7 +159,7 @@ export default function ConteoInventarioView() {
                     sub="el ERP sigue sin corregir"
                     active={foco === 'SIN_AJUSTE'} onClick={() => setFoco((f) => (f === 'SIN_AJUSTE' ? 'TODOS' : 'SIN_AJUSTE'))}
                 />
-            </div>
+            </CarrilCards>
 
             {/* §17: los filtros de la vista, en UNA píldora, en el cuerpo y a la
                 derecha. El segmentado pasa a bloque de 2 columnas en teléfono — en

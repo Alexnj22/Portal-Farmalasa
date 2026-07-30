@@ -1,4 +1,4 @@
-import React, { memo, Children, isValidElement, useState, useEffect, useId, useRef, createContext, useContext } from 'react';
+import React, { memo, Children, isValidElement, useState, useEffect, useLayoutEffect, useId, useRef, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -114,7 +114,8 @@ const Section = memo(({
   // contenedor de alto automático es indefinido — la ranura se colapsaba a 0.
   // Los 36px son los mismos de antes: 52 = 36 + 8 + 8.
   return (
-    <div className={`flex items-center min-w-0 ${compacto ? 'h-auto w-full px-2' : 'h-9 px-1'} ${className}`}>
+    <div data-pieza={compacto ? undefined : 'ranura'}
+        className={`flex items-center min-w-0 ${compacto ? 'h-auto w-full px-2' : 'h-9 px-1'} ${className}`}>
         <div className={`flex items-center gap-1 px-0.5 rounded-btn border transition-[background-color,border-color] duration-200
             ${compacto ? 'min-h-9 h-auto w-full flex-wrap' : 'h-9'}
             ${active ? 'bg-brand/10 border-brand/30' : 'border-transparent'}`}>
@@ -295,19 +296,25 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
         <>
             <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
             <div className="flex items-center h-9 px-1">
+                {/* Tiene la MISMA forma que una ranura —36px de alto, píldora,
+                    mismo relleno— y no un cuadrito aparte: es una ranura movida
+                    de sitio, no otro tipo de control. Se tiñe de marca cuando lo
+                    que guarda está aplicado, igual que una ranura activa, para
+                    que se vea desde lejos que hay filtro puesto aunque su control
+                    no esté a la vista. La cuenta va al lado del ícono y no como
+                    burbuja encima: acá el número es el contenido, no un aviso. */}
                 <button ref={btnRef} type="button" onClick={() => setAbierto(v => !v)}
                     aria-expanded={abierto} aria-haspopup="dialog"
-                    aria-label={`Más filtros (${secciones.length})`}
-                    className={`relative w-9 h-9 rounded-btn flex items-center justify-center shrink-0
-                        transition-[background-color,color] duration-200
-                        ${abierto ? 'bg-brand/12 text-brand-text ring-1 ring-inset ring-brand/30'
-                                  : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
-                    <MoreHorizontal size={18} strokeWidth={2.5} />
-                    {aplicadas > 0 && (
-                        <Contador valor={aplicadas} tono="brand" max={9}
-                            className="absolute -top-1 -right-1 ring-2 ring-surface-card"
-                            aria-label={`${aplicadas} de estos filtros aplicado${aplicadas === 1 ? '' : 's'}`} />
-                    )}
+                    aria-label={aplicadas > 0
+                        ? `Más filtros: ${secciones.length} guardados, ${aplicadas} aplicado${aplicadas === 1 ? '' : 's'}`
+                        : `Más filtros (${secciones.length})`}
+                    className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0 border
+                        transition-[background-color,border-color,color] duration-200
+                        ${aplicadas > 0 || abierto
+                            ? 'bg-brand/10 border-brand/30 text-brand-text'
+                            : 'bg-surface-card-hover border-border-card text-content-2 hover:text-content'}`}>
+                    <SlidersHorizontal size={14} strokeWidth={2.5} />
+                    <span className="text-body-sm font-bold tabular-nums">{secciones.length}</span>
                 </button>
             </div>
 
@@ -335,10 +342,89 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
 });
 PanelDesborde.displayName = 'FilterBar.PanelDesborde';
 
-// Cuántas ranuras se dibujan en línea antes de mandar el resto al desborde.
-// Tres es lo que entra sin que la píldora le coma a las tarjetas el ancho de
-// dos: con ranuras canónicas de 150px son ~500px de píldora.
-const MAX_RANURAS = 3;
+// ── El reparto del ancho (2026-07-30, aprobado sobre mockup) ─────────────
+// El cupo de ranuras NO es un número fijo: es el que entre en el ancho REAL.
+// Antes eran 3 a secas, y eso escondía filtros en un monitor de 27" teniendo
+// 1.400px libres — el usuario lo señaló mirando el mockup.
+//
+// Y NO se estima: se MIDE. El primer intento modelaba cada acción en 150px y se
+// equivocaba por 62 en una sola píldora — medidas reales en Personal: "Nuevo
+// Empleado" 166, "Nuevo Practicante" 186, "Exportar" (solo ícono) 36. El ancho
+// de una acción es el de su rótulo, así que ninguna constante lo puede
+// representar. Lo único que sí es fijo es la forma degradada: un botón sin
+// rótulo mide `w-9` = 36px, siempre.
+
+const PX = {
+    divisor: 1,      // el <span> de 1px; el aire lo pone el px-1 de cada ranura
+    limpiar: 45,
+    accionIcono: 36,
+    accionGap: 4,
+    relleno: 12,     // el px-1.5 del contenedor, a los dos lados
+    desborde: 62,    // el control de «más filtros»: h-9 px-2.5 + ícono + cuenta
+};
+
+// Lo que el carril de tarjetas se queda siempre: dos tarjetas y su separación.
+// Es lo que hace que se LEA como deslizable — una sola tarjeta cortada parece un
+// error de maquetación, no un carril.
+const RESERVA_CARRIL = 2 * 148 + 8 + 10;
+
+/**
+ * Mide el ancho que la FILA le deja a la píldora, y cuántas tarjetas tiene al lado.
+ *
+ * Se observa al ABUELO, no al padre. El padre es el envoltorio que ajusta al
+ * contenido —o sea a la píldora— así que medirlo es un bucle: la píldora crece,
+ * el padre crece, entra otra ranura, crece otra vez. Se midió: con el padre la
+ * píldora quedaba clavada en 748px y 2 ranuras a TODO ancho, de 1280 a 2240.
+ * El abuelo es la fila, y su ancho lo decide la página, no la píldora.
+ */
+function useMedidaFila(ref, activo) {
+    const [medida, setMedida] = useState({ ancho: null, fila: null, tarjetas: 0 });
+    useEffect(() => {
+        const padre = ref.current?.parentElement;
+        const fila = padre?.parentElement ?? padre;
+        if (!activo || !fila) return undefined;
+        const medir = () => {
+            const carril = fila.querySelector('[role="group"]');
+            const tarjetas = carril ? carril.children.length : 0;
+            setMedida({
+                ancho: fila.clientWidth - (tarjetas ? RESERVA_CARRIL : 0),
+                fila: fila.clientWidth,
+                tarjetas,
+            });
+        };
+        medir();
+        const ro = new ResizeObserver(medir);
+        ro.observe(fila);
+        return () => ro.disconnect();
+    }, [ref, activo]);
+    return medida;
+}
+
+/**
+ * Mide, UNA vez y en su estado natural, cuánto ocupa cada pieza de la píldora.
+ *
+ * Corre en `useLayoutEffect`, o sea antes de que el navegador pinte: el usuario
+ * nunca ve el estado sin degradar aunque sea el primero que se renderiza.
+ *
+ * La clave la forman los rótulos: si cambian —otra vista, otro idioma, un
+ * contador que crece— hay que volver a medir, y solo entonces.
+ */
+function useMedidaPiezas(ref, clave, activo) {
+    const [piezas, setPiezas] = useState(null);
+    useLayoutEffect(() => {
+        if (!activo) return;
+        const el = ref.current;
+        if (!el) return;
+        const ranuras = [...el.querySelectorAll('[data-pieza="ranura"]')]
+            .map(n => n.getBoundingClientRect().width);
+        const bloque = el.querySelector('[data-pieza="acciones"]');
+        setPiezas({
+            ranuras,
+            accionesTexto: bloque ? bloque.getBoundingClientRect().width : 0,
+        });
+    }, [ref, clave, activo]);
+    return piezas;
+}
 
 const FilterBar = memo(({
     children,
@@ -388,6 +474,13 @@ const FilterBar = memo(({
     usePublicarBarraFlotante(esFlotante);
     const buscadorDeVista = useBuscadorDeVista();
     const buscadorEfectivo = buscador ?? buscadorDeVista;
+
+    // Cuánto ancho le deja su contenedor. Solo importa en escritorio.
+    const pildoraRef = useRef(null);
+    const medidaFila = useMedidaFila(pildoraRef, !compacto);
+    // La clave de medición: si cambian los rótulos, hay que volver a medir.
+    const claveRotulos = `${secciones.length}|${acciones.map(a => a.label).join('|')}`;
+    const piezas = useMedidaPiezas(pildoraRef, claveRotulos, !compacto);
 
     // Escape cierra la hoja, y mientras está abierta el fondo no scrollea:
     // sin esto, arrastrar dentro de la hoja mueve la tabla de atrás y al
@@ -577,33 +670,68 @@ const FilterBar = memo(({
     }
 
     // ── Escritorio: la píldora ────────────────────────────────────────────
-    // Presupuesto fijo de ranuras. Las APLICADAS tienen prioridad y nunca se
-    // esconden: una vista que recorta datos sin mostrar por qué es peor que una
-    // píldora ancha. El resto entra por orden hasta llenar el cupo.
+    // Cuántas ranuras entran, según el ancho REAL. Y el orden en que se cede:
+    //   1º el TEXTO de las acciones      2º las ranuras vacías
+    // Una ranura APLICADA no se esconde nunca — una vista que recorta datos sin
+    // mostrar por qué es peor que una píldora ancha.
+    const idxAplicadas = secciones.map((s, i) => [s, i]).filter(([s]) => s.props?.active).map(([, i]) => i);
+    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !s.props?.active).map(([, i]) => i);
+    // El ✕ de «limpiar todo» solo existe con DOS o más filtros: con uno alcanza
+    // la × de la propia ranura. Cobrarlo siempre costaba 54px de gusto.
+    const hayLimpiar = !!onClear && activeCount > 1;
+
+    // Con las piezas ya medidas se calcula exacto; sin medir todavía se asume que
+    // entra todo, que es el estado que `useMedidaPiezas` necesita para medir.
+    const anchoIconos = acciones.length
+        ? acciones.length * PX.accionIcono + (acciones.length - 1) * PX.accionGap + 8
+        : 0;
+
+    const medirCon = (n, conTexto) => {
+        if (!piezas) return 0;
+        const ranuras = piezas.ranuras.slice(0, n).reduce((a, b) => a + b, 0)
+            + Math.max(0, n - 1) * PX.divisor;
+        const desborde = n < secciones.length ? PX.desborde + PX.divisor : 0;
+        const limpiar = hayLimpiar ? PX.limpiar + PX.divisor : 0;
+        const accs = conTexto ? piezas.accionesTexto : anchoIconos;
+        return PX.relleno + ranuras + desborde + limpiar + (accs ? PX.divisor + accs : 0);
+    };
+
+    const disponible = medidaFila.ancho ?? Infinity;
+    let cupo = secciones.length;
+
+    // El TEXTO de las acciones es lo último que la píldora reclama, y solo si el
+    // carril de al lado ya muestra TODAS sus tarjetas. Sin esta regla la píldora
+    // se lo llevaba apenas podía y el carril retrocedía al agrandar la ventana:
+    // medido, a 1280px se veían 2 tarjetas y a 1440 solo 1.
+    const carrilCompleto = medidaFila.tarjetas * 148 + Math.max(0, medidaFila.tarjetas - 1) * 8;
+    // 24 = la separación de la fila (12) más un colchón del mismo tamaño.
+    const cabenLasTarjetas = ancho =>
+        !medidaFila.tarjetas || (medidaFila.fila - ancho - 24) >= carrilCompleto;
+
+    let conTextoAcciones = true;
+    if (piezas) {
+        const conTexto = medirCon(cupo, true);
+        conTextoAcciones = conTexto <= disponible && cabenLasTarjetas(conTexto);
+        while (cupo > idxAplicadas.length && cupo > 1 && medirCon(cupo, conTextoAcciones) > disponible) cupo--;
+    }
+
     // Se ELIGEN por prioridad pero se DIBUJAN en su orden original: el orden de
     // ranuras de §17 (ámbito → entidad → tiempo → estado) es el orden en que una
     // persona lo diría en voz alta, y reordenarlo porque una esté aplicada lo
     // rompería — la píldora cambiaría de forma cada vez que se toca un filtro.
-    const idxAplicadas = secciones.map((s, i) => [s, i]).filter(([s]) => s.props?.active).map(([, i]) => i);
-    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !s.props?.active).map(([, i]) => i);
-    const cupo         = Math.max(MAX_RANURAS, idxAplicadas.length);
-    const visibles     = new Set(secciones.length <= MAX_RANURAS
-        ? secciones.map((_, i) => i)
-        : [...idxAplicadas, ...idxVacias].slice(0, cupo));
+    const visibles   = new Set([...idxAplicadas, ...idxVacias].slice(0, Math.max(cupo, idxAplicadas.length)));
     const enLinea    = secciones.filter((_, i) => visibles.has(i));
     const enDesborde = secciones.filter((_, i) => !visibles.has(i));
 
     return (
         <BarraCtx.Provider value={{ compacto: false }}>
         <div
-            // 52px: 36 del control + 8 de aire arriba y abajo. Los mismos de
-            // siempre, pero ahora como `min-h` + `py-2` en vez de `h` fija —
-            // desde que las acciones comparten el contenedor, una vista con
-            // cinco ranuras y dos botones ya no entra en una línea a 1280px, y
-            // envolver es mejor que desbordar. Mientras entre en una línea la
-            // píldora mide exactamente lo mismo que antes y sigue alineada con
-            // el título, que es lo que §17 pedía.
-            className={`inline-flex flex-wrap items-center gap-y-1 min-h-[52px] py-2 px-1.5 rounded-card border border-border-card
+            ref={pildoraRef}
+            // 52px: 36 del control + 8 de aire arriba y abajo. Vuelve a ser un
+            // alto FIJO y una sola línea: desde que el cupo de ranuras se calcula
+            // contra el ancho real, la píldora ya no puede desbordar — lo que no
+            // entra se va al control de desborde en vez de envolver.
+            className={`inline-flex items-center h-[52px] px-1.5 rounded-card border border-border-card
                 bg-surface-card shadow-[var(--shadow-glass-1)] max-w-full
                 transition-[border-color,box-shadow] duration-200 ${className}`}
             {...rest}
@@ -655,23 +783,28 @@ const FilterBar = memo(({
             {(acciones.length > 0 || accionesExtra) && (
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-                    <div className="flex items-center gap-1 h-9 px-1">
+                    <div data-pieza="acciones" className="flex items-center gap-1 h-9 px-1">
                         {acciones.map(a => {
                             // `soloIcono`: el ícono solo. Es para la acción
                             // secundaria y reconocible —ocultar montos, exportar—
                             // que con texto le come a la píldora el ancho que
                             // necesitan los filtros. En el clúster táctil sigue
                             // rotulado: ahí hay sitio y no hay hover que lo revele.
+                            // El texto de las acciones es lo PRIMERO que cede
+                            // cuando falta ancho: el ícono ya identifica la acción
+                            // y el rótulo sigue disponible en el tooltip. Lo
+                            // decide la medida de la fila, no el llamador.
+                            const sinTexto = a.soloIcono || !conTextoAcciones;
                             const boton = (
                                 <TabBarAction key={a.key} size="sm" icon={a.icon}
                                     variant={a.variant} tone={a.tone}
                                     as={a.as} href={a.href} target={a.target} rel={a.rel}
                                     disabled={a.disabled} onClick={a.onClick}
                                     label={a.label}
-                                    title={a.soloIcono ? undefined : a.title}
-                                    soloIcono={a.soloIcono}
+                                    title={sinTexto ? undefined : a.title}
+                                    soloIcono={sinTexto}
                                     aria-pressed={a.activo != null ? !!a.activo : undefined}>
-                                    {a.soloIcono ? null : a.label}
+                                    {sinTexto ? null : a.label}
                                 </TabBarAction>
                             );
                             // Un botón sin texto necesita que su rótulo sea
@@ -680,7 +813,7 @@ const FilterBar = memo(({
                             // en salir y en táctil no existe—, justo lo que la regla
                             // cero-nativo evita. `LiquidTooltip` es el canónico
                             // (§15.10) y va abajo para no taparle la fila de arriba.
-                            return a.soloIcono
+                            return sinTexto
                                 ? <LiquidTooltip key={a.key} content={a.label} side="bottom">{boton}</LiquidTooltip>
                                 : boton;
                         })}

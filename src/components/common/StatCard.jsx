@@ -9,19 +9,25 @@ import { Loader2, X } from 'lucide-react';
  *     <StatCard ... />
  *   </div>
  *
- * ── ANCHO FIJO Y CANONICO (2026-07-30) ─────────────────────────────────────
- * La card mide 200px SIEMPRE. Antes era `flex-1 basis-0 min-w-[150px]`, o sea
- * que se repartia el espacio disponible — y eso hacia que la MISMA card midiera
- * distinto en cada vista y en cada ancho de ventana. Medido: en Ventas 2 por
- * fila a 1512px y 4 a 1920; en Personal 2, 3, 4 o 5 segun el monitor.
+ * ── MEDIDAS CANONICAS (2026-07-30, aprobadas sobre mockup) ─────────────────
+ *   minimo 148px · maximo 200px · el detalle cede bajo 176px
  *
- * Peor: la card HUERFANA de la ultima fila crecia hasta llenarla sola. Medido
- * en Personal a 1920: cuatro cards de 172px y la quinta de **726px**.
+ * Antes era `flex-1 basis-0 min-w-[150px]`, o sea que se repartia el espacio
+ * disponible — y eso hacia que la MISMA card midiera distinto en cada vista y en
+ * cada monitor. Medido: en Ventas 2 por fila a 1512px y 4 a 1920; en Personal 2,
+ * 3, 4 o 5 segun la pantalla. Y la card HUERFANA de la ultima fila crecia hasta
+ * llenarla sola: en Personal a 1920px habia cuatro de 172px y **una de 726**.
  *
- * Con ancho fijo la fila se ve igual en todas partes: si no caben, envuelven; si
- * sobran, sobra espacio. Es lo que pidio el usuario — "las cards canonicamente
- * deben tener el mismo tamano". El padre DEBE usar items-stretch para igualar
- * alturas.
+ * El maximo es lo que mata a la huerfana; el minimo es lo que deja entrar cinco
+ * en 772px. Entre los dos crecen PAREJO, asi que dentro de una fila todas miden
+ * igual.
+ *
+ * `compacta` esconde la linea de detalle. Es el primer dato que cede cuando falta
+ * ancho —es terciario— y lo decide `CarrilCards`, que es quien conoce el ancho
+ * real. Sin el, bajar de 176px cortaba el texto a mitad de palabra.
+ *
+ * Las cards NO envuelven: van en una sola fila y, si no entran, `CarrilCards`
+ * las desliza. El padre DEBE usar items-stretch para igualar alturas.
  *
  * Props:
  *   icon       (component, obligatorio) -- icono Lucide
@@ -58,6 +64,8 @@ export default function StatCard({
     // sus tarjetas escalonan la aparición con `animationDelay`. Sin esto la
     // migración habría tenido que elegir entre el canónico y la animación.
     className  = '',
+    // Sin la linea de detalle. Lo decide el carril a partir del ancho real.
+    compacta = false,
     style,
 }) {
     const isClickable = !!onClick;
@@ -86,7 +94,7 @@ export default function StatCard({
             disabled={isClickable && loading ? true : undefined}
             {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
             className={`
-                basis-[200px] grow-0 shrink-0 min-w-0 max-w-full h-full
+                basis-[148px] grow shrink-0 min-w-0 max-w-[200px] h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border
                 transition-[box-shadow,border-color,background-color,transform] duration-200
                 ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}
@@ -158,9 +166,11 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] whitespace-nowrap max-[560px]:whitespace-normal max-[560px]:leading-tight">
-                    {!loading ? sub : ''}
-                </span>
+                {!compacta && (
+                    <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] whitespace-nowrap max-[560px]:whitespace-normal max-[560px]:leading-tight">
+                        {!loading ? sub : ''}
+                    </span>
+                )}
             </div>
 
             {/* X al activar -- solo en clickable */}

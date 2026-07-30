@@ -53,6 +53,7 @@ import PracticanteModal from '../components/practicantes/PracticanteModal';
 import ConfirmModal from '../components/common/ConfirmModal';
 import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
+import CarrilCards from '../components/common/CarrilCards';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -493,7 +494,7 @@ const STAT_CARD_COLORS = {
 // ícono, mismo número, misma etiqueta, misma × al estar activa. Queda como un
 // envoltorio finito que solo traduce `color` a la paleta local — el resto lo
 // pone el canónico.
-function StaffStatCard({ icon, label, value, active, onClick, color, loading }) {
+function StaffStatCard({ icon, label, value, active, onClick, color, loading, compacta }) {
   const c = STAT_CARD_COLORS[color];
   return (
     <StatCard
@@ -501,7 +502,7 @@ function StaffStatCard({ icon, label, value, active, onClick, color, loading }) 
       label={label}
       value={loading ? '–' : value.toLocaleString()} valueCls={c.textColor}
       active={active} activeBg={c.activeBg} inactiveBg={c.inactiveBg}
-      loading={loading} onClick={onClick}
+      loading={loading} onClick={onClick} compacta={compacta}
     />
   );
 }
@@ -865,12 +866,11 @@ const StaffManagementView = ({
             usuario, 2026-07-30). Antes iban una debajo de otra y la píldora
             terminaba ocupando un renglón entero para sí sola.
             Las tarjetas ya traen `flex-1 basis-0 min-w-[150px]` del canónico
-            `StatCard`, así que reparten el ancho de SU columna solas: con cinco
-            quedan iguales, con tres se ensanchan. Y envuelven dentro de su propia
-            columna cuando no entran, que es lo que permite que la píldora se quede
-            a la derecha a cualquier ancho en vez de empujarse abajo. */}
-        <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-          <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-[312px]">
+            `StatCard` (148 mínimo, 200 máximo), y `CarrilCards` las mantiene en
+            UNA fila: las que no entran se alcanzan deslizando, en vez de envolver
+            y empujar la tabla hacia abajo un alto distinto en cada monitor. */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <CarrilCards className="flex-1" ariaLabel="Resumen del personal">
             <StaffStatCard
               icon={Users} color="blue" label="Total" value={stats.total}
               active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
@@ -896,7 +896,7 @@ const StaffManagementView = ({
               active={isPracticantesView} onClick={() => setActiveStatFilter('PRACTICANTES')}
               loading={practicantesLoading && practicantes.length === 0}
             />
-          </div>
+          </CarrilCards>
 
           <div className="flex justify-end min-w-0">
                             {/* Filtros y acciones, en la misma píldora (§17).

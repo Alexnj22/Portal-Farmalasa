@@ -15,6 +15,7 @@ import {
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
 import StatCard from '../../components/common/StatCard';
+import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
@@ -169,7 +170,8 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
         : 'bg-success/10';
 
     return (
-        <div className="flex gap-3 flex-wrap">
+        // Una sola fila: las que no entren se alcanzan deslizando (§17.0).
+        <CarrilCards ariaLabel="Resumen del catálogo">
             {/* Info card — total */}
             <div className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] ${infoCard}`}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${statIconBg}`}>
@@ -231,7 +233,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     />
                 );
             })}
-        </div>
+        </CarrilCards>
     );
 }
 

@@ -16,7 +16,30 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.234.0';
+export const APP_VERSION = '2.235.0';
+
+// v2.235.0 — hook de pre-commit, y la regla de que este arbol es compartido.
+//
+// EL HOOK vive en `.githooks/pre-commit` (versionado a proposito: `.git/hooks/` no
+// viaja con el repo, asi que un clon nuevo se quedaria sin gate). Se habilita una
+// vez por clon con `npm run hooks:install`, que setea `core.hooksPath`. Tres
+// chequeos, ninguno con red: bloquea si un archivo esta preparado Y modificado
+// despues de prepararlo, corre `version-gate` siempre, y `migration-gate` solo si
+// el commit toca `supabase/migrations` — acotado ahi para no bloquear a una sesion
+// por el arbol a medio editar de otra.
+//
+// LA REGLA NUEVA en CLAUDE.md sale de medirlo en esta misma sesion: el `git status`
+// paso de 2 a 8 archivos modificados en 40 minutos sin que esta sesion tocara
+// ninguno de los 6 nuevos, y otra sesion commiteo y pusheo v2.234.0 en el medio.
+// De ahi: leer `git status` antes de editar un archivo que no tocaste (un `Write`
+// encima de cambios ajenos los borra y no estan en ningun commit); prohibido
+// `git add -A`/`commit -a`/`stash`/`checkout .`/`reset --hard`; `fetch` antes de
+// pushear; y leer `APP_VERSION` del disco en el momento en vez de asumir "el
+// anterior + 1" — que es exactamente lo que iba a pasar aca.
+//
+// El hook se ejercito en los cuatro caminos antes de confiar en el (preparado y
+// modificado despues, resuelto con re-add, migracion con nombre viejo, y src/
+// preparado sin bump). Los cuatro dan el mensaje correcto y salida 1 donde toca.
 
 // v2.234.0 — Personal › Listado bajaba 4.1 MB en fotos. Ahora baja 534 kB.
 //

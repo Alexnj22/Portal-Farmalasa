@@ -1,0 +1,69 @@
+#!/bin/sh
+# Hook de pre-commit del portal. Versionado a propósito: `.git/hooks/` no viaja
+# con el repo, así que un clon nuevo (u otra máquina) se quedaría sin gate.
+# Se habilita con `npm run hooks:install` (setea core.hooksPath=.githooks).
+#
+# Hace tres cosas, todas baratas — ningún chequeo que necesite red:
+#
+#   1. CONCURRENCIA. Hay varias sesiones de Claude trabajando sobre este mismo
+#      árbol al mismo tiempo (medido: el `git status` de una sesión pasó de 2 a 8
+#      archivos modificados en 40 minutos, sin que esa sesión tocara los 6
+#      nuevos). Si un archivo está preparado Y además modificado después, el
+#      commit se estaría llevando una foto parcial de algo que alguien más sigue
+#      editando. Se bloquea.
+#   2. `version-gate.mjs` — APP_VERSION tiene que subir si cambió `src/`
+#      (regla de CLAUDE.md; doce bumps habían fallado en silencio antes de que
+#      existiera el gate).
+#   3. `migration-gate.mjs` — solo si el commit toca migraciones. Se corre
+#      acotado a eso justamente para no bloquear a una sesión por el árbol a
+#      medio editar de otra.
+#
+# `git commit --no-verify` lo saltea. Es para una emergencia real, no para
+# silenciar un hallazgo: los tres chequeos son consecuencia de incidentes.
+
+echo ""
+
+# ── 1. ¿Alguien más está editando lo que estoy por commitear? ───────────────────
+# Formato de --porcelain: "XY ruta", X = índice, Y = árbol de trabajo.
+# X≠' ' y X≠'?'  → preparado.   Y≠' '  → cambió después de prepararlo.
+CONCURRENTES=$(git status --porcelain | awk '
+  { x = substr($0,1,1); y = substr($0,2,1)
+    if (x != " " && x != "?" && y != " ") print substr($0,4) }')
+
+if [ -n "$CONCURRENTES" ]; then
+  echo "  ✗ Archivo(s) preparados y modificados DESPUÉS de prepararlos:"
+  echo ""
+  echo "$CONCURRENTES" | sed 's/^/      /'
+  echo ""
+  echo "    El commit se llevaría una versión que ya no es la del disco. En este"
+  echo "    repo trabajan varias sesiones a la vez, así que ese cambio de más"
+  echo "    puede no ser tuyo."
+  echo ""
+  echo "    Si el cambio es tuyo:  git add <archivo>   (y volvé a commitear)"
+  echo "    Si NO es tuyo:         git restore --staged <archivo>   — dejalo afuera,"
+  echo "                           no lo pises ni lo revertás."
+  echo ""
+  exit 1
+fi
+
+# ── 2. Lo que queda fuera del commit, a la vista ────────────────────────────────
+# Informativo, no bloquea: es para no asumir nunca un árbol limpio.
+FUERA=$(git status --porcelain | awk '
+  { x = substr($0,1,1); y = substr($0,2,1)
+    if ((x == " " && y != " ") || x == "?") print substr($0,4) }')
+
+if [ -n "$FUERA" ]; then
+  N=$(echo "$FUERA" | wc -l | tr -d ' ')
+  echo "  ℹ $N archivo(s) modificados FUERA de este commit (posiblemente de otra sesión):"
+  echo "$FUERA" | head -8 | sed 's/^/      /'
+  [ "$N" -gt 8 ] && echo "      … y $((N - 8)) más"
+  echo "    No los toques, no los revertás, no los commitees de arrastre."
+  echo ""
+fi
+
+# ── 3. Los gates ────────────────────────────────────────────────────────────────
+node scripts/version-gate.mjs || exit 1
+
+if git diff --cached --name-only | grep -q '^supabase/migrations'; then
+  node scripts/migration-gate.mjs || exit 1
+fi

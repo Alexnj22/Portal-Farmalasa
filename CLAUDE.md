@@ -235,6 +235,38 @@ es `data_days`, o sea los días desde la **primera venta histórica** del produc
 en esa sucursal (tope `analysis_days`, piso 30 días). Eso solo cambia algo para
 los productos realmente nuevos — medido en Salud 1: 45 de 1,765.
 
+## REGLA CRÍTICA: hay OTRAS sesiones trabajando en este mismo árbol
+
+No es hipotético ni excepcional. Medido el 2026-07-29 en una sola sesión: el
+`git status` pasó de 2 a 8 archivos modificados en 40 minutos sin que esta sesión
+tocara ninguno de los 6 nuevos, y otra sesión commiteó **y pusheó** v2.234.0 en el
+medio. El árbol de trabajo es compartido y no avisa.
+
+**Antes de editar un archivo que no tocaste en esta sesión**: `git status --short`.
+Si aparece modificado y el cambio no es tuyo, es de otra sesión — leerlo antes de
+escribirlo. Un `Write` encima de cambios ajenos los borra sin dejar rastro: no
+están en ningún commit del que recuperarlos.
+
+**Prohibido barrer el árbol.** Nunca `git add -A` / `git add .` / `git commit -a` /
+`git stash` / `git checkout .` / `git restore .` / `git reset --hard`: todos se
+llevan trabajo ajeno sin commitear. Siempre paths explícitos, y **verificar
+`git status` después del `add`** — un pathspec que falla aborta TODO el add.
+
+**Commitear lo propio en cuanto compila**, con paths explícitos. Es la única
+protección real: lo commiteado se recupera, lo demás no. Y `git fetch` antes de
+pushear — el remoto puede haberse movido.
+
+**Al bumpear `APP_VERSION`**: leer `src/version.js` en el momento, nunca asumir
+"el anterior + 1". Otra sesión puede haber usado ese número ya.
+
+**El hook de pre-commit** (`.githooks/pre-commit`, se habilita una vez por clon con
+`npm run hooks:install`) cubre el caso mecánico: **bloquea el commit si un archivo
+está preparado y además modificado después de prepararlo** — señal de que alguien
+lo siguió editando y el commit se llevaría una foto parcial. Además lista lo que
+queda fuera del commit, corre `version-gate` siempre y `migration-gate` cuando el
+commit toca `supabase/migrations`. `git commit --no-verify` lo saltea: es para una
+emergencia real, no para silenciar un hallazgo.
+
 ## Estándares del proyecto
 - Ver `DESIGN.md` para patrones de UI (glassmorphism, filter pills, tabs, search)
 - Siempre usar `LiquidSelect` en lugar de `<select>` nativo

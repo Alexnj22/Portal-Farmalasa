@@ -12,6 +12,42 @@ retomar; acá está todo.
 
 ---
 
+## v2.235.0 — hook de pre-commit, y la regla de que este árbol es compartido.
+
+**El hook** vive en `.githooks/pre-commit` — versionado a propósito, porque
+`.git/hooks/` no viaja con el repo y un clon nuevo se quedaría sin gate. Se habilita
+una vez por clon con `npm run hooks:install`, que setea `core.hooksPath`. Tres
+chequeos, ninguno con red:
+
+1. **Bloquea si un archivo está preparado y además modificado después de
+   prepararlo.** El commit se llevaría una versión que ya no es la del disco, y con
+   varias sesiones sobre el mismo árbol ese cambio de más puede no ser tuyo. El
+   mensaje da las dos salidas correctas: `git add` si el cambio es tuyo,
+   `git restore --staged` si no lo es.
+2. `version-gate` siempre (APP_VERSION tiene que subir si cambió `src/`).
+3. `migration-gate` **solo si el commit toca `supabase/migrations`** — acotado ahí
+   justamente para no bloquear a una sesión por el árbol a medio editar de otra.
+
+Además lista lo que queda modificado *fuera* del commit, para no asumir nunca un
+árbol limpio. `git commit --no-verify` lo saltea: es para una emergencia real, no
+para silenciar un hallazgo.
+
+**La regla nueva de CLAUDE.md** sale de medirlo en esta misma sesión: el
+`git status` pasó de 2 a 8 archivos modificados en 40 minutos sin que esta sesión
+tocara ninguno de los 6 nuevos, y otra sesión commiteó **y pusheó** v2.234.0 en el
+medio. De ahí: leer `git status` antes de editar un archivo que no tocaste (un
+`Write` encima de cambios ajenos los borra, y no están en ningún commit del que
+recuperarlos); prohibido `git add -A` / `commit -a` / `stash` / `checkout .` /
+`reset --hard`; `fetch` antes de pushear; y leer `APP_VERSION` del disco en el
+momento en vez de asumir "el anterior + 1" — que es exactamente lo que iba a pasar
+acá.
+
+Ejercitado en los cuatro caminos antes de confiar en él: preparado-y-modificado,
+resuelto con re-`add`, migración con nombre viejo, y `src/` preparado sin bump. Los
+cuatro dan el mensaje correcto y salida 1 donde toca.
+
+---
+
 ## v2.233.0 — la convención de migraciones deja de ser prosa: `gate:migrations`.
 
 C2 del plan de cierre de Supabase dejó `supabase/migrations/` describiendo prod

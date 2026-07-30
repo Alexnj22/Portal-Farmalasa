@@ -715,6 +715,16 @@ const RequestsView = () => {
 
             {/* ModalShell: escrito a mano no atrapaba el foco, no cerraba con
                 Escape y no se anunciaba como diálogo (auditoría 2026-07-29). */}
+            {/* El `actionModal &&` NO es defensivo de más: sin él la vista CRASHEA.
+                Los hijos de un elemento JSX se evalúan al CREARLO, no cuando el
+                padre decide pintarlos — así que `actionModal.mode` de aquí abajo
+                corre en cada render, incluido el primero, cuando `actionModal` es
+                `null`. "TypeError: null is not an object (evaluating 'c.mode')" y
+                la vista entera al ErrorBoundary.
+                El modal a mano que había antes sí tenía la guarda; se perdió al
+                pasarlo a `ModalShell` en v2.183.0, porque `open={!!actionModal}`
+                LEE como si condicionara los hijos y no los condiciona. */}
+            {actionModal && (
             <ModalShell open={!!actionModal} onClose={() => !isActioning && setActionModal(null)} maxWidthClass="max-w-md" zClass="z-toast" closeOnEsc={!isActioning} ariaLabel={actionModal?.mode === 'approve' ? 'Aprobar la solicitud' : 'Rechazar la solicitud'}>
                     <div data-surface="card" className="relative w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <div className={`w-14 h-14 rounded-card flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
@@ -753,6 +763,7 @@ const RequestsView = () => {
                         </div>
                     </div>
             </ModalShell>
+            )}
 
             <ModalShell open={createModalOpen} onClose={() => !isCreatingReq && setCreateModalOpen(false)} maxWidthClass="max-w-lg" zClass="z-toast" closeOnEsc={!isCreatingReq} ariaLabel="Nueva solicitud">
                     <div data-surface="card" className="relative w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">

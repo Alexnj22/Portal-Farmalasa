@@ -16,7 +16,21 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.249.2';
+export const APP_VERSION = '2.249.3';
+
+// v2.249.3 — dos vistas crasheaban al ABRIRLAS, y las dos por el mismo motivo.
+//
+// `Gestion de Solicitudes` (reportada por el usuario) y `EmployeeDetailView`:
+// "TypeError: null is not an object (evaluating 'c.mode')" y la vista entera al
+// ErrorBoundary. **Los hijos de un elemento JSX se evaluan al CREARLO, no cuando
+// el padre decide pintarlos**, asi que `actionModal.mode` / `resetResult.password`
+// corrian en cada render, incluido el primero, con la variable en `null`.
+//
+// `<ModalShell open={!!actionModal}>` LEE como si condicionara sus hijos y no los
+// condiciona. Los modales escritos a mano que habia antes SI traian el
+// `{actionModal && (...)}`; la guarda se perdio al pasarlos a `ModalShell` en
+// v2.183.0. Barrido el patron en las 30 vistas que usan `ModalShell`: eran
+// exactamente estas dos.
 
 // v2.249.2 — DESIGN.md al dia con el canonico nuevo.
 //

@@ -1106,6 +1106,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             de scroll. Escrito a mano no tenía ninguna de las cuatro cosas
             (auditoría 2026-07-29). El cuerpo queda igual: `AlertModal` solo
             acepta title+message y acá hay una contraseña con botón de copiar. */}
+        {/* La guarda `resetResult &&` es obligatoria, no defensiva: los hijos de un
+            elemento JSX se evalúan al CREARLO, no cuando el padre decide pintarlos,
+            así que `resetResult.password` de más abajo corre en cada render — con
+            `resetResult` en `null` eso es un TypeError y la vista al ErrorBoundary.
+            `open={!!x}` LEE como si condicionara los hijos y no lo hace. Mismo
+            defecto que tenía RequestsView; los dos vienen del pase a `ModalShell`
+            de v2.183.0, donde los modales a mano sí traían la guarda. */}
+        {resetResult && (
         <ModalShell open={!!resetResult} onClose={() => setResetResult(null)} maxWidthClass="max-w-sm" zClass="z-confirm" ariaLabel="Contraseña temporal generada">
                 <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)]">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-success" />
@@ -1137,6 +1145,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     </div>
                 </div>
         </ModalShell>
+        )}
 
         <ModalShell open={cancelModalRender} onClose={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : () => {}} maxWidthClass="max-w-sm" zClass="z-confirm" closeOnEsc={!isCancelling} ariaLabel="Cancelar el evento del expediente">
                 <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>

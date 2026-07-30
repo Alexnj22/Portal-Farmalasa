@@ -242,20 +242,12 @@ export default function TabInventario({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
                 <CarrilCards ariaLabel="Resumen de inventario">
 
-                    <div data-surface="card" className="flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
-                            <Package size={15} className="text-brand-text" />
-                        </div>
-                        <div className="text-left">
-                            <div className="text-title-lg font-black leading-none tabular-nums text-content-2">
-                                {loading ? <span className="text-content-3">–</span> : total.toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold text-content-2">Productos</div>
-                            <div className="text-micro text-content-3">
-                                {selectedErp !== null ? ERP_NAMES[selectedErp] : 'todas las sucursales'}
-                            </div>
-                        </div>
-                    </div>
+                    <StatCard
+                        icon={Package} iconBg="bg-chart-1/10" iconCls="text-brand-text"
+                        label="Productos" value={total.toLocaleString()}
+                        sub={selectedErp !== null ? ERP_NAMES[selectedErp] : 'todas las sucursales'}
+                        loading={loading}
+                    />
 
                     {/* §16.x — estas cuatro eran la MISMA tarjeta escrita a mano,
                         cuatro veces seguidas en el mismo bloque. `StatCard` ya la

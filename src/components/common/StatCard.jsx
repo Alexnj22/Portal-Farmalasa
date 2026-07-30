@@ -29,6 +29,18 @@ import { Loader2, X } from 'lucide-react';
  * Las cards NO envuelven: van en una sola fila y, si no entran, `CarrilCards`
  * las desliza. El padre DEBE usar items-stretch para igualar alturas.
  *
+ * ── Nada se sale de la tarjeta ────────────────────────────────────────────
+ * Los tres textos truncan. Antes iban con `whitespace-nowrap` a secas, o sea que
+ * EMPUJABAN el ancho — y con la tarjeta ya topada en 200px lo que hacían era
+ * desbordar y montarse sobre la de al lado. El `aria-label` de la tarjeta lleva
+ * el texto entero, así que a un lector de pantalla no le falta nada.
+ *
+ * ── El radio sale del TOKEN (§8) ──────────────────────────────────────────
+ * `rounded-card`, no `rounded-2xl`. Con el radio fijo la tarjeta medía 1rem
+ * mientras cualquier bloque con `data-surface="card"` media 1.75 en vidrio: en la
+ * misma fila convivían dos formas distintas y se veía. Y en el tema sólido el
+ * token baja a 0.75rem, que es la forma recta que ese tema quiere.
+ *
  * Props:
  *   icon       (component, obligatorio) -- icono Lucide
  *   iconBg     (string)                 -- clases Tailwind para el squircle, ej. 'bg-danger/10'
@@ -95,7 +107,7 @@ export default function StatCard({
             {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
             className={`
                 basis-[148px] grow shrink-0 min-w-0 max-w-[200px] h-full
-                flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border
+                flex items-center gap-3 pl-3 pr-4 py-3 rounded-card border
                 transition-[box-shadow,border-color,background-color,transform] duration-200
                 ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
@@ -135,7 +147,13 @@ export default function StatCard({
                     // vio en Inventario, donde "$331,327.89" se leía "$331,3…".
                     // La tarjeta tiene `flex-1 basis-0` y `min-w` es un mínimo,
                     // no un máximo: que crezca es exactamente lo correcto.
-                    : <span className={`text-title-sm font-black tabular-nums leading-none whitespace-nowrap ${valueCls}`}>
+                    // `truncate` también en el valor. El comentario de arriba
+                    // decía que un número cortado no comunica nada, y es cierto —
+                    // pero la alternativa medida era peor: con `nowrap` a secas el
+                    // número SE SALÍA de la tarjeta y se montaba sobre la de al
+                    // lado. Contenido y cortado se lee mal; desbordado rompe la
+                    // fila. Con 200px de máximo el corte es el caso raro.
+                    : <span className={`block truncate text-title-sm font-black tabular-nums leading-none ${valueCls}`}>
                         {value ?? 0}
                       </span>
                 }
@@ -155,7 +173,7 @@ export default function StatCard({
                     // precio" salían cortados a mitad de palabra. Bajo 560px el
                     // texto envuelve — una etiqueta de dos líneas se lee, una
                     // cortada no.
-                    : <span className="text-caption font-bold text-content-2 leading-none mt-1 whitespace-nowrap max-[560px]:whitespace-normal max-[560px]:leading-tight">
+                    : <span className="block truncate text-caption font-bold text-content-2 leading-none mt-1">
                         {label}
                       </span>
                 }
@@ -167,7 +185,7 @@ export default function StatCard({
                     `sub` tienen exactamente la misma altura total.
                 */}
                 {!compacta && (
-                    <span className="block text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px] whitespace-nowrap max-[560px]:whitespace-normal max-[560px]:leading-tight">
+                    <span className="block truncate text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px]">
                         {!loading ? sub : ''}
                     </span>
                 )}

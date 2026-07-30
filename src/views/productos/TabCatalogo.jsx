@@ -116,14 +116,10 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
     const perdidaCount = stats?.perdidaIds?.size ?? 0;
     const bajoCount    = stats?.bajoIds?.size    ?? 0;
 
-    // Neutral card (info only, not clickable filter)
-    const infoCard = 'bg-surface-card border-border-card backdrop-blur-sm shadow-sm';
-
+    // El fondo, el borde y la sombra los pone `StatCard` con `data-surface`; acá
+    // solo queda lo que la tarjeta no puede deducir sola.
     const statText   = 'text-content-2';
-    const statLabel  = 'text-content-2';
-    const statSub    = 'text-content-3';
     const statIconBg = 'bg-chart-1/10';
-    const divider    = 'bg-surface-card-hover';
 
     const filterCardDef = [
         {
@@ -172,23 +168,17 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
     return (
         // Una sola fila: las que no entren se alcanzan deslizando (§17.0).
         <CarrilCards ariaLabel="Resumen del catálogo">
-            {/* Info card — total */}
-            <div className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[140px] ${infoCard}`}>
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${statIconBg}`}>
-                    <Package size={15} className={'text-brand-text'} />
-                </div>
-                <div className="text-left min-w-0">
-                    <div className={`text-title-lg font-black leading-none tabular-nums ${statText}`}>
-                        {productStatsLoading ? <span className={'text-content-3'}>–</span> : (productStats?.activos ?? 0).toLocaleString()}
-                    </div>
-                    <div className={`text-caption font-bold leading-tight ${statLabel}`}>Productos activos</div>
-                    {!productStatsLoading && (productStats?.inactivos ?? 0) > 0 && (
-                        <div className={`text-micro tabular-nums ${statSub}`}>
-                            {(productStats.inactivos).toLocaleString()} inactivos
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Era la MISMA tarjeta escrita a mano —icono, valor, rótulo y
+                detalle—, con su propio `rounded-2xl` y su propio `min-w`. Por eso
+                en la fila convivía con otro radio y otro ancho. */}
+            <StatCard
+                icon={Package} iconBg={statIconBg} iconCls="text-brand-text"
+                label="Productos activos"
+                value={(productStats?.activos ?? 0).toLocaleString()} valueCls={statText}
+                sub={(productStats?.inactivos ?? 0) > 0
+                    ? `${(productStats.inactivos).toLocaleString()} inactivos` : undefined}
+                loading={productStatsLoading}
+            />
 
             {/* §16.x — estas tarjetas de métrica eran la misma anatomía escrita
                 a mano. `StatCard` ya la tenía, con la × al estar activa incluida. */}
@@ -216,7 +206,6 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             />
 
             {/* Divider */}
-            <div className={`w-px h-14 self-center hidden sm:block ${divider}`} />
 
             {/* Filter cards */}
             {filterCardDef.map(c => {

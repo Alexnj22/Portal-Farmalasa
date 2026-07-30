@@ -575,17 +575,11 @@ export default function TabReglas({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de reglas">
 
-                    <div data-surface="card" className="flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-1/10">
-                            {statsLoading ? <Loader2 size={14} className="animate-spin text-content-3" /> : <Package size={15} className="text-brand-text" />}
-                        </div>
-                        <div>
-                            <div className="text-title-lg font-black leading-none tabular-nums text-content-2">
-                                {statsLoading ? <span className="text-content-3">–</span> : allCount.toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold leading-tight text-content-2">Productos activos</div>
-                        </div>
-                    </div>
+                    <StatCard
+                        icon={Package} iconBg="bg-chart-1/10" iconCls="text-brand-text"
+                        label="Productos activos" value={allCount.toLocaleString()}
+                        loading={statsLoading}
+                    />
 
                     <StatCard label="Con regla" value={rulesCount}
                         icon={Check} iconBg={filterRule === 'con' ? 'bg-surface-card' : 'bg-success/10'} iconCls="text-success"

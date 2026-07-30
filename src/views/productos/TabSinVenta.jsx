@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import CarrilCards from '../../components/common/CarrilCards';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { supabase } from '../../supabaseClient';
@@ -531,72 +532,49 @@ export default function TabGestionStock({ searchTerm = '' }) {
             <div className="flex items-start gap-3 flex-wrap">
 
                 {/* Left: summary + cost/revenue + sub-filter cards */}
-                <div className="flex items-center gap-3 flex-wrap">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de gestión de stock">
 
-                    {/* Total count card */}
-                    <div data-surface="card" className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-brand/[0.08]">
-                            <Package size={15} className="text-brand-text/60" />
-                        </div>
-                        <div className="text-left min-w-0">
-                            <div className="text-title-lg font-black leading-none tabular-nums text-content-2">
-                                {activeLoading ? <span className="text-content-3">–</span> : activeData.length.toLocaleString()}
-                            </div>
-                            <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">
-                                {mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
-                            </div>
-                            <div className="text-micro text-content-3">en la sucursal activa</div>
-                        </div>
-                    </div>
+                    {/* Las tres eran la MISMA tarjeta escrita a mano, con su propio
+                        `min-w` cada una. `StatCard` ya la tenía. */}
+                    <StatCard
+                        icon={Package} iconBg="bg-brand/[0.08]" iconCls="text-brand-text/60"
+                        label={mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
+                        value={activeData.length.toLocaleString()}
+                        sub="en la sucursal activa"
+                        loading={activeLoading}
+                    />
 
-                    {/* Costo retenido */}
                     {mode === 'stock_ret' && (
-                        <div data-surface="card" className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 min-w-[145px]" style={{ animationDelay: '40ms' }}>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-4/10">
-                                <DollarSign size={15} className="text-chart-4-text" />
-                            </div>
-                            <div className="text-left min-w-0">
-                                <div className="text-title-lg font-black leading-none tabular-nums text-chart-4-text">
-                                    {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalCost)}
-                                </div>
-                                <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">Costo retenido</div>
-                                {filteredCost > 0 && filteredCost !== totalCost
-                                    ? <div className="text-micro text-chart-4-text">{fmtMoney(filteredCost)} en filtro</div>
-                                    : <div className="text-micro text-content-3">total sucursal</div>
-                                }
-                            </div>
-                        </div>
+                        <StatCard
+                            icon={DollarSign} iconBg="bg-chart-4/10" iconCls="text-chart-4-text"
+                            label="Costo retenido" value={fmtMoney(totalCost)} valueCls="text-chart-4-text"
+                            sub={filteredCost > 0 && filteredCost !== totalCost
+                                ? `${fmtMoney(filteredCost)} en filtro` : 'total sucursal'}
+                            loading={activeLoading}
+                        />
                     )}
 
-                    {/* Revenue (sin_gestion) */}
                     {mode === 'sin_gestion' && (
-                        <div data-surface="card" className="filter-card-anim flex items-center gap-3 pl-3 pr-4 py-3 min-w-[145px]" style={{ animationDelay: '40ms' }}>
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-warning/10">
-                                <TrendingUp size={15} className="text-warning" />
-                            </div>
-                            <div className="text-left min-w-0">
-                                <div className="text-title-lg font-black leading-none tabular-nums text-warning">
-                                    {activeLoading ? <span className="text-content-3">–</span> : fmtMoney(totalRevenue)}
-                                </div>
-                                <div className="text-caption font-bold leading-tight text-content-2 mt-0.5">Revenue 6m</div>
-                                <div className="text-micro text-content-3">sin parámetros min/max</div>
-                            </div>
-                        </div>
+                        <StatCard
+                            icon={TrendingUp} iconBg="bg-warning/10" iconCls="text-warning"
+                            label="Revenue 6m" value={fmtMoney(totalRevenue)} valueCls="text-warning"
+                            sub="sin parámetros min/max"
+                            loading={activeLoading}
+                        />
                     )}
 
-                    {/* Sub-filter cards */}
-                    {mode === 'sin_gestion' && <React.Fragment key="sin_gestion_filters">
-                        <div className="w-px h-14 self-center hidden sm:block bg-divider" />
+                    {/* Sub-filtros. Sin divisor: el carril ya separa por espacio, y
+                        un divisor adentro se lee como una tarjeta más. */}
+                    {mode === 'sin_gestion' && (
                         <SinMinMaxFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'agregar' : id)}
                             loading={activeLoading} ignoredSet={ignoredSet} />
-                    </React.Fragment>}
-                    {mode === 'stock_ret' && <React.Fragment key="stock_ret_filters">
-                        <div className="w-px h-14 self-center hidden sm:block bg-divider" />
+                    )}
+                    {mode === 'stock_ret' && (
                         <StockRetFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
-                    </React.Fragment>}
-                </div>
+                    )}
+                </CarrilCards>
 
                 {/* §17 — píldora a mano. Las "mode pills" eran un uno-de-N
                     escrito a mano con su propio badge de conteo: es

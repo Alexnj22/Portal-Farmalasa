@@ -802,20 +802,6 @@ function TabDocumentos({
                 el mismo divisor, con la misma forma. Es el hallazgo que ya se
                 corrigió en Staff en v2.97.0 y que a esta vista no llegó. */}
             <div className="flex items-center justify-end gap-2 flex-wrap shrink-0">
-                {filtered.length > 0 && (
-                    <Button variant="secondary" size="sm" icon={Download} disabled={bulkDownloading}
-                        title="Descargar todos los filtrados en un ZIP" onClick={downloadBulk}>
-                        {bulkProgress?.total > 0
-                            ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
-                            : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
-                    </Button>
-                )}
-                {canEdit && (
-                    <Button variant="secondary" size="sm" icon={RefreshCw} loading={syncing}
-                        disabled={syncing} onClick={runSyncNow}>
-                        {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
-                    </Button>
-                )}
 
                 {/* H14: los quick-filters de las cards (Invalidados / Sin
                     Proveedor) SON filtros — deben contar en el badge y
@@ -823,9 +809,30 @@ function TabDocumentos({
                     con la card activa la barra decía que no había filtros y
                     "Limpiar" no la apagaba, así que la tabla quedaba recortada
                     sin ninguna señal de por qué. */}
+                {/* Las acciones van DENTRO de la píldora (§17, 2026-07-30).
+                    Estaban en una fila propia al lado, que es la regla anterior —
+                    y por eso la píldora no quedaba justificada a la derecha: había
+                    otro bloque disputándole el borde. */}
                 <FilterBar
                     onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterInvalidados(false); }}
                     activeCount={[dateDirty, filterSinProveedor, filterInvalidados].filter(Boolean).length}
+                    acciones={[
+                        ...(filtered.length > 0 ? [{
+                            key: 'descargar', icon: Download,
+                            label: bulkProgress?.total > 0
+                                ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
+                                : bulkDownloading ? 'Armando ZIP…' : 'Descargar',
+                            title: 'Descargar todos los filtrados en un ZIP',
+                            disabled: bulkDownloading, onClick: downloadBulk,
+                        }] : []),
+                        ...(canEdit ? [{
+                            key: 'sincronizar', icon: RefreshCw,
+                            label: syncing
+                                ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando')
+                                : 'Sincronizar',
+                            disabled: syncing, onClick: runSyncNow,
+                        }] : []),
+                    ]}
                 >
                     <FilterBar.Section active={dateDirty} onClear={() => setDateRange(defaultDateRange())} label="período">
                         <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />

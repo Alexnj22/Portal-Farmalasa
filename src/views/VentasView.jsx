@@ -233,7 +233,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
         <div
             {...clickable(onClick)}
             className={`basis-[148px] grow shrink-0 min-w-0 max-w-[200px]
-                flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
+                flex items-center gap-2 px-3 py-2 rounded-card border select-none transition-[box-shadow,border-color,background-color]
                 ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-surface-card' : 'cursor-default bg-surface-card'}
                 ${active
                     ? 'border-warning ring-2 ring-warning/45 shadow-md bg-warning/10'

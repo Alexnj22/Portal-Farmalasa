@@ -16,7 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.255.0';
+export const APP_VERSION = '2.256.0';
+
+// v2.256.0 — nada a mano: los ultimos bloques y el ultimo pill legacy, al canonico.
+//
+// **El radio salia de un numero, no del token.** `StatCard` usaba `rounded-2xl`
+// (1rem fijo) mientras cualquier bloque con `data-surface="card"` toma
+// `--card-radius` (1.75rem en vidrio, 0.75 en solido). En la MISMA fila convivian
+// dos formas y se veia — el usuario lo señalo. Ahora `rounded-card`, que es lo que
+// §8 manda: el radio lo decide el TEMA.
+//
+// **Nada se sale de la tarjeta.** Los tres textos truncan. Iban con
+// `whitespace-nowrap` a secas, o sea que EMPUJABAN el ancho, y con la tarjeta
+// topada en 200px lo que hacian era desbordar y montarse sobre la de al lado. El
+// `aria-label` lleva el texto entero, asi que a un lector no le falta nada.
+//
+// **Cinco bloques "a mano" que eran `StatCard` reescrito** —Catalogo, Inventario,
+// Reglas, Pedidos y los tres de Gestion de Stock— reemplazados por el canonico,
+// cada uno con su propio `rounded-2xl`, su propio `min-w` y su propia estructura.
+// Y fuera los dos divisores que quedaban dentro de los carriles: el carril ya
+// separa por espacio, y un divisor adentro se lee como una tarjeta mas.
+//
+// **`FilterPill` de Pedidos era el ULTIMO resto del pill legacy** —el que §17 dice
+// haber reemplazado— y seguia armando el contenedor a mano: su `h-14 rounded-2xl
+// border bg-surface-card`, sus divisores y un boton de limpiar por ranura. Ahora
+// es un `FilterBar`, con lo que gana el orden de ranuras, el colapso a barra
+// flotante en el telefono, el cupo por ancho y el control de desborde.
+//
+// **Facturas de Compra tenia "Descargar" y "Sincronizar" FUERA de la pildora**,
+// que era la regla anterior de §17. Al moverlas a `acciones` se arreglo de paso lo
+// que el usuario pidio: la pildora no quedaba justificada a la derecha porque
+// habia otro bloque disputandole el borde.
+//
+// Verificado en las 12 vistas con tarjetas a 1512px: **pildora a ras del borde en
+// todas, cero desbordes de texto y un solo radio por vista**.
 
 // v2.255.0 — el canonico de medidas, aplicado a TODAS las vistas con tarjetas.
 //

@@ -1,21 +1,31 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
-import { Building2, X } from 'lucide-react';
-import Button from '../../../components/common/Button';
-import LiquidSelect from '../../../components/common/LiquidSelect';
 import PeriodPicker from '../../../components/common/PeriodPicker';
 import { currentMonthRange } from './helpers';
 import FilterBar from '../../../components/common/FilterBar';
 
+/**
+ * Los filtros de Pedidos. Desde el 2026-07-30 es un `FilterBar` de verdad.
+ *
+ * Este archivo era el ÚLTIMO resto del `FilterPill` original —el que §17 dice
+ * haber reemplazado— y seguía reconstruyendo el contenedor a mano: su propio
+ * `h-14 rounded-2xl border bg-surface-card`, sus propios divisores y un botón de
+ * limpiar por ranura. O sea que se veía distinto al resto del portal y no tenía
+ * nada de lo que el canónico trae solo: el orden de ranuras, el colapso a barra
+ * flotante en el teléfono, el cupo de ranuras por ancho ni el control de
+ * desborde.
+ *
+ * El nombre del archivo se conserva porque lo importa `TabPedidos`; lo que hay
+ * adentro ya no es una píldora a mano.
+ */
 export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilterStatus, filterOptions, filterDate, setFilterDate }) {
     const defaultDate = currentMonthRange();
     const dateDirty   = filterDate !== defaultDate;
-    const hasActive   = (!isBranch && filterSuc !== '') || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
+    const activos     = [!isBranch && filterSuc !== '', filterStatus !== 'all', dateDirty].filter(Boolean).length;
 
     // `FilterBar.Chip` es EXACTAMENTE esto: se apaga al volver a pulsarlo,
-    // lleva `aria-pressed` y ya dibuja la × cuando está activo — que era lo
-    // último que este botón hacía a mano. El `activeClass` pasa a ser `tone`.
-    const statusBtn = (key, label, tone = 'brand') => (
+    // lleva `aria-pressed` y ya dibuja la × cuando está activo.
+    const chipEstado = (key, label, tone = 'brand') => (
         <FilterBar.Chip
             tone={tone}
             active={filterStatus === key}
@@ -26,50 +36,26 @@ export default function FilterPill({ isBranch, filterSuc, setFilterSuc, filterSt
     );
 
     return (
-        <div className="group flex items-center gap-0 h-14 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-glass-3)] hover:-translate-y-0.5 hover:border-divider overflow-visible shrink-0">
-
-            {/* Sucursal (solo bodega) */}
+        <FilterBar onClear={clearAll} activeCount={activos} title="Filtros de pedidos">
+            {/* 1 · ámbito */}
             {!isBranch && (
-                <>
-                    <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible" style={{ width: '150px' }}>
-                            <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
-                        </div>
-                        {filterSuc !== '' && (
-                            <Button variant="destructive" icon={X} title="Quitar sucursal" iconOnly onClick={() => setFilterSuc('')} />
-                        )}
-                    </div>
-                    <div className="h-5 w-px bg-divider shrink-0" />
-                </>
+                <FilterBar.Section active={filterSuc !== ''} onClear={() => setFilterSuc('')} label="sucursal">
+                    <FilterBar.Sucursal value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} />
+                </FilterBar.Section>
             )}
 
-            {/* Fecha */}
-            <div className="flex items-center">
-                <div className="px-2 py-2 overflow-visible">
-                    <PeriodPicker value={filterDate} onChange={setFilterDate} />
-                </div>
-                {dateDirty && (
-                    <Button variant="destructive" icon={X} title="Quitar fecha" iconOnly onClick={() => setFilterDate(defaultDate)} />
-                )}
-            </div>
+            {/* 3 · tiempo */}
+            <FilterBar.Section active={dateDirty} onClear={() => setFilterDate(defaultDate)} label="período">
+                <PeriodPicker value={filterDate} onChange={setFilterDate} />
+            </FilterBar.Section>
 
-            <div className="h-5 w-px bg-divider shrink-0" />
-
-            {/* Estado */}
-            <div className="flex items-center gap-1 px-2 py-1.5">
-                {statusBtn('confirmado', 'Pendientes')}
-                {statusBtn('enviado',    'En ruta')}
-                <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
-                {statusBtn('observacion','Con observación', 'warning')}
-                {statusBtn('completado', 'Completados',     'success')}
-            </div>
-
-            {hasActive && (
-                <>
-                    <div className="h-5 w-px bg-divider shrink-0" />
-                    <Button variant="destructive" size="xs" icon={X} iconOnly onClick={clearAll} />
-                </>
-            )}
-        </div>
+            {/* 4 · estado */}
+            <FilterBar.Section active={filterStatus !== 'all'} onClear={() => setFilterStatus('all')} label="estado">
+                {chipEstado('confirmado',  'Pendientes')}
+                {chipEstado('enviado',     'En ruta')}
+                {chipEstado('observacion', 'Con observación', 'warning')}
+                {chipEstado('completado',  'Completados',     'success')}
+            </FilterBar.Section>
+        </FilterBar>
     );
 }

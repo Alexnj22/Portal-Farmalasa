@@ -1,4 +1,5 @@
 import React from 'react';
+import CarrilCards from '../../components/common/CarrilCards';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
@@ -199,7 +200,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
             <div>
                 {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
-                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <div className="flex items-center gap-3 mb-3">
+                <CarrilCards className="flex-1" ariaLabel="Pedidos por sucursal">
                     {/* Bodega / alcance todos: card clicable por sucursal */}
                     {!isBranch && sucursalCounts.map(({ id, name, total }) => {
                         const active = filterSuc === String(id);
@@ -219,19 +221,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                     {isBranch && sucursalCounts.length > 0 && (() => {
                         const own = sucursalCounts[0];
                         return (
-                            <div data-surface="card" className="flex items-center gap-3 pl-3 pr-4 py-3 min-w-[130px]">
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-chart-3/10">
-                                    <Building2 size={15} className="text-chart-3-text" />
-                                </div>
-                                <div className="text-left">
-                                    <div className="text-title-lg font-black leading-none tabular-nums text-content-2">{own.total}</div>
-                                    <div className="text-caption font-bold text-content-2">{own.name}</div>
-                                    <div className="text-micro text-content-3">pedidos este mes</div>
-                                </div>
-                            </div>
+                            <StatCard
+                                icon={Building2} iconBg="bg-chart-3/10" iconCls="text-chart-3-text"
+                                label={own.name} value={own.total} sub="pedidos este mes"
+                            />
                         );
                     })()}
-                    <div className="ml-auto">
+                </CarrilCards>
+                    <div className="flex justify-end min-w-0">
                         <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
                     </div>
                 </div>

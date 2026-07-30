@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { NOMBRE_POR_ICONO, TONO_POR_ICONO } from './iconNames';
+import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO } from './iconNames';
 
 /**
  * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).
@@ -27,16 +27,6 @@ import { NOMBRE_POR_ICONO, TONO_POR_ICONO } from './iconNames';
  * `--tabaction-bg` no es "blanco al N%" sino un valor propio por tema.
  */
 
-const TONE_ICON = {
-    brand:     'text-brand-text',
-    success:   'text-success-text',
-    warning:   'text-warning-text',
-    danger:    'text-danger-text',
-    'chart-1': 'text-chart-1-text',
-    'chart-3': 'text-chart-3-text', 'chart-4': 'text-chart-4-text',
-    'chart-9': 'text-chart-9-text', 'chart-6': 'text-chart-6-text',
-    'chart-8': 'text-chart-8-text',
-};
 
 const BASE = `rounded-full shrink-0 whitespace-nowrap
     inline-flex items-center justify-center gap-2 border
@@ -103,7 +93,7 @@ const TabBarAction = memo(({
                 competir con la acción primaria. En `primary` el botón entero ya
                 es del color, así que el ícono va en blanco con el texto. */}
             {Icon && <Icon size={14} strokeWidth={2.5}
-                className={isPrimary ? '' : (TONE_ICON[tonoEfectivo] || TONE_ICON.brand)} />}
+                className={isPrimary ? '' : (CLASE_TEXTO_POR_TONO[tonoEfectivo] || CLASE_TEXTO_POR_TONO.brand)} />}
             {children && <span className="hidden sm:inline">{children}</span>}
         </Tag>
     );

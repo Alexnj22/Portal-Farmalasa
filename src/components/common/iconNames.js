@@ -71,3 +71,25 @@ export const TONO_POR_ICONO = {
     // Destruir.
     Trash2: 'danger', Trash: 'danger',
 };
+
+// La clase de TEXTO por tono. Vivía duplicada dentro de `TabBarAction`; la
+// comparte con `Button` desde que el tono por ícono se aplicó a todo el
+// proyecto (2026-07-30). Es el color del ÍCONO, no un relleno: en una superficie
+// neutra el color identifica la categoría sin gritar.
+export const CLASE_TEXTO_POR_TONO = {
+    brand:     'text-brand-text',
+    success:   'text-success-text',
+    warning:   'text-warning-text',
+    danger:    'text-danger-text',
+    'chart-1': 'text-chart-1-text',
+    'chart-3': 'text-chart-3-text',
+    'chart-4': 'text-chart-4-text',
+    'chart-6': 'text-chart-6-text',
+    'chart-8': 'text-chart-8-text',
+    'chart-9': 'text-chart-9-text',
+};
+
+// Las variantes RELLENAS: su fondo ya es del color y el ícono va en blanco, así
+// que el tono por ícono NO se les aplica — teñirlo lo haría desaparecer contra
+// su propio fondo.
+export const VARIANTES_RELLENAS = new Set(['primary', 'destructive']);

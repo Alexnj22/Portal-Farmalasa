@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Loader2 } from 'lucide-react';
-import { NOMBRE_POR_ICONO } from './iconNames';
+import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO, VARIANTES_RELLENAS } from './iconNames';
 
 // Botón compartido — Fase T3 (AUDITORIA-TEMA-2026-07.md, aprobado en la
 // lámina de componentes T2.3: normal-case en vez de mayúsculas con tracking,
@@ -189,8 +189,31 @@ const Button = memo(({
     const isDisabled = disabled || loading;
     // Solo cuando NO hay texto y nadie dio nombre. Si el llamador pasó
     // `aria-label` o `title`, el suyo manda — este es el piso.
+    const nombreIcono = Icon?.displayName ?? Icon?.name;
     const nombreAuto = iconOnly && !rest['aria-label'] && !rest.title
-        ? NOMBRE_POR_ICONO[Icon?.displayName ?? Icon?.name]
+        ? NOMBRE_POR_ICONO[nombreIcono]
+        : undefined;
+
+    // ── El tono por ÍCONO, aplicado al ícono y no al relleno (2026-07-30) ──
+    // Auditados los 193 `iconOnly` del proyecto: 18 íconos se dibujaban con 2 a
+    // 4 colores distintos. El arreglo es un mapa y no N ediciones — mismo
+    // principio que `NOMBRE_POR_ICONO`.
+    //
+    // Se tiñe el ÍCONO, no el botón. `TONE_CLASSES` es relleno sólido con texto
+    // blanco, así que aplicar el tono como relleno habría convertido cada fila
+    // de acciones discretas en una hilera de bloques de color. En una superficie
+    // neutra el color identifica la categoría sin gritar — es la misma regla que
+    // `TabBarAction quiet` ya seguía.
+    //
+    // Tres cosas lo desactivan, y las tres a propósito:
+    //   · `tone` explícito — el llamador manda; esto es el piso, no el techo.
+    //   · variante RELLENA — el fondo ya es del color y el ícono va en blanco.
+    //     Es lo que preserva el `Check` en `destructive` de un "confirmar
+    //     borrado", que va en rojo aunque el mapa diga que un check es verde.
+    //   · botón CON texto — ahí el color sale del papel del botón en el
+    //     formulario, no de su ícono.
+    const claseTono = (iconOnly && !tone && !VARIANTES_RELLENAS.has(variant))
+        ? CLASE_TEXTO_POR_TONO[TONO_POR_ICONO[nombreIcono]]
         : undefined;
     return (
         <button
@@ -218,7 +241,8 @@ const Button = memo(({
             {loading ? (
                 <Loader2 size={ICON_PX[size] ?? 15} className="relative animate-spin" />
             ) : (
-                Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.5} className="relative" />
+                Icon && <Icon size={ICON_PX[size] ?? 15} strokeWidth={2.5}
+                    className={`relative ${claseTono || ''}`} />
             )}
             {!iconOnly && <span className="relative">{children}</span>}
         </button>

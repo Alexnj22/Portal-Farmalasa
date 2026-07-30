@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.251.0';
+export const APP_VERSION = '2.252.0';
+
+// v2.252.0 — `TONO_POR_ICONO` aplicado a TODO el proyecto.
+//
+// En v2.251.0 el mapa existia pero lo consumia solo `TabBarAction`. Ahora
+// tambien `Button`, que es donde viven los 193 `iconOnly` auditados.
+//
+// **Se tine el ICONO, no el relleno.** `TONE_CLASSES` de `Button` es relleno
+// solido con texto blanco: aplicar el tono como fondo habria convertido cada
+// fila de acciones discretas en una hilera de bloques de color. En superficie
+// neutra el color identifica la categoria sin gritar — la misma regla que
+// `TabBarAction quiet` ya seguia.
+//
+// Tres desactivadores, los tres a proposito: `tone` explicito (el llamador
+// manda), variante RELLENA (`primary`/`destructive`: el fondo ya es del color y
+// el icono va en blanco — es lo que preserva el `Check` rojo de un "confirmar
+// borrado"), y boton CON texto (ahi el color sale del papel del boton, no de su
+// icono).
+//
+// Medido: **20 botones pasaron a llevar color, 172 quedaron igual** — 41 de
+// ellos por decision explicita. Verificado en el navegador: los `Copy` de
+// Sucursales pasaron de neutro a rgb(29,78,216), el mismo azul que el ojo de la
+// pildora de Ventas.
+//
+// El tono explicito suele codificar la ACCION y no el icono, y eso es correcto:
+// `Eye`+`success` es "restaurar sugerencia", `RefreshCw`+`success` es
+// "recontratar", `RotateCcw`+`chart-3` es "regenerar con IA".
+//
+// De paso, `TabBarAction` deja de duplicar su tabla de clases de texto:
+// `CLASE_TEXTO_POR_TONO` vive en `iconNames.js` y la comparten los dos.
 
 // v2.251.0 — el mismo icono, el mismo color. Y el ojo, solo el ojo.
 //

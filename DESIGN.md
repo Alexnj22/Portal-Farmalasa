@@ -1619,15 +1619,31 @@ lo dice el ícono.**
 | archivar | `Archive` | `chart-4` |
 | destruir | `Trash2` `Trash` | `danger` |
 
-**Es el piso, no el techo**: quien pase `tone` o `variant` gana el suyo, y eso es
-necesario — un `Check` dentro de un "confirmar borrado" va en `destructive` a
-propósito, y los clústeres de acción por fila (Facturas de Compra pinta
-Eye/Download/FileJson/Archive de `chart-1` a la vez) tienen una coherencia local
-legítima.
+**Se tiñe el ÍCONO, no el relleno.** `TONE_CLASSES` de `Button` es relleno sólido
+con texto blanco, así que aplicar el tono como fondo habría convertido cada fila
+de acciones discretas en una hilera de bloques de color. En una superficie neutra
+el color identifica la categoría sin gritar — es la regla que `TabBarAction quiet`
+ya seguía, y la que se ve en la píldora de Ventas: fondo neutro, ojo azul.
 
-**Hoy lo consume solo `TabBarAction`**, que es el botón de acción de una vista —
-el que vive en `FilterBar`, uno o dos por pantalla. Extenderlo a `Button` tocaría
-los 193 de una vez, incluidos esos clústeres, y eso es una decisión aparte.
+**Lo consumen `TabBarAction` y `Button`** (2026-07-30). Tres cosas lo desactivan,
+y las tres a propósito:
+
+| desactivador | por qué |
+|---|---|
+| `tone` explícito | el llamador manda; esto es el piso, no el techo |
+| variante **rellena** (`primary`, `destructive`) | el fondo ya es del color y el ícono va en blanco; teñirlo lo haría desaparecer |
+| botón **con texto** | ahí el color sale del papel del botón en el formulario, no de su ícono |
+
+La segunda es la que preserva el `Check` en `destructive` de un "confirmar
+borrado" —va en rojo aunque el mapa diga que un check es verde—, y la primera la
+que deja en pie los clústeres de acción por fila (Facturas de Compra pinta
+Eye/Download/FileJson/Archive de `chart-1` a la vez).
+
+**Medido al aplicarlo**: de los 193 `iconOnly`, **20 pasaron a llevar color** y
+172 quedaron igual — 41 de ellos por decisión explícita. El tono explícito suele
+codificar la ACCIÓN y no el ícono, y eso es correcto: `Eye` + `success` es
+"restaurar sugerencia", `RefreshCw` + `success` es "recontratar", `RotateCcw` +
+`chart-3` es "regenerar con IA" (`chart-3` es el color de IA del portal).
 
 #### `soloIcono` lleva `LiquidTooltip`, nunca `title`
 

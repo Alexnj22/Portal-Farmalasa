@@ -234,25 +234,40 @@ const BarraPortal = ({
                     clases Tailwind solo dan el color de fondo, así que con
                     `bg-surface-card` el clúster salía SIN vidrio: translúcido, no glass.
 
-                    Y la superficie es `card`: el mismo vidrio que cualquier otra
-                    tarjeta del portal, que es lo que se pidió. Con el blur ya
-                    funcionando (ver la nota del contenedor de arriba) los 44px de
-                    `--backdrop-card` convierten lo de atrás en luz y no en texto, que
-                    es el criterio que index.css fija para las superficies flotantes.
-                    `dropdown` (72%) era la compensación de un blur roto y se veía
-                    como un panel opaco.
+                    La superficie sigue siendo `dropdown`, y eso se midió, no se
+                    heredó. Con el blur ya vivo (ver la nota del contenedor de arriba)
+                    se compararon las tres superficies existentes sobre la lista de
+                    empleados, a 390px y con las filas pasando por detrás:
+
+                      · `card` (16%)     "SALUD 2" se lee ENTERO y cae encima de
+                                         "ACCIONES". Es vidrio, pero ilegible.
+                      · `dropdown` (72%) lo de atrás queda como un fantasma y los
+                                         rótulos del clúster se leen limpios.
+                      · `modal` (85%)    ya no deja ver nada; es un panel.
+
+                    O sea que `dropdown` era la elección correcta por la razón
+                    equivocada: se había subido a 72% para tapar un blur que no
+                    existía. Con el blur andando, el 72% es vidrio esmerilado de
+                    verdad —se ve el movimiento y el color de la lista a través— y
+                    encima cumple el criterio que index.css ya fija para lo que flota
+                    sobre contenido: que lo de atrás sea LUZ, no texto.
+
+                    NO agregar una superficie nueva para esto: la paleta es cerrada.
 
                     La animación de entrada/salida vive ACÁ y no en el contenedor: un
                     `transform` propio no rompe el `backdrop-filter`, uno ancestro sí.
-                    `transition-transform` la declara `[data-surface="card"]` en
-                    index.css (gana la cascada sobre las utilidades de Tailwind), así
-                    que la barra entra con la duración y el spring del tema.
+                    `transition-transform` de Tailwind v4 cubre `translate` además de
+                    `transform` —son propiedades independientes y `translate-y-*`
+                    compila a la segunda—, así que sin esa clase la barra saltaría en
+                    vez de deslizarse. `dropdown` no declara `transition` propia en
+                    index.css, así que acá la utilidad manda sin pelearse con nada.
 
                     Al buscar toma todo el ancho en vez de ajustarse al contenido, así
                     el campo se queda con lo que sobra sin mover los otros dos. */}
                 <div
-                    data-surface="card"
+                    data-surface="dropdown"
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
+                        transition-transform duration-200 ease-out
                         ${campoAbierto ? 'w-full' : 'max-w-full'}
                         ${visible || campoAbierto ? 'translate-y-0' : 'translate-y-[135%]'}`}
                 >
@@ -379,7 +394,12 @@ const Boton = memo(({ icon: Icono, label, rotulo, badge, activo, principal, onCl
             )}
         </span>
         {rotulo && (
-            <span className={`text-micro font-black uppercase leading-none text-center w-full truncate
+            // Dos líneas, no `truncate`. Con una sola, "NUEVO EMPLEADO" salía
+            // "NUEVO E…" en los 60px de la columna — y un rótulo cortado a la
+            // mitad no dice qué hace el botón, que es justo para lo que está.
+            // `line-clamp-2` acota el peor caso; `items-start` en el clúster ya
+            // mantiene alineados los íconos aunque un rótulo ocupe dos líneas.
+            <span className={`text-micro font-black uppercase leading-tight text-center w-full line-clamp-2 break-words
                 ${principal ? 'text-chart-9-text' : activo ? 'text-brand-text' : 'text-content-3'}`}>
                 {label}
             </span>

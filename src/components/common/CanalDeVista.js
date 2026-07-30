@@ -120,10 +120,25 @@ function usePublicar(nombre, valor) {
     // un ref —y escribir un ref durante el render es justo lo que el compilador
     // de React prohíbe—. Corre en cada render y `publicar` descarta lo repetido.
     useLayoutEffect(() => {
-        if (!canal) return undefined;
-        canal.publicar(id, valor);
-        return () => canal.publicar(id, null);
+        if (canal) canal.publicar(id, valor);
     });
+
+    // ── La baja va en SU PROPIO efecto, y esto no es cosmético ────────────
+    // Estaba junto al alta, como `return () => publicar(id, null)` del efecto de
+    // arriba. Pero ese efecto no tiene array de dependencias, así que su limpieza
+    // corre en CADA render — y borrar del Map siempre cambia el Map, así que
+    // siempre notificaba, aunque el valor fuera idéntico. Con dos canales
+    // apuntándose entre sí eso es un bucle cerrado: `ViewTabBar` publica →
+    // `FilterBar` re-renderiza → publica → `ViewTabBar` re-renderiza → publica…
+    // Se manifestó como React #185 ("Maximum update depth exceeded") y tiraba la
+    // vista entera al ErrorBoundary en el teléfono.
+    //
+    // Con deps `[canal, id]` la limpieza corre solo al desmontar, y el alta de
+    // arriba —que sí corre siempre— no notifica cuando el valor no cambió.
+    useLayoutEffect(() => {
+        if (!canal) return undefined;
+        return () => canal.publicar(id, null);
+    }, [canal, id]);
 }
 
 const sinSuscripcion = () => () => {};

@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.249.0';
+export const APP_VERSION = '2.249.1';
+
+// v2.249.1 — la superficie de la barra flotante se MIDIO, y el rotulo dejo de
+// cortarse.
+//
+// v2.249.0 cambio el cluster a `data-surface="card"` razonando que, con el blur
+// ya arreglado, el 16% seria el vidrio "del header y de cualquier card" que se
+// pidio. Medido en WebKit a 390px sobre la lista de empleados, con las filas
+// pasando por detras: **falso**. Comparadas las tres superficies existentes,
+//
+//     card (16%)      "SALUD 2" se lee ENTERO y cae encima de "ACCIONES"
+//     dropdown (72%)  lo de atras queda fantasma, los rotulos limpios
+//     modal (85%)     ya no deja ver nada, es un panel
+//
+// asi que `dropdown` era la eleccion correcta por la razon equivocada: se habia
+// subido a 72% para tapar un blur que no existia. Con el blur vivo, el 72% ES
+// vidrio esmerilado —se ve el color y el movimiento de la lista a traves— y
+// ademas cumple el criterio que index.css ya fija para lo que flota sobre
+// contenido: que lo de atras sea LUZ, no texto. Vuelve a `dropdown`.
+//
+// **`index.css` queda byte a byte igual que antes de la sesion.** v2.249.0 le
+// habia agregado `translate` a la transicion de `[data-surface="card"]`; con el
+// cluster en `dropdown` —que no declara `transition` propia— alcanza la utilidad
+// `transition-transform` de Tailwind v4, que en v4 ya cubre `translate` ademas de
+// `transform`. Cero tokens nuevos: la paleta es CERRADA.
+//
+// Y el rotulo del boton del cluster pasa de `truncate` a dos lineas: en los 60px
+// de la columna "NUEVO EMPLEADO" salia "NUEVO E…", que no dice que hace el boton.
 
 // v2.249.0 — FilterBar es filtros Y acciones, y el vidrio de la barra flotante
 // estaba roto por un `transform` ancestro.

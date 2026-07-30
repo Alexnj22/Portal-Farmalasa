@@ -12,6 +12,48 @@ retomar; acá está todo.
 
 ---
 
+## v2.233.0 — la convención de migraciones deja de ser prosa: `gate:migrations`.
+
+C2 del plan de cierre de Supabase dejó `supabase/migrations/` describiendo prod
+otra vez: un baseline generado del catálogo (`20260101000000_baseline_schema.sql`,
+verificado en una rama limpia con las 15 categorías de la huella en md5 idéntico a
+prod) más las 339 heredadas archivadas en `migrations-legacy/`. Lo que **no**
+quedaba cerrado es la reincidencia: `apply_migration` escribe SOLO en el servidor,
+y ni olvidar el archivo local ni nombrarlo con el viejo `YYYYMMDD_nombre` dan
+error. Ése es exactamente el mecanismo que produjo 731 filas de registro contra 339
+archivos, con solo 14 de 699 versiones coincidiendo.
+
+**Y el detector natural quedó ciego.** `supabase migration list` y
+`db push --dry-run` arrancan listando las 731 versiones pre-baseline que ya no
+tienen archivo local, así que una migración nueva sin archivo sería la fila 732 de
+una lista de ruido. La señal existe y no se ve.
+
+`npm run gate:migrations` (`scripts/migration-gate.mjs`) corre sin red ni
+credenciales y chequea: nombres `<versión-de-14-dígitos>_<name>.sql` — el viejo de
+8 dígitos falla —, que la versión sea un timestamp real, sin duplicados, el
+baseline presente y ordenando primero, nada pre-corte en `migrations/` y nada
+post-corte archivado en `migrations-legacy/`. Con `-- --remote` cruza contra el
+registro de prod y, ante una migración aplicada sin archivo, imprime el `select`
+sobre la columna `statements` que la recupera.
+
+**La frontera es una constante, no la versión del baseline.** `CORTE =
+20260729223030` es la primera migración post-baseline. Hacía falta explícita porque
+el baseline lleva `20260101000000` a propósito, para ordenar primero, mientras las
+731 viejas van de `20260404143525` a `20260729215940` — o sea son *mayores* que el
+baseline. Comparar contra él no separaría nada.
+
+Ejercitado contra un árbol falso antes de confiar en él: los cuatro chequeos
+locales disparan y la detección remota encuentra la migración sin archivo. Sin
+credenciales degrada a los chequeos locales con un aviso, no a verde. El `.env` se
+mueve y se restaura en `finally` + SIGINT (el CLI lo lee y aborta), y si quedó
+colgado de una corrida interrumpida lo restaura al arrancar.
+
+CLAUDE.md queda al día: decía solo que el `name` del `apply_migration` coincidiera
+con el nombre del archivo. Un agente que leyera eso hoy escribiría
+`20260730_mi_cambio.sql` y estaría cumpliendo la regla escrita.
+
+---
+
 ## v2.231.0 — el conteo ciego era un interruptor, y un click de más inventaba faltantes.
 
 El conteo de inventario se rediseña para lo que realmente es: alguien de pie en

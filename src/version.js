@@ -16,7 +16,44 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.232.0';
+export const APP_VERSION = '2.233.0';
+
+// v2.233.0 — la convencion de migraciones deja de ser prosa: `gate:migrations`.
+//
+// C2 del plan de cierre de Supabase dejo `supabase/migrations/` describiendo prod
+// otra vez (un baseline generado del catalogo, verificado 15/15 contra la huella,
+// mas las 339 heredadas en `migrations-legacy/`). Pero nada impedia que la deriva
+// volviera a acumularse: `apply_migration` escribe SOLO en el servidor, y ni
+// olvidar el archivo ni nombrarlo `YYYYMMDD_nombre` dan error. Es el mismo
+// mecanismo que produjo 731 filas contra 339 archivos, con solo 14 de 699
+// versiones coincidiendo.
+//
+// Y el detector natural quedo ciego: `supabase migration list` y `db push
+// --dry-run` arrancan listando las 731 versiones pre-baseline sin archivo local,
+// asi que una migracion nueva sin archivo seria la fila 732 de una lista de ruido.
+//
+// `npm run gate:migrations` corre sin red ni credenciales: nombres
+// `<version-de-14-digitos>_<name>.sql` (el viejo de 8 digitos falla), version que
+// sea un timestamp real, sin duplicados, baseline presente y ordenando primero,
+// nada pre-corte en `migrations/` y nada post-corte archivado en
+// `migrations-legacy/`. Con `-- --remote` cruza contra el registro de prod y, si
+// encuentra una migracion aplicada sin archivo, imprime el `select` sobre la
+// columna `statements` para recuperarla.
+//
+// La frontera es una constante —`CORTE = 20260729223030`, la primera migracion
+// post-baseline— y no la version del baseline: el baseline es `20260101000000` a
+// proposito, para ordenar primero, pero las 731 viejas van de 20260404 a 20260729,
+// o sea son MAYORES. Comparar contra el baseline no separaria nada.
+//
+// Ejercitado contra un arbol falso antes de confiar en el: los cuatro chequeos
+// locales disparan y la deteccion remota encuentra la migracion sin archivo. Sin
+// credenciales degrada a los chequeos locales con un aviso, no a verde. El `.env`
+// se mueve y se restaura en `finally` + SIGINT (el CLI lo lee y aborta), y si
+// quedo colgado de una corrida interrumpida lo restaura al arrancar.
+//
+// CLAUDE.md queda al dia. Decia solo que el `name` del `apply_migration`
+// coincidiera con el archivo: un agente que leyera eso hoy escribiria
+// `20260730_mi_cambio.sql` y estaria cumpliendo la regla escrita.
 
 // v2.232.0 — Mantenimiento en tarjetas, y el aviso del candado se muda al
 // encabezado (opcion B, elegida por Alex).

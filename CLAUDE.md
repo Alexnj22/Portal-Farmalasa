@@ -93,22 +93,41 @@ listadas arriba, aplicar primero ahí con `apply_migration` apuntando a ese
 Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2 (secretos de Vault
 en `cron.job.command`) — ambos sin incidentes.
 
-**Todo `apply_migration` necesita su archivo local en el mismo commit
-(incidente descubierto 2026-07-15, Bloque 3.5).** La tool `apply_migration`
-SOLO escribe en el servidor (`supabase_migrations.schema_migrations`) —
-nunca toca el disco. Guardar el archivo en `supabase/migrations/` es un
-paso manual aparte que durante meses se hizo inconsistente (a veces con
-nombre distinto al de la migración real, a veces consolidando 3-8
-migraciones chicas de una sesión en un solo archivo resumido). Resultado:
-el servidor tiene 584 migraciones registradas, git solo 180 — no es
-trabajo perdido (el 78% de los archivos locales sí corresponden a algo
-real, solo que resumido/renombrado), pero significa que reconstruir el
-esquema desde cero solo con los archivos locales no reproduce fielmente
-la historia real aplicada, lo cual rompe cosas como crear un branch de
-staging limpio. Regla: el `name` que se le pasa a `apply_migration` DEBE
-ser el mismo nombre del archivo que se crea en `supabase/migrations/`
-(sin resumir, sin combinar varias migraciones en un archivo), y el archivo
-se crea en la misma sesión de trabajo — nunca "lo consolido después".
+**Todo `apply_migration` necesita su archivo local en el mismo commit, nombrado
+con la versión que asignó el servidor** (incidente descubierto 2026-07-15,
+Bloque 3.5; resuelto en C2 el 2026-07-29). La tool `apply_migration` SOLO escribe
+en el servidor (`supabase_migrations.schema_migrations`) — nunca toca el disco.
+Guardar el archivo en `supabase/migrations/` es un paso manual aparte, y como
+olvidarlo no da ningún error, durante meses se hizo inconsistente: al cierre de C2
+el registro de prod tenía **731 migraciones contra 339 archivos locales, y solo 14
+de 699 versiones coincidían**. El repo no era un subconjunto de la historia real,
+era un set paralelo mantenido a mano — así que el esquema no se podía reconstruir
+desde los archivos, ni tener un staging fiel.
+
+Cómo quedó (`PLAN-SUPABASE-CIERRE.md` C2, v2.228.0):
+
+- `supabase/migrations/` tiene **un baseline generado del catálogo de prod**
+  (`20260101000000_baseline_schema.sql`, verificado aplicándolo a una rama limpia:
+  0 errores y las 15 categorías de la huella con md5 idéntico a prod) **más las
+  migraciones aplicadas después**. Las 339 heredadas viven en
+  `supabase/migrations-legacy/`: aplicarlas sobre el baseline falla por
+  construcción (esperan el esquema de abril, ej. `employees.is_admin`).
+- **El archivo se nombra `<versión>_<name>.sql` con la versión de 14 dígitos que
+  asignó el servidor**, no con el viejo `YYYYMMDD_nombre` (que es lo que generó la
+  deriva: no se corresponde con ninguna fila real). La versión la devuelve
+  `apply_migration`; si no, `select max(version) from
+  supabase_migrations.schema_migrations`. El `name` del `apply_migration` debe ser
+  idéntico al del archivo — sin resumir, sin combinar varias migraciones en uno — y
+  el archivo se crea en la misma sesión: nunca "lo consolido después".
+- **Al cerrar cualquier trabajo con migraciones, correr `npm run gate:migrations`**
+  (chequeos locales, sin red) y `npm run gate:migrations -- --remote` para cruzar
+  contra el registro de prod — es el que detecta la migración aplicada sin archivo.
+  Existe porque el detector natural quedó ciego: `supabase migration list` y
+  `db push --dry-run` arrancan listando las 731 versiones pre-baseline sin archivo
+  local, así que una migración nueva sin archivo sería la fila 732 de una lista de
+  ruido. `db push` no se usa en este proyecto (se aplica con `apply_migration`).
+  La constante `CORTE` del gate **no se mueve** para silenciar un hallazgo: correrla
+  es declarar que una migración no necesita archivo, o sea la deriva misma.
 
 **Edge functions**: NUNCA ignorar el `error` de un query supabase-js
 (`const { data } = await ...` sin chequear `error`). Un select que falla en

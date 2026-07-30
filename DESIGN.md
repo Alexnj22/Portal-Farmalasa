@@ -2541,7 +2541,41 @@ Tres cosas que costaron y conviene no re-descubrir:
   en `display:none` no intersecta, y cambiar de tab no desmonta nada, así que hace
   falta enterarse en los dos sentidos.
 
-### 17.0 El rango de fechas se escribe compacto
+### 17.0 Medidas fijas: la tarjeta y el cupo de ranuras (2026-07-30)
+
+**La `StatCard` mide 200px SIEMPRE.** Antes era `flex-1 basis-0 min-w-[150px]`,
+o sea que se repartía el espacio disponible — y la MISMA tarjeta medía distinto
+en cada vista y en cada monitor. Medido antes del cambio:
+
+| ancho | Ventas (4 tarjetas) | Personal (5) |
+|---|---|---|
+| 1280 | 1 por fila | 2 por fila |
+| 1512 | 2 | 2 |
+| 1728 | 3 | 3 |
+| 1920 | 4 | 4 |
+| 2240 | 4 | 5 |
+
+Y la tarjeta **huérfana** de la última fila crecía hasta llenarla sola: en
+Personal a 1920px había cuatro de 172px y **una de 726px**. Con ancho fijo, si no
+caben envuelven y si sobran deja espacio — pero todas se ven iguales.
+
+**La píldora tiene un cupo fijo de 3 ranuras** (`MAX_RANURAS`); el resto va tras
+un `···` que las despliega en un panel anclado. Antes crecía con lo que cada
+vista le metiera: medida a 1512px iba de 189px a 782px, así que le robaba a las
+tarjetas un ancho distinto en cada pantalla.
+
+**Las ranuras APLICADAS nunca se esconden.** Es lo que hace que el cupo no rompa
+la premisa de §17 —"el lugar único donde el usuario mira para saber qué está
+filtrando"—: esconder un filtro activo dejaría la vista recortada sin nada
+visible que lo explicara. Se esconden las vacías, y el botón lleva un `Contador`
+con cuántas de las guardadas están aplicadas.
+
+Y se **eligen** por prioridad pero se **dibujan** en su orden original: el orden
+de ranuras (ámbito → entidad → tiempo → estado) es el orden en que una persona lo
+diría en voz alta, y reordenarlo al aplicar un filtro haría que la píldora
+cambiara de forma con cada clic.
+
+### 17.0.1 El rango de fechas se escribe compacto
 
 `PeriodPicker` mostraba `01/07/2026 → 30/07/2026`: 23 caracteres, ~250px, para
 decir dos días del mismo mes — la ranura más ancha de la vista con más ranuras

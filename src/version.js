@@ -16,7 +16,30 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.252.2';
+export const APP_VERSION = '2.253.0';
+
+// v2.253.0 — medidas FIJAS: la tarjeta y el cupo de ranuras.
+//
+// **`StatCard` mide 200px siempre.** Era `flex-1 basis-0 min-w-[150px]`: se
+// repartia el espacio, asi que la MISMA tarjeta media distinto en cada vista y
+// en cada monitor. Medido antes: Ventas daba 1/2/3/4/4 tarjetas por fila a
+// 1280/1440/1512/1728/1920px, y Personal 2/2/2/3/4. Y la tarjeta HUERFANA de la
+// ultima fila crecia hasta llenarla sola — en Personal a 1920px habia cuatro de
+// 172px y **una de 726px**.
+//
+// **La pildora tiene cupo de 3 ranuras**; el resto va tras un `···` que las
+// despliega en un panel anclado. Antes crecia con lo que cada vista le metiera:
+// de 189 a 782px a 1512, robandole a las tarjetas un ancho distinto en cada
+// pantalla. Proveedores paso de 718 a 618.
+//
+// **Las ranuras APLICADAS nunca se esconden** — esconder un filtro activo
+// dejaria la vista recortada sin nada visible que lo explicara, que es
+// exactamente lo que §17 existe para evitar. Se esconden las vacias y el boton
+// lleva `Contador`. Y se ELIGEN por prioridad pero se DIBUJAN en su orden
+// original: reordenarlas al aplicar un filtro haria que la pildora cambiara de
+// forma con cada clic.
+//
+// El gate atrapo un `size={17}` fuera de la rampa de iconos de §12; va en 18.
 
 // v2.252.2 — la pildora de Ventas no estaba justificada a la derecha.
 //

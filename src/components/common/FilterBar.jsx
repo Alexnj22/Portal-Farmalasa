@@ -1,4 +1,4 @@
-import React, { memo, Children, isValidElement, useState, useEffect, useId, createContext, useContext } from 'react';
+import React, { memo, Children, isValidElement, useState, useEffect, useId, useRef, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -246,6 +246,100 @@ const Sucursal = memo(({ value, onChange, options = [], ancho = '150px', ...rest
 });
 Sucursal.displayName = 'FilterBar.Sucursal';
 
+/**
+ * PanelDesborde — las ranuras que no entran en la píldora, tras un ícono.
+ *
+ * La píldora tiene un presupuesto FIJO de ranuras visibles (`MAX_RANURAS`), y no
+ * un ancho que crezca con lo que cada vista quiera meterle. Antes crecía: medida
+ * a 1512px iba de 189px (Solicitudes) a 782px (Auditoría), así que la misma
+ * píldora se veía distinta en cada pantalla y le robaba a las tarjetas un ancho
+ * distinto en cada vista.
+ *
+ * **Las ranuras APLICADAS nunca se esconden.** Es la regla que hace que esto no
+ * rompa §17 —"el lugar único donde el usuario mira para saber qué está
+ * filtrando"—: si se ocultara un filtro activo, la vista mostraría datos
+ * recortados sin nada visible que lo explicara. Se esconden las vacías, y el
+ * botón lleva un `Contador` con cuántas quedaron guardadas.
+ *
+ * Va por portal y se posiciona contra el botón: dentro de la píldora quedaría
+ * recortado por su propio `overflow`.
+ */
+const PanelDesborde = memo(({ secciones, aplicadas }) => {
+    const [abierto, setAbierto] = useState(false);
+    const [caja, setCaja] = useState(null);
+    const btnRef = useRef(null);
+    const id = useId();
+
+    useEffect(() => {
+        if (!abierto) return undefined;
+        const medir = () => {
+            const r = btnRef.current?.getBoundingClientRect();
+            if (r) setCaja({ top: r.bottom + 8, right: window.innerWidth - r.right });
+        };
+        medir();
+        const alTeclear = e => { if (e.key === 'Escape') setAbierto(false); };
+        const alClic = e => { if (!btnRef.current?.contains(e.target) && !e.target.closest?.(`[data-panel="${id}"]`)) setAbierto(false); };
+        window.addEventListener('keydown', alTeclear);
+        window.addEventListener('resize', medir);
+        window.addEventListener('scroll', medir, true);
+        document.addEventListener('mousedown', alClic);
+        return () => {
+            window.removeEventListener('keydown', alTeclear);
+            window.removeEventListener('resize', medir);
+            window.removeEventListener('scroll', medir, true);
+            document.removeEventListener('mousedown', alClic);
+        };
+    }, [abierto, id]);
+
+    return (
+        <>
+            <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
+            <div className="flex items-center h-9 px-1">
+                <button ref={btnRef} type="button" onClick={() => setAbierto(v => !v)}
+                    aria-expanded={abierto} aria-haspopup="dialog"
+                    aria-label={`Más filtros (${secciones.length})`}
+                    className={`relative w-9 h-9 rounded-btn flex items-center justify-center shrink-0
+                        transition-[background-color,color] duration-200
+                        ${abierto ? 'bg-brand/12 text-brand-text ring-1 ring-inset ring-brand/30'
+                                  : 'text-content-2 hover:bg-surface-card-hover hover:text-content'}`}>
+                    <MoreHorizontal size={18} strokeWidth={2.5} />
+                    {aplicadas > 0 && (
+                        <Contador valor={aplicadas} tono="brand" max={9}
+                            className="absolute -top-1 -right-1 ring-2 ring-surface-card"
+                            aria-label={`${aplicadas} de estos filtros aplicado${aplicadas === 1 ? '' : 's'}`} />
+                    )}
+                </button>
+            </div>
+
+            {abierto && caja && createPortal(
+                <div data-panel={id} role="dialog" aria-label="Más filtros"
+                    data-surface="dropdown"
+                    style={{ top: caja.top, right: caja.right }}
+                    className="fixed z-dropdown w-[280px] p-3 flex flex-col gap-3
+                        animate-in fade-in zoom-in-95 duration-150 ease-out">
+                    {secciones.map((s, i) => (
+                        <div key={i} className="flex flex-col gap-1.5">
+                            {s.props?.label && (
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3">
+                                    {s.props.label}
+                                </span>
+                            )}
+                            <div className="[&_*]:!max-w-full">{s}</div>
+                        </div>
+                    ))}
+                </div>,
+                document.body,
+            )}
+        </>
+    );
+});
+PanelDesborde.displayName = 'FilterBar.PanelDesborde';
+
+// Cuántas ranuras se dibujan en línea antes de mandar el resto al desborde.
+// Tres es lo que entra sin que la píldora le coma a las tarjetas el ancho de
+// dos: con ranuras canónicas de 150px son ~500px de píldora.
+const MAX_RANURAS = 3;
+
 const FilterBar = memo(({
     children,
     onClear,
@@ -483,6 +577,22 @@ const FilterBar = memo(({
     }
 
     // ── Escritorio: la píldora ────────────────────────────────────────────
+    // Presupuesto fijo de ranuras. Las APLICADAS tienen prioridad y nunca se
+    // esconden: una vista que recorta datos sin mostrar por qué es peor que una
+    // píldora ancha. El resto entra por orden hasta llenar el cupo.
+    // Se ELIGEN por prioridad pero se DIBUJAN en su orden original: el orden de
+    // ranuras de §17 (ámbito → entidad → tiempo → estado) es el orden en que una
+    // persona lo diría en voz alta, y reordenarlo porque una esté aplicada lo
+    // rompería — la píldora cambiaría de forma cada vez que se toca un filtro.
+    const idxAplicadas = secciones.map((s, i) => [s, i]).filter(([s]) => s.props?.active).map(([, i]) => i);
+    const idxVacias    = secciones.map((s, i) => [s, i]).filter(([s]) => !s.props?.active).map(([, i]) => i);
+    const cupo         = Math.max(MAX_RANURAS, idxAplicadas.length);
+    const visibles     = new Set(secciones.length <= MAX_RANURAS
+        ? secciones.map((_, i) => i)
+        : [...idxAplicadas, ...idxVacias].slice(0, cupo));
+    const enLinea    = secciones.filter((_, i) => visibles.has(i));
+    const enDesborde = secciones.filter((_, i) => !visibles.has(i));
+
     return (
         <BarraCtx.Provider value={{ compacto: false }}>
         <div
@@ -498,7 +608,7 @@ const FilterBar = memo(({
                 transition-[border-color,box-shadow] duration-200 ${className}`}
             {...rest}
         >
-            {secciones.map((s, i) => (
+            {enLinea.map((s, i) => (
                 <React.Fragment key={i}>
                     {/* El divisor lo pone el contenedor, no cada vista. Era lo
                         que más se repetía a mano y lo que más quedaba de más:
@@ -508,6 +618,11 @@ const FilterBar = memo(({
                     {s}
                 </React.Fragment>
             ))}
+
+            {enDesborde.length > 0 && (
+                <PanelDesborde secciones={enDesborde}
+                    aplicadas={enDesborde.filter(s => s.props?.active).length} />
+            )}
 
             {onClear && activeCount > 1 && (
                 <>

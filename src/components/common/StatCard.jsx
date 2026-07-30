@@ -9,10 +9,19 @@ import { Loader2, X } from 'lucide-react';
  *     <StatCard ... />
  *   </div>
  *
- * La card tiene flex-1 basis-0 min-w-[150px] para que todas las cards de
- * una misma fila flex se repartan el espacio por igual, sin importar el
- * largo del texto (fix del problema de anchos disparejos).
- * El padre DEBE usar items-stretch para igualar alturas entre cards.
+ * ── ANCHO FIJO Y CANONICO (2026-07-30) ─────────────────────────────────────
+ * La card mide 200px SIEMPRE. Antes era `flex-1 basis-0 min-w-[150px]`, o sea
+ * que se repartia el espacio disponible — y eso hacia que la MISMA card midiera
+ * distinto en cada vista y en cada ancho de ventana. Medido: en Ventas 2 por
+ * fila a 1512px y 4 a 1920; en Personal 2, 3, 4 o 5 segun el monitor.
+ *
+ * Peor: la card HUERFANA de la ultima fila crecia hasta llenarla sola. Medido
+ * en Personal a 1920: cuatro cards de 172px y la quinta de **726px**.
+ *
+ * Con ancho fijo la fila se ve igual en todas partes: si no caben, envuelven; si
+ * sobran, sobra espacio. Es lo que pidio el usuario — "las cards canonicamente
+ * deben tener el mismo tamano". El padre DEBE usar items-stretch para igualar
+ * alturas.
  *
  * Props:
  *   icon       (component, obligatorio) -- icono Lucide
@@ -77,7 +86,7 @@ export default function StatCard({
             disabled={isClickable && loading ? true : undefined}
             {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
             className={`
-                flex-1 basis-0 min-w-[150px] h-full
+                basis-[200px] grow-0 shrink-0 min-w-0 max-w-full h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border
                 transition-[box-shadow,border-color,background-color,transform] duration-200
                 ${isClickable ? 'cursor-pointer' : 'cursor-default select-none'}

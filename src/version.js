@@ -16,8 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.264.0';
+export const APP_VERSION = '2.265.0';
 
+// v2.265.0 — Movil: los modales son hojas, y el buscador sube encima de la barra.
+//
+// **Todo modal entra como hoja en tactil.** Centrado y con zoom es la gramatica
+// del escritorio: en un telefono deja los botones a media pantalla, lejos del
+// pulgar, y cuando abre el teclado el panel sube y se recorta. Ademas la hoja de
+// filtros y la de acciones YA entraban desde abajo, asi que dos cosas que hacen
+// lo mismo —tapar la vista hasta cerrarlas— entraban distinto.
+//
+// `ModalShell` resuelve `align="center"` a `"bottom"` con `(hover: none)`, mismo
+// criterio que `soloIcono`. `align="top"` se respeta siempre: es el ⌘K, que
+// quiere estar bajo los ojos y no bajo el pulgar. Las dos correcciones del
+// contenido van al hijo con variantes de descendiente —esquinas de abajo rectas
+// y area segura— para no editar los 18 llamadores: lo que cada uno rendea fue
+// escrito para un panel centrado. Medido: "Cancelar" quedaba bajo el indicador
+// de inicio.
+//
+// **La barra flotante cambia de orden: `principal · acciones · buscador`.** Lo
+// que mas se toca queda bajo el pulgar; lo que abre teclado se va al extremo.
+//
+// **Y el campo sube ENCIMA del cluster**, como fila propia, con los cuatro
+// botones intactos. Antes se estiraba DENTRO y expulsaba a los otros, asi que
+// buscar y filtrar eran excluyentes. Elegido sobre cuatro variantes con maqueta;
+// la descartada de cerca era el campo pegado al encabezado de la pantalla: el
+// teclado ocupa la mitad de abajo, asi que el dedo teclea abajo y el ojo salta
+// ~500px en cada letra, justo a la zona que el pulgar no alcanza.
+//
+// Medido en WebKit a 390px: orden CALCULAR/FILTROS/ACCIONES/BUSCAR, el campo a
+// y=710 sobre el cluster en y=754, y los 4 botones siguen ahi.
+//
 // v2.264.0 — La sombra seguia cortada: el aire hay que MEDIRLO.
 //
 // v2.262.0 le puso 10px de aire a la pista del carril y la sombra siguio

@@ -12,6 +12,29 @@ retomar; acá está todo.
 
 ---
 
+## v2.265.0 — Móvil: los modales son hojas, y el buscador sube encima de la barra
+
+**Todo modal entra como hoja en táctil.** Centrado y con *zoom* es la gramática
+del escritorio: en un teléfono deja los botones a media pantalla, lejos del
+pulgar, y con el teclado abierto el panel sube y se recorta. Además la hoja de
+filtros y la de acciones ya entraban desde abajo, así que dos cosas que hacen lo
+mismo entraban distinto. `ModalShell` resuelve `align="center"` a `"bottom"` con
+`(hover: none)`; `align="top"` (el ⌘K) se respeta siempre. Las correcciones del
+contenido —esquinas de abajo rectas, área segura— van al hijo con variantes de
+descendiente, sin editar los 18 llamadores.
+
+**La barra flotante cambia de orden: `principal · acciones · buscador`.** Lo que
+más se toca queda bajo el pulgar; lo que abre teclado se va al extremo.
+
+**Y el campo sube encima del clúster**, como fila propia, con los cuatro botones
+intactos — antes se estiraba *dentro* y expulsaba a los otros, así que buscar y
+filtrar eran excluyentes. Elegido sobre cuatro variantes con maqueta; la
+descartada de cerca era el campo pegado al encabezado: el teclado ocupa la mitad
+de abajo, así que el ojo salta ~500px en cada letra hacia la zona que el pulgar
+no alcanza.
+
+---
+
 ## v2.264.0 — La sombra seguía cortada: el aire hay que medirlo
 
 v2.262.0 le puso 10px de aire a la pista del carril y la sombra siguió saliendo

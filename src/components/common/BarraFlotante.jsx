@@ -28,28 +28,35 @@ import ModalShell from './ModalShell';
  *    de pares cuando una es la principal.
  * 2. **Los disclosures llevan su estado.** Un ícono dice dónde está el control,
  *    no qué está aplicado — y "verlos siempre" era justamente el pedido. Así que
- *    el buscador se estira a campo y muestra el término, y las acciones llevan
+ *    el buscador abre un campo que muestra el término, y las acciones llevan
  *    `Contador`. Sin esto la barra muestra la puerta y esconde el contenido.
  *
  * El costo que no se puede diseñar afuera: **lupa y filtros significan casi lo
  * mismo** para quien está contando — los dos son "achicar la lista". Cuesta un
  * toque perdido cada tanto, y es el precio de ser la más compacta.
  *
- * ── El buscador se ESTIRA, no cambia de modo ──────────────────────────────
- * Al tocar la lupa el campo crece en el lugar y los otros botones se quedan. La
- * alternativa era una fila propia arriba, que se descartó por lo mismo que se
- * descartó otra variante: dos anatomías en la misma barra.
+ * ── El orden: la acción primero, el buscador último ───────────────────────
+ * `principal · acciones · buscador`, y no al revés como estaba. Lo que más se
+ * toca queda bajo el pulgar; lo que abre teclado se va al extremo, porque un
+ * toque accidental ahí cuesta media pantalla de teclado.
  *
- * Medido, el área de tecleo: **160px a 390px de viewport, 90px a 320px**. Los 90
- * de un iPhone SE son ~6 caracteres a la vista, y es lo que da la física con tres
- * controles rotulados en 320px. Alcanza porque esto es búsqueda incremental —se
- * teclean cuatro o cinco letras, no el nombre entero— y el texto se desplaza
- * dentro del campo. Queda expandido mientras tenga texto, así que el término
- * sigue visible con el teclado cerrado, que era el requisito.
+ * ── El campo sube ENCIMA de la barra (2026-07-30) ──────────────────────────
+ * Antes se estiraba DENTRO del clúster: el campo crecía y los otros botones se
+ * iban, así que buscar y filtrar eran excluyentes. Ahora es una fila propia
+ * arriba y los cuatro botones se quedan.
  *
- * Y el panel del buscador NO es una hoja: mientras se escribe hay que ver la
- * lista filtrarse, o no se sabe cuándo parar de teclear. Los filtros sí van en
- * hoja, porque se aplican y se cierran.
+ * Se eligió sobre cuatro variantes con maqueta. La descartada de cerca era el
+ * campo pegado al ENCABEZADO de la pantalla: el teclado ocupa la mitad de abajo,
+ * así que el dedo teclea abajo y el ojo tiene que saltar ~500px en cada letra —
+ * justo a la zona que el pulgar no alcanza. Arriba de la barra el texto sale a
+ * dos dedos de donde se escribe.
+ *
+ * Y el campo NO es una hoja: mientras se escribe hay que ver la lista
+ * filtrarse, o no se sabe cuándo parar de teclear. Los filtros sí van en hoja,
+ * porque se aplican y se cierran.
+ *
+ * Queda expandido mientras tenga texto, así que el término sigue visible con el
+ * teclado cerrado, que era el requisito.
  *
  * ── Va por portal al `body`, y no es un detalle ────────────────────────────
  * Un `position: fixed` dentro de un ancestro con `transform`, `filter` o
@@ -240,7 +247,7 @@ const BarraPortal = ({
                 className="fixed inset-x-0 bottom-0 z-tabs
                     px-3 pt-2
                     pb-[calc(var(--alto-nav-inferior,0px)+max(12px,env(safe-area-inset-bottom)))]
-                    [display:var(--barra-flotante-display,flex)] justify-end pointer-events-none"
+                    [display:var(--barra-flotante-display,flex)] flex-col items-end gap-2 pointer-events-none"
             >
                 {/* El clúster: una sola pieza con su propio material, para que los
                     controles no compitan con el texto de la lista que pasa por
@@ -283,51 +290,73 @@ const BarraPortal = ({
 
                     Al buscar toma todo el ancho en vez de ajustarse al contenido, así
                     el campo se queda con lo que sobra sin mover los otros dos. */}
+                {/* ── El campo: fila PROPIA, encima del clúster ────────────
+                    Antes se estiraba dentro del clúster y expulsaba a los otros
+                    botones. Acá los cuatro se quedan donde estaban: se puede
+                    buscar y tocar "Filtros" sin cerrar nada.
+
+                    Y va ARRIBA de la barra, no arriba de la PANTALLA, que era la
+                    otra variante sobre la mesa. El teclado ocupa la mitad de
+                    abajo: con el campo pegado al encabezado, el dedo teclea abajo
+                    y el ojo tiene que saltar ~500px en cada letra, justo a la
+                    zona que el pulgar no alcanza. Acá el texto sale a dos dedos
+                    de donde se escribe. */}
+                {buscador && campoAbierto && (
+                    <div
+                        data-surface="dropdown"
+                        className="pointer-events-auto w-full flex items-center gap-1.5 h-12 px-3 shadow-lg
+                            animate-in fade-in slide-in-from-bottom-2 duration-200
+                            ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    >
+                        <Search size={15} strokeWidth={2.5} className="text-brand-text shrink-0" />
+                        <input
+                            ref={inputRef}
+                            // `text` y no `search`: WebKit le dibuja al segundo su
+                            // PROPIA ✕ de limpiar, así que salían dos —la nativa
+                            // gris y la del portal—. Es la regla cero-nativo: el
+                            // cromo del navegador no se estiliza, se evita.
+                            // `inputMode="search"` conserva la tecla Buscar del
+                            // teclado sin traer la decoración.
+                            type="text"
+                            inputMode="search"
+                            value={buscador.value}
+                            onChange={(e) => buscador.onChange?.(e.target.value)}
+                            onBlur={() => setBuscando(false)}
+                            placeholder={buscador.placeholder || 'Buscar...'}
+                            aria-label={buscador.placeholder || 'Buscar'}
+                            // 16px como mínimo: por debajo, iOS hace zoom al enfocar
+                            // y descuadra toda la vista (DESIGN.md §32).
+                            className="flex-1 min-w-0 bg-transparent border-none outline-none
+                                text-body-xl font-bold text-content placeholder:text-content-3"
+                        />
+                        {conTexto && (
+                            <button type="button" aria-label="Limpiar la búsqueda"
+                                onClick={() => { buscador.onChange?.(''); setBuscando(false); }}
+                                className="w-8 h-8 -mr-1 shrink-0 rounded-full flex items-center justify-center
+                                    text-danger-text hover:bg-danger/15 transition-colors duration-150">
+                                <X size={14} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 <div
                     data-surface="dropdown"
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
                         transition-transform duration-200 ease-out
-                        ${campoAbierto ? 'w-full' : 'max-w-full'}
+                        max-w-full
                         ${visible || campoAbierto ? 'translate-y-0' : 'translate-y-[135%]'}`}
                 >
 
-                    {buscador && (campoAbierto ? (
-                        <div className="flex items-center gap-1.5 h-11 min-w-0 flex-1 px-3
-                            rounded-full bg-surface-input border border-brand/40
-                            outline-solid outline-2 outline-offset-0 outline-brand/25">
-                            <Search size={14} strokeWidth={2.5} className="text-brand-text shrink-0" />
-                            <input
-                                ref={inputRef}
-                                // `text` y no `search`: WebKit le dibuja al segundo su
-                                // PROPIA ✕ de limpiar, así que salían dos —la nativa
-                                // gris y la del portal—. Es la regla cero-nativo: el
-                                // cromo del navegador no se estiliza, se evita.
-                                // `inputMode="search"` conserva la tecla Buscar del
-                                // teclado sin traer la decoración.
-                                type="text"
-                                inputMode="search"
-                                value={buscador.value}
-                                onChange={(e) => buscador.onChange?.(e.target.value)}
-                                onBlur={() => setBuscando(false)}
-                                placeholder={buscador.placeholder || 'Buscar...'}
-                                aria-label={buscador.placeholder || 'Buscar'}
-                                // 16px como mínimo: por debajo, iOS hace zoom al enfocar
-                                // y descuadra toda la vista (DESIGN.md §32).
-                                className="flex-1 min-w-0 bg-transparent border-none outline-none
-                                    text-body-xl font-bold text-content placeholder:text-content-3"
-                            />
-                            {conTexto && (
-                                <button type="button" aria-label="Limpiar la búsqueda"
-                                    onClick={() => { buscador.onChange?.(''); setBuscando(false); }}
-                                    className="w-8 h-8 -mr-1 shrink-0 rounded-full flex items-center justify-center
-                                        text-danger-text hover:bg-danger/15 transition-colors duration-150">
-                                    <X size={14} strokeWidth={3} />
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        <Boton icon={Search} label="Buscar" rotulo={rotulos} onClick={abrirBusqueda} />
-                    ))}
+                    {principal && (
+                        <Boton
+                            icon={principal.icon}
+                            label={principal.label}
+                            rotulo={rotulos}
+                            principal
+                            onClick={principal.onClick}
+                        />
+                    )}
 
                     {acciones.map((a) => (
                         <Boton
@@ -341,13 +370,13 @@ const BarraPortal = ({
                         />
                     ))}
 
-                    {principal && (
+                    {buscador && (
                         <Boton
-                            icon={principal.icon}
-                            label={principal.label}
+                            icon={Search}
+                            label="Buscar"
                             rotulo={rotulos}
-                            principal
-                            onClick={principal.onClick}
+                            activo={campoAbierto}
+                            onClick={abrirBusqueda}
                         />
                     )}
                 </div>

@@ -1673,6 +1673,43 @@ convenciones se olvidan.
 El texto no se pierde: sin `label`, `children` es lo que nombra al botón para un
 lector de pantalla.
 
+#### En táctil todo modal es una HOJA
+
+Centrado y con *zoom* es la gramática del escritorio. En un teléfono deja los
+botones a media pantalla, lejos del pulgar, y cuando abre el teclado el panel
+sube y se recorta. La hoja nace pegada al borde donde está la mano — y es la
+misma gramática que ya usaban la hoja de filtros y la de acciones de
+`BarraFlotante`, así que sin esto **dos cosas que hacen lo mismo** (tapar la
+vista hasta que la cierres) entraban de dos maneras distintas.
+
+`ModalShell` resuelve `align="center"` a `"bottom"` cuando se cumple
+`(hover: none)` — mismo criterio que `soloIcono`: manda el dispositivo de
+entrada, no el ancho. `align="top"` se respeta siempre: es el ⌘K, que quiere
+estar bajo los ojos y no bajo el pulgar.
+
+Las dos correcciones del contenido van al hijo con variantes de descendiente
+(`[&>*]:rounded-b-none`, `[&>*]:pb-[max(16px,env(safe-area-inset-bottom))]`) para
+no editar los 18 llamadores: lo que cada uno rendea fue escrito para un panel
+centrado, así que trae esquinas redondeadas abajo —contra el filo de la pantalla
+se ven como un error— y ningún respeto por el área segura. Medido en un iPhone:
+"Cancelar" quedaba debajo del indicador de inicio.
+
+#### En la barra flotante el campo sube ENCIMA, y el buscador va último
+
+Orden canónico: **`principal · acciones · buscador`**. Lo que más se toca queda
+bajo el pulgar; lo que abre teclado se va al extremo, porque un toque accidental
+ahí cuesta media pantalla de teclado.
+
+Al tocarlo, el campo aparece como **fila propia arriba del clúster** y los cuatro
+botones se quedan. Antes se estiraba *dentro* del clúster y expulsaba a los
+otros, así que buscar y filtrar eran excluyentes.
+
+Se eligió sobre cuatro variantes con maqueta. La descartada de cerca era el campo
+pegado al **encabezado de la pantalla**: el teclado ocupa la mitad de abajo, así
+que el dedo teclea abajo y el ojo salta ~500px en cada letra, justo a la zona que
+el pulgar no alcanza. Arriba de la barra el texto sale a dos dedos de donde se
+escribe.
+
 #### En táctil `soloIcono` NO existe
 
 Un botón sin texto apuesta todo su significado al tooltip, y **un tooltip se abre

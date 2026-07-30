@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import useMediaQuery from "../../hooks/useMediaQuery";
 
 // Lo que un diálogo debe poder enfocar. `[tabindex="-1"]` queda fuera a
 // propósito: es enfocable por código, no por Tab.
@@ -38,7 +39,9 @@ const visible = (el) => {
  *   align            – "center" (default) | "top" para paletas de comandos |
  *                      "bottom" para hojas táctiles (entran deslizando desde
  *                      abajo y llegan a los bordes: sin padding en el
- *                      contenedor, el panel pone el suyo)
+ *                      contenedor, el panel pone el suyo).
+ *                      EN TÁCTIL, "center" se resuelve a "bottom" solo — ver la
+ *                      nota en el cuerpo. "top" se respeta siempre.
  *   surface          – data-surface del panel (default "modal"; el ⌘K usa
  *                      "dropdown", que es lo que ese material es). En `null`
  *                      el panel no declara superficie: para los consumidores
@@ -83,11 +86,26 @@ export default function ModalShell({
   closeOnEsc = true,
   closeOnBackdrop = true,
   lockScroll = true,
-  align = "center",
+  align: alignPedido = "center",
   surface = "modal",
   panelClassName = "",
   ariaLabel = "Ventana modal",
 }) {
+  // ── En táctil, TODO modal es una hoja (2026-07-30) ────────────────────
+  // Centrado y con zoom es la gramática del escritorio. En un teléfono deja los
+  // botones a media pantalla, lejos del pulgar, y cuando abre el teclado el
+  // panel sube y se recorta. La hoja nace pegada al borde donde está la mano —
+  // y es además la MISMA gramática que ya usan la hoja de filtros y la de
+  // acciones de `BarraFlotante`: sin esto, dos cosas que hacen lo mismo (tapar
+  // la vista hasta que la cierres) entraban de dos maneras distintas.
+  //
+  // Se decide por `(hover: none)` y no por ancho, igual que `TabBarAction`: lo
+  // que manda es el dispositivo de entrada. `align="top"` se respeta siempre —
+  // es el ⌘K, que quiere estar bajo los ojos y no bajo el pulgar.
+  const sinHover = useMediaQuery("(hover: none)");
+  const autoHoja = sinHover && alignPedido === "center";
+  const align = autoHoja ? "bottom" : alignPedido;
+
   // `mounted` sobrevive a `open=false` el tiempo de la animación de salida.
   const [mounted, setMounted] = useState(open);
   const panelRef = useRef(null);
@@ -259,7 +277,19 @@ export default function ModalShell({
         // tiene ningún control adentro (un visor, una confirmación sin botones).
         tabIndex={-1}
         data-surface={surface || undefined}
-        className={`relative w-full ${maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
+        // Como hoja el panel llega a los bordes: un `max-w-lg` centrado en un
+        // teléfono de 390px no se nota, pero en una tablet táctil dejaría la
+        // hoja flotando en el medio, que es justo lo que se quiso evitar.
+        //
+        // Y las dos correcciones van al HIJO, con variantes de descendiente, para
+        // no tener que editar los 18 llamadores: el contenido que cada uno rendea
+        // fue escrito para un panel centrado, así que trae esquinas redondeadas
+        // abajo —que contra el filo de la pantalla se ven como un error— y ningún
+        // respeto por el área segura: medido en un iPhone, "Cancelar" quedaba
+        // debajo del indicador de inicio.
+        className={`relative w-full ${autoHoja
+            ? 'max-w-none [&>*]:rounded-b-none [&>*]:pb-[max(16px,env(safe-area-inset-bottom))]'
+            : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

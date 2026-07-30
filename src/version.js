@@ -16,7 +16,49 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.238.0';
+export const APP_VERSION = '2.239.0';
+
+// v2.239.0 — F2 de identidad: la Voz. DESIGN.md tenia 3,370 lineas sobre la forma
+// y CERO sobre la palabra.
+//
+// Era la unica primitiva del sistema sin doc, y se notaba: en el mismo hueco —el
+// mensaje de vacio— convivian cuatro gramaticas. `Sin resultados` /
+// `Sin facturas en el periodo.` (con punto) / `No hay registros` /
+// `Aun no hay cotizaciones`. Mas Title Case suelto (`Sin Horarios`,
+// `Datos Incompletos`) y tuteo mezclado con voseo.
+//
+// Nueva §26 con nueve reglas. La decision de fondo: **el portal usa tuteo**, que
+// ademas era lo que ya dominaba (89 usos contra 22 de voseo). Unificar hacia el
+// mayoritario costo 22 strings en vez de 89.
+//
+// Tres reglas salieron de aplicarlas, no de escribirlas:
+//
+//  - **El vacio feliz es una tercera forma (§26.3).** Forzar `Sin X` en
+//    `Todo esta al dia` o `Expediente impecable` tira informacion al piso: ahi
+//    "no hay nada" es una BUENA noticia y hay que decirsela.
+//  - **Los `¡...!` se prohiben en el feedback del sistema, no en los momentos
+//    humanos (§26.7).** La primera version los prohibia a secas y el codigo tenia
+//    razon en violarla tres veces: el cumpleanos en el kiosco, `¡Acceso
+//    concedido!` al escanear el carne, y `¡Hoy! 🎉`. Un `¡Guardado!` en un boton
+//    es la app festejando su propio CRUD; un cumpleanos no.
+//  - **El punto final no depende de cuantas oraciones hay sino de si es etiqueta
+//    o prosa (§26.5).** Mi primer gate marcaba `subtitle="Crea el primero con el
+//    boton de arriba."` — contradiciendo el doc que acababa de escribir, porque un
+//    subtitulo ES oracion completa y lleva punto.
+//
+// Dos gates nuevos, `copy-vacio` y `copy-trato`, bloqueantes en cero (27
+// categorias). Y acotarlos fue el trabajo real: la primera version miraba todo
+// `title=` y devolvio 123 hallazgos casi todos falsos —
+// `<GlassViewLayout title="Facturas de Compra">` es el NOMBRE de un modulo y ahi
+// el Title Case es correcto—. Ahora solo mira `message:` y los atributos DENTRO
+// de un `<EmptyState>`, y el Title Case solo en etiquetas de ≤4 palabras.
+//
+// Bug propio que vale registrar: **en JS `\b` es ASCII**, asi que `\bTené\b`
+// matchea DENTRO de `Tenés` (la `é` cuenta como no-palabra, y entre `é` y `s` hay
+// frontera). Lo delato el gate reportando `Tené` en "Tenés un borrador". Van
+// lookarounds explicitos de letra con acentos.
+//
+// Segunda fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`.
 
 // v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard
 // dejo de mostrar `$1234,56`.

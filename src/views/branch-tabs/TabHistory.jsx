@@ -209,7 +209,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
         } catch (error) {
             console.error("Error al generar resumen IA:", error);
-            setAiSummaryData("Ocurrió un error al intentar analizar el historial. Por favor, revisa tu conexión o intenta de nuevo más tarde.");
+            setAiSummaryData("No se pudo analizar el historial. Revisa la conexión e intenta de nuevo.");
         } finally {
             setIsGeneratingAi(false);
         }

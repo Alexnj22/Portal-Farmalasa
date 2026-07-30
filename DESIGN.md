@@ -3368,3 +3368,168 @@ No `env(safe-area-inset-*)` usage was found in the codebase. Given the app targe
 **Update 2026-07-15 (Bloque 5.7b):** the static `maximum-scale=1.0, user-scalable=no` in `index.html`'s `<meta name="viewport">` blocked pinch-zoom unconditionally — a real WCAG 1.4.4 (Resize Text) violation for anyone using the portal as a normal website. Resolved by making it conditional instead of choosing one side: a small inline script in `index.html` (runs synchronously before React mounts, so there's no flash of different zoom behavior) checks — native Capacitor build (`Capacitor.isNativePlatform()`), installed/standalone PWA (`display-mode: standalone` / `navigator.standalone`), or the `/kiosk` route — and only in those cases keeps `user-scalable=no`. Everywhere else (a regular browser tab, including on mobile) the meta tag is rewritten to drop `maximum-scale`/`user-scalable`, restoring full pinch-zoom. `viewport-fit=cover` is unaffected either way, and is correctly set up for safe-area CSS to work, once/if that's implemented (see above).
 
 ---
+
+---
+
+## 26. Voz — cómo escribe el portal (F2 de PLAN-IDENTIDAD, 2026-07-29)
+
+Esta sección faltaba entera. Hasta hoy el doc tenía 3,370 líneas sobre la
+**forma** y ni una sobre la **palabra**, que es la mitad de la identidad y la
+única primitiva que el gate no puede ver mirando clases de Tailwind. El
+resultado, medido en los 73 slots de copy del portal: cuatro gramáticas
+conviviendo en el mismo hueco.
+
+| Forma | Ejemplos que había |
+|---|---|
+| `Sin X` | `Sin resultados`, `Sin pagos confirmados` |
+| `Sin X` **con punto** | `Sin facturas en el período.`, `Sin proveedores registrados todavía.` |
+| `No hay X` | `No hay registros`, `No hay empleados en esta categoría` |
+| `Aún no hay X` / `No se encontraron X` | `Aún no hay cotizaciones`, `No se encontraron productos` |
+
+Es la misma deriva que tenían los colores antes de la paleta cerrada: cada quien
+resolvió lo mismo a su manera porque no había dónde mirar.
+
+### 26.1 El vacío se escribe `Sin <sustantivo plural>`
+
+Título, **sin punto final**, y sin las muletas que no agregan nada:
+
+```
+✅ Sin cotizaciones          ❌ Aún no hay cotizaciones
+✅ Sin proveedores           ❌ Sin proveedores registrados todavía.
+✅ Sin registros             ❌ No hay registros
+✅ Sin conteos de inventario ❌ Sin conteos de inventario registrados
+```
+
+`aún` y `todavía` prometen algo que la app no sabe (¿va a haber?). `registrados`
+es ruido: si la lista está vacía, ya se entiende que no hay ninguno registrado.
+Y un punto final en una frase de tres palabras no cierra nada.
+
+### 26.2 Búsqueda sin resultados **no** es un vacío
+
+Son dos estados distintos y el usuario necesita distinguirlos: uno se arregla
+borrando el filtro, el otro creando el primer registro. Confundirlos manda a
+alguien a crear algo que ya existe.
+
+```jsx
+// tabla vacía de verdad
+empty={{ icon: Package, message: 'Sin productos' }}
+
+// hay filtro o término activo
+<EmptyState compact icon={Search} title="Sin resultados"
+            subtitle={`Ningún producto coincide con "${termino}".`} />
+```
+
+`VentasView` y `TabExpediente` ya lo hacían bien y ahora es la regla. El título
+es siempre `Sin resultados`; el término va en el subtítulo, entre comillas.
+
+### 26.3 El vacío feliz es una tercera forma, y se respeta
+
+Cuando "no hay nada" es una **buena** noticia, forzar `Sin X` tira la
+información al piso: `Sin documentos vencidos` informa; `Expediente impecable`
+felicita, y es lo que la persona necesita leer. Los que existen hoy y quedan
+como están:
+
+```
+Todo está al día            (no hay anulaciones pendientes)
+Expediente impecable        (no hay alertas ni documentos por vencer)
+Sin saltos detectados       (los correlativos están completos)
+```
+
+La prueba para saber si aplica: ¿el usuario quería encontrar algo acá, o quería
+que estuviera vacío? Si quería que estuviera vacío, se le dice que ganó.
+
+### 26.4 Sentence case en todo
+
+Mayúscula en la primera palabra y ya. `Sin horarios`, no `Sin Horarios`.
+`Datos incompletos`, no `Datos Incompletos`. Los nombres propios y las siglas
+(`MH`, `SRS`, `ERP`, `ABC × XYZ`, `MIN/MAX`) van como corresponde.
+
+**La única excepción** es la etiqueta en versalitas de `text-caption`
+(`uppercase tracking-widest font-black`), que ya está en §7 y va en mayúsculas
+por diseño tipográfico, no por redacción.
+
+### 26.5 El punto final: etiqueta o prosa
+
+La pregunta no es cuántas oraciones tiene, sino **si es una etiqueta o si es
+prosa**. Una etiqueta nombra algo; la prosa le habla a alguien.
+
+- **Etiqueta → sin punto.** Títulos, botones, badges, encabezados de columna,
+  mensajes de vacío. Son frases nominales, no oraciones: `Sin facturas en el
+  período`, no `Sin facturas en el período.`
+- **Prosa → con punto.** Subtítulos, mensajes de modal, errores. Tienen verbo
+  conjugado y le dicen algo al usuario: `Los correlativos están en orden. No hay
+  brechas.` · `Alguien ya leyó este aviso. Por seguridad no puedes eliminarlo.`
+- **Fragmento que continúa el título:** sin punto y en minúscula
+  (`Selecciona un cargo` / `para modificar sus permisos de acceso`). Es un
+  patrón válido: título y subtítulo se leen como una sola frase.
+
+El gate aproxima "etiqueta" con **≤6 palabras y una sola oración**, porque un
+texto con verbo conjugado y subordinadas ya dejó de ser una etiqueta. Es un
+proxy, no la regla: la regla es la de arriba.
+
+### 26.6 Los botones son verbos en infinitivo
+
+`Guardar`, `Agregar producto`, `Confirmar conteo`. No `Guardado`, no `¡Guardar!`,
+no `OK`. Un botón dice qué va a pasar cuando lo apretás, no qué pasó.
+
+### 26.7 Tuteo, sin "por favor" y sin signos de exclamación
+
+**Decisión del 2026-07-29.** El portal usa **tuteo** (`Selecciona`, `Intenta`,
+`Crea`), que además era lo que ya dominaba: 89 usos contra 22 de voseo. El voseo
+suena más salvadoreño pero mezclarlos es peor que cualquiera de los dos, y
+unificar hacia el mayoritario cuesta 22 strings en vez de 89.
+
+Nada de `por favor`: el portal es una herramienta de trabajo, informa y no pide
+permiso. Un `por favor` en un error además suena a que la app se disculpa por
+algo que el usuario no hizo.
+
+```
+✅ Selecciona un cargo               ❌ Seleccioná un cargo
+✅ Revisa la conexión                ❌ Por favor revisá la conexión
+✅ Conteo guardado                   ❌ ¡Conteo guardado!
+✅ El cargo necesita un nombre.      ❌ ¡Ey! No puedes dejar el cargo sin nombre.
+```
+
+**Los `¡...!` se prohíben en el feedback del sistema, no en los momentos
+humanos.** La primera versión de esta regla los prohibía a secas, y al aplicarla
+quedó claro que era una regla que el código tenía razón en violar en tres
+lugares. Un `¡Guardado!` en un botón es la app festejando su propio CRUD; un
+`🎉 ¡Celebración!` el día del cumpleaños de alguien es otra cosa.
+
+| | Exclamación |
+|---|---|
+| Toast, error, confirmación, botón, estado vacío, badge | **Nunca.** `Guardado`, `Copiado`, `Todo en orden` |
+| El saludo del kiosco, el cumpleaños, el acceso concedido | **Sí.** Es una persona frente a una pantalla, no un log |
+
+Los tres que quedan, y son la lista completa: `FeedbackOverlay` (cumpleaños y
+aviso urgente del kiosco), `LoginView` (`¡Acceso concedido!` al escanear el
+carné) y `EmployeeProfileView` (`¡Hoy! 🎉` en el cumpleaños propio).
+
+### 26.8 Un error dice qué pasó y qué hacer
+
+```
+✅ No se pudo guardar el conteo. Revisa la conexión e intenta de nuevo.
+❌ Error: PGRST204 column "x" does not exist
+❌ Algo salió mal
+```
+
+El código crudo del error nunca llega al usuario — va al log. `Algo salió mal`
+no es un error, es un encogimiento de hombros: no dice qué falló ni qué hacer.
+
+### 26.9 Qué vigila el gate, y qué no
+
+`copy-vacio` y `copy-trato` (2026-07-29) miran **solo los slots enumerados** —
+`empty={{…message}}`, `<EmptyState title/subtitle>`, `message:` de
+`AlertModal`/`ConfirmModal`— y no todo string del proyecto. Un gate de redacción
+tiene falsos positivos por naturaleza; limitarlo a los huecos donde la regla es
+inequívoca es lo que lo hace confiable. Detecta:
+
+- punto final en un slot de una sola oración (26.1, 26.5);
+- los arranques `No hay` / `Aún no` / `No se encontraron` / `Ningún` (26.1);
+- Title Case: una segunda palabra capitalizada que no es sigla (26.4);
+- las formas de voseo imperativo en cualquier string de UI (26.7).
+
+Lo que **no** puede ver: si el texto es *correcto*. Que un vacío diga
+`Sin productos` cuando había un filtro activo pasa el gate y es un error de
+26.2 — eso lo agarra una persona leyendo, no un regex. Por eso `EXCEPTIONS` acá
+se usa sin culpa cuando el texto está bien y el patrón se confunde.

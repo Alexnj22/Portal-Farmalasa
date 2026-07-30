@@ -691,7 +691,7 @@ export default function RecepcionModal({
                                     ? `Cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
                                     : hasFaltaItems
                                         ? 'Cajas disponibles confirmadas. Aún hay electrolit o cajas especiales pendientes de reenvío. Finaliza cuando lleguen.'
-                                        : '¡Todas las cajas recibidas!'
+                                        : 'Todas las cajas recibidas'
                                 }
                             </p>
                         </div>
@@ -828,7 +828,7 @@ export default function RecepcionModal({
                             <div className="py-12 text-center">
                                 <PackagePlus size={28} className="text-brand-text/40 mx-auto mb-2" />
                                 <p className="text-body font-semibold text-content-3">Sin productos extra</p>
-                                <p className="text-label text-content-3 mt-1">Buscá un producto abajo para agregarlo</p>
+                                <p className="text-label text-content-3 mt-1">Busca un producto abajo para agregarlo</p>
                             </div>
                         )}
 

@@ -122,7 +122,7 @@ export default function ConteoInventarioView() {
                     Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
                 </div>
             )}
-            <DataTable columns={COLS} loading={loading} empty={{ icon: ClipboardCheck, message: 'Sin conteos de inventario registrados' }}>
+            <DataTable columns={COLS} loading={loading} empty={{ icon: ClipboardCheck, message: 'Sin conteos de inventario' }}>
                 {filtered.map((c, i) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
                     const valorNeto = (c.valor_sobrante || 0) - (c.valor_faltante || 0);

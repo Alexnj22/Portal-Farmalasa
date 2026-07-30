@@ -139,7 +139,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {hasDraft && screen === 1 && (
                 <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-chart-3/10 border border-chart-3/30">
                     <RotateCcw size={12} className="text-chart-3-text shrink-0" />
-                    <span className="text-label text-chart-3-text flex-1">Tenés un borrador guardado</span>
+                    <span className="text-label text-chart-3-text flex-1">Tienes un borrador guardado</span>
                     <Button variant="ghost" onClick={handleRestoreDraft}>Restaurar</Button>
                     <Button variant="ghost" icon={X} iconOnly onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} />
                 </div>

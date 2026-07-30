@@ -367,7 +367,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     onSort={handleSort}
                     loading={loading}
                     skeletonRows={Math.min(pageSize, 8)}
-                    empty={{ icon: Package, message: 'No se encontraron productos' }}
+                    empty={{ icon: Package, message: 'Sin productos' }}
                     minWidth="700px"
                 >
                     {groups.map((group, i) => {

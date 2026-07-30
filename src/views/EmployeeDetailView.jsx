@@ -1051,7 +1051,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 ))}
                                             </div>
                                         ) : empRequests.length === 0 ? (
-                                            <EmptyState compact icon={ClipboardList} title="Sin solicitudes registradas" />
+                                            <EmptyState compact icon={ClipboardList} title="Sin solicitudes" />
                                         ) : (
                                             <div className="space-y-3">
                                                 {empRequests.map(req => {
@@ -1149,7 +1149,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                             {isCancelling ? 'Procesando...' : 'Cancelar Acción de RRHH'}
                         </h3>
                         <p className={`text-body font-medium text-content-3 text-center mb-5 transition-opacity duration-300 ${isCancelling ? 'opacity-60' : 'opacity-100'}`}>
-                            {isCancelling ? 'Por favor, no cierres esta ventana.' : 'Esta acción quedará registrada como cancelada. No se puede deshacer.'}
+                            {isCancelling ? 'No cierres esta ventana.' : 'Esta acción quedará registrada como cancelada. No se puede deshacer.'}
                         </p>
                         {!isCancelling && (
                             <>

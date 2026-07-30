@@ -1619,7 +1619,7 @@ export default function TabCatalogo({
             setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] } }));
         } catch (e) {
             console.error('TabCatalogo.jsx: ', e);
-            useToastStore.getState().showToast('No se pudo abrir el detalle', 'El detalle del producto no cargó. Intentá de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo abrir el detalle', 'El detalle del producto no cargó. Intenta de nuevo.', 'error');
         } finally { setLoadingExpandedId(null); }
     }, [expandedId, expandedCache, cancelPrefetch, canSeeCosts]);
 
@@ -1759,7 +1759,7 @@ export default function TabCatalogo({
                     onSort={handleSort}
                     loading={loading}
                     skeletonRows={8}
-                    empty={{ icon: Package, message: 'No se encontraron productos' }}
+                    empty={{ icon: Package, message: 'Sin productos' }}
                 >
                     {products.map((p, index) => {
                         const isExpanded    = expandedId === p.id;

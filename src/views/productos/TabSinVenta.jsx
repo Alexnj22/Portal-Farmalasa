@@ -663,7 +663,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                 const columns = mode === 'sin_gestion' ? SIN_GESTION_COLS : STOCK_RET_COLS;
 
                 const emptyMsg = activeData.length === 0
-                    ? '¡Sin productos para este criterio!'
+                    ? 'Sin productos para este criterio'
                     : 'Sin productos con ese filtro';
 
                 return (
@@ -693,7 +693,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 title="Copiar nombre"
                                             >
                                                 <span className="text-body font-semibold text-content block truncate leading-snug max-w-[280px] group-hover/copy:text-brand-text transition-colors">
-                                                    {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                                                    {copiedId === row.erp_product_id ? 'Copiado' : (row.product_name || '—')}
                                                 </span>
                                                 <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
@@ -775,7 +775,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 title="Copiar nombre"
                                             >
                                                 <span className="text-body font-semibold text-content block truncate leading-snug max-w-[220px] group-hover/copy:text-brand-text transition-colors">
-                                                    {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
+                                                    {copiedId === row.erp_product_id ? 'Copiado' : (row.product_name || '—')}
                                                 </span>
                                                 <span className={`shrink-0 text-micro font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-success opacity-100' : 'text-content-3 opacity-0 group-hover/copy:opacity-100 focus-within:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}

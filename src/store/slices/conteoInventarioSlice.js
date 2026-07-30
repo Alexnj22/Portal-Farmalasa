@@ -21,7 +21,7 @@ const ERRORES = {
     APROBADOR_ES_QUIEN_FINALIZO: 'No podés aprobar un conteo que vos mismo finalizaste: debe firmarlo otra persona.',
     ITEM_NO_ENCONTRADO: 'No se encontró el renglón.',
     ESTADO_INVALIDO: 'Estado de renglón inválido.',
-    PRESENTACION_Y_LOTE_REQUERIDOS: 'Elegí presentación y lote antes de agregar.',
+    PRESENTACION_Y_LOTE_REQUERIDOS: 'Elige presentación y lote antes de agregar.',
     PRODUCTO_NO_ENCONTRADO: 'Ese producto no existe o está inactivo.',
     LINEA_YA_EXISTE: 'Ese producto ya está en el conteo con esa presentación y lote.',
     CONTEO_NO_APROBADO: 'El ajuste solo se registra después de que el conteo esté aprobado.',

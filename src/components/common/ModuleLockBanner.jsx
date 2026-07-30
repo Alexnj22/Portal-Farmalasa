@@ -92,7 +92,7 @@ const ModuleLockNotice = memo(({ moduleKey: moduleKeyProp }) => {
                             {lock.reason ? ` — ${lock.reason}` : ''}
                             {lock.locked_at ? <span className="tabular-nums"> · desde {hora(lock.locked_at)}</span> : null}
                             {lock.expires_at ? <span className="tabular-nums"> · vence {hora(lock.expires_at)}</span> : null}
-                            . Podés consultar; guardar está desactivado.
+                            . Puedes consultar; guardar está desactivado.
                         </>
                     ) : (
                         <>

@@ -402,13 +402,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     <Button variant="ghost" size="sm" icon={Settings2} iconOnly
                         disabled={!canManage}
                         className={configOpen ? 'text-brand-text' : ''}
-                        title={canManage ? 'Configurar parámetros' : 'Necesitás permiso de edición en Min/Max'}
+                        title={canManage ? 'Configurar parámetros' : 'Necesitas permiso de edición en Min/Max'}
                         onClick={() => setConfigOpen(o => !o)} />
 
                     <Button variant="ghost" size="sm" icon={FlaskConical} iconOnly
                         disabled={!canManage}
                         className={labsOpen ? 'text-brand-text' : ''}
-                        title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitás permiso de edición en Min/Max'}
+                        title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitas permiso de edición en Min/Max'}
                         onClick={() => setLabsOpen(o => !o)} />
 
                     {/* Recalcular — oculto en Bodega (se actualiza sola vía trigger) */}
@@ -523,7 +523,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         icon={Package}
                         title={`Sin datos para ${ERP_NAMES[selectedErp]}`}
                         subtitle={isBodega
-                            ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Seleccioná una sucursal para calcular.'
+                            ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Selecciona una sucursal para calcular.'
                             : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los MIN/MAX.`}
                         action={!isBodega ? (
                             <Button disabled={calculating} onClick={handleRecalcular}>{calculating ? <Loader2 size={14} className="animate-spin" /> : null}
@@ -1517,7 +1517,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <div className="flex justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                             )}
                             {!historyLoading && historyLogs.length === 0 && (
-                                <EmptyState compact icon={History} title="Sin cambios registrados aún" />
+                                <EmptyState compact icon={History} title="Sin cambios" />
                             )}
                             {!historyLoading && historyLogs.map(log => {
                                 const d = log.details || {};
@@ -1657,7 +1657,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 onClose={() => setHideFilteredConfirm(false)}
                 onConfirm={hideFiltered}
                 title={`¿Ocultar ${filtered.length} producto${filtered.length !== 1 ? 's' : ''}?`}
-                message={`Los productos de "${filterLabel}" en ${ERP_NAMES[selectedErp]} quedarán ocultos con MIN/MAX en borrador 0/0. Podés revertirlo desde el filtro de ocultos.`}
+                message={`Los productos de "${filterLabel}" en ${ERP_NAMES[selectedErp]} quedarán ocultos con MIN/MAX en borrador 0/0. Puedes revertirlo desde el filtro de ocultos.`}
                 confirmText="Ocultar"
                 cancelText="Cancelar"
                 isDestructive={true}

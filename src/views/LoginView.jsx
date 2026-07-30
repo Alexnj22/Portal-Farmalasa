@@ -233,7 +233,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             setScanFeedback({ status: 'success', code, message: '¡Acceso concedido!' });
             return true;
         } catch {
-            setScanFeedback({ status: 'error', code, message: 'Error de conexión.' });
+            setScanFeedback({ status: 'error', code, message: 'Error de conexión' });
             setTimeout(() => setScanFeedback(cur => (cur?.status === 'error' ? null : cur)), 2500);
             return false;
         } finally {

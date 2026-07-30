@@ -592,7 +592,7 @@ function TabDocumentos({
             setRows(data);
         } catch (e) {
             console.error('FacturasCompraView.jsx: ', e);
-            useToastStore.getState().showToast('No se pudieron cargar los documentos', 'Revisá la conexión e intentá de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudieron cargar los documentos', 'Revisa la conexión e intenta de nuevo.', 'error');
         } finally {
             setLoading(false);
         }
@@ -834,7 +834,7 @@ function TabDocumentos({
 
             {bulkError && <div className="text-caption text-danger-text px-1">{bulkError}</div>}
 
-            <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
+            <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
                 {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => viewDetail(row)}>
                         <DataCell>
@@ -971,7 +971,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             setRows(data);
         } catch (e) {
             console.error('FacturasCompraView.jsx: ', e);
-            useToastStore.getState().showToast('No se pudo cargar la cola de revisión', 'Revisá la conexión e intentá de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo cargar la cola de revisión', 'Revisa la conexión e intenta de nuevo.', 'error');
         } finally {
             setLoading(false);
         }
@@ -1046,7 +1046,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             </div>
             {rowError && <div className="text-caption text-danger-text px-1">{rowError}</div>}
 
-            <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Nada pendiente de revisión.' }}>
+            <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Sin pendientes de revisión' }}>
                 {filtered.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => openFile(row)}>
                         <DataCell>

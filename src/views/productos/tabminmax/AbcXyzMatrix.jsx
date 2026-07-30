@@ -49,7 +49,7 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                         ))}
                     </div>
                 ) : (
-                    <EmptyState compact icon={BarChart2} title="Sin datos" subtitle="Presioná Calcular para armar la matriz ABC × XYZ." />
+                    <EmptyState compact icon={BarChart2} title="Sin datos" subtitle="Presiona Calcular para armar la matriz ABC × XYZ." />
                 )}
             </div>
         );

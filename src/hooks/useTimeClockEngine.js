@@ -873,7 +873,7 @@ const submitEarlyExit = useCallback((e) => {
                     status: 'error',
                     message: auth.rateLimited ? 'DEMASIADOS INTENTOS' : 'CÓDIGO INCORRECTO',
                     subtext: auth.rateLimited
-                        ? 'Esperá unos minutos antes de volver a intentar.'
+                        ? 'Espera unos minutos antes de volver a intentar.'
                         : 'Autorización Denegada',
                     color: 'red',
                     icon: XCircle,
@@ -893,7 +893,7 @@ const submitEarlyExit = useCallback((e) => {
         if (!employee) {
             setFeedback({
                 status: 'error',
-                message: 'Código No Encontrado',
+                message: 'Código no encontrado',
                 subtext: `Verifique su carnet`,
                 color: 'red',
                 icon: XCircle,

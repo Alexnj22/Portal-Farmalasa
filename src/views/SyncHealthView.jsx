@@ -82,7 +82,7 @@ const SyncHealthView = () => {
                     loading={loading}
                     empty={{
                         icon: RadioTower,
-                        message: 'Sin corridas registradas todavía',
+                        message: 'Sin corridas',
                         subtext: 'Los syncs de este dominio no han corrido desde que se activó este monitoreo.',
                     }}
                 >

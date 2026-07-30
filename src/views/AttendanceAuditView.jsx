@@ -284,7 +284,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
       setNewType(''); setNewTime(''); setReason('');
     } catch (e) {
         console.error('AttendanceAuditView.jsx: ', e);
-        useToastStore.getState().showToast('No se pudo guardar', 'La marca no se registró. Intentá de nuevo.', 'error');
+        useToastStore.getState().showToast('No se pudo guardar', 'La marca no se registró. Intenta de nuevo.', 'error');
     } finally { setSaving(false); }
   };
 
@@ -1409,7 +1409,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
               {/* Empty state */}
               {employeesByBranch.size === 0 && (
-                <EmptyState compact icon={CalendarRange} title="Sin empleados para mostrar" />
+                <EmptyState compact icon={CalendarRange} title="Sin empleados" />
               )}
 
               {/* Export CSV */}

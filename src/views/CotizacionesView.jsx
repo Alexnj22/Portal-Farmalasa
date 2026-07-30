@@ -1037,7 +1037,7 @@ export default function CotizacionesView() {
                 ]}
                 loading={loadingList}
                 skeletonRows={6}
-                empty={{ icon: Receipt, message: 'Aún no hay cotizaciones' }}
+                empty={{ icon: Receipt, message: 'Sin cotizaciones' }}
                 minWidth="600px"
             >
                 {cotizaciones.map((cot, i) => {

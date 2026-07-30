@@ -186,7 +186,7 @@ export default function ProveedoresView({ openModal }) {
             setRows(data);
         } catch (e) {
             console.error('ProveedoresView.jsx: ', e);
-            useToastStore.getState().showToast('No se pudieron cargar los proveedores', 'Revisá la conexión e intentá de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudieron cargar los proveedores', 'Revisa la conexión e intenta de nuevo.', 'error');
         } finally {
             setLoading(false);
         }
@@ -318,7 +318,7 @@ export default function ProveedoresView({ openModal }) {
             await load();
         } catch (e) {
             console.error('ProveedoresView.jsx: bulk categoría', e);
-            useToastStore.getState().showToast('No se pudo guardar', e.message || 'Intentá de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo guardar', e.message || 'Intenta de nuevo.', 'error');
         } finally {
             setBulkBusy(false);
         }
@@ -399,7 +399,7 @@ export default function ProveedoresView({ openModal }) {
                     </FilterBar>
                 </div>
 
-                <DataTable columns={COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: Truck, message: 'Sin proveedores registrados todavía.' }}>
+                <DataTable columns={COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: Truck, message: 'Sin proveedores' }}>
                     {pageRows.map((row, i) => (
                         <DataRow key={row.id} index={i} onClick={() => openDetail(row)}>
                             {/* stopPropagation: la fila entera abre el detalle,

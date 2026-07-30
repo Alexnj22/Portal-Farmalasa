@@ -357,7 +357,7 @@ const filtrosCuerpo = (
                 loading={false}
                 empty={{
                     icon: ListFilter,
-                    message: 'No hay registros',
+                    message: 'Sin registros',
                     subtext: 'Limpia los filtros o cambia la búsqueda.',
                     action: { label: 'Limpiar Filtros', onClick: clearFilters },
                 }}

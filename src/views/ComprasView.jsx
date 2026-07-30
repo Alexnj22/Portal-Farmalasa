@@ -225,7 +225,7 @@ function TabFacturas({
                 {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
             </div>
 
-            <DataTable columns={FACTURA_COLS} loading={loading} empty={{ icon: ShoppingCart, message: 'Sin facturas en el período.' }}>
+            <DataTable columns={FACTURA_COLS} loading={loading} empty={{ icon: ShoppingCart, message: 'Sin facturas en el período' }}>
                 {rows.map((row, i) => (
                     <React.Fragment key={row.id}>
                         <DataRow index={i} aria-expanded={expandedId === row.id} onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}>
@@ -317,7 +317,7 @@ function TabProductos({ searchTerm }) {
                 {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} con historial`}
             </div>
 
-            <DataTable columns={PRODUCTO_COLS} loading={loading} empty={{ icon: Package, message: 'Sin productos con historial de compras.' }}>
+            <DataTable columns={PRODUCTO_COLS} loading={loading} empty={{ icon: Package, message: 'Sin productos con historial de compras' }}>
                 {rows.map((row, i) => (
                     <DataRow key={row.erp_product_id} index={i}>
                         <DataCell align="center">

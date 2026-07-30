@@ -62,7 +62,7 @@ export default function VentasPperdidasView() {
                 if (!cancelled) setRows(data || []);
             } catch (e) {
                 console.error('VentasPperdidasView.jsx: ', e);
-                useToastStore.getState().showToast('No se pudieron cargar las ventas perdidas', 'Revisá la conexión e intentá de nuevo.', 'error');
+                useToastStore.getState().showToast('No se pudieron cargar las ventas perdidas', 'Revisa la conexión e intenta de nuevo.', 'error');
             } finally {
                 if (!cancelled) setLoading(false);
             }

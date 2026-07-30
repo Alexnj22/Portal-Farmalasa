@@ -83,7 +83,7 @@ export default function WidgetSrsInventory() {
       {/* Results */}
       <div className="flex-1 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {results === null && !loading && (
-          <EmptyState compact icon={FlaskConical} title="Buscá un medicamento" subtitle="en el registro SRS" />
+          <EmptyState compact icon={FlaskConical} title="Busca un medicamento" subtitle="en el registro SRS" />
         )}
 
         {results !== null && results.length === 0 && (

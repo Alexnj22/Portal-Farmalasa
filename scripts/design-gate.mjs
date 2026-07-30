@@ -561,6 +561,47 @@ const RIGHT_BORDER_RE = /\bborder-r(-[248])?\b/;
 // en vez de excepcionar esos 5 archivos mantiene la categoría viva en ellos: si
 // mañana uno formatea un monto mal, el gate lo ve igual.
 const LOCALE_AJENO_RE = /toLocale(?:Date|Time)?String\(\s*['"](?!es-SV|en-CA)[a-z]{2}(?:-[A-Z]{2})?['"]/g;
+
+// ── Categorías `copy-vacio` y `copy-trato` (F2, DESIGN.md §26) ──────────────
+// Miran SOLO los slots enumerados, no todo string del proyecto: un gate de
+// redacción tiene falsos positivos por naturaleza y limitarlo a los huecos donde
+// la regla es inequívoca es lo que lo hace confiable.
+//
+// **Los slots son solo estos dos**, y acotarlos así fue el trabajo de verdad.
+// La primera versión miraba todo `title=` y marcó 123 hallazgos, casi todos
+// falsos: `<GlassViewLayout title="Facturas de Compra">` es el NOMBRE de un
+// módulo, y ahí el Title Case es correcto porque es un nombre propio. Lo mismo
+// `title="Volver a Personal"` (Personal es un módulo). El Title Case que §26.4
+// prohíbe es el de una etiqueta que debería leerse como oración —`Sin Horarios`—,
+// no el del nombre de una pantalla.
+//   1. el `message:` de un objeto (`empty={{…}}`, AlertModal, ConfirmModal)
+//   2. `title=` / `subtitle=` **dentro de un `<EmptyState>`**
+const SLOT_MESSAGE_RE = /\bmessage:\s*(['"])([^'"]{3,120})\1/g;
+const SLOT_EMPTYSTATE_RE = /<EmptyState\b[^>]*?>/gs;
+const SLOT_ES_ATTR_RE = /\b(?:title|subtitle)=(?:\{\s*)?(['"])([^'"]{3,120})\1/g;
+
+// 26.1 — los arranques que la regla reemplaza por `Sin <sustantivo>`.
+const ARRANQUE_MALO_RE = /^(No hay|Aún no|Aun no|No se encontr|Ningún|Ninguna|Nada )/;
+
+// 26.4 — Title Case. Solo se aplica a etiquetas CORTAS (≤4 palabras): una
+// oración larga lleva nombres propios legítimos ("el botón Agregar", "vuelta a
+// base") y ahí el chequeo no distingue. El `[a-záéíóúñ]` que sigue a la
+// mayúscula deja pasar las siglas (`MH`, `SRS`, `ERP`, `ABC`, `XYZ`).
+const TITLE_CASE_RE = /\s[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}/;
+
+// 26.7 — voseo. Lista cerrada, no heurística de acentos.
+//
+// **`\b` no sirve acá:** en JS es ASCII, así que `é` cuenta como NO-palabra y
+// `\bTené\b` matchea dentro de `Tenés` (hay frontera entre `é` y `s`). Lo
+// descubrí porque el gate reportó `Tené` en "Tenés un borrador". Van lookarounds
+// explícitos de letra, acentos incluidos.
+const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','Elegí','Ingresá',
+  'Seleccioná','Verificá','Agregá','Escribí','Intentá','Volvé','Guardá','Pedí','Poné',
+  'Mirá','Tené','Andá','Marcá','Borrá','Cerrá','Abrí','Mandá','Esperá','Fijate',
+  // presente de indicativo en segunda persona (vos), no solo imperativo
+  'Tenés','Querés','Podés','Buscás','Archivés','Sabés','Vas a poder','Necesitás'];
+const LETRA = 'A-Za-zÁÉÍÓÚÑáéíóúñ';
+const VOSEO_RE = new RegExp(`(?<![${LETRA}])(${VOSEO.join('|')})(?![${LETRA}])`, 'g');
 const MONEDA_A_MANO_RE = /\$\$\{[^}]*\.toFixed\(\s*[12]\s*\)/g;
 
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
@@ -1300,6 +1341,70 @@ function scanFile(path) {
       let m;
       while ((m = LEFT_BORDER_RE.exec(line))) {
         findings.push({ line: i + 1, label: `border-l decorativo: ${m[0]}`, category: 'left-border', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  if (!hasException(path, 'copy-vacio')) {
+    // Se recorre el texto completo, no línea por línea: un `<EmptyState>` suele
+    // venir partido en varias líneas y los atributos hay que leerlos del bloque.
+    // `kind` importa: §26.5 pide punto en un SUBTÍTULO (es oración completa) y
+    // lo prohíbe en un título o mensaje (es una etiqueta). Y §26.1 habla del
+    // título del vacío: "No hay alertas ni documentos pendientes." como
+    // subtítulo es español correcto, no una violación.
+    const slots = []; // { texto, pos, kind }
+    SLOT_MESSAGE_RE.lastIndex = 0;
+    let m;
+    while ((m = SLOT_MESSAGE_RE.exec(text))) slots.push({ texto: m[2].trim(), pos: m.index, kind: 'titulo' });
+    SLOT_EMPTYSTATE_RE.lastIndex = 0;
+    let bloque;
+    while ((bloque = SLOT_EMPTYSTATE_RE.exec(text))) {
+      SLOT_ES_ATTR_RE.lastIndex = 0;
+      let a;
+      while ((a = SLOT_ES_ATTR_RE.exec(bloque[0]))) {
+        const kind = bloque[0].slice(Math.max(0, a.index - 9), a.index + 9).includes('subtitle') ? 'subtitulo' : 'titulo';
+        slots.push({ texto: a[2].trim(), pos: bloque.index + a.index, kind });
+      }
+    }
+    for (const { texto, pos, kind } of slots) {
+      const linea = text.slice(0, pos).split('\n').length;
+      if (isComment[linea - 1]) continue;
+      const palabras = texto.split(/\s+/).length;
+      if (kind === 'titulo') {
+        // §26.5 no distingue por cantidad de oraciones sino por ETIQUETA vs
+        // PROSA: `Sin facturas en el período.` es una etiqueta y el punto sobra;
+        // `Alguien ya leyó este aviso. Por seguridad no puedes eliminarlo.` es
+        // prosa y lo lleva. El proxy es corto + una sola oración, porque una
+        // etiqueta con verbo conjugado y subordinadas ya no es una etiqueta.
+        const unaOracion = texto.split(/\.\s+/).length === 1;
+        // Los puntos suspensivos no son un punto final: `Verificando…` es un
+        // estado en curso, no una oración cerrada.
+        const suspensivos = texto.endsWith('...') || texto.endsWith('…');
+        if (texto.endsWith('.') && !suspensivos && unaOracion && palabras <= 6) {
+          findings.push({ line: linea, label: `punto final en una etiqueta: "${texto}" (§26.5)`,
+            category: 'copy-vacio', text: texto.slice(0, 110) });
+        }
+        if (ARRANQUE_MALO_RE.test(texto)) {
+          findings.push({ line: linea, label: `"${texto}" — el vacío se escribe \`Sin <sustantivo>\` (§26.1)`,
+            category: 'copy-vacio', text: texto.slice(0, 110) });
+        }
+      }
+      // Title Case solo en etiquetas cortas: ver el comentario de TITLE_CASE_RE.
+      if (palabras <= 4 && TITLE_CASE_RE.test(texto)) {
+        findings.push({ line: linea, label: `Title Case en una etiqueta: "${texto}" — sentence case (§26.4)`,
+          category: 'copy-vacio', text: texto.slice(0, 110) });
+      }
+    }
+  }
+
+  if (!hasException(path, 'copy-trato')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      VOSEO_RE.lastIndex = 0;
+      let m;
+      while ((m = VOSEO_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `voseo "${m[1]}" — el portal usa tuteo (§26.7)`,
+          category: 'copy-trato', text: line.trim().slice(0, 120) });
       }
     });
   }

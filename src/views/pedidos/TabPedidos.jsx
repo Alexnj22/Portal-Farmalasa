@@ -460,7 +460,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
                                                 if (conductorEnRuta) return (
-                                                    <div className="flex items-center gap-1 text-caption font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
+                                                    <div className="flex items-center gap-1 text-caption font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Espera a que marque vuelta a base.">
                                                         <Truck size={10} className="text-content-3" />Esperando vuelta conductor
                                                     </div>
                                                 );
@@ -745,7 +745,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     ? `Problemas en pedido #${pedido.numero} — ${branchName}`
                                     : `Pedido #${pedido.numero} confirmado — ${branchName}`;
                                 const message = realHasDiff
-                                    ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisá y marcalo como corregido.`
+                                    ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisa y márcalo como corregido.`
                                     : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
                                 // Con diferencias = accionable (push); sin novedades = solo campana
                                 notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: realHasDiff });

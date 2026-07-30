@@ -536,8 +536,8 @@ const PayrollView = ({ openModal }) => {
                                 <Button size="sm" icon={Plus} iconOnly onClick={() => openModal?.('newPayrollPeriod')} />
                             </div>
                             {filteredPeriods.length === 0 ? (
-                                <EmptyState compact icon={CalendarDays} title="Sin períodos aún"
-                                    subtitle="Creá el primero con el botón de arriba." />
+                                <EmptyState compact icon={CalendarDays} title="Sin períodos"
+                                    subtitle="Crea el primero con el botón de arriba." />
                             ) : (
                                 <div className="space-y-2">
                                     {filteredPeriods.map(p => {

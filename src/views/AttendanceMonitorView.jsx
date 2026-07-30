@@ -650,7 +650,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       {employeeDataList.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No hay empleados en esta categoría"
+          title="Sin empleados en esta categoría"
           subtitle="Intenta cambiar el filtro o seleccionar otra tarjeta."
         />
       ) : (

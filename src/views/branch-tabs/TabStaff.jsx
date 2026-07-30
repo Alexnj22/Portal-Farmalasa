@@ -458,7 +458,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
         } catch (error) {
             console.error("Error al generar resumen IA:", error);
-            setAiSummaryData("Ocurrió un error al intentar analizar la estructura de personal. Por favor, revisa tu conexión o intenta de nuevo más tarde.");
+            setAiSummaryData("No se pudo analizar la estructura de personal. Revisa la conexión e intenta de nuevo.");
         } finally {
             setIsGeneratingAi(false);
         }

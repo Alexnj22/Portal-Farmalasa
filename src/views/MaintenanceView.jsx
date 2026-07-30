@@ -183,8 +183,8 @@ export default function MaintenanceView() {
                 <EmptyState
                     icon={Wrench}
                     compact
-                    title="Ningún módulo coincide"
-                    subtitle={`Probá con otro término. Hay ${bloqueables.length} módulos que se pueden poner en mantenimiento.`}
+                    title="Sin resultados"
+                    subtitle={`Prueba con otro término. Hay ${bloqueables.length} módulos que se pueden poner en mantenimiento.`}
                 />
             ) : (
                 <div className="flex flex-col gap-5 pt-1">

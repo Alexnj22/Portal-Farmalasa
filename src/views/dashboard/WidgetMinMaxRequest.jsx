@@ -76,7 +76,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
   const submit = async () => {
     setErr('');
-    if (!erp) { setErr('Elegí una sucursal'); return; }
+    if (!erp) { setErr('Elige una sucursal'); return; }
     const newMin = mn === '' ? null : parseInt(mn, 10);
     const newMax = mx === '' ? null : parseInt(mx, 10);
     if (newMin === null || newMax === null) { setErr('Completá MIN y MAX'); return; }
@@ -310,7 +310,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         {!loading && search.trim().length < 2 && (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-content-3">
             <TrendingUp size={28} strokeWidth={1.5} />
-            <p className="text-body-sm font-semibold text-content-3 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
+            <p className="text-body-sm font-semibold text-content-3 text-center px-4">Busca un producto para proponer un ajuste de mínimo/máximo</p>
           </div>
         )}
 

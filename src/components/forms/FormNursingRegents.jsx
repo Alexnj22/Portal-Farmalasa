@@ -195,7 +195,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     {nursingRegents.length === 0 && (
                         <div {...clickable(addNurse)} className="cursor-pointer border-2 border-dashed border-divider rounded-modal transition-all duration-500 hover:-translate-y-1 hover:shadow-md mt-4">
                             <EmptyState compact icon={Plus} title="Sin profesionales asignados"
-                                subtitle="Hacé clic aquí o en Añadir Profesional para comenzar." />
+                                subtitle="Haz clic aquí o en Añadir Profesional para comenzar." />
                         </div>
                     )}
                 </div>

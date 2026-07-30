@@ -149,6 +149,84 @@ puede cambiar sin inventar una migración de más.
 
 ---
 
+## v2.239.0 — F2 de identidad: la Voz. `DESIGN.md` tenía 3,370 líneas sobre la forma y **cero** sobre la palabra.
+
+Segunda fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. Era la única primitiva del
+sistema sin documentar, y se notaba: en el mismo hueco —el mensaje de vacío—
+convivían cuatro gramáticas.
+
+| Forma | Ejemplos que había |
+|---|---|
+| `Sin X` | `Sin resultados`, `Sin pagos confirmados` |
+| `Sin X` **con punto** | `Sin facturas en el período.`, `Sin proveedores registrados todavía.` |
+| `No hay X` | `No hay registros`, `No hay empleados en esta categoría` |
+| `Aún no hay X` / `No se encontraron X` | `Aún no hay cotizaciones`, `No se encontraron productos` |
+
+Más Title Case suelto (`Sin Horarios`, `Datos Incompletos`, `Falta Regente`) y
+tuteo mezclado con voseo en el mismo portal.
+
+**Nueva §26, nueve reglas.** La decisión de fondo: el portal usa **tuteo**, que
+además era lo que ya dominaba —89 usos contra 22 de voseo—, así que unificar
+hacia el mayoritario costó 22 strings en vez de 89.
+
+### Tres reglas salieron de aplicarlas, no de escribirlas
+
+1. **El vacío feliz es una tercera forma (§26.3).** Forzar `Sin X` en `Todo está
+   al día` o `Expediente impecable` tira información al piso: ahí "no hay nada"
+   es una *buena* noticia y hay que decírsela. La prueba: ¿el usuario quería
+   encontrar algo acá, o quería que estuviera vacío?
+2. **Los `¡...!` se prohíben en el feedback del sistema, no en los momentos
+   humanos (§26.7).** La primera versión los prohibía a secas, y al aplicarla
+   quedó claro que era una regla que el código tenía razón en violar en tres
+   lugares: el cumpleaños en el kiosco, `¡Acceso concedido!` al escanear el
+   carné, y `¡Hoy! 🎉`. Un `¡Guardado!` en un botón es la app festejando su
+   propio CRUD; un cumpleaños es una persona frente a una pantalla.
+3. **El punto final no depende de cuántas oraciones hay, sino de si es etiqueta o
+   prosa (§26.5).** Mi primer gate marcaba `subtitle="Crea el primero con el
+   botón de arriba."` — contradiciendo el doc que acababa de escribir, porque un
+   subtítulo *es* oración completa y lleva punto. Lo que no lo lleva es la
+   etiqueta: `Sin facturas en el período`.
+
+### Lo que se reescribió
+
+~45 strings: los mensajes de vacío del inventario medido (`Aún no hay
+cotizaciones` → `Sin cotizaciones`, `No hay registros` → `Sin registros`, y las
+muletas `registrados` / `todavía` / `aún` que no agregaban nada), los 22 voseos,
+los `¡...!` del feedback del sistema, los cinco `Por favor` y las
+interjecciones de los errores de validación (`¡Ey! No puedes dejar el cargo sin
+nombre.` → `El cargo necesita un nombre.`).
+
+También la distinción de §26.2, que `VentasView` y `TabExpediente` ya hacían
+bien y ahora es regla: **búsqueda sin resultados no es un vacío**. Uno se
+arregla borrando el filtro, el otro creando el primer registro; confundirlos
+manda a alguien a crear algo que ya existe.
+
+### Dos gates nuevos — y acotarlos fue el trabajo real
+
+`copy-vacio` y `copy-trato`, bloqueantes en cero: **27 categorías**.
+
+La primera versión miraba todo `title=` y devolvió **123 hallazgos, casi todos
+falsos**: `<GlassViewLayout title="Facturas de Compra">` es el *nombre de un
+módulo*, y ahí el Title Case es correcto porque es un nombre propio. El Title
+Case que §26.4 prohíbe es el de una etiqueta que debería leerse como oración
+(`Sin Horarios`), no el de una pantalla. Ahora los slots son solo dos —
+`message:` y los atributos **dentro** de un `<EmptyState>` — y el chequeo de
+Title Case se aplica solo a etiquetas de ≤4 palabras, porque una oración larga
+lleva nombres propios legítimos ("el botón Agregar", "vuelta a base").
+
+Bug propio que vale la pena registrar: **en JavaScript `\b` es ASCII**, así que
+`\bTené\b` matchea *dentro* de `Tenés` — la `é` cuenta como no-palabra y entre
+`é` y `s` hay frontera. Lo delató el gate reportando `Tené` en "Tenés un
+borrador guardado". Van lookarounds explícitos de letra, acentos incluidos. Y los
+puntos suspensivos no son punto final: `Verificando…` es un estado en curso.
+
+Verificado además que ninguno de los strings reescritos se usa como
+identificador: las alertas de `BranchesView` (`Falta regente`, `Datos
+incompletos`) solo se producen para mostrar, nadie compara contra ellas.
+
+`npm run gate:design` en verde, build y lint limpios. Cambio de strings
+únicamente — sin cambios de estructura ni de layout.
+
 ## v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard dejó de mostrar `$1234,56`.
 
 Primera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`, el plan que cierra las

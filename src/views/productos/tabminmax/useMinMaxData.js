@@ -245,7 +245,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const fmtCalcError = msg => {
         if (!msg) return 'Error al calcular.';
         if (/timeout|canceling statement/i.test(msg))
-            return 'El cálculo tardó demasiado. Intentá recalcular por sucursal en vez de todas a la vez.';
+            return 'El cálculo tardó demasiado. Intenta recalcular por sucursal en vez de todas a la vez.';
         return `Error al calcular: ${msg}`;
     };
 
@@ -976,7 +976,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         }
         const toastMsg = (freshFloorMin > 0 || freshFloorMax > 0)
             ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — ingresá el total de bodega (sum + excedente).`
-            : 'Sin MIN/MAX en salas. Ingresá el excedente que debe quedar en bodega.';
+            : 'Sin MIN/MAX en salas. Ingresa el excedente que debe quedar en bodega.';
         useToastStore.getState().showToast('Bodega', toastMsg, 'info');
         setInlineDraftEdit({
             productId: row.erp_product_id, sucursalId: row._erp_sucursal_id,

@@ -388,7 +388,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                 <EmptyState
                     compact
                     icon={Search}
-                    title="No se encontraron documentos"
+                    title="Sin resultados"
                     subtitle={`Ningún documento coincide con "${searchTerm}".`}
                     action={<Button variant="secondary" onClick={() => setSearchTerm('')}>Limpiar la búsqueda</Button>}
                 />

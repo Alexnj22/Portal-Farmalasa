@@ -96,7 +96,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                     {results.length === 0 ? (
                         <div className="px-5 py-10 text-center">
                             <div className="text-body font-semibold text-content-3">Sin resultados para “{query}”</div>
-                            <div className="text-label text-content-3 mt-1">Probá con otra palabra, ej. el nombre de lo que buscás hacer.</div>
+                            <div className="text-label text-content-3 mt-1">Prueba con otra palabra, ej. el nombre de lo que buscas hacer.</div>
                         </div>
                     ) : (
                         results.map((item, idx) => {

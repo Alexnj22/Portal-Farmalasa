@@ -531,7 +531,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 variant={isUrgent ? 'destructive' : 'primary'}
                                 icon={CheckCircle2}
                             >
-                                {active.length === 1 ? '¡Listo, estoy al día!' : 'Entendido · Siguiente'}
+                                {active.length === 1 ? 'Listo, estoy al día' : 'Entendido · Siguiente'}
                                 {active.length > 1 && <ChevronsRight size={16} strokeWidth={2.5} className="inline ml-2 -mt-0.5"/>}
                             </Button>
                         </div>

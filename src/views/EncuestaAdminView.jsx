@@ -1118,7 +1118,7 @@ export default function EncuestaAdminView() {
                                             {loadingDetail ? (
                                                 <div className="h-32 py-3"><SkeletonText lines={4} /></div>
                                             ) : respuestas.length === 0 ? (
-                                                <EmptyState compact icon={ClipboardList} title="Sin respuestas registradas" subtitle="Usá el botón Agregar para comenzar." />
+                                                <EmptyState compact icon={ClipboardList} title="Sin respuestas" subtitle="Usa el botón Agregar para comenzar." />
                                             ) : (
                                                 responsesByBranch.map(([branchName, group]) => {
                                                     const allRows = [...group.jefes, ...group.colabs];

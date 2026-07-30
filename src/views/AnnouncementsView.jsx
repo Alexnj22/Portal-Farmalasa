@@ -317,10 +317,10 @@ const AnnouncementsView = ({ openModal }) => {
     setError('');
 
     if (!title.trim() || !message.trim()) {
-      setError('¡Ey! El aviso no tiene título o mensaje. Llena los campos.'); return;
+      setError('El aviso necesita título y mensaje.'); return;
     }
     if (targetType === 'BRANCH' && !targetValue) {
-      setError('Por favor, selecciona a qué sucursal quieres enviarle el aviso.'); return;
+      setError('Selecciona a qué sucursal quieres enviarle el aviso.'); return;
     }
     if (targetType === 'ROLE' && !targetValue) {
       setError('Necesitas especificar a qué cargo va dirigido este mensaje.'); return;
@@ -384,7 +384,7 @@ const AnnouncementsView = ({ openModal }) => {
           scheduledFor: finalScheduledFor
         });
         useToastStore.getState().showToast(
-          finalScheduledFor ? 'Aviso Programado' : '¡Boom! Enviado',
+          finalScheduledFor ? 'Aviso Programado' : 'Aviso enviado',
           finalScheduledFor ? `Se mostrará a partir del ${new Date(finalScheduledFor).toLocaleDateString()}.` : 'El aviso ya está en las pantallas de tu equipo. 🚀',
           'success'
         );

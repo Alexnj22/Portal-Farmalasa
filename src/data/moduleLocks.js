@@ -47,6 +47,6 @@ export function translateLockError(msg) {
     if (/ALREADY_LOCKED/.test(msg))    return 'Ese módulo ya está bloqueado por otra persona.';
     if (/PERMISSION_DENIED/.test(msg)) return 'No tenés permiso para bloquear o liberar este módulo.';
     if (/UNKNOWN_MODULE/.test(msg))    return 'Ese módulo no existe.';
-    if (/NO_EMPLOYEE/.test(msg))       return 'No se pudo identificar tu empleado. Cerrá sesión y volvé a entrar.';
+    if (/NO_EMPLOYEE/.test(msg))       return 'No se pudo identificar tu empleado. Cierra sesión y vuelve a entrar.';
     return msg;
 }

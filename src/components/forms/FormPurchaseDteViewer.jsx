@@ -157,7 +157,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
             if (url) window.open(url, '_blank', 'noopener');
         } catch (e) {
             console.error('FormPurchaseDteViewer.jsx: ', e);
-            useToastStore.getState().showToast('No se pudo abrir el PDF', 'El documento de invalidación no está disponible. Intentá de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo abrir el PDF', 'El documento de invalidación no está disponible. Intenta de nuevo.', 'error');
         } finally {
             setOpeningInvalidacionPdf(false);
         }

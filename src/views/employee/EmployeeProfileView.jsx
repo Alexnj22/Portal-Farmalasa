@@ -507,7 +507,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 ))}
                             </div>
                         ) : timeline.length === 0 ? (
-                            <EmptyState compact icon={Clock} title="Sin eventos registrados" />
+                            <EmptyState compact icon={Clock} title="Sin eventos" />
                         ) : (
                             <>
                             <div className="relative border-l-[2px] border-divider ml-3 space-y-3 pb-2">

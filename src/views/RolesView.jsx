@@ -259,13 +259,13 @@ const RolesView = ({ openModal }) => {
         setError('');
 
         if (!newRole.trim()) {
-            setError('¡Ey! No puedes dejar el cargo sin nombre.');
+            setError('El cargo necesita un nombre.');
             return;
         }
 
         const hasRootRole = roles.some(r => !r.parent_role_id && r.id !== editingRoleId);
         if (hasRootRole && !parentRoleId) {
-            setError('¡Alto ahí! Ya hay un jefe supremo (Nivel Raíz). Asígnale un superior a este cargo.');
+            setError('Ya hay un cargo en Nivel Raíz. Asígnale un superior a este cargo.');
             return;
         }
 
@@ -744,8 +744,8 @@ const RolesView = ({ openModal }) => {
                                 })}
                                 {filteredAndSortedRoles.length === 0 && (
                                     <div className="col-span-full">
-                                        <EmptyState compact icon={Search} title="No se encontraron cargos"
-                                            subtitle={`No hay coincidencias para "${searchQuery}".`} />
+                                        <EmptyState compact icon={Search} title="Sin resultados"
+                                            subtitle={`Ningún cargo coincide con "${searchQuery}".`} />
                                     </div>
                                 )}
                             </div>

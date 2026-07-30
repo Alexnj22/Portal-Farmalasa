@@ -156,12 +156,12 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
 
     if (!pType) alerts.push({ level: 'warning', message: 'Inmueble no definido', icon: Info });
     else if (pType === 'RENTED') {
-        if (!settings.rent?.contract?.endDate) alerts.push({ level: 'warning', message: 'Falta Contrato', icon: Info });
+        if (!settings.rent?.contract?.endDate) alerts.push({ level: 'warning', message: 'Falta contrato', icon: Info });
         else evaluateDocExpiration(settings.rent.contract.endDate, "Contrato Alquiler", 60);
     }
 
     if (isFarmacia) {
-        if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta Permiso SRS', icon: Info });
+        if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta permiso SRS', icon: Info });
         evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
         evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
         evaluateDocExpiration(legalData.pharmacovigilanceExp, "Credencial Referente", 45);
@@ -171,15 +171,15 @@ const getAlertStatus = (branch, currentTimestamp, branchEmployees = []) => {
     }
 
     const needsPhone = isFarmacia || branch.type === 'BODEGA';
-    if (!branch.address || (needsPhone && !branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos Incompletos', icon: Info });
+    if (!branch.address || (needsPhone && !branch.phone && !branch.cell)) alerts.push({ level: 'warning', message: 'Datos incompletos', icon: Info });
 
     if (isFarmacia) {
-        if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin Horarios', icon: Clock });
+        if (!isScheduleDefined(branch)) alerts.push({ level: 'critical', message: 'Sin horarios', icon: Clock });
         const hasJefe = branchEmployees.some(e => (e.role || '').toUpperCase().includes('JEFE') && !(e.role || '').toUpperCase().includes('SUB'));
-        if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta Jefe de Sucursal', icon: Users });
-        if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta Regente', icon: Briefcase });
-        if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta Referente', icon: Shield });
-        if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta Enfermero/a', icon: Stethoscope });
+        if (!hasJefe) alerts.push({ level: 'critical', message: 'Falta jefe de sucursal', icon: Users });
+        if (!legalData.regentEmployeeId) alerts.push({ level: 'critical', message: 'Falta regente', icon: Briefcase });
+        if (!legalData.pharmacovigilanceEmployeeId) alerts.push({ level: 'critical', message: 'Falta referente', icon: Shield });
+        if (hasInjections && (!legalData.nurses || legalData.nurses.length === 0)) alerts.push({ level: 'critical', message: 'Falta enfermero/a', icon: Stethoscope });
         evaluateServicePayment(servicesData.light?.paidThrough, "Luz");
         evaluateServicePayment(servicesData.water?.paidThrough, "Agua");
         evaluateServicePayment(servicesData.internet?.paidThrough, "Internet");
@@ -302,7 +302,7 @@ const BranchCard = memo(({
             setAiSummaryData(aiResponse.aiSummary);
         } catch (error) {
             console.error("Error al generar resumen IA:", error);
-            setAiSummaryData("Ocurrió un error de conexión con la red neuronal. Por favor, intenta de nuevo.");
+            setAiSummaryData("Ocurrió un error de conexión con la red neuronal. Intenta de nuevo.");
         } finally {
             setIsGeneratingAi(false);
         }
@@ -790,7 +790,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
                             <h3 className="text-title font-black text-content tracking-tight">
-                                {filterStatus === 'ALERTS' ? '¡Todo en orden!' : 'Sin sucursales'}
+                                {filterStatus === 'ALERTS' ? 'Todo en orden' : 'Sin sucursales'}
                             </h3>
                             <p className="text-body-lg text-content-3 mt-2 font-medium max-w-[300px] leading-relaxed">
                                 {filterStatus === 'ALERTS'

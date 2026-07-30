@@ -65,7 +65,7 @@ const ConfirmModal = ({
                 </h3>
 
                 <div className={`text-body font-medium leading-relaxed w-full transition-opacity duration-300 text-content-3 ${isProcessing ? 'opacity-60' : 'opacity-100'}`}>
-                    {isProcessing ? "Por favor, no cierres esta ventana." : message}
+                    {isProcessing ? "No cierres esta ventana." : message}
                 </div>
             </div>
 

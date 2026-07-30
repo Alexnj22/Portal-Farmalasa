@@ -93,7 +93,7 @@ const OrphanObjectsView = () => {
                         { key: 'status', label: 'Estado' },
                     ]}
                     loading={loading}
-                    empty={{ icon: Ghost, message: 'Sin objetos registrados en este filtro' }}
+                    empty={{ icon: Ghost, message: 'Sin objetos para este filtro' }}
                 >
                     {filteredRows.map((row, i) => {
                         const badge = STATUS_BADGE[row.status] || STATUS_BADGE.candidate;

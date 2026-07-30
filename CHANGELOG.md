@@ -12,65 +12,76 @@ retomar; acá está todo.
 
 ---
 
-## v2.242.0 — el campo de fecha no tenía caja, y DESIGN.md ya decía que la lleva.
+## v2.244.0 — el select de laboratorio en el teléfono no estaba chico: estaba mal.
 
-Tres cosas del alta manual del conteo y una del canónico de filtros. Las dos de
-fondo son incumplimientos de reglas que ya estaban escritas.
+Reportado como "ese select no sale correctamente y no sale el listado". Medido en
+WebKit con perfil de iPhone sobre el filtro de laboratorio del conteo (220
+opciones), el dropdown anclado de `LiquidSelect` fallaba de **tres** maneras a la
+vez:
 
-### El vencimiento se veía como texto suelto
+| | |
+|---|---|
+| hereda el ancho del trigger | **190 × 216px** → ~4 opciones visibles de 220 |
+| se abre pegado al trigger | y el trigger vive dentro de la hoja de filtros, o sea abajo: en un teléfono real **el teclado del sistema tapa justo esa zona** |
+| pasado `searchThreshold` arranca vacío | dice "Escribe para buscar" y el campo es **invisible**, superpuesto al trigger |
 
-`DESIGN.md` §14 lo dice con estas palabras: *«**`LiquidDatePicker` es el caso
-contrario y su envoltorio SÍ va.** Su contenedor usa `h-full` — toma la altura del
-padre, no tiene mínimo propio. Quitárselo lo colapsa»*. Los dos usos del conteo
-—el alta manual y el modal de corregir lote— **no tenían ninguno**, así que el
-campo salía sin fondo ni borde al lado de dos selects con caja: parecía una
-etiqueta, no algo donde se escribe.
+O sea que no era cuestión de agrandarlo: el patrón de dropdown anclado no es el
+correcto para táctil.
 
-El envoltorio usa `h-[max(40px,var(--tap-min))]`, el mismo alto que el trigger de
-`LiquidSelect`, para que los campos de la fila queden parejos y en táctil no bajen
-de 44px. Las clases salen de `inputHoverClass`, que existe justamente para
-*«cualquier wrapper de LiquidSelect/LiquidDatePicker que necesite el mismo look»*.
+El segundo punto es de los que headless no reproduce —no tiene teclado— así que
+el diagnóstico salió de leer la anatomía, no de una captura.
 
-**Anotado y no resuelto:** hay **siete anatomías distintas** de este mismo
-envoltorio en el portal (`h-[36px] rounded-xl`, `h-[42px] rounded-2xl`, `h-10
-overflow-hidden`, `flex-1 … rounded-xl`…). Es un canónico que obliga a cada
-llamador a inventarse su cromo, y merece una pasada propia.
+### `SelectorTactil`, canónico nuevo (§14.1)
 
-### La fila del formulario y el botón
+Hoja de pantalla completa: buscador fijo, lista agrupada por letra con encabezado
+pegajoso, filas de 56px, y **riel A–Z arrastrable** con burbuja de letra. Sin el
+riel, 356 laboratorios son 18 pantallas de scroll para llegar a la Z.
 
-El vencimiento vivía en una fila aparte **compartida con el botón**, así que la
-fecha quedaba desalineada de los campos a los que pertenece y el botón parecía un
-campo más. Ahora los cuatro van en una fila (3 columnas, 4 cuando aparece el lote
-nuevo) y el botón cierra el formulario en su propia fila, a la derecha.
+**No se usa a mano.** Lo abre `LiquidSelect` solo cuando el puntero es grueso y
+hay más de **12** opciones (o `serverSearch`), así que todos los selects largos del
+portal quedan usables en teléfono sin tocar ni una vista, y los cortos —sucursal,
+estado, sí/no— siguen con el dropdown anclado, que para 6 opciones es mejor.
 
-Los cuatro llevan rótulo. Antes dependían del placeholder, que **desaparece en
-cuanto el campo tiene valor**: a los dos segundos la fila eran cuatro cajas sin
-decir qué es cada una. Y un campo con rótulo al lado de otros sin rótulo quedaba
-corrido hacia abajo — que es exactamente lo que se veía.
+**El mínimo es 12 y no `searchThreshold` (80).** Ese 80 es un número de escritorio
+—cuándo conviene escribir en vez de mirar— y en un teléfono dejaba un hueco malo
+entre 13 y 80 opciones: dropdown de ~4 filas Y sin buscador, porque el buscador
+también aparecía a los 80. Una lista de 40 en un teléfono era scrollear a ciegas
+en una ventanita. 12 es donde el dropdown deja de mostrar la lista completa.
 
-El rótulo es `div` + `span` y no `<label>`: un `<label>` se asocia a UN control, y
-acá dos campos son `role="combobox"` y el de fecha son **tres** inputs adentro
-(día/mes/año). El nombre accesible lo lleva cada control por su cuenta.
+### La letra del cajón no es el primer carácter
 
-### El botón se partía en dos renglones
+`src/utils/alfabetico.js`, con prueba unitaria (10 casos). En el catálogo real
+**71 de 356** laboratorios traen prefijo del ERP: `1-ABBOTT NUTRICIONAL`,
+`1.1-INSUMOS`, `3-*BONIN SOLUCIONES`. Agrupar por el primer carácter manda a
+Abbott al cajón "1", que es el último lugar donde alguien lo busca.
 
-`<Button …>{saving ? <Loader2/> : <Plus/>} Agregar al conteo</Button>` — el ícono
-iba como **hijo**, así que entraba al mismo `<span>` que el texto y el contenido
-se quebraba: "+" arriba, "Agregar al conteo" abajo. `Button` tiene prop `icon` y
-prop `loading` para esto. Medido: 40px de alto, una línea.
+Se saltan **todos** los caracteres iniciales que no son letra —no una lista de los
+que se me ocurrieron: el `*` de `3-*BONIN` sobrevivió a la primera versión y lo
+mandaba a `#`— y **el orden usa la misma clave**. Si se ordena por el nombre crudo
+y se agrupa por la letra limpia, los grupos no quedan contiguos y el índice
+aterriza en cualquier parte.
 
-### En la hoja de filtros del teléfono las ranuras se solapaban
+### Dos defectos que costaron encontrar
 
-Defecto del canónico. `FilterBar.Section` fija `h-9` (36px) en su chip interno:
-en la píldora de escritorio eso es lo que hace que la barra mida 52px tenga una
-ranura o cinco, pero en la hoja del teléfono las ranuras se **apilan en columna**,
-y ahí cualquier control más alto que 36px se desborda y tapa al de arriba. No se
-veía antes porque todo control de filtro era de una fila; apareció con el
-`SegmentedControl` en bloque de dos filas que entró en v2.240.0.
+- **El riel no movía nada.** Apuntaba al encabezado de letra, que es `sticky`:
+  cuando está pinchado arriba su rect coincide con el del contenedor y el delta
+  sale 0. Ahora apunta a la `<section>`, y desplaza por
+  `getBoundingClientRect` en vez de `offsetTop` — `offsetTop` se mide contra el
+  ancestro POSICIONADO más cercano, que no es el contenedor scrolleable.
+- **Arrastrar el índice cerraba el selector.** `LiquidSelect` escucha
+  `mousedown` en `document` para cerrarse al hacer click afuera, y la hoja va por
+  portal al `body`, o sea fuera de `selectRef`: cada toque dentro de ella contaba
+  como "afuera". Medido: `mouse.down` sobre el riel y la hoja desaparecía. Con la
+  hoja ese oyente no se registra — Escape y el fondo ya los da `ModalShell`.
 
-`Section` ahora lee un contexto de la barra: alto fijo en la píldora, `min-h-9
-h-auto` en la hoja. Medido en WebKit a 320 y 390: dos ranuras (46px y 98px),
-**cero solapes**, cero desborde horizontal.
+### Verificación
+
+Contra el build de producción (no el dev server, que tira fallos de import
+espurios), en WebKit con perfil de iPhone a 320 y 390: panel a pantalla completa,
+22 cajones, ABBOTT bajo la A, 221 filas de 56px, buscador dentro, el riel llevando
+a `scrollTop 9328` (letra R), "bayer" filtrando a 2 resultados, y al elegir la
+hoja cierra y el trigger queda en "BAYER". **Cero errores de consola.** En
+escritorio a 1500px nada cambia: sigue el dropdown anclado de 190px.
 
 ---
 
@@ -164,6 +175,68 @@ Dos excepciones con su motivo escrito:
   escala se lee como un dibujo en vez de una textura.
 
 `npm run gate:design` en verde, build y lint limpios.
+
+## v2.242.0 — el campo de fecha no tenía caja, y DESIGN.md ya decía que la lleva.
+
+Tres cosas del alta manual del conteo y una del canónico de filtros. Las dos de
+fondo son incumplimientos de reglas que ya estaban escritas.
+
+### El vencimiento se veía como texto suelto
+
+`DESIGN.md` §14 lo dice con estas palabras: *«**`LiquidDatePicker` es el caso
+contrario y su envoltorio SÍ va.** Su contenedor usa `h-full` — toma la altura del
+padre, no tiene mínimo propio. Quitárselo lo colapsa»*. Los dos usos del conteo
+—el alta manual y el modal de corregir lote— **no tenían ninguno**, así que el
+campo salía sin fondo ni borde al lado de dos selects con caja: parecía una
+etiqueta, no algo donde se escribe.
+
+El envoltorio usa `h-[max(40px,var(--tap-min))]`, el mismo alto que el trigger de
+`LiquidSelect`, para que los campos de la fila queden parejos y en táctil no bajen
+de 44px. Las clases salen de `inputHoverClass`, que existe justamente para
+*«cualquier wrapper de LiquidSelect/LiquidDatePicker que necesite el mismo look»*.
+
+**Anotado y no resuelto:** hay **siete anatomías distintas** de este mismo
+envoltorio en el portal (`h-[36px] rounded-xl`, `h-[42px] rounded-2xl`, `h-10
+overflow-hidden`, `flex-1 … rounded-xl`…). Es un canónico que obliga a cada
+llamador a inventarse su cromo, y merece una pasada propia.
+
+### La fila del formulario y el botón
+
+El vencimiento vivía en una fila aparte **compartida con el botón**, así que la
+fecha quedaba desalineada de los campos a los que pertenece y el botón parecía un
+campo más. Ahora los cuatro van en una fila (3 columnas, 4 cuando aparece el lote
+nuevo) y el botón cierra el formulario en su propia fila, a la derecha.
+
+Los cuatro llevan rótulo. Antes dependían del placeholder, que **desaparece en
+cuanto el campo tiene valor**: a los dos segundos la fila eran cuatro cajas sin
+decir qué es cada una. Y un campo con rótulo al lado de otros sin rótulo quedaba
+corrido hacia abajo — que es exactamente lo que se veía.
+
+El rótulo es `div` + `span` y no `<label>`: un `<label>` se asocia a UN control, y
+acá dos campos son `role="combobox"` y el de fecha son **tres** inputs adentro
+(día/mes/año). El nombre accesible lo lleva cada control por su cuenta.
+
+### El botón se partía en dos renglones
+
+`<Button …>{saving ? <Loader2/> : <Plus/>} Agregar al conteo</Button>` — el ícono
+iba como **hijo**, así que entraba al mismo `<span>` que el texto y el contenido
+se quebraba: "+" arriba, "Agregar al conteo" abajo. `Button` tiene prop `icon` y
+prop `loading` para esto. Medido: 40px de alto, una línea.
+
+### En la hoja de filtros del teléfono las ranuras se solapaban
+
+Defecto del canónico. `FilterBar.Section` fija `h-9` (36px) en su chip interno:
+en la píldora de escritorio eso es lo que hace que la barra mida 52px tenga una
+ranura o cinco, pero en la hoja del teléfono las ranuras se **apilan en columna**,
+y ahí cualquier control más alto que 36px se desborda y tapa al de arriba. No se
+veía antes porque todo control de filtro era de una fila; apareció con el
+`SegmentedControl` en bloque de dos filas que entró en v2.240.0.
+
+`Section` ahora lee un contexto de la barra: alto fijo en la píldora, `min-h-9
+h-auto` en la hoja. Medido en WebKit a 320 y 390: dos ranuras (46px y 98px),
+**cero solapes**, cero desborde horizontal.
+
+---
 
 ## v2.241.0 — F3 de identidad: los 50 `title=` no interactivos eran **cuatro** patrones, y 22 puntos de estado que ningún lector de pantalla anunciaba.
 

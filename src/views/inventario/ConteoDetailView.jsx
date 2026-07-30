@@ -1210,9 +1210,13 @@ export default function ConteoDetailView() {
         return () => { vivo = false; };
     }, [id, fetchConteoLaboratorios]);
 
+    // El conteo va en `badge` y no dentro del rótulo: en la hoja táctil se
+    // alinea a la derecha en su propia columna, y el rótulo queda limpio para
+    // que el índice A–Z agrupe por el nombre y no por un paréntesis.
     const labOpciones = labs.map((l) => ({
         value: String(l.laboratorio_id),
-        label: `${l.laboratorio_nombre} (${l.item_count})`,
+        label: l.laboratorio_nombre,
+        badge: l.item_count,
     }));
 
     const filtrosActivos = (laboratorioId != null ? 1 : 0) + (filtro !== 'TODOS' ? 1 : 0);

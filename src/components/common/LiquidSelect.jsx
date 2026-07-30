@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import useCoarsePointer from '../../hooks/useCoarsePointer';
+import SelectorTactil from './SelectorTactil';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -161,6 +163,34 @@ const LiquidSelect = ({
         }
     };
 
+    const isLargeList = !serverSearch && options.length > searchThreshold;
+
+    // ── Hoja táctil para listas largas (2026-07-30) ────────────────────────
+    // En puntero grueso el dropdown anclado no sirve para una lista larga:
+    // hereda el ancho del trigger (190px medidos en el filtro de laboratorio
+    // del conteo), muestra ~4 opciones de 220, y si el trigger está abajo de la
+    // pantalla el teclado del sistema lo tapa. Encima, pasado
+    // `searchThreshold` la lista arranca vacía pidiendo "Escribe para buscar"
+    // con el campo invisible sobre el trigger.
+    //
+    // ── El mínimo ──────────────────────────────────────────────────────────
+    // Para 4 opciones una hoja de pantalla completa es desproporcionado, y ahí
+    // el dropdown anclado funciona bien: entran todas de una.
+    //
+    // El corte NO es `searchThreshold` (80). Ese número está pensado para
+    // escritorio —cuándo conviene escribir en vez de recorrer con la vista— y en
+    // un teléfono deja un hueco malo entre 13 y 80 opciones: el dropdown muestra
+    // ~4 a la vez (216px medidos) y el buscador tampoco aparece, porque también
+    // se activa a los 80. O sea que una lista de 40 en un teléfono es scrollear a
+    // ciegas en una ventanita.
+    //
+    // 12 es el punto donde el dropdown anclado deja de mostrar la lista completa
+    // en un teléfono. Por debajo se recorre de un vistazo; por arriba hace falta
+    // pantalla, índice y buscador.
+    const CORTE_HOJA = 12;
+    const esTactil = useCoarsePointer();
+    const usaHoja = esTactil && !nano && (serverSearch || options.length > CORTE_HOJA);
+
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (
@@ -179,7 +209,12 @@ const LiquidSelect = ({
             }
         };
 
-        if (isOpen) {
+        // Con la hoja táctil NO se registran: la hoja va por portal al `body`, o
+        // sea FUERA de `selectRef`, así que cada toque dentro de ella contaba como
+        // "afuera" y la cerraba. Se veía como que arrastrar el índice A–Z cerraba
+        // el selector — medido: `mouse.down` sobre el riel y la hoja desaparecía.
+        // Escape y el fondo ya los maneja `ModalShell`, que es quien la dibuja.
+        if (isOpen && !usaHoja) {
             document.addEventListener('mousedown', handleClickOutside);
             document.addEventListener('keydown', handleEscape);
         }
@@ -187,7 +222,7 @@ const LiquidSelect = ({
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleEscape);
         };
-    }, [isOpen]);
+    }, [isOpen, usaHoja]);
 
     // 🚨 SEGUIMIENTO CONTINUO DE POSICIÓN (fix bug histórico de selects)
     // Antes, la posición se calculaba UNA sola vez al abrir y luego se
@@ -253,6 +288,10 @@ const LiquidSelect = ({
         updateCoords(); // Calculamos el espacio antes de abrir
         setIsOpen(true);
         setSearchTerm('');
+        // Con la hoja táctil el buscador vive DENTRO de ella: enfocar el input
+        // superpuesto al trigger levantaría el teclado detrás de la hoja y le
+        // robaría el foco al campo real.
+        if (usaHoja) return;
         setTimeout(() => inputRef.current?.focus(), 50);
     };
 
@@ -284,7 +323,6 @@ const LiquidSelect = ({
         triggerRef.current?.focus();
     };
 
-    const isLargeList = !serverSearch && options.length > searchThreshold;
 
     const filteredOptions = useMemo(() => {
         if (serverSearch) {
@@ -529,8 +567,10 @@ const LiquidSelect = ({
                     ) : placeholder}
                 </div>
 
-                {/* Search input — overlaid absolutely when open */}
-                {isOpen && (
+                {/* Search input — overlaid absolutely when open.
+                    Con la hoja táctil NO va: el buscador es el de la hoja, y este
+                    quedaría invisible detrás capturando el foco. */}
+                {isOpen && !usaHoja && (
                     <input
                         ref={inputRef}
                         type="text"
@@ -607,7 +647,26 @@ const LiquidSelect = ({
                 </button>
             )}
 
-            {createPortal(
+            {usaHoja ? (
+                <SelectorTactil
+                    open={isOpen}
+                    onClose={() => { setIsOpen(false); setSearchTerm(''); }}
+                    options={options.filter(o => !o.isSeparator && o.value !== '')}
+                    value={value}
+                    onChange={handleSelect}
+                    title={ariaLabel || placeholder}
+                    // El placeholder del select es el RÓTULO del campo
+                    // ("Laboratorio"); dentro de la hoja el campo es un buscador y
+                    // tiene que decir qué hace, no cómo se llama el filtro.
+                    placeholder="Buscar..."
+
+                    serverSearch={serverSearch}
+                    onSearchChange={onSearchChange}
+                    isLoading={isLoading}
+                    clearable={clearable}
+                    clearLabel={clearLabel}
+                />
+            ) : createPortal(
                 <AnimatePresence>{isOpen ? dropdownContent : null}</AnimatePresence>,
                 document.body
             )}

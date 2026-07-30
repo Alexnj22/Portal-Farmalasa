@@ -38,6 +38,7 @@
 | campo de formulario | `PortalInput` | §29.1 |
 | campo de varias líneas | `PortalTextarea` | §29.2 |
 | desplegable | `LiquidSelect` | §14 · §15.13 |
+| desplegable de lista LARGA en táctil | `SelectorTactil` (lo abre `LiquidSelect` solo) | §14.1 |
 | fecha / rango | `LiquidDatePicker` · `RangeDatePicker` | §14 |
 | barra de vista con buscador | `ViewTabBar` | §24 |
 | vacío · esqueleto · cargando | `StateViews` | §18 |
@@ -1386,6 +1387,52 @@ File: `src/components/common/LiquidAvatar.jsx`
 User avatar with skeleton shimmer preloader, lazy image load, fallback to initials or `User` Lucide icon.
 
 ---
+
+### 14.1 `SelectorTactil` — la lista larga con el pulgar
+
+`LiquidSelect` abre un dropdown ANCLADO al trigger. Con mouse está bien; en un
+teléfono se rompe de tres maneras a la vez, medidas el 2026-07-30 en WebKit con
+perfil de iPhone sobre el filtro de laboratorio del conteo (220 opciones):
+
+| | |
+|---|---|
+| el dropdown hereda el ancho del trigger | **190 × 216px** → ~4 opciones visibles de 220 |
+| se abre pegado al trigger | si el trigger está abajo (dentro de una hoja de filtros), **el teclado del sistema lo tapa** |
+| pasado `searchThreshold` la lista arranca vacía | dice "Escribe para buscar" y el campo es invisible, superpuesto al trigger |
+
+O sea que no era un problema de tamaño: el patrón anclado no es el correcto para
+táctil. `SelectorTactil` lo reemplaza por una hoja de pantalla completa con
+buscador fijo, lista agrupada por letra con encabezado pegajoso, y **riel A–Z
+arrastrable** con burbuja de letra.
+
+**No se usa a mano.** `LiquidSelect` decide: puntero grueso **y** más de **12**
+opciones (o `serverSearch`). El corte no es `searchThreshold` (80) porque ése es
+un número de escritorio —cuándo conviene escribir en vez de mirar— y en un
+teléfono dejaba un hueco malo entre 13 y 80: dropdown de ~4 filas y sin buscador,
+porque el buscador también aparecía a los 80. **12 es donde el dropdown anclado
+deja de mostrar la lista completa en un teléfono.** Por debajo se recorre de un
+vistazo y una hoja de pantalla completa sería desproporcionada.
+
+**La letra del cajón no es el primer carácter** (`src/utils/alfabetico.js`, con
+prueba unitaria). En el catálogo real 71 de 356 laboratorios traen prefijo del
+ERP (`1-ABBOTT NUTRICIONAL`, `3-*BONIN`, `1.1-INSUMOS`): agrupar por el primer
+carácter manda a Abbott al cajón "1", donde nadie lo busca. Se saltan todos los
+caracteres iniciales que no son letra, y **el orden usa la misma clave** — si se
+ordena por el nombre crudo y se agrupa por la letra limpia, los grupos no quedan
+contiguos y el índice aterriza en cualquier parte.
+
+Dos cosas que costaron encontrar, anotadas para el próximo:
+
+- **El riel apunta a la `<section>`, no al encabezado.** El encabezado es
+  `sticky`: cuando está pinchado arriba su rect coincide con el del contenedor y
+  el delta sale 0, así que el índice no movía nada. Y el desplazamiento va por
+  `getBoundingClientRect`, no por `offsetTop` — `offsetTop` se mide contra el
+  ancestro POSICIONADO más cercano, que no es el contenedor scrolleable.
+- **`LiquidSelect` no registra su cierre por click-afuera cuando usa la hoja.**
+  La hoja va por portal al `body`, o sea fuera de `selectRef`, así que cada toque
+  dentro de ella contaba como "afuera": arrastrar el índice cerraba el selector.
+  Escape y el fondo ya los da `ModalShell`.
+
 
 ## 15. Controles canónicos
 

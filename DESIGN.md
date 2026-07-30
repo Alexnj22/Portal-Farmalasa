@@ -1187,11 +1187,16 @@ regla del proyecto, `LiquidSelect` en todas partes.
   44px, único tamaño desde la consolidación de VentasView — ver abajo).
 - Divisor (`dividerCls`, `bg-divider`) y botón de búsqueda (`bg-brand`)
   quedan como clases bespoke (no forman parte del contrato de superficies).
-- `trailingActions` (prop opcional, agregado en la consolidación de
-  VentasView): ReactNode con botones extra entre los tabs y el buscador,
-  separado del bloque de tabs con el mismo `dividerCls`.
+- ~~`trailingActions`~~ — **retirada el 2026-07-30.** Las acciones de la vista
+  viven en `FilterBar` (§16.9, §17). Acá quedan pestañas y buscador.
 
 **Variantes/tamaños:** `showSearch={false}` para tab-only bars.
+
+**En táctil el buscador se va abajo.** Si la vista tiene una `FilterBar` flotante,
+ella se queda con el buscador y esta barra no dibuja su lupa — el header se va con
+el scroll, así que un segundo acceso al mismo buscador allá arriba es un acceso
+que a los tres deslizamientos ya no existe. Lo resuelve el canal de
+`CanalDeVista.js` (§17.3), no la vista.
 
 **Matriz de estados:**
 | Estado | Clases |
@@ -1206,10 +1211,11 @@ regla del proyecto, `LiquidSelect` en todas partes.
 
 **Duplicado — RESUELTO (2026-07-24):** `VentasView.jsx` tenía su propia copia
 hand-rolled de este mismo pill (el "structural finding" documentado en
-§32/§23) — consolidada al componente real vía el prop `trailingActions`
-(único elemento que el duplicado tenía de más: el toggle de privacidad).
-Efecto colateral: sus botones de tab pasaron de `h-9 md:h-10` (36/40px, bajo
-el mínimo táctil) a los `h-11` (44px) reales.
+§32/§23) — consolidada al componente real. Efecto colateral: sus botones de tab
+pasaron de `h-9 md:h-10` (36/40px, bajo el mínimo táctil) a los `h-11` (44px)
+reales. Su único agregado propio, el toggle de privacidad, era un `<button>` a
+mano con 11 clases; hoy es un descriptor de `FilterBar.acciones` con `activo`,
+así que lo dibuja el canónico y emite `aria-pressed` (2026-07-30).
 
 **Search pattern:** Search button (`bg-brand`) expands an input via `isSearchMode` state. Close via `ChevronRight`. Never add local search inputs inside tab components — search lives here only.
 
@@ -1566,21 +1572,31 @@ misma acción.
 se pinta con el color del sistema operativo e ignora los cuatro temas. Es la
 misma regla que ya existía para `<select>`.
 
-### 15.5 `TabBarAction` — acciones dentro de `ViewTabBar`
+### 15.5 `TabBarAction` — el botón de acción de una vista
+
+**No se instancia a mano.** Desde el 2026-07-30 lo renderiza `FilterBar` a partir
+de los descriptores de `acciones` (§17); la vista describe la acción, el canónico
+decide cómo se dibuja en cada tamaño:
 
 ```jsx
-<ViewTabBar … trailingActions={
-    <TabBarAction icon={UserPlus} variant="primary" onClick={crear}>Nuevo</TabBarAction>
-} />
+<FilterBar … acciones={[
+    { key: 'nuevo', icon: UserPlus, label: 'Nuevo', variant: 'primary', onClick: crear },
+]} />
 ```
 
 Una sola primaria por barra; el resto `quiet`, con el color reducido al ícono.
 Sin halo: `shadow-glow-*` se dibuja igual sobre fondo claro que oscuro, así que
 en los temas sólidos no se ve luminoso sino sucio.
 
-En táctil las acciones **no van en línea** — `ViewTabBar` las guarda tras un
-botón y las abre en una hoja inferior. Sin eso, a 390px quedaban controles fuera
-de la pantalla.
+**Dos tamaños.** `md` (44px) es el de siempre. `sm` (36px) es el que usa
+`FilterBar` en su píldora de escritorio, y existe por el contrato de altura de
+§17 —"son 52px tenga una ranura o cinco": 36 del control + 8 de aire arriba y
+abajo—. Un botón de 44 la estiraría a 60 y la desalinearía de todas las demás.
+No baja del mínimo táctil porque en táctil esa píldora no se dibuja: ahí
+`FilterBar` es la barra flotante, donde los botones miden 44 y 48.
+
+El nombre quedó de cuando estas acciones vivían en `ViewTabBar`; ya no van ahí
+(§16.9).
 
 ### 15.6 `Notice` — aviso inline
 
@@ -2137,9 +2153,18 @@ hizo escribir mal §17. No son intercambiables:
 | | píldora del **header** | píldora del **cuerpo** |
 |---|---|---|
 | canónico | **`ViewTabBar`** | **`FilterBar`** |
-| qué lleva | pestañas de la vista + buscador global + acciones | los filtros que recortan los datos |
+| qué lleva | pestañas de la vista + buscador global | los filtros que recortan los datos **+ las acciones** |
 | dónde | fila del título, vía `filtersContent` | bajo el título, a la derecha |
-| responde | *¿qué sección estoy viendo?* | *¿qué recorte de esa sección?* |
+| responde | *¿qué sección estoy viendo?* | *¿qué recorte, y qué hago con él?* |
+
+**Las acciones son de la píldora del CUERPO (2026-07-30).** `ViewTabBar` tuvo una
+prop `trailingActions` y se volvió un cajón de sastre: además de acciones de
+verdad ("Nuevo Empleado", "Publicar", "Exportar") guardaba **filtros** —el rango
+de fechas y el tipo de `TabHistory`, el `SegmentedControl` de
+`EmployeeAnnouncementsView`, el selector "Copiar desde…" de `PermissionsView`—.
+O sea que el header terminó filtrando, que es exactamente lo que §17 dice que no
+hace. La prop se retiró: si algo recorta datos o actúa sobre ellos, va a
+`FilterBar`. En el header solo queda navegar y buscar.
 
 **La prop está mal nombrada.** `GlassViewLayout` la llama `filtersContent`, pero
 **22 de las 34 vistas que la usan le pasan un `ViewTabBar`** — o sea pestañas,
@@ -2166,16 +2191,51 @@ a `ViewTabBar`.
 ## 17. Filter Pills — canónico `FilterBar` (2026-07-27)
 
 ```jsx
-<FilterBar onClear={limpiar} activo={hayFiltro}>
-    <FilterBar.Section><LiquidSelect value={suc} onChange={setSuc} options={sucs} /></FilterBar.Section>
-    <FilterBar.Section><PeriodPicker value={rango} onChange={setRango} /></FilterBar.Section>
-    <FilterBar.Section compact><SegmentedControl value={estado} onChange={setEstado} options={estados} /></FilterBar.Section>
+<FilterBar
+    onClear={limpiar}
+    activeCount={n}
+    acciones={[
+        { key: 'nuevo',  icon: Plus,     label: 'Nuevo Empleado', variant: 'primary', onClick: crear },
+        { key: 'export', icon: Download, label: 'Exportar', tone: 'success', onClick: exportar },
+    ]}
+>
+    <FilterBar.Section label="sucursal"><LiquidSelect value={suc} onChange={setSuc} options={sucs} /></FilterBar.Section>
+    <FilterBar.Section label="período"><PeriodPicker value={rango} onChange={setRango} /></FilterBar.Section>
+    <FilterBar.Section label="estado"><SegmentedControl value={estado} onChange={setEstado} options={estados} /></FilterBar.Section>
 </FilterBar>
 ```
 
 **La píldora donde vive TODO el filtro de la vista actual** — fecha, categoría,
-sucursal, estado. No es una decoración: es el lugar único donde el usuario mira
-para saber qué está filtrando y para soltarlo.
+sucursal, estado — **y todas sus acciones**. No es una decoración: es el lugar
+único donde el usuario mira para saber qué está filtrando, para soltarlo y para
+ver qué puede hacer con lo que quedó.
+
+#### Las acciones son DESCRIPTORES, no JSX
+
+`acciones` es un array, no un ReactNode, y eso no es capricho: el mismo botón se
+dibuja de dos maneras muy distintas — `TabBarAction size="sm"` en la píldora de
+escritorio, botón de clúster en la barra flotante táctil. Con JSX suelto la barra
+flotante solo podría re-renderizarlo tal cual, que es como se llegó a tener
+controles de 44px fuera del viewport a 390px.
+
+| campo | qué hace |
+|---|---|
+| `key` `icon` `label` `onClick` | lo obvio |
+| `variant` | `'primary'` (una sola por barra) o `'quiet'` |
+| `tone` | color del ícono en `quiet` |
+| `disabled` | |
+| `activo` | es un interruptor: emite `aria-pressed` y se ve encendido en el clúster |
+| `principal` | fuerza (o niega) el botón grande del clúster táctil. Por defecto lo es el `variant: 'primary'` |
+| `as` `href` `target` `rel` | para la acción que NAVEGA — un enlace tiene que seguir siendo un enlace |
+| `soloEscritorio` | no aparece en el teléfono |
+
+`accionesExtra` es la escotilla ReactNode para lo que no es un botón: un `Badge`
+de estado, un `LiquidSelect` de "copiar desde". Va al final de la píldora y a la
+hoja de acciones en táctil.
+
+**El divisor las separa de los filtros**, y por eso ahora pueden convivir: lo que
+en su día echó a "Publicar" de acá fue que, mezclado entre las ranuras, leía como
+un filtro más.
 
 #### Dónde va — resuelto (2026-07-27)
 
@@ -2219,24 +2279,55 @@ la píldora está a la vista junto con la tabla.
 Un clúster fijo abajo a la derecha con **buscador, acciones y la acción
 principal**, que se esconde al bajar y vuelve al subir.
 
-**No se usa a mano.** En táctil `FilterBar` **es** esta barra — el canónico decide,
-igual que `LiquidSelect` abre `SelectorTactil` solo. Las 22 vistas que ya usan
-`FilterBar` la tienen sin cambiar una línea; las que además quieran el buscador y
-su acción principal ahí, se los pasan a `FilterBar`:
+**No se usa a mano, y no hay que cablearle nada.** En táctil `FilterBar` **es**
+esta barra — el canónico decide, igual que `LiquidSelect` abre `SelectorTactil`
+solo. Los tres elementos aparecen sin que la vista escriba una línea:
 
-```jsx
-<FilterBar
-    activeCount={n} onClear={limpiar} title="Filtros del conteo"
-    buscador={{ value: q, onChange: setQ, placeholder: 'Producto o lote' }}
-    accionPrincipal={{ icon: Plus, label: 'Agregar', onClick: abrir }}
->
-    <FilterBar.Section label="laboratorio">…</FilterBar.Section>
-</FilterBar>
-```
+| elemento | de dónde sale |
+|---|---|
+| buscador | lo publica `ViewTabBar` por el canal de `CanalDeVista.js` |
+| filtros | los `FilterBar.Section` de la propia píldora |
+| acción principal | el `acciones[]` con `variant: 'primary'` |
 
-En escritorio eso no cambia nada: el buscador sigue en `ViewTabBar` y la acción en
-sus `trailingActions`, que es donde §17/§24 los ponen. En un teléfono los tres
-tienen que estar en el mismo lugar y no irse con el scroll.
+**El buscador NO se pasa dos veces.** Hasta el 2026-07-30 había que dárselo
+también a `FilterBar` con `buscador={{…}}`, y de 22 vistas lo hacía **1**. No fue
+descuido: el mismo dato había que escribirlo en dos sitios y la copia que falta no
+se ve rota hasta abrir la vista en un teléfono. En las 5 pestañas de Productos era
+además **imposible** — el estado del buscador vive en `ProductosView` y las
+pestañas solo reciben el término ya rebotado, nunca el setter.
+
+`buscador` sigue existiendo como override explícito, para la vista cuyo buscador
+no sea el del header.
+
+#### `CanalDeVista.js` — el cable entre las dos píldoras
+
+Las dos píldoras son **hermanas**, no una descendiente de la otra:
+`GlassViewLayout` recibe `ViewTabBar` por `filtersContent` y `FilterBar` por
+`children`. Un contexto declarado en cualquiera de las dos no llega a la otra, así
+que el proveedor lo monta `GlassViewLayout`, el único ancestro común. Dos canales,
+en sentidos opuestos:
+
+- **buscador** — `ViewTabBar` publica → `FilterBar` consume.
+- **barra** — `FilterBar` publica → `ViewTabBar` consume, y con eso el header
+  **no dibuja su lupa en táctil**. Dos accesos al mismo buscador, uno de ellos
+  arriba y que se va con el scroll, es peor que uno solo bien puesto.
+
+Sin proveedor (un `FilterBar` dentro de un modal) los hooks devuelven `null` y
+todo se comporta como antes.
+
+Dos trampas del canal, las dos costaron:
+
+- **Un `Map` por publicador, no un `useState`.** `filtersContent` se renderiza
+  DOS VECES en `GlassViewLayout` (rama de escritorio y rama de móvil, y está
+  bien — ahí está documentado por qué), así que hay **dos `ViewTabBar` montados
+  publicando a la vez**. Con un `useState`, desmontar la copia oculta al cruzar
+  el breakpoint borraría lo que publicó la copia viva.
+- **El alta y la baja van en efectos SEPARADOS.** Juntas, en un efecto sin array
+  de dependencias, la limpieza corre en cada render — y borrar del `Map` siempre
+  lo cambia, así que siempre notifica. Con dos canales apuntándose entre sí eso
+  es un bucle cerrado: React #185 ("Maximum update depth exceeded") y la vista
+  entera al ErrorBoundary. La baja lleva deps `[canal, id]` y corre solo al
+  desmontar.
 
 `flotante={false}` vuelve al botón + hoja inline. Hace falta si un `FilterBar`
 vive DENTRO de un modal: la barra va por portal al `body` en capa 40 y quedaría
@@ -2282,11 +2373,48 @@ Tres cosas que costaron y conviene no re-descubrir:
   Glass: las clases dan el color, pero el `backdrop-filter` lo aplica
   `data-surface` en index.css. Es la misma lección que ya estaba escrita en
   `GlassViewLayout`.
-- **Y la superficie es `dropdown`, no `card`.** `card` es 16% en liquid —pensada
-  para algo apoyado en la página— y el nombre del producto **se leía a través del
-  clúster**. `dropdown` es 72% con el mismo blur y el mismo radio. `sheet` (98.5%,
-  la que index.css creó justamente para ese fallo) no sirve acá: **su radio es 0**,
-  porque está pensada para una hoja que llega a los bordes.
+- **El contenedor `fixed` NO se transforma — era el bug del vidrio (2026-07-30).**
+  Animaba su entrada con `translate-y-*`, y un ancestro con `translate` establece
+  un *backdrop root*: el `backdrop-filter` del clúster muestreaba un fondo VACÍO y
+  no difuminaba nada. El usuario lo reportó como *"el liquidglass del filterpill no
+  es liquidglass, no se ve a través de él como el header u otra card"*. Tercera vez
+  que el proyecto se tropieza con esta regla — index.css ya la documenta para el
+  sidebar móvil, con el mismo síntoma medido en un iPhone 13. La animación se movió
+  al elemento que lleva el vidrio: un `transform` **propio** no crea backdrop root,
+  solo uno **ancestro**. Es por eso que el vidrio de `ViewTabBar` sí funciona
+  teniendo `transform-gpu` en el mismo div que su `data-surface`.
+- **Y la superficie es `dropdown`, no `card` — medido, no heredado.** Con el blur
+  ya vivo se compararon las tres superficies existentes sobre la lista de empleados
+  a 390px, con las filas pasando por detrás:
+
+  | | resultado |
+  |---|---|
+  | `card` (16%) | "SALUD 2" se lee ENTERO y cae encima de "ACCIONES". Es vidrio, pero ilegible |
+  | `dropdown` (72%) | lo de atrás queda fantasma, los rótulos del clúster limpios |
+  | `modal` (85%) | ya no deja ver nada; es un panel |
+
+  O sea que `dropdown` era la elección correcta **por la razón equivocada**: se
+  había subido a 72% para compensar un blur que no existía. Con el blur andando el
+  72% es vidrio esmerilado de verdad —se ve el color y el movimiento de la lista a
+  través— y cumple el criterio que index.css ya fija para lo que flota sobre
+  contenido: que lo de atrás sea LUZ, no texto. `sheet` (98.5%) no sirve acá:
+  **su radio es 0**, está pensada para una hoja que llega a los bordes.
+
+  **No agregar una superficie nueva para esto.** La paleta es CERRADA (§6.0).
+- **`transition-transform` va como utilidad de Tailwind.** `dropdown` no declara
+  `transition` propia en index.css, así que la utilidad manda sin pelearse con
+  nada. Y tiene que ser `transition-transform` y no `transition` a secas: en
+  Tailwind v4 esa utilidad cubre `translate` además de `transform` —son
+  propiedades CSS independientes y `translate-y-*` compila a la segunda—, así que
+  sin ella la barra saltaría en vez de deslizarse.
+- **El rótulo del botón va a dos líneas, no `truncate`.** En los 60px de la
+  columna, "NUEVO EMPLEADO" salía "NUEVO E…", y un rótulo cortado a la mitad no
+  dice qué hace el botón — que es justo para lo que está. `line-clamp-2` acota el
+  peor caso.
+- **El clúster no crece sin límite.** A 320px entran tres columnas de 60px y poco
+  más, así que: la principal se dibuja aparte, UNA acción secundaria puede tener su
+  propio botón, y de dos para arriba se agrupan tras un botón "Acciones" que las
+  abre en hoja. Máximo cuatro columnas.
 - **Una sola barra a la vez.** Los tabs de Productos se montan TODOS y se ocultan
   con `hidden`, así que había **tres** clústeres apilados: el portal al `body` los
   saca del subárbol oculto, que es lo que los volvía visibles. `FilterBar` deja un

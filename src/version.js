@@ -16,7 +16,18 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.249.1';
+export const APP_VERSION = '2.249.2';
+
+// v2.249.2 — DESIGN.md al dia con el canonico nuevo.
+//
+// §16.9 (las dos pildoras), §17 (los descriptores de `acciones`), §17.3 (el canal
+// de `CanalDeVista.js`, el bug del `transform` ancestro y la medicion de las tres
+// superficies), §15.5 (`TabBarAction` ya no se instancia a mano, y el tamano `sm`)
+// y la ficha de `ViewTabBar` en §14, que seguia documentando `trailingActions`
+// como prop viva.
+//
+// No es tramite: en este proyecto un doc desactualizado ENSENA la deuda — el
+// snippet viejo de §16.2 se copio 9 veces antes de que alguien lo notara.
 
 // v2.249.1 — la superficie de la barra flotante se MIDIO, y el rotulo dejo de
 // cortarse.

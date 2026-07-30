@@ -16,7 +16,30 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.252.0';
+export const APP_VERSION = '2.252.1';
+
+// v2.252.1 — la pildora de Ventas, de 852 a 609px. Y el ojo se ve.
+//
+// **El icono aplastado era un bug, no un tamano mal elegido.** `soloIcono` se
+// habia implementado como un `className` con `px-0 w-9` desde `FilterBar`, y ese
+// `px-0` **perdia contra el `px-3.5` del tamano**: entre dos utilidades de
+// Tailwind el ganador lo decide el orden de la HOJA DE ESTILOS, no el del
+// atributo `class`. Medido: boton de 36px con 28 de relleno y el SVG en **6×18**
+// en vez de 18×18. Ahora `soloIcono` es una prop que REEMPLAZA el tamano
+// (`w-9 h-9 px-0`) — la misma leccion que `Button` ya tenia escrita para su
+// `iconOnly` — y el icono sube de 14 a 18px, que es la proporcion de un boton
+// sin rotulo. El `<svg>` lleva `shrink-0`: es un elemento flex mas.
+//
+// **El rango de fechas, compacto.** `01/07/2026 → 30/07/2026` eran 23
+// caracteres y ~250px para decir dos dias del mismo mes. El ano se escribe UNA
+// vez y solo si hace falta: dentro del ano en curso no se escribe, en otro ano
+// va corto al final, y en los dos extremos solo si el rango cruza de ano.
+//
+// **Menos aire entre ranuras**: `px-2`→`px-1` en la ranura, `gap-1.5`→`gap-1`
+// y `px-1`→`px-0.5` adentro.
+//
+// Medido en Ventas (la vista con mas ranuras): **852 → 609px**. Personal
+// 778 → 748, Auditoria 812 → 782.
 
 // v2.252.0 — `TONO_POR_ICONO` aplicado a TODO el proyecto.
 //

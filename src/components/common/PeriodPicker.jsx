@@ -69,7 +69,21 @@ function labelFromRange(s, e) {
         return `${MONTHS_SH[+sm - 1]} ${sy} – ${MONTHS_SH[+em - 1]} ${ey}`;
     }
     if (s === e) return formatDisplay(s);
-    return `${formatDisplay(s)} → ${formatDisplay(e)}`;
+
+    // ── El rango suelto, compacto (2026-07-30) ────────────────────────────
+    // Salía `01/07/2026 → 30/07/2026`: 23 caracteres para decir dos días del
+    // mismo mes. Medido en la píldora de Ventas eran ~250px, la ranura más ancha
+    // de la vista con más ranuras del portal.
+    // El año se escribe UNA vez y solo si hace falta: dentro del año en curso no
+    // se escribe (nadie lee "2026" para enterarse de que estamos en 2026); en
+    // otro año va corto y una sola vez al final; y solo si el rango cruza de año
+    // se escribe en los dos extremos, que es cuando de verdad desambigua.
+    const dm = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
+    const yy = (d) => d.slice(2, 4);
+    if (sy !== ey) return `${dm(s)}/${yy(s)} → ${dm(e)}/${yy(e)}`;
+    return sy === String(svNow().y)
+        ? `${dm(s)} → ${dm(e)}`
+        : `${dm(s)} → ${dm(e)}/${yy(e)}`;
 }
 
 // ── Day calendar sub-component ────────────────────────────────────────────────

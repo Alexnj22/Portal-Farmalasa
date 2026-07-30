@@ -1645,6 +1645,22 @@ codificar la ACCIÓN y no el ícono, y eso es correcto: `Eye` + `success` es
 "restaurar sugerencia", `RefreshCw` + `success` es "recontratar", `RotateCcw` +
 `chart-3` es "regenerar con IA" (`chart-3` es el color de IA del portal).
 
+#### `soloIcono` es un TAMAÑO, no una clase de más
+
+`soloIcono` **reemplaza** el tamaño del botón, no lo complementa: pasa a cuadrado
+(`w-9 h-9 px-0` en `sm`) y el ícono crece de 14 a 18px. Los 14 están calibrados
+para ir al lado de un texto —ahí el ícono acompaña—; sin rótulo el ícono ES el
+botón y necesita su proporción.
+
+Es la misma lección que `Button` ya tenía escrita para su `iconOnly`, y volver a
+tropezarla costó: se intentó apagar el relleno con un `px-0` en el `className` del
+llamador y **perdió contra el `px-3.5` del tamaño** — entre dos utilidades de
+Tailwind el ganador lo decide el orden de la hoja de estilos, no el del atributo
+`class`. Resultado medido: un botón de 36px con 28 de relleno y el SVG aplastado
+a **6×18** en vez de 18×18. El usuario lo reportó como "el ícono es demasiado
+pequeño". El `<svg>` lleva además `shrink-0`: es un elemento flex más y se deja
+aplastar.
+
 #### `soloIcono` lleva `LiquidTooltip`, nunca `title`
 
 Un botón sin texto necesita que su rótulo sea **descubrible**, y el `title` del
@@ -2524,6 +2540,24 @@ Tres cosas que costaron y conviene no re-descubrir:
   ancla de 1px en el flujo normal y un `IntersectionObserver` decide — un elemento
   en `display:none` no intersecta, y cambiar de tab no desmonta nada, así que hace
   falta enterarse en los dos sentidos.
+
+### 17.0 El rango de fechas se escribe compacto
+
+`PeriodPicker` mostraba `01/07/2026 → 30/07/2026`: 23 caracteres, ~250px, para
+decir dos días del mismo mes — la ranura más ancha de la vista con más ranuras
+del portal. **El año se escribe una vez y solo si hace falta**: dentro del año en
+curso no se escribe (nadie lee "2026" para enterarse de que estamos en 2026), en
+otro año va corto y una sola vez al final, y solo si el rango cruza de año se
+escribe en los dos extremos — que es cuando de verdad desambigua.
+
+| rango | antes | ahora |
+|---|---|---|
+| dentro del año en curso | `01/07/2026 → 30/07/2026` | `01/07 → 30/07` |
+| otro año | `01/03/2025 → 30/06/2025` | `01/03 → 30/06/25` |
+| cruza de año | `01/12/2025 → 15/01/2026` | `01/12/25 → 15/01/26` |
+
+Los presets siguen ganando: un rango que coincide con "Este mes" o con un mes
+entero se muestra por su nombre, no por sus fechas.
 
 ### 17.1 `PeriodStepper` — correr el período
 

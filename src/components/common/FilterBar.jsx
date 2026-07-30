@@ -114,8 +114,8 @@ const Section = memo(({
   // contenedor de alto automático es indefinido — la ranura se colapsaba a 0.
   // Los 36px son los mismos de antes: 52 = 36 + 8 + 8.
   return (
-    <div className={`flex items-center px-2 min-w-0 ${compacto ? 'h-auto w-full' : 'h-9'} ${className}`}>
-        <div className={`flex items-center gap-1.5 px-1 rounded-btn border transition-[background-color,border-color] duration-200
+    <div className={`flex items-center min-w-0 ${compacto ? 'h-auto w-full px-2' : 'h-9 px-1'} ${className}`}>
+        <div className={`flex items-center gap-1 px-0.5 rounded-btn border transition-[background-color,border-color] duration-200
             ${compacto ? 'min-h-9 h-auto w-full flex-wrap' : 'h-9'}
             ${active ? 'bg-brand/10 border-brand/30' : 'border-transparent'}`}>
             {children}
@@ -493,7 +493,7 @@ const FilterBar = memo(({
             // envolver es mejor que desbordar. Mientras entre en una línea la
             // píldora mide exactamente lo mismo que antes y sigue alineada con
             // el título, que es lo que §17 pedía.
-            className={`inline-flex flex-wrap items-center gap-y-1 min-h-[52px] py-2 px-1 rounded-card border border-border-card
+            className={`inline-flex flex-wrap items-center gap-y-1 min-h-[52px] py-2 px-1.5 rounded-card border border-border-card
                 bg-surface-card shadow-[var(--shadow-glass-1)] max-w-full
                 transition-[border-color,box-shadow] duration-200 ${className}`}
             {...rest}
@@ -512,7 +512,7 @@ const FilterBar = memo(({
             {onClear && activeCount > 1 && (
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-                    <div className="flex items-center h-9 px-2">
+                    <div className="flex items-center h-9 px-1">
                         {/* Ícono solo, a pedido del usuario, para ahorrar
                             espacio. El rótulo se conserva en `title` y
                             `aria-label` con la CUENTA adentro, que es lo que lo
@@ -540,7 +540,7 @@ const FilterBar = memo(({
             {(acciones.length > 0 || accionesExtra) && (
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
-                    <div className="flex items-center gap-1.5 h-9 px-2">
+                    <div className="flex items-center gap-1 h-9 px-1">
                         {acciones.map(a => {
                             // `soloIcono`: el ícono solo. Es para la acción
                             // secundaria y reconocible —ocultar montos, exportar—
@@ -554,7 +554,7 @@ const FilterBar = memo(({
                                     disabled={a.disabled} onClick={a.onClick}
                                     label={a.label}
                                     title={a.soloIcono ? undefined : a.title}
-                                    className={a.soloIcono ? 'px-0 w-9 justify-center' : ''}
+                                    soloIcono={a.soloIcono}
                                     aria-pressed={a.activo != null ? !!a.activo : undefined}>
                                     {a.soloIcono ? null : a.label}
                                 </TabBarAction>

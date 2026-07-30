@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
+import ModalShell from '../../../components/common/ModalShell';
 import Switch from '../../../components/common/Switch';
 import { SkeletonText } from '../../../components/common/StateViews';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
@@ -86,16 +87,14 @@ export default function LabsPanel({ onClose, onChanged }) {
     };
 
     return (
-        <div className="fixed inset-0 z-sidebar flex items-start justify-end p-4 pt-20 pointer-events-none">
-            {/* §11 — la entrada de un panel es `animate-in`, que Tailwind ya
-                trae y que pasa por los DOS gates de movimiento (tema y
-                prefers-reduced-motion). Con framer-motion no pasaba por
-                ninguno: en Solid, donde el movimiento se apaga, este panel
-                seguía entrando con escala. */}
-            <div
-                className="pointer-events-auto w-72 rounded-2xl overflow-hidden flex flex-col
-                    animate-in fade-in slide-in-from-top-2 zoom-in-95 duration-200"
-                style={glass.panel}>
+        // `ModalShell` y no un overlay a mano (2026-07-30): sin scrim, sin
+        // `role="dialog"`, sin Escape y sin atrapar el foco, este panel no era un
+        // diálogo para nadie más que para el ojo. La entrada la anima el canónico,
+        // que ya pasa por los dos gates de movimiento (tema y reduced-motion).
+        <ModalShell open onClose={onClose} align="top" maxWidthClass="max-w-xs"
+            zClass="z-modal" ariaLabel="Laboratorios ocultos en Min/Max"
+            panelClassName="overflow-hidden">
+            <div className="flex flex-col">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b" style={glass.divider}>
@@ -177,6 +176,6 @@ export default function LabsPanel({ onClose, onChanged }) {
                     <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
 }

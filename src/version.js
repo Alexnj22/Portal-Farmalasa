@@ -16,7 +16,30 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.257.0';
+export const APP_VERSION = '2.258.0';
+
+// v2.258.0 — Min/Max: las acciones a la pildora, y sus dos paneles a `ModalShell`.
+//
+// **Cinco controles sueltos al lado de la pildora**, cada uno con su forma: "CSV"
+// con rotulo, dos iconos pelados y DOS botones de calcular. Ahora son `acciones`
+// del canonico: la pildora paso de 553 a **425px** y quedan CERO sueltos.
+//
+// **"Calcular" era dos botones gemelos** —"Todas las sucursales" y "Calcular"—
+// que son la MISMA accion con distinto alcance. Dos botones asi obligan a leerlos
+// enteros para ver en que se diferencian, y el mas destructivo quedaba a un clic
+// sin confirmar cual se apreto. Ahora el alcance se elige DENTRO del modal, que
+// es donde ya se explica que va a pasar. El progreso ("Bayer 3/7") vive en el
+// rotulo de la accion: es la unica senal de que sigue trabajando.
+//
+// **`ConfigPanel` y `LabsPanel` no eran modales**, eran `fixed inset-0` con
+// `pointer-events-none`: sin scrim, sin `role="dialog"`, sin Escape y sin atrapar
+// el foco — o sea que para un lector de pantalla no eran un dialogo, y con el
+// teclado se seguia tabulando por la tabla de atras. Y su `rounded-2xl` era un
+// radio fijo contra el token del tema. Los dos pasan a `ModalShell`.
+//
+// El gate atrapo lo que el build no puede ver: `ConfigPanel` usaba `<ModalShell>`
+// **sin importarlo**. Un componente indefinido en JSX no rompe el build, revienta
+// en runtime al abrirlo.
 
 // v2.257.0 — las tarjetas, todas iguales; y el tooltip dejo de correrse.
 //

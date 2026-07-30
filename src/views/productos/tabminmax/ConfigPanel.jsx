@@ -1,6 +1,7 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState } from 'react';
 import Button from '../../../components/common/Button';
+import ModalShell from '../../../components/common/ModalShell';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
 import { updateStockConfig } from '../../../data/stockParams';
@@ -68,11 +69,15 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-sidebar flex items-start justify-end p-4 pt-20 pointer-events-none">
-            {/* Era `rgba(255,255,255,.88)` fijo: un panel blanco sobre tema
-                oscuro. `data-surface="dropdown"` da fondo, borde y vidrio del
-                tema — es lo que este panel es. */}
-            <div data-surface="dropdown" className="pointer-events-auto w-80 rounded-2xl overflow-hidden">
+        // `ModalShell` y no un overlay a mano (2026-07-30). Este panel se montaba
+        // con `fixed inset-0 … pointer-events-none`: sin scrim, sin `role="dialog"`,
+        // sin Escape y sin atrapar el foco — o sea que para un lector de pantalla
+        // no era un diálogo y con el teclado se seguía tabulando por la tabla de
+        // atrás. Y su `rounded-2xl` era un radio fijo contra el token del tema.
+        <ModalShell open onClose={onClose} align="top" maxWidthClass="max-w-sm"
+            zClass="z-modal" ariaLabel="Configuración de Min/Max"
+            panelClassName="overflow-hidden">
+            <div>
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                     <div className="flex items-center gap-2">
@@ -163,6 +168,6 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     <Button variant="secondary" onClick={onClose}>Cerrar</Button>
                 </div>
             </div>
-        </div>
+        </ModalShell>
     );
 }

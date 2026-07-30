@@ -17,6 +17,7 @@ import FilterBar from '../../components/common/FilterBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import SegmentedControl from '../../components/common/SegmentedControl';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
@@ -338,6 +339,60 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     } = useMinMaxData({ searchTerm, lockedErpId });
 
     // ─── Render ───────────────────────────────────────────────────────────────
+    // ── Las acciones de la vista, en la píldora (§17) ────────────────────
+    // Estaban sueltas al lado: "CSV" con su rótulo, dos íconos pelados que abren
+    // paneles, y DOS botones de calcular —"Todas las sucursales" y "Calcular"—
+    // que son la misma acción con distinto alcance. El alcance ahora se elige
+    // DENTRO del modal de confirmación, que es donde ya se explica qué va a pasar.
+    const exportarCsv = async () => {
+                            let netStockMap = {};
+                            let supplierMap = {};
+                            if (isBodega && filtered.length > 0) {
+                                const ids = filtered.map(r => r.erp_product_id);
+                                // Chunk input by 1000 so each RPC call returns ≤1000 rows (PostgREST cap)
+                                const CHUNK = 1000;
+                                const chunks = [];
+                                for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+                                const [nsResults, spResults] = await Promise.all([
+                                    Promise.all(chunks.map(c => supabase.rpc('get_sucursal_net_stock', { p_product_ids: c }))),
+                                    Promise.all(chunks.map(c => supabase.rpc('get_top_supplier_per_product', { p_product_ids: c }))),
+                                ]);
+                                nsResults.forEach(r => { if (r.data) r.data.forEach(row => { netStockMap[row.erp_product_id] = row.net_stock; }); });
+                                spResults.forEach(r => { if (r.data) r.data.forEach(row => { supplierMap[row.erp_product_id] = row.proveedor; }); });
+                            }
+                            exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap, supplierMap);
+                            };
+
+    const accionesMinMax = [
+        ...(isBodega ? [] : [{
+            key: 'calcular', icon: RefreshCw, variant: 'primary',
+            // El progreso vive en el rótulo: al recalcular TODAS las sucursales
+            // esto dice por cuál va ("Bayer 3/7"), que es la única señal de que
+            // sigue trabajando en una operación que tarda minutos.
+            label: !calculating ? 'Calcular'
+                : calcMode === 'all' && calcProgress
+                    ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}`
+                    : 'Calculando…',
+            disabled: !canManage || calculating || loading,
+            onClick: () => setCalcularConfirm({ open: true, mode: 'single' }),
+        }]),
+        {
+            key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true,
+            disabled: data.length === 0 || loading,
+            onClick: exportarCsv,
+        },
+        {
+            key: 'config', icon: Settings2, label: 'Configurar parámetros', soloIcono: true,
+            disabled: !canManage, activo: configOpen,
+            onClick: () => setConfigOpen(o => !o),
+        },
+        {
+            key: 'labs', icon: FlaskConical, label: 'Laboratorios ocultos', soloIcono: true,
+            disabled: !canManage, activo: labsOpen,
+            onClick: () => setLabsOpen(o => !o),
+        },
+    ];
+
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4 w-full min-w-0">
 
@@ -376,68 +431,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     `motion.button` escritas a mano. Separado en lo que cada cosa
                     es: la barra filtra, los botones actúan. De paso se van cinco
                     usos de framer-motion, que §11 marca como "no agregar más". */}
-                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end ml-auto">
-
-                    <Button variant="ghost" size="sm" icon={Download}
-                        disabled={data.length === 0 || loading} title="Exportar CSV"
-                        onClick={async () => {
-                            let netStockMap = {};
-                            let supplierMap = {};
-                            if (isBodega && filtered.length > 0) {
-                                const ids = filtered.map(r => r.erp_product_id);
-                                // Chunk input by 1000 so each RPC call returns ≤1000 rows (PostgREST cap)
-                                const CHUNK = 1000;
-                                const chunks = [];
-                                for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
-                                const [nsResults, spResults] = await Promise.all([
-                                    Promise.all(chunks.map(c => supabase.rpc('get_sucursal_net_stock', { p_product_ids: c }))),
-                                    Promise.all(chunks.map(c => supabase.rpc('get_top_supplier_per_product', { p_product_ids: c }))),
-                                ]);
-                                nsResults.forEach(r => { if (r.data) r.data.forEach(row => { netStockMap[row.erp_product_id] = row.net_stock; }); });
-                                spResults.forEach(r => { if (r.data) r.data.forEach(row => { supplierMap[row.erp_product_id] = row.proveedor; }); });
-                            }
-                            exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap, supplierMap);
-                        }}>
-                        CSV
-                    </Button>
-
-                    <Button variant="ghost" size="sm" icon={Settings2} iconOnly
-                        disabled={!canManage}
-                        className={configOpen ? 'text-brand-text' : ''}
-                        title={canManage ? 'Configurar parámetros' : 'Necesitas permiso de edición en Min/Max'}
-                        onClick={() => setConfigOpen(o => !o)} />
-
-                    <Button variant="ghost" size="sm" icon={FlaskConical} iconOnly
-                        disabled={!canManage}
-                        className={labsOpen ? 'text-brand-text' : ''}
-                        title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitas permiso de edición en Min/Max'}
-                        onClick={() => setLabsOpen(o => !o)} />
-
-                    {/* Recalcular — oculto en Bodega (se actualiza sola vía trigger) */}
-                    {!isBodega && (
-                        <>
-                            <Button variant="secondary" size="sm" icon={Layers}
-                                loading={calculating && calcMode === 'all'}
-                                disabled={!canManage || calculating || loading}
-                                title="Recalcular todas las sucursales (Bodega se actualiza sola)"
-                                onClick={() => setCalcularConfirm({ open: true, mode: 'all' })}>
-                                {calculating && calcMode === 'all' && calcProgress
-                                    ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}`
-                                    : 'Todas las sucursales'}
-                            </Button>
-
-                            <Button size="sm" icon={RefreshCw}
-                                loading={calculating && calcMode === 'single'}
-                                disabled={!canManage || calculating || loading}
-                                onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}>
-                                {calculating && calcMode === 'single' ? 'Calculando…' : 'Calcular'}
-                            </Button>
-                        </>
-                    )}
+                <div className="flex items-center gap-2 shrink-0 justify-end ml-auto">
 
                     <FilterBar
                         onClear={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
                         activeCount={[filterAbc !== 'all', filterXyz !== 'all'].filter(Boolean).length}
+                        acciones={accionesMinMax}
                     >
                         {!lockedErpId && (
                             <FilterBar.Section label="sucursal">
@@ -1583,10 +1582,31 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 isOpen={calcularConfirm.open}
                 onClose={() => setCalcularConfirm({ open: false, mode: null })}
                 onConfirm={() => { const m = calcularConfirm.mode; setCalcularConfirm({ open: false, mode: null }); m === 'all' ? handleRecalcularAll() : handleRecalcular(); }}
-                title={calcularConfirm.mode === 'all' ? '¿Recalcular todas las sucursales?' : `¿Recalcular ${ERP_NAMES[selectedErp]}?`}
-                message={calcularConfirm.mode === 'all'
-                    ? 'Se generarán nuevos borradores para todas las sucursales. Los borradores existentes no publicados serán reemplazados.'
-                    : `Se generarán nuevos borradores para ${ERP_NAMES[selectedErp]}. Los borradores actuales no publicados serán reemplazados.`}
+                title="¿Recalcular MIN/MAX?"
+                // El ALCANCE se elige acá, no con dos botones distintos afuera.
+                // "Calcular esta sucursal" y "calcular todas" son la misma acción
+                // con distinto alcance: dos botones gemelos obligaban a leerlos
+                // enteros para ver en qué se diferencian, y el destructivo —todas—
+                // quedaba a un clic sin confirmar cuál se había apretado.
+                message={
+                    <div className="flex flex-col gap-3 text-left">
+                        <SegmentedControl
+                            size="sm"
+                            label="Alcance del cálculo"
+                            value={calcularConfirm.mode ?? 'single'}
+                            onChange={m => setCalcularConfirm(c => ({ ...c, mode: m }))}
+                            options={[
+                                { value: 'single', label: ERP_NAMES[selectedErp] },
+                                { value: 'all',    label: 'Todas las sucursales' },
+                            ]}
+                        />
+                        <p className="text-body font-medium leading-relaxed text-content-3">
+                            {calcularConfirm.mode === 'all'
+                                ? 'Se generarán nuevos borradores para todas las sucursales. Los borradores existentes no publicados serán reemplazados.'
+                                : `Se generarán nuevos borradores para ${ERP_NAMES[selectedErp]}. Los borradores actuales no publicados serán reemplazados.`}
+                        </p>
+                    </div>
+                }
                 confirmText="Calcular"
                 cancelText="Cancelar"
                 isDestructive={false}

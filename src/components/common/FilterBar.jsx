@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import Contador from './Contador';
+import BarraFlotante from './BarraFlotante';
 
 /**
  * FilterBar — la píldora donde vive TODO el filtro de la vista actual.
@@ -123,11 +124,24 @@ const FilterBar = memo(({
     // sabe qué cuenta como "aplicado" en su dominio.
     activeCount = 0,
     title = 'Filtros',
-    // `soloEscritorio`: la vista resuelve el móvil con `BarraFlotante`, así que
-    // acá no hay que dibujar el botón + hoja. Sin esto quedarían DOS accesos a
-    // los mismos filtros, y el de la píldora se va con el scroll — que es
-    // justamente lo que la barra flotante vino a arreglar.
-    soloEscritorio = false,
+    // ── En táctil esto ES la barra flotante (2026-07-30) ──────────────────
+    // El canónico decide, no el llamador — igual que `LiquidSelect` abre
+    // `SelectorTactil` solo. Antes cada vista tenía que cablear `BarraFlotante` a
+    // mano y pasarle `soloEscritorio` a su `FilterBar`: dos pasos que se pueden
+    // olvidar, y 22 vistas que se olvidarían.
+    //
+    // `buscador` y `accionPrincipal` son opcionales y solo existen en táctil: en
+    // escritorio el buscador vive en `ViewTabBar` y la acción en sus
+    // `trailingActions`, que es donde §17/§24 los ponen. En un teléfono los tres
+    // tienen que estar en el mismo lugar y no irse con el scroll.
+    buscador = null,
+    accionPrincipal = null,
+    // Escotilla: `false` vuelve al botón + hoja inline. Hace falta si algún día un
+    // `FilterBar` vive DENTRO de un modal — la barra va por portal al `body` en
+    // capa 40 y quedaría detrás del modal (capa 100), invisible. Hoy ninguna lo
+    // hace (verificado: los tres usos en modales son de `FilterBar.Chip`, no del
+    // contenedor), pero el día que pase no se va a descubrir solo.
+    flotante = true,
     className = '',
     ...rest
 }) => {
@@ -152,9 +166,55 @@ const FilterBar = memo(({
         };
     }, [abierto]);
 
-    if (compacto && soloEscritorio) return null;
+    // ── Táctil: la barra flotante ─────────────────────────────────────────
+    if (compacto && flotante) {
+        return (
+            <BarraCtx.Provider value={{ compacto: true }}>
+                <BarraFlotante
+                    ariaLabel={`${title} y acciones`}
+                    buscador={buscador}
+                    principal={accionPrincipal}
+                    acciones={secciones.length ? [{
+                        key: 'filtros',
+                        icon: SlidersHorizontal,
+                        // El rótulo del botón es corto y fijo: `title` puede ser
+                        // "Filtros del conteo" y en una columna de 60px se corta
+                        // ("FILTROS …"). El título largo se usa donde hay lugar, que
+                        // es el encabezado de la hoja.
+                        label: 'Filtros',
+                        tituloPanel: title,
+                        badge: activeCount,
+                        panel: (
+                            <div className="flex flex-col gap-4">
+                                {secciones.map((s, i) => (
+                                    // El rótulo de la ranura pasa a ser encabezado: la vista
+                                    // ya lo declara para el aria del botón de limpiar, y en
+                                    // la hoja apilada hace falta saber qué es cada control.
+                                    <div key={i} className="flex flex-col gap-1.5">
+                                        {s.props?.label && (
+                                            <span className="text-caption font-black uppercase tracking-widest text-content-3">
+                                                {s.props.label}
+                                            </span>
+                                        )}
+                                        <div className="[&_*]:!max-w-full">{s}</div>
+                                    </div>
+                                ))}
+                                {onClear && activeCount > 0 && (
+                                    <button type="button" onClick={onClear}
+                                        className="h-11 rounded-btn bg-danger/12 ring-1 ring-inset ring-danger/30
+                                            text-danger-text text-caption font-black uppercase tracking-widest">
+                                        Limpiar {activeCount} filtro{activeCount === 1 ? '' : 's'}
+                                    </button>
+                                )}
+                            </div>
+                        ),
+                    }] : []}
+                />
+            </BarraCtx.Provider>
+        );
+    }
 
-    // ── Móvil: botón + hoja inferior ──────────────────────────────────────
+    // ── Móvil sin flotante: botón + hoja inferior ─────────────────────────
     if (compacto) {
         return (
             <BarraCtx.Provider value={{ compacto: true }}>

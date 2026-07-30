@@ -97,6 +97,13 @@ const BarraFlotante = memo(({
 }) => {
     const compacto = useMediaQuery('(max-width: 719px)');
     const [visible, setVisible] = useState(true);
+    // ¿Este `FilterBar` está realmente en pantalla? Medido el 2026-07-30 en
+    // Productos: sus tabs se montan TODOS y se ocultan con `hidden`, así que había
+    // **tres** clústeres apilados uno sobre otro — el portal al `body` los saca del
+    // subárbol oculto, que es justo lo que los hacía visibles. El ancla vive en el
+    // flujo normal, donde sí la alcanza el `display:none` del tab.
+    const [enPantalla, setEnPantalla] = useState(true);
+    const anclaRef = useRef(null);
     const [abierta, setAbierta] = useState(null);   // key de la acción con panel abierto
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
@@ -124,13 +131,33 @@ const BarraFlotante = memo(({
         return () => window.removeEventListener('scroll', alScrollear);
     }, [compacto, autoOcultar]);
 
+    // `IntersectionObserver` y no un chequeo puntual: cambiar de tab no desmonta
+    // nada, solo alterna `display`, así que hace falta enterarse en los dos
+    // sentidos. Un elemento en `display:none` no intersecta, que es la señal.
+    useEffect(() => {
+        const ancla = anclaRef.current;
+        if (!compacto || !ancla) return undefined;
+        const obs = new IntersectionObserver(
+            ([e]) => setEnPantalla(e.isIntersecting || e.boundingClientRect.height > 0),
+            { threshold: 0 },
+        );
+        obs.observe(ancla);
+        return () => obs.disconnect();
+    }, [compacto]);
+
     const abrirBusqueda = useCallback(() => {
         setBuscando(true);
         // El foco va después del render, o el navegador no levanta el teclado.
         setTimeout(() => inputRef.current?.focus(), 60);
     }, []);
 
+    // El ancla se renderiza SIEMPRE en el flujo (1px, invisible): es lo que sabe
+    // si esta instancia está en un tab oculto. Sin ella no hay forma de
+    // distinguir "montado" de "en pantalla".
+    const ancla = <span ref={anclaRef} aria-hidden="true" className="block w-px h-px" />;
+
     if (!compacto) return null;
+    if (!enPantalla) return ancla;
 
     const conTexto = !!buscador?.value;
     const campoAbierto = !!buscador && (buscando || conTexto);
@@ -138,7 +165,37 @@ const BarraFlotante = memo(({
     const rotulos = mostrarRotulos ?? botones > 1;
     const panelAbierto = acciones.find((a) => a.key === abierta && a.panel);
 
-    return createPortal(
+    return (
+        <>
+            {ancla}
+            {createPortal(
+                <BarraPortal
+                    ariaLabel={ariaLabel}
+                    visible={visible || campoAbierto}
+                    campoAbierto={campoAbierto}
+                    conTexto={conTexto}
+                    buscador={buscador}
+                    inputRef={inputRef}
+                    setBuscando={setBuscando}
+                    abrirBusqueda={abrirBusqueda}
+                    acciones={acciones}
+                    principal={principal}
+                    rotulos={rotulos}
+                    setAbierta={setAbierta}
+                    panelAbierto={panelAbierto}
+                />,
+                document.body,
+            )}
+        </>
+    );
+});
+
+/** El árbol que va al `body`. Separado solo para que el guard de arriba se lea. */
+const BarraPortal = ({
+    ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
+    abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
+}) => {
+    return (
         <>
             <div
                 role="toolbar"
@@ -153,12 +210,36 @@ const BarraFlotante = memo(({
                     controles no compitan con el texto de la lista que pasa por
                     detrás. `items-start` para que los rótulos queden alineados
                     aunque el botón principal sea más alto. */}
-                {/* Al buscar el clúster toma todo el ancho disponible en vez de
-                    ajustarse a su contenido, así el campo se queda con todo lo que
-                    sobra sin mover ni esconder los otros dos botones. */}
-                <div className={`pointer-events-auto flex items-start gap-1.5 p-1.5
-                    rounded-[1.75rem] bg-surface-card border border-border-card shadow-lg
-                    ${campoAbierto ? 'w-full' : 'max-w-full'}`}>
+                {/* `data-surface="card"` y NO `bg-surface-card border border-border-card`.
+                    Es la lección que este proyecto ya tiene escrita en
+                    GlassViewLayout: el MATERIAL —fondo, borde, sombra, radio y sobre
+                    todo `backdrop-filter`— lo aplica `data-surface` en index.css. Las
+                    clases Tailwind solo dan el color de fondo, así que con
+                    `bg-surface-card` el clúster salía SIN vidrio: translúcido, no glass.
+
+                    Y la superficie es `dropdown`, no `card`. En Liquid Glass `card` es
+                    16% de opacidad, pensada para algo que se apoya en la página; acá el
+                    clúster flota sobre una lista densa y **el nombre del producto se
+                    leía a través de él**. Es el mismo fallo que index.css ya documenta
+                    para las hojas táctiles: "se leían 'Filtros' y los cuatro estados A
+                    TRAVÉS del calendario", con el criterio de elegir "una opacidad donde
+                    lo de atrás es luz, no texto". `dropdown` es 72% con el mismo blur y
+                    el mismo radio, que es la superficie de lo que flota sobre contenido.
+
+                    Se probó `sheet` (98.5%, la que index.css creó para ese fallo) y no
+                    sirve acá: **su radio es 0** —está pensada para una hoja que llega a
+                    los bordes de la pantalla y el llamador le pone el suyo—, así que el
+                    clúster salía rectangular. Con `dropdown` queda un resto de sangrado
+                    del texto de atrás, muy atenuado; se acepta porque lo que tiene que
+                    leerse son los rótulos DEL clúster, y esos quedan nítidos.
+
+                    Al buscar toma todo el ancho en vez de ajustarse al contenido, así
+                    el campo se queda con lo que sobra sin mover los otros dos. */}
+                <div
+                    data-surface="dropdown"
+                    className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
+                        ${campoAbierto ? 'w-full' : 'max-w-full'}`}
+                >
 
                     {buscador && (campoAbierto ? (
                         <div className="flex items-center gap-1.5 h-11 min-w-0 flex-1 px-3
@@ -243,10 +324,9 @@ const BarraFlotante = memo(({
                     </div>
                 </ModalShell>
             )}
-        </>,
-        document.body,
+        </>
     );
-});
+};
 
 /**
  * Un botón del clúster. `principal` lo hace relleno y más grande — es lo que

@@ -39,7 +39,7 @@
 | campo de varias líneas | `PortalTextarea` | §29.2 |
 | desplegable | `LiquidSelect` | §14 · §15.13 |
 | desplegable de lista LARGA en táctil | `SelectorTactil` (lo abre `LiquidSelect` solo) | §14.1 |
-| controles de la vista en táctil | `BarraFlotante` | §17.3 |
+| controles de la vista en táctil | lo hace `FilterBar` solo — `BarraFlotante` no se usa a mano | §17.3 |
 | fecha / rango | `LiquidDatePicker` · `RangeDatePicker` | §14 |
 | barra de vista con buscador | `ViewTabBar` | §24 |
 | vacío · esqueleto · cargando | `StateViews` | §18 |
@@ -2217,17 +2217,31 @@ scroll el filtro y el botón de agregar **dejaron de existir**. Con mouse no pas
 la píldora está a la vista junto con la tabla.
 
 Un clúster fijo abajo a la derecha con **buscador, acciones y la acción
-principal**, que se esconde al bajar y vuelve al subir. La vista le pasa
-`soloEscritorio` a su `FilterBar` para no tener dos accesos a los mismos filtros.
+principal**, que se esconde al bajar y vuelve al subir.
+
+**No se usa a mano.** En táctil `FilterBar` **es** esta barra — el canónico decide,
+igual que `LiquidSelect` abre `SelectorTactil` solo. Las 22 vistas que ya usan
+`FilterBar` la tienen sin cambiar una línea; las que además quieran el buscador y
+su acción principal ahí, se los pasan a `FilterBar`:
 
 ```jsx
-<BarraFlotante
+<FilterBar
+    activeCount={n} onClear={limpiar} title="Filtros del conteo"
     buscador={{ value: q, onChange: setQ, placeholder: 'Producto o lote' }}
-    acciones={[{ key: 'filtros', icon: SlidersHorizontal, label: 'Filtros',
-                 badge: filtrosActivos, tituloPanel: 'Filtrar', panel: <>…</> }]}
-    principal={{ icon: Plus, label: 'Agregar', onClick: abrir }}
-/>
+    accionPrincipal={{ icon: Plus, label: 'Agregar', onClick: abrir }}
+>
+    <FilterBar.Section label="laboratorio">…</FilterBar.Section>
+</FilterBar>
 ```
+
+En escritorio eso no cambia nada: el buscador sigue en `ViewTabBar` y la acción en
+sus `trailingActions`, que es donde §17/§24 los ponen. En un teléfono los tres
+tienen que estar en el mismo lugar y no irse con el scroll.
+
+`flotante={false}` vuelve al botón + hoja inline. Hace falta si un `FilterBar`
+vive DENTRO de un modal: la barra va por portal al `body` en capa 40 y quedaría
+detrás del modal (capa 100). Hoy ninguno lo hace — los tres usos en modales son de
+`FilterBar.Chip`, no del contenedor.
 
 **Elegida sobre cinco anatomías mockupeadas.** Gana por ser la más compacta (94px
 con rótulos, pegada a la derecha) y por lo tanto la que menos lista tapa. Dos
@@ -2263,6 +2277,22 @@ Tres cosas que costaron y conviene no re-descubrir:
   dibuja al segundo su propia ✕ y salían **dos** botones de limpiar, el nativo
   gris y el del portal. Es la regla cero-nativo — el cromo del navegador no se
   estiliza, se evita.
+- **El material sale de `data-surface`, no de clases Tailwind.** Con
+  `bg-surface-card border border-border-card` el clúster salía SIN vidrio en Liquid
+  Glass: las clases dan el color, pero el `backdrop-filter` lo aplica
+  `data-surface` en index.css. Es la misma lección que ya estaba escrita en
+  `GlassViewLayout`.
+- **Y la superficie es `dropdown`, no `card`.** `card` es 16% en liquid —pensada
+  para algo apoyado en la página— y el nombre del producto **se leía a través del
+  clúster**. `dropdown` es 72% con el mismo blur y el mismo radio. `sheet` (98.5%,
+  la que index.css creó justamente para ese fallo) no sirve acá: **su radio es 0**,
+  porque está pensada para una hoja que llega a los bordes.
+- **Una sola barra a la vez.** Los tabs de Productos se montan TODOS y se ocultan
+  con `hidden`, así que había **tres** clústeres apilados: el portal al `body` los
+  saca del subárbol oculto, que es lo que los volvía visibles. `FilterBar` deja un
+  ancla de 1px en el flujo normal y un `IntersectionObserver` decide — un elemento
+  en `display:none` no intersecta, y cambiar de tab no desmonta nada, así que hace
+  falta enterarse en los dos sentidos.
 
 ### 17.1 `PeriodStepper` — correr el período
 

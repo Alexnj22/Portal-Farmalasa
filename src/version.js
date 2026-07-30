@@ -16,7 +16,7 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.247.0';
+export const APP_VERSION = '2.248.0';
 
 // v2.243.0 — F4 de identidad: la rampa de iconos se habia medido MAL, y el trazo
 // tenia 14 valores contra un doc que declaraba uno.

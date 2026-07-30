@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
     Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
-    FileSpreadsheet, Download, SlidersHorizontal,
+    FileSpreadsheet, Download,
 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -34,7 +34,6 @@ import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
-import BarraFlotante from '../../components/common/BarraFlotante';
 import Contador from '../../components/common/Contador';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
@@ -1405,7 +1404,16 @@ export default function ConteoDetailView() {
     // Una sola definición de los filtros para los dos sitios donde viven: en el
     // cuerpo con mouse, dentro de la barra flotante con el pulgar.
     const barraFiltros = (
-        <FilterBar activeCount={filtrosActivos} onClear={limpiarFiltros} soloEscritorio>
+        <FilterBar
+            activeCount={filtrosActivos}
+            onClear={limpiarFiltros}
+            title="Filtros del conteo"
+            // En táctil `FilterBar` ES la barra flotante, así que el buscador y la
+            // acción principal se le pasan acá y no se cablean a mano: el canónico
+            // decide dónde van en cada tamaño.
+            buscador={{ value: search, onChange: setSearch, placeholder: 'Producto, laboratorio o lote' }}
+            accionPrincipal={editable && canEdit ? { icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true) } : null}
+        >
             {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
                 sucursal, y cambiarla sería abrir otro conteo. */}
             <FilterBar.Section
@@ -1595,7 +1603,7 @@ export default function ConteoDetailView() {
                     )}
                     </div>
 
-                    {!compacto && barraFiltros}
+                    {barraFiltros}
                 </div>
 
                 {!verSistema && (
@@ -1699,67 +1707,6 @@ export default function ConteoDetailView() {
                     <TablePagination pageSize={PAGE_SIZE} onPageSizeChange={() => {}} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="productos" />
                 )}
             </div>
-
-            {/* Teléfono: el clúster al alcance del pulgar. Buscador, filtros y la
-                acción principal — los tres con rótulo, porque son más de uno. */}
-            {conteo && (
-                <BarraFlotante
-                    ariaLabel="Buscar, filtrar y agregar en el conteo"
-                    buscador={{
-                        value: search,
-                        onChange: setSearch,
-                        placeholder: 'Producto, laboratorio o lote',
-                    }}
-                    acciones={[{
-                        key: 'filtros',
-                        icon: SlidersHorizontal,
-                        label: 'Filtros',
-                        tituloPanel: 'Filtrar el conteo',
-                        badge: filtrosActivos,
-                        panel: (
-                            <div className="flex flex-col gap-4">
-                                <div>
-                                    <span className="text-caption font-black uppercase tracking-widest text-content-3">Laboratorio</span>
-                                    <div className="mt-1.5">
-                                        <LiquidSelect
-                                            value={laboratorioId == null ? null : String(laboratorioId)}
-                                            onChange={(v) => setLaboratorioId(v == null ? null : Number(v))}
-                                            options={labOpciones}
-                                            placeholder="Todos los laboratorios"
-                                            ariaLabel="Filtrar por laboratorio"
-                                            icon={FlaskConical}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <span className="text-caption font-black uppercase tracking-widest text-content-3">Estado del renglón</span>
-                                    <div className="mt-1.5">
-                                        <SegmentedControl
-                                            label="Filtrar los renglones"
-                                            tone="chart-9"
-                                            value={filtro}
-                                            onChange={setFiltro}
-                                            layout="block"
-                                            columns={2}
-                                            options={FILTRO_PILLS
-                                                .filter((f) => verSistema || !f.soloConSistema)
-                                                .map((f) => ({ value: f.key, label: f.label }))}
-                                        />
-                                    </div>
-                                </div>
-                                {filtrosActivos > 0 && (
-                                    <Button variant="secondary" icon={X} onClick={limpiarFiltros}>
-                                        Limpiar {filtrosActivos} filtro{filtrosActivos === 1 ? '' : 's'}
-                                    </Button>
-                                )}
-                            </div>
-                        ),
-                    }]}
-                    principal={editable && canEdit ? {
-                        icon: Plus, label: 'Agregar', onClick: () => setShowAddForm(true),
-                    } : null}
-                />
-            )}
 
             {/* El alta en hoja inferior, el mismo material que la de filtros: en
                 teléfono el formulario inline empujaba la lista tres pantallas hacia

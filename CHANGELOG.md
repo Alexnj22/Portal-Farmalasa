@@ -12,6 +12,62 @@ retomar; acá está todo.
 
 ---
 
+## v2.248.0 — si es el canónico del filtro, las 22 vistas deberían tenerlo sin cablear nada.
+
+Observación del usuario, y tenía razón: `BarraFlotante` había quedado como una
+pieza que cada vista tenía que armar a mano y además pasarle `soloEscritorio` a su
+`FilterBar`. Dos pasos que se pueden olvidar, y 22 vistas que se olvidarían.
+
+**Ahora en táctil `FilterBar` ES la barra flotante.** El canónico decide, igual que
+`LiquidSelect` abre `SelectorTactil` solo. Las 22 vistas que ya usaban `FilterBar`
+la tienen sin cambiar una línea; el conteo pasó de cablearla a pasarle dos props.
+En escritorio no cambia nada.
+
+### Tres defectos que encontró la verificación, no la lectura
+
+**Productos mostraba TRES barras apiladas.** Sus tabs se montan todos y se ocultan
+con `hidden`, así que cada `FilterBar` oculto igual portaleaba su clúster al
+`body` — y el portal es precisamente lo que los saca del subárbol oculto y los
+vuelve visibles. Se resuelve con un ancla de 1px en el flujo normal y un
+`IntersectionObserver`: un elemento en `display:none` no intersecta. Observer y no
+un chequeo puntual porque cambiar de tab no desmonta nada, solo alterna `display`,
+así que hay que enterarse en los dos sentidos.
+
+**En Liquid Glass el clúster no se veía como vidrio.** Reportado por el usuario.
+Estaba con `bg-surface-card border border-border-card`, y las clases Tailwind dan
+el color pero **el `backdrop-filter` lo aplica `data-surface`** en index.css — es la
+misma lección que ya estaba escrita en `GlassViewLayout`. Con `data-surface` el
+clúster toma fondo, borde, sombra, radio y blur del tema activo.
+
+**Y la superficie correcta es `dropdown`, no `card`.** Al ponerle `card` apareció el
+problema de fondo: 16% de opacidad en liquid es para algo apoyado en la página, y
+acá el nombre del producto **se leía a través del clúster**. Es el mismo fallo que
+index.css ya documenta para las hojas táctiles —"se leían 'Filtros' y los cuatro
+estados A TRAVÉS del calendario"— con el criterio de elegir "una opacidad donde lo
+de atrás es luz, no texto". `dropdown` es 72% con el mismo blur y el mismo radio.
+Se probó `sheet` (98.5%, la que se creó para ese fallo) y **no sirve acá: su radio
+es 0**, porque está pensada para una hoja que llega a los bordes de la pantalla.
+Queda un resto de sangrado muy atenuado, y se acepta: lo que tiene que leerse son
+los rótulos DEL clúster, y esos quedan nítidos.
+
+De paso, el rótulo del botón de filtros pasa a ser corto y fijo ("Filtros"): con
+`title="Filtros del conteo"` se cortaba en la columna de 60px ("FILTROS …"). El
+título largo se usa donde hay lugar, que es el encabezado de la hoja.
+
+### Verificación
+
+Nueve vistas en WebKit con perfil de iPhone a 390px —conteo detalle, conteo lista,
+Ventas, Compras, Productos, Facturación, Personal, Auditoría, Proveedores—: **una
+sola barra en cada una**, dentro del viewport, sin píldora duplicada en el cuerpo y
+sin desborde horizontal. En escritorio a 1440, **ninguna** de las nueve la muestra.
+
+Los cuatro temas, medido sobre el clúster: liquid `rgba(240,248,255,0.72)` radio
+28px con `blur(24px) saturate(1.6)`; dark `rgba(10,15,38,0.88)` igual; solid y
+solid-dark opacos con radio 12px y sin blur — o sea que se ve como las demás
+superficies flotantes de su tema en vez de imponer un número.
+
+---
+
 ## v2.247.0 — `BarraFlotante`: los controles al alcance del pulgar, elegida sobre cinco anatomías.
 
 En el conteo los controles vivían arriba. Con mouse no molesta —la píldora de

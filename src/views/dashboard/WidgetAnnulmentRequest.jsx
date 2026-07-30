@@ -15,6 +15,7 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import { notifyEmployees } from '../../utils/notify';
+import { formatMoney } from '../../utils/formatNumber';
 import { insertApprovalRequestSilent } from '../../data/requests';
 import { fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth } from '../../data/facturacion';
 import { searchCustomersByTokens } from '../../data/customers';
@@ -48,7 +49,15 @@ const AV = {
 };
 
 function svToday() {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/El_Salvador' }));
+  // `en-CA` da `YYYY-MM-DD`: es el idiom para LEER la fecha de una zona, no
+  // formato para el usuario — el mismo que ya usa `useTimeClockEngine.js`.
+  // Antes esto era `toLocaleString('en-US')` reparseado con `new Date()`, que
+  // funcionaba de casualidad (con `es-SV` da Invalid Date). Solo se usan las
+  // partes de fecha del resultado, nunca la hora.
+  const [a, m, d] = new Date()
+    .toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' })
+    .split('-').map(Number);
+  return new Date(a, m - 1, d);
 }
 function daysAgo(dateStr) {
   const invoiceDate = new Date(dateStr + 'T00:00:00');
@@ -63,7 +72,7 @@ function isSameDay(dateStr) {
     today.getMonth() === d.getMonth() &&
     today.getDate() === d.getDate();
 }
-function fmtCurrency(n) { return `$${Number(n ?? 0).toFixed(2)}`; }
+function fmtCurrency(n) { return formatMoney(n ?? 0); }
 function fmtDate(d) {
   if (!d) return '';
   return new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });

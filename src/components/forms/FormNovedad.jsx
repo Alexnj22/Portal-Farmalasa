@@ -18,6 +18,7 @@ import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
 import Badge from '../common/Badge';
 import PortalInput from '../common/PortalInput';
+import { formatMoney } from '../../utils/formatNumber';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
@@ -643,7 +644,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             <div className="grid grid-cols-3 gap-3">
                                 <div data-surface="card" className="bg-surface-card-hover/80 p-3 text-center">
                                     <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Salario Actual</p>
-                                    <p className="text-subtitle font-black text-content-2">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
+                                    <p className="text-subtitle font-black text-content-2">{currentSalary ? formatMoney(currentSalary) : '—'}</p>
                                 </div>
                                 <div data-surface="card" className="bg-surface-card-hover/80 p-3 text-center">
                                     <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Cargo</p>
@@ -667,7 +668,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     /></div>
                                     {diff !== null && !isNaN(diff) && (
                                         <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-label font-black ${diff > 0 ? 'bg-success/10 text-success-text' : diff < 0 ? 'bg-danger/10 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
-                                            {diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {diff > 0 ? '+' : ''}${diff.toFixed(2)}
+                                            {diff > 0 ? '▲' : diff < 0 ? '▼' : '='} {diff > 0 ? '+' : ''}{formatMoney(diff)}
                                         </div>
                                     )}
                                 </div>

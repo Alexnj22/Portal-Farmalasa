@@ -23,6 +23,7 @@ import {
 } from '../data/cotizaciones';
 import { fetchBranchesBasic } from '../data/system';
 import { clickable } from '../utils/clickable';
+import { formatMoney, formatQty } from '../utils/formatNumber';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -54,7 +55,7 @@ const DOC_OPTS = [
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt    = (n) => formatMoney(n || 0);
 const fmtD   = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 const todayStr = () => new Date().toISOString().split('T')[0];
 
@@ -102,7 +103,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
             <td style="padding:7px 5px;text-align:center;color:#6b7280;font-size:12px;">${i + 1}</td>
             <td style="padding:7px 5px;font-size:12px;font-weight:600;">${esc(it.product_nombre)}</td>
             <td style="padding:7px 5px;text-align:center;font-size:11px;color:#374151;">${it.presentacion_desc || '—'}</td>
-            <td style="padding:7px 5px;text-align:center;font-size:12px;">${parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
+            <td style="padding:7px 5px;text-align:center;font-size:12px;">${formatQty(it.cantidad, { decimalesMax: 3 })}</td>
             ${isCCF ? `
             <td style="padding:7px 5px;text-align:right;font-size:11px;">${fmt(dsg.unitSinIva)}</td>
             <td style="padding:7px 5px;text-align:right;font-size:11px;">${fmt(dsg.subtotalSinIva)}</td>
@@ -919,7 +920,7 @@ export default function CotizacionesView() {
                                                 <td className="px-4 py-2.5 text-label font-black text-content-3">{i + 1}</td>
                                                 <td className="px-4 py-2.5 text-body-sm font-bold text-content max-w-[200px] truncate">{it.product_nombre}</td>
                                                 <td className="px-4 py-2.5 text-label text-content-3">{it.presentacion_desc || '—'}</td>
-                                                <td className="px-4 py-2.5 text-center text-body-sm font-bold text-content-2">{parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
+                                                <td className="px-4 py-2.5 text-center text-body-sm font-bold text-content-2">{formatQty(it.cantidad, { decimalesMax: 3 })}</td>
                                                 {isCCF ? (
                                                     <>
                                                         <td className="px-4 py-2.5 text-right text-label text-content-2">{fmt(dsg.unitSinIva)}</td>

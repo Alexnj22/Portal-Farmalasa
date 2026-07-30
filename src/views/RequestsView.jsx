@@ -23,6 +23,7 @@ import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import PortalTextarea from '../components/common/PortalTextarea';
 import ModalShell from '../components/common/ModalShell';
+import { formatMoney } from '../utils/formatNumber';
 
 const CREATABLE_TYPES = [
     { key: 'VACATION',     icon: Palmtree },
@@ -280,7 +281,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <Ban size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">Factura a anular</p>
-                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
                                     {meta.fecha && <p className="text-caption text-warning-text">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
                                 </div>
                                 {meta.tipo_documento && (
@@ -303,7 +304,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <CreditCard size={13} className="text-warning-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-caption font-black uppercase tracking-widest text-warning-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-body-sm font-bold text-warning-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -326,7 +327,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <Receipt size={13} className="text-chart-8-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-caption font-black uppercase tracking-widest text-chart-8-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-chart-8-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-body-sm font-bold text-chart-8-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
@@ -357,7 +358,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <Receipt size={13} className="text-chart-9-text flex-shrink-0" strokeWidth={2} />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-caption font-black uppercase tracking-widest text-chart-9-text mb-0.5">Factura</p>
-                                    <p className="text-body-sm font-bold text-chart-9-text">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    <p className="text-body-sm font-bold text-chart-9-text">{meta.correlativo} · {formatMoney(meta.total || 0)}</p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">

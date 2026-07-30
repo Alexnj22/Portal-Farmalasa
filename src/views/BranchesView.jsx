@@ -450,7 +450,7 @@ const BranchCard = memo(({
                                 )}
                                 <p className="text-caption text-content-2 font-bold uppercase tracking-widest flex items-center gap-1">
                                     {branch.openingDate || branch.opening_date
-                                        ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
+                                        ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}`
                                         : 'Pendiente de apertura'}
                                 </p>
                             </div>

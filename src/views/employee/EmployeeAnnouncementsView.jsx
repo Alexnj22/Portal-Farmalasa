@@ -10,6 +10,7 @@ import GlassViewLayout from '../../components/GlassViewLayout';
 import { smartFilter } from '../../utils/searchUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { clickable } from '../../utils/clickable';
+import { formatMoney } from '../../utils/formatNumber';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin Leer' },
@@ -21,7 +22,7 @@ const REQUEST_DETAIL_ICONS = {
     ADVANCE: DollarSign, CERTIFICATE: FileCheck, DISABILITY: Stethoscope,
 };
 
-const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' }) : null;
+const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' }) : null;
 
 const AnnouncementCard = memo(({ ann, userId, onRead }) => {
     const isRead = (ann.readBy || []).some(r =>
@@ -142,7 +143,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                     {meta.requestType === 'ADVANCE' && meta.amount && (
                         <div className="flex items-center gap-2">
                             <DollarSign size={12} className="text-success flex-shrink-0" strokeWidth={2} />
-                            <span className="text-body-sm font-bold text-content-2">${Number(meta.amount).toLocaleString('es-VE')}</span>
+                            <span className="text-body-sm font-bold text-content-2">{formatMoney(meta.amount)}</span>
                         </div>
                     )}
 
@@ -162,11 +163,11 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
             <div className="flex items-center justify-between pt-1 border-t border-divider">
                 <p className="text-caption font-bold text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
-                    {new Date(ann.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {new Date(ann.date).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {ann.editedAt && (
                         <span className="text-warning flex items-center gap-1">
                             · <Pencil size={9} strokeWidth={2.5} />
-                            editado {new Date(ann.editedAt).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                            editado {new Date(ann.editedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
                         </span>
                     )}
                 </p>
@@ -431,7 +432,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 {badgeEl}
                                 <span className="ml-auto text-caption font-bold text-content-3 flex items-center gap-1 flex-shrink-0">
                                     <Clock size={10} strokeWidth={2}/>
-                                    {new Date(current.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {new Date(current.date).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </span>
                             </div>
 
@@ -505,7 +506,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     {meta.requestType === 'ADVANCE' && meta.amount && (
                                         <div className="flex items-center gap-2">
                                             <DollarSign size={12} className="text-success flex-shrink-0" strokeWidth={2}/>
-                                            <span className="text-body-sm font-bold text-content-2">${Number(meta.amount).toLocaleString('es-VE')}</span>
+                                            <span className="text-body-sm font-bold text-content-2">{formatMoney(meta.amount)}</span>
                                         </div>
                                     )}
                                     {meta.requestType === 'CERTIFICATE' && meta.certificateType && (

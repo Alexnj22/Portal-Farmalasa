@@ -31,6 +31,7 @@ import OfflineBanner from '../common/OfflineBanner';
 import ThemeMigrationRibbon, { RIBBON_HEIGHT } from '../common/ThemeMigrationRibbon';
 import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
+import { prefetchRuta } from '../../constants/routeImporters';
 import { webpSignedUrl } from '../../utils/storageFiles';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
@@ -545,7 +546,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 to={path}
                 ref={(!indent || isExpanded) ? (el => { if (el) itemRefs.current.set(pathSeg, el); else itemRefs.current.delete(pathSeg); }) : null}
                 onClick={() => { if (isMobile) setIsSidebarOpen(false); setFlyout(null); }}
-                onMouseEnter={handleMouseEnter}
+                // Prefetch al pasar el mouse: dispara el import() de la vista antes
+                // del clic. Medido: la 1ª entrada a un módulo tardaba 350-850 ms y la
+                // 2ª 60 ms — la diferencia es resolver y evaluar el módulo, que esto
+                // adelanta al momento en que el mouse llega al ítem. En táctil no hay
+                // hover, por eso también va en onFocus (teclado) y onTouchStart.
+                onMouseEnter={(e) => { prefetchRuta(path); handleMouseEnter(e); }}
+                onFocus={() => prefetchRuta(path)}
+                onTouchStart={() => prefetchRuta(path)}
                 onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={!isExpanded ? label : undefined}

@@ -3,6 +3,7 @@
 
 // Normalize legacy demand_variability values → X/Y/Z
 export const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
+import { formatMoneyCorto } from '../../../utils/formatNumber';
 
 // Traduce el error crudo de Postgres a algo que se pueda leer. Vive acá y no
 // dentro del hook porque las solicitudes (TabMinMaxRequests) muestran los
@@ -51,13 +52,7 @@ export function hasDispatchRisk(maxValue, dispatchPresFactor, dispatchMultiplo) 
     return rounded === 0;
 }
 
-export function fmtMoney(n) {
-    const v = Number(n) || 0;
-    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-    if (v >= 100_000)   return `$${Math.round(v / 1000)}k`;
-    if (v >= 1_000)     return `$${(v / 1000).toFixed(1)}k`;
-    return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+export const fmtMoney = (n) => formatMoneyCorto(n ?? 0);
 
 export function sortedPres(presentations) {
     return [...new Map((presentations || []).map(p => [p.factor, p])).values()]

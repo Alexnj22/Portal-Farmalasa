@@ -3,6 +3,7 @@ import {
     fetchConteosInventario as fetchConteosInventarioData, fetchConteoDetalle as fetchConteoDetalleData,
 } from '../../data/conteoInventario';
 import { signPhotosDeep } from '../../utils/storageFiles';
+import { formatMoney } from '../../utils/formatNumber';
 
 // Las RPCs del módulo levantan códigos, no frases. Sin esta traducción el
 // usuario veía el identificador crudo de Postgres en el toast.
@@ -97,15 +98,51 @@ export const createConteoInventarioSlice = (set, get) => ({
     // Paginación por PRODUCTO (no por fila) — así un producto con muchos
     // lotes nunca se parte entre dos páginas y el total agregado por
     // producto (sistema/físico/diferencia) siempre es exacto.
-    fetchConteoProductsPage: async (conteoId, { page = 1, pageSize = 25, search = '', filtro = 'TODOS' } = {}) => {
+    //
+    // Laboratorio y orden van al SERVIDOR por la misma razón que la paginación:
+    // ordenar o filtrar las 25 filas que ya llegaron da un resultado que parece
+    // correcto sobre un conteo de 2,500 renglones y no lo es. El servidor
+    // además ignora el orden por sistema/diferencia en un conteo ciego — la
+    // lista ordenada por el número tapado lo revela igual.
+    fetchConteoProductsPage: async (conteoId, {
+        page = 1, pageSize = 25, search = '', filtro = 'TODOS',
+        laboratorioId = null, orderBy = null, orderDir = 'asc',
+    } = {}) => {
         const from = (page - 1) * pageSize;
         const [{ data: count, error: countErr }, { data: rows, error: rowsErr }] = await Promise.all([
-            supabase.rpc('get_conteo_products_count', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro }),
-            supabase.rpc('get_conteo_products_page', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro, p_limit: pageSize, p_offset: from }),
+            supabase.rpc('get_conteo_products_count', {
+                p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
+                p_laboratorio_id: laboratorioId,
+            }),
+            supabase.rpc('get_conteo_products_page', {
+                p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro,
+                p_limit: pageSize, p_offset: from,
+                p_laboratorio_id: laboratorioId, p_order_by: orderBy, p_order_dir: orderDir,
+            }),
         ]);
         if (countErr) throw countErr;
         if (rowsErr) throw rowsErr;
         return { rows: rows || [], total: count || 0 };
+    },
+
+    // Solo los laboratorios que están EN ESTE conteo. El catálogo completo son
+    // 1,100+: ofrecerlos todos deja elegir uno que no está en el anaquel y
+    // vaciar la tabla sin explicación.
+    fetchConteoLaboratorios: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_laboratorios', { p_conteo_id: conteoId });
+        if (error) throw error;
+        return data || [];
+    },
+
+    // Totales de TODO el conteo, en vivo. Los de `conteos_inventario` los
+    // escribe recalcular_totales_conteo, que solo corre al finalizar: mientras
+    // el conteo está abierto valen 0, que es justo cuando sirve saber cuánto
+    // falta. Los agregados de fetchConteoProductsPage son de la página (25 de
+    // 1,457 productos), así que tampoco servían.
+    fetchConteoResumen: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_resumen', { p_conteo_id: conteoId });
+        if (error) throw error;
+        return data || null;
     },
 
     // Líneas (lote/presentación) de UN producto dentro del conteo — se piden
@@ -247,7 +284,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             timeline_title: 'Conteo de inventario finalizado',
             dimension: 'OPERATIVE',
             branch_id: detalle?.branch_id,
-            new_value: `${data.total_diferencias} diferencia(s) — faltante $${Number(data.valor_faltante).toFixed(2)} · sobrante $${Number(data.valor_sobrante).toFixed(2)}${trato}`,
+            new_value: `${data.total_diferencias} diferencia(s) — faltante ${formatMoney(data.valor_faltante)} · sobrante ${formatMoney(data.valor_sobrante)}${trato}`,
         });
 
         return data;

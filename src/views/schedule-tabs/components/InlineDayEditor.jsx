@@ -324,7 +324,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className="min-w-0">
                             <p className="text-body font-black text-content truncate leading-tight">{employee?.name || '—'}</p>
                             <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">
-                                {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}{' '}
+                                {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}{' '}
                                 <span className="text-content-3 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
                             </p>
                         </div>

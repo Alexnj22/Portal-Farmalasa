@@ -129,7 +129,7 @@ const TimeClockView = ({ setView }) => {
   ]);
 
   const now = time || new Date();
-  const timeStr  = now.toLocaleTimeString('en-US',  { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const timeStr  = now.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const dateStr  = now.toLocaleDateString('es-SV',  { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (

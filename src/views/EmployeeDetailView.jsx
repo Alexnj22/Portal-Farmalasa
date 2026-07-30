@@ -748,7 +748,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="flex items-center justify-between mb-3">
                                                 <Button tone="chart-1" size="xs" icon={ChevronLeft} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }} />
                                                 <span className="text-body font-black text-content-2 capitalize">
-                                                    {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
+                                                    {ausenciasCalMonth.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}
                                                 </span>
                                                 <Button tone="chart-1" size="xs" icon={ChevronRight} iconOnly onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }} />
                                             </div>
@@ -1070,7 +1070,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 </div>
                                                                 {req.note && <p className="text-body-sm text-content-2 line-clamp-2">{req.note}</p>}
                                                                 {req.approver_note && <p className="text-label text-content-3 mt-1 italic">Nota: {req.approver_note}</p>}
-                                                                <p className="text-caption text-content-3 mt-1">{new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                                                <p className="text-caption text-content-3 mt-1">{new Date(req.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                             </div>
                                                         </div>
                                                     );

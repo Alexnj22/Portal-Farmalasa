@@ -15,6 +15,7 @@ import {
     fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
     fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
 } from '../data/compras';
+import { formatMoney, formatQty } from '../utils/formatNumber';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -48,10 +49,8 @@ const PRODUCTO_COLS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const fmt$ = (n) =>
-    `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const fmtNum = (n) =>
-    parseFloat(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const fmt$ = (n) => formatMoney(n || 0);
+const fmtNum = (n) => formatQty(n || 0, { decimalesMax: 2 });
 const fmtDate = (d) => {
     if (!d) return '—';
     const [y, m, day] = d.split('-');

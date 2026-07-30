@@ -11,6 +11,7 @@ import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
+import { formatMoney } from '../utils/formatNumber';
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
 // 'CERRADO'. Las claves bg/text/border tampoco: solo se usaba `variante`, que es
@@ -40,7 +41,7 @@ const fmtDate = (iso) => {
     const d = new Date(iso);
     return d.toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
 };
-const fmtMoney = (n) => n == null ? '—' : `$${Number(n).toFixed(2)}`;
+const fmtMoney = (n) => formatMoney(n);
 
 export default function ConteoInventarioView() {
     const navigate = useNavigate();

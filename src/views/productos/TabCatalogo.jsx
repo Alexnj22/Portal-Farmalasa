@@ -19,6 +19,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 import { normSearch } from '../../utils/searchUtils';
+import { formatMoney } from '../../utils/formatNumber';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -54,7 +55,7 @@ const CHANGELOG_HIDDEN = new Set(['laboratorio_id']);
 
 function fmtP(v) {
     if (v == null || v === '' || parseFloat(v) === 0) return '—';
-    return `$${parseFloat(v).toFixed(2)}`;
+    return formatMoney(v);
 }
 
 function calcMargin(price, costo) {

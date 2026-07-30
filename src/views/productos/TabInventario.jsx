@@ -18,6 +18,7 @@ import {
 } from '../../data/inventarioTab';
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import { useToastStore } from '../../store/toastStore';
+import { formatMoney } from '../../utils/formatNumber';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -290,7 +291,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <StatCard
                         icon={DollarSign} iconBg="bg-success/10" iconCls="text-success-text"
                         label="Inversión" sub="costo sin IVA"
-                        value={loading ? '–' : `$${inversionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        value={loading ? '–' : formatMoney(inversionTotal)}
                         valueCls="text-success-text"
                     />
 

@@ -9,6 +9,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 // 🚀 IMPORTANTE: Importamos el parser robusto que usamos en el otro componente
 import { timeToMins } from '../../utils/scheduleHelpers';
 import { AiThinkingState } from '../common/StateViews';
+import { formatMoney } from '../../utils/formatNumber';
 
 const DAYS_MAP = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo' };
 const DAYS_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -252,7 +253,7 @@ const FormWfmAnalytics = ({ branches }) => {
                         </p>
                         <p className="text-body font-bold flex items-center gap-2.5">
                             <DollarSign size={16} className="text-success" /> 
-                            ${data.avgSales.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} 
+                            {formatMoney(data.avgSales)} 
                         </p>
                     </div>
 

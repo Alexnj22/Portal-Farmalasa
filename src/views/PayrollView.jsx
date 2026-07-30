@@ -9,6 +9,7 @@ import {
 import { fetchUnapprovedTimesheetsCount } from '../data/payroll';
 import { useStaffStore } from '../store/staffStore';
 import { smartFilter } from '../utils/searchUtils';
+import { formatMoney } from '../utils/formatNumber';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -21,7 +22,7 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
+const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
 // Role hierarchy by DB id — lower index = more senior

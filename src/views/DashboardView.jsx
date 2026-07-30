@@ -38,6 +38,7 @@ import {
     fetchBranchHourlySalesRange, fetchRecentCotizaciones, fetchTodayInvoicesSummary,
 } from '../data/dashboard';
 import { clickable } from '../utils/clickable';
+import { formatMoney } from '../utils/formatNumber';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -348,7 +349,7 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
         aria-expanded={open}
         className="capitalize min-w-[120px]"
         onClick={openPicker}>
-        {value.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
+        {value.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}
       </Button>
       {open && createPortal(
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
@@ -1037,13 +1038,13 @@ const DashboardView = ({ openModal }) => {
 
   const trendData = useMemo(()=>{
     const base=new Date(); base.setDate(base.getDate()+trendOffset*7);
-    return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); trendEmployees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
+    return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); trendEmployees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es-SV',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
   },[trendEmployees,trendOffset]);
 
   const trendRangeLabel = useMemo(()=>{
     const base=new Date(); base.setDate(base.getDate()+trendOffset*7);
     const start=new Date(base); start.setDate(start.getDate()-6);
-    const fmt=d=>d.toLocaleDateString('es',{day:'numeric',month:'short'});
+    const fmt=d=>d.toLocaleDateString('es-SV',{day:'numeric',month:'short'});
     return `${fmt(start)} – ${fmt(base)}`;
   },[trendOffset]);
 
@@ -1397,7 +1398,7 @@ const DashboardView = ({ openModal }) => {
       const aV=dH.map(h=>hourMap[h]).filter(v=>v>0).sort((a,b)=>a-b);
       const maxV=aV[aV.length-1]??1;
       const bC=v=>{if(!v)return'var(--txvol-muerta)'; if(v>18)return'var(--txvol-critica)'; if(v>12)return'var(--txvol-pico)'; if(v>4)return'var(--txvol-normal)'; return'var(--txvol-muerta)';};
-      const fS=v=>v>0?`$${v.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}`:null;
+      const fS=v=>v>0?formatMoney(v):null;
       const hourSalesMap=bd?.hourSales||{};
       const nowH=new Date().getHours();
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
@@ -1476,7 +1477,7 @@ const DashboardView = ({ openModal }) => {
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
-                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
+                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}`}</p></div>
                     <Badge variant={cfg.variante} size="sm">{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</Badge>
                   </div>
                 );
@@ -1524,7 +1525,7 @@ const DashboardView = ({ openModal }) => {
                   subtitle={REQUEST_TYPE_LABELS[r.type]||r.type}
                   onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
-                  trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>} />
+                  trailing={<span className="text-caption text-content-3">{new Date(r.created_at).toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</span>} />
               ))}
           </div>
         </WidgetCard>
@@ -1665,7 +1666,7 @@ const DashboardView = ({ openModal }) => {
                   iconClass={a.priority==='URGENT'?'text-danger-text':'text-chart-1-text'}
                   iconBoxClass={a.priority==='URGENT'?'bg-danger/10 border-danger/30':'bg-chart-1/10 border-chart-1/30'}
                   title={a.title}
-                  subtitle={new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}
+                  subtitle={new Date(a.date).toLocaleDateString('es-SV',{day:'2-digit',month:'short',year:'numeric'})}
                   onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className="rounded-none border-x-0 border-t-0 px-5"
                   trailing={a.priority==='URGENT'&&<Badge variant="danger" size="sm" uppercase={false}>URGENTE</Badge>} />
@@ -1735,7 +1736,7 @@ const DashboardView = ({ openModal }) => {
               <div className="space-y-1.5">
                 {displayBirthdays.map((e,i)=>{
                   const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-                  const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
+                  const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es-SV',{month:'short'})}`;
                   const cardCls = e.isToday
                     ? 'bg-brand/5 border-brand/20 shadow-[var(--shadow-glow-brand)]'
                     : e.isTomorrow
@@ -1782,7 +1783,7 @@ const DashboardView = ({ openModal }) => {
     /* ── COTIZACIONES ── */
     if (wid === 'cotizaciones') {
       if (!showWidget('cotizaciones', 'dash_cotizaciones')) return null;
-      const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const fmt = v => formatMoney(v);
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
           action={<Button variant="ghost" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
@@ -1833,7 +1834,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-label font-semibold text-content truncate">{c.customer_name || '—'}</p>
-                    <p className="text-micro text-content-3">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}</p>
+                    <p className="text-micro text-content-3">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es-SV',{day:'2-digit',month:'short'})}</p>
                   </div>
                   <span className="text-label font-black text-content-2 shrink-0">{fmt(c.total)}</span>
                 </div>
@@ -1848,7 +1849,7 @@ const DashboardView = ({ openModal }) => {
     /* ── FACTURACION HOY ── */
     if (wid === 'facturacion') {
       if (!showWidget('facturacion', 'dash_facturacion')) return null;
-      const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const fmt = v => formatMoney(v);
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
           action={<Button variant="ghost" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
@@ -1912,7 +1913,7 @@ const DashboardView = ({ openModal }) => {
     /* ── TOP PRODUCTOS ── */
     if (wid === 'top_productos') {
       if (!showWidget('top_productos', 'dash_top_productos')) return null;
-      const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      const fmt = v => formatMoney(v, { decimales: 0 });
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
@@ -2180,9 +2181,9 @@ const DashboardView = ({ openModal }) => {
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="#0052CC" sub="últ. 30 días" onClick={() => navigate('/cotizaciones')}/>
-            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={`$${cotizStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#12B76A" sub="en cotizaciones"/>
+            <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="#12B76A" sub="en cotizaciones"/>
             <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="#6929C4" sub={factStats.count===1?'documento':'documentos'} onClick={() => navigate('/facturacion')}/>
-            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={`$${factStats.total.toLocaleString('es',{minimumFractionDigits:0,maximumFractionDigits:0})}`} color="#F79009" sub="total del día"/>
+            <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="#F79009" sub="total del día"/>
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (

@@ -6,7 +6,7 @@ const SU_ROLES = ['JEFE', 'SUBJEFE'];
 
 const formatTime = (dateObj) => {
   if (!dateObj) return '--:--';
-  return new Date(dateObj).toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return new Date(dateObj).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 const AuthPromptPanel = ({

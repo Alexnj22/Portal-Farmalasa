@@ -695,7 +695,7 @@ const ScheduleCalendar = memo(({
             const dNum = new Date(date + 'T00:00:00').getDay();
             const result = coverageByDay[dNum];
             if (result?.copilotAlerts?.length > 0) {
-                const dayName = new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' });
+                const dayName = new Date(date + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' });
                 weeklyCopilotAlerts = [
                     ...weeklyCopilotAlerts,
                     ...result.copilotAlerts.map(a => ({ ...a, msg: `[${dayName.toUpperCase()}] ${a.msg}` }))
@@ -758,7 +758,7 @@ const ScheduleCalendar = memo(({
                                             </div>
 
                                             <div className={`text-micro uppercase font-black tracking-wider mb-0.5 ${dayTextColor}`}>
-                                                {new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}
+                                                {new Date(date + 'T00:00:00').toLocaleDateString('es-SV', { weekday: 'long' })}
                                             </div>
                                             <div className={`text-title font-black leading-none ${headerTextColor}`}>
                                                 {new Date(date + 'T00:00:00').getDate()}

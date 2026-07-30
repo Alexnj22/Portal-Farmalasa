@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recha
 import ChartContainer from '../../components/common/ChartContainer';
 
 import { fetchBranchExpensesHistory } from '../../data/branches';
+import { formatMoney } from '../../utils/formatNumber';
 
 // ============================================================================
 // MOTOR DE ESTADOS FINANCIEROS
@@ -86,7 +87,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             <div className="flex-1 flex items-end justify-between mt-2 relative z-base">
                 <div>
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
-                    <p className="text-lg font-black text-content">${amount ? Number(amount).toFixed(2) : '0.00'}</p>
+                    <p className="text-lg font-black text-content">{formatMoney(amount ?? 0)}</p>
                 </div>
                 <div className="text-right">
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">
@@ -117,7 +118,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                 <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-body-xl font-black text-content flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>
-                    ${payload[0].value.toFixed(2)}
+                    {formatMoney(payload[0].value)}
                 </p>
             </div>
         );
@@ -155,7 +156,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     if (!acc[monthKey]) {
                         const [year, month] = monthKey.split('-');
                         const dateObj = new Date(year, parseInt(month) - 1, 1);
-                        const label = dateObj.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }).replace('.', '').replace(' ', ' ');
+                        const label = dateObj.toLocaleDateString('es-SV', { month: 'short', year: '2-digit' }).replace('.', '').replace(' ', ' ');
                         
                         acc[monthKey] = { name: label.toUpperCase(), total: 0, rawMonth: monthKey };
                     }
@@ -169,7 +170,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                 // Si no hay datos suficientes, rellenamos para que el gráfico no se vea vacío
                 if (chartData.length === 0) {
                      const d = new Date();
-                     const label = d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }).replace('.', '').toUpperCase();
+                     const label = d.toLocaleDateString('es-SV', { month: 'short', year: '2-digit' }).replace('.', '').toUpperCase();
                      chartData = [{ name: label, total: 0 }];
                 }
 
@@ -260,7 +261,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                     <div className="px-4 py-2 bg-success/10 text-success rounded-2xl border border-success/30 shadow-sm flex items-center gap-2 backdrop-blur-md">
                         <DollarSign size={16} strokeWidth={2.5} />
                         <span className="text-label font-black uppercase tracking-widest">Total Operativo Actual</span>
-                        <span className="text-body-lg font-black">${totalMonthlyEst.toFixed(2)}</span>
+                        <span className="text-body-lg font-black">{formatMoney(totalMonthlyEst)}</span>
                     </div>
                 </div>
             </div>

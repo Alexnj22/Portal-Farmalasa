@@ -5,8 +5,9 @@ import { Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
 import { fetchOvertimeBankRows } from '../../data/payroll';
 import NocturnalLegalInfo from '../common/NocturnalLegalInfo';
+import { formatMoney } from '../../utils/formatNumber';
 
-const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
+const fmt    = (n) => formatMoney(n || 0);
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
 
 // `InputLabel` y `glassInput` vivían acá: la etiqueta y el campo de PortalInput

@@ -118,7 +118,7 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
         : (() => { try { return JSON.parse(req.metadata); } catch { return {}; } })();
 
     const dateStr = meta.date
-        ? new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long' })
+        ? new Date(meta.date + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'long', day: '2-digit', month: 'long' })
         : null;
 
     return (
@@ -220,7 +220,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                     </div>
                     <p className="text-caption font-bold text-content-2 uppercase tracking-widest">
-                        {new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {new Date(req.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 </div>
                 {req.status === 'PENDING' && (
@@ -247,7 +247,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                     )}
                                     {meta.date && (
                                         <span className="text-label font-bold text-chart-9-text">
-                                            {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}
+                                            {new Date(meta.date + 'T12:00:00').toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}
                                         </span>
                                     )}
                                 </div>
@@ -276,9 +276,9 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 border border-danger/30">
                                 <Stethoscope size={13} className="text-danger flex-shrink-0" strokeWidth={2} />
                                 <span className="text-body-sm font-bold text-danger-text">
-                                    {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                                    {new Date(meta.startDate + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
                                     {meta.endDate && meta.endDate !== meta.startDate && (
-                                        <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}</>
+                                        <> – {new Date(meta.endDate + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</>
                                     )}
                                     {meta.days && <span className="text-danger font-medium ml-1.5">({meta.days} días)</span>}
                                 </span>
@@ -505,7 +505,7 @@ const EmployeeRequestsView = () => {
 
     // Formatea un período de incapacidad para mostrar en mensajes
     const fmtDisabilityPeriod = (d) => {
-        const fmt = (s) => new Date(s + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+        const fmt = (s) => new Date(s + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
         return `${fmt(d.startDate)} – ${fmt(d.endDate)}`;
     };
 
@@ -637,7 +637,7 @@ const EmployeeRequestsView = () => {
             const blocked = (payload.permissionDates).find(d => disabilityConflict(d));
             if (blocked) {
                 const c = disabilityConflict(blocked);
-                setError(`El día ${new Date(blocked + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })} cae dentro de tu incapacidad activa (${fmtDisabilityPeriod(c)}).`);
+                setError(`El día ${new Date(blocked + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })} cae dentro de tu incapacidad activa (${fmtDisabilityPeriod(c)}).`);
                 return;
             }
         }
@@ -695,7 +695,7 @@ const EmployeeRequestsView = () => {
     // ── Sección específica por tipo ──────────────────────────────────────────
     const renderTypeSection = () => {
         if (formType === 'VACATION') {
-            const fmt = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
+            const fmt = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
             const hasRange = payload.startDate && payload.endDate;
 
             return (
@@ -807,7 +807,7 @@ const EmployeeRequestsView = () => {
                         <div className="flex flex-wrap gap-2">
                             {permDates.map(d => (
                                 <Badge key={d} variant="chart-3" uppercase={false}>
-                                    {new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}
+                                    {new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
                                     <Button variant="ghost" icon={XCircle} iconOnly onClick={() => handleRemovePermDate(d)} />
                                 </Badge>
                             ))}
@@ -959,7 +959,7 @@ const EmployeeRequestsView = () => {
                     {endDate && (
                         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border bg-danger/10 border-danger/30 text-danger-text w-fit text-caption font-black uppercase tracking-widest">
                             <Stethoscope size={11} className="text-danger flex-shrink-0" strokeWidth={2.5} />
-                            <span>Hasta {endDate.toLocaleDateString('es-VE', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
+                            <span>Hasta {endDate.toLocaleDateString('es-SV', { weekday: 'short', day: '2-digit', month: 'short' })}</span>
                         </div>
                     )}
 

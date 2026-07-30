@@ -23,7 +23,7 @@ import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList
 import SegmentedControl from '../../components/common/SegmentedControl';
 
 const formatDate = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
 
 // Tokenizado T7 — mismo criterio que RequestsView.jsx (comparten el mismo
@@ -311,7 +311,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="min-w-0">
                                 <p className="text-micro font-black text-success uppercase tracking-widest">Próximas vacaciones</p>
                                 <p className="text-body-sm font-black text-success-text truncate">
-                                    {new Date(nextVacation.start_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {new Date(nextVacation.start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                                     {nextVacation.status === 'CONFIRMED' && <span className="ml-1.5 text-success font-bold">· Confirmadas</span>}
                                 </p>
                             </div>
@@ -356,7 +356,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div className="space-y-2">
                                 {myVacPlans.map(vp => {
                                     const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
-                                    const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
+                                    const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
                                     const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
                                     return (
                                         <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : ''}`}>

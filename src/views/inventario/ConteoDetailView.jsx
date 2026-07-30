@@ -31,6 +31,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
+import { formatMoney } from '../../utils/formatNumber';
 
 const PAGE_SIZE = 25;
 
@@ -55,26 +56,43 @@ const FILTRO_PILLS = [
 // Las columnas del sistema no se declaran si el conteo es ciego: la RPC ya
 // devuelve NULL ahí, así que una columna "Sistema" llena de ••• sería un hueco
 // que además invita a preguntar por qué está tapada.
+//
+// `sortable` solo donde el orden significa algo: la unidad que el servidor
+// pagina y ordena es el PRODUCTO, no el renglón. Lote, vencimiento y autoría son
+// del renglón —ordenar por ellos tendría que romper los grupos, o sea deshacer
+// justo lo que hace que un producto con 14 lotes no se parta entre dos páginas—.
+// "Estado" ordena por progreso (contados/total), que es lo que esa celda muestra
+// en la banda del producto.
+//
+// Los rótulos son cortos a propósito: el `<th>` es `whitespace-nowrap`, así que
+// una palabra larga no se parte, empuja el ancho de la tabla y termina fuera del
+// marco. "Diferencia" era la que se cortaba ("DIFERENC…"); "Dif." es además lo
+// que ya usa el reporte impreso.
 const columnas = (verSistema) => [
-    { key: 'producto', label: 'Producto' },
-    { key: 'laboratorio', label: 'Laboratorio', hideBelow: 'xl' },
-    { key: 'presentacion', label: 'Presentación', align: 'center', hideBelow: 'lg' },
+    { key: 'producto', label: 'Producto', sortable: true },
+    { key: 'laboratorio', label: 'Laboratorio', hideBelow: 'xl', sortable: true },
+    { key: 'presentacion', label: 'Present.', align: 'center', hideBelow: 'lg' },
     { key: 'lote', label: 'Lote' },
     { key: 'vence', label: 'Vence', align: 'center', hideBelow: 'xl' },
-    { key: 'quien', label: 'Contado por', hideBelow: 'lg' },
-    ...(verSistema ? [{ key: 'sistema', label: 'Sistema', align: 'center' }] : []),
-    { key: 'fisico', label: 'Físico', align: 'center' },
-    ...(verSistema ? [{ key: 'diferencia', label: 'Diferencia', align: 'center' }] : []),
+    { key: 'quien', label: 'Contó', hideBelow: 'lg' },
+    ...(verSistema ? [{ key: 'sistema', label: 'Sistema', align: 'center', sortable: true }] : []),
+    { key: 'fisico', label: 'Físico', align: 'center', sortable: true },
+    ...(verSistema ? [{ key: 'diferencia', label: 'Dif.', align: 'center', sortable: true }] : []),
     { key: 'nota', label: 'Nota', hideBelow: 'xl' },
-    { key: 'estado', label: 'Estado', align: 'center' },
+    { key: 'estado', label: 'Estado', align: 'center', sortable: true },
 ];
+
+// La columna "Estado" ordena por otra cosa que su propia clave: el servidor no
+// sabe de "estado", sabe de progreso. El mapa está acá y no en la RPC para que
+// la lista blanca del servidor siga siendo la de los nombres que él entiende.
+const ORDEN_SERVIDOR = { estado: 'progreso' };
 
 const fmtDate = (iso) => {
     if (!iso) return '—';
     const [y, m, d] = iso.split('-');
     return `${d}/${m}/${y}`;
 };
-const fmtMoney = (n) => (n == null ? '—' : `$${Number(n).toFixed(2)}`);
+const fmtMoney = (n) => formatMoney(n);
 const fmtDateTime = (iso) => {
     if (!iso) return '—';
     return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -1128,34 +1146,43 @@ export default function ConteoDetailView() {
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
             <div className="p-4 md:p-6 lg:p-8 space-y-6">
-                <Button variant="ghost" icon={ChevronLeft} onClick={() => navigate('/conteo-inventario')}>Volver a Conteos</Button>
-
                 {conteo && (
                     <div data-surface="card" className="p-4 md:p-5">
+                        {/* Volver vive acá y no en una fila propia arriba: era un botón
+                            solo en 40px de alto, y el lugar donde uno busca "de dónde
+                            vengo" es junto a de qué sucursal es lo que está mirando.
+                            El rótulo es "Volver" y no "Volver a Conteos" porque el
+                            destino ya lo dice el título de la vista. */}
                         <div className="flex flex-wrap items-start justify-between gap-4">
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <h2 className="text-body-xl font-black text-content">{conteo.branches?.name}</h2>
-                                    <Badge variant={es.variante} size="sm" uppercase={false}>{es.label}</Badge>
+                            <div className="flex items-start gap-2 min-w-0">
+                                <Button variant="ghost" icon={ChevronLeft} onClick={() => navigate('/conteo-inventario')}>Volver</Button>
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h2 className="text-body-xl font-black text-content">{conteo.branches?.name}</h2>
+                                        <Badge variant={es.variante} size="sm" uppercase={false}>{es.label}</Badge>
+                                    </div>
+                                    <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                                 </div>
-                                <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                             </div>
+                            {/* Un botón por documento eran hasta CUATRO ("Imprimir Hoja",
+                                "Imprimir Resultados", "Ajuste para el ERP", "CSV") y
+                                empujaban a Finalizar —la única acción que cambia el estado
+                                del conteo— al final de una fila de secundarios. Ahora:
+                                "Imprimir" y "Finalizar". Con un solo documento disponible
+                                imprime directo; con varios abre el selector, porque elegir
+                                entre cuatro papeles sí merece leerlos. */}
                             <div className="flex flex-wrap items-center gap-2">
-                                <Button variant="secondary" icon={Printer} disabled={printing} onClick={() => handlePrint('hoja')}>Imprimir Hoja</Button>
-                                {hasResults && (
-                                    <Button variant="secondary" icon={Printer} disabled={printing} onClick={() => handlePrint('resultados')}>Imprimir Resultados</Button>
-                                )}
-                                {hasResults && (
-                                    <>
-                                        <Button variant="secondary" icon={FileSpreadsheet} disabled={printing} onClick={() => handlePrint('ajuste')}>Ajuste para el ERP</Button>
-                                        <Button variant="secondary" icon={Download} disabled={printing} onClick={() => handlePrint('ajuste-csv')}>CSV</Button>
-                                    </>
-                                )}
+                                <Button
+                                    variant="secondary" icon={Printer} disabled={printing} loading={printing}
+                                    onClick={() => (documentos.length === 1 ? handlePrint(documentos[0].kind) : setPrintChooserOpen(true))}
+                                >
+                                    Imprimir
+                                </Button>
                                 {canFinalize && (
-                                    <Button disabled={busy} onClick={handleFinalizar}>{busy ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Finalizar Conteo</Button>
+                                    <Button icon={CheckCircle2} disabled={busy} loading={busy} onClick={handleFinalizar}>Finalizar</Button>
                                 )}
                                 {canApproveNow && (
-                                    <Button tone="success" disabled={busy} onClick={handleAprobar}>{busy ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />} Aprobar</Button>
+                                    <Button tone="success" icon={ShieldCheck} disabled={busy} loading={busy} onClick={handleAprobar}>Aprobar</Button>
                                 )}
                             </div>
                         </div>
@@ -1199,47 +1226,29 @@ export default function ConteoDetailView() {
                             </div>
                         )}
 
-                        {hasResults && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                                <div className="bg-surface-card-hover rounded-xl px-3 py-2 text-center">
-                                    <p className="text-body-xl font-black text-content-2 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
-                                    <p className="text-micro uppercase tracking-widest text-content-2 font-bold">Contados</p>
-                                </div>
-                                <div className="bg-warning/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-body-xl font-black text-warning-text tabular-nums">{conteo.total_diferencias ?? 0}</p>
-                                    <p className="text-micro uppercase tracking-widest text-warning font-bold">
-                                        Diferencias{conteo.total_recontados > 0 ? ` · ${conteo.total_recontados} recontadas` : ''}
-                                    </p>
-                                </div>
-                                <div className="bg-danger/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-body-lg font-black text-danger tabular-nums">{fmtMoney(conteo.valor_faltante)}</p>
-                                    <p className="text-micro uppercase tracking-widest text-danger font-bold">Faltante</p>
-                                </div>
-                                <div className="bg-chart-1/10 rounded-xl px-3 py-2 text-center">
-                                    <p className="text-body-lg font-black text-chart-1-text tabular-nums">{fmtMoney(conteo.valor_sobrante)}</p>
-                                    <p className="text-micro uppercase tracking-widest text-chart-1-text font-bold">Sobrante</p>
-                                </div>
-                            </div>
-                        )}
+                        {/* Las tarjetas existían SOLO con el conteo ya finalizado, y
+                            salían de `conteos_inventario.total_*`, que las escribe
+                            recalcular_totales_conteo al cerrar. O sea que durante los
+                            días en que alguien está contando —los únicos en que sirve
+                            saber cuánto falta— la vista no decía nada: había que
+                            paginar 59 páginas para saber si iba por la mitad. Ahora
+                            salen de get_conteo_resumen, que agrega TODO el conteo en
+                            vivo y usa la misma fórmula del dinero, así que al
+                            finalizar el número no cambia de golpe. */}
+                        {resumen && <ResumenCards resumen={resumen} abierto={!hasResults} />}
                     </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <SegmentedControl
-                        label="Filtrar los renglones"
-                        size="sm"
-                        tone="chart-9"
-                        value={filtro}
-                        onChange={setFiltro}
-                        // "Con diferencia" no se ofrece si el conteo es ciego: la
-                        // RPC lo trata como TODOS (filtrar por diferencia señala
-                        // exactamente las líneas que descuadran), así que sería un
-                        // control que no controla — y ofrecerlo ya insinúa que hay
-                        // algo ahí que mirar.
-                        options={FILTRO_PILLS
-                            .filter((f) => verSistema || f.key !== 'DIFERENCIA')
-                            .map((f) => ({ value: f.key, label: f.label }))}
-                    />
+                {/* §17: los filtros de la vista van en UNA píldora, en el cuerpo y a
+                    la derecha. Estaban sueltos —un SegmentedControl a la intemperie—,
+                    que es justo lo que la regla prohíbe: sin contenedor no hay orden de
+                    ranuras, no hay limpiar-todo, y en móvil las opciones se parten en
+                    tres filas y empujan la tabla fuera de la pantalla.
+                    El orden es el del estándar: entidad (laboratorio) antes que estado
+                    (los chips). No hay ranura de sucursal porque un conteo ES de una
+                    sucursal: cambiarla sería abrir otro conteo. */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                     {puedeRecontar && (
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             {/* Entrar al recuento deja la vista en "Con diferencia": es lo
@@ -1258,6 +1267,47 @@ export default function ConteoDetailView() {
                     {editable && canEdit && (
                         <Button tone="chart-9" icon={Plus} onClick={() => setShowAddForm((v) => !v)}>Agregar Producto/Lote</Button>
                     )}
+                    </div>
+
+                    <FilterBar activeCount={filtrosActivos} onClear={limpiarFiltros}>
+                        {/* 2 · entidad — un conteo no tiene ranura de ámbito: ES de una
+                            sucursal, y cambiarla sería abrir otro conteo. */}
+                        <FilterBar.Section
+                            active={laboratorioId != null}
+                            onClear={() => setLaboratorioId(null)}
+                            label="laboratorio"
+                        >
+                            <div className="w-[190px]">
+                                <LiquidSelect
+                                    value={laboratorioId == null ? null : String(laboratorioId)}
+                                    onChange={(v) => setLaboratorioId(v == null ? null : Number(v))}
+                                    options={labOpciones}
+                                    placeholder="Laboratorio"
+                                    ariaLabel="Filtrar por laboratorio"
+                                    icon={FlaskConical}
+                                    compact bare
+                                />
+                            </div>
+                        </FilterBar.Section>
+                        {/* 4 · estado */}
+                        <FilterBar.Section active={filtro !== 'TODOS'} onClear={() => setFiltro('TODOS')} label="estado">
+                            <SegmentedControl
+                                label="Filtrar los renglones"
+                                size="sm"
+                                tone="chart-9"
+                                value={filtro}
+                                onChange={setFiltro}
+                                // "Con diferencia" no se ofrece si el conteo es ciego: la
+                                // RPC lo trata como TODOS (filtrar por diferencia señala
+                                // exactamente las líneas que descuadran), así que sería un
+                                // control que no controla — y ofrecerlo ya insinúa que hay
+                                // algo ahí que mirar.
+                                options={FILTRO_PILLS
+                                    .filter((f) => verSistema || f.key !== 'DIFERENCIA')
+                                    .map((f) => ({ value: f.key, label: f.label }))}
+                            />
+                        </FilterBar.Section>
+                    </FilterBar>
                 </div>
 
                 {!verSistema && (

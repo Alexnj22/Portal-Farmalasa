@@ -53,7 +53,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     const CardIcon = theme.icon;
     const [copiedField, setCopiedField] = useState(null);
 
-    const formatDate = (date) => date ? new Date(date).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
+    const formatDate = (date) => date ? new Date(date).toLocaleDateString('es-SV', { month: 'short', year: 'numeric' }).toUpperCase() : 'N/A';
     const hireDate = employee?.hireDate || employee?.hire_date;
 
     const handleAction = (e, action, value, field) => {
@@ -184,7 +184,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
             nextDate.setDate(nextDate.getDate() + daysPerChunk - 1);
             if (nextDate > end) nextDate = end;
             let chunkEnd = nextDate.toISOString().split('T')[0];
-            let monthName = current.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }).toUpperCase();
+            let monthName = current.toLocaleDateString('es-SV', { month: 'short', year: 'numeric' }).toUpperCase();
             chunks.push({ i: chunkStart, f: chunkEnd, label: monthName });
             current.setDate(current.getDate() + daysPerChunk);
         }

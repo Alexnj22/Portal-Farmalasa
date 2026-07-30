@@ -71,7 +71,7 @@ const CERT_LABELS = {
 };
 
 const fmtDate = (d) => d
-    ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })
     : null;
 
 const parseMeta = (m) =>
@@ -137,7 +137,7 @@ const DocCard = ({ doc }) => {
                     {/* Footer: fecha + archivo */}
                     <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-divider">
                         <p className="text-caption text-content-3 font-medium">
-                            Solicitado el {new Date(doc.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            Solicitado el {new Date(doc.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
 
                         {doc.meta?.docUrl ? (

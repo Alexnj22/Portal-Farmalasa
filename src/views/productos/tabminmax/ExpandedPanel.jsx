@@ -15,6 +15,7 @@ import { sortedPres, formatDominant } from './helpers';
 import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
 import { fetchStockParamsHistory, fetchProductCostHistory } from '../../../data/stockParams';
+import { formatMoney } from '../../../utils/formatNumber';
 
 // 7B.2 — regla (g) de Bodega: la cuenta regresiva es sobre la política en
 // meses, NO el mes de vencimiento — el envío llega ~1 mes después de
@@ -369,7 +370,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="font-bold text-content-2 tabular-nums shrink-0">
                                                             {Number(p.cantidad).toLocaleString()} und
                                                         </span>
-                                                        <span className="text-content-3 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                        <span className="text-content-3 shrink-0">{formatMoney(p.precio_unitario)}</span>
                                                         <span className="text-content-3 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
                                                         {p.lote && p.lote !== 'GENERICO' && (
                                                             <span className="shrink-0 text-micro font-mono text-content-3 bg-surface-card px-1 rounded">{p.lote}</span>
@@ -399,7 +400,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             {Number(s.cantidad).toLocaleString()} und
                                                         </span>
                                                         {s.total_linea > 0 && (
-                                                            <span className="text-content-3 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                            <span className="text-content-3 shrink-0">{formatMoney(s.total_linea)}</span>
                                                         )}
                                                         {s.cliente && (
                                                             <span className="text-content-3 truncate min-w-0 flex-1">{s.cliente}</span>
@@ -469,7 +470,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                         <span className="font-bold text-content-2 tabular-nums shrink-0">
                                                             {Number(p.cantidad).toLocaleString()} und
                                                         </span>
-                                                        <span className="text-content-3 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                        <span className="text-content-3 shrink-0">{formatMoney(p.precio_unitario)}</span>
                                                         <span className="text-content-3 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
                                                         {p.lote && p.lote !== 'GENERICO' && (
                                                             <span className="shrink-0 text-micro font-mono text-content-3 bg-surface-card px-1 rounded">{p.lote}</span>
@@ -496,7 +497,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             {Number(s.cantidad).toLocaleString()} und
                                                         </span>
                                                         {s.total_linea > 0 && (
-                                                            <span className="text-content-3 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                            <span className="text-content-3 shrink-0">{formatMoney(s.total_linea)}</span>
                                                         )}
                                                         {s.cliente && (
                                                             <span className="text-content-3 truncate min-w-0 flex-1">{s.cliente}</span>

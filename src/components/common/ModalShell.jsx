@@ -50,9 +50,29 @@ const visible = (el) => {
  */
 
 // La salida dura menos que la entrada: al cerrar, el usuario ya decidió y
-// esperar la misma animación se siente lento. Sincronizado con el timeout que
-// desmonta — si divergen, el panel se congela visible o desaparece de golpe.
+// esperar la misma animación se siente lento. Es el TOPE de vida del panel tras
+// `open=false`, no la duración de la animación: esa la puede acortar el tema
+// (`[data-theme="solid"] .animate-out { animation-duration: 130ms }`) o
+// `prefers-reduced-motion` (120ms !important), y desde JS no hay forma de
+// saberlo. Por eso la salida ya no depende de que los dos números coincidan
+// —ver `fill-mode-forwards` abajo—: si divergen, no se ve.
 const EXIT_MS = 180;
+
+// Los keyframes `exit` de tw-animate-css son solo `to`, y el shorthand
+// `--animate-out` trae `var(--tw-animation-fill-mode, none)`. Sin declarar el
+// fill-mode, en cuanto la animación TERMINA el elemento vuelve a su estado
+// natural: opacidad 1, sin transform. Y como el tema la acorta a 130ms mientras
+// el desmontaje espera 180ms, quedaba una ventana de ~50ms en la que el modal
+// —ya desvanecido— reaparecía entero y después desaparecía de golpe. Medido el
+// 2026-07-29 sobre el modal de lote: opacidad 1.00 → 0.02 → **1.00** → nodo
+// removido. Eso es lo que se reportaba como "al cerrarlo se abre y cierra dos
+// veces": no había doble montaje (el MutationObserver ve un ADD y un DEL), era
+// este rebote.
+//
+// `fill-mode-forwards` hace que la salida SOSTENGA su último fotograma hasta
+// que el nodo se va, y de paso vuelve inofensiva cualquier divergencia futura
+// entre la duración de la animación y EXIT_MS.
+const HOLD_EXIT = "fill-mode-forwards";
 
 export default function ModalShell({
   open,
@@ -192,14 +212,14 @@ export default function ModalShell({
   // index.css). Los dos gates de movimiento las alcanzan: en Solid duran
   // 130ms lineales y con prefers-reduced-motion pierden la geometría y queda
   // solo el fade.
-  const backdropAnim = open ? "animate-in fade-in duration-500" : "animate-out fade-out duration-150";
+  const backdropAnim = open ? "animate-in fade-in duration-500" : `animate-out fade-out duration-150 ${HOLD_EXIT}`;
   // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
   const esHoja = align === "bottom";
   const panelAnim = open
     ? (esHoja ? "animate-in slide-in-from-bottom duration-300" : "animate-in fade-in zoom-in-95 duration-300")
-    : (esHoja ? "animate-out slide-out-to-bottom duration-200" : "animate-out fade-out zoom-out-95 duration-150");
+    : (esHoja ? `animate-out slide-out-to-bottom duration-200 ${HOLD_EXIT}` : `animate-out fade-out zoom-out-95 duration-150 ${HOLD_EXIT}`);
   const alignCls =
     align === "top"    ? "items-start justify-center pt-[10vh] px-4" :
     align === "bottom" ? "items-end justify-center" :

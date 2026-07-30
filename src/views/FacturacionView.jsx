@@ -25,6 +25,7 @@ import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
 import FileField from '../components/common/FileField';
 import PortalTextarea from '../components/common/PortalTextarea';
+import { formatMoney } from '../utils/formatNumber';
 import {
     fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, updateInvoiceReceivedMh,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
@@ -34,7 +35,7 @@ import {
 } from '../data/facturacion';
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
-const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n) => formatMoney(n || 0);
 const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
 const IMMEDIATE_TIPOS = ['tarjeta', 'transferencia', 'cheque', 'bitcoin'];
 const CREDIT_TIPOS    = ['credito'];

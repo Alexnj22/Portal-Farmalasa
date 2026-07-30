@@ -29,7 +29,7 @@ const DocumentRow = ({ doc }) => {
                 <p className="text-body-sm font-bold text-content truncate">{doc.title || doc.category}</p>
                 {doc.expiry_date && (
                     <p className="text-caption text-content-3 font-medium mt-0.5">
-                        Vence {new Date(doc.expiry_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        Vence {new Date(doc.expiry_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 )}
             </div>

@@ -147,7 +147,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             const date = new Date(item.sortDate);
             const year = date.getFullYear().toString();
             const monthId = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthName = date.toLocaleDateString('es-ES', { month: 'long' }).toUpperCase();
+            const monthName = date.toLocaleDateString('es-SV', { month: 'long' }).toUpperCase();
             if (!groups[year]) groups[year] = { months: {} };
             if (!groups[year].months[monthId]) groups[year].months[monthId] = { name: monthName, events: [] };
             groups[year].months[monthId].events.push(item);
@@ -185,7 +185,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         
         try {
             const compressedHistory = printHistory.map(item => {
-                const date = new Date(item.sortDate).toLocaleDateString('es-ES');
+                const date = new Date(item.sortDate).toLocaleDateString('es-SV');
                 const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
                 return {
                     fecha: date,
@@ -220,8 +220,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         const headers = ['Fecha', 'Hora', 'Acción', 'Descripción', 'Realizado por'];
         const rows = printHistory.map(item => {
             const dateObj = new Date(item.sortDate);
-            const dStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const tStr = (dateObj.getHours() === 0 && dateObj.getMinutes() === 0) ? 'N/A' : dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const dStr = dateObj.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const tStr = (dateObj.getHours() === 0 && dateObj.getMinutes() === 0) ? 'N/A' : dateObj.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
             const action = getActionLabel(item);
             let desc = item.name || 'Registro del Sistema';
             const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
@@ -243,7 +243,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             <div id="print-report-container" className="hidden print:block w-full bg-surface-card text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
                     <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand-text">{liveBranch?.name || 'No especificada'}</span></h2></div>
-                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{new Date().toLocaleDateString('es-ES')}</p></div>
+                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{new Date().toLocaleDateString('es-SV')}</p></div>
                 </div>
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">
@@ -261,7 +261,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             else if (item.action === 'PAGO_REGISTRADO' && parsedDetails.servicio) itemTitle = `Pago ${parsedDetails.servicio} ($${parsedDetails.monto})`;
                             return (
                                 <tr key={idx} className="border-b border-divider break-inside-avoid">
-                                    <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-ES')}</td>
+                                    <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-SV')}</td>
                                     <td className="py-2.5 px-2 text-micro uppercase tracking-widest">{getActionLabel(item)}</td>
                                     <td className="py-2.5 px-2 font-bold text-content">{itemTitle}</td>
                                     <td className="py-2.5 px-2 font-bold text-content-2">{item.isDoc ? 'DOCUMENTO' : (item.user_name || 'SISTEMA')}</td>
@@ -515,8 +515,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                                                             const theme = getThemeForAction(item.action, isDoc, isSynthetic);
 
                                                                             const dateObj = new Date(item.sortDate);
-                                                                            const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase();
-                                                                            const timeStr = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                                                            const dateStr = dateObj.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' }).toUpperCase();
+                                                                            const timeStr = dateObj.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
 
                                                                             let itemTitle = item.name || 'Configuración Modificada';
                                                                             let oldVal = null;

@@ -18,6 +18,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { smartFilter } from '../../utils/searchUtils';
 import { useNowTick } from '../../hooks/useNowTick';
+import { formatMoney, formatMoneyCorto } from '../../utils/formatNumber';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -63,12 +64,7 @@ const MODES = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function fmtMoney(n) {
-    const v = Number(n) || 0;
-    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-    if (v >= 100_000)   return `$${Math.round(v / 1_000)}k`;
-    return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+const fmtMoney = (n) => formatMoneyCorto(n ?? 0);
 
 function getSuggestion(row) {
     const stock  = Number(row.current_stock);
@@ -839,7 +835,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     ? <Badge uppercase={false}>Sin historial</Badge>
                                                     : soldIn.map(s => (
                                                         <Badge key={s.esid} variant={SUC_VARIANTE[s.esid] || 'neutral'} size="sm" uppercase={false}
-                                                            title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
+                                                            title={`${formatMoney(s.rev, { decimales: 0 })} en ingresos`}
                                                             className="cursor-default">
                                                             {ERP_NAMES[s.esid] || `Suc.${s.esid}`}<span className="opacity-50 font-normal">·</span><span className="tabular-nums opacity-80">{Number(s.units).toLocaleString()}</span>
                                                         </Badge>

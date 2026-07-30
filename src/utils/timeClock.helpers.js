@@ -17,7 +17,7 @@ export const buildDateFromTime = (baseDate, timeStr) => {
 export const format12hNoSeconds = (dateObj) => {
   if (!dateObj) return '';
 
-  return new Date(dateObj).toLocaleTimeString('es-ES', {
+  return new Date(dateObj).toLocaleTimeString('es-SV', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,

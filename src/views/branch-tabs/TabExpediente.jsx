@@ -28,7 +28,7 @@ const getDocStatus = (url, expDate) => {
 
 const formatDate = (dateStr) => {
     if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+    return new Date(dateStr).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
 };
 
 // ============================================================================

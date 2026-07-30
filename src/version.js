@@ -16,7 +16,39 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.235.1';
+export const APP_VERSION = '2.236.0';
+
+// v2.236.0 — prefetch del menú: la vista se carga al pasar el mouse, no al hacer clic.
+//
+// Segunda entrega de la tarea de rendimiento, y la parte mas util fue MEDIR bien
+// antes de creerme el resultado:
+//
+//  1. La primera medicion decia 820 ms por navegacion. Falso: ~470 ms de eso era
+//     el propio `click()` de Playwright esperando que el item del menu dejara de
+//     animarse. Con un cronometro DENTRO de la pagina (listener de click real →
+//     MutationObserver del <h2>) la navegacion real es ~350 ms.
+//  2. En localhost el prefetch no mejoraba NADA (351 → 349 ms). Tampoco era
+//     falso: bajar 8 archivos desde el disco local no cuesta. Con 70 ms de
+//     latencia emulada, que es lo que hay contra el CDN de Vercel:
+//         Nomina  (9 chunks)   356 → 337 ms
+//         Personal (22 chunks) 366 → 363 ms
+//         Pedidos (16 chunks) 1947 → 1241 ms   ← -706 ms
+//         media                 890 → 647 ms   (-27%)
+//     O sea: sirve en las vistas pesadas, que son las que se sienten lentas.
+//  3. Verificado que el prefetch corre de verdad: al pasar el mouse por Nomina se
+//     piden 8 archivos JS (incluido PayrollView) y el clic posterior pide CERO.
+//
+// Como esta hecho: los `import()` de las 44 vistas dejan de estar sueltos en cada
+// `lazy()` y viven en constants/routeImporters.js, asi el prefetch reusa
+// exactamente la misma funcion (import() cachea la promesa: pasar el mouse veinte
+// veces no descarga dos). El mapa ruta → vista se genero leyendo las <Route> de
+// App.jsx, no a mano; si una vista se renombra y el mapa queda viejo, el prefetch
+// no encuentra la clave y no hace nada — nunca rompe la navegacion.
+// Va en onMouseEnter, onFocus (teclado) y onTouchStart (en tactil no hay hover).
+//
+// Lo que NO arregla, y queda medido: hay un piso de ~350 ms de React montando la
+// vista que el prefetch no toca — el modulo ya esta resuelto y evaluado. Volver a
+// un modulo ya visitado son 60 ms.
 
 // v2.235.1 — el borrador de una migracion va al scratchpad, no a migrations/.
 //

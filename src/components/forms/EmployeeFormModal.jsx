@@ -21,6 +21,7 @@ import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDE
 import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import FileField from '../common/FileField';
+import { formatMoney } from '../../utils/formatNumber';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -1848,7 +1849,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LockedField label="Área de Trabajo" value={selectedBranch?.name || formData.branch_id} />
                                         <LockedField label="Cargo Principal" value={roles?.find(r => String(r.id) === String(formData.role_id))?.name || formData.role} />
                                         <LockedField label="Cargo Secundario" value={roles?.find(r => String(r.id) === String(formData.secondary_role_id))?.name || formData.secondary_role || 'Sin cargo secundario'} />
-                                        <LockedField label="Fecha de Contratación" value={formData.hire_date ? new Date(formData.hire_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                        <LockedField label="Fecha de Contratación" value={formData.hire_date ? new Date(formData.hire_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
@@ -1919,7 +1920,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
-                                        <LockedField label="Fecha de Inicio de Contrato" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                        <LockedField label="Fecha de Inicio de Contrato" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
                                     </>
                                 ) : (
                                     <>
@@ -1969,7 +1970,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <p className="text-caption font-bold text-content-3 flex items-center gap-1.5"><ShieldCheck size={12} className="text-success" /> Recontratación antes de 1 año: no aplica período de prueba (Art. 28, último párrafo).</p>
                                     ) : probationInfo.inProbation ? (
                                         <p className="text-caption font-bold text-brand-text flex items-center gap-1.5 bg-brand/5 border border-brand/20 rounded-xl px-3 py-2 w-fit">
-                                            <Clock size={12} /> En Período de Prueba — vence el {probationInfo.probationEnd.toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' })} (Art. 28: 30 días desde la fecha de contratación)
+                                            <Clock size={12} /> En Período de Prueba — vence el {probationInfo.probationEnd.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })} (Art. 28: 30 días desde la fecha de contratación)
                                         </p>
                                     ) : null}
                                 </div>
@@ -1986,7 +1987,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
                                 {isEditMode
-                                    ? <LockedField label="Salario Base" value={formData.base_salary ? `$${Number(formData.base_salary).toFixed(2)}` : '—'} />
+                                    ? <LockedField label="Salario Base" value={formData.base_salary ? formatMoney(formData.base_salary) : '—'} />
                                     : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
                             </div>

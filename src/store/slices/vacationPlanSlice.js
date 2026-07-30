@@ -191,7 +191,7 @@ export const createVacationPlanSlice = (set, get) => ({
                 const windowEnd   = new Date(anniversary);
                 windowEnd.setMonth(windowEnd.getMonth() + windowMonths);
                 if (startDate < anniversary || startDate > windowEnd) {
-                    throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los ${windowMonths} meses posteriores al aniversario (${anniversary.toLocaleDateString('es-VE')} — ${windowEnd.toLocaleDateString('es-VE')}).`);
+                    throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los ${windowMonths} meses posteriores al aniversario (${anniversary.toLocaleDateString('es-SV')} — ${windowEnd.toLocaleDateString('es-SV')}).`);
                 }
             }
 
@@ -284,7 +284,7 @@ export const createVacationPlanSlice = (set, get) => ({
                 const plan = get().vacationPlans.find(vp => vp.id === planId);
                 if (plan?.employee_id) {
                     const fmtDate = (d) => d
-                        ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' })
+                        ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })
                         : '—';
                     await notifyEmployees([String(plan.employee_id)], {
                         type: 'REQUEST_DECIDED',

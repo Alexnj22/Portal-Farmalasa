@@ -30,6 +30,7 @@ import {
     findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview,
 } from '../../data/facturasCompra';
 import { clickable } from '../../utils/clickable';
+import { formatMoney } from '../../utils/formatNumber';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -58,7 +59,7 @@ const REVIEW_COLS = [
     { key: 'acciones', label: '',           align: 'center' },
 ];
 
-const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt$ = (n) => formatMoney(n || 0);
 const fmtMB = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 const fmtDate = (d) => {
     if (!d) return '—';

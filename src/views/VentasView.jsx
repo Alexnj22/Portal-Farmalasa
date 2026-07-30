@@ -32,14 +32,15 @@ import {
     fetchProductPreciosDetail, fetchProductPreciosHistory,
 } from '../data/ventas';
 import { clickable } from '../utils/clickable';
+import { formatMoney, formatQty } from '../utils/formatNumber';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
 const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
 
-const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
+const fmt    = (n) => formatMoney(n || 0);
+const fmtNum = (n) => formatQty(parseInt(n || 0));
 const fmtPct = (n) => `${parseFloat(n || 0).toFixed(1)}%`;
 
 const CANCELLED_ESTADOS = ['NULA', 'DTE INVALIDADO EN MH'];

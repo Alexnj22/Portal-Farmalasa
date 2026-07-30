@@ -7,8 +7,9 @@ import { dteTypeLabel } from '../../utils/dteTypes';
 import SegmentedControl from '../common/SegmentedControl';
 import { useToastStore } from '../../store/toastStore';
 import { LoadingState } from '../common/StateViews';
+import { formatMoney } from '../../utils/formatNumber';
 
-const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt$ = (n) => formatMoney(n || 0);
 
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;

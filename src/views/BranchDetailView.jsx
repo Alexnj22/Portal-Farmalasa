@@ -386,7 +386,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             </div>
                             <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">
                                 {(liveBranch?.openingDate || liveBranch?.opening_date)
-                                    ? `Inaugurada en ${new Date(liveBranch.openingDate || liveBranch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
+                                    ? `Inaugurada en ${new Date(liveBranch.openingDate || liveBranch.opening_date).toLocaleDateString('es-SV', { month: 'long', year: 'numeric' })}`
                                     : 'Fecha de inauguración pendiente'}
                             </span>
                         </div>

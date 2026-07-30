@@ -23,6 +23,12 @@ function fmtMoney(n) {
     if (n === null || n === undefined) return '—';
     return `$${Number(n).toFixed(2)}`;
 }
+// Las cifras del sistema llegan en NULL cuando el llamador no tiene
+// `conteo_ver_sistema` (las RPCs las tapan en origen). `String(null)` imprime la
+// palabra "null" en el PDF, que es peor que un guion: parece un dato roto.
+function num(n) {
+    return n === null || n === undefined ? '—' : String(n);
+}
 function sortItems(items) {
     return [...items].sort((a, b) =>
         (a.laboratorio_nombre || '').localeCompare(b.laboratorio_nombre || '', 'es')
@@ -70,8 +76,21 @@ function productCell(item) {
 }
 
 // ── Hoja de conteo en blanco ────────────────────────────────────────────────
-const HOJA_COL_WIDTHS = ['26%', '18%', '11%', '11%', '10%', '24%'];
-const HOJA_LABELS = ['Producto', 'Lote', 'Vence', 'Sistema', 'Físico', 'Nota'];
+// Dos anatomías, no una con un hueco. En conteo ciego la columna Sistema NO
+// EXISTE: antes se imprimía igual con el rótulo y las celdas en blanco, o sea
+// una columna vacía en el papel que además invita a preguntar qué debería ir
+// ahí (y a que alguien lo rellene a mano desde otra pantalla). El ancho que
+// libera se reparte entre Producto y Nota, que es donde se escribe.
+const HOJA_COLS = {
+    normal: {
+        widths: ['26%', '18%', '11%', '11%', '10%', '24%'],
+        labels: ['Producto', 'Lote', 'Vence', 'Sistema', 'Físico', 'Nota'],
+    },
+    ciego: {
+        widths: ['31%', '18%', '11%', '12%', '28%'],
+        labels: ['Producto', 'Lote', 'Vence', 'Físico', 'Nota'],
+    },
+};
 
 // El ERP separa el stock vencido en su propia área: dos filas del mismo
 // producto/lote/fecha que en papel se veían idénticas y nadie sabía cuál era
@@ -82,9 +101,12 @@ function loteCell(item) {
 }
 
 function buildHojaTable(conteo, items, ciego) {
-    const headerRow = HOJA_LABELS.map((label, i) => ({
-        text: (i === 3 && ciego) ? '' : label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
-        alignment: (i === 2 || i === 3) ? 'center' : 'left', margin: [4, 3, 4, 3],
+    const { widths, labels } = ciego ? HOJA_COLS.ciego : HOJA_COLS.normal;
+
+    const headerRow = labels.map((label) => ({
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 7.5, color: '#000',
+        alignment: ['Vence', 'Sistema', 'Físico'].includes(label) ? 'center' : 'left',
+        margin: [4, 3, 4, 3],
     }));
 
     const body = sortItems(items).map((item, idx) => {
@@ -93,16 +115,16 @@ function buildHojaTable(conteo, items, ciego) {
             { ...productCell(item), fillColor: bg },
             { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: fmtFecha(item.fecha_vencimiento), fontSize: 7.5, color: '#333', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
-            ciego
-                ? { text: '', fillColor: bg }
-                : { text: String(item.sistema_cantidad), fontSize: 8.5, bold: true, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: '', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: '', fillColor: bg, margin: [4, 3, 4, 3] },
+            // Sistema: la columna solo se emite si el dato vino. `num()` es la
+            // red de seguridad — un `String(null)` imprime la palabra "null".
+            ...(ciego ? [] : [{ text: num(item.sistema_cantidad), fontSize: 8.5, bold: true, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] }]),
+            { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Físico: se llena a mano
+            { text: '', fillColor: bg, margin: [4, 3, 4, 3] },   // Nota: idem
         ];
     });
 
     return {
-        table: { headerRows: 1, dontBreakRows: true, widths: HOJA_COL_WIDTHS, body: [headerRow, ...body] },
+        table: { headerRows: 1, dontBreakRows: true, widths, body: [headerRow, ...body] },
         layout: {
             hLineWidth: (i, node) => (i === 0 ? 0 : i === 1 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
             vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
@@ -164,7 +186,7 @@ function buildResultadosTable(items) {
         return [
             { ...productCell(item), fillColor: bg },
             { text: loteCell(item), fontSize: 7.5, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: String(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: num(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: fisicoTxt, fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: dif != null ? (dif > 0 ? `+${dif}` : String(dif)) : '—', fontSize: 8.5, bold: true, color: difColor, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: valor != null ? fmtMoney(valor) : '—', fontSize: 7.5, color: difColor, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
@@ -274,8 +296,8 @@ function buildAjusteSection(titulo, color, fill, items) {
             { text: item.presentacion || '—', fontSize: 7, color: '#555', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: loteAjusteCell(item), fontSize: 7, color: '#333', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: fmtFecha(item.fecha_vencimiento), fontSize: 7, color: '#555', fillColor: bg, alignment: 'center', margin: [4, 3, 4, 3] },
-            { text: String(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
-            { text: String(item.fisico_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: num(item.sistema_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
+            { text: num(item.fisico_cantidad), fontSize: 8, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: item.diferencia > 0 ? `+${item.diferencia}` : String(item.diferencia), fontSize: 9, bold: true, color, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
             { text: val != null ? fmtMoney(val) : '—', fontSize: 7.5, color, alignment: 'center', fillColor: bg, margin: [4, 3, 4, 3] },
         ];

@@ -17,7 +17,7 @@ export default function DraftCostCard({ draftCost, isBodega }) {
         : 'Costo de tener el catálogo COMPLETO al nivel MIN → al nivel MAX (usa el borrador si hay uno pendiente). No resta el stock actual — no es "lo que falta comprar", es el rango de inversión total del catálogo configurado.';
     return (
         <div data-surface="card" className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl"
-            title={tooltip}>
+            role="img" title={tooltip}>
             <Target size={13} className={`shrink-0 ${isBodega ? 'text-warning' : 'text-chart-3-text'}`} />
             <div className="flex flex-col leading-snug gap-0.5">
                 <span className="text-caption font-semibold text-content-3">

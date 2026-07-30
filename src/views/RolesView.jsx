@@ -668,7 +668,7 @@ const RolesView = ({ openModal }) => {
 
                                                     <div className="min-w-0 flex-1 pt-1">
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                            <h4 className={`font-black text-body-lg leading-tight transition-colors ${isExternal ? 'text-content-2' : 'text-content'}`} title={role.name}>
+                                                            <h4 className={`font-black text-body-lg leading-tight transition-colors ${isExternal ? 'text-content-2' : 'text-content'}`}>
                                                                 {role.name}
                                                             </h4>
                                                             {isRoot && (

@@ -409,7 +409,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
             <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-semibold text-content-2 truncate flex items-center gap-1.5">
                     {isCofarsal(proveedor.nombre) && (
-                        <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+                        <span role="img" title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
                     )}
                     {proveedor.nombre}
                 </p>

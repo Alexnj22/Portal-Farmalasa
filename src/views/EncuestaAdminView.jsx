@@ -28,6 +28,7 @@ import {
     updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
 } from '../data/encuestas';
 import SearchInput from '../components/common/SearchInput';
+import LiquidTooltip from '../components/common/LiquidTooltip';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
@@ -1136,7 +1137,7 @@ export default function EncuestaAdminView() {
                                                                             <th className="text-left py-2.5 pl-5 pr-3 text-micro font-black uppercase tracking-wider text-content-2">Empleado</th>
                                                                             <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2">Rol</th>
                                                                             {bloques.map(b => (
-                                                                                <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2 cursor-help">B{b.numero}</th>
+                                                                                <th key={b.id} className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2 cursor-help"><LiquidTooltip content={b.nombre || `Bloque ${b.numero}`}>B{b.numero}</LiquidTooltip></th>
                                                                             ))}
                                                                             <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2">Global</th>
                                                                             <th className="py-2.5 w-20 pr-3" />
@@ -1167,11 +1168,11 @@ export default function EncuestaAdminView() {
                                                                                         {bloques.map(b => {
                                                                                             const sc = blockScore(row.responses || [], b.indices || [], invertedIndices);
                                                                                             return (
-                                                                                                <td key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="py-2.5 px-2 text-center cursor-help">
+                                                                                                <td key={b.id} className="py-2.5 px-2 text-center cursor-help"><LiquidTooltip content={b.nombre || `Bloque ${b.numero}`}>
                                                                                                     {sc != null
                                                                                                         ? <Badge variant={scoreVariante(sc)} size="sm" uppercase={false}>{sc}</Badge>
                                                                                                         : <span className="text-content-3 text-caption">—</span>}
-                                                                                                </td>
+                                                                                                </LiquidTooltip></td>
                                                                                             );
                                                                                         })}
                                                                                         <td className="py-2.5 px-2 text-center">
@@ -1276,11 +1277,12 @@ export default function EncuestaAdminView() {
                                                                                                                                         {['A','B','C','D'].map(opt => {
                                                                                                                                             const oc = OPT_COLORS[opt];
                                                                                                                                             return (
-                                                                                                                                                <span key={opt}
-                                                                                                                                                    title={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}
-                                                                                                                                                    className={`w-6 h-6 rounded-full text-caption font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
-                                                                                                                                                    {opt}
-                                                                                                                                                </span>
+                                                                                                <LiquidTooltip content={p.opciones?.[['A','B','C','D'].indexOf(opt)] || opt}>
+                                                                                                                                                    <span key={opt}
+                                                                                                                                                        className={`w-6 h-6 rounded-full text-caption font-black flex items-center justify-center transition-all ${ans === opt ? oc.on : 'bg-surface-card-hover text-content-3'}`}>
+                                                                                                                                                        {opt}
+                                                                                                                                                    </span>
+                                                                                                </LiquidTooltip>
                                                                                                                                             );
                                                                                                                                         })}
                                                                                                                                     </div>

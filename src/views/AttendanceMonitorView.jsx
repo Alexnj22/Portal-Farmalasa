@@ -465,7 +465,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           {emp.hasLactation && (
             <div
               className="absolute -bottom-1 -right-1 bg-pink-100 p-1 rounded-full border border-pink-200 text-pink-600 shadow-sm"
-              title="Lactancia Activa"
+              role="img" title="Lactancia Activa"
             >
               <Baby size={9} strokeWidth={3} />
             </div>

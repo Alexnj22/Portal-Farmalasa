@@ -26,7 +26,7 @@ export default function CostCards({ summary, isBodega }) {
             {STATS.map(({ label, value, color, icon: Icon, iconCls, tooltip }) => (
                 <div key={label} data-surface="card"
                     className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl"
-                    title={tooltip}>
+                    role="img" title={tooltip}>
                     <Icon size={13} className={`shrink-0 ${iconCls}`} />
                     <div className="flex flex-col leading-snug gap-0.5">
                         <span className="text-caption font-semibold text-content-3">{label}</span>

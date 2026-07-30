@@ -20,6 +20,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { smartFilter } from '../utils/searchUtils';
 import Switch from '../components/common/Switch';
+import LiquidTooltip from '../components/common/LiquidTooltip';
 import {
     fetchRolesForPermissions, fetchRolePermissions, upsertRolePermission, upsertRolePermissionsBulk,
     updateRoleMaxPriceLevel, updateRoleIsSU,
@@ -176,7 +177,6 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                         return (
                             <div
                                 key={pt.key}
-                                title={PERM_DESC[pt.key]}
                                 className={`flex items-center justify-between gap-3 px-1.5 py-1 rounded-lg transition-all duration-300 ${
                                     needsView ? 'opacity-20 pointer-events-none' : ''
                                 } ${isFlashing ? (val ? 'bg-chart-1/10 scale-[1.02]' : 'bg-danger/10 scale-[0.99]') : ''}`}
@@ -189,9 +189,11 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     }`}>
                                         <PtIcon size={9} className="text-white" strokeWidth={3} />
                                     </div>
-                                    <span className={`text-caption font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-content-2' : 'text-content-2'}`}>
-                                        {pt.label}
-                                    </span>
+                                    <LiquidTooltip content={PERM_DESC[pt.key]}>
+                                        <span className={`text-caption font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-content-2' : 'text-content-2'}`}>
+                                            {pt.label}
+                                        </span>
+                                    </LiquidTooltip>
                                 </div>
                                 <Toggle
                                     value={val}

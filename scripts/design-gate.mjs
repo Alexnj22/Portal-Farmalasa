@@ -602,6 +602,27 @@ const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','E
   'Tenés','Querés','Podés','Buscás','Archivés','Sabés','Vas a poder','Necesitás'];
 const LETRA = 'A-Za-zÁÉÍÓÚÑáéíóúñ';
 const VOSEO_RE = new RegExp(`(?<![${LETRA}])(${VOSEO.join('|')})(?![${LETRA}])`, 'g');
+
+// ── Categoría `tooltip-no-control` (F3, DESIGN.md §15.10) ───────────────────
+// `title=` sobre un elemento NO interactivo. Al medirlos (50 sitios) resultó que
+// no son "tooltips sin migrar": son cuatro patrones distintos, y solo uno se
+// resuelve con `LiquidTooltip`.
+//
+//   (A) el escape del truncado — el texto visible está cortado y el `title` tiene
+//       el completo. `LiquidTooltip` NO sirve: envuelve en `inline-block` y eso
+//       rompe justo el truncado que el `title` existe para salvar.
+//   (B) el nombre de un gráfico — un punto de estado, un avatar en pila, un dot
+//       por sucursal. Sin `role`, ningún lector de pantalla lo anuncia; con
+//       `role="img"` el MISMO `title` pasa a ser su nombre accesible. Un atributo,
+//       cero riesgo de layout, y el hover del mouse queda igual.
+//   (C) un contenedor de controles con nombre → `role="group"`, misma lógica.
+//   (D) prosa suplementaria → ésa sí va a `LiquidTooltip`.
+//
+// El gate permite (A) por el truncado y (B)/(C) por el rol. Todo lo demás es (D)
+// y tiene que ser `LiquidTooltip`.
+const TAGS_INTERACTIVOS = new Set(['button','a','input','select','textarea','label','option','optgroup',
+  // `title` en éstos es legítimo o requerido por accesibilidad
+  'iframe','img','area']);
 const MONEDA_A_MANO_RE = /\$\$\{[^}]*\.toFixed\(\s*[12]\s*\)/g;
 
 // Marca líneas que son comentario puro (`// ...`, `* ...` de bloque, `/* ... */`
@@ -1394,6 +1415,30 @@ function scanFile(path) {
         findings.push({ line: linea, label: `Title Case en una etiqueta: "${texto}" — sentence case (§26.4)`,
           category: 'copy-vacio', text: texto.slice(0, 110) });
       }
+    }
+  }
+
+  if (!hasException(path, 'tooltip-no-control')) {
+    let m;
+    const RE_TITLE = /\stitle=/g;
+    while ((m = RE_TITLE.exec(text))) {
+      const i = text.lastIndexOf('<', m.index);
+      if (i < 0) continue;
+      const entre = text.slice(i + 1, m.index);
+      if (entre.includes('>') || entre.length > 600) continue; // no es su tag
+      const nombre = /^([A-Za-z][A-Za-z0-9.]*)/.exec(entre)?.[1];
+      if (!nombre || !/^[a-z]/.test(nombre)) continue;   // Mayúscula = prop de componente
+      if (TAGS_INTERACTIVOS.has(nombre)) continue;
+      const cierre = text.indexOf('>', m.index);
+      const abre = cierre > 0 ? text.slice(i, cierre + 1) : entre;
+      const truncado = /\b(truncate|line-clamp-\d|text-ellipsis)\b/.test(abre);
+      const conRol = /\brole=["'](img|group)["']/.test(abre);
+      if (truncado || conRol) continue;
+      const linea = text.slice(0, m.index).split('\n').length;
+      if (isComment[linea - 1]) continue;
+      findings.push({ line: linea,
+        label: `\`title=\` en <${nombre}> no interactivo — si es un gráfico va \`role="img"\`, si es prosa va \`LiquidTooltip\` (§15.10)`,
+        category: 'tooltip-no-control', text: abre.replace(/\s+/g, ' ').slice(0, 110) });
     }
   }
 

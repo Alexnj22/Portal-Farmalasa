@@ -21,6 +21,7 @@ import {
     fetchActiveEmployeesBasic, fetchPedidoNumero, fetchPedidoIdsSinceExcluding,
     fetchPedidoSucursalStatusForPedidos, fetchPedidoItemsForPrintCapture, updatePedidoSucursalStatus,
 } from '../../data/pedidos';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 function friendlyError(e) {
     const msg = e?.message || String(e);
@@ -537,17 +538,18 @@ export default function TabGenerar({ searchTerm = '' }) {
                         <DataCell>
                             <div className="flex flex-wrap gap-1">
                                 {(row.sucursales || []).map(s => (
-                                    <span key={s.erp_sucursal_id}
-                                        className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-surface-card-hover border border-divider whitespace-nowrap"
-                                        title={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
-                                        <span className="font-medium text-content-2">{ERP_NAMES[s.erp_sucursal_id]}</span>
-                                        <span className="text-danger font-semibold">{s.reponer}</span>
-                                        {s.ventas_6m > 0 && (
-                                            <span className="text-content-3 flex items-center gap-0.5">
-                                                ↻<span className="text-micro font-semibold">{Math.round(s.ventas_6m)}</span>
-                                            </span>
-                                        )}
-                                    </span>
+                                    <LiquidTooltip key={s.erp_sucursal_id} content={`${ERP_NAMES[s.erp_sucursal_id]}: necesita ${s.reponer}${s.ventas_6m > 0 ? ` · ${Math.round(s.ventas_6m)} ventas en 6m` : ''}`}>
+                                        <span
+                                            className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-surface-card-hover border border-divider whitespace-nowrap">
+                                            <span className="font-medium text-content-2">{ERP_NAMES[s.erp_sucursal_id]}</span>
+                                            <span className="text-danger font-semibold">{s.reponer}</span>
+                                            {s.ventas_6m > 0 && (
+                                                <span className="text-content-3 flex items-center gap-0.5">
+                                                    ↻<span className="text-micro font-semibold">{Math.round(s.ventas_6m)}</span>
+                                                </span>
+                                            )}
+                                        </span>
+                                    </LiquidTooltip>
                                 ))}
                             </div>
                         </DataCell>

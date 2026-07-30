@@ -302,15 +302,15 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
             {birthdayInfo?.isToday && (
-                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-content flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
+                <span role="img" className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-chart-6 border-2 border-white shadow-sm z-content flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
                     <span className="text-micro leading-none">🎂</span>
                 </span>
             )}
             {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-surface-card rounded-full shadow-sm z-base" title="Disponible"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-success border-2 border-surface-card rounded-full shadow-sm z-base" role="img" title="Disponible"></span>
             )}
             {isAbsent && emp.status !== 'INACTIVO' && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-warning border-2 border-surface-card rounded-full shadow-sm z-base" title="Ausencia"></span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-warning border-2 border-surface-card rounded-full shadow-sm z-base" role="img" title="Ausencia"></span>
             )}
           </div>
 
@@ -330,7 +330,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
               {isPendingData(emp) && <PendingBadge emp={emp} />}
 
               {birthdayInfo && (
-                <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.tooltip}>
+                <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} role="img" title={birthdayInfo.tooltip}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-chart-6-text scale-125' : 'text-chart-6'} shrink-0`} />
                   <span className={`text-micro font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-chart-6-solid px-1 rounded' : 'text-chart-6-text bg-chart-6/10 px-1 rounded'}`}>
                      {birthdayInfo.label}
@@ -338,13 +338,13 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 </div>
               )}
               {anniversaryInfo && (
-                <div className="flex items-center gap-0.5" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
+                <div className="flex items-center gap-0.5" role="img" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
                   <Medal size={12} strokeWidth={2.5} className="text-warning shrink-0" />
                   <span className="text-micro font-black text-warning-text bg-warning/10 px-1 rounded">{anniversaryInfo.years} Años</span>
                 </div>
               )}
               {expiryInfo && (
-                <div className="flex items-center gap-0.5" title={expiryInfo.tooltip}>
+                <div className="flex items-center gap-0.5" role="img" title={expiryInfo.tooltip}>
                   <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-danger' : 'text-warning'} shrink-0`} />
                   <span className={`text-micro font-black px-1 rounded ${expiryInfo.isExpired ? 'text-danger-text bg-danger/10' : 'text-warning-text bg-warning/10'}`}>{expiryInfo.label}</span>
                 </div>

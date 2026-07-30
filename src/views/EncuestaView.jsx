@@ -21,6 +21,7 @@ import {
     fetchSurveyAiSummaries, updateSurvey,
 } from '../data/encuestas';
 import { clickable } from '../utils/clickable';
+import LiquidTooltip from '../components/common/LiquidTooltip';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -140,7 +141,7 @@ function DistBar({ dist, invertida = false }) {
                 {bars.map(({ key, n, cls }) => n > 0 && (
                     <div key={key} className={`${cls} transition-all duration-500`}
                         style={{ width: `${(n / total) * 100}%` }}
-                        title={`${key}: ${n} (${pct(n)}%)`} />
+                        role="img" title={`${key}: ${n} (${pct(n)}%)`} />
                 ))}
             </div>
             <span className={`text-caption font-black w-8 text-right ${positives >= 70 ? 'text-success' : positives >= 50 ? 'text-warning' : 'text-danger-text'}`}>
@@ -1086,7 +1087,7 @@ export default function EncuestaView() {
                                             <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Bloque</th>
                                             <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
                                             <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
-                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center"><LiquidTooltip content="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</LiquidTooltip></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1108,13 +1109,15 @@ export default function EncuestaView() {
                                                     <td className="px-3 py-2.5 text-center">
                                                         <span className="text-body font-black text-content-2">{sC?.toFixed(0)}%</span>
                                                     </td>
-                                                    <td className="px-3 py-2.5 text-center" title={delta !== null ? (delta >= 0 ? `Jefes ${Math.abs(delta).toFixed(0)}pp por encima` : `Jefes ${Math.abs(delta).toFixed(0)}pp por debajo`) : ''}>
-                                                        {delta !== null && (
-                                                            <span className={`text-label font-black flex items-center justify-center gap-0.5 ${delta > 5 ? 'text-success' : delta < -5 ? 'text-danger-text' : 'text-content-3'}`}>
-                                                                {delta >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                                                                {delta >= 0 ? '+' : ''}{delta.toFixed(0)}pp
-                                                            </span>
-                                                        )}
+                                                    <td className="px-3 py-2.5 text-center">
+                                                            <LiquidTooltip content={delta !== null ? (delta >= 0 ? `Jefes ${Math.abs(delta).toFixed(0)}pp por encima` : `Jefes ${Math.abs(delta).toFixed(0)}pp por debajo`) : ''}>
+                                                            {delta !== null && (
+                                                                <span className={`text-label font-black flex items-center justify-center gap-0.5 ${delta > 5 ? 'text-success' : delta < -5 ? 'text-danger-text' : 'text-content-3'}`}>
+                                                                    {delta >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                                                    {delta >= 0 ? '+' : ''}{delta.toFixed(0)}pp
+                                                                </span>
+                                                            )}
+                                                            </LiquidTooltip>
                                                     </td>
                                                 </tr>
                                             );
@@ -1241,7 +1244,7 @@ export default function EncuestaView() {
                                                 <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Empleado</th>
                                                 <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Rol</th>
                                                 {BLOQUES.map(b => (
-                                                    <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-micro font-black uppercase tracking-wider text-content-2 cursor-help">B{b.id}</th>
+                                                    <th key={b.id} className="text-center px-2 py-2.5 text-micro font-black uppercase tracking-wider text-content-2 cursor-help"><LiquidTooltip content={b.nombre || `Bloque ${b.id}`}>B{b.id}</LiquidTooltip></th>
                                                 ))}
                                                 <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Auto</th>
                                                 <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Global</th>
@@ -1278,8 +1281,8 @@ export default function EncuestaView() {
                                                                 : s >= 55 ? 'text-warning'
                                                                 : 'text-danger-text font-black';
                                                             return (
-                                                                <td key={b.id} title={b.nombre} className={`px-2 py-2.5 text-center text-label font-bold cursor-help ${cls}`}>
-                                                                    {s ? `${s.toFixed(0)}` : '–'}
+                                                                <td key={b.id} className={`px-2 py-2.5 text-center text-label font-bold cursor-help ${cls}`}>
+                                                                    <LiquidTooltip content={b.nombre}>{s ? `${s.toFixed(0)}` : '–'}</LiquidTooltip>
                                                                 </td>
                                                             );
                                                         })}

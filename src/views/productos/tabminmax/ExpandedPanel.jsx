@@ -304,7 +304,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 {policyData && (
                                     <span className="flex items-center gap-1 text-micro font-bold text-content-3">
                                         {policyData.es_cofarsal && (
-                                            <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+                                            <span role="img" title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
                                         )}
                                         {policyData.proveedor_nombre}
                                         {policyData.es_devolutivo

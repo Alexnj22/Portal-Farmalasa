@@ -38,6 +38,7 @@ import { useMinMaxData } from './tabminmax/useMinMaxData';
 import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -1343,11 +1344,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         </>}
                                                     </Badge>
                                                     {hasRule && hasPres && (
-                                                        <span
-                                                            className="text-micro font-semibold text-content-3 tabular-nums"
-                                                            title="MIN · MAX ya redondeado a la regla de despacho">
-                                                            {applyRule(dispMin).toLocaleString()} · {applyRule(dispMax).toLocaleString()}
-                                                        </span>
+                                                        <LiquidTooltip content="MIN · MAX ya redondeado a la regla de despacho">
+                                                            <span className="text-micro font-semibold text-content-3 tabular-nums">
+                                                                {applyRule(dispMin).toLocaleString()} · {applyRule(dispMax).toLocaleString()}
+                                                            </span>
+                                                        </LiquidTooltip>
                                                     )}
                                                 </div>
                                             );

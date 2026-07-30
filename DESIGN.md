@@ -1711,6 +1711,53 @@ Son dos cosas distintas y conviven:
 - **Nunca los dos con el mismo texto.** Había 4 así; el `title` sobraba y solo
   agregaba un tooltip del sistema encima del nombre que ya existía.
 
+#### `title=` sobre un elemento NO interactivo — cuatro patrones (F3, 2026-07-29)
+
+La medición de arriba separó por componente pero no por **tipo de elemento**. Al
+hacerlo aparecieron 50 `title=` sobre elementos no interactivos (`span`, `div`,
+`th`, `td`, `p`), y la lectura fácil —"son 50 tooltips sin migrar"— es falsa otra
+vez. Son cuatro patrones y solo uno se resuelve con `LiquidTooltip`.
+
+| | Qué es | Qué lleva | Cuántos |
+|---|---|---|---|
+| **A** | El texto visible está **truncado** y el `title` tiene el completo | `title` + `truncate`. Se queda | 12 |
+| **B** | Un **gráfico**: punto de estado, avatar en pila, dot por sucursal, ícono suelto | `role="img"` + el `title` de siempre | 22 |
+| **C** | Un **contenedor de controles** con nombre | `role="group"` + `title` | 1 |
+| **D** | **Prosa suplementaria** sobre texto inline | `LiquidTooltip` | 15 |
+
+**Por qué (A) no se migra.** `LiquidTooltip` envuelve a su hijo en un
+`<span className="inline-block">`. Eso rompe exactamente el truncado que el
+`title` existe para salvar, y descoloca a un hijo de flex o a un elemento
+posicionado en absoluto. En (A) el `title` no es decoración: es el escape del
+desborde, y es el markup correcto.
+
+**Por qué (B) es el hallazgo que importa.** Un `<span className="w-3.5 h-3.5
+rounded-full bg-success" title="Disponible">` no lo anuncia **nada**: sin `role`,
+un lector de pantalla salta el elemento entero y ese `title` no existe para nadie
+que no use mouse. Con `role="img"`, el mismo `title` pasa a ser su nombre
+accesible —`title` es fuente de nombre válida— así que **un solo atributo le da
+nombre al lector de pantalla sin quitarle el hover a nadie**. Cero riesgo de
+layout. Migrar esos 22 a `LiquidTooltip` habría roto la pila de avatares
+(`margin-left: -6px`) y el posicionamiento del punto de estado, y no habría
+arreglado nada de accesibilidad — ver abajo.
+
+**Lo que `LiquidTooltip` NO arregla, y conviene no prometerlo.** Su wrapper es un
+`<span>` sin `tabIndex`: **no es focusable**. Sus `onFocus`/`onBlur` solo
+disparan si el HIJO lo es. Envolver un texto o un gráfico deja el tooltip igual
+de inalcanzable por teclado que el `title`, y en táctil tampoco hay `mouseenter`.
+Sobre un elemento no interactivo, `LiquidTooltip` compra **consistencia visual**
+(la superficie del portal, sin la espera de ~1 s del sistema), no accesibilidad.
+Si la información *importa* y hoy solo vive en hover, la respuesta no es un
+tooltip más lindo: es un botón de info o texto visible. Queda anotado como deuda,
+no resuelto.
+
+**Un `pointer-events-none` mata el hover.** `CajaFecha` de `ConteoDetailView`
+explica en su `title` *por qué* la caja está inerte — y cuando lo está lleva
+`pointer-events-none`, así que ningún evento de mouse entra: el texto es
+inalcanzable justo en el estado que explica. Ahí `role="group"` al menos se lo da
+al lector de pantalla. Arreglar el hover requiere mover el disparador a un
+ancestro, y eso es un cambio de esa vista.
+
 #### Tooltip ≠ hover card — dónde termina la regla 1a
 
 Al terminar la migración quedaron 9 elementos que aparecen al pasar el puntero y
@@ -1965,6 +2012,21 @@ un borde blanco dibujaría un halo.
 
 `animate-ping` es decorativo: el tema sólido lo apaga solo, y también
 `prefers-reduced-motion`.
+
+**El punto necesita nombre (F3, 2026-07-29).** Un punto de color es información
+—verde disponible, ámbar ausente— y un `<span>` sin `role` no lo anuncia: el
+lector de pantalla lo salta completo. Va `role="img"` con el texto en `title` o
+`aria-label`:
+
+```jsx
+<span role="img" title="Disponible"
+      className="w-3.5 h-3.5 rounded-full bg-success …" />
+```
+
+Con `role="img"` el `title` **es** el nombre accesible, así que no hace falta
+duplicarlo en `aria-label` y el hover del mouse sigue funcionando igual. Aplica a
+todo indicador puramente gráfico: el punto de estado, el avatar en pila, el dot
+por sucursal, la burbuja del cumpleaños. Ver §15.10, patrón (B).
 
 ---
 

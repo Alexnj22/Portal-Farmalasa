@@ -30,6 +30,7 @@ import {
     findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview,
 } from '../../data/facturasCompra';
 import { clickable } from '../../utils/clickable';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { formatMoney } from '../../utils/formatNumber';
 
 const CLASIFICAR_TIPO_OPTIONS = [
@@ -169,7 +170,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
         return (
             <div className="min-w-0">
                 <span className="text-content-2 text-body-sm block truncate">{row.emisor_nombre || '—'}</span>
-                <span className="text-caption text-content-3" title={`${dteTypeLabel(row.tipo_dte)}: el emisor es un intermediario financiero, no un proveedor de compras`}>No aplica</span>
+                <LiquidTooltip content={`${dteTypeLabel(row.tipo_dte)}: el emisor es un intermediario financiero, no un proveedor de compras`}><span className="text-caption text-content-3">No aplica</span></LiquidTooltip>
             </div>
         );
     }
@@ -293,8 +294,8 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         }
         if (state === 'loading') return <span className="text-micro text-content-3 whitespace-nowrap">Analizando…</span>;
         if (state === 'no_code') return <Button variant="ghost" onClick={(e) => { e.stopPropagation(); detect(); }}>Sin código, reintentar</Button>;
-        if (state === 'error') return <span className="text-micro text-danger-text whitespace-nowrap" title={result.error}>Error al detectar</span>;
-        if (state === 'not_found') return <span className="text-micro text-content-3 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
+        if (state === 'error') return <LiquidTooltip content={result.error}><span className="text-micro text-danger-text whitespace-nowrap">Error al detectar</span></LiquidTooltip>;
+        if (state === 'not_found') return <LiquidTooltip content={`Código completo: ${result.code}`}><span className="text-micro text-content-3 whitespace-nowrap">Código sin sincronizar</span></LiquidTooltip>;
         return (
             <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}</Button>
         );
@@ -330,7 +331,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'error') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-danger" title={result.error}>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-danger" role="img" title={result.error}>
                 <AlertTriangle size={15} />
                 <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Error</span>
             </div>
@@ -338,7 +339,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'not_found') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" title={`Código completo: ${result.code} — sin sincronizar aún`}>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" role="img" title={`Código completo: ${result.code} — sin sincronizar aún`}>
                 <ScanSearch size={15} />
                 <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Sin match</span>
             </div>

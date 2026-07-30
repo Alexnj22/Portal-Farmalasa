@@ -207,7 +207,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                     {node.apoyo.slice(0, 3).map((a, i) => (
                                         a.photo_url
                                             ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-white shadow-sm shrink-0 relative" alt="" />
-                                            : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-white flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
+                                            : <span key={a.id} role="img" title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-surface-card-hover border-2 border-white flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-content-3" /></span>
                                     ))}
                                 </div>
                             )}

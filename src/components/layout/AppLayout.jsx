@@ -956,7 +956,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                     {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
                                                 </div>
                                                 {myBirthday && (
-                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                         <Cake size={9} className="text-white" />
                                                     </span>
                                                 )}
@@ -1000,7 +1000,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={16} strokeWidth={1.5} />}
                                         </Link>
                                         {myBirthday && (
-                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                                 <Cake size={9} className="text-white" />
                                             </span>
                                         )}
@@ -1068,7 +1068,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         {user?.photo ? <img src={webpSignedUrl(user.photo)} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-content-3" />}
                                     </Link>
                                     {myBirthday && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
                                             <Cake size={9} className="text-white" />
                                         </span>
                                     )}

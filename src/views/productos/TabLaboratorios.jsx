@@ -254,7 +254,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
                     <>
                         <span className="hidden sm:flex items-center gap-1 mr-2">
                             {branches.map(b => (
-                                <span key={b.id} title={b.name}
+                                <span key={b.id} role="img" title={b.name}
                                     className={`w-2 h-2 rounded-full transition-all duration-300 ${
                                         hasAny(locationMap[b.id] || {})
                                             ? b.type === 'BODEGA' ? 'bg-warning' : 'bg-chart-9'

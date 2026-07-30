@@ -460,7 +460,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
                                                 if (conductorEnRuta) return (
-                                                    <div className="flex items-center gap-1 text-caption font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" title="El conductor aún está en ruta. Espera a que marque vuelta a base.">
+                                                    <div className="flex items-center gap-1 text-caption font-semibold text-content-3 px-2.5 py-1.5 rounded-xl border border-divider bg-surface-card cursor-not-allowed" role="img" title="El conductor aún está en ruta. Espera a que marque vuelta a base.">
                                                         <Truck size={10} className="text-content-3" />Esperando vuelta conductor
                                                     </div>
                                                 );

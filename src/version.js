@@ -16,7 +16,47 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.240.0';
+export const APP_VERSION = '2.241.0';
+
+// v2.241.0 — F3 de identidad: los 50 `title=` sobre elementos no interactivos eran
+// CUATRO patrones, no uno. Y 22 puntos de estado que ningun lector de pantalla
+// anunciaba.
+//
+// El plan decia "los 50 son el caso 'explicar' y van a LiquidTooltip". Al medirlos
+// por tipo de elemento, falso:
+//
+//   (A) 12 = el escape del TRUNCADO. El texto visible esta cortado y el `title`
+//       tiene el completo. LiquidTooltip envuelve en `inline-block`, que rompe
+//       justo el truncado que el title existe para salvar. Se quedan.
+//   (B) 22 = el nombre de un GRAFICO: punto de estado, avatar en pila, dot por
+//       sucursal, burbuja del cumpleanos. Un `<span className="rounded-full
+//       bg-success" title="Disponible">` no lo anuncia NADA: sin `role`, el lector
+//       de pantalla salta el elemento y ese title no existe para quien no usa
+//       mouse. Con `role="img"` el MISMO title pasa a ser su nombre accesible.
+//       Un atributo, cero riesgo de layout, el hover intacto.
+//   (C) 1 = un contenedor de controles con nombre → `role="group"`.
+//   (D) 15 = prosa suplementaria → esos si fueron a LiquidTooltip (de 4 archivos
+//       usandolo a 12).
+//
+// **Lo que LiquidTooltip NO arregla**, y por eso no lo prometo: su wrapper es un
+// `<span>` sin tabIndex, o sea NO es focusable. Sus onFocus/onBlur solo disparan
+// si el hijo lo es. Sobre texto o un grafico, el tooltip queda igual de
+// inalcanzable por teclado que el `title`, y en tactil tampoco hay mouseenter.
+// Compra consistencia visual, no accesibilidad. Si la info importa y solo vive en
+// hover, la respuesta es un boton de info o texto visible — anotado como deuda.
+//
+// Un `title` que repetia exacto el texto visible (RolesView) se borro: sobraba.
+//
+// Bug encontrado y no resuelto: `CajaFecha` de ConteoDetailView explica en su
+// `title` POR QUE la caja esta inerte, y cuando lo esta lleva
+// `pointer-events-none` — el hover esta muerto justo en el estado que explica.
+// `role="group"` al menos se lo da al lector de pantalla.
+//
+// Gate nuevo `tooltip-no-control`, bloqueante en cero (28 categorias): permite (A)
+// por el truncado y (B)/(C) por el rol; todo lo demas es (D) y va a LiquidTooltip.
+// §15.10 y §16.3 documentan los cuatro patrones.
+//
+// Tercera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`.
 
 // v2.239.0 — F2 de identidad: la Voz. DESIGN.md tenia 3,370 lineas sobre la forma
 // y CERO sobre la palabra.

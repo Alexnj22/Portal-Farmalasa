@@ -378,7 +378,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         >
                             <div className="flex items-center gap-3">
                                 <span className="text-title md:text-title-lg font-black text-content leading-none tracking-tight">{liveBranch?.name || "Detalle de Sucursal"}</span>
-                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-success shadow-[var(--shadow-glow-success-md)] animate-pulse' : 'bg-content-3'}`} title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
+                                <div className={`flex items-center justify-center w-2 h-2 md:w-2.5 md:h-2.5 rounded-full shadow-sm ${todaySchedule.isOpen ? 'bg-success shadow-[var(--shadow-glow-success-md)] animate-pulse' : 'bg-content-3'}`} role="img" title={todaySchedule.isOpen ? 'Operativa' : 'Cerrada'}></div>
 
                                 <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all duration-300 ml-0.5 md:ml-1 ${showProfile ? 'bg-brand border-brand text-white translate-x-1' : 'bg-brand/10 border-brand/20 text-brand-text group-hover/title:translate-x-0.5'}`}>
                                     <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />

@@ -94,6 +94,83 @@ revienta** si no aparece o si no son exactamente 4 funciones.
 
 ---
 
+## v2.241.0 — F3 de identidad: los 50 `title=` no interactivos eran **cuatro** patrones, y 22 puntos de estado que ningún lector de pantalla anunciaba.
+
+Tercera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. El plan decía: "los 50 son el
+caso *explicar* de §15.10 y van a `LiquidTooltip`". Al medirlos por **tipo de
+elemento** eso resultó falso, y lo que apareció debajo vale más que la migración
+que se había planeado.
+
+| | Qué es | Qué lleva | Cuántos |
+|---|---|---|---|
+| **A** | El texto visible está **truncado**; el `title` tiene el completo | `title` + `truncate`. Se queda | 12 |
+| **B** | Un **gráfico**: punto de estado, avatar en pila, dot por sucursal, burbuja del cumpleaños | `role="img"` + el `title` de siempre | 22 |
+| **C** | Un **contenedor de controles** con nombre | `role="group"` + `title` | 1 |
+| **D** | **Prosa suplementaria** sobre texto inline | `LiquidTooltip` | 15 |
+
+### (B) es el hallazgo, y es de accesibilidad real
+
+Un `<span className="w-3.5 h-3.5 rounded-full bg-success" title="Disponible" />`
+no lo anuncia **nada**. Sin `role`, un lector de pantalla salta el elemento
+completo: ese `title` no existe para nadie que no use mouse. Y `§16.3` daba la
+forma visual del punto de estado sin decir una palabra sobre su nombre — no había
+un solo `role="img"` en el proyecto.
+
+Con `role="img"`, el **mismo** `title` pasa a ser su nombre accesible (`title` es
+fuente de nombre válida). Un atributo agregado, nada quitado: el lector de
+pantalla lo anuncia y el hover del mouse sigue igual. Cero riesgo de layout.
+
+Migrar esos 22 a `LiquidTooltip` habría sido peor en los dos sentidos: rompe la
+pila de avatares (`margin-left: -6px`) y el posicionamiento absoluto del punto,
+y no arregla nada de accesibilidad — por lo que sigue.
+
+### Lo que `LiquidTooltip` no arregla, y por eso no lo prometemos
+
+Su wrapper es un `<span className="inline-block">` **sin `tabIndex`**: no es
+focusable. Sus `onFocus`/`onBlur` solo disparan si el *hijo* lo es. Sobre un texto
+o un gráfico, el tooltip queda **igual de inalcanzable por teclado** que el
+`title`, y en táctil tampoco hay `mouseenter`. Sobre un elemento no interactivo
+compra consistencia visual —la superficie del portal, sin la espera de ~1 s del
+sistema—, no accesibilidad.
+
+Si la información *importa* y hoy solo vive en hover, la respuesta no es un
+tooltip más lindo: es un botón de info o texto visible. Queda anotado como deuda,
+no resuelto. Los dos casos donde más pesa: la descripción de cada permiso en
+`PermissionsView` y la explicación del cálculo del delta en `EncuestaView`.
+
+### Por qué (A) no se migra
+
+`LiquidTooltip` envuelve en `inline-block`, y eso rompe exactamente el truncado
+que el `title` existe para salvar. En (A) el `title` no es decoración: es el
+escape del desborde, y es el markup correcto.
+
+### Lo que se hizo
+
+- **22 `role="img"`** en los indicadores gráficos, más **1 `role="group"`**.
+- **15 a `LiquidTooltip`** — de 4 archivos usándolo a **12**. Incluye los `<th>` y
+  `<td>` de Encuesta (varios ya traían `cursor-help`: el autor sabía que era un
+  tooltip), el chip de `TabGenerar`, `AbcXyzBadge` —donde el `shrink-0` pasó al
+  wrapper vía la prop `className` para no perder el no-encogimiento— y la
+  descripción del permiso, que se movió del `<div>` de la fila (flex, no
+  envolvible) a la etiqueta, que es inline.
+- **1 borrado:** `RolesView` tenía `title={role.name}` sobre un `<h4>` que ya
+  muestra `{role.name}` y no trunca. Duplicación pura.
+- `§15.10` y `§16.3` documentan los cuatro patrones.
+
+### Un bug encontrado y NO resuelto
+
+`CajaFecha` de `ConteoDetailView` explica en su `title` *por qué* la caja está
+inerte — y cuando lo está lleva `pointer-events-none`, así que ningún evento de
+mouse entra: **el texto es inalcanzable justo en el estado que explica**.
+`role="group"` al menos se lo entrega al lector de pantalla; arreglar el hover
+requiere mover el disparador a un ancestro, que es un cambio de esa vista.
+
+**Gate nuevo `tooltip-no-control`**, bloqueante en cero — **28 categorías**.
+Permite (A) por el truncado y (B)/(C) por el rol; todo lo demás es (D) y tiene que
+ser `LiquidTooltip`.
+
+`npm run gate:design` en verde, build y lint limpios.
+
 ## v2.239.0 — F2 de identidad: la Voz. `DESIGN.md` tenía 3,370 líneas sobre la forma y **cero** sobre la palabra.
 
 Segunda fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. Era la única primitiva del

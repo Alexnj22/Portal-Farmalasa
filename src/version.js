@@ -16,7 +16,41 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.258.0';
+export const APP_VERSION = '2.259.0';
+
+// v2.259.0 — Min/Max: la matriz y los filtros pasan a ser RANURAS de la pildora.
+//
+// **La matriz ABC × XYZ era un bloque de 124px** entre la pildora y la tabla, y
+// la tira de filtros de estado otros 44: **168px de cromo** antes del primer
+// producto. Una matriz 3×3 es la forma correcta cuando se comparan celdas entre
+// si, y aca casi nunca — se mira "cuantos A tengo" y "cuantos son erraticos".
+// Peor: se mira para DECIDIR un filtro, no para vigilarla. Elegida la clase, lo
+// que importa es la lista, y la matriz seguia ocupando alto sin que nadie la
+// releyera.
+//
+// Ahora es una ranura que resume lo aplicado ("ABC · A") y se abre en un popover
+// con **barras apiladas por clase**, interactivas: contestan las dos preguntas de
+// un vistazo y conservan las nueve zonas de clic. Aprobado sobre mockup.
+//
+// **Los seis filtros de estado** pasan a la ranura "estado". Estaban en una tira
+// aparte, asi que para saber que recortaba la lista habia que mirar en DOS
+// sitios. Su `onClear` usa `clearAllFilters` del hook y no una lista propia: el
+// hook ya sabe cuales son todos los filtros, incluidos los que no tienen ranura
+// visible (borrador, solo-cambios).
+//
+// **"Restaurar ocultos" era un boton DENTRO de un chip de filtro** — dos cosas en
+// el mismo control. Pasa a ser una accion, y solo existe cuando hay algo que
+// restaurar.
+//
+// **La tabla pedia `minWidth: 860px`** y en un telefono habia que arrastrarla de
+// lado: se veia el nombre del producto y para leer su MIN/MAX habia que
+// desplazar. Sus seis columnas no declaraban **ninguna** `hideBelow`, que es la
+// estrategia que §32 fija para pantallas angostas. Con laboratorio/clase/
+// presentacion marcadas, en un telefono quedan Producto · MIN·MAX · Acciones.
+// Medido a 390px: `scrollWidth` 390, cero desborde horizontal.
+//
+// En el telefono el ABC no abre popover: esa ranura ya vive dentro de la hoja de
+// filtros, y una capa encima de otra seria una hoja dentro de una hoja.
 
 // v2.258.0 — Min/Max: las acciones a la pildora, y sus dos paneles a `ModalShell`.
 //

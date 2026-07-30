@@ -1,14 +1,49 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
-import React, { useMemo } from 'react';
-import { BarChart2, X } from 'lucide-react';
+import React, { useMemo, useState, useRef, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
+import { BarChart2, ChevronDown } from 'lucide-react';
 import { normXyz } from './helpers';
 import Button from '../../../components/common/Button';
-import { EmptyState } from '../../../components/common/StateViews';
+import useMediaQuery from '../../../hooks/useMediaQuery';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
 const ABC_KEYS = ['A', 'B', 'C'];
+const XYZ_DESC = { X: 'estable', Y: 'moderada', Z: 'errática' };
 
+// El peso visual de cada tramo. Sale del token de marca con `color-mix`, así que
+// la escala sigue al tema en vez de quemar tres azules.
+const TRAMO = { X: 100, Y: 55, Z: 24 };
+
+/**
+ * AbcXyzMatrix — la clasificación ABC × XYZ, como RANURA de la píldora.
+ *
+ * ── Por qué dejó de ser un bloque (2026-07-30, aprobado sobre mockup) ─────
+ * Era una matriz de 3×3 con sus cabeceras y su leyenda: **124px de alto** entre
+ * la píldora y la tabla, más los 44 de la tira de filtros que había abajo. En
+ * total 168px de cromo antes de que se viera el primer producto.
+ *
+ * Una matriz 3×3 es la forma correcta cuando lo que se compara son *celdas entre
+ * sí*, y acá casi nunca: se mira "cuántos A tengo" y "cuántos son erráticos".
+ * Peor, **se mira para DECIDIR un filtro, no para vigilarla** — una vez elegida
+ * la clase lo que importa es la lista, y la matriz se quedaba ocupando alto sin
+ * que nadie la volviera a leer.
+ *
+ * Ahora es una ranura que resume lo aplicado ("ABC · A") y se abre entera cuando
+ * hace falta. Adentro, barras apiladas por clase: contestan las dos preguntas de
+ * un vistazo y conservan las nueve zonas de clic.
+ *
+ * ── En el teléfono no hay popover ─────────────────────────────────────────
+ * Ahí esta ranura ya vive DENTRO de la hoja de filtros de la barra flotante, así
+ * que abrir otra capa encima sería una hoja dentro de una hoja. Se dibuja
+ * directamente desplegada.
+ */
 export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, loading }) {
+    const compacto = useMediaQuery('(max-width: 719px)');
+    const [abierto, setAbierto] = useState(false);
+    const [caja, setCaja] = useState(null);
+    const btnRef = useRef(null);
+    const id = useId();
+
     const matrix = useMemo(() => {
         const m = {};
         for (const abc of ABC_KEYS)
@@ -23,129 +58,146 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
         return m;
     }, [data]);
 
-    const maxCell = Math.max(1, ...Object.values(matrix));
+    const totalPorAbc = abc => XYZ_KEYS.reduce((s, x) => s + matrix[`${abc}${x}`], 0);
 
     const toggle = (abc, xyz) => {
         setFilterAbc(pa => pa === abc ? 'all' : abc);
         setFilterXyz(px => px === xyz ? 'all' : xyz);
     };
 
-    // Era `background: rgba(255,255,255,.52)` con su propio brillo interior:
-    // blanco FIJO, así que la matriz quedaba clara sobre los dos temas
-    // oscuros. La superficie sale de `data-surface="card"` y el vidrio de la
-    // escala `--shadow-glass-*`, que ya modela elevación + brillo (D3.8).
+    useEffect(() => {
+        if (!abierto || compacto) return undefined;
+        const medir = () => {
+            const r = btnRef.current?.getBoundingClientRect();
+            if (r) setCaja({ top: r.bottom + 8, left: r.left });
+        };
+        medir();
+        const alTeclear = e => { if (e.key === 'Escape') setAbierto(false); };
+        const alClic = e => {
+            if (!btnRef.current?.contains(e.target) && !e.target.closest?.(`[data-abc="${id}"]`)) setAbierto(false);
+        };
+        window.addEventListener('keydown', alTeclear);
+        window.addEventListener('resize', medir);
+        window.addEventListener('scroll', medir, true);
+        document.addEventListener('mousedown', alClic);
+        return () => {
+            window.removeEventListener('keydown', alTeclear);
+            window.removeEventListener('resize', medir);
+            window.removeEventListener('scroll', medir, true);
+            document.removeEventListener('mousedown', alClic);
+        };
+    }, [abierto, compacto, id]);
 
-    const isAbcActive = (abc) => filterAbc === abc;
-    const isXyzActive = (xyz) => filterXyz === xyz;
+    // ── Las barras: una fila por clase, partida en X/Y/Z ──────────────────
+    const barras = (
+        <div className="flex flex-col gap-1.5 min-w-[240px]">
+            {ABC_KEYS.map(abc => {
+                const total = totalPorAbc(abc);
+                return (
+                    <div key={abc} className="flex items-center gap-2">
+                        <button type="button"
+                            onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
+                            aria-pressed={filterAbc === abc}
+                            aria-label={`Clase ${abc}: ${total} producto${total === 1 ? '' : 's'}`}
+                            className={`w-5 text-caption font-black shrink-0 transition-colors duration-150
+                                ${filterAbc === abc ? 'text-brand-text' : 'text-content-3 hover:text-content-2'}`}>
+                            {abc}
+                        </button>
 
-    if (loading || data.length === 0) {
-        return (
-            <div className="rounded-2xl border border-border-card p-2.5 flex flex-col gap-1.5" data-surface="card">
-                <span className="text-micro font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
-                {loading ? (
-                    <div className="grid gap-[3px] animate-pulse" style={{ gridTemplateColumns: '20px repeat(3, 1fr)' }}>
-                        {Array.from({ length: 16 }).map((_, i) => (
-                            <div key={i} className="h-8 rounded-lg bg-surface-card-hover/70" />
-                        ))}
+                        <div className="flex-1 flex h-[22px] rounded-btn overflow-hidden bg-surface-card-hover">
+                            {XYZ_KEYS.map(xyz => {
+                                const n = matrix[`${abc}${xyz}`];
+                                if (!n) return null;
+                                const pct = (n / Math.max(1, total)) * 100;
+                                const activo = filterAbc === abc && filterXyz === xyz;
+                                return (
+                                    <button key={xyz} type="button"
+                                        onClick={() => toggle(abc, xyz)}
+                                        aria-pressed={activo}
+                                        aria-label={`${abc}${xyz} — demanda ${XYZ_DESC[xyz]}: ${n} producto${n === 1 ? '' : 's'}`}
+                                        title={`${abc}${xyz} · ${n}`}
+                                        style={{
+                                            flex: `0 0 ${pct}%`,
+                                            background: `color-mix(in srgb, var(--brand) ${TRAMO[xyz]}%, transparent)`,
+                                            outline: activo ? '2px solid var(--brand)' : undefined,
+                                            outlineOffset: '-2px',
+                                        }}
+                                        className={`grid place-items-center min-w-0 text-micro font-black tabular-nums
+                                            transition-[filter] duration-150 hover:brightness-110
+                                            ${xyz === 'Z' ? 'text-content-2' : 'text-white'}`}>
+                                        {pct > 14 ? n : ''}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <span className="w-10 text-right text-caption font-bold tabular-nums text-content-2 shrink-0">
+                            {total}
+                        </span>
                     </div>
-                ) : (
-                    <EmptyState compact icon={BarChart2} title="Sin datos" subtitle="Presiona Calcular para armar la matriz ABC × XYZ." />
-                )}
-            </div>
-        );
-    }
+                );
+            })}
 
-    const headerBtnCls = (active) =>
-        `py-1 px-2 rounded-md text-caption font-black text-center
-         transition-[background-color,box-shadow,color] duration-75
-         ${active
-             ? 'text-brand-text bg-brand/[0.11] shadow-[var(--shadow-glass-1)]'
-             : 'text-content-3 hover:text-content-2 hover:bg-surface-card'}`;
-
-    return (
-        <div className="rounded-2xl border border-border-card p-2 flex flex-col gap-1" data-surface="card">
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-micro font-black uppercase tracking-widest text-content-2">ABC × XYZ</span>
+            <div className="flex items-center gap-3 pt-1 border-t border-border-card">
+                {XYZ_KEYS.map(xyz => (
+                    <span key={xyz} className="flex items-center gap-1 text-micro text-content-3">
+                        <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0"
+                            style={{ background: `color-mix(in srgb, var(--brand) ${TRAMO[xyz]}%, transparent)` }} />
+                        <span className="font-black">{xyz}</span> {XYZ_DESC[xyz]}
+                    </span>
+                ))}
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                    <Button variant="ghost" size="xs" icon={X}
+                    <Button variant="ghost" size="xs" className="ml-auto"
                         onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}>
-                        limpiar
+                        Limpiar
                     </Button>
                 )}
             </div>
-
-            <div className="grid gap-[3px]" style={{ gridTemplateColumns: '18px repeat(3, 1fr)' }}>
-                {/* XYZ header */}
-                <div />
-                {XYZ_KEYS.map(xyz => (
-                    <button key={xyz}
-                        onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className={headerBtnCls(isXyzActive(xyz))}>
-                        {xyz}
-                    </button>
-                ))}
-
-                {/* Rows */}
-                {ABC_KEYS.map(abc => (
-                    <React.Fragment key={abc}>
-                        <button
-                            onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className={headerBtnCls(isAbcActive(abc))}>
-                            {abc}
-                        </button>
-                        {XYZ_KEYS.map(xyz => {
-                            const count = matrix[`${abc}${xyz}`];
-                            const isActive = filterAbc === abc && filterXyz === xyz;
-                            const intensity = count > 0 ? Math.max(0.07, (count / maxCell) * 0.28) : 0;
-                            return (
-                                <button key={xyz}
-                                    aria-pressed={isActive}
-                                    aria-label={`${abc}${xyz}: ${count} producto${count === 1 ? '' : 's'}`}
-                                    disabled={count === 0}
-                                    onClick={() => count > 0 && toggle(abc, xyz)}
-                                    className={`relative py-1.5 rounded-md text-center
-                                        transition-transform duration-150
-                                        ${count > 0 ? 'active:scale-[0.97] hover:translate-y-[var(--lift-hover)]' : ''}
-                                        ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer'}
-                                        ${isActive ? 'z-base' : ''}`}
-                                    style={{
-                                        background: isActive
-                                            // La intensidad de cada celda sale del token de marca,
-                                            // no del azul quemado: `color-mix` mantiene la escala y
-                                            // sigue al tema.
-                                            ? `color-mix(in srgb, var(--brand) ${Math.round(Math.min(0.22, intensity + 0.10) * 100)}%, transparent)`
-                                            : count > 0 ? `color-mix(in srgb, var(--brand) ${Math.round(intensity * 100)}%, transparent)`
-                                                        : 'var(--surface-card-hover)',
-                                        backdropFilter: isActive ? 'blur(10px) saturate(180%)' : undefined,
-                                        WebkitBackdropFilter: isActive ? 'blur(10px) saturate(180%)' : undefined,
-                                        boxShadow: isActive
-                                            ? 'var(--shadow-glow-brand-md)'
-                                            : count > 0 ? 'var(--shadow-elevation-xs)' : undefined,
-                                        outline: isActive ? '1.5px solid var(--brand)' : undefined,
-                                        outlineOffset: isActive ? '1.5px' : undefined,
-                                    }}
-                                    disabled={count === 0}>
-                                    <span className="text-label font-black text-content-2 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-micro font-semibold text-content-3 block">{abc}{xyz}</span>}
-                                </button>
-                            );
-                        })}
-                    </React.Fragment>
-                ))}
-            </div>
-
-            {/* Legend — one line */}
-            <div className="flex items-center gap-2.5 border-t border-border-card pt-1">
-                {XYZ_KEYS.map((xyz, i) => {
-                    const descs = ['Estable', 'Mod.', 'Errática'];
-                    return (
-                        <span key={xyz} className="flex items-center gap-0.5 text-micro">
-                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-brand-text' : 'text-content-3'}`}>{xyz}</span>
-                            <span className="text-content-3">{descs[i]}</span>
-                        </span>
-                    );
-                })}
-            </div>
         </div>
+    );
+
+    if (loading || data.length === 0) {
+        return (
+            <span className="flex items-center gap-1.5 px-2 h-9 text-body-sm font-bold text-content-3">
+                <BarChart2 size={13} strokeWidth={2.5} />
+                {loading ? 'Clasificando…' : 'Sin clasificar'}
+            </span>
+        );
+    }
+
+    // En el teléfono la ranura ya vive dentro de la hoja de filtros: desplegada.
+    if (compacto) return barras;
+
+    const resumen = filterAbc === 'all' && filterXyz === 'all'
+        ? null
+        : `${filterAbc !== 'all' ? filterAbc : '·'}${filterXyz !== 'all' ? filterXyz : ''}`;
+
+    return (
+        <>
+            <button ref={btnRef} type="button" onClick={() => setAbierto(v => !v)}
+                aria-expanded={abierto} aria-haspopup="dialog"
+                aria-label="Clasificación ABC por XYZ"
+                className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-btn shrink-0
+                    text-body-sm font-bold transition-colors duration-150
+                    ${abierto || resumen ? 'text-brand-text' : 'text-content-2 hover:text-content'}`}>
+                <BarChart2 size={13} strokeWidth={2.5} className="text-brand-text" />
+                ABC
+                {resumen && <span className="font-black tabular-nums text-brand-text">{resumen}</span>}
+                <ChevronDown size={11} strokeWidth={2.5} className="text-content-3" />
+            </button>
+
+            {abierto && caja && createPortal(
+                <div data-abc={id} role="dialog" aria-label="Clasificación ABC por XYZ"
+                    data-surface="dropdown"
+                    style={{ top: caja.top, left: caja.left }}
+                    className="fixed z-dropdown p-3 animate-in fade-in zoom-in-95 duration-150 ease-out">
+                    <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">
+                        Clasificación ABC × XYZ
+                    </p>
+                    {barras}
+                </div>,
+                document.body,
+            )}
+        </>
     );
 }

@@ -339,6 +339,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     } = useMinMaxData({ searchTerm, lockedErpId });
 
     // ─── Render ───────────────────────────────────────────────────────────────
+    // Los seis filtros de estado, como un solo bloque para el `active`/`onClear`
+    // de su ranura: si alguno está puesto la ranura se marca, y limpiarla los
+    // suelta todos de una.
+    const estadoActivo = hasAnyFilter || filterHidden;
+    const limpiarEstado = () => {
+        setFilterAlert('all');
+        setFilterAbc(p => (p === 'A' ? 'all' : p));
+        setFilterSparse(false);
+        setFilterDispatchRisk(false);
+        setFilterHidden(false);
+        setPage(1);
+    };
+
     // ── Las acciones de la vista, en la píldora (§17) ────────────────────
     // Estaban sueltas al lado: "CSV" con su rótulo, dos íconos pelados que abren
     // paneles, y DOS botones de calcular —"Todas las sucursales" y "Calcular"—
@@ -391,6 +404,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             disabled: !canManage, activo: labsOpen,
             onClick: () => setLabsOpen(o => !o),
         },
+        // "Restaurar ocultos" vivía DENTRO del chip de ocultos, como un botoncito
+        // anidado que aparecía al activarlo. Un botón dentro de un filtro es dos
+        // cosas en el mismo control; acá es una acción, y solo existe cuando hay
+        // algo que restaurar.
+        ...(hiddenIds.size > 0 && canManage ? [{
+            key: 'restaurar', icon: RotateCcw,
+            label: `Restaurar ${hiddenIds.size} oculto${hiddenIds.size === 1 ? '' : 's'}`,
+            soloIcono: true, onClick: unhideAll,
+        }] : []),
     ];
 
     return (
@@ -434,8 +456,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 <div className="flex items-center gap-2 shrink-0 justify-end ml-auto">
 
                     <FilterBar
-                        onClear={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
-                        activeCount={[filterAbc !== 'all', filterXyz !== 'all'].filter(Boolean).length}
+                        // `clearAllFilters` y no una lista propia: el hook ya sabe
+                        // cuáles son TODOS los filtros de esta vista, incluidos los
+                        // que no tienen ranura visible (borrador, solo-cambios).
+                        // Escribirlos otra vez acá era garantizar que se
+                        // desincronizaran al agregar el siguiente.
+                        onClear={() => { clearAllFilters(); setFilterHidden(false); setPage(1); }}
+                        activeCount={[
+                            filterAbc !== 'all', filterXyz !== 'all', filterAlert !== 'all',
+                            filterSparse, filterDispatchRisk, filterHidden,
+                            filterDraft, filterChangesOnly,
+                        ].filter(Boolean).length}
                         acciones={accionesMinMax}
                     >
                         {!lockedErpId && (
@@ -448,15 +479,61 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             </FilterBar.Section>
                         )}
 
-                        {/* El filtro ABC/XYZ se aplica desde la matriz de abajo;
-                            acá se muestra que está puesto y se puede soltar. */}
-                        {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                            <FilterBar.Section active
+                        {/* La clasificación: ranura que se abre con las barras.
+                            Antes era un bloque de 124px entre la píldora y la tabla. */}
+                        {!isBodega && (
+                            <FilterBar.Section
+                                active={filterAbc !== 'all' || filterXyz !== 'all'}
                                 onClear={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
                                 label="clasificación">
-                                <span className="px-2 text-body-sm font-black text-brand-text tabular-nums whitespace-nowrap">
-                                    {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
-                                </span>
+                                <AbcXyzMatrix
+                                    data={data}
+                                    filterAbc={filterAbc} setFilterAbc={setFilterAbc}
+                                    filterXyz={filterXyz} setFilterXyz={setFilterXyz}
+                                    loading={loading}
+                                />
+                            </FilterBar.Section>
+                        )}
+
+                        {/* Los seis filtros de estado. Eran una tira suelta de 44px
+                            ENTRE la matriz y la tabla, así que para saber qué
+                            recortaba la lista había que mirar en dos sitios. */}
+                        {!neverCalc && (
+                            <FilterBar.Section
+                                active={estadoActivo}
+                                onClear={limpiarEstado}
+                                label="estado">
+                                {STAT_CFGS.filter(c => VISIBLE_STAT_KEYS.includes(c.key)).map(cfg => (
+                                    <FilterBar.Chip key={cfg.key} tone="brand"
+                                        active={filterAlert === cfg.key}
+                                        onToggle={() => setFilterAlert(p => p === cfg.key ? 'all' : cfg.key)}>
+                                        {loading ? '–' : stats[cfg.key]} {cfg.label}
+                                    </FilterBar.Chip>
+                                ))}
+                                {hasPublishedData && criticalACount > 0 && !loading && (
+                                    <FilterBar.Chip tone="danger" active={filterAbc === 'A'}
+                                        onToggle={() => setFilterAbc(p => p === 'A' ? 'all' : 'A')}>
+                                        {criticalACount} Crítico A
+                                    </FilterBar.Chip>
+                                )}
+                                {sparseCount > 0 && !loading && (
+                                    <FilterBar.Chip tone="warning" active={filterSparse}
+                                        onToggle={() => setFilterSparse(v => !v)}>
+                                        {sparseCount} Poca venta
+                                    </FilterBar.Chip>
+                                )}
+                                {!isBodega && dispatchRiskCount > 0 && !loading && (
+                                    <FilterBar.Chip tone="warning" active={filterDispatchRisk}
+                                        onToggle={() => setFilterDispatchRisk(v => !v)}>
+                                        {dispatchRiskCount} Riesgo regla
+                                    </FilterBar.Chip>
+                                )}
+                                {hiddenIds.size > 0 && (
+                                    <FilterBar.Chip tone="brand" active={filterHidden}
+                                        onToggle={() => setFilterHidden(v => !v)}>
+                                        {hiddenIds.size} Ocultos
+                                    </FilterBar.Chip>
+                                )}
                             </FilterBar.Section>
                         )}
                     </FilterBar>
@@ -465,13 +542,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
             {/* ── ABC × XYZ Matrix + info strip ── */}
             {!isBodega && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-stretch">
-                    <AbcXyzMatrix
-                        data={data}
-                        filterAbc={filterAbc} setFilterAbc={setFilterAbc}
-                        filterXyz={filterXyz} setFilterXyz={setFilterXyz}
-                        loading={loading}
-                    />
+                <div className="flex justify-end">
                     {config && <div data-surface="card" className={`${glass} px-4 py-3 flex flex-col gap-2 text-caption text-content-3 min-w-[200px]`}>
                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Fórmula actual</span>
                         <div className="flex flex-col gap-1.5">
@@ -536,198 +607,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             {!neverCalc && (
                 <div className="flex items-center gap-2.5 flex-wrap">
 
-                    {/* Left: scrollable status filter pill */}
-                    <div className="overflow-x-auto min-w-0 flex-1 pb-0.5">
-                    <motion.div
-                        className="flex items-center rounded-2xl overflow-hidden self-start transition-shadow duration-300 w-max"
-                        whileHover={{ boxShadow: 'var(--shadow-glass-4)' }}
-                        style={{
-                            background: 'var(--surface-input)',
-                            backdropFilter: 'blur(24px)',
-                            WebkitBackdropFilter: 'blur(24px)',
-                            border: '1px solid var(--border-card)',
-                            boxShadow: 'var(--shadow-glass-3)',
-                        }}>
-                        {STAT_CFGS.filter(cfg => VISIBLE_STAT_KEYS.includes(cfg.key)).map((cfg, i) => {
-                            const active = filterAlert === cfg.key;
-                            return (
-                                <React.Fragment key={cfg.key}>
-                                    {i > 0 && <div className="h-5 w-px bg-divider shrink-0" />}
-                                    <motion.button
-                                        whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
-                                        onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
-                                            transition-[background-color,border-color,color,box-shadow] duration-100
-                                            ${active
-                                                ? cfg.chipActive + ' font-bold border shadow-[var(--shadow-glass-1)]'
-                                                : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
-                                        <motion.span
-                                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
-                                            animate={active ? { scale: [1, 1.5, 1] } : { scale: 1 }}
-                                            transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
-                                        />
-                                        <span className={`tabular-nums font-black text-label ${active ? '' : 'text-content-2'}`}>
-                                            {loading ? '–' : stats[cfg.key]}
-                                        </span>
-                                        <span>{cfg.label}</span>
-                                        <AnimatePresence>
-                                        {active && (
-                                            <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
-                                                <X size={9} className="ml-0.5" />
-                                            </motion.span>
-                                        )}
-                                        </AnimatePresence>
-                                    </motion.button>
-                                </React.Fragment>
-                            );
-                        })}
-
-                        {/* Clase A — urgente, visible cuando hay datos publicados */}
-                        {hasPublishedData && criticalACount > 0 && !loading && (
-                            <>
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <motion.button
-                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
-                                    onClick={() => { setFilterAbc(prev => prev === 'A' ? 'all' : 'A'); setPage(1); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
-                                        transition-[background-color,border-color,color,box-shadow] duration-100
-                                        ${filterAbc === 'A'
-                                            ? 'bg-danger/10 text-danger-text font-bold border border-danger/30 shadow-[var(--shadow-glass-1)]'
-                                            : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
-                                    <AlertTriangle size={9} className={`shrink-0 ${filterAbc === 'A' ? 'text-danger' : 'text-danger/70'}`} />
-                                    <span className="font-black">A</span>
-                                    <span className="tabular-nums font-black text-label">{criticalACount}</span>
-                                    <AnimatePresence>
-                                    {filterAbc === 'A' && (
-                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
-                                            <X size={9} className="ml-0.5" />
-                                        </motion.span>
-                                    )}
-                                    </AnimatePresence>
-                                </motion.button>
-                            </>
-                        )}
-
-                        {/* Revisar (pocos datos) — mismo estilo que otros chips */}
-                        <AnimatePresence>
-                        {sparseCount > 0 && !loading && (
-                            <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <motion.button
-                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
-                                    onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
-                                        transition-[background-color,border-color,color,box-shadow] duration-100
-                                        ${filterSparse
-                                            ? 'bg-warning/10 text-warning-text font-bold border border-warning/30 shadow-[var(--shadow-glass-1)]'
-                                            : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
-                                    <motion.span
-                                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterSparse ? 'bg-warning' : 'bg-warning/60'}`}
-                                        animate={filterSparse ? { scale: [1, 1.5, 1] } : { scale: 1 }}
-                                        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
-                                    />
-                                    <span className={`tabular-nums font-black text-label ${filterSparse ? '' : 'text-content-2'}`}>{sparseCount}</span>
-                                    <span>Revisar</span>
-                                    <AnimatePresence>
-                                    {filterSparse && (
-                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
-                                            <X size={9} className="ml-0.5" />
-                                        </motion.span>
-                                    )}
-                                    </AnimatePresence>
-                                </motion.button>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-
-                        {/* Riesgo de regla de despacho: el MAX configurado no alcanza el 40%
-                            de la unidad de despacho del producto ni en el mejor caso (repunte
-                            completo desde 0) — nunca va a generar un pedido real. Solo aplica
-                            a sucursales de venta (Bodega no despacha "a sí misma"). */}
-                        <AnimatePresence>
-                        {!isBodega && dispatchRiskCount > 0 && !loading && (
-                            <motion.div key="dispatch-risk" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <motion.button
-                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
-                                    onClick={() => { setFilterDispatchRisk(f => !f); setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    title="MAX configurado por debajo del umbral de la regla de despacho — nunca va a generar un pedido real con este valor"
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-semibold select-none whitespace-nowrap backdrop-blur-sm
-                                        transition-[background-color,border-color,color,box-shadow] duration-100
-                                        ${filterDispatchRisk
-                                            ? 'bg-danger/10 text-danger-text font-bold border border-danger/30 shadow-[var(--shadow-glass-1)]'
-                                            : 'text-content-3 border border-transparent hover:bg-surface-card hover:text-content-2'}`}>
-                                    <motion.span
-                                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterDispatchRisk ? 'bg-danger' : 'bg-danger/60'}`}
-                                        animate={filterDispatchRisk ? { scale: [1, 1.5, 1] } : { scale: 1 }}
-                                        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
-                                    />
-                                    <span className={`tabular-nums font-black text-label ${filterDispatchRisk ? '' : 'text-content-2'}`}>{dispatchRiskCount}</span>
-                                    <span>Riesgo regla</span>
-                                    <AnimatePresence>
-                                    {filterDispatchRisk && (
-                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
-                                            <X size={9} className="ml-0.5" />
-                                        </motion.span>
-                                    )}
-                                    </AnimatePresence>
-                                </motion.button>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-
-                        {/* Limpiar — siempre rojo cuando hay filtro activo */}
-                        <AnimatePresence>
-                        {hasAnyFilter && (
-                            <motion.div key="clear-all" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-danger/30 shrink-0" />
-                                <motion.button
-                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
-                                    onClick={clearAllFilters}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-caption font-bold text-danger-text bg-danger/10 border border-danger/30 shadow-[var(--shadow-glow-danger-md)] backdrop-blur-sm whitespace-nowrap
-                                        transition-[background-color,box-shadow] duration-100 hover:bg-danger/20 hover:shadow-[var(--shadow-glow-danger-md)]">
-                                    <X size={10} strokeWidth={2.5} />
-                                    Limpiar
-                                </motion.button>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-
-                        {/* N ocultos toggle */}
-                        <AnimatePresence>
-                        {hiddenIds.size > 0 && (
-                            <motion.div key="hidden-toggle" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-divider shrink-0" />
-                                <motion.button
-                                    whileTap={{ scale: 0.92 }}
-                                    onClick={() => setFilterHidden(f => !f)}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-label font-semibold transition-colors duration-150 whitespace-nowrap ${filterHidden ? 'bg-chart-3/10 text-chart-3-text font-bold' : 'text-content-3 hover:text-content-2'}`}>
-                                    <Eye size={10} className="shrink-0" />
-                                    {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
-                                    <AnimatePresence>
-                                    {filterHidden && (
-                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
-                                            <X size={9} className="ml-0.5" />
-                                        </motion.span>
-                                    )}
-                                    </AnimatePresence>
-                                </motion.button>
-                                {filterHidden && (
-                                    <>
-                                        <div className="h-5 w-px bg-chart-3/30 shrink-0" />
-                                        <motion.button
-                                            whileTap={{ scale: 0.92 }}
-                                            onClick={unhideAll}
-                                            className="flex items-center gap-1 px-3 py-2.5 text-label font-bold text-chart-3-text hover:text-chart-3-text transition-colors whitespace-nowrap">
-                                            Mostrar todos
-                                        </motion.button>
-                                    </>
-                                )}
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-                    </motion.div>
-                    </div>
+                    {/* La tira de filtros de estado vivía acá: 44px entre la
+                        matriz y la tabla. Ahora es una ranura de la píldora, con
+                        lo que los filtros dejan de estar en dos sitios. */}
 
                     {/* Draft pill + Publicar — liquid glass, integrado a la derecha */}
                     <AnimatePresence>
@@ -910,7 +792,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             ? { label: 'Quitar filtros y ver resultado', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } }
                             : { label: 'Quitar filtros', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } },
                     }}
-                    minWidth="860px"
+                    minWidth="340px"
                 >
 
                     {pageRows.map((row, rowIdx) => {
@@ -1033,14 +915,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     </DataCell>
 
                                     {/* Laboratorio */}
-                                    <DataCell align="left" className="!py-2.5">
+                                    <DataCell hideBelow="lg" align="left" className="!py-2.5">
                                         <span className="text-label text-content-2 truncate block max-w-[160px]">
                                             {row.laboratorio_nombre || <span className="text-content-3">—</span>}
                                         </span>
                                     </DataCell>
 
                                     {/* Clase — show draft badge when no published value yet */}
-                                    <DataCell align="center" className="!py-2.5">
+                                    <DataCell hideBelow="sm" align="center" className="!py-2.5">
                                         {!row.abc_class && hasDraft
                                             ? <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
                                             : (
@@ -1288,7 +1170,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     </DataCell>
 
                                     {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}
-                                    <DataCell align="center" className="!py-2 !px-2">
+                                    <DataCell hideBelow="md" align="center" className="!py-2 !px-2">
                                         {(() => {
                                             // 7A.7: dispMin/dispMax + applyRule calculan el MIN/MAX ya
                                             // redondeado por la regla de despacho — se muestran debajo del

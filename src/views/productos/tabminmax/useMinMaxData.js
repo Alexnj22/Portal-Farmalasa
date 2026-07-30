@@ -942,12 +942,20 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
+    // `hideBelow` es la estrategia del portal para pantallas angostas (§32): la
+    // tabla no se reflowea a tarjetas, deja caer columnas. Estas seis no
+    // declaraban NINGUNA, así que la tabla pedía `minWidth: 860px` y en un
+    // teléfono había que arrastrarla de lado: se veía el nombre del producto y
+    // para leer su MIN/MAX —el dato de la vista— había que desplazar.
+    //
+    // Lo que queda en un teléfono es lo que la vista existe para contestar:
+    // qué producto, cuánto MIN/MAX, y qué hacer con él.
     const COLS = [
         { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true, className: 'w-[30%]' },
-        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]' },
-        { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14' },
+        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]', hideBelow: 'lg' },
+        { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14',    hideBelow: 'sm' },
         { key: 'effective_min', label: 'MIN · MAX',   align: 'center', sortable: true, className: 'w-[150px]' },
-        { key: 'presentacion',  label: 'Presentación', align: 'center', className: 'w-[130px]' },
+        { key: 'presentacion',  label: 'Presentación', align: 'center', className: 'w-[130px]', hideBelow: 'md' },
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
 

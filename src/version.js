@@ -16,8 +16,39 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.262.0';
+export const APP_VERSION = '2.263.0';
 
+// v2.263.0 — En tactil un boton de solo-icono no tiene nombre: ahora lleva texto.
+//
+// Un boton sin rotulo apuesta todo su significado al `LiquidTooltip`, y un
+// tooltip **se abre con el mouse encima**: en un telefono no hay "encima". Ahi
+// el rotulo no es un lujo, es el unico nombre que el boton llega a tener.
+//
+// Dos causas, las dos en `TabBarAction`:
+//
+// 1. **El rotulo llevaba `hidden sm:inline`**, o sea que se escondia bajo 640px
+//    — justo donde mas falta hace. En la hoja de filtros del telefono los
+//    botones son de ancho completo: salian con un icono suelto y ~300px de vacio
+//    al lado. Y arriba de 720px, el unico sitio donde la pildora de escritorio
+//    se dibuja, la clase no llegaba a aplicarse nunca. Solo hacia dano.
+// 2. **`soloIcono` se aplicaba tambien en tactil.** Ahora se ignora cuando
+//    `(hover: none)` se cumple. Se decide por dispositivo de ENTRADA y no por
+//    ancho: una tablet ancha tampoco tiene hover, y una ventana angosta de
+//    escritorio si lo tiene.
+//
+// Medido en WebKit a 390px: la hoja de Acciones de MIN·MAX pasa de tres botones
+// mudos a "DESCARGAR", "CONFIGURAR PARAMETROS" y "LABORATORIOS OCULTOS".
+//
+// **Auditoria de los dos canonicos** (pedida en la misma vuelta): 13 vistas
+// tienen tarjetas de metrica y **las 13** usan `StatCard` dentro de
+// `CarrilCards`; el barrido estructural por la forma "superficie card + numero
+// tabular + etiqueta chica" no encontro **ninguna** tarjeta a mano. 22 vistas
+// montan `FilterBar`. Queda UN hueco: `TabNoEfectivo` de Facturacion tiene tres
+// filtros propios fuera de la pildora —el mes, y una fila "Filtrar:" con dos
+// selects y su Limpiar, que es una pildora reescrita a mano—. No se toco: el
+// estado y las opciones se calculan dentro de la pestana y la pildora vive dos
+// componentes mas arriba, asi que no es un cambio mecanico.
+//
 // v2.262.0 — La sombra de las tarjetas ya no se corta, y `soloIcono` cumple.
 //
 // **`overflow-x: auto` no es un eje.** En cuanto un eje deja de ser `visible` el

@@ -1673,6 +1673,24 @@ convenciones se olvidan.
 El texto no se pierde: sin `label`, `children` es lo que nombra al botón para un
 lector de pantalla.
 
+#### En táctil `soloIcono` NO existe
+
+Un botón sin texto apuesta todo su significado al tooltip, y **un tooltip se abre
+con el mouse encima**: en un teléfono no hay "encima". Ahí el rótulo deja de ser
+un lujo y pasa a ser el único nombre que el botón llega a tener — un ícono sin
+nombre alcanzable es un botón adivinanza.
+
+Por eso `TabBarAction` ignora `soloIcono` cuando la media query `(hover: none)`
+se cumple, y el llamador no tiene que hacer nada. Se decide por **dispositivo de
+entrada, no por ancho**: una tablet ancha tampoco tiene hover, y una ventana
+angosta de escritorio sí lo tiene.
+
+Del mismo arreglo (2026-07-30): el rótulo ya no lleva `hidden sm:inline`. Esa
+clase lo escondía bajo 640px, que es justo donde más falta hace —en la hoja de
+filtros del teléfono los botones son de ancho completo y salían con un ícono
+suelto y 300px de vacío al lado—, y arriba de 720px, el único sitio donde la
+píldora de escritorio se dibuja, no llegaba a aplicarse nunca. Solo hacía daño.
+
 #### `soloIcono` lleva `LiquidTooltip`, nunca `title`
 
 Un botón sin texto necesita que su rótulo sea **descubrible**, y el `title` del

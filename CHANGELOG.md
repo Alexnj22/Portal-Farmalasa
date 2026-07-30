@@ -12,6 +12,30 @@ retomar; acá está todo.
 
 ---
 
+## v2.263.0 — En táctil un botón de solo-ícono no tiene nombre: ahora lleva texto
+
+Un botón sin rótulo apuesta todo su significado al `LiquidTooltip`, y un tooltip
+se abre **con el mouse encima**: en un teléfono no hay "encima". Dos causas, las
+dos en `TabBarAction`:
+
+1. **El rótulo llevaba `hidden sm:inline`**, o sea que se escondía bajo 640px —
+   justo donde más falta hace. En la hoja de filtros del teléfono los botones son
+   de ancho completo: salían con un ícono suelto y ~300px de vacío al lado. Y
+   arriba de 720px, el único sitio donde la píldora de escritorio se dibuja, la
+   clase no llegaba a aplicarse nunca.
+2. **`soloIcono` se aplicaba también en táctil.** Ahora se ignora cuando
+   `(hover: none)` se cumple — por dispositivo de entrada, no por ancho.
+
+Medido en WebKit a 390px: la hoja de Acciones de MIN·MAX pasa de tres botones
+mudos a "DESCARGAR", "CONFIGURAR PARÁMETROS" y "LABORATORIOS OCULTOS".
+
+**Auditoría de los dos canónicos.** 13 vistas tienen tarjetas de métrica y las 13
+usan `StatCard` dentro de `CarrilCards`; el barrido estructural no encontró
+ninguna tarjeta a mano. 22 vistas montan `FilterBar`. Queda un hueco:
+`TabNoEfectivo` de Facturación tiene tres filtros propios fuera de la píldora.
+
+---
+
 ## v2.262.0 — La sombra de las tarjetas ya no se corta, y `soloIcono` cumple
 
 **`overflow-x: auto` no es un eje.** En cuanto un eje deja de ser `visible` el

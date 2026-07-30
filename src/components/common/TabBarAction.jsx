@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { NOMBRE_POR_ICONO, TONO_POR_ICONO, CLASE_TEXTO_POR_TONO } from './iconNames';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 /**
  * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).
@@ -81,8 +82,8 @@ const TabBarAction = memo(({
     tone,
     size = 'md',
     // Sin rótulo: el botón se vuelve cuadrado, el ícono crece a su proporción y
-    // el texto NO se pinta — `children` pasa a ser solo el nombre accesible.
-    soloIcono = false,
+    // el texto NO se pinta. Se IGNORA en táctil — ver abajo.
+    soloIcono: soloIconoPedido = false,
     label,
     className = '',
     // `as="a"` para las acciones que NAVEGAN fuera del portal. Agregado el
@@ -94,6 +95,18 @@ const TabBarAction = memo(({
     as: Tag = 'button',
     ...rest
 }) => {
+    // ── `soloIcono` no existe donde no hay hover (2026-07-30) ─────────────
+    // Un botón sin texto apuesta todo su significado al `LiquidTooltip`, y un
+    // tooltip **se abre con el mouse encima**: en un teléfono no hay "encima",
+    // así que ahí el rótulo no es un lujo, es el único nombre que el botón
+    // llega a tener. Un ícono sin nombre alcanzable es un botón adivinanza.
+    //
+    // Se resuelve con `(hover: none)` y no con un ancho: lo que decide es el
+    // dispositivo de entrada, no el tamaño de la ventana — una tablet ancha
+    // tampoco tiene hover, y una ventana angosta de escritorio sí lo tiene.
+    const sinHover = useMediaQuery('(hover: none)');
+    const soloIcono = soloIconoPedido && !sinHover;
+
     const isPrimary = variant === 'primary';
     const esBoton = Tag === 'button';
     const nombreIcono = Icon?.displayName ?? Icon?.name;
@@ -130,8 +143,15 @@ const TabBarAction = memo(({
                 lado. Una prop que promete "sin rótulo" tiene que quitarlo ella.
                 El texto no se pierde: si no hay `label`, es el que nombra al
                 botón para un lector de pantalla (arriba), y el llamador de la
-                píldora además le pone su `LiquidTooltip`. */}
-            {children && !soloIcono && <span className="hidden sm:inline">{children}</span>}
+                píldora además le pone su `LiquidTooltip`.
+
+                Y ya NO lleva `hidden sm:inline`. Esa clase escondía el rótulo
+                bajo 640px, que es justo donde más falta hace: en la hoja de
+                filtros del teléfono los botones son de ancho completo y salían
+                con un ícono suelto y 300px de vacío al lado. Arriba de 720px
+                —el único sitio donde la píldora de escritorio se dibuja— la
+                clase nunca llegaba a aplicarse, así que solo hacía daño. */}
+            {children && !soloIcono && <span>{children}</span>}
         </Tag>
     );
 });

@@ -12,6 +12,26 @@ retomar; acá está todo.
 
 ---
 
+## v2.264.0 — La sombra seguía cortada: el aire hay que medirlo
+
+v2.262.0 le puso 10px de aire a la pista del carril y la sombra siguió saliendo
+con un canto recto. La sombra real es `0 8px 32px`: baja **40px** bajo la tarjeta
+y sube 24 — y en hover crece a `0 16px 40px`, que son 56. `pt-6 pb-14` cubre los
+dos casos y `-mt-6 -mb-14` se los devuelve al layout.
+
+Había un **segundo** recorte, el que hacía el canto más visible: `mask-image`
+recorta al border-box, igual que un `overflow: hidden`. Todo lo que la sombra
+pintaba fuera de la caja desaparecía de golpe, así que la línea cruzaba el ancho
+entero de la fila y no solo el de una tarjeta.
+
+**A los lados no se agranda la caja: se deja de recortar.** Agrandarla hacia la
+derecha la metería bajo la píldora y le robaría los clics del borde. Si todo
+entra, la pista va `overflow-visible`; el clip solo existe cuando hay algo que
+deslizar, y ahí la máscara ya desvanece los bordes. La medición pasó a
+`useLayoutEffect` porque decide el `overflow` del primer pintado.
+
+---
+
 ## v2.263.1 — Tener un solo módulo no era tener acceso: el aterrizaje ignoraba 24 de 35
 
 La pantalla de aterrizaje se elegía con una cascada escrita a mano de **11

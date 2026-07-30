@@ -16,8 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.263.1';
+export const APP_VERSION = '2.264.0';
 
+// v2.264.0 — La sombra seguia cortada: el aire hay que MEDIRLO.
+//
+// v2.262.0 le puso 10px de aire a la pista del carril y la sombra siguio
+// saliendo con un canto recto. La sombra real es `0 8px 32px`: baja **40px** por
+// debajo de la tarjeta y sube 24 — y al pasar el mouse crece a `0 16px 40px`,
+// que son 56. Diez no alcanzaba ni de lejos. `pt-6 pb-14` cubre los dos casos y
+// `-mt-6 -mb-14` se los devuelve al layout.
+//
+// Y habia un SEGUNDO recorte, el que hacia el canto mas visible: **`mask-image`
+// recorta al border-box**, igual que un `overflow: hidden`. Todo lo que la
+// sombra pintaba fuera de la caja de la pista desaparecia de golpe, asi que la
+// linea cruzaba el ancho entero de la fila y no solo el de una tarjeta. Con
+// padding suficiente el recorte cae donde ya no hay sombra.
+//
+// **A los lados no se agranda la caja: se deja de recortar.** Agrandarla hacia
+// la derecha la meteria por debajo de la pildora y le robaria los clics del
+// borde. Si todo entra, la pista va `overflow-visible` y las sombras respiran;
+// el clip solo existe cuando hay algo que deslizar, y justo entonces la mascara
+// ya desvanece los dos bordes. Por eso la medicion paso a `useLayoutEffect`:
+// decide el `overflow` del primer pintado.
+//
 // v2.263.1 — Tener un solo modulo no era tener acceso: el aterrizaje ignoraba 24 de 35.
 //
 // La pantalla de aterrizaje se elegia con una cascada escrita a mano de **11

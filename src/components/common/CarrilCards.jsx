@@ -1,4 +1,4 @@
-import React, { memo, Children, isValidElement, cloneElement, useRef, useState, useEffect, useCallback } from 'react';
+import React, { memo, Children, isValidElement, cloneElement, useRef, useState, useLayoutEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
@@ -38,14 +38,33 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  *
  * ── La sombra necesita aire DENTRO de la pista ────────────────────────────
  * `overflow-x: auto` no es un eje: en cuanto un eje deja de ser `visible` el
- * otro pasa a `auto` solo. O sea que la pista también recortaba ARRIBA y ABAJO,
- * y con `py-0.5` la sombra de la tarjeta —y su `-translate-y-px` al pasar el
- * mouse— quedaban cortadas con un canto recto. Se veía como si las tarjetas
- * estuvieran metidas en una caja.
+ * otro pasa a `auto` solo. O sea que la pista también recorta ARRIBA y ABAJO, y
+ * la sombra de la tarjeta salía con un canto recto. Se veía como si las
+ * tarjetas estuvieran metidas en una caja.
  *
- * `py-2.5` le da los 10px que la sombra necesita, y `-my-2` se los devuelve al
- * layout: la fila mide lo mismo que antes, pero la sombra ya no choca contra el
- * borde del scroll.
+ * **El aire hay que medirlo, no estimarlo.** El primer intento le puso 10px y
+ * seguía cortada: la sombra real es `0 8px 32px`, o sea que baja **40px** por
+ * debajo de la tarjeta y sube 24 — y al pasar el mouse crece a `0 16px 40px`,
+ * que son 56. `pt-6 pb-14` cubre los dos casos y `-mt-6 -mb-14` se los devuelve
+ * al layout: la fila mide lo mismo que antes.
+ *
+ * Y ojo con la MÁSCARA, que es la que hacía el corte más visible: `mask-image`
+ * recorta al border-box igual que un `overflow: hidden`. Todo lo que la sombra
+ * pintaba fuera de la caja de la pista desaparecía de golpe, así que el canto
+ * recto cruzaba el ancho entero de la fila y no solo el de una tarjeta. Padding
+ * suficiente lo resuelve para los dos: el recorte cae donde ya no hay sombra.
+ *
+ * ── Y horizontalmente NO se recorta: se deja de recortar ──────────────────
+ * A los lados el mismo problema, pero ahí la solución no es padding: agrandar la
+ * caja hacia la derecha la metería por debajo de la píldora y le robaría los
+ * clics del borde. Lo que se hace es **no clipear cuando no hace falta**: si
+ * todo entra, la pista va `overflow-visible` y las sombras respiran. El clip
+ * solo existe cuando hay algo que deslizar — y justo entonces la máscara ya
+ * desvanece los dos bordes, así que el corte no se puede ver.
+ *
+ * Por eso la medición corre en `useLayoutEffect` y no en `useEffect`: decide el
+ * `overflow` del primer pintado, y con el efecto normal se alcanzaba a ver un
+ * cuadro de tarjetas desbordadas antes de que se corrigiera.
  *
  * ── El borde se DESVANECE, no corta ───────────────────────────────────────
  * La tarjeta que asoma quedaba rebanada con un canto recto, como si la vista se
@@ -114,7 +133,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
         if (primera) setCompacta(primera.getBoundingClientRect().width < ANCHO_CON_DETALLE);
     }, []);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const el = pistaRef.current;
         if (!el) return undefined;
         medir();
@@ -142,8 +161,10 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 ref={pistaRef}
                 role="group"
                 aria-label={ariaLabel}
-                className="flex items-stretch gap-2 overflow-x-auto scroll-smooth
-                    [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2.5 -my-2"
+                className={`flex items-stretch gap-2 scroll-smooth
+                    [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+                    pt-6 pb-14 -mt-6 -mb-14
+                    ${desliza ? 'overflow-x-auto' : 'overflow-visible'}`}
                 style={{
                     maskImage: mascara,
                     WebkitMaskImage: mascara,

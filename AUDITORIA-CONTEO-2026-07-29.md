@@ -1,9 +1,15 @@
 # Auditoría del módulo Conteo de Inventario — 2026-07-29
 
-Estado: **C1–C7 aplicadas** (v2.183.0, 6 migraciones). Auditoría completa de las
-6 capas del módulo (vista lista, vista detalle, modal de alta, slice, capa de
-datos, PDF) más las 12 RPCs, 3 tablas y sus policies en producción. Los hallazgos
-están verificados contra datos reales, no inferidos de la lectura.
+Estado: **C1–C7 aplicadas** (v2.183.0, 6 migraciones), más la Fase A del ajuste
+al ERP (v2.188.0), el recuento de variaciones (v2.190.0) y los conteos cíclicos
+(v2.194.0). Auditoría completa de las 6 capas del módulo (vista lista, vista
+detalle, modal de alta, slice, capa de datos, PDF) más las 12 RPCs, 3 tablas y
+sus policies en producción. Los hallazgos están verificados contra datos reales,
+no inferidos de la lectura.
+
+**Lo que siguió después de cerrar el plan está en "Después del cierre"** — cuatro
+entregas (v2.201 → v2.231) que salieron de usar el módulo, no de auditarlo, y
+que corrigen dos cosas que este documento había dado por buenas.
 
 Queda abierto solo lo listado en "Fuera de alcance", que son decisiones de
 negocio, no deuda técnica.
@@ -29,7 +35,7 @@ Tres decisiones tomadas por separado que se contradicen entre sí:
 | 3 | Lo no contado no entra en diferencias ni en valor | 🔴 | C4 | ✅ |
 | 4 | El conteo aprobado no ajusta ni exporta nada | 🔴 | — | fuera de alcance* |
 | 5 | Se pierde la existencia inicial del libro | 🟠 | C4 | ✅ |
-| 6 | Sin conteo ciego, sin segregación de funciones, sin recuento, cambio de lote sin rastro | 🟠 | C6 | ✅ (recuento no) |
+| 6 | Sin conteo ciego, sin segregación de funciones, sin recuento, cambio de lote sin rastro | 🟠 | C6 | ✅ — pero el ciego se reabrió, ver v2.231.0 |
 | 7 | Tres huecos de RLS + alta manual sin RPC | 🟠 | C5 | ✅ |
 | 8 | Un guardado fallido no avisa — pérdida silenciosa de datos | 🟠 | C2 | ✅ |
 | 9 | Huecos funcionales (lote nuevo, SIN_UBICAR, vencidos, conteo duplicado, paginación) | 🟡 | C7 | ✅ |
@@ -84,7 +90,9 @@ manual usa el mismo criterio (hoy usa un tercero: `order('id').limit(1)`).
 ### C6 — Controles que aguanten una auditoría
 
 - Conteo ciego alcanzable (el PDF ya lo soporta, la UI nunca lo pide) y
-  ocultable también en pantalla.
+  ocultable también en pantalla. **Esto quedó a medias y el documento lo dio por
+  cerrado: lo que se entregó fue un `<Switch>` con el número viajando igual en la
+  respuesta. Lo cerró de verdad v2.231.0** — ver "Después del cierre".
 - Aprobar exige que el aprobador no sea quien finalizó el conteo.
 - El cambio de lote deja fila de historial.
 - `appendAuditLog` en las acciones que faltan.
@@ -153,6 +161,76 @@ por +$834.93 en el escenario de prueba), con 56 líneas correctamente marcadas
 como área de vencidos. El payload de impresión trae los 22 campos que el reporte
 necesita.
 
+## Después del cierre — cuatro entregas que salieron de usar el módulo
+
+Todo lo de arriba se verificó contra datos reales pero **nunca contra un
+navegador con sesión** (está dicho en "Verificación": el camino de escritura
+depende de `auth_employee_id()`, que desde una consulta administrativa es NULL).
+Las cuatro entregas siguientes son lo que apareció al operar el módulo de
+verdad, y dos de ellas contradicen algo que este documento daba por hecho.
+
+### v2.201.0 — un CHECK bloqueaba el cíclico entero
+
+`conteos_inventario_scope_type_check` nunca incluyó `'CICLICO'`: **ningún**
+conteo cíclico se podía crear, ni el programado ni el manual. v2.194.0 no lo
+detectó porque solo se había probado el **sorteo de la muestra**
+(`preview_muestra_ciclica`), nunca el `INSERT` del conteo — que es exactamente el
+hueco que deja verificar un plan por sus lecturas. Lo encontró el primer test
+real de la función programada.
+
+Con el mismo arreglo entró la programación mensual
+(`crear_conteos_ciclicos_programados()` + cron `0 15 15 * *`, el 15 y no el 1
+porque ese día ya corren el recálculo de MIN/MAX y el cierre de mes), decidida
+por `branches.conteo_ciclico_activo` / `conteo_ciclico_tamano` y no por código —
+Bodega en `false`. También salió `'APROBADO'` del CHECK de status: nadie lo
+escribe, `aprobar_conteo_inventario` pone `'CERRADO'`.
+
+Un guard interno era `auth.role() = 'service_role'`, que habría roto el cron en
+silencio: pg_cron ejecuta SQL directo, sin contexto de request, así que
+`auth.role()` es NULL. El control lo hacen los GRANT.
+
+### v2.208.0 / v2.210.0 — el modal de alta
+
+El `SegmentedControl` del alcance iba envuelto en un `md:grid-cols-2`, y en
+`layout="block"` ese control ya arma su propia grilla: cada píldora terminaba con
+~25% del ancho del modal y el texto en tres líneas. Y el selector de sucursal
+ofrecía Administración, que no tiene inventario: elegirla reventaba con
+`SUCURSAL_SIN_MAPEO_ERP`. El filtro correcto es el **mapeo al ERP**
+(`erp_sucursal_map`), que es el mismo criterio que exige la RPC.
+
+Medido de paso: el sorteo no era lento (`preview_muestra_ciclica` = 35 ms en BD,
+~230 ms de ida y vuelta). Lo lento era el arranque global del portal — **24
+peticiones en 8 segundos con la pestaña quieta**, incluida `ensure_user_by_code`
+repetida. Queda anotado abajo; no es del módulo.
+
+### v2.231.0 — el ciego era decorativo, y un guardado sin cambios inventaba faltantes
+
+Los dos defectos de fondo que este documento no vio:
+
+1. **El conteo ciego era `useState(true)` + un `<Switch>`.** Cualquiera con
+   `can_edit` lo apagaba, y el número del sistema **viajaba en la respuesta de
+   todos modos** — bastaba el inspector. C6 lo dio por cerrado por eso: la UI
+   pedía el ciego, y eso se confundió con imponerlo. Ahora no sale de la base:
+   permiso `conteo_ver_sistema` y el predicado
+   `conteo_puede_ver_sistema(conteo_id)` (se ve si el conteo ya está cerrado, o
+   con el permiso). Son **cinco** caminos que devuelven el dato y los cinco lo
+   respetan — incluidos `get_conteo_items_jsonb` (los PDF salían con
+   `{ciego: false}` **fijo**: el papel revelaba lo que la pantalla tapaba) y los
+   dos `*_count`, porque filtrar por "con diferencia" señala exactamente las
+   líneas que descuadran sin mostrar un número.
+2. **`guardar_conteo_item` releía `inventory` en TODA llamada.** Abrir una línea
+   confirmada y salir sin tocar nada le reasignaba el sistema de ese instante: si
+   entre el conteo y ese click hubo una venta, la línea pasaba de cuadrada a
+   faltante **sin que nadie contara**. El físico es una medición tomada en un
+   momento. Ahora un guardado sin cambios es `SIN_CAMBIO` y no escribe nada — el
+   invariante va en la RPC, no en el `lastSaved` client-side que ya existía y que
+   un reintento o un doble submit se salteaba.
+
+Con eso entró el rediseño de la vista para lo que es (alguien de pie en un
+pasillo tecleando por lote): nada se contrae, confirmada = bloqueada con lápiz,
+autoría en la línea, columna `evento` en el historial, y tarjetas por producto en
+teléfono.
+
 ## Fuera de alcance (decisión pendiente del usuario)
 - **Corte (cutoff) de movimientos.** Hoy la lectura es en vivo, sin registrar
   las ventas ocurridas durante el conteo. Con 6 sucursales sincronizando cada
@@ -182,3 +260,8 @@ necesita.
   Queda pendiente revisar el ABC de **Salud 5**: solo 309 productos clasificados
   de 1,914, contra ~1,400 en las demás farmacias. Hasta que se publique, su
   muestra cae casi toda en "sin clase".
+- **El arranque del portal, ajeno a este módulo.** Medido en v2.210.0 buscando
+  por qué el sorteo del cíclico parecía tardar 5 s: son **24 peticiones en 8
+  segundos con la pestaña quieta**, incluida la edge function de auth
+  (`ensure_user_by_code`) repetida. El preview salía dentro de esa ráfaga y
+  esperaba detrás. Es un problema del arranque global.

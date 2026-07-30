@@ -12,6 +12,143 @@ retomar; acá está todo.
 
 ---
 
+## v2.238.0 — el modal no se abría dos veces al cerrarse: rebotaba.
+
+Diez cosas de la vista de Conteo de Inventario, sobre el uso real del módulo. La
+primera resultó ser de **todo el portal**, no del conteo.
+
+### El rebote del modal
+
+Reportado como "al cerrar un modal se abre y cierra 2 veces". No había doble
+montaje —un `MutationObserver` sobre `[role=dialog]` ve **un ADD y un DEL**—, así
+que era visual. Muestreando la opacidad efectiva cuadro por cuadro:
+
+```
+  122ms  1.00  exit    ← arranca la salida
+  130ms  0.18  exit
+  164ms  0.02  exit
+  180ms  1.00  exit    ← ⚠ vuelve a estar ENTERO
+  315ms  ── nodo removido ──
+```
+
+Los keyframes `exit` de tw-animate-css son solo `to`, y el shorthand
+`--animate-out` trae `var(--tw-animation-fill-mode, none)`: **sin fill-mode, en
+cuanto la animación termina el elemento vuelve a su estado natural** (opacidad 1,
+sin transform). Y la animación termina antes que el desmontaje porque el tema la
+acorta —`[data-theme="solid"] .animate-out { animation-duration: 130ms }`, y
+`prefers-reduced-motion` la deja en 120ms `!important`— mientras `EXIT_MS` espera
+180. Ahí quedaba la ventana en la que el modal reaparecía y después desaparecía de
+golpe.
+
+El comentario de `ModalShell` ya avisaba: *"sincronizado con el timeout que
+desmonta — si divergen, el panel se congela visible o desaparece de golpe"*. Lo
+que no podía saber es que la duración la decide el CSS del tema, no el JS.
+`fill-mode-forwards` en las tres salidas hace que la última imagen se sostenga
+hasta que el nodo se va, y de paso vuelve inofensiva cualquier divergencia
+futura. Medido después: `1.00 → 0.08 → 0.02 → 0.00` y **se queda en 0.00**.
+Verificado además que la clase existe en el bundle (`fill-mode-forwards{…
+animation-fill-mode:forwards}`) — cuarta vez que este proyecto se tropieza con
+una clase escrita que no existía.
+
+La otra mitad del síntoma era del conteo: `open={!!item}` acoplaba "qué renglón"
+con "está abierto", así que al cerrar el item pasaba a `null` y durante los 180ms
+de la salida el modal se quedaba **sin título y sin contenido**. Ahora son dos
+props, y el efecto que trae el historial depende también de `open` para que
+reabrir el mismo renglón no muestre el historial cacheado.
+
+### Filtro por laboratorio y orden por columna — en el servidor
+
+Las dos cosas son del mismo problema: la lista **pagina en el servidor** (por
+producto, para que uno con 14 lotes no se parta entre dos páginas), así que
+filtrar u ordenar las 25 filas que ya llegaron da un resultado que parece
+correcto sobre 2,500 renglones y no lo es.
+
+- `get_conteo_products_page` / `_count` ganan `p_laboratorio_id`, y la página
+  además `p_order_by` / `p_order_dir` con lista blanca. Se **dropea** la firma
+  vieja: un overload cuyos parámetros extra tienen DEFAULT solo se puede llamar
+  con la aridad máxima, así que dejar las dos habría hecho ambigua (42725) la
+  llamada de 5 argumentos que hacía el portal.
+- `get_conteo_laboratorios` ofrece **solo los laboratorios de ese conteo** (219 +
+  "sin laboratorio"), no el catálogo de 1,100. El centinela `id = 0` existe
+  porque hay renglones sin laboratorio (1 de 2,500) y sin la opción no serían
+  alcanzables por ningún filtro — el mismo agujero que tenía `SIN_UBICAR`.
+- **En conteo ciego el orden por sistema/diferencia se ignora**: ordenar la lista
+  por el número tapado lo revela igual, solo más despacio. Es el mismo criterio
+  que ya apagaba el filtro "con diferencia". Verificado impersonando empleados
+  reales en transacción con `ROLLBACK`: rol 13 (con permiso) ordena 140·124·103
+  descendente; rol 11 (sin permiso) pidiendo el mismo orden recibe **el orden por
+  defecto**, idéntico al de no pedir nada, y `sistema_total` en NULL. Ordenar por
+  producto sí se permite: no revela nada.
+- Los filtros pasan a `FilterBar` (§17). Estaban **sueltos**, que es justo lo que
+  la regla prohíbe: sin contenedor no hay orden de ranuras, no hay limpiar-todo, y
+  en móvil se parten en tres filas.
+
+### Tarjetas que sirven mientras se cuenta
+
+Existían **solo con el conteo finalizado**, porque salían de
+`conteos_inventario.total_*`, que las escribe `recalcular_totales_conteo` al
+cerrar. O sea que durante los días en que alguien está contando —los únicos en
+que a alguien le importa cuánto falta— la vista no decía nada: había que paginar
+59 páginas para saber si iba por la mitad.
+
+`get_conteo_resumen` agrega **todo** el conteo en vivo: avance, sin contar,
+productos, no ubicados, diferencias y el dinero. Usa la **misma fórmula** que
+`recalcular_totales_conteo`, así que al finalizar el número no salta. Las de
+dinero se tapan si el sistema no es visible (son la suma exacta de lo que la
+tabla está ocultando renglón por renglón) y mientras el conteo está abierto van
+rotuladas **"faltante parcial"** — valuar un conteo a medias como si fuera el
+resultado es el error que este módulo ya cometió una vez (hallazgo #3).
+
+De paso sale un dato de control que no estaba: **cuántas personas contaron**. Un
+conteo de 2,500 renglones hecho por una sola ya es un hallazgo.
+
+### La barra del encabezado
+
+`Volver a Conteos` era un botón solo en una fila propia; ahora dice **Volver** y
+vive junto a la sucursal, que es donde uno mira para saber de dónde viene. Y los
+hasta **cuatro** botones de impresión ("Imprimir Hoja", "Imprimir Resultados",
+"Ajuste para el ERP", "CSV") empujaban a Finalizar —la única acción que cambia el
+estado del conteo— al final de una fila de secundarios. Quedan **Imprimir** y
+**Finalizar**: con un documento disponible imprime directo, con varios abre un
+selector con una línea de qué es cada uno, porque "Resultados" y "Ajuste para el
+ERP" no son lo mismo y antes eran dos botones idénticos lado a lado.
+
+### El resto
+
+- **La hoja impresa ciega ya no trae la columna Sistema.** Se emitía igual, con
+  el rótulo y las celdas vacías: una columna en blanco en el papel, que además
+  invita a rellenarla a mano desde otra pantalla. Ahora son dos anatomías (5 y 6
+  columnas) y el ancho liberado va a Producto y Nota. Los `String(x)` sobre las
+  cifras tapadas pasan a un helper: un `String(null)` imprime la palabra "null".
+- **El lápiz de corregir lote quedaba en un segundo renglón.** Compartía el
+  `flex-wrap` con los badges, así que en cuanto aparecía "Área vencidos" caía
+  abajo — un lápiz solo, sin nada que dijera a qué lote pertenecía. Ahora va en
+  un grupo que no se parte, pegado al lote.
+- **En teléfono no existía.** Solo vivía en la tabla (`hidden md:block`), y el
+  caso que lo necesita —el lote del anaquel no es el que copió el snapshot— se
+  descubre justamente de pie frente al anaquel. Medido en WebKit con perfil de
+  iPhone a 320 y 390: 44×44, dentro del marco, sin desborde horizontal.
+- **El encabezado ordena** (Producto, Laboratorio, Sistema, Físico, Dif.,
+  Estado), con `aria-sort`. Solo esas seis: la unidad que el servidor pagina es
+  el producto, y ordenar por lote o vencimiento tendría que romper los grupos.
+- **El texto cortado**: los rótulos largos se acortaron ("Diferencia" → "Dif.",
+  que es lo que ya usa el reporte impreso) y `Vence`/`Nota` bajan a un
+  breakpoint nuevo **`2xl`** en `DataTable` — `xl` no servía porque 1440 ya es
+  `xl`. La tabla pasa de 1710px a 1539px. **Sigue necesitando scroll horizontal
+  en 1440 con el menú abierto** (quedan ~1030px): nueve columnas no entran, y
+  seguir recortando significaba borrar columnas que la auditoría agregó a
+  propósito.
+
+### Migraciones
+
+`20260730015843_20260729_conteo_v5_filtro_lab_y_orden` ·
+`20260730015902_20260729_conteo_v6_resumen_en_vivo`. Los dos nombres arrastran un
+prefijo `20260729_` de la convención vieja: se aplicaron minutos antes de que
+llegara la nueva regla de nombres, y el `name` registrado en el servidor ya no se
+puede cambiar sin inventar una migración de más.
+
+---
+
 ## v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard dejó de mostrar `$1234,56`.
 
 Primera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`, el plan que cierra las

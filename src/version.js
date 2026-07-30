@@ -16,7 +16,7 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.237.0';
+export const APP_VERSION = '2.238.0';
 
 // v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard
 // dejo de mostrar `$1234,56`.

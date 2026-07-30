@@ -45,6 +45,11 @@ const HIDE_BELOW = {
   md: 'hidden md:table-cell',
   lg: 'hidden lg:table-cell',
   xl: 'hidden xl:table-cell',
+  // `2xl` (1536px) se agregó el 2026-07-29 para el conteo de inventario: 11
+  // columnas no entran en los ~1030px que quedan al costado del menú en una
+  // pantalla de 1440, y la última terminaba fuera del marco. `xl` no alcanzaba
+  // porque 1440 YA es xl, así que todo lo marcado `xl` se mostraba igual.
+  '2xl': 'hidden 2xl:table-cell',
 };
 
 // ── Tokens (Fase T3, AUDITORIA-TEMA-2026-07.md — cierra el blindspot de dark

@@ -31,7 +31,8 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
-import { formatMoney } from '../../utils/formatNumber';
+import FilterBar from '../../components/common/FilterBar';
+import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 
 const PAGE_SIZE = 25;
 
@@ -73,12 +74,12 @@ const columnas = (verSistema) => [
     { key: 'laboratorio', label: 'Laboratorio', hideBelow: 'xl', sortable: true },
     { key: 'presentacion', label: 'Present.', align: 'center', hideBelow: 'lg' },
     { key: 'lote', label: 'Lote' },
-    { key: 'vence', label: 'Vence', align: 'center', hideBelow: 'xl' },
+    { key: 'vence', label: 'Vence', align: 'center', hideBelow: '2xl' },
     { key: 'quien', label: 'Contó', hideBelow: 'lg' },
     ...(verSistema ? [{ key: 'sistema', label: 'Sistema', align: 'center', sortable: true }] : []),
     { key: 'fisico', label: 'Físico', align: 'center', sortable: true },
     ...(verSistema ? [{ key: 'diferencia', label: 'Dif.', align: 'center', sortable: true }] : []),
-    { key: 'nota', label: 'Nota', hideBelow: 'xl' },
+    { key: 'nota', label: 'Nota', hideBelow: '2xl' },
     { key: 'estado', label: 'Estado', align: 'center', sortable: true },
 ];
 
@@ -92,7 +93,6 @@ const fmtDate = (iso) => {
     const [y, m, d] = iso.split('-');
     return `${d}/${m}/${y}`;
 };
-const fmtMoney = (n) => formatMoney(n);
 const fmtDateTime = (iso) => {
     if (!iso) return '—';
     return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -364,19 +364,26 @@ function ItemRow({
             <DataCell align="center" hideBelow="lg"><span className="text-label font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
             <DataCell>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
+                    {/* El lápiz va PEGADO al lote, en un grupo que no se parte. Antes
+                        compartía el `flex-wrap` con los badges, así que en cuanto
+                        aparecía "Área vencidos" el botón caía al segundo renglón y la
+                        fila medía el doble — un lápiz solo, debajo, sin nada que
+                        indicara a qué lote pertenecía. */}
+                    <span className="flex items-center gap-1 shrink-0 whitespace-nowrap">
+                        <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
+                        {editable && (
+                            <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
+                        )}
+                    </span>
                     {/* El ERP separa el stock vencido en su propia área. Sin esta
                         marca, esa fila y la del stock bueno se veían idénticas
                         (mismo producto, presentación, lote y fecha) y el
                         contador no sabía cuál de las dos estaba llenando. */}
                     {item.is_vencidos && <Badge variant="danger" size="sm" className="shrink-0">Área vencidos</Badge>}
                     {item.es_agregado_manual && <Badge variant="chart-9" size="sm" className="shrink-0">Agregado</Badge>}
-                    {editable && (
-                        <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
-                    )}
                 </div>
             </DataCell>
-            <DataCell align="center" hideBelow="xl">
+            <DataCell align="center" hideBelow="2xl">
                 <div className="flex items-center justify-center gap-1">
                     <span className="text-label text-content-3 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
                     <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
@@ -461,7 +468,7 @@ function ItemRow({
                     )}
                 </DataCell>
             )}
-            <DataCell hideBelow="xl">
+            <DataCell hideBelow="2xl">
                 <PortalInput
                     aria-label="Nota del conteo"
                     type="text"
@@ -500,7 +507,10 @@ function ProductGroupRow({ product, index, verSistema }) {
     const completo = product.item_count > 0 && product.contados_count >= product.item_count;
     return (
         <DataRow index={index} className={completo ? 'bg-success/10' : ''}>
-            <DataCell className="w-[280px]">
+            {/* Sin ancho fijo. Los 280px que tenía eran un mínimo de facto que la
+                tabla no podía ceder: con 11 columnas de `whitespace-nowrap` sumaban
+                más que el marco y la última ("Diferencia") terminaba cortada. */}
+            <DataCell className="min-w-[200px] max-w-[320px]">
                 <div className="flex items-center gap-1.5 min-w-0">
                     <p className={`font-bold text-body-sm truncate ${completo ? 'text-success' : 'text-content'}`}>
                         {product.product_nombre || `Producto ${product.erp_product_id}`}
@@ -515,7 +525,7 @@ function ProductGroupRow({ product, index, verSistema }) {
                 </Badge>
             </DataCell>
             <DataCell />
-            <DataCell align="center" hideBelow="xl">
+            <DataCell align="center" hideBelow="2xl">
                 <div className="flex items-center justify-center gap-1">
                     {product.con_vencidos_count > 0 && <VencimientoBadge status="VENCIDO" />}
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
@@ -533,7 +543,7 @@ function ProductGroupRow({ product, index, verSistema }) {
                     <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
                 </DataCell>
             )}
-            <DataCell hideBelow="xl" />
+            <DataCell hideBelow="2xl" />
             <DataCell align="center">
                 <span className={`text-caption font-bold tabular-nums ${completo ? 'text-success' : 'text-content-3'}`}>
                     {product.contados_count}/{product.item_count}
@@ -549,7 +559,7 @@ function ProductGroupRow({ product, index, verSistema }) {
 // pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
-function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, currentUser }) {
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser }) {
     const { showToast } = useToastStore();
     const [fisico, setFisico] = useState(recuento ? '' : (item.fisico_cantidad ?? ''));
     const [estadoItem, setEstadoItem] = useState(item.estado_item);
@@ -619,9 +629,28 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
 
     return (
         <div className="pt-2.5 mt-2.5 border-t border-dashed border-border-card first:border-t-0 first:mt-1 first:pt-0">
-            <div className="flex items-baseline justify-between gap-2 flex-wrap mb-1.5">
-                <span className={`text-label font-bold tabular-nums ${bloqueada ? 'text-success' : 'text-content-2'}`}>
-                    Lote {item.lote || '—'}
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
+                <span className="flex items-center gap-1 min-w-0">
+                    <span className={`text-label font-bold tabular-nums ${bloqueada ? 'text-success' : 'text-content-2'}`}>
+                        Lote {item.lote || '—'}
+                    </span>
+                    {/* Corregir el lote solo existía en la tabla, o sea solo en
+                        escritorio (`hidden md:block`). Y el caso que lo necesita
+                        —el lote del anaquel no es el que copió el snapshot— se
+                        descubre justamente de pie frente al anaquel, con el
+                        teléfono en la mano. 44px de lado: es un objetivo táctil,
+                        no el adorno de otro control. */}
+                    {/* Sin `w-11 h-11` a mano: `iconOnly` ya resuelve el lado con
+                        `max(…, var(--tap-min))`, que en un dedo son 44px. Escribirlo
+                        acá era pelearle al canónico con una clase que puede perder o
+                        ganar según el orden del CSS generado. */}
+                    {editable && onEditLote && (
+                        <Button variant="ghost" icon={Pencil} iconOnly disabled={saving}
+                            className="shrink-0"
+                            title="Corregir lote/vencimiento"
+                            aria-label={`Corregir el lote ${item.lote || 'sin lote'} de ${item.product_nombre || 'este producto'}`}
+                            onClick={() => onEditLote(item)} />
+                    )}
                 </span>
                 <span className="text-caption text-content-3 tabular-nums">
                     {item.presentacion || '—'} · vence {fmtDate(item.fecha_vencimiento)}
@@ -705,18 +734,143 @@ function ProductCardMovil({ product, lines, desbloqueadas, ...rest }) {
     );
 }
 
-function ItemHistoryModal({ item, onClose }) {
+// ── Tarjetas del encabezado ──────────────────────────────────────────────────
+// Una sola tarjeta, un solo dato, y el rótulo dice de qué conteo habla. Las que
+// tienen dinero solo salen si el sistema es visible: son la suma de todas las
+// diferencias, o sea el resumen exacto de lo que un conteo ciego está tapando
+// renglón por renglón.
+function Tarjeta({ valor, rotulo, sub, tono = 'neutral' }) {
+    const t = {
+        neutral: { caja: 'bg-surface-card-hover', num: 'text-content-2', txt: 'text-content-2' },
+        warning: { caja: 'bg-warning/10',        num: 'text-warning-text', txt: 'text-warning' },
+        danger:  { caja: 'bg-danger/10',         num: 'text-danger',       txt: 'text-danger' },
+        success: { caja: 'bg-success/10',        num: 'text-success',      txt: 'text-success' },
+        chart1:  { caja: 'bg-chart-1/10',        num: 'text-chart-1-text', txt: 'text-chart-1-text' },
+    }[tono];
+    return (
+        <div className={`${t.caja} rounded-xl px-3 py-2 text-center`}>
+            <p className={`text-body-lg font-black tabular-nums ${t.num}`}>{valor}</p>
+            <p className={`text-micro uppercase tracking-widest font-bold ${t.txt}`}>{rotulo}</p>
+            {sub && <p className="text-micro text-content-3 tabular-nums mt-0.5">{sub}</p>}
+        </div>
+    );
+}
+
+function ResumenCards({ resumen, abierto }) {
+    const {
+        total_items: items = 0, total_productos: productos = 0, contados = 0, pendientes = 0,
+        sin_ubicar: sinUbicar = 0, recontados = 0, contadores = 0, agregados = 0,
+        con_diferencia: conDif, valor_faltante: falt, valor_sobrante: sobra, ver_sistema: ver,
+    } = resumen;
+    const pct = items > 0 ? (contados / items) * 100 : 0;
+
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 mt-4">
+            <Tarjeta
+                tono={pendientes === 0 ? 'success' : 'neutral'}
+                valor={formatPct(pct, { decimales: 0 })}
+                rotulo="Avance"
+                sub={`${formatQty(contados)} de ${formatQty(items)} renglones`}
+            />
+            <Tarjeta
+                tono={pendientes > 0 ? 'warning' : 'success'}
+                valor={formatQty(pendientes)}
+                rotulo="Sin contar"
+                // Cuántas personas contaron: si un conteo de 2,500 renglones lo
+                // hizo una sola, eso ya es un hallazgo de control interno.
+                sub={contadores > 0 ? `${formatQty(contadores)} contador(es)` : null}
+            />
+            <Tarjeta
+                valor={formatQty(productos)}
+                rotulo="Productos"
+                sub={agregados > 0 ? `${formatQty(agregados)} agregado(s) a mano` : null}
+            />
+            <Tarjeta
+                tono={sinUbicar > 0 ? 'danger' : 'neutral'}
+                valor={formatQty(sinUbicar)}
+                rotulo="No ubicados"
+                sub="buscados y no están"
+            />
+            {ver && (
+                <>
+                    <Tarjeta
+                        tono="warning"
+                        valor={formatQty(conDif)}
+                        rotulo="Diferencias"
+                        sub={recontados > 0 ? `${formatQty(recontados)} recontada(s)` : null}
+                    />
+                    {/* Faltante y sobrante en una tarjeta: son las dos mitades del
+                        mismo ajuste y en el ERP son dos transacciones del mismo
+                        conteo. Mientras está abierto van rotulados como PARCIAL —
+                        valuar un conteo a medias como si fuera el resultado es el
+                        error que este módulo ya cometió una vez (hallazgo #3). */}
+                    <Tarjeta
+                        tono="danger"
+                        valor={formatMoney(falt)}
+                        rotulo={abierto ? 'Faltante parcial' : 'Faltante'}
+                        sub={`sobrante ${formatMoney(sobra)}`}
+                    />
+                </>
+            )}
+        </div>
+    );
+}
+
+// ── Selector de documento ────────────────────────────────────────────────────
+// No es un menú desplegable: no existe uno canónico en el portal, y inventarlo
+// para cuatro opciones sería agregar un primitivo al sistema de diseño de paso.
+// Con un renglón por documento y su línea de qué es, además se elige leyendo —
+// "Ajuste para el ERP" y "Resultados" no son lo mismo y antes eran dos botones
+// idénticos uno al lado del otro.
+function PrintChooserModal({ open, documentos, busy, onClose, onPick }) {
+    return (
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-md" ariaLabel="Elegir documento para imprimir">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
+                <div>
+                    <h3 className="font-black text-content text-subtitle">Imprimir</h3>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Elige el documento</p>
+                </div>
+                <Button variant="destructive" size="sm" icon={X} iconOnly onClick={onClose} />
+            </div>
+            <div className="px-6 py-5 flex flex-col gap-2 relative z-base">
+                {documentos.map((d) => (
+                    <Button key={d.kind} variant="secondary" disabled={busy}
+                        className="w-full justify-start text-left h-auto py-3"
+                        onClick={() => onPick(d.kind)}>
+                        <d.icon size={15} className="shrink-0" />
+                        <span className="min-w-0">
+                            <span className="block font-bold">{d.label}</span>
+                            <span className="block text-caption text-content-3 font-normal normal-case tracking-normal text-pretty">{d.detalle}</span>
+                        </span>
+                    </Button>
+                ))}
+            </div>
+        </LiquidModal>
+    );
+}
+
+// `open` e `item` van SEPARADOS a propósito. Antes eran uno solo (`open={!!item}`)
+// y cerrar significaba poner el item en null — pero el panel sigue en pantalla
+// los ~180ms de la animación de salida, así que en esos milisegundos el modal se
+// quedaba sin título y sin contenido: un cuadro vacío desvaneciéndose. Es la
+// otra mitad de lo que se reportaba como "se abre y cierra dos veces" (la
+// primera era el rebote de opacidad de ModalShell). Cuál es el renglón y si el
+// diálogo está visible son dos cosas distintas; tratarlas como una era el bug.
+function ItemHistoryModal({ open, item, onClose }) {
     const fetchConteoItemHistory = useStaffStore((s) => s.fetchConteoItemHistory);
     const [history, setHistory] = useState(null);
 
+    // Depende de `open` además de `item`: al reabrir el MISMO renglón la
+    // referencia no cambió, y sin esto se vería el historial cacheado de antes
+    // de la última corrección.
     useEffect(() => {
-        if (!item) return;
-        setHistory(null); // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de item
+        if (!open || !item) return;
+        setHistory(null); // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al abrir o cambiar de item
         fetchConteoItemHistory(item.id).then(setHistory);
-    }, [item, fetchConteoItemHistory]);
+    }, [open, item, fetchConteoItemHistory]);
 
     return (
-        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
@@ -766,17 +920,20 @@ function ItemHistoryModal({ item, onClose }) {
     );
 }
 
-function EditLoteModal({ item, onClose, onSave }) {
+function EditLoteModal({ open, item, onClose, onSave }) {
     const { showToast } = useToastStore();
     const [lote, setLote] = useState('');
     const [fecha, setFecha] = useState('');
     const [saving, setSaving] = useState(false);
 
+    // Igual que en el historial: `open` en las dependencias para que reabrir el
+    // mismo renglón vuelva a partir del valor guardado y no del que quedó
+    // tecleado en el intento anterior.
     useEffect(() => {
-        if (!item) return;
+        if (!open || !item) return;
         setLote(item.lote || '');
         setFecha(item.fecha_vencimiento || '');
-    }, [item]);
+    }, [open, item]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -791,7 +948,7 @@ function EditLoteModal({ item, onClose, onSave }) {
     };
 
     return (
-        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
@@ -911,12 +1068,21 @@ export default function ConteoDetailView() {
     const fetchConteoPendientesCount = useStaffStore((s) => s.fetchConteoPendientesCount);
     const marcarAjusteErp = useStaffStore((s) => s.marcarAjusteErp);
     const recontarConteoItem = useStaffStore((s) => s.recontarConteoItem);
+    const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
+    const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
+    const [resumen, setResumen] = useState(null);
+    const [labs, setLabs] = useState([]);
+    const [laboratorioId, setLaboratorioId] = useState(null);
+    const [printChooserOpen, setPrintChooserOpen] = useState(false);
+    // Orden por columna. `null` = el orden del anaquel (laboratorio, producto),
+    // que es el que sirve para recorrerlo contando; lo resuelve el servidor.
+    const [orden, setOrden] = useState({ key: null, dir: 'asc' });
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío.
@@ -925,8 +1091,13 @@ export default function ConteoDetailView() {
     const [busy, setBusy] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [printing, setPrinting] = useState(false);
+    // Cuál renglón y si el diálogo está abierto son dos estados, no uno: al
+    // cerrar, el panel sobrevive los ~180ms de la salida y necesita seguir
+    // teniendo qué mostrar (ver el comentario de ItemHistoryModal).
     const [historyItem, setHistoryItem] = useState(null);
+    const [historyOpen, setHistoryOpen] = useState(false);
     const [editLoteItem, setEditLoteItem] = useState(null);
+    const [editLoteOpen, setEditLoteOpen] = useState(false);
     const [itemsByProduct, setItemsByProduct] = useState({});
     const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
     const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
@@ -946,6 +1117,9 @@ export default function ConteoDetailView() {
     // viajaba igual en la respuesta.
     const verSistema = products.length > 0 ? !!products[0].ver_sistema : true;
 
+    const abrirHistorial = useCallback((item) => { setHistoryItem(item); setHistoryOpen(true); }, []);
+    const abrirEditLote  = useCallback((item) => { setEditLoteItem(item); setEditLoteOpen(true); }, []);
+
     const setDesbloqueada = useCallback((itemId, abierta) => {
         setDesbloqueadas((prev) => {
             if (!!prev[itemId] === abierta) return prev;
@@ -958,13 +1132,20 @@ export default function ConteoDetailView() {
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const [detalle, productsPage] = await Promise.all([
+            const [detalle, productsPage, res] = await Promise.all([
                 fetchConteoDetalle(id),
-                fetchConteoProductsPage(id, { page, pageSize: PAGE_SIZE, search, filtro }),
+                fetchConteoProductsPage(id, {
+                    page, pageSize: PAGE_SIZE, search, filtro,
+                    laboratorioId,
+                    orderBy: orden.key ? (ORDEN_SERVIDOR[orden.key] ?? orden.key) : null,
+                    orderDir: orden.dir,
+                }),
+                fetchConteoResumen(id),
             ]);
             setConteo(detalle);
             setProducts(productsPage.rows);
             setTotal(productsPage.total);
+            setResumen(res);
             setDesbloqueadas({});
 
             // Nada se contrae: las líneas de los productos de la página vienen
@@ -979,10 +1160,34 @@ export default function ConteoDetailView() {
         } finally {
             setLoading(false);
         }
-    }, [id, page, search, filtro, fetchConteoDetalle, fetchConteoProductsPage, fetchConteoItemsForProducts, showToast]);
+    }, [id, page, search, filtro, laboratorioId, orden, fetchConteoDetalle, fetchConteoProductsPage,
+        fetchConteoItemsForProducts, fetchConteoResumen, showToast]);
 
     useEffect(() => { load(); }, [load]);
-    useEffect(() => { setPage(1); }, [search, filtro]);
+    useEffect(() => { setPage(1); }, [search, filtro, laboratorioId, orden]);
+
+    // Los laboratorios del conteo no cambian mientras se cuenta (el alcance se
+    // fijó al crearlo), así que se piden una vez por conteo y no en cada `load`.
+    useEffect(() => {
+        let vivo = true;
+        fetchConteoLaboratorios(id).then((r) => { if (vivo) setLabs(r); }).catch(() => {});
+        return () => { vivo = false; };
+    }, [id, fetchConteoLaboratorios]);
+
+    const labOpciones = labs.map((l) => ({
+        value: String(l.laboratorio_id),
+        label: `${l.laboratorio_nombre} (${l.item_count})`,
+    }));
+
+    const filtrosActivos = (laboratorioId != null ? 1 : 0) + (filtro !== 'TODOS' ? 1 : 0);
+    const limpiarFiltros = () => { setLaboratorioId(null); setFiltro('TODOS'); };
+
+    // Un segundo clic invierte; el tercero NO vuelve a "sin orden". Con el orden
+    // del anaquel como default, poder volver a él es útil, pero hacerlo el tercer
+    // paso de un ciclo lo vuelve un accidente: se limpia desde la píldora.
+    const handleSort = (key) => setOrden((prev) => (
+        prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
+    ));
 
     const editable = conteo && ['BORRADOR', 'EN_PROGRESO'].includes(conteo.status);
     const canFinalize = editable && canEdit;
@@ -1098,6 +1303,7 @@ export default function ConteoDetailView() {
     };
 
     const handlePrint = async (kind) => {
+        setPrintChooserOpen(false);
         setPrinting(true);
         try {
             const allItems = await fetchTodosLosItemsConteo(id);
@@ -1132,6 +1338,18 @@ export default function ConteoDetailView() {
 
     const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
     const es = conteo ? (ESTADO_CFG[conteo.status] || ESTADO_CFG.BORRADOR) : null;
+
+    // Qué documentos existen para este conteo AHORA. Mientras se cuenta hay uno
+    // solo (la hoja), así que "Imprimir" imprime y no abre un selector de una
+    // opción; con el conteo cerrado hay cuatro y ahí sí hay algo que elegir.
+    const documentos = [
+        { kind: 'hoja', icon: Printer, label: 'Hoja de conteo', detalle: 'Para llenar a mano en el anaquel, con firma de quien contó.' },
+        ...(hasResults ? [
+            { kind: 'resultados', icon: FileSpreadsheet, label: 'Resultados', detalle: 'Sistema, físico, diferencia y valuación de cada renglón.' },
+            { kind: 'ajuste', icon: FileSpreadsheet, label: 'Ajuste para el ERP', detalle: 'Partido en faltantes (salida) y sobrantes (entrada), listo para teclear.' },
+            { kind: 'ajuste-csv', icon: Download, label: 'Ajuste en CSV', detalle: 'Lo mismo en planilla, para filtrar o cargar en lote.' },
+        ] : []),
+    ];
 
     // D3.9 (2026-07-27): barra reescrita a mano → canónico. Aquí era buscador
     // puro: 26 líneas para lo que el componente ya hace.
@@ -1359,14 +1577,19 @@ export default function ConteoDetailView() {
                             onUnlock={setDesbloqueada}
                             onSave={(itemId, payload) => handleSaveItem(itemId, payload, product.erp_product_id)}
                             onRecount={(itemId, payload) => handleRecountItem(itemId, payload, product.erp_product_id)}
-                            onShowHistory={setHistoryItem}
+                            onShowHistory={abrirHistorial}
+                            onEditLote={abrirEditLote}
                             currentUser={user}
                         />
                     ))}
                 </div>
 
                 <div className="hidden md:block">
-                    <DataTable columns={columnas(verSistema)} loading={loading} empty={{ icon: Package, message: 'Sin productos para este filtro' }}>
+                    <DataTable
+                        columns={columnas(verSistema)}
+                        sortKey={orden.key} sortDir={orden.dir} onSort={handleSort}
+                        loading={loading} empty={{ icon: Package, message: 'Sin productos para este filtro' }}
+                    >
                         {products.map((product, i) => {
                             const key = product.erp_product_id;
                             const lines = itemsByProduct[key];
@@ -1387,8 +1610,8 @@ export default function ConteoDetailView() {
                                             onUnlock={setDesbloqueada}
                                             onSave={(itemId, payload) => handleSaveItem(itemId, payload, key)}
                                             onRecount={(itemId, payload) => handleRecountItem(itemId, payload, key)}
-                                            onShowHistory={setHistoryItem}
-                                            onEditLote={setEditLoteItem}
+                                            onShowHistory={abrirHistorial}
+                                            onEditLote={abrirEditLote}
                                             currentUser={user}
                                         />
                                     ))}
@@ -1403,10 +1626,19 @@ export default function ConteoDetailView() {
                 )}
             </div>
 
-            <ItemHistoryModal item={historyItem} onClose={() => setHistoryItem(null)} />
+            <PrintChooserModal
+                open={printChooserOpen}
+                documentos={documentos}
+                busy={printing}
+                onClose={() => setPrintChooserOpen(false)}
+                onPick={handlePrint}
+            />
+
+            <ItemHistoryModal open={historyOpen} item={historyItem} onClose={() => setHistoryOpen(false)} />
             <EditLoteModal
+                open={editLoteOpen}
                 item={editLoteItem}
-                onClose={() => setEditLoteItem(null)}
+                onClose={() => setEditLoteOpen(false)}
                 onSave={(itemId, payload) => handleEditLote(itemId, payload, editLoteItem?.erp_product_id)}
             />
 

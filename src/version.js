@@ -16,8 +16,41 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.263.0';
+export const APP_VERSION = '2.263.1';
 
+// v2.263.1 — Tener un solo modulo no era tener acceso: el aterrizaje ignoraba 24 de 35.
+//
+// La pantalla de aterrizaje se elegia con una cascada escrita a mano de **11
+// modulos**, y terminaba en `/no-access`. Pero modulos navegables hay **35**.
+// Los 24 que no estaban en la lista no eran destino posible: un rol cuyos
+// modulos cayeran todos fuera entraba, y aterrizaba en "Sin acceso" — que vive
+// FUERA del `AppLayout`, o sea pantalla completa, sin menu y sin salida salvo
+// "Cerrar sesion". El modulo funcionaba perfecto escribiendo la URL a mano; lo
+// unico que faltaba era la forma de llegar.
+//
+// Le pasaba a **Contador Externo** (unico modulo: `facturas_compra`) y a
+// **Sistema — Alertas Tecnicas** (`sync_health`). El primero tiene un empleado
+// activo que ya habia iniciado sesion y visto la pantalla de "Sin acceso".
+//
+// Ahora la lista es la PREFERENCIA (las vistas que sirven de inicio) y, si
+// ninguna aplica, cae al primer modulo del `MODULE_MAP` con `can_view`. Se
+// excluyen los `comingSoon` — no tienen `<Route>`, aterrizar ahi seria el 404.
+// `/no-access` queda para quien de verdad no tiene ningun modulo navegable,
+// que es lo que la pantalla dice.
+//
+// **Para los demas no cambia nada**: los 11 conservan su prioridad, asi que
+// nadie que hoy aterriza en una pantalla cambia de destino. Verificado contra
+// los 23 roles: los 12 que aterrizan hoy aterrizan igual. Los paths salen del
+// `MODULE_MAP` y coinciden uno a uno con los que estaban escritos a mano
+// (`staff_list` → `/dashboard`, `emp_requests` → `/my-requests`, etc.).
+//
+// Lo que esto NO arregla, porque es configuracion y no codigo: **10 roles solo
+// tienen permisos de PESTANA** (`facturacion_tab_*`, `productos_tab_*`,
+// `ventas_tab_*`) sin el modulo padre. No aterrizan ni ven nada en el menu — el
+// sidebar arma los grupos con las keys padre. Nueve no tienen empleados
+// activos; el decimo, "Agente de Atencion de Canales Digitales", tiene uno. Se
+// arregla dandoles `ventas` / `productos` / `facturacion` desde Permisos.
+//
 // v2.263.0 — En tactil un boton de solo-icono no tiene nombre: ahora lleva texto.
 //
 // Un boton sin rotulo apuesta todo su significado al `LiquidTooltip`, y un

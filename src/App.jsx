@@ -8,6 +8,7 @@ import { useAuth } from "./context/AuthContext";
 import { useStaffStore as useStaff } from "./store/staffStore";
 import { useToastStore } from "./store/toastStore";
 import { isMobileOrApp } from './utils/helpers';
+import { MODULE_MAP } from './constants/moduleMap';
 import AlertModal from "./components/common/AlertModal";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 
@@ -178,6 +179,28 @@ function ScrollToTop() {
     return null;
 }
 
+// Orden de PREFERENCIA para la pantalla de aterrizaje: las vistas que sirven
+// de "inicio", de la más general a la más personal. No es la lista completa de
+// destinos posibles — el resto sale del MODULE_MAP.
+//
+// Hasta el 2026-07-30 sí era la lista completa y terminaba en '/no-access':
+// como estos 11 son un subconjunto de los 35 módulos ruteables, cualquier rol
+// cuyos módulos cayeran todos fuera aterrizaba en "Sin acceso" — que vive
+// FUERA del AppLayout, o sea sin menú y sin salida. Le pasaba a "Contador
+// Externo" (único módulo: facturas_compra) y a "Sistema — Alertas Técnicas"
+// (sync_health). El módulo funcionaba perfecto escribiendo la URL a mano: lo
+// único que faltaba era la forma de llegar. Ahora '/no-access' queda para
+// quien de verdad no tiene ningún módulo navegable, que es lo que la pantalla
+// dice ("Tu cuenta no tiene módulos habilitados").
+//
+// Los `comingSoon` del MODULE_MAP se excluyen porque no tienen <Route>:
+// aterrizar ahí sería el 404.
+const LANDING_PREFERIDO = [
+    'overview', 'staff_list', 'monitor', 'requests', 'schedules',
+    'announcements', 'branches', 'emp_requests', 'emp_announcements',
+    'emp_documents', 'emp_profile',
+];
+
 function MainApp() {
     const { user, logout, isAuthenticated, hasPermission, loading, permsLoading } = useAuth();
 
@@ -216,20 +239,17 @@ function MainApp() {
         else navigate(`/${targetView}`);
     };
 
-    // First permitted landing page
+    // Primera pantalla con permiso: la preferencia primero, y si ninguna
+    // aplica, el primer módulo navegable que el usuario sí tenga.
     const defaultRedirect = (() => {
-        if (hasPermission('overview',           'can_view')) return '/overview';
-        if (hasPermission('staff_list',        'can_view')) return '/dashboard';
-        if (hasPermission('monitor',           'can_view')) return '/monitor';
-        if (hasPermission('requests',          'can_view')) return '/requests';
-        if (hasPermission('schedules',         'can_view')) return '/schedules';
-        if (hasPermission('announcements',     'can_view')) return '/announcements';
-        if (hasPermission('branches',          'can_view')) return '/branches';
-        if (hasPermission('emp_requests',      'can_view')) return '/my-requests';
-        if (hasPermission('emp_announcements', 'can_view')) return '/my-announcements';
-        if (hasPermission('emp_documents',     'can_view')) return '/my-documents';
-        if (hasPermission('emp_profile',       'can_view')) return '/profile';
-        return '/no-access';
+        const puedeAterrizar = (key) =>
+            MODULE_MAP[key] && !MODULE_MAP[key].comingSoon && hasPermission(key, 'can_view');
+
+        const preferido = LANDING_PREFERIDO.find(puedeAterrizar);
+        if (preferido) return MODULE_MAP[preferido].path;
+
+        const primero = Object.keys(MODULE_MAP).find(puedeAterrizar);
+        return primero ? MODULE_MAP[primero].path : '/no-access';
     })();
 
     const [searchTerm, setSearchTerm] = useState("");

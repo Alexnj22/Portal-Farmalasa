@@ -36,6 +36,17 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  * `compacta` se le inyecta a cada hija: el carril es quien sabe el ancho real,
  * y bajo 176px la línea de detalle se corta a mitad de palabra.
  *
+ * ── La sombra necesita aire DENTRO de la pista ────────────────────────────
+ * `overflow-x: auto` no es un eje: en cuanto un eje deja de ser `visible` el
+ * otro pasa a `auto` solo. O sea que la pista también recortaba ARRIBA y ABAJO,
+ * y con `py-0.5` la sombra de la tarjeta —y su `-translate-y-px` al pasar el
+ * mouse— quedaban cortadas con un canto recto. Se veía como si las tarjetas
+ * estuvieran metidas en una caja.
+ *
+ * `py-2.5` le da los 10px que la sombra necesita, y `-my-2` se los devuelve al
+ * layout: la fila mide lo mismo que antes, pero la sombra ya no choca contra el
+ * borde del scroll.
+ *
  * ── El borde se DESVANECE, no corta ───────────────────────────────────────
  * La tarjeta que asoma quedaba rebanada con un canto recto, como si la vista se
  * hubiera roto ahí. Se descartaron dos caminos antes del que quedó:
@@ -132,7 +143,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 role="group"
                 aria-label={ariaLabel}
                 className="flex items-stretch gap-2 overflow-x-auto scroll-smooth
-                    [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5"
+                    [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-2.5 -my-2"
                 style={{
                     maskImage: mascara,
                     WebkitMaskImage: mascara,

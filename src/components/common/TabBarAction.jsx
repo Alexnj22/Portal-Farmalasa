@@ -80,7 +80,8 @@ const TabBarAction = memo(({
     // `TONO_POR_ICONO`. Quien pase `tone` gana el suyo — esto es el piso.
     tone,
     size = 'md',
-    // Sin rótulo: el botón se vuelve cuadrado y el ícono crece a su proporción.
+    // Sin rótulo: el botón se vuelve cuadrado, el ícono crece a su proporción y
+    // el texto NO se pinta — `children` pasa a ser solo el nombre accesible.
     soloIcono = false,
     label,
     className = '',
@@ -120,7 +121,17 @@ const TabBarAction = memo(({
                 strokeWidth={2.5}
                 // `shrink-0`: un SVG es un elemento flex más y se deja aplastar.
                 className={`shrink-0 ${isPrimary ? '' : (CLASE_TEXTO_POR_TONO[tonoEfectivo] || CLASE_TEXTO_POR_TONO.brand)}`} />}
-            {children && <span className="hidden sm:inline">{children}</span>}
+            {/* `soloIcono` ESCONDE el rótulo. Antes solo cambiaba el relleno y
+                el tamaño del ícono, así que el texto se seguía pintando y cada
+                llamador tenía que acordarse de pasar `children={null}` además
+                de la prop — `FilterBar` lo hacía, nadie más lo sabía. El primer
+                llamador que no lo supo (restaurar ocultos, en la ranura de
+                estado) dibujó "RESTAURAR 10 OCULTOS" encima del select de al
+                lado. Una prop que promete "sin rótulo" tiene que quitarlo ella.
+                El texto no se pierde: si no hay `label`, es el que nombra al
+                botón para un lector de pantalla (arriba), y el llamador de la
+                píldora además le pone su `LiquidTooltip`. */}
+            {children && !soloIcono && <span className="hidden sm:inline">{children}</span>}
         </Tag>
     );
 });

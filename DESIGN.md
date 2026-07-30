@@ -1661,6 +1661,18 @@ a **6×18** en vez de 18×18. El usuario lo reportó como "el ícono es demasiad
 pequeño". El `<svg>` lleva además `shrink-0`: es un elemento flex más y se deja
 aplastar.
 
+Y **quita el rótulo él mismo** (2026-07-30). Hasta esa fecha `soloIcono` solo
+cambiaba el relleno y el tamaño del ícono: el texto se seguía pintando, así que
+cada llamador tenía que acordarse de pasar `children={null}` *además* de la prop.
+`FilterBar` lo hacía en su renderer de `acciones`; nadie más lo sabía, porque no
+estaba escrito en ningún lado. El primer llamador directo que no lo supo dibujó
+"RESTAURAR 10 OCULTOS" encima del select de al lado. Una prop que promete "sin
+rótulo" tiene que ser la que lo quite — si no, es una convención, y las
+convenciones se olvidan.
+
+El texto no se pierde: sin `label`, `children` es lo que nombra al botón para un
+lector de pantalla.
+
 #### `soloIcono` lleva `LiquidTooltip`, nunca `title`
 
 Un botón sin texto necesita que su rótulo sea **descubrible**, y el `title` del

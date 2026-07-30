@@ -12,6 +12,30 @@ retomar; acá está todo.
 
 ---
 
+## v2.262.0 — La sombra de las tarjetas ya no se corta, y `soloIcono` cumple
+
+**`overflow-x: auto` no es un eje.** En cuanto un eje deja de ser `visible` el
+otro pasa a `auto` solo, así que la pista del carril también recortaba arriba y
+abajo: con `py-0.5` la sombra de la tarjeta —y su `-translate-y-px` al pasar el
+mouse— quedaban cortadas con un canto recto. `py-2.5` da los 10px que la sombra
+necesita y `-my-2` se los devuelve al layout (fila de 77px antes y después).
+
+**`soloIcono` ahora esconde el rótulo.** Solo cambiaba el relleno y el tamaño del
+ícono; el texto se seguía pintando, así que cada llamador tenía que acordarse de
+pasar `children={null}` *además* de la prop. `FilterBar` lo hacía; nadie más lo
+sabía porque no estaba escrito. El primer llamador directo que no lo supo dibujó
+"RESTAURAR 10 OCULTOS" encima del select de al lado.
+
+**Restaurar ocultos se muda al lado del select de estado** — es lo único que se
+puede hacer con la opción "Ocultos", y en el grupo de acciones no se leía como
+parte de ella.
+
+**La tarjeta del rango muestra solo el MAX.** `MIN → MAX` no entraba en 200px: se
+leía `$15.9k → …`, con el monto que importa cortado. El select de estado baja de
+185 a 150px.
+
+---
+
 ## v2.261.0 — El borde del carril se desvanece; los ocho estados son un select
 
 **La tarjeta que asoma ya no queda rebanada.** Terminaba en un canto recto, como

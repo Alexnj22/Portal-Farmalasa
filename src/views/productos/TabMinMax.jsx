@@ -2,6 +2,7 @@ import React from 'react';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import TabBarAction from '../../components/common/TabBarAction';
 import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -440,19 +441,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             disabled: !canManage, activo: labsOpen,
             onClick: () => setLabsOpen(o => !o),
         },
-        // "Restaurar ocultos" vivía DENTRO del chip de ocultos, como un botoncito
-        // anidado que aparecía al activarlo. Un botón dentro de un filtro es dos
-        // cosas en el mismo control; acá es una acción, y solo existe cuando hay
-        // algo que restaurar.
-        // Solo cuando se están MIRANDO los ocultos. Antes salía siempre que
-        // hubiera alguno, o sea una acción permanente en la píldora para un
-        // estado que no se está viendo — y restaurar algo que no está en
-        // pantalla es un cambio a ciegas.
-        ...(filterHidden && hiddenIds.size > 0 && canManage ? [{
-            key: 'restaurar', icon: RotateCcw,
-            label: `Restaurar ${hiddenIds.size} oculto${hiddenIds.size === 1 ? '' : 's'}`,
-            soloIcono: true, onClick: unhideAll,
-        }] : []),
     ];
 
     return (
@@ -557,12 +545,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     icon={Filter}
                                     label="Estado"
                                     placeholder="Estado"
-                                    ancho="185px"
+                                    ancho="150px"
                                     umbral={0}
                                     value={estadoSel}
                                     onChange={setEstadoSel}
                                     options={opcionesEstado}
                                 />
+                                {/* Pegado al select y no en el grupo de acciones:
+                                    restaurar es lo único que se puede HACER con
+                                    la opción "Ocultos", y a 300px de distancia no
+                                    se leía como parte de ella. Solo existe con esa
+                                    opción puesta — restaurar filas que no están en
+                                    pantalla es un cambio a ciegas. */}
+                                {filterHidden && hiddenIds.size > 0 && canManage && (
+                                    <LiquidTooltip side="bottom"
+                                        content={`Restaurar ${hiddenIds.size} oculto${hiddenIds.size === 1 ? '' : 's'}`}>
+                                        <TabBarAction size="sm" soloIcono icon={RotateCcw}
+                                            onClick={unhideAll}
+                                            label={`Restaurar ${hiddenIds.size} oculto${hiddenIds.size === 1 ? '' : 's'}`} />
+                                    </LiquidTooltip>
+                                )}
                             </FilterBar.Section>
                         )}
                     </FilterBar>

@@ -7,9 +7,14 @@ import StatCard from '../../../components/common/StatCard';
  * El rango de inversión del catálogo, como una tarjeta más del carril.
  *
  * Era la única de la fila que dibujaba DOS montos con una flecha en medio, y por
- * eso medía casi el doble que sus vecinas. En el canónico el valor es uno: acá
- * es `MIN → MAX` en una sola cadena, y la delta del borrador —que es lo que
- * cambia— baja al detalle en vez de colgar de la etiqueta.
+ * eso medía casi el doble que sus vecinas. Se probó juntarlos en una cadena
+ * `MIN → MAX` y tampoco entra: con la tarjeta topada en 200px se leía
+ * `$15.9k → …`, o sea el segundo monto —el que importa— cortado.
+ *
+ * Queda **el MAX solo**. Es el techo de la inversión, que es la pregunta que se
+ * le hace a esta tarjeta ("¿cuánto cuesta tener el catálogo completo?"); el MIN
+ * es el piso teórico y se consulta mucho menos. El detalle dice cuál es, para
+ * que el número no quede sin apellido.
  */
 export default function DraftCostCard({ draftCost, isBodega }) {
     const pubMin  = Number(draftCost?.pub_min_cost  ?? draftCost?.min_cost  ?? 0);
@@ -24,11 +29,11 @@ export default function DraftCostCard({ draftCost, isBodega }) {
     return (
         <StatCard
             icon={Target}
-            label={isBodega ? 'Σ red' : 'Rango MIN·MAX'}
-            value={`${fmtMoney(hasDraft ? effMin : pubMin)} → ${fmtMoney(hasDraft ? effMax : pubMax)}`}
+            label={isBodega ? 'Σ red al MAX' : 'Catálogo al MAX'}
+            value={fmtMoney(hasDraft ? effMax : pubMax)}
             sub={hasAnyDelta
                 ? `Borrador ${deltaMax >= 0 ? '+' : ''}${fmtMoney(deltaMax)}`
-                : 'Inversión'}
+                : 'Techo al MAX'}
         />
     );
 }

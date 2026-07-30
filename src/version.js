@@ -16,8 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.261.0';
+export const APP_VERSION = '2.262.0';
 
+// v2.262.0 — La sombra de las tarjetas ya no se corta, y `soloIcono` cumple.
+//
+// **`overflow-x: auto` no es un eje.** En cuanto un eje deja de ser `visible` el
+// otro pasa a `auto` solo, asi que la pista del carril tambien recortaba ARRIBA
+// y ABAJO: con `py-0.5` la sombra de la tarjeta —y su `-translate-y-px` al pasar
+// el mouse— quedaban cortadas con un canto recto, y las tarjetas se veian
+// metidas en una caja. `py-2.5` le da los 10px que la sombra necesita y `-my-2`
+// se los devuelve al layout: la fila mide igual, medido 77px antes y despues.
+//
+// **`soloIcono` ahora ESCONDE el rotulo.** Solo cambiaba el relleno y el tamano
+// del icono; el texto se seguia pintando, asi que cada llamador tenia que
+// acordarse de pasar `children={null}` ADEMAS de la prop. `FilterBar` lo hacia
+// en su renderer de acciones; nadie mas lo sabia porque no estaba escrito. El
+// primer llamador directo que no lo supo —restaurar ocultos— dibujo "RESTAURAR
+// 10 OCULTOS" encima del select de al lado. Una prop que promete "sin rotulo"
+// tiene que ser la que lo quite: si no, es una convencion, y las convenciones se
+// olvidan. Los 4 llamadores que quedan pasan por `acciones`, donde ya iba null.
+//
+// **Restaurar ocultos se muda al lado del select de estado.** Es lo unico que se
+// puede HACER con la opcion "Ocultos", y a 300px de distancia, en el grupo de
+// acciones, no se leia como parte de ella.
+//
+// **La tarjeta del rango muestra solo el MAX.** `MIN → MAX` en una cadena
+// tampoco entraba en 200px: se leia `$15.9k → …`, o sea el segundo monto —el que
+// importa— cortado. El MAX es el techo de la inversion, que es la pregunta que
+// se le hace a esa tarjeta. Y el select de estado baja de 185 a 150px.
+//
 // v2.261.0 — El borde del carril se desvanece; los ocho estados son UN select.
 //
 // **La tarjeta que asoma ya no queda rebanada.** Terminaba en un canto recto,

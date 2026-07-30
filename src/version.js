@@ -16,8 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.259.0';
+export const APP_VERSION = '2.260.0';
 
+// v2.260.0 — Min/Max: la fila de controles, canonica de verdad.
+//
+// Dos cosas reportadas sobre la vista, y la segunda tenia una causa que no
+// estaba donde se veia.
+//
+// **1. Se va la tarjeta "Formula actual".** Repetia la config —MAX objetivo,
+// MIN por clase, ventana, cortes de ABC y XYZ— en una caja fija al costado. Es
+// un dato que se consulta al configurar, no al revisar la lista, y vivia en la
+// vista entera ocupando ancho. La config se edita en su panel, que es donde
+// esos numeros SI se pueden cambiar.
+//
+// **2. La pildora no estaba a la derecha ni escondia nada.** El sintoma se veia
+// en la pildora, pero la causa estaban las TARJETAS: nunca pasaron al canonico.
+// Seguian escritas a mano —`rounded-2xl` en vez del token, tipografia propia,
+// su propio `flex-wrap`— y como cada componente traia su propio envoltorio, la
+// fila de controles tenia que ser `flex-wrap`. Con eso la pildora saltaba a su
+// propia linea, y ahi `shrink-0` la dejaba estirarse de borde a borde: se veia
+// pegada a la izquierda y su cupo de ranuras no se agotaba nunca, asi que el
+// desborde no aparecia jamas. `CostCards`, `DraftCostCard` y `CardSkeletons`
+// devuelven ahora `StatCard` sueltas y la fila es `CarrilCards` + pildora.
+// Medido a 1280/1512/1920: el borde derecho de la pildora coincide con el de la
+// fila en los tres, y las tarjetas miden 148 parejo (antes la huerfana crecia).
+//
+// **`FilterBar.Chips`** (nuevo, §17). Seis chips en una ranura rompian el cupo:
+// el reparto cuenta RANURAS, y seis chips son una sola de ~700px. Aca el
+// desborde es por CHIP y con la misma regla de un nivel mas arriba: los
+// aplicados se quedan en linea, el resto se guarda tras un `+N`. En el telefono
+// no hay `+N` — la ranura ya vive dentro de la hoja de filtros.
+//
+// De paso las etiquetas se acortan a una o dos palabras: con la tarjeta topada
+// en 200px, "Capital excedente" se leia "Capital exce…", que no dice nada.
+//
 // v2.259.0 — Min/Max: la matriz y los filtros pasan a ser RANURAS de la pildora.
 //
 // **La matriz ABC × XYZ era un bloque de 124px** entre la pildora y la tabla, y

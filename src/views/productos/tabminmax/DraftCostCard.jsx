@@ -1,7 +1,16 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { Target } from 'lucide-react';
 import { fmtMoney } from './helpers';
+import StatCard from '../../../components/common/StatCard';
 
+/**
+ * El rango de inversión del catálogo, como una tarjeta más del carril.
+ *
+ * Era la única de la fila que dibujaba DOS montos con una flecha en medio, y por
+ * eso medía casi el doble que sus vecinas. En el canónico el valor es uno: acá
+ * es `MIN → MAX` en una sola cadena, y la delta del borrador —que es lo que
+ * cambia— baja al detalle en vez de colgar de la etiqueta.
+ */
 export default function DraftCostCard({ draftCost, isBodega }) {
     const pubMin  = Number(draftCost?.pub_min_cost  ?? draftCost?.min_cost  ?? 0);
     const pubMax  = Number(draftCost?.pub_max_cost  ?? draftCost?.max_cost  ?? 0);
@@ -11,29 +20,15 @@ export default function DraftCostCard({ draftCost, isBodega }) {
     const deltaMax = effMax - pubMax;
     const hasAnyDelta = hasDraft && Math.abs(deltaMax) > 0.01;
     if (!draftCost || (!pubMin && !pubMax && !effMin && !effMax)) return null;
-    const label = isBodega ? 'Σ red efectiva' : 'Catálogo a MIN·MAX';
-    const tooltip = isBodega
-        ? 'Costo de la suma de sucursales al MIN → al MAX (efectivo: usa el borrador si hay uno pendiente).'
-        : 'Costo de tener el catálogo COMPLETO al nivel MIN → al nivel MAX (usa el borrador si hay uno pendiente). No resta el stock actual — no es "lo que falta comprar", es el rango de inversión total del catálogo configurado.';
+
     return (
-        <div data-surface="card" className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl"
-            role="img" title={tooltip}>
-            <Target size={13} className={`shrink-0 ${isBodega ? 'text-warning' : 'text-chart-3-text'}`} />
-            <div className="flex flex-col leading-snug gap-0.5">
-                <span className="text-caption font-semibold text-content-3">
-                    {label}
-                    {hasAnyDelta && (
-                        <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-success' : 'text-danger'}`}>
-                            {deltaMax >= 0 ? '+' : ''}{fmtMoney(deltaMax)}
-                        </span>
-                    )}
-                </span>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-body-lg font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-caption text-content-3 leading-none">→</span>
-                    <span className="text-body-lg font-black tabular-nums leading-none text-content">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
-                </div>
-            </div>
-        </div>
+        <StatCard
+            icon={Target}
+            label={isBodega ? 'Σ red' : 'Rango MIN·MAX'}
+            value={`${fmtMoney(hasDraft ? effMin : pubMin)} → ${fmtMoney(hasDraft ? effMax : pubMax)}`}
+            sub={hasAnyDelta
+                ? `Borrador ${deltaMax >= 0 ? '+' : ''}${fmtMoney(deltaMax)}`
+                : 'Inversión'}
+        />
     );
 }

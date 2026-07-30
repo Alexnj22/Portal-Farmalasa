@@ -27,6 +27,7 @@ import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS } from './tab
 import CoverageBar from './tabminmax/CoverageBar';
 import StockBar from './tabminmax/StockBar';
 import AbcXyzBadge from './tabminmax/AbcXyzBadge';
+import CarrilCards from '../../components/common/CarrilCards';
 import CardSkeletons from './tabminmax/CardSkeletons';
 import CostCards from './tabminmax/CostCards';
 import DraftCostCard from './tabminmax/DraftCostCard';
@@ -436,24 +437,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             )}
 
             {/* ── Controls row ── */}
-            <div className="flex items-start gap-3 flex-wrap">
+            {/* La fila NO envuelve. Cuando envolvía, la píldora se iba a su propia
+                línea y ahí `shrink-0` la dejaba estirarse de borde a borde: se
+                veía pegada a la izquierda y su cupo de ranuras nunca llegaba a
+                agotarse, así que el control de desborde no aparecía jamás. El
+                carril absorbe la falta de ancho deslizando las tarjetas. */}
+            <div className="flex items-stretch gap-3 min-w-0">
 
                 {/* LEFT: Cost cards */}
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de costo del inventario">
                     {loading
                         ? <CardSkeletons isBodega={isBodega} />
                         : costSummary
                             ? <CostCards summary={costSummary} isBodega={isBodega} />
                             : null}
                     {!loading && draftCost && <DraftCostCard draftCost={draftCost} isBodega={isBodega} />}
-                </div>
+                </CarrilCards>
 
                 {/* §17 — esto era UNA píldora con un filtro (sucursal) y cinco
                     ACCIONES adentro (CSV, config, labs, recalcular ×2), todas
                     `motion.button` escritas a mano. Separado en lo que cada cosa
                     es: la barra filtra, los botones actúan. De paso se van cinco
                     usos de framer-motion, que §11 marca como "no agregar más". */}
-                <div className="flex items-center gap-2 shrink-0 justify-end ml-auto">
+                <div className="flex items-center gap-2 shrink-0 justify-end">
 
                     <FilterBar
                         // `clearAllFilters` y no una lista propia: el hook ya sabe
@@ -503,79 +509,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 active={estadoActivo}
                                 onClear={limpiarEstado}
                                 label="estado">
-                                {STAT_CFGS.filter(c => VISIBLE_STAT_KEYS.includes(c.key)).map(cfg => (
-                                    <FilterBar.Chip key={cfg.key} tone="brand"
-                                        active={filterAlert === cfg.key}
-                                        onToggle={() => setFilterAlert(p => p === cfg.key ? 'all' : cfg.key)}>
-                                        {loading ? '–' : stats[cfg.key]} {cfg.label}
-                                    </FilterBar.Chip>
-                                ))}
-                                {hasPublishedData && criticalACount > 0 && !loading && (
-                                    <FilterBar.Chip tone="danger" active={filterAbc === 'A'}
-                                        onToggle={() => setFilterAbc(p => p === 'A' ? 'all' : 'A')}>
-                                        {criticalACount} Crítico A
-                                    </FilterBar.Chip>
-                                )}
-                                {sparseCount > 0 && !loading && (
-                                    <FilterBar.Chip tone="warning" active={filterSparse}
-                                        onToggle={() => setFilterSparse(v => !v)}>
-                                        {sparseCount} Poca venta
-                                    </FilterBar.Chip>
-                                )}
-                                {!isBodega && dispatchRiskCount > 0 && !loading && (
-                                    <FilterBar.Chip tone="warning" active={filterDispatchRisk}
-                                        onToggle={() => setFilterDispatchRisk(v => !v)}>
-                                        {dispatchRiskCount} Riesgo regla
-                                    </FilterBar.Chip>
-                                )}
-                                {hiddenIds.size > 0 && (
-                                    <FilterBar.Chip tone="brand" active={filterHidden}
-                                        onToggle={() => setFilterHidden(v => !v)}>
-                                        {hiddenIds.size} Ocultos
-                                    </FilterBar.Chip>
-                                )}
+                                <FilterBar.Chips label="filtros de estado" items={[
+                                    ...STAT_CFGS.filter(c => VISIBLE_STAT_KEYS.includes(c.key)).map(cfg => ({
+                                        key: cfg.key, tone: 'brand',
+                                        label: `${loading ? '–' : stats[cfg.key]} ${cfg.label}`,
+                                        active: filterAlert === cfg.key,
+                                        onToggle: () => setFilterAlert(p => p === cfg.key ? 'all' : cfg.key),
+                                    })),
+                                    ...(hasPublishedData && criticalACount > 0 && !loading ? [{
+                                        key: 'criticoA', tone: 'danger', label: `${criticalACount} Crítico A`,
+                                        active: filterAbc === 'A',
+                                        onToggle: () => setFilterAbc(p => p === 'A' ? 'all' : 'A'),
+                                    }] : []),
+                                    ...(sparseCount > 0 && !loading ? [{
+                                        key: 'sparse', tone: 'warning', label: `${sparseCount} Poca venta`,
+                                        active: filterSparse, onToggle: () => setFilterSparse(v => !v),
+                                    }] : []),
+                                    ...(!isBodega && dispatchRiskCount > 0 && !loading ? [{
+                                        key: 'riesgo', tone: 'warning', label: `${dispatchRiskCount} Riesgo regla`,
+                                        active: filterDispatchRisk, onToggle: () => setFilterDispatchRisk(v => !v),
+                                    }] : []),
+                                    ...(hiddenIds.size > 0 ? [{
+                                        key: 'ocultos', tone: 'brand', label: `${hiddenIds.size} Ocultos`,
+                                        active: filterHidden, onToggle: () => setFilterHidden(v => !v),
+                                    }] : []),
+                                ]} />
                             </FilterBar.Section>
                         )}
                     </FilterBar>
                 </div>
             </div>
-
-            {/* ── ABC × XYZ Matrix + info strip ── */}
-            {!isBodega && (
-                <div className="flex justify-end">
-                    {config && <div data-surface="card" className={`${glass} px-4 py-3 flex flex-col gap-2 text-caption text-content-3 min-w-[200px]`}>
-                        <span className="text-micro font-black uppercase tracking-widest text-content-2">Fórmula actual</span>
-                        <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center justify-between gap-4">
-                                <span className="font-semibold text-content-2">MAX (objetivo)</span>
-                                <span className="font-black text-content">{cycleDays} días</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-content-3 inline-block" /> MIN (X)</span>
-                                <span className="font-black text-content-2">{config?.reorder_x_days ?? 7}d</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-content-3 inline-block" /> MIN (Y)</span>
-                                <span className="font-black text-content-3">{config?.reorder_y_days ?? 10}d</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-content-3 inline-block" /> MIN (Z)</span>
-                                <span className="font-black text-content-3">{config?.reorder_z_days ?? 15}d</span>
-                            </div>
-                            <div className="h-px bg-divider my-0.5" />
-                            <div className="flex items-center justify-between gap-4">
-                                <span>Ventana histórica</span>
-                                <span className="font-bold text-content-2">{config?.analysis_days ?? 180}d</span>
-                            </div>
-                        </div>
-                        <p className="text-micro text-content-3 mt-auto pt-2 leading-snug">
-                            XYZ: X≤percentil {config?.xyz_x_percentile ?? 5} · Y≤percentil {config?.xyz_y_percentile ?? 35} · Z=resto (relativo a cada sucursal)<br />
-                            ABC: A&lt;{config?.abc_a_pct ?? 70}% revenue · B&lt;{config?.abc_b_pct ?? 90}%
-                        </p>
-                    </div>}
-                </div>
-            )}
-
 
             {configChanged && !calculating && (
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chart-1/10 border border-chart-1/30 text-body-sm text-chart-1-text font-medium">

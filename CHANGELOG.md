@@ -12,6 +12,33 @@ retomar; acá está todo.
 
 ---
 
+## v2.260.0 — Min/Max: la fila de controles, canónica de verdad
+
+Dos cosas reportadas sobre la vista, y la segunda tenía una causa que no estaba
+donde se veía.
+
+**1. Se va la tarjeta "Fórmula actual".** Repetía la config —MAX objetivo, MIN
+por clase, ventana, cortes de ABC y XYZ— en una caja fija al costado. Es un dato
+que se consulta al configurar, no al revisar la lista.
+
+**2. La píldora no estaba a la derecha ni escondía nada.** El síntoma se veía en
+la píldora, pero la causa estaba en las TARJETAS: nunca pasaron al canónico.
+Seguían escritas a mano —`rounded-2xl` en vez del token, tipografía propia, su
+propio `flex-wrap`— y como cada componente traía su propio envoltorio, la fila de
+controles tenía que ser `flex-wrap`. Con eso la píldora saltaba a su propia línea
+y `shrink-0` la dejaba estirarse de borde a borde: pegada a la izquierda y con el
+cupo de ranuras nunca agotado, así que el desborde no aparecía jamás.
+`CostCards`, `DraftCostCard` y `CardSkeletons` devuelven ahora `StatCard` sueltas
+y la fila es `CarrilCards` + píldora. Medido a 1280/1512/1920: el borde derecho
+de la píldora coincide con el de la fila en los tres.
+
+**`FilterBar.Chips`** (nuevo, §17). Seis chips en una ranura rompían el cupo: el
+reparto cuenta *ranuras*, y seis chips son una sola de ~700px. Acá el desborde es
+por chip, con la misma regla de un nivel más arriba: los aplicados se quedan en
+línea, el resto se guarda tras un `+N`.
+
+---
+
 ## v2.248.0 — si es el canónico del filtro, las 22 vistas deberían tenerlo sin cablear nada.
 
 Observación del usuario, y tenía razón: `BarraFlotante` había quedado como una

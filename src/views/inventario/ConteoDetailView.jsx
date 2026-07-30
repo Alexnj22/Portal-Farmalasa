@@ -32,6 +32,8 @@ import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
 import FilterBar from '../../components/common/FilterBar';
+import Contador from '../../components/common/Contador';
+import useMediaQuery from '../../hooks/useMediaQuery';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 
 const PAGE_SIZE = 25;
@@ -47,11 +49,18 @@ const ESTADO_CFG = {
     CERRADO:     { label: 'Cerrado',     variante: 'success' },
 };
 
+// `soloConSistema`: el filtro no se ofrece si el conteo es ciego para este rol.
+// No es solo "con diferencia": **"no ubicados" también**. Un renglón marcado así
+// es físico 0 contra una línea que el ERP dice que tiene stock, o sea un
+// faltante confirmado — filtrar por él es pedir la lista de faltantes sin la
+// cifra, que es exactamente lo que el ciego evita. Lo impone la RPC además de la
+// UI (`20260730024814_conteo_v7…`): un filtro que solo se esconde en el cliente
+// es decorativo, y este módulo ya cometió ese error una vez con el `<Switch>`.
 const FILTRO_PILLS = [
     { key: 'TODOS', label: 'Todos' },
     { key: 'PENDIENTES', label: 'Pendientes' },
-    { key: 'DIFERENCIA', label: 'Con diferencia' },
-    { key: 'SIN_UBICAR', label: 'No ubicados' },
+    { key: 'DIFERENCIA', label: 'Con diferencia', soloConSistema: true },
+    { key: 'SIN_UBICAR', label: 'No ubicados', soloConSistema: true },
 ];
 
 // Las columnas del sistema no se declaran si el conteo es ciego: la RPC ya
@@ -69,17 +78,30 @@ const FILTRO_PILLS = [
 // una palabra larga no se parte, empuja el ancho de la tabla y termina fuera del
 // marco. "Diferencia" era la que se cortaba ("DIFERENC…"); "Dif." es además lo
 // que ya usa el reporte impreso.
+// Siete columnas, no once. Medido a 1440 con el menú abierto: la tabla pedía
+// 1520px en un marco de 1028, o sea 492px de scroll horizontal, y ninguna
+// columna tenía holgura salvo el padding. Lo que salió no se perdió, se movió a
+// donde se lee mejor:
+//
+//   Laboratorio  → subtítulo del producto en su banda (como ya era en móvil)
+//   Presentación → segunda línea de la celda de Lote, que es su contexto real
+//   Vence        → idem, pegado a la presentación y con su badge
+//   Nota         → fuera (decisión del usuario, 2026-07-30)
+//
+// Que el laboratorio deje de ser columna no lo vuelve inalcanzable: ahora hay
+// filtro por laboratorio en la píldora, que es como se lo usa de verdad.
 const columnas = (verSistema) => [
     { key: 'producto', label: 'Producto', sortable: true },
-    { key: 'laboratorio', label: 'Laboratorio', hideBelow: 'xl', sortable: true },
-    { key: 'presentacion', label: 'Present.', align: 'center', hideBelow: 'lg' },
     { key: 'lote', label: 'Lote' },
-    { key: 'vence', label: 'Vence', align: 'center', hideBelow: '2xl' },
-    { key: 'quien', label: 'Contó', hideBelow: 'lg' },
+    // Corte medido en 1440, no `lg` ni `xl`: es la columna más ancha después de
+    // Producto (242px) y la tabla entra recién cuando el marco llega a 1028px.
+    // Con `xl` (1280) se prendía antes de que hubiera lugar. La autoría no se
+    // pierde debajo de eso: sigue en el historial de la línea y, en teléfono, en
+    // la tarjeta del lote.
+    { key: 'quien', label: 'Contó', hideBelow: '1440' },
     ...(verSistema ? [{ key: 'sistema', label: 'Sistema', align: 'center', sortable: true }] : []),
     { key: 'fisico', label: 'Físico', align: 'center', sortable: true },
     ...(verSistema ? [{ key: 'diferencia', label: 'Dif.', align: 'center', sortable: true }] : []),
-    { key: 'nota', label: 'Nota', hideBelow: '2xl' },
     { key: 'estado', label: 'Estado', align: 'center', sortable: true },
 ];
 
@@ -160,13 +182,25 @@ function AutorLinea({ nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
         + (ediciones > 0 ? ` · editada ${ediciones} ${ediciones === 1 ? 'vez' : 'veces'}` : '')
         + ' — ver historial';
     return (
-        <Button variant="ghost" size="sm" onClick={onClick} title={titulo} className="min-w-0 max-w-full">
+        // `xs` y no `sm`: son 8px menos de padding, que es exactamente lo que le
+        // faltaba a la tabla para entrar sin scroll a 1440 con el menú abierto. Es
+        // un control anidado dentro de una celda densa, no una acción principal, y
+        // el alto sigue pasando por `max(…, var(--tap-min))` así que en un dedo
+        // sigue midiendo 44px.
+        <Button variant="ghost" size="xs" onClick={onClick} title={titulo} className="min-w-0 max-w-full">
             <span className="flex items-center gap-1.5 min-w-0">
                 <LiquidAvatar src={fotoUrl} alt="" fallbackText={nombre || '?'}
                     className="w-5 h-5 rounded-full shrink-0" />
                 <span className="text-label font-bold text-content-2 truncate">{nombre || 'Desconocido'}</span>
                 <span className="text-micro text-content-3 tabular-nums shrink-0">{fmtHora(cuando)}</span>
-                {ediciones > 0 && <Badge variant="warning" size="sm" className="shrink-0">{ediciones} ed.</Badge>}
+                {/* `Contador`, no `Badge`. Su propia documentación lo dice: un chip
+                    crece con su texto, un contador es circular con un dígito y
+                    ovalado con dos. Esto era un `Badge` con el texto "2 ed.", o sea
+                    exactamente la forma escrita a mano que el canónico vino a
+                    reemplazar — y la décima vez que pasa. El "ed." además no hacía
+                    falta: el `title` ya dice "editada 2 veces". */}
+                <Contador valor={ediciones} tono="warning" size="sm" max={9}
+                    aria-label={`editada ${ediciones} ${ediciones === 1 ? 'vez' : 'veces'}`} />
             </span>
         </Button>
     );
@@ -360,36 +394,37 @@ function ItemRow({
     return (
         <DataRow index={index} className={bloqueada ? 'bg-success/5' : 'bg-surface-card-hover/30'}>
             <DataCell><span className="text-content-3 text-label">↳</span></DataCell>
-            <DataCell hideBelow="xl" />
-            <DataCell align="center" hideBelow="lg"><span className="text-label font-semibold text-content-2">{item.presentacion || '—'}</span></DataCell>
             <DataCell>
-                <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Toda la identidad del renglón en una celda: lote arriba,
+                    presentación y vencimiento abajo. Eran tres columnas y las tres
+                    describen LO MISMO —cuál de los N renglones de este producto es
+                    éste—, así que separarlas costaba 260px de ancho para leer un
+                    dato que se lee junto. */}
+                <div className="flex flex-col gap-0.5 py-0.5">
                     {/* El lápiz va PEGADO al lote, en un grupo que no se parte. Antes
                         compartía el `flex-wrap` con los badges, así que en cuanto
                         aparecía "Área vencidos" el botón caía al segundo renglón y la
                         fila medía el doble — un lápiz solo, debajo, sin nada que
                         indicara a qué lote pertenecía. */}
-                    <span className="flex items-center gap-1 shrink-0 whitespace-nowrap">
-                        <span className="text-label text-content-2 tabular-nums">{item.lote || '—'}</span>
+                    <span className="flex items-center gap-1 min-w-0">
+                        <span className="text-label font-bold text-content-2 tabular-nums truncate">{item.lote || '—'}</span>
                         {editable && (
                             <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
                         )}
+                        {/* El ERP separa el stock vencido en su propia área. Sin esta
+                            marca, esa fila y la del stock bueno se veían idénticas
+                            (mismo producto, presentación, lote y fecha) y el
+                            contador no sabía cuál de las dos estaba llenando. */}
+                        {item.is_vencidos && <Badge variant="danger" size="sm" className="shrink-0">Vencidos</Badge>}
+                        {item.es_agregado_manual && <Badge variant="chart-9" size="sm" className="shrink-0">Agregado</Badge>}
                     </span>
-                    {/* El ERP separa el stock vencido en su propia área. Sin esta
-                        marca, esa fila y la del stock bueno se veían idénticas
-                        (mismo producto, presentación, lote y fecha) y el
-                        contador no sabía cuál de las dos estaba llenando. */}
-                    {item.is_vencidos && <Badge variant="danger" size="sm" className="shrink-0">Área vencidos</Badge>}
-                    {item.es_agregado_manual && <Badge variant="chart-9" size="sm" className="shrink-0">Agregado</Badge>}
+                    <span className="flex items-center gap-1 min-w-0 text-micro text-content-3 tabular-nums">
+                        <span className="truncate">{item.presentacion || '—'} · {fmtDate(item.fecha_vencimiento)}</span>
+                        <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
+                    </span>
                 </div>
             </DataCell>
-            <DataCell align="center" hideBelow="2xl">
-                <div className="flex items-center justify-center gap-1">
-                    <span className="text-label text-content-3 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
-                    <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
-                </div>
-            </DataCell>
-            <DataCell hideBelow="lg">
+            <DataCell hideBelow="1440">
                 <AutorLinea
                     nombre={contadoPorNombre} fotoUrl={contadoPorFoto} cuando={contadoAt}
                     ediciones={ediciones} onClick={() => onShowHistory(item)}
@@ -439,7 +474,10 @@ function ItemRow({
                                     compact
                                     data-fisico-input="true"
                                     inputClassName="text-center text-body-xl font-bold"
-                                    className="w-16"
+                                    // 56px y no 64: los últimos 8px que le faltaban a la
+                                    // tabla para entrar sin scroll a 1440 con el menú
+                                    // abierto. Cuatro dígitos siguen entrando centrados.
+                                    className="w-14"
                                 />
                                 {editable && !recuento && (
                                     <Button variant="ghost" icon={PackageX} disabled={saving}
@@ -468,19 +506,6 @@ function ItemRow({
                     )}
                 </DataCell>
             )}
-            <DataCell hideBelow="2xl">
-                <PortalInput
-                    aria-label="Nota del conteo"
-                    type="text"
-                    value={nota}
-                    onChange={(e) => setNota(e.target.value)}
-                    placeholder="Nota..."
-                    onBlur={commit}
-                    readOnly={!editable}
-                    compact
-                    inputClassName="text-body-xl"
-                />
-            </DataCell>
             <DataCell align="center">
                 <div className="flex flex-col items-center gap-0.5">
                     {estadoItem === 'SIN_UBICAR'
@@ -509,29 +534,31 @@ function ProductGroupRow({ product, index, verSistema }) {
         <DataRow index={index} className={completo ? 'bg-success/10' : ''}>
             {/* Sin ancho fijo. Los 280px que tenía eran un mínimo de facto que la
                 tabla no podía ceder: con 11 columnas de `whitespace-nowrap` sumaban
-                más que el marco y la última ("Diferencia") terminaba cortada. */}
-            <DataCell className="min-w-[200px] max-w-[320px]">
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <p className={`font-bold text-body-sm truncate ${completo ? 'text-success' : 'text-content'}`}>
-                        {product.product_nombre || `Producto ${product.erp_product_id}`}
-                    </p>
-                    {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
+                más que el marco y la última ("Diferencia") terminaba cortada.
+                El laboratorio pasó a ser el subtítulo del producto — dejó de ser
+                columna propia porque para filtrar ya está la píldora, y acá se lee
+                mejor pegado al nombre que a 180px de distancia. */}
+            <DataCell className="min-w-[180px] max-w-[340px]">
+                <div className="flex flex-col gap-0.5 py-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <p className={`font-bold text-body-sm truncate ${completo ? 'text-success' : 'text-content'}`}>
+                            {product.product_nombre || `Producto ${product.erp_product_id}`}
+                        </p>
+                        {product.es_antibiotico && <Badge variant="danger" size="sm" className="shrink-0">Bajo Receta</Badge>}
+                    </div>
+                    <span className="text-micro text-content-3 truncate">{product.laboratorio_nombre || 'Sin laboratorio'}</span>
                 </div>
             </DataCell>
-            <DataCell hideBelow="xl"><span className="text-label text-content-3 truncate">{product.laboratorio_nombre || '—'}</span></DataCell>
-            <DataCell align="center" hideBelow="lg">
-                <Badge uppercase={false} variant={completo ? 'success' : 'neutral'}>
-                    {product.item_count} lote{product.item_count === 1 ? '' : 's'}
-                </Badge>
-            </DataCell>
-            <DataCell />
-            <DataCell align="center" hideBelow="2xl">
-                <div className="flex items-center justify-center gap-1">
+            <DataCell>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge uppercase={false} variant={completo ? 'success' : 'neutral'}>
+                        {product.item_count} lote{product.item_count === 1 ? '' : 's'}
+                    </Badge>
                     {product.con_vencidos_count > 0 && <VencimientoBadge status="VENCIDO" />}
                     {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
                 </div>
             </DataCell>
-            <DataCell hideBelow="lg" />
+            <DataCell hideBelow="1440" />
             {verSistema && (
                 <DataCell align="center">
                     <span className="text-body-sm font-black text-content-2 tabular-nums">{product.sistema_total ?? '—'}</span>
@@ -543,7 +570,6 @@ function ProductGroupRow({ product, index, verSistema }) {
                     <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
                 </DataCell>
             )}
-            <DataCell hideBelow="2xl" />
             <DataCell align="center">
                 <span className={`text-caption font-bold tabular-nums ${completo ? 'text-success' : 'text-content-3'}`}>
                     {product.contados_count}/{product.item_count}
@@ -1071,6 +1097,10 @@ export default function ConteoDetailView() {
     const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
     const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
 
+    // Mismo corte que usa FilterBar para colapsar a hoja inferior (719px):
+    // si divergen, el segmentado se dibujaría en riel dentro de la hoja.
+    const compacto = useMediaQuery('(max-width: 719px)');
+
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);
     const [total, setTotal] = useState(0);
@@ -1181,6 +1211,15 @@ export default function ConteoDetailView() {
 
     const filtrosActivos = (laboratorioId != null ? 1 : 0) + (filtro !== 'TODOS' ? 1 : 0);
     const limpiarFiltros = () => { setLaboratorioId(null); setFiltro('TODOS'); };
+
+    // Si el conteo resulta ciego para este rol y el filtro activo era uno de los
+    // dos que se retiran, vuelve a TODOS. Sin esto quedaría un filtro aplicado
+    // que ya no tiene botón para apagarse — y que el servidor ignora, así que la
+    // píldora diría "1 filtro" sobre una lista sin filtrar.
+    useEffect(() => {
+        if (verSistema) return;
+        if (FILTRO_PILLS.some((f) => f.soloConSistema && f.key === filtro)) setFiltro('TODOS');
+    }, [verSistema, filtro]);
 
     // Un segundo clic invierte; el tercero NO vuelve a "sin orden". Con el orden
     // del anaquel como default, poder volver a él es útil, pero hacerlo el tercer
@@ -1515,13 +1554,19 @@ export default function ConteoDetailView() {
                                 tone="chart-9"
                                 value={filtro}
                                 onChange={setFiltro}
-                                // "Con diferencia" no se ofrece si el conteo es ciego: la
-                                // RPC lo trata como TODOS (filtrar por diferencia señala
-                                // exactamente las líneas que descuadran), así que sería un
-                                // control que no controla — y ofrecerlo ya insinúa que hay
-                                // algo ahí que mirar.
+                                // En el teléfono el riel es `inline-flex` con opciones
+                                // `whitespace-nowrap`: las cuatro no caben y se salían de
+                                // la hoja de filtros arrastrando scroll horizontal. En
+                                // bloque a 2 columnas quedan 2×2, que es lo que el ancho
+                                // del pulgar permite leer.
+                                layout={compacto ? 'block' : 'inline'}
+                                columns={2}
+                                // Ni "con diferencia" ni "no ubicados" se ofrecen si el
+                                // conteo es ciego: la RPC los trata como TODOS, así que
+                                // serían controles que no controlan — y ofrecerlos ya
+                                // insinúa que hay algo ahí que mirar.
                                 options={FILTRO_PILLS
-                                    .filter((f) => verSistema || f.key !== 'DIFERENCIA')
+                                    .filter((f) => verSistema || !f.soloConSistema)
                                     .map((f) => ({ value: f.key, label: f.label }))}
                             />
                         </FilterBar.Section>
@@ -1588,6 +1633,10 @@ export default function ConteoDetailView() {
                     <DataTable
                         columns={columnas(verSistema)}
                         sortKey={orden.key} sortDir={orden.dir} onSort={handleSort}
+                        // `dense`: 7 columnas de captura densa. Con el padding normal
+                        // (48px por columna) la tabla pedía 1203px en un marco de 1028
+                        // y arrastraba scroll horizontal.
+                        dense
                         loading={loading} empty={{ icon: Package, message: 'Sin productos para este filtro' }}
                     >
                         {products.map((product, i) => {

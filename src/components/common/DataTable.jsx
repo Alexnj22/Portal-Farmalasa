@@ -50,6 +50,14 @@ const HIDE_BELOW = {
   // pantalla de 1440, y la última terminaba fuera del marco. `xl` no alcanzaba
   // porque 1440 YA es xl, así que todo lo marcado `xl` se mostraba igual.
   '2xl': 'hidden 2xl:table-cell',
+  // Corte MEDIDO, no un peldaño de la escala. La columna "Contó" del conteo
+  // pide 242px y la tabla entra recién cuando el marco llega a ~1028px, o sea a
+  // 1440 de viewport con el menú abierto. Con `xl` (1280) la columna se prendía
+  // 160px ANTES de que hubiera lugar, y el resultado era 152px de scroll justo
+  // en el ancho de laptop más común. La escala de breakpoints no tiene un
+  // peldaño ahí, y forzar `2xl` habría escondido la autoría a 1440 — que es
+  // donde más se usa.
+  '1440': 'hidden min-[1440px]:table-cell',
 };
 
 // ── Tokens (Fase T3, AUDITORIA-TEMA-2026-07.md — cierra el blindspot de dark
@@ -103,6 +111,19 @@ export function useExpandStyle() {
 }
 
 // ── DataTable ─────────────────────────────────────────────────────────────────
+// El padding horizontal de celda es donde vive casi toda la holgura de una tabla
+// ancha: `px-4 md:px-6` son 48px POR COLUMNA, así que una tabla de 7 columnas
+// gasta 336px solo en aire. `dense` los baja a 24 sin tocar el alto de fila, que
+// lo sigue decidiendo `--row-h`.
+//
+// Es opt-in y no el default porque en una tabla de 4 columnas ese aire es lo que
+// la hace legible. Se agregó el 2026-07-30 para el conteo de inventario, medido:
+// la tabla pedía 1203px en un marco de 1028 y con esto entra sin scroll.
+const PAD = {
+  normal: 'px-4 md:px-6',
+  dense:  'px-3',
+};
+
 export function DataTable({
   columns = [],
   sortKey,
@@ -114,9 +135,10 @@ export function DataTable({
   toolbar,
   footer,
   minWidth = '600px',
+  dense = false,
   children,
 }) {
-  const tk = useTokens();
+  const tk = { ...useTokens(), pad: dense ? PAD.dense : PAD.normal };
   const childCount = React.Children.count(children);
   const isEmpty = !loading && childCount === 0;
 
@@ -165,7 +187,7 @@ export function DataTable({
                       key={col.key}
                       aria-sort={sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                       className={[
-                        'px-4 md:px-6 py-3',
+                        `${tk.pad} py-3`,
                         'text-micro md:text-caption font-black uppercase tracking-widest',
                         'select-none whitespace-nowrap',
                         tk.thText, alignCls, hideCls,
@@ -216,7 +238,7 @@ export function DataTable({
                     const w = `${45 + ((i * 11 + ci * 17) % 40)}%`;
                     const alignCls = col.align === 'right' ? 'ml-auto' : '';
                     return (
-                      <td key={col.key} className={`px-4 md:px-6 h-[var(--row-h)] ${hideCls}`}>
+                      <td key={col.key} className={`${tk.pad} h-[var(--row-h)] ${hideCls}`}>
                         <div
                           className={`h-[11px] rounded-full animate-pulse ${tk.skeletonPulse} ${alignCls}`}
                           style={{ width: w }}
@@ -339,7 +361,8 @@ export function DataCell({ children, align = 'left', hideBelow, className = '', 
       className={[
         // D2.3 — el alto de fila sale de --row-h (44/38/32px con mouse, piso
         // de 44px en táctil) en vez de un padding fijo.
-        'px-4 md:px-6 h-[var(--row-h)] text-body',
+        tk.pad || 'px-4 md:px-6',
+        'h-[var(--row-h)] text-body',
         tk.cellText || '',
         alignCls, hideCls, className,
       ].join(' ')}

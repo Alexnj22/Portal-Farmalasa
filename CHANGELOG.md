@@ -12,6 +12,166 @@ retomar; acá está todo.
 
 ---
 
+## v2.240.0 — la tabla del conteo entra sin scroll, y "2 ED." era un `Badge` haciendo de contador.
+
+### El contador no era canónico
+
+`Contador` existe justamente para esto y su propia documentación lo dice: *"un
+chip crece con su texto, un contador tiene que ser **circular con un dígito y
+ovalado con dos**"*. La burbuja de ediciones era un `<Badge variant="warning">2
+ed.</Badge>`, o sea la forma escrita a mano que el canónico vino a reemplazar —
+**la décima vez** que aparece (nueve las midió D3.5, cuatro de ellas dentro de
+otros canónicos). Ahora es `Contador`: 18×18 circular, solo el número, y el
+`aria-label` dice de qué es (`"editada 3 veces"`) porque un "3" suelto no se
+entiende con lector de pantalla. El "ed." no hacía falta: el `title` de la línea
+ya lo explica.
+
+### Siete columnas en vez de once, y cero scroll horizontal
+
+Medido a 1440 con el menú abierto: la tabla pedía **1520px en un marco de 1028**,
+o sea 492px de scroll, y **ninguna columna tenía holgura salvo el padding** (48px
+× 9 = 432px de puro aire). Lo que salió no se perdió, se movió a donde se lee
+mejor:
+
+| columna | a dónde fue |
+|---|---|
+| Laboratorio | subtítulo del producto en su banda — y para filtrar ya está la píldora |
+| Presentación | segunda línea de la celda de Lote, que es su contexto real |
+| Vence | idem, pegado a la presentación con su badge |
+| Nota | fuera (decisión del usuario) |
+
+Las tres primeras describían **lo mismo** —cuál de los N renglones de este
+producto es éste— y separarlas costaba 260px para leer un dato que se lee junto.
+Quitar el campo de nota **no borra las notas ya escritas**: `nota` se sigue
+leyendo de la fila y se reenvía sin cambios en cada guardado.
+
+Más dos cosas nuevas en `DataTable`, las dos medidas y no elegidas de una escala:
+
+- **`dense`** baja el padding de celda de 48 a 24px. Es opt-in: en una tabla de 4
+  columnas ese aire es lo que la hace legible.
+- **`hideBelow="1440"`** — un corte medido, no un peldaño de Tailwind. La columna
+  "Contó" pide 242px y la tabla entra recién cuando el marco llega a 1028px, o
+  sea a 1440 de viewport. Con `xl` (1280) se prendía **160px antes de que hubiera
+  lugar** y daba 152px de scroll justo en el ancho de laptop más común; con `2xl`
+  habría desaparecido a 1440, que es donde más se usa. Verificado que la clase
+  existe en el bundle.
+
+Resultado, medido con `scrollLeft` real (no con anchos calculados) a 1536 · 1440 ·
+1280 · 1180 · 1080: **0px de desplazamiento en los cinco**.
+
+### "No ubicados" también era una fuga del conteo ciego
+
+v2.231.0 neutralizó el filtro "Con diferencia" para quien no tiene
+`conteo_ver_sistema`, razonando que **señala** las líneas que descuadran aunque no
+muestre un número. El mismo argumento valía para "No ubicados" y se pasó por alto:
+un renglón marcado así es físico 0 sobre una línea que el ERP dice que tiene
+stock, o sea un faltante confirmado. Filtrar por él es pedirle a la base la lista
+de faltantes sin la cifra.
+
+Los dos filtros ahora desaparecen de la UI **y** la RPC los trata como `TODOS` —
+lo segundo es lo que importa: un filtro que solo se esconde en el cliente es
+decorativo, y este módulo ya cometió ese error con el `<Switch>` del ciego.
+Verificado impersonando al rol 11 (edita, sin el permiso): `SIN_UBICAR` y
+`DIFERENCIA` devuelven 1,457 igual que `TODOS`, mientras `PENDIENTES` sigue
+filtrando en 1,456. Si el filtro activo era uno de esos dos, vuelve a "Todos"
+solo — si no, la píldora diría "1 filtro" sobre una lista sin filtrar.
+
+### En el teléfono los 4 filtros se salían
+
+El riel del `SegmentedControl` es `inline-flex` con opciones `whitespace-nowrap`:
+las cuatro no caben en la hoja de filtros y arrastraban scroll horizontal. En
+móvil pasa a `layout="block"` con 2 columnas, o sea **2×2**. Medido en WebKit con
+perfil de iPhone a 320, 390 y 430: 4 opciones en 2 filas, todas dentro del marco,
+sin scroll ni en la hoja ni en la página.
+
+### Migración
+
+`20260730024814_conteo_v7_sin_ubicar_tambien_es_ciego`. Parchea las cuatro RPCs
+con `p_filtro` mediante una transformación sobre `pg_get_functiondef` en vez de
+retranscribir cuatro cuerpos largos — el riesgo de una migración de 300 líneas
+copiadas a mano es cambiar la que no era. El ancla se verifica y **la migración
+revienta** si no aparece o si no son exactamente 4 funciones.
+
+---
+
+## v2.239.0 — F2 de identidad: la Voz. `DESIGN.md` tenía 3,370 líneas sobre la forma y **cero** sobre la palabra.
+
+Segunda fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. Era la única primitiva del
+sistema sin documentar, y se notaba: en el mismo hueco —el mensaje de vacío—
+convivían cuatro gramáticas.
+
+| Forma | Ejemplos que había |
+|---|---|
+| `Sin X` | `Sin resultados`, `Sin pagos confirmados` |
+| `Sin X` **con punto** | `Sin facturas en el período.`, `Sin proveedores registrados todavía.` |
+| `No hay X` | `No hay registros`, `No hay empleados en esta categoría` |
+| `Aún no hay X` / `No se encontraron X` | `Aún no hay cotizaciones`, `No se encontraron productos` |
+
+Más Title Case suelto (`Sin Horarios`, `Datos Incompletos`, `Falta Regente`) y
+tuteo mezclado con voseo en el mismo portal.
+
+**Nueva §26, nueve reglas.** La decisión de fondo: el portal usa **tuteo**, que
+además era lo que ya dominaba —89 usos contra 22 de voseo—, así que unificar
+hacia el mayoritario costó 22 strings en vez de 89.
+
+### Tres reglas salieron de aplicarlas, no de escribirlas
+
+1. **El vacío feliz es una tercera forma (§26.3).** Forzar `Sin X` en `Todo está
+   al día` o `Expediente impecable` tira información al piso: ahí "no hay nada"
+   es una *buena* noticia y hay que decírsela. La prueba: ¿el usuario quería
+   encontrar algo acá, o quería que estuviera vacío?
+2. **Los `¡...!` se prohíben en el feedback del sistema, no en los momentos
+   humanos (§26.7).** La primera versión los prohibía a secas, y al aplicarla
+   quedó claro que era una regla que el código tenía razón en violar en tres
+   lugares: el cumpleaños en el kiosco, `¡Acceso concedido!` al escanear el
+   carné, y `¡Hoy! 🎉`. Un `¡Guardado!` en un botón es la app festejando su
+   propio CRUD; un cumpleaños es una persona frente a una pantalla.
+3. **El punto final no depende de cuántas oraciones hay, sino de si es etiqueta o
+   prosa (§26.5).** Mi primer gate marcaba `subtitle="Crea el primero con el
+   botón de arriba."` — contradiciendo el doc que acababa de escribir, porque un
+   subtítulo *es* oración completa y lleva punto. Lo que no lo lleva es la
+   etiqueta: `Sin facturas en el período`.
+
+### Lo que se reescribió
+
+~45 strings: los mensajes de vacío del inventario medido (`Aún no hay
+cotizaciones` → `Sin cotizaciones`, `No hay registros` → `Sin registros`, y las
+muletas `registrados` / `todavía` / `aún` que no agregaban nada), los 22 voseos,
+los `¡...!` del feedback del sistema, los cinco `Por favor` y las
+interjecciones de los errores de validación (`¡Ey! No puedes dejar el cargo sin
+nombre.` → `El cargo necesita un nombre.`).
+
+También la distinción de §26.2, que `VentasView` y `TabExpediente` ya hacían
+bien y ahora es regla: **búsqueda sin resultados no es un vacío**. Uno se
+arregla borrando el filtro, el otro creando el primer registro; confundirlos
+manda a alguien a crear algo que ya existe.
+
+### Dos gates nuevos — y acotarlos fue el trabajo real
+
+`copy-vacio` y `copy-trato`, bloqueantes en cero: **27 categorías**.
+
+La primera versión miraba todo `title=` y devolvió **123 hallazgos, casi todos
+falsos**: `<GlassViewLayout title="Facturas de Compra">` es el *nombre de un
+módulo*, y ahí el Title Case es correcto porque es un nombre propio. El Title
+Case que §26.4 prohíbe es el de una etiqueta que debería leerse como oración
+(`Sin Horarios`), no el de una pantalla. Ahora los slots son solo dos —
+`message:` y los atributos **dentro** de un `<EmptyState>` — y el chequeo de
+Title Case se aplica solo a etiquetas de ≤4 palabras, porque una oración larga
+lleva nombres propios legítimos ("el botón Agregar", "vuelta a base").
+
+Bug propio que vale la pena registrar: **en JavaScript `\b` es ASCII**, así que
+`\bTené\b` matchea *dentro* de `Tenés` — la `é` cuenta como no-palabra y entre
+`é` y `s` hay frontera. Lo delató el gate reportando `Tené` en "Tenés un
+borrador guardado". Van lookarounds explícitos de letra, acentos incluidos. Y los
+puntos suspensivos no son punto final: `Verificando…` es un estado en curso.
+
+Verificado además que ninguno de los strings reescritos se usa como
+identificador: las alertas de `BranchesView` (`Falta regente`, `Datos
+incompletos`) solo se producen para mostrar, nadie compara contra ellas.
+
+`npm run gate:design` en verde, build y lint limpios. Cambio de strings
+únicamente — sin cambios de estructura ni de layout.
+
 ## v2.238.0 — el modal no se abría dos veces al cerrarse: rebotaba.
 
 Diez cosas de la vista de Conteo de Inventario, sobre el uso real del módulo. La
@@ -148,84 +308,6 @@ llegara la nueva regla de nombres, y el `name` registrado en el servidor ya no s
 puede cambiar sin inventar una migración de más.
 
 ---
-
-## v2.239.0 — F2 de identidad: la Voz. `DESIGN.md` tenía 3,370 líneas sobre la forma y **cero** sobre la palabra.
-
-Segunda fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. Era la única primitiva del
-sistema sin documentar, y se notaba: en el mismo hueco —el mensaje de vacío—
-convivían cuatro gramáticas.
-
-| Forma | Ejemplos que había |
-|---|---|
-| `Sin X` | `Sin resultados`, `Sin pagos confirmados` |
-| `Sin X` **con punto** | `Sin facturas en el período.`, `Sin proveedores registrados todavía.` |
-| `No hay X` | `No hay registros`, `No hay empleados en esta categoría` |
-| `Aún no hay X` / `No se encontraron X` | `Aún no hay cotizaciones`, `No se encontraron productos` |
-
-Más Title Case suelto (`Sin Horarios`, `Datos Incompletos`, `Falta Regente`) y
-tuteo mezclado con voseo en el mismo portal.
-
-**Nueva §26, nueve reglas.** La decisión de fondo: el portal usa **tuteo**, que
-además era lo que ya dominaba —89 usos contra 22 de voseo—, así que unificar
-hacia el mayoritario costó 22 strings en vez de 89.
-
-### Tres reglas salieron de aplicarlas, no de escribirlas
-
-1. **El vacío feliz es una tercera forma (§26.3).** Forzar `Sin X` en `Todo está
-   al día` o `Expediente impecable` tira información al piso: ahí "no hay nada"
-   es una *buena* noticia y hay que decírsela. La prueba: ¿el usuario quería
-   encontrar algo acá, o quería que estuviera vacío?
-2. **Los `¡...!` se prohíben en el feedback del sistema, no en los momentos
-   humanos (§26.7).** La primera versión los prohibía a secas, y al aplicarla
-   quedó claro que era una regla que el código tenía razón en violar en tres
-   lugares: el cumpleaños en el kiosco, `¡Acceso concedido!` al escanear el
-   carné, y `¡Hoy! 🎉`. Un `¡Guardado!` en un botón es la app festejando su
-   propio CRUD; un cumpleaños es una persona frente a una pantalla.
-3. **El punto final no depende de cuántas oraciones hay, sino de si es etiqueta o
-   prosa (§26.5).** Mi primer gate marcaba `subtitle="Crea el primero con el
-   botón de arriba."` — contradiciendo el doc que acababa de escribir, porque un
-   subtítulo *es* oración completa y lleva punto. Lo que no lo lleva es la
-   etiqueta: `Sin facturas en el período`.
-
-### Lo que se reescribió
-
-~45 strings: los mensajes de vacío del inventario medido (`Aún no hay
-cotizaciones` → `Sin cotizaciones`, `No hay registros` → `Sin registros`, y las
-muletas `registrados` / `todavía` / `aún` que no agregaban nada), los 22 voseos,
-los `¡...!` del feedback del sistema, los cinco `Por favor` y las
-interjecciones de los errores de validación (`¡Ey! No puedes dejar el cargo sin
-nombre.` → `El cargo necesita un nombre.`).
-
-También la distinción de §26.2, que `VentasView` y `TabExpediente` ya hacían
-bien y ahora es regla: **búsqueda sin resultados no es un vacío**. Uno se
-arregla borrando el filtro, el otro creando el primer registro; confundirlos
-manda a alguien a crear algo que ya existe.
-
-### Dos gates nuevos — y acotarlos fue el trabajo real
-
-`copy-vacio` y `copy-trato`, bloqueantes en cero: **27 categorías**.
-
-La primera versión miraba todo `title=` y devolvió **123 hallazgos, casi todos
-falsos**: `<GlassViewLayout title="Facturas de Compra">` es el *nombre de un
-módulo*, y ahí el Title Case es correcto porque es un nombre propio. El Title
-Case que §26.4 prohíbe es el de una etiqueta que debería leerse como oración
-(`Sin Horarios`), no el de una pantalla. Ahora los slots son solo dos —
-`message:` y los atributos **dentro** de un `<EmptyState>` — y el chequeo de
-Title Case se aplica solo a etiquetas de ≤4 palabras, porque una oración larga
-lleva nombres propios legítimos ("el botón Agregar", "vuelta a base").
-
-Bug propio que vale la pena registrar: **en JavaScript `\b` es ASCII**, así que
-`\bTené\b` matchea *dentro* de `Tenés` — la `é` cuenta como no-palabra y entre
-`é` y `s` hay frontera. Lo delató el gate reportando `Tené` en "Tenés un
-borrador guardado". Van lookarounds explícitos de letra, acentos incluidos. Y los
-puntos suspensivos no son punto final: `Verificando…` es un estado en curso.
-
-Verificado además que ninguno de los strings reescritos se usa como
-identificador: las alertas de `BranchesView` (`Falta regente`, `Datos
-incompletos`) solo se producen para mostrar, nadie compara contra ellas.
-
-`npm run gate:design` en verde, build y lint limpios. Cambio de strings
-únicamente — sin cambios de estructura ni de layout.
 
 ## v2.237.0 — F1 de identidad: toda cifra pasa por `formatNumber`, y el Dashboard dejó de mostrar `$1234,56`.
 

@@ -16,7 +16,7 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.239.0';
+export const APP_VERSION = '2.240.0';
 
 // v2.239.0 — F2 de identidad: la Voz. DESIGN.md tenia 3,370 lineas sobre la forma
 // y CERO sobre la palabra.

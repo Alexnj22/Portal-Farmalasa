@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { NOMBRE_POR_ICONO } from './iconNames';
+import { NOMBRE_POR_ICONO, TONO_POR_ICONO } from './iconNames';
 
 /**
  * TabBarAction — acción dentro de la barra flotante de vista (`ViewTabBar`).
@@ -64,7 +64,10 @@ const TabBarAction = memo(({
     icon: Icon,
     children,
     variant = 'quiet',
-    tone = 'brand',
+    // Sin `tone` explícito lo decide el ÍCONO, no el `brand` por defecto de
+    // antes: el ojo se veía de cuatro colores distintos según la pantalla. Ver
+    // `TONO_POR_ICONO`. Quien pase `tone` gana el suyo — esto es el piso.
+    tone,
     size = 'md',
     label,
     className = '',
@@ -79,6 +82,8 @@ const TabBarAction = memo(({
 }) => {
     const isPrimary = variant === 'primary';
     const esBoton = Tag === 'button';
+    const nombreIcono = Icon?.displayName ?? Icon?.name;
+    const tonoEfectivo = tone || TONO_POR_ICONO[nombreIcono] || 'brand';
 
     return (
         <Tag
@@ -87,7 +92,7 @@ const TabBarAction = memo(({
                 || (typeof children === 'string' ? children : undefined)
                 // Mismo piso que `Button` (v2.117.0): si no hay etiqueta ni texto,
                 // el nombre sale del ícono en vez de quedar en nada.
-                || NOMBRE_POR_ICONO[Icon?.displayName ?? Icon?.name]}
+                || NOMBRE_POR_ICONO[nombreIcono]}
             className={`${BASE} ${SIZE[size] || SIZE.md} ${className}
                 ${isPrimary
                     ? 'bg-brand border-brand text-white hover:bg-brand-hover hover:border-brand-hover'
@@ -98,7 +103,7 @@ const TabBarAction = memo(({
                 competir con la acción primaria. En `primary` el botón entero ya
                 es del color, así que el ícono va en blanco con el texto. */}
             {Icon && <Icon size={14} strokeWidth={2.5}
-                className={isPrimary ? '' : (TONE_ICON[tone] || TONE_ICON.brand)} />}
+                className={isPrimary ? '' : (TONE_ICON[tonoEfectivo] || TONE_ICON.brand)} />}
             {children && <span className="hidden sm:inline">{children}</span>}
         </Tag>
     );

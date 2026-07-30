@@ -1598,6 +1598,45 @@ No baja del mínimo táctil porque en táctil esa píldora no se dibuja: ahí
 El nombre quedó de cuando estas acciones vivían en `ViewTabBar`; ya no van ahí
 (§16.9).
 
+#### El TONO lo decide el ícono — `TONO_POR_ICONO` (2026-07-30)
+
+Auditados los **193 botones `iconOnly`** del proyecto: **18 íconos se dibujan con
+2 a 4 colores distintos**. El ojo aparece sin tono, `chart-1`, `success` y
+`secondary`; `Download` es `success` en Personal y `chart-1` en Facturas de
+Compra. El mismo ícono significa lo mismo y se ve distinto según la pantalla.
+
+El arreglo es un mapa y no N ediciones — mismo principio que `NOMBRE_POR_ICONO`,
+y en el mismo archivo (`iconNames.js`): **si el llamador no dice de qué color es,
+lo dice el ícono.**
+
+| familia | íconos | tono |
+|---|---|---|
+| crear / confirmar | `Plus` `Check` `CheckCircle2` `Save` | `success` |
+| sacar datos | `Download` `Upload` `FileOutput` | `success` |
+| mirar sin tocar | `Eye` `EyeOff` `Search` `Maximize2` `Printer` | `chart-1` |
+| rehacer / traer | `RefreshCw` `RotateCcw` `Copy` | `chart-1` |
+| modificar | `Edit2` `Edit3` `Pencil` `SquarePen` | `warning` |
+| archivar | `Archive` | `chart-4` |
+| destruir | `Trash2` `Trash` | `danger` |
+
+**Es el piso, no el techo**: quien pase `tone` o `variant` gana el suyo, y eso es
+necesario — un `Check` dentro de un "confirmar borrado" va en `destructive` a
+propósito, y los clústeres de acción por fila (Facturas de Compra pinta
+Eye/Download/FileJson/Archive de `chart-1` a la vez) tienen una coherencia local
+legítima.
+
+**Hoy lo consume solo `TabBarAction`**, que es el botón de acción de una vista —
+el que vive en `FilterBar`, uno o dos por pantalla. Extenderlo a `Button` tocaría
+los 193 de una vez, incluidos esos clústeres, y eso es una decisión aparte.
+
+#### `soloIcono` lleva `LiquidTooltip`, nunca `title`
+
+Un botón sin texto necesita que su rótulo sea **descubrible**, y el `title` del
+navegador no sirve: es cromo nativo —no se estiliza, tarda un segundo largo en
+aparecer y en táctil no existe—, justo lo que la regla cero-nativo evita. Lo pone
+`FilterBar` solo, con `side="bottom"` para no tapar la fila de arriba. El
+`aria-label` sale igual del `label` del descriptor.
+
 ### 15.6 `Notice` — aviso inline
 
 ```jsx

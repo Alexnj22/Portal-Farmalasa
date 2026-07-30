@@ -847,7 +847,9 @@ const StaffManagementView = ({
     // portal (Auditoría y el historial de sucursal usan el mismo) y con texto le
     // comía a la píldora el ancho que necesitan los dos filtros. En el clúster
     // táctil sigue rotulado.
-    { key: 'exportar', icon: Download, label: 'Exportar', tone: 'success',
+    // Sin `tone`: lo pone `TONO_POR_ICONO` a partir del ícono, que es lo que hace
+    // que `Download` se vea igual acá que en cualquier otra vista.
+    { key: 'exportar', icon: Download, label: 'Exportar',
       soloIcono: true, onClick: handleExportCSV },
   ];
 

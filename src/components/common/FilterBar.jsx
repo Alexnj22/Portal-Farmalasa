@@ -7,6 +7,7 @@ import BarraFlotante from './BarraFlotante';
 import TabBarAction from './TabBarAction';
 import SegmentedControl from './SegmentedControl';
 import LiquidSelect from './LiquidSelect';
+import LiquidTooltip from './LiquidTooltip';
 import { useBuscadorDeVista, usePublicarBarraFlotante } from './CanalDeVista';
 
 /**
@@ -540,24 +541,34 @@ const FilterBar = memo(({
                 <>
                     <span aria-hidden="true" className="h-[22px] w-px bg-divider shrink-0" />
                     <div className="flex items-center gap-1.5 h-9 px-2">
-                        {acciones.map(a => (
-                            // `soloIcono`: el ícono solo, con el rótulo vivo en
-                            // `label`/`title` para el aria y el tooltip. Es para la
-                            // acción secundaria y reconocible —Exportar— que si va
-                            // con texto le come a la píldora el ancho que necesitan
-                            // los filtros. En el clúster táctil sigue con rótulo:
-                            // ahí hay sitio y no hay hover que lo revele.
-                            <TabBarAction key={a.key} size="sm" icon={a.icon}
-                                variant={a.variant} tone={a.tone}
-                                as={a.as} href={a.href} target={a.target} rel={a.rel}
-                                disabled={a.disabled} onClick={a.onClick}
-                                label={a.label}
-                                title={a.title || a.label}
-                                className={a.soloIcono ? 'px-0 w-9 justify-center' : ''}
-                                aria-pressed={a.activo != null ? !!a.activo : undefined}>
-                                {a.soloIcono ? null : a.label}
-                            </TabBarAction>
-                        ))}
+                        {acciones.map(a => {
+                            // `soloIcono`: el ícono solo. Es para la acción
+                            // secundaria y reconocible —ocultar montos, exportar—
+                            // que con texto le come a la píldora el ancho que
+                            // necesitan los filtros. En el clúster táctil sigue
+                            // rotulado: ahí hay sitio y no hay hover que lo revele.
+                            const boton = (
+                                <TabBarAction key={a.key} size="sm" icon={a.icon}
+                                    variant={a.variant} tone={a.tone}
+                                    as={a.as} href={a.href} target={a.target} rel={a.rel}
+                                    disabled={a.disabled} onClick={a.onClick}
+                                    label={a.label}
+                                    title={a.soloIcono ? undefined : a.title}
+                                    className={a.soloIcono ? 'px-0 w-9 justify-center' : ''}
+                                    aria-pressed={a.activo != null ? !!a.activo : undefined}>
+                                    {a.soloIcono ? null : a.label}
+                                </TabBarAction>
+                            );
+                            // Un botón sin texto necesita que su rótulo sea
+                            // DESCUBRIBLE, y el `title` del navegador no sirve: es
+                            // cromo nativo —no se estiliza, tarda un segundo largo
+                            // en salir y en táctil no existe—, justo lo que la regla
+                            // cero-nativo evita. `LiquidTooltip` es el canónico
+                            // (§15.10) y va abajo para no taparle la fila de arriba.
+                            return a.soloIcono
+                                ? <LiquidTooltip key={a.key} content={a.label} side="bottom">{boton}</LiquidTooltip>
+                                : boton;
+                        })}
                         {accionesExtra}
                     </div>
                 </>

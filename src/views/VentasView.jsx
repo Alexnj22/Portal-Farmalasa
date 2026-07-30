@@ -170,7 +170,11 @@ function FilterControls({
                 key: 'privacidad',
                 icon: privacyMode ? EyeOff : Eye,
                 label: privacyMode ? 'Mostrar montos' : 'Ocultar montos',
-                tone: 'chart-8',
+                // Solo el ojo: es reconocible y el rótulo en mayúsculas se comía
+                // media píldora en la vista con MÁS ranuras del portal (sucursal,
+                // laboratorio, fecha y cuatro chips). El rótulo sigue disponible
+                // en el tooltip y en el `aria-label`; en el teléfono va rotulado.
+                soloIcono: true,
                 activo: privacyMode,
                 principal: false,
                 onClick: () => setPrivacyMode(v => !v),

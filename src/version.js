@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.250.0';
+export const APP_VERSION = '2.251.0';
+
+// v2.251.0 — el mismo icono, el mismo color. Y el ojo, solo el ojo.
+//
+// Auditados los **193 botones `iconOnly`** del proyecto: **18 iconos se dibujan
+// con 2 a 4 colores distintos**. El ojo aparece sin tono, `chart-1`, `success` y
+// `secondary`; `Download` es `success` en Personal y `chart-1` en Facturas de
+// Compra. El mismo icono significa lo mismo y se ve distinto segun la pantalla.
+//
+// `TONO_POR_ICONO` en `iconNames.js`, al lado de `NOMBRE_POR_ICONO` y por el
+// mismo principio: si el llamador no dice de que color es, lo dice el icono.
+// Es el PISO, no el techo — quien pase `tone` gana el suyo, y hace falta: un
+// `Check` dentro de un "confirmar borrado" va en `destructive` a proposito, y
+// los clusteres de accion por fila (Facturas de Compra pinta
+// Eye/Download/FileJson/Archive de `chart-1` a la vez) tienen coherencia local.
+// Por eso hoy lo consume SOLO `TabBarAction` — el boton de accion de una vista.
+// Extenderlo a `Button` tocaria los 193 de una vez; queda como decision aparte.
+//
+// **El ojo de Ventas pasa a `soloIcono`.** Con rotulo en mayusculas se comia
+// media pildora en la vista con MAS ranuras del portal (sucursal, laboratorio,
+// fecha y cuatro chips): la pildora bajo de 852 a 722px.
+//
+// **Y `soloIcono` lleva `LiquidTooltip`, no `title`.** Un boton sin texto
+// necesita que su rotulo sea descubrible, y el `title` del navegador es cromo
+// nativo: no se estiliza, tarda un segundo largo y en tactil no existe — justo
+// lo que la regla cero-nativo evita. Va con `side="bottom"` para no tapar la
+// fila de arriba.
 
 // v2.250.0 — la pildora, corregida sobre la revision del usuario.
 //

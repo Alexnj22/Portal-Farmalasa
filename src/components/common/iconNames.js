@@ -36,3 +36,38 @@ export const NOMBRE_POR_ICONO = {
 // constante desde un archivo de componente rompe el Fast Refresh de React
 // (`react-refresh/only-export-components`): al editar el mapa, Vite recarga la
 // página entera en vez de sustituir el componente.
+
+// ── Tono canónico por ícono (2026-07-30) ─────────────────────────────────
+// Mismo principio que `NOMBRE_POR_ICONO`, y por el mismo hallazgo. Auditados
+// los 193 botones `iconOnly` del proyecto: **18 íconos se dibujan con 2 a 4
+// colores distintos**. El ojo aparece sin tono, `chart-1`, `success` y
+// `secondary`; `Download` es `success` en Personal y `chart-1` en Facturas de
+// Compra. O sea que el mismo ícono significa lo mismo y se ve distinto según la
+// pantalla, que es justo lo que el usuario señaló.
+//
+// El arreglo es un mapa y no N ediciones: si el llamador no dice de qué color
+// es, lo dice el ícono. Es el piso, no el techo — quien pase `tone` o `variant`
+// explícitos gana el suyo, y eso es necesario: un `Check` dentro de un
+// "confirmar borrado" va en `destructive` a propósito, y los clústeres de
+// acción por fila (Facturas de Compra pinta Eye/Download/FileJson/Archive de
+// `chart-1` a la vez) tienen una coherencia local que es legítima.
+//
+// Por eso hoy lo consume SOLO `TabBarAction`, que es el botón de acción de una
+// vista — el que vive en `FilterBar` y del que hay uno o dos por pantalla.
+// Extenderlo a `Button` tocaría los 193 de una vez, incluidos esos clústeres.
+export const TONO_POR_ICONO = {
+    // Crear y confirmar: algo aparece.
+    Plus: 'success', Check: 'success', CheckCircle2: 'success', Save: 'success',
+    // Sacar datos del portal.
+    Download: 'success', Upload: 'success', FileOutput: 'success', Printer: 'chart-1',
+    // Mirar sin tocar.
+    Eye: 'chart-1', EyeOff: 'chart-1', Search: 'chart-1', Maximize2: 'chart-1',
+    // Modificar lo que ya existe.
+    Edit2: 'warning', Edit3: 'warning', Pencil: 'warning', SquarePen: 'warning',
+    // Rehacer / volver a traer.
+    RefreshCw: 'chart-1', RotateCcw: 'chart-1', Copy: 'chart-1',
+    // Guardar fuera de la vista, sin destruir.
+    Archive: 'chart-4',
+    // Destruir.
+    Trash2: 'danger', Trash: 'danger',
+};

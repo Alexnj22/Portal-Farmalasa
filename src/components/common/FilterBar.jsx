@@ -1,4 +1,4 @@
-import React, { memo, Children, isValidElement, useState, useEffect, useId } from 'react';
+import React, { memo, Children, isValidElement, useState, useEffect, useId, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -41,6 +41,19 @@ import Contador from './Contador';
  * filas y empujaba la tabla fuera de la pantalla.
  */
 
+/**
+ * Si la barra está colapsada en hoja inferior. Lo necesita `Section` porque su
+ * alto NO puede ser el mismo en los dos modos:
+ *
+ * En la píldora de escritorio el `h-9` fijo es lo que hace que la barra mida
+ * 52px tenga una ranura o cinco. En la hoja del teléfono las ranuras se apilan
+ * en columna, y ahí ese mismo `h-9` recorta: un control más alto que 36px —un
+ * `SegmentedControl` en bloque de dos filas, por ejemplo— se desborda de su
+ * ranura y **se solapa con la de arriba**. No se ve en escritorio porque ahí
+ * todo control de filtro es de una fila.
+ */
+const BarraCtx = createContext({ compacto: false });
+
 const Section = memo(({
     children,
     // `active` + `onClear` son lo que convierte la ranura en chip. No se
@@ -51,9 +64,12 @@ const Section = memo(({
     onClear,
     label,
     className = '',
-}) => (
-    <div className={`flex items-center h-full px-2 min-w-0 ${className}`}>
-        <div className={`flex items-center gap-1.5 h-9 px-1 rounded-btn border transition-[background-color,border-color] duration-200
+}) => {
+  const { compacto } = useContext(BarraCtx);
+  return (
+    <div className={`flex items-center px-2 min-w-0 ${compacto ? 'h-auto w-full' : 'h-full'} ${className}`}>
+        <div className={`flex items-center gap-1.5 px-1 rounded-btn border transition-[background-color,border-color] duration-200
+            ${compacto ? 'min-h-9 h-auto w-full flex-wrap' : 'h-9'}
             ${active ? 'bg-brand/10 border-brand/30' : 'border-transparent'}`}>
             {children}
             {active && onClear && (
@@ -67,7 +83,8 @@ const Section = memo(({
             )}
         </div>
     </div>
-));
+  );
+});
 Section.displayName = 'FilterBar.Section';
 
 /**
@@ -133,7 +150,7 @@ const FilterBar = memo(({
     // ── Móvil: botón + hoja inferior ──────────────────────────────────────
     if (compacto) {
         return (
-            <>
+            <BarraCtx.Provider value={{ compacto: true }}>
                 <button type="button" onClick={() => setAbierto(true)}
                     aria-expanded={abierto} aria-controls={idHoja}
                     className={`inline-flex items-center gap-2 h-[max(40px,var(--tap-min))] px-3.5 rounded-card border shrink-0
@@ -188,12 +205,13 @@ const FilterBar = memo(({
                     </div>,
                     document.body,
                 )}
-            </>
+            </BarraCtx.Provider>
         );
     }
 
     // ── Escritorio: la píldora ────────────────────────────────────────────
     return (
+        <BarraCtx.Provider value={{ compacto: false }}>
         <div
             // `h-[52px]` fijo. No es un número al azar: 36 del chip + 8 de aire
             // arriba y abajo. El divisor mide 22 y todo se centra, así que la
@@ -236,6 +254,7 @@ const FilterBar = memo(({
                 </>
             )}
         </div>
+        </BarraCtx.Provider>
     );
 });
 

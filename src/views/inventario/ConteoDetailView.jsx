@@ -31,10 +31,12 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
+import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
+import { inputHoverClass } from '../../utils/inputStyles';
 
 const PAGE_SIZE = 25;
 
@@ -433,7 +435,7 @@ function ItemRow({
             {verSistema && (
                 <DataCell align="center">
                     {tapado ? (
-                        <span className="text-body-sm font-bold text-content-3 tabular-nums" title="Oculto hasta que registrés tu recuento">{TAPADO}</span>
+                        <LiquidTooltip content="Oculto hasta que registres tu recuento"><span className="text-body-sm font-bold text-content-3 tabular-nums">{TAPADO}</span></LiquidTooltip>
                     ) : (
                         <div className="flex items-center justify-center gap-1.5">
                             <span className="text-body-sm font-bold text-content-2 tabular-nums">{sistema ?? '—'}</span>
@@ -994,9 +996,13 @@ function EditLoteModal({ open, item, onClose, onSave }) {
                         inputClassName="text-body-xl"
                     />
                 </div>
+                {/* Mismo caso que el alta: sin envoltorio el campo se veía como
+                    texto suelto debajo del de Lote, que sí tiene caja. */}
                 <div>
                     <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Fecha de vencimiento</label>
-                    <LiquidDatePicker value={fecha} onChange={setFecha} />
+                    <CajaFecha>
+                        <LiquidDatePicker value={fecha} onChange={setFecha} />
+                    </CajaFecha>
                 </div>
                 <Button tone="chart-9" disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección</Button>
             </div>
@@ -1726,6 +1732,56 @@ export default function ConteoDetailView() {
     );
 }
 
+// Rótulo + campo. Los cuatro campos del alta van en una fila, y sin rótulo
+// propio cada uno dependía de su placeholder — que desaparece en cuanto tiene
+// valor, así que a los dos segundos la fila era cuatro cajas sin decir qué es
+// cada una. Además alinea las bases: un campo con rótulo al lado de otro sin
+// rótulo quedaba corrido hacia abajo, que es lo que se veía con el vencimiento.
+// `div` + `span`, no `<label>`: un `<label>` se asocia a UN control, y acá dos de
+// los cuatro campos no son un `<input>` (los `role="combobox"` de LiquidSelect) y
+// el de fecha son TRES inputs adentro (día/mes/año). El nombre accesible lo lleva
+// cada control por su cuenta — `ariaLabel` en los selects, `aria-label` en el
+// input, y los suyos propios el date picker.
+function Campo({ label, children }) {
+    return (
+        <div className="flex flex-col gap-1 min-w-0">
+            <span className="text-micro font-black uppercase tracking-widest text-content-3 ml-1">{label}</span>
+            {children}
+        </div>
+    );
+}
+
+// El envoltorio que `LiquidDatePicker` EXIGE. DESIGN.md §14 lo dice con estas
+// palabras: «`LiquidDatePicker` es el caso contrario y su envoltorio SÍ va. Su
+// contenedor usa `h-full` — toma la altura del padre, no tiene mínimo propio.
+// Quitárselo lo colapsa». Acá no tenía ninguno, y por eso el campo se veía como
+// texto suelto al lado de dos selects con caja.
+//
+// El alto es `max(40px, var(--tap-min))`, el mismo que el trigger de
+// `LiquidSelect`, para que los campos de la fila queden parejos y en táctil no
+// bajen de 44px. Las clases salen de `inputHoverClass`, que existe justamente
+// para «cualquier wrapper de LiquidSelect/LiquidDatePicker que necesite el mismo
+// look».
+//
+// Pendiente anotado, no resuelto acá: hay SIETE anatomías distintas de este
+// mismo envoltorio en el portal (h-[36px] rounded-xl, h-[42px] rounded-2xl,
+// h-10 overflow-hidden, …). Es un canónico que hace que cada llamador se
+// invente su cromo, y merece una pasada propia.
+function CajaFecha({ inerte, titulo, children }) {
+    return (
+        <div
+            role="group"
+            title={titulo}
+            aria-disabled={inerte || undefined}
+            className={`bg-surface-card rounded-2xl border border-divider shadow-sm flex items-center
+                h-[max(40px,var(--tap-min))] px-1.5 ${inputHoverClass}
+                ${inerte ? 'opacity-60 pointer-events-none' : ''}`}
+        >
+            {children}
+        </div>
+    );
+}
+
 function AddManualItemForm({ branchId, onAdd, onCancel }) {
     const { showToast } = useToastStore();
     const [results, setResults] = useState([]);
@@ -1815,37 +1871,65 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
                 <p className="text-label font-black uppercase tracking-widest text-chart-9-text flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
                 <Button variant="ghost" icon={X} iconOnly onClick={onCancel} />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <div className="md:col-span-3">
+            <div className="md:w-2/3">
+                <Campo label="Producto">
                     <LiquidSelect value={selected ? String(selected.id) : null} onChange={handleSelectProduct} options={results.map((p) => ({ value: String(p.id), label: `${p.nombre}${p.laboratorios?.nombre ? ` · ${p.laboratorios.nombre}` : ''}` }))} placeholder="Buscar producto..." serverSearch onSearchChange={handleSearch} />
-                </div>
-                <LiquidSelect value={presentacion || null} onChange={setPresentacion} options={presentacionOpts} placeholder={selected ? 'Presentación...' : 'Elige un producto primero'} disabled={!selected} clearable={false} />
-                <LiquidSelect
-                    value={lote || null}
-                    onChange={handleSelectLote}
-                    options={[...loteOpts.map((l) => ({ value: l.value, label: l.value })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
-                    placeholder={selected ? 'Lote...' : 'Elige un producto primero'}
-                    disabled={!selected}
-                    clearable={false}
-                />
-                {lote === '__OTRO__' && (
-                    <PortalInput
-                        aria-label="Número de lote nuevo"
-                        value={loteOtro}
-                        onChange={(e) => setLoteOtro(e.target.value)}
-                        placeholder="Número de lote nuevo"
-                        inputClassName="text-body-xl"
-                    />
-                )}
+                </Campo>
             </div>
-            <div className="flex items-center gap-2">
-                <div>
-                    <label className="text-micro font-black uppercase tracking-widest text-content-3 ml-1 mb-1 block">Vencimiento</label>
-                    <div className={lote !== '__OTRO__' ? 'opacity-50 pointer-events-none' : ''}>
+
+            {/* Los cuatro campos del renglón en UNA fila. El vencimiento vivía en
+                una fila aparte junto al botón, así que la fecha quedaba desalineada
+                de los campos a los que pertenece y el botón parecía parte del
+                formulario en vez de su cierre. Las columnas son literales y no
+                calculadas: Tailwind escanea el fuente (`grid-cols-${n}` no
+                existiría en el CSS). */}
+            <div className={`grid grid-cols-1 gap-2 ${lote === '__OTRO__' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                <Campo label="Presentación">
+                    <LiquidSelect value={presentacion || null} onChange={setPresentacion} options={presentacionOpts} placeholder={selected ? 'Presentación...' : 'Elige un producto primero'} disabled={!selected} clearable={false} ariaLabel="Presentación" />
+                </Campo>
+                <Campo label="Lote">
+                    <LiquidSelect
+                        value={lote || null}
+                        onChange={handleSelectLote}
+                        options={[...loteOpts.map((l) => ({ value: l.value, label: l.value })), { value: '__OTRO__', label: '+ Otro lote (nuevo)' }]}
+                        placeholder={selected ? 'Lote...' : 'Elige un producto primero'}
+                        disabled={!selected}
+                        clearable={false}
+                        ariaLabel="Lote"
+                    />
+                </Campo>
+                {lote === '__OTRO__' && (
+                    <Campo label="Número de lote">
+                        <PortalInput
+                            aria-label="Número de lote nuevo"
+                            value={loteOtro}
+                            onChange={(e) => setLoteOtro(e.target.value)}
+                            placeholder="Ej. A-1234"
+                            inputClassName="text-body-xl"
+                        />
+                    </Campo>
+                )}
+                {/* Un lote que ya existe en el ERP trae su vencimiento: se muestra
+                    pero no se edita, porque cambiarlo acá no cambiaría el del ERP.
+                    `aria-disabled` + `title` para que no sea solo un gris. */}
+                <Campo label={lote === '__OTRO__' ? 'Vencimiento' : 'Vencimiento (del lote)'}>
+                    <CajaFecha
+                        inerte={lote !== '__OTRO__'}
+                        titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote del ERP' : undefined}
+                    >
                         <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
-                    </div>
-                </div>
-                <Button tone="chart-9" disabled={!canSubmit || saving} onClick={handleSubmit}>{saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo</Button>
+                    </CajaFecha>
+                </Campo>
+            </div>
+
+            {/* El botón cierra el formulario, no es uno de sus campos: fila propia,
+                a la derecha. Y el ícono va por la prop `icon`, no como hijo — como
+                hijo entra al mismo <span> que el texto y el botón se partía en dos
+                renglones ("+" arriba, "Agregar al conteo" abajo). */}
+            <div className="flex justify-end">
+                <Button tone="chart-9" icon={Plus} loading={saving} disabled={!canSubmit || saving} onClick={handleSubmit}>
+                    Agregar al conteo
+                </Button>
             </div>
         </div>
     );

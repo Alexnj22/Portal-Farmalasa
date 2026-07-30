@@ -16,7 +16,7 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.241.0';
+export const APP_VERSION = '2.242.0';
 
 // v2.241.0 — F3 de identidad: los 50 `title=` sobre elementos no interactivos eran
 // CUATRO patrones, no uno. Y 22 puntos de estado que ningun lector de pantalla

@@ -12,6 +12,145 @@ retomar; acá está todo.
 
 ---
 
+## v2.242.0 — el campo de fecha no tenía caja, y DESIGN.md ya decía que la lleva.
+
+Tres cosas del alta manual del conteo y una del canónico de filtros. Las dos de
+fondo son incumplimientos de reglas que ya estaban escritas.
+
+### El vencimiento se veía como texto suelto
+
+`DESIGN.md` §14 lo dice con estas palabras: *«**`LiquidDatePicker` es el caso
+contrario y su envoltorio SÍ va.** Su contenedor usa `h-full` — toma la altura del
+padre, no tiene mínimo propio. Quitárselo lo colapsa»*. Los dos usos del conteo
+—el alta manual y el modal de corregir lote— **no tenían ninguno**, así que el
+campo salía sin fondo ni borde al lado de dos selects con caja: parecía una
+etiqueta, no algo donde se escribe.
+
+El envoltorio usa `h-[max(40px,var(--tap-min))]`, el mismo alto que el trigger de
+`LiquidSelect`, para que los campos de la fila queden parejos y en táctil no bajen
+de 44px. Las clases salen de `inputHoverClass`, que existe justamente para
+*«cualquier wrapper de LiquidSelect/LiquidDatePicker que necesite el mismo look»*.
+
+**Anotado y no resuelto:** hay **siete anatomías distintas** de este mismo
+envoltorio en el portal (`h-[36px] rounded-xl`, `h-[42px] rounded-2xl`, `h-10
+overflow-hidden`, `flex-1 … rounded-xl`…). Es un canónico que obliga a cada
+llamador a inventarse su cromo, y merece una pasada propia.
+
+### La fila del formulario y el botón
+
+El vencimiento vivía en una fila aparte **compartida con el botón**, así que la
+fecha quedaba desalineada de los campos a los que pertenece y el botón parecía un
+campo más. Ahora los cuatro van en una fila (3 columnas, 4 cuando aparece el lote
+nuevo) y el botón cierra el formulario en su propia fila, a la derecha.
+
+Los cuatro llevan rótulo. Antes dependían del placeholder, que **desaparece en
+cuanto el campo tiene valor**: a los dos segundos la fila eran cuatro cajas sin
+decir qué es cada una. Y un campo con rótulo al lado de otros sin rótulo quedaba
+corrido hacia abajo — que es exactamente lo que se veía.
+
+El rótulo es `div` + `span` y no `<label>`: un `<label>` se asocia a UN control, y
+acá dos campos son `role="combobox"` y el de fecha son **tres** inputs adentro
+(día/mes/año). El nombre accesible lo lleva cada control por su cuenta.
+
+### El botón se partía en dos renglones
+
+`<Button …>{saving ? <Loader2/> : <Plus/>} Agregar al conteo</Button>` — el ícono
+iba como **hijo**, así que entraba al mismo `<span>` que el texto y el contenido
+se quebraba: "+" arriba, "Agregar al conteo" abajo. `Button` tiene prop `icon` y
+prop `loading` para esto. Medido: 40px de alto, una línea.
+
+### En la hoja de filtros del teléfono las ranuras se solapaban
+
+Defecto del canónico. `FilterBar.Section` fija `h-9` (36px) en su chip interno:
+en la píldora de escritorio eso es lo que hace que la barra mida 52px tenga una
+ranura o cinco, pero en la hoja del teléfono las ranuras se **apilan en columna**,
+y ahí cualquier control más alto que 36px se desborda y tapa al de arriba. No se
+veía antes porque todo control de filtro era de una fila; apareció con el
+`SegmentedControl` en bloque de dos filas que entró en v2.240.0.
+
+`Section` ahora lee un contexto de la barra: alto fijo en la píldora, `min-h-9
+h-auto` en la hoja. Medido en WebKit a 320 y 390: dos ranuras (46px y 98px),
+**cero solapes**, cero desborde horizontal.
+
+---
+
+## v2.241.0 — F3 de identidad: los 50 `title=` no interactivos eran **cuatro** patrones, y 22 puntos de estado que ningún lector de pantalla anunciaba.
+
+Tercera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. El plan decía: "los 50 son el
+caso *explicar* de §15.10 y van a `LiquidTooltip`". Al medirlos por **tipo de
+elemento** eso resultó falso, y lo que apareció debajo vale más que la migración
+que se había planeado.
+
+| | Qué es | Qué lleva | Cuántos |
+|---|---|---|---|
+| **A** | El texto visible está **truncado**; el `title` tiene el completo | `title` + `truncate`. Se queda | 12 |
+| **B** | Un **gráfico**: punto de estado, avatar en pila, dot por sucursal, burbuja del cumpleaños | `role="img"` + el `title` de siempre | 22 |
+| **C** | Un **contenedor de controles** con nombre | `role="group"` + `title` | 1 |
+| **D** | **Prosa suplementaria** sobre texto inline | `LiquidTooltip` | 15 |
+
+### (B) es el hallazgo, y es de accesibilidad real
+
+Un `<span className="w-3.5 h-3.5 rounded-full bg-success" title="Disponible" />`
+no lo anuncia **nada**. Sin `role`, un lector de pantalla salta el elemento
+completo: ese `title` no existe para nadie que no use mouse. Y `§16.3` daba la
+forma visual del punto de estado sin decir una palabra sobre su nombre — no había
+un solo `role="img"` en el proyecto.
+
+Con `role="img"`, el **mismo** `title` pasa a ser su nombre accesible (`title` es
+fuente de nombre válida). Un atributo agregado, nada quitado: el lector de
+pantalla lo anuncia y el hover del mouse sigue igual. Cero riesgo de layout.
+
+Migrar esos 22 a `LiquidTooltip` habría sido peor en los dos sentidos: rompe la
+pila de avatares (`margin-left: -6px`) y el posicionamiento absoluto del punto,
+y no arregla nada de accesibilidad — por lo que sigue.
+
+### Lo que `LiquidTooltip` no arregla, y por eso no lo prometemos
+
+Su wrapper es un `<span className="inline-block">` **sin `tabIndex`**: no es
+focusable. Sus `onFocus`/`onBlur` solo disparan si el *hijo* lo es. Sobre un texto
+o un gráfico, el tooltip queda **igual de inalcanzable por teclado** que el
+`title`, y en táctil tampoco hay `mouseenter`. Sobre un elemento no interactivo
+compra consistencia visual —la superficie del portal, sin la espera de ~1 s del
+sistema—, no accesibilidad.
+
+Si la información *importa* y hoy solo vive en hover, la respuesta no es un
+tooltip más lindo: es un botón de info o texto visible. Queda anotado como deuda,
+no resuelto. Los dos casos donde más pesa: la descripción de cada permiso en
+`PermissionsView` y la explicación del cálculo del delta en `EncuestaView`.
+
+### Por qué (A) no se migra
+
+`LiquidTooltip` envuelve en `inline-block`, y eso rompe exactamente el truncado
+que el `title` existe para salvar. En (A) el `title` no es decoración: es el
+escape del desborde, y es el markup correcto.
+
+### Lo que se hizo
+
+- **22 `role="img"`** en los indicadores gráficos, más **1 `role="group"`**.
+- **15 a `LiquidTooltip`** — de 4 archivos usándolo a **12**. Incluye los `<th>` y
+  `<td>` de Encuesta (varios ya traían `cursor-help`: el autor sabía que era un
+  tooltip), el chip de `TabGenerar`, `AbcXyzBadge` —donde el `shrink-0` pasó al
+  wrapper vía la prop `className` para no perder el no-encogimiento— y la
+  descripción del permiso, que se movió del `<div>` de la fila (flex, no
+  envolvible) a la etiqueta, que es inline.
+- **1 borrado:** `RolesView` tenía `title={role.name}` sobre un `<h4>` que ya
+  muestra `{role.name}` y no trunca. Duplicación pura.
+- `§15.10` y `§16.3` documentan los cuatro patrones.
+
+### Un bug encontrado y NO resuelto
+
+`CajaFecha` de `ConteoDetailView` explica en su `title` *por qué* la caja está
+inerte — y cuando lo está lleva `pointer-events-none`, así que ningún evento de
+mouse entra: **el texto es inalcanzable justo en el estado que explica**.
+`role="group"` al menos se lo entrega al lector de pantalla; arreglar el hover
+requiere mover el disparador a un ancestro, que es un cambio de esa vista.
+
+**Gate nuevo `tooltip-no-control`**, bloqueante en cero — **28 categorías**.
+Permite (A) por el truncado y (B)/(C) por el rol; todo lo demás es (D) y tiene que
+ser `LiquidTooltip`.
+
+`npm run gate:design` en verde, build y lint limpios.
+
 ## v2.240.0 — la tabla del conteo entra sin scroll, y "2 ED." era un `Badge` haciendo de contador.
 
 ### El contador no era canónico
@@ -93,83 +232,6 @@ copiadas a mano es cambiar la que no era. El ancla se verifica y **la migración
 revienta** si no aparece o si no son exactamente 4 funciones.
 
 ---
-
-## v2.241.0 — F3 de identidad: los 50 `title=` no interactivos eran **cuatro** patrones, y 22 puntos de estado que ningún lector de pantalla anunciaba.
-
-Tercera fase de `docs/PLAN-IDENTIDAD-2026-07-29.md`. El plan decía: "los 50 son el
-caso *explicar* de §15.10 y van a `LiquidTooltip`". Al medirlos por **tipo de
-elemento** eso resultó falso, y lo que apareció debajo vale más que la migración
-que se había planeado.
-
-| | Qué es | Qué lleva | Cuántos |
-|---|---|---|---|
-| **A** | El texto visible está **truncado**; el `title` tiene el completo | `title` + `truncate`. Se queda | 12 |
-| **B** | Un **gráfico**: punto de estado, avatar en pila, dot por sucursal, burbuja del cumpleaños | `role="img"` + el `title` de siempre | 22 |
-| **C** | Un **contenedor de controles** con nombre | `role="group"` + `title` | 1 |
-| **D** | **Prosa suplementaria** sobre texto inline | `LiquidTooltip` | 15 |
-
-### (B) es el hallazgo, y es de accesibilidad real
-
-Un `<span className="w-3.5 h-3.5 rounded-full bg-success" title="Disponible" />`
-no lo anuncia **nada**. Sin `role`, un lector de pantalla salta el elemento
-completo: ese `title` no existe para nadie que no use mouse. Y `§16.3` daba la
-forma visual del punto de estado sin decir una palabra sobre su nombre — no había
-un solo `role="img"` en el proyecto.
-
-Con `role="img"`, el **mismo** `title` pasa a ser su nombre accesible (`title` es
-fuente de nombre válida). Un atributo agregado, nada quitado: el lector de
-pantalla lo anuncia y el hover del mouse sigue igual. Cero riesgo de layout.
-
-Migrar esos 22 a `LiquidTooltip` habría sido peor en los dos sentidos: rompe la
-pila de avatares (`margin-left: -6px`) y el posicionamiento absoluto del punto,
-y no arregla nada de accesibilidad — por lo que sigue.
-
-### Lo que `LiquidTooltip` no arregla, y por eso no lo prometemos
-
-Su wrapper es un `<span className="inline-block">` **sin `tabIndex`**: no es
-focusable. Sus `onFocus`/`onBlur` solo disparan si el *hijo* lo es. Sobre un texto
-o un gráfico, el tooltip queda **igual de inalcanzable por teclado** que el
-`title`, y en táctil tampoco hay `mouseenter`. Sobre un elemento no interactivo
-compra consistencia visual —la superficie del portal, sin la espera de ~1 s del
-sistema—, no accesibilidad.
-
-Si la información *importa* y hoy solo vive en hover, la respuesta no es un
-tooltip más lindo: es un botón de info o texto visible. Queda anotado como deuda,
-no resuelto. Los dos casos donde más pesa: la descripción de cada permiso en
-`PermissionsView` y la explicación del cálculo del delta en `EncuestaView`.
-
-### Por qué (A) no se migra
-
-`LiquidTooltip` envuelve en `inline-block`, y eso rompe exactamente el truncado
-que el `title` existe para salvar. En (A) el `title` no es decoración: es el
-escape del desborde, y es el markup correcto.
-
-### Lo que se hizo
-
-- **22 `role="img"`** en los indicadores gráficos, más **1 `role="group"`**.
-- **15 a `LiquidTooltip`** — de 4 archivos usándolo a **12**. Incluye los `<th>` y
-  `<td>` de Encuesta (varios ya traían `cursor-help`: el autor sabía que era un
-  tooltip), el chip de `TabGenerar`, `AbcXyzBadge` —donde el `shrink-0` pasó al
-  wrapper vía la prop `className` para no perder el no-encogimiento— y la
-  descripción del permiso, que se movió del `<div>` de la fila (flex, no
-  envolvible) a la etiqueta, que es inline.
-- **1 borrado:** `RolesView` tenía `title={role.name}` sobre un `<h4>` que ya
-  muestra `{role.name}` y no trunca. Duplicación pura.
-- `§15.10` y `§16.3` documentan los cuatro patrones.
-
-### Un bug encontrado y NO resuelto
-
-`CajaFecha` de `ConteoDetailView` explica en su `title` *por qué* la caja está
-inerte — y cuando lo está lleva `pointer-events-none`, así que ningún evento de
-mouse entra: **el texto es inalcanzable justo en el estado que explica**.
-`role="group"` al menos se lo entrega al lector de pantalla; arreglar el hover
-requiere mover el disparador a un ancestro, que es un cambio de esa vista.
-
-**Gate nuevo `tooltip-no-control`**, bloqueante en cero — **28 categorías**.
-Permite (A) por el truncado y (B)/(C) por el rol; todo lo demás es (D) y tiene que
-ser `LiquidTooltip`.
-
-`npm run gate:design` en verde, build y lint limpios.
 
 ## v2.239.0 — F2 de identidad: la Voz. `DESIGN.md` tenía 3,370 líneas sobre la forma y **cero** sobre la palabra.
 

@@ -53,6 +53,7 @@ const MinMaxView = lazy(IMPORTADORES.MinMaxView);
 const VentasPperdidasView = lazy(IMPORTADORES.VentasPperdidasView);
 const ComprasView = lazy(IMPORTADORES.ComprasView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
+const LibrosIvaView = lazy(IMPORTADORES.LibrosIvaView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
 const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
@@ -634,6 +635,7 @@ function MainApp() {
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
@@ -726,6 +728,7 @@ const ROUTE_TITLES = {
     '/encuesta-admin':    'Encuesta',
     '/compras':           'Compras',
     '/facturas-compra':   'Facturas de Compra',
+    '/libros-iva':        'Libros IVA',
     '/conteo-inventario': 'Conteo de Inventario',
     '/branches':          'Sucursales',
     '/roles':             'Roles',

@@ -37,6 +37,7 @@ export const MODULE_SEARCH_KEYWORDS = {
     ventas_perdidas:    ['quiebres de stock', 'sin stock', 'faltantes', 'stockouts'],
     compras:            ['compras del erp', 'facturas de bodega', 'costos de compra'],
     facturas_compra:    ['facturas de proveedores', 'correo de facturas', 'dte de compras', 'gastos'],
+    libros_iva:         ['libro de ventas', 'libro de iva', 'consumidor final', 'contribuyentes', 'declaracion de iva', 'hacienda', 'contabilidad', 'anulados'],
     proveedores:        ['suppliers', 'contactos de proveedor', 'maestro de proveedores'],
     conteo_inventario:  ['auditoria de inventario', 'conteo fisico', 'cuadre de stock'],
 };

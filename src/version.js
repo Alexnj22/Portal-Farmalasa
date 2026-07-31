@@ -16,7 +16,50 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.314.0';
+export const APP_VERSION = '2.315.0';
+
+// v2.315.0 — Datos Contables: los libros de IVA se generan desde el portal.
+//
+// Grupo nuevo en el menú con **Facturas de Compra** —que sale de "Compras":
+// ese documento se sincroniza para contabilidad, no para decidir qué reponer—
+// y el módulo nuevo **Libros IVA**. El grupo de la pantalla de permisos se mueve
+// igual: si el permiso vive en "Inventario" y el menú lo muestra en "Datos
+// Contables", quien reparte accesos lo busca donde no está.
+//
+// Tres libros, tres RPC (20260731211927): consumidor final (Art. 83 RCT, una
+// fila por día con el rango de correlativos del→al), contribuyentes (Art. 85,
+// una fila por documento) y el anexo de anulados. Las columnas y su orden salen
+// del Reglamento y no del CSV del ERP: es la referencia con autoridad y no
+// depende de que un proveedor no cambie su exportador.
+//
+// **El filtro es el sello**: `estado='FINALIZADA' AND length(recibido_mh)=40`.
+// Verificado el 2026-07-31 contra el ERP, 7 sucursales × 3 meses: CCF y
+// consumidor 18/18 branch-meses exactos, y los 204 anulados con el md5 del
+// conjunto de `codigo_generacion` idéntico. Sin ese filtro sobraban $282.58.
+//
+// Los RPC son DEFINER **con gate adentro**: la policy de `sales_invoices` pide
+// `ventas.can_view`, así que un contador con permiso de Libros IVA y nada más
+// leería cero filas siendo INVOKER. El gate replica permiso + scope y va en
+// `(SELECT ...)` para que no se evalúe por fila.
+//
+// **Hallazgo que limita el alcance: falta el NRC del cliente.** El Art. 85 lo
+// exige en cada fila del libro de contribuyentes y el portal no lo guarda —
+// `customers` tiene `nit` y `dui` y las dos están VACÍAS: 0 de los 49 CCF de
+// junio. La verificación contra el ERP cuadró en conteo y monto, que era lo que
+// se comparó; la columna de identificación no entraba ahí. La columna `nrc` se
+// crea igual (20260731211852) para que el libro nazca con su forma definitiva,
+// y la vista marca los documentos sin NRC en vez de dejarlos en blanco: un
+// libro que parece completo y no lo está es peor que uno que avisa.
+//
+// De paso, encontrado probando el grupo nuevo: **cada hover sobre un ítem del
+// menú con el sidebar abierto tiraba `handleMouseEnter is not a function`**.
+// La función es `undefined` a propósito cuando el flyout no corresponde, y el
+// envoltorio que agregó el prefetch en v2.57.0 la llamaba sin `?.`.
+//
+// Verificado en navegador contra junio 2026: 21,604 documentos y $222,822.64 de
+// consumidor con $25,634.46 de débito calculado, 49 CCF por $2,157.80 y 80
+// anulados por $1,925.53 — los mismos números que devuelve el SQL directo. El
+// CSV baja con BOM, `;`, fecha DD/MM/YYYY y su fila de TOTALES.
 
 // v2.314.0 — el carril lo dibuja la VISTA, no el dato (y la marca de copiado).
 //

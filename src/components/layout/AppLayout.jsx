@@ -9,7 +9,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search
+    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, BookOpen
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -65,7 +65,13 @@ const MENU_GROUPS = [
     { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
     { key: 'pedidos_sucursales', label: 'Pedidos a Sucursales', icon: ClipboardList, modules: ['pedidos'] },
     { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['minmax', 'ventas_perdidas', 'conteo_inventario'] },
-    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_compra', 'proveedores'] },
+    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'proveedores'] },
+    // Datos Contables (2026-07-31, pedido del usuario). Facturas de Compra sale
+    // de "Compras": el documento de compra se sincroniza para CONTABILIDAD —el
+    // DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué reponer, que
+    // es de lo que trata el resto de ese grupo. Y aquí nace Libros IVA, que se
+    // apoya en el mismo dato fiscal desde el otro lado del mostrador.
+    { key: 'contabilidad', label: 'Datos Contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
 ];
@@ -594,7 +600,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 // 2ª 60 ms — la diferencia es resolver y evaluar el módulo, que esto
                 // adelanta al momento en que el mouse llega al ítem. En táctil no hay
                 // hover, por eso también va en onFocus (teclado) y onTouchStart.
-                onMouseEnter={(e) => { prefetchRuta(path); handleMouseEnter(e); }}
+                // `?.` y no una llamada pelada: `handleMouseEnter` es `undefined`
+                // a propósito cuando el flyout no corresponde —menú expandido,
+                // móvil o módulo "próximamente"—, así que el envoltorio que
+                // agregó el prefetch (v2.57.0) tiraba "handleMouseEnter is not a
+                // function" en CADA hover de ítem con el menú abierto. Encontrado
+                // el 2026-07-31 probando el grupo Datos Contables.
+                onMouseEnter={(e) => { prefetchRuta(path); handleMouseEnter?.(e); }}
                 onFocus={() => prefetchRuta(path)}
                 onTouchStart={() => prefetchRuta(path)}
                 onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}

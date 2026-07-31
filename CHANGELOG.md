@@ -12,6 +12,70 @@ retomar; acá está todo.
 
 ---
 
+## v2.315.0 — Datos Contables: los libros de IVA se generan desde el portal
+
+Grupo nuevo en el menú con **Facturas de Compra** y el módulo nuevo **Libros
+IVA**. Facturas de Compra sale de "Compras": ese documento se sincroniza para
+contabilidad —el DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué
+reponer, que es de lo que trata el resto de aquel grupo. El grupo de la pantalla
+de permisos se mueve igual, porque si el permiso vive en "Inventario" y el menú
+lo muestra en "Datos Contables", quien reparte accesos lo busca donde no está.
+
+Tres libros, tres RPC (`20260731211927`):
+
+| libro | forma | base legal |
+|---|---|---|
+| Consumidor final | una fila **por día**, con el rango de correlativos del→al | Art. 83 RCT |
+| Contribuyentes | una fila **por documento** | Art. 85 RCT |
+| Anexo de anulados | los DTE invalidados en MH | — |
+
+**Las columnas y su orden salen del Reglamento, no del CSV del ERP**: es la
+referencia con autoridad y no depende de que un proveedor no cambie su
+exportador. Del ERP se conservan el separador `;` y la fecha `DD/MM/YYYY`, que
+es lo que la contadora ya sabe abrir. El CSV cierra con su fila de TOTALES, y el
+de consumidor además con el **resumen de cálculo del débito fiscal** que el Art.
+83 pide explícitamente —el precio al público lleva el IVA adentro, así que ese
+número no está en ninguna columna: se calcula.
+
+**El filtro es el sello**: `estado = 'FINALIZADA' AND length(recibido_mh) = 40`.
+Verificado el 2026-07-31 contra los libros del ERP, 7 sucursales × 3 meses: CCF y
+consumidor 18/18 branch-meses exactos en conteo y monto, y los 204 anulados con
+el md5 del conjunto ordenado de `codigo_generacion` idéntico en ambos lados. Sin
+ese filtro sobraban $282.58, que eran exactamente las facturas sin sello válido.
+
+Los RPC son `SECURITY DEFINER` **con el gate adentro**: la policy de
+`sales_invoices` pide `ventas.can_view`, así que un contador con permiso de
+Libros IVA y nada más leería cero filas siendo INVOKER. El gate replica permiso
++ scope de sucursal y va envuelto en `(SELECT ...)` para que no se evalúe por
+fila.
+
+### Hallazgo que limita el alcance: falta el NRC del cliente
+
+El Art. 85 lit. e) exige el **NRC del cliente** en cada fila del libro de
+contribuyentes, y el portal no lo guarda: `customers` tiene `nit` y `dui`, y las
+dos están **vacías** — 0 de los 49 CCF de junio 2026. La verificación contra el
+ERP había cuadrado en conteo y monto, que es lo que se comparó; la columna de
+identificación no entraba en esa comparación.
+
+La columna `nrc` se crea igual (`20260731211852`) para que el libro nazca con su
+forma definitiva, y **la vista marca los documentos sin NRC** en lugar de
+dejarlos en blanco: un libro que parece completo y no lo está es peor que uno
+que avisa. El dato viene en el receptor del DTE del ERP; falta capturarlo en
+`sync-dte-sales` y hacer backfill de los meses pasados.
+
+### Y un bug del menú, encontrado probando el grupo nuevo
+
+Cada hover sobre un ítem del menú con el sidebar abierto tiraba
+`handleMouseEnter is not a function`. La función es `undefined` **a propósito**
+cuando el flyout no corresponde —menú expandido, móvil o módulo "próximamente"—
+y el envoltorio que agregó el prefetch en v2.57.0 la llamaba sin `?.`.
+
+Verificado en navegador contra junio 2026: 21,604 documentos y $222,822.64 de
+consumidor con $25,634.46 de débito calculado, 49 CCF por $2,157.80 y 80
+anulados por $1,925.53 — los mismos números que devuelve el SQL directo.
+
+---
+
 ## v2.314.0 — el carril lo dibuja la VISTA, no el dato (y la marca de copiado)
 
 De las cuatro medidas canónicas de `StatCard` en §17.0 —148, 200, 8 y **cinco**—

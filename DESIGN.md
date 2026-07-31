@@ -1827,15 +1827,45 @@ que CERRÓ —el fondo, o el botón de cancelar—, no el que abrió.
 en 28px, y eso solo es cierto en los temas de vidrio: en `solid` el token baja a
 12px y las esquinas del recorte no coincidían con las del panel.
 
-#### En los temas sólidos: el gesto se queda, el material no
+#### Un solo material para toda la capa móvil
+
+`MATERIAL_HOJA` vive en `HojaMovil` —el canónico de la capa— y lo importa
+`BarraFlotante` para su clúster. La barra y lo que la barra despliega son la
+misma capa; con superficies distintas se leían como piezas de dos sistemas.
+
+Se llegó a esto por un reporte: "Calcular" y "Parámetros" no se veían igual que
+la hoja de la barra. Era literal — esas usaban `modal` (85%) y la de la barra
+`card` (16%). **Un canónico con dos materiales no es un canónico.**
+
+#### Sombra hacia ARRIBA: el eje que a la escala le faltaba
+
+`--shadow-elevation-*` baja siempre, y una hoja inferior tiene un solo borde
+visible —el de arriba— contra una lista que sigue viva detrás. Sin sombra ahí el
+corte se lee plano. `--shadow-hoja` es ese eje (más corta y dura en los temas
+sólidos, como el resto de la escala en ese tema).
+
+Va en el **envoltorio** de `ModalShell`, no en la hoja: `data-surface` fija el
+`box-shadow` del panel y le ganaría por orden de hoja — la misma trampa de
+especificidad que el radio. Y cuelga de **`esHoja`**, no de `autoHoja`: las hojas
+que ya pedían `align="bottom"` no pasan por la conversión automática, así que
+atarla a `autoHoja` la dejaba fuera justo de las que más se ven.
+
+#### En los temas sólidos: el gesto se queda, el material no — y la animación es OTRA
 
 `solid` y `solid-dark` son temas deliberadamente sin vidrio, así que la hoja
-entra **con la misma gota** sobre un panel opaco. Es la división correcta: la
-animación es *información* —de dónde salió esto— y el vidrio es *material*. Un
-tema puede renunciar al material sin renunciar a lo que la interfaz dice.
-Verificado en los cuatro: la animación corre en todos, `backdrop-filter` vive en
-los dos de vidrio y es `none` en los dos sólidos, con el radio correcto de cada
-uno (28px / 12px).
+entra **con el mismo gesto** sobre un panel opaco: la animación es *información*
+—de dónde salió esto— y el vidrio es *material*. Un tema puede renunciar al
+segundo sin renunciar al primero.
+
+Pero **la técnica cambia**. `clip-path` existe solo para preservar el
+`backdrop-filter`; sin vidrio esa razón desaparece y queda el costo — animar
+`clip-path` obliga a rasterizar cada cuadro. Ahí se usa `transform` + `opacity`,
+que son las dos propiedades que el compositor mueve sin volver a pintar. Es el
+camino barato, en el tema que justamente eligió no pagar por el vidrio.
+
+**La condición no es el nombre del tema**: es `getComputedStyle(el).backdropFilter
+!== 'none'`. Así no hay una lista de temas que actualizar cuando aparezca el
+quinto, y la regla se lee sola — *si no hay blur que preservar, usá lo barato*.
 
 #### La hoja de la barra NACE del control que la abrió
 

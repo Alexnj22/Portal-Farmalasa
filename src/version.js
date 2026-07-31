@@ -16,8 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.276.0';
+export const APP_VERSION = '2.277.0';
 
+// v2.277.0 — Un solo material para la capa movil, sombra hacia arriba, y en solido
+// otra animacion.
+//
+// **"Calcular" y "Parametros" no se veian igual que la hoja de la barra."** Era
+// literal, y por dos motivos distintos: esas usaban `modal` (85%) contra `card`
+// (16%) de la barra, y `ConfigPanel`/`LabsPanel` ni siquiera pasaban por
+// `HojaMovil` —eran su cuerpo de escritorio metido en una hoja—. Ahora el
+// material lo define `MATERIAL_HOJA` en `HojaMovil` y lo importa
+// `BarraFlotante`: la barra y lo que la barra despliega son la misma capa. Un
+// canonico con dos materiales no es un canonico.
+//
+// **Sombra hacia ARRIBA** (`--shadow-hoja`). La escala `--shadow-elevation-*`
+// baja siempre, y una hoja inferior tiene UN borde visible —el de arriba—
+// contra una lista que sigue viva detras; sin sombra ahi el corte se lee plano.
+// Va en el ENVOLTORIO y no en la hoja porque `data-surface` fija el `box-shadow`
+// y le ganaria por orden de hoja, y cuelga de `esHoja` y no de `autoHoja`: las
+// hojas que ya pedian `align="bottom"` no pasan por la conversion automatica.
+//
+// **En solido, otra animacion.** `clip-path` existe solo para preservar el
+// `backdrop-filter`; sin vidrio esa razon desaparece y queda el costo. Ahi se
+// usa `transform` + `opacity`, que el compositor mueve sin repintar. La
+// condicion NO es el nombre del tema sino si el elemento TIENE vidrio, asi no
+// hay lista de temas que actualizar cuando aparezca el quinto.
+//
+// `ConfigPanel`/`LabsPanel` esconden su encabezado de escritorio en tactil —dos
+// encabezados apilados se leen como un error de maquetado— y el envoltorio es
+// una FUNCION que devuelve JSX, no un componente definido en el render: eso
+// ultimo lo re-crea en cada pasada y React remonta el subarbol, perdiendo el
+// estado del formulario.
+//
 // v2.276.0 — El vidrio ya vive DURANTE la animacion, y la hoja cierra en gota.
 //
 // **La causa del vidrio tardio no era la escala: era la OPACIDAD del ancestro.**

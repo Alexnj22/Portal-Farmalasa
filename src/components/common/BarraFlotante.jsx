@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import Contador from './Contador';
 import ModalShell from './ModalShell';
-import HojaMovil from './HojaMovil';
+import HojaMovil, { MATERIAL_HOJA } from './HojaMovil';
 
 /**
  * BarraFlotante — los controles de la vista, al alcance del pulgar. Solo táctil.
@@ -101,12 +101,9 @@ import HojaMovil from './HojaMovil';
 
 // Cuánto hay que mover el dedo para que la barra reaccione. Sin umbral, el
 // rebote elástico de iOS y cualquier micro-scroll la hacen titilar.
-// ── El material de la barra, en UN solo sitio ─────────────────────────────
-// El clúster y sus hojas usan el mismo `data-surface` a propósito: la hoja es la
-// barra desplegándose, no un diálogo aparte, y con dos materiales distintos se
-// leían como dos piezas apiladas. Estando acá, la prueba de `card` se revierte a
-// `dropdown` cambiando ESTA línea y nada más.
-const MATERIAL = 'card';
+// El material lo define `HojaMovil`, que es el canónico de la capa móvil: la
+// barra y lo que la barra despliega son la misma capa, así que el material es
+// uno solo y vive en un solo sitio.
 
 const UMBRAL = 8;
 // Arriba de la página nunca se esconde: si el usuario está en el principio, no
@@ -397,7 +394,7 @@ const BarraPortal = ({
                 )}
 
                 <div
-                    data-surface={MATERIAL}
+                    data-surface={MATERIAL_HOJA}
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
                         transition-transform duration-200 ease-out
                         max-w-full
@@ -463,8 +460,7 @@ const BarraPortal = ({
                         esto, esto tiene que ser lo primero en usarlo. */}
                     <HojaMovil
                         titulo={panelAbierto?.tituloPanel || panelAbierto?.label}
-                        // La MISMA superficie del clúster — ver `MATERIAL`.
-                        superficie={MATERIAL}
+                        superficie={MATERIAL_HOJA}
                         origen={origen}
                     >
                         {panelAbierto?.panel}

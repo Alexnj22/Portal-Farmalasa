@@ -55,6 +55,17 @@ import { EstadoDialogoCtx } from './estadoDialogo';
  *   </ModalShell>
  */
 
+/**
+ * El material de la capa móvil, definido UNA vez.
+ *
+ * La barra flotante y todas las hojas lo comparten a propósito: en el teléfono
+ * son la misma capa —la barra y lo que la barra despliega—, y con superficies
+ * distintas se leían como piezas de dos sistemas. `BarraFlotante` lo importa de
+ * acá en vez de tener el suyo, así que cambiarlo (o revertir la prueba de
+ * `card`) sigue siendo una línea, pero ahora una línea que manda sobre todo.
+ */
+export const MATERIAL_HOJA = 'card';
+
 const TONO = {
     brand:   'text-brand-text bg-brand/12',
     danger:  'text-danger-text bg-danger/12',
@@ -74,11 +85,11 @@ const HojaMovil = memo(({
     // que la principal va PRIMERA: es la que queda más arriba, más lejos del
     // borde y más cerca del pulgar en reposo.
     pie,
-    // La superficie. Por defecto `modal`, que es lo que un diálogo debe ser. Las
-    // hojas que abre `BarraFlotante` pasan la MISMA del clúster: son la barra
-    // desplegándose, no un diálogo aparte, y con dos materiales distintos se
-    // leían como dos piezas apiladas.
-    superficie = 'modal',
+    // La superficie. El MISMO material para todas: el usuario reportó que
+    // "Calcular" y "Parámetros" no se veían igual que la hoja de la barra, y era
+    // literal — esas usaban `modal` (85%) y la de la barra `card` (16%). Un
+    // canónico con dos materiales no es un canónico.
+    superficie = MATERIAL_HOJA,
     // El rectángulo del control que abrió la hoja, `{ x, y, w, h }`. Opcional:
     // sin él se usa el último toque del usuario. Ver la nota de la gota.
     origen,
@@ -94,66 +105,75 @@ const HojaMovil = memo(({
     const origenFijo = useRef(null);
     if (origenFijo.current === null) origenFijo.current = origen || leerUltimoToque() || false;
 
-    // ── La gota: se RECORTA, no se escala ─────────────────────────────────
-    // Primera versión: FLIP con `transform: scale()`. La forma era correcta pero
-    // el vidrio llegaba tarde, y el motivo es que **el blur se escala con el
-    // elemento**: a `scale(0.14)` los 24px de `backdrop-filter` valen ~3, así
-    // que la hoja arrancaba casi sin efecto y lo ganaba al crecer. El usuario lo
-    // describió exacto: "al inicio solo se ve transparente y luego queda con el
-    // efecto correcto".
+    // ── La apertura, y por qué son DOS técnicas ───────────────────────────
     //
-    // `clip-path: inset()` no toca la escala: la hoja está SIEMPRE a tamaño real
-    // —con su blur a 24px desde el primer cuadro— y lo que se anima es la
-    // ventana por la que se la ve. Empieza siendo el rectángulo exacto del
-    // control, con radio de píldora, y se abre hasta el panel entero. De paso el
-    // contenido nunca se deforma, porque nunca se escala.
+    // **Con vidrio: `clip-path`.** Escalar la hoja escala también su
+    // `backdrop-filter` —a `scale(0.14)` los 24px de blur valen ~3— así que la
+    // hoja arrancaba casi transparente y ganaba el efecto al crecer. Recortando,
+    // está siempre a tamaño real y lo único que crece es la ventana por la que
+    // se la ve. Cuesta más: animar `clip-path` obliga al navegador a rasterizar
+    // cada cuadro, y encima con un `backdrop-filter` vivo detrás.
     //
-    // El origen sale de `leerUltimoToque()` si nadie lo pasa: la gota tiene que
-    // ser canónica, no opt-in.
-    useLayoutEffect(() => {
-        const el = hojaRef.current;
-        const desde = origenFijo.current;
-        if (!el || !desde || sinMovimiento || cerrando) return;
-        const r = el.getBoundingClientRect();
-        if (!r.width || !r.height) return;
-
-        // Los cuatro recortes, en coordenadas de la propia hoja. Se topan en 0
-        // porque el control puede estar fuera de ella —la barra flotante queda
-        // por debajo del borde inferior de la hoja— y un inset negativo no
-        // recorta: desborda.
-        const tope = (n) => Math.max(0, Math.round(n));
-        const arriba  = tope(desde.y - r.top);
-        const izq     = tope(desde.x - r.left);
-        const derecha = tope((r.left + r.width) - (desde.x + desde.w));
-        const abajo   = tope((r.top + r.height) - (desde.y + desde.h));
-
+    // **Sin vidrio: `transform`.** En los temas sólidos no hay `backdrop-filter`
+    // que romper, así que desaparece la única razón por la que `clip-path` valía
+    // la pena — y `transform` + `opacity` son las dos propiedades que el
+    // compositor mueve sin volver a pintar nada. Es el camino barato, y en el
+    // tema que justamente eligió no pagar por el vidrio.
+    //
+    // La condición NO es el nombre del tema: es si el elemento tiene vidrio. Así
+    // no hay una lista de temas que actualizar cuando aparezca el quinto, y la
+    // regla se lee sola — "si no hay blur que preservar, usá lo barato".
+    const animarApertura = (el, desde) => {
+        const conVidrio = getComputedStyle(el).backdropFilter !== 'none';
         const cuerpo = cuerpoRef.current;
-        el.style.transition = 'none';
-        el.style.clipPath = `inset(${arriba}px ${derecha}px ${abajo}px ${izq}px round 9999px)`;
         if (cuerpo) { cuerpo.style.transition = 'none'; cuerpo.style.opacity = '0'; }
+
+        if (!conVidrio) {
+            const r = el.getBoundingClientRect();
+            el.style.transformOrigin =
+                `${Math.round(desde.x + desde.w / 2 - r.left)}px ${Math.round(desde.y + desde.h / 2 - r.top)}px`;
+            el.style.transition = 'none';
+            el.style.transform = 'scale(0.94)';
+            el.style.opacity = '0';
+            void el.offsetWidth;
+            el.style.transition = 'transform 240ms cubic-bezier(0.22,1,0.36,1), opacity 160ms ease-out';
+            el.style.transform = 'scale(1)';
+            el.style.opacity = '1';
+            if (cuerpo) { cuerpo.style.transition = 'opacity 180ms ease-out 60ms'; cuerpo.style.opacity = '1'; }
+            return () => { el.style.transform = ''; el.style.opacity = ''; el.style.transition = ''; };
+        }
+
+        const r = el.getBoundingClientRect();
+        const tope = (n) => Math.max(0, Math.round(n));
+        el.style.transition = 'none';
+        el.style.clipPath = `inset(${tope(desde.y - r.top)}px ${tope((r.left + r.width) - (desde.x + desde.w))}px `
+            + `${tope((r.top + r.height) - (desde.y + desde.h))}px ${tope(desde.x - r.left)}px round 9999px)`;
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
         void el.offsetWidth;
 
         el.style.transition = 'clip-path 520ms cubic-bezier(0.22,1,0.36,1)';
-        // El radio final se LEE del elemento, no se escribe. Estaba quemado en
-        // 28px y eso solo es cierto en los temas de vidrio: en `solid` el token
-        // `--card-radius` baja a 12px, así que durante la animación las esquinas
-        // del recorte no coincidían con las del panel. Abajo va recto, igual que
-        // su `border-radius`, o se vería una curva fantasma contra el filo.
+        // El radio final se LEE del elemento: estaba quemado en 28px y eso solo
+        // es cierto en los temas de vidrio (en `solid` el token baja a 12).
         const radio = getComputedStyle(el).borderTopLeftRadius || '28px';
         el.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} 0px 0px)`;
-        if (cuerpo) {
-            cuerpo.style.transition = 'opacity 260ms ease-out 140ms';
-            cuerpo.style.opacity = '1';
-        }
+        if (cuerpo) { cuerpo.style.transition = 'opacity 260ms ease-out 140ms'; cuerpo.style.opacity = '1'; }
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que la hoja quiera sacar fuera de su caja.
         const alTerminar = () => { el.style.clipPath = ''; el.style.transition = ''; };
         el.addEventListener('transitionend', alTerminar, { once: true });
         return () => el.removeEventListener('transitionend', alTerminar);
+    };
+
+    useLayoutEffect(() => {
+        const el = hojaRef.current;
+        const desde = origenFijo.current;
+        if (!el || !desde || sinMovimiento || cerrando) return undefined;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return undefined;
+        return animarApertura(el, desde);
     }, [sinMovimiento, cerrando]);
 
     // ── La salida: la misma gota, al revés ────────────────────────────────
@@ -169,14 +189,20 @@ const HojaMovil = memo(({
         if (!el || !cerrando || !desde || sinMovimiento) return;
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return;
-        const tope = (n) => Math.max(0, Math.round(n));
         const cuerpo = cuerpoRef.current;
         if (cuerpo) { cuerpo.style.transition = `opacity ${Math.round(salidaMs * 0.4)}ms ease-in`; cuerpo.style.opacity = '0'; }
-        const radio = getComputedStyle(el).borderTopLeftRadius || '28px';
+
+        // La salida usa la MISMA técnica que la entrada, por lo mismo.
+        if (getComputedStyle(el).backdropFilter === 'none') {
+            el.style.transition = `transform ${salidaMs}ms cubic-bezier(0.4,0,1,1), opacity ${salidaMs}ms ease-in`;
+            el.style.transform = 'scale(0.96)';
+            el.style.opacity = '0';
+            return;
+        }
+        const tope = (n) => Math.max(0, Math.round(n));
         el.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
         el.style.clipPath = `inset(${tope(desde.y - r.top)}px ${tope((r.left + r.width) - (desde.x + desde.w))}px `
             + `${tope((r.top + r.height) - (desde.y + desde.h))}px ${tope(desde.x - r.left)}px round 9999px)`;
-        void radio;
     }, [cerrando, salidaMs, sinMovimiento]);
 
     return (
@@ -189,6 +215,10 @@ const HojaMovil = memo(({
         // de atributo —misma especificidad que una clase— y le gana por orden de
         // hoja. Sin el `!` las cuatro esquinas quedaban en 32px y las de abajo
         // dibujaban una curva contra el filo de la pantalla.
+        // La sombra de arriba NO va acá: `data-surface` fija el `box-shadow` y le
+        // gana por orden de hoja, igual que hace con el radio. La pone
+        // `ModalShell` en el envoltorio, que calza exacto con la hoja y no tiene
+        // sombra propia con la que pelearse.
         className={`flex flex-col max-h-[88dvh] rounded-t-modal rounded-b-none! overflow-hidden ${className}`}
     >
     <div ref={cuerpoRef} className="flex flex-col min-h-0">

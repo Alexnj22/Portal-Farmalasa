@@ -12,6 +12,25 @@ retomar; acá está todo.
 
 ---
 
+## v2.277.0 — Un solo material para la capa móvil, sombra hacia arriba, y otra animación en sólido
+
+**"Calcular" y "Parámetros" no se veían igual que la hoja de la barra.** Era
+literal, por dos motivos: usaban `modal` (85%) contra `card` (16%), y
+`ConfigPanel`/`LabsPanel` ni siquiera pasaban por `HojaMovil`. Ahora el material
+lo define `MATERIAL_HOJA` y lo importa `BarraFlotante`: la barra y lo que
+despliega son la misma capa.
+
+**Sombra hacia arriba** (`--shadow-hoja`): la escala `--shadow-elevation-*` baja
+siempre, y una hoja inferior tiene un solo borde visible. Va en el envoltorio de
+`ModalShell` —`data-surface` le ganaría por orden de hoja— y cuelga de `esHoja`,
+no de `autoHoja`.
+
+**En sólido, otra animación.** `clip-path` existe solo para preservar el
+`backdrop-filter`; sin vidrio queda el costo. Ahí se usa `transform` + `opacity`.
+La condición no es el nombre del tema sino si el elemento tiene vidrio.
+
+---
+
 ## v2.276.0 — El vidrio ya vive durante la animación, y la hoja cierra en gota
 
 **La causa no era la escala: era la opacidad del ancestro.** El contenedor de

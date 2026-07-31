@@ -1,5 +1,7 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState } from 'react';
+import HojaMovil from '../../../components/common/HojaMovil';
+import useMediaQuery from '../../../hooks/useMediaQuery';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
@@ -68,6 +70,17 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         finally { setSaving(false); }
     };
 
+    // En el teléfono el cuerpo es el canónico de hoja; en escritorio, el panel
+    // de siempre. `Envoltorio` evita duplicar todo el árbol para cambiar la caja.
+    const enTactil = useMediaQuery('(hover: none)');
+    // Una FUNCIÓN que devuelve JSX, no un componente definido en el render:
+    // definir un componente ahí adentro lo re-crea en cada pasada y React
+    // remonta el subárbol entero, perdiendo el estado del formulario. El lint lo
+    // marca ("Cannot create components during render") y tiene razón.
+    const envolver = (hijos) => enTactil
+        ? <HojaMovil titulo="Configuración Min/Max" icono={Settings2}>{hijos}</HojaMovil>
+        : <div>{hijos}</div>;
+
     return (
         // `ModalShell` y no un overlay a mano (2026-07-30). Este panel se montaba
         // con `fixed inset-0 … pointer-events-none`: sin scrim, sin `role="dialog"`,
@@ -81,9 +94,14 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         // de comandos, es un formulario.
         <ModalShell open onClose={onClose} maxWidthClass="max-w-sm"
             zClass="z-modal" ariaLabel="Configuración de Min/Max"
+            surface={enTactil ? null : undefined}
+            animacionPropia={enTactil}
             panelClassName="overflow-hidden">
-            <div>
-                {/* Header */}
+            {envolver(<>
+                {/* Header — solo en escritorio: en el teléfono el título y el asa
+                    los pone `HojaMovil`, y dos encabezados apilados se leen como
+                    un error de maquetado. */}
+                {!enTactil && (
                 <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                     <div className="flex items-center gap-2">
                         <Settings2 size={14} className="text-brand-text" />
@@ -91,6 +109,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     </div>
                     <Button variant="secondary" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
+                )}
 
                 <div className="px-4 py-3 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
                     {/* Ciclo */}
@@ -172,7 +191,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         {saved ? 'Guardado' : 'Guardar configuración'}</Button>
                     <Button variant="secondary" onClick={onClose}>Cerrar</Button>
                 </div>
-            </div>
+            </>)}
         </ModalShell>
     );
 }

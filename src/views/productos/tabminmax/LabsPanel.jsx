@@ -1,5 +1,7 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
 import { useState, useEffect, useRef } from 'react';
+import HojaMovil from '../../../components/common/HojaMovil';
+import useMediaQuery from '../../../hooks/useMediaQuery';
 import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
@@ -86,6 +88,17 @@ export default function LabsPanel({ onClose, onChanged }) {
         footer: { background: 'var(--surface-card)', border: '1px solid var(--divider)' },
     };
 
+    // En el teléfono el cuerpo es el canónico de hoja; en escritorio, el panel
+    // de siempre.
+    const enTactil = useMediaQuery('(hover: none)');
+    // Una FUNCIÓN que devuelve JSX, no un componente definido en el render:
+    // definir un componente ahí adentro lo re-crea en cada pasada y React
+    // remonta el subárbol entero, perdiendo el estado del formulario. El lint lo
+    // marca ("Cannot create components during render") y tiene razón.
+    const envolver = (hijos) => enTactil
+        ? <HojaMovil titulo="Visibilidad de laboratorios" icono={FlaskConical}>{hijos}</HojaMovil>
+        : <div className="flex flex-col">{hijos}</div>;
+
     return (
         // `ModalShell` y no un overlay a mano (2026-07-30): sin scrim, sin
         // `role="dialog"`, sin Escape y sin atrapar el foco, este panel no era un
@@ -98,10 +111,14 @@ export default function LabsPanel({ onClose, onChanged }) {
         // de comandos, es un formulario.
         <ModalShell open onClose={onClose} maxWidthClass="max-w-xs"
             zClass="z-modal" ariaLabel="Laboratorios ocultos en Min/Max"
+            surface={enTactil ? null : undefined}
+            animacionPropia={enTactil}
             panelClassName="overflow-hidden">
-            <div className="flex flex-col">
+            {envolver(<>
 
-                {/* Header */}
+                {/* Header — solo en escritorio: en el teléfono el título y el asa
+                    los pone `HojaMovil`. */}
+                {!enTactil && (
                 <div className="flex items-center justify-between px-4 py-3 border-b" style={glass.divider}>
                     <div className="flex items-center gap-2">
                         <FlaskConical size={14} className="text-brand-text" />
@@ -112,6 +129,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                     </div>
                     <Button variant="ghost" size="xs" icon={X} iconOnly onClick={onClose} />
                 </div>
+                )}
 
                 {/* Search */}
                 <div className="px-3 pt-3 pb-1.5">
@@ -180,7 +198,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                 <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>
                     <Button variant="ghost" onClick={onClose}>Cerrar</Button>
                 </div>
-            </div>
+            </>)}
         </ModalShell>
     );
 }

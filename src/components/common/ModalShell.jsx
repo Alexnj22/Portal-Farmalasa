@@ -343,7 +343,17 @@ export default function ModalShell({
         // `:not([data-hoja])` deja fuera a `HojaMovil`, que es el cuerpo canónico
         // de una hoja y ya hace las dos cosas bien. El parche es para los cuerpos
         // heredados, no para el canónico.
-        className={`relative w-full ${autoHoja
+        // `shadow-hoja` es el eje que a la escala le faltaba: una hoja inferior
+        // tiene UN solo borde visible —el de arriba— contra una lista que sigue
+        // viva detrás, y sin sombra ahí el corte se lee plano. Va en el
+        // envoltorio y no en la hoja porque `data-surface` fija el `box-shadow`
+        // del panel y le ganaría por orden de hoja.
+        // La sombra cuelga de `esHoja` y NO de `autoHoja`: las hojas que ya pedían
+        // `align="bottom"` —las de `BarraFlotante`— no pasan por la conversión
+        // automática, así que atarla a `autoHoja` la dejaba justamente fuera de
+        // las que más se ven. Los parches del hijo sí son de `autoHoja`: existen
+        // para los cuerpos heredados, no para toda hoja.
+        className={`relative w-full ${esHoja ? 'shadow-[var(--shadow-hoja)]' : ''} ${autoHoja
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,env(safe-area-inset-bottom))]'
             : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}

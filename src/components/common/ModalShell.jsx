@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { EstadoDialogoCtx } from "./estadoDialogo";
-import { useGotaApertura } from "./gotaApertura";
+import { useGotaApertura, tiemposGota } from "./gotaApertura";
 import useMediaQuery from "../../hooks/useMediaQuery";
 import { createPortal } from "react-dom";
 
@@ -76,12 +76,17 @@ const visible = (el) => {
 // Salir dura ~70% de entrar: es la proporción que usan las guías (Material:
 // 225 al entrar, 195 al salir) y la razón es de significado — entrar es una
 // invitación y admite demorarse, salir es una respuesta.
-const EXIT_MS = 240;
 // El desmontaje va DESPUÉS de la animación, no al mismo tiempo. Con los dos en
 // 240ms el último tramo se cortaba —el navegador todavía estaba interpolando
 // cuando el nodo desaparecía— y el cierre se leía como que la hoja simplemente se
 // esfuma. 60ms de margen alcanzan y no se notan.
-const DESMONTAJE_MS = EXIT_MS + 60;
+//
+// El número base ya no vive acá: lo pone el tema, porque la salida es la gota y
+// la gota cambia de reloj (`--gota-salida`: 240ms en liquid, 140 en solid). Con
+// un `EXIT_MS` fijo, Solid terminaba su recorrido a los 140 y el nodo se quedaba
+// 160ms más en pantalla mostrando la píldora ya encogida — o sea que acortar la
+// animación habría AGREGADO una espera visible.
+const MARGEN_DESMONTAJE = 60;
 
 
 
@@ -98,7 +103,7 @@ const DESMONTAJE_MS = EXIT_MS + 60;
 //
 // `fill-mode-forwards` hace que la salida SOSTENGA su último fotograma hasta
 // que el nodo se va, y de paso vuelve inofensiva cualquier divergencia futura
-// entre la duración de la animación y EXIT_MS.
+// entre la duración de la animación y la de la salida.
 const HOLD_EXIT = "fill-mode-forwards";
 
 export default function ModalShell({
@@ -170,7 +175,7 @@ export default function ModalShell({
       setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta en respuesta a `open`; el estado ES la animación de entrada
       return undefined;
     }
-    const t = setTimeout(() => setMounted(false), DESMONTAJE_MS);
+    const t = setTimeout(() => setMounted(false), tiemposGota().salida + MARGEN_DESMONTAJE);
     return () => clearTimeout(t);
   }, [open]);
 
@@ -269,11 +274,15 @@ export default function ModalShell({
 
       // Segunda pasada DESPUÉS de que el panel se desmonta.
       // La primera versión de este respaldo comprobaba "¿el foco quedó en el
-      // body?" en el mismo tick, y ahí todavía no: el panel sigue montado
-      // `EXIT_MS` por la animación de salida, así que el foco seguía adentro,
-      // la comprobación salía temprano, y recién al desmontarse el navegador lo
+      // body?" en el mismo tick, y ahí todavía no: el panel sigue montado lo que
+      // dura la animación de salida, así que el foco seguía adentro, la
+      // comprobación salía temprano, y recién al desmontarse el navegador lo
       // mandaba al body. Los 3 diálogos que fallaban seguían fallando.
-      // Ahora se corre cuando el panel ya no existe.
+      //
+      // El plazo se cuenta desde el DESMONTAJE y no desde la animación: era
+      // `EXIT_MS + 40` = 280ms contra un desmontaje a los 300, o sea que esta
+      // pasada corría 20ms ANTES de que el panel se fuera — justo lo que el
+      // comentario decía estar evitando.
       setTimeout(() => {
         if (document.activeElement && document.activeElement !== document.body) return;
         // El disparador no sobrevivió (lo reemplazó un re-render, o la vista
@@ -295,7 +304,7 @@ export default function ModalShell({
           // enfocable ensucia el recorrido de teclado del resto de la app
           main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
         }
-      }, EXIT_MS + 40);
+      }, tiemposGota().salida + MARGEN_DESMONTAJE + 40);
     };
   }, [open]);
 
@@ -308,7 +317,6 @@ export default function ModalShell({
     ref: panelRef,
     activo: !animacionPropia && !sinMovimiento,
     cerrando: !open,
-    salidaMs: EXIT_MS,
   });
 
   if (!open && !mounted) return null;
@@ -355,7 +363,7 @@ export default function ModalShell({
                          "items-center justify-center p-4 sm:p-6";
 
   return createPortal(
-    <EstadoDialogoCtx.Provider value={{ cerrando: !open, salidaMs: EXIT_MS, alCerrar: onClose }}>
+    <EstadoDialogoCtx.Provider value={{ cerrando: !open, salidaMs: tiemposGota().salida, alCerrar: onClose }}>
     <div
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,

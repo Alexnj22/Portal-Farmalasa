@@ -10,21 +10,40 @@ import { leerUltimoToque } from './ultimoToque';
  * posiciones. Por eso ahora es un hook que usa `ModalShell`, y lo hereda todo el
  * portal sin que ningún llamador pida nada.
  *
- * ── Dos técnicas, y la condición no es el tema ────────────────────────────
- * **Con vidrio: `clip-path`.** Escalar el panel escala también su
- * `backdrop-filter` —a `scale(0.14)` los 24px de blur valen ~3—, así que el
- * vidrio llegaba al final en vez de estar desde el principio. Recortando, el
- * panel está siempre a tamaño real y lo único que crece es la ventana por la que
- * se lo ve.
+ * ── DOS gramáticas, una por material ──────────────────────────────────────
+ * **Con vidrio, la gota: `clip-path`.** El vidrio es una lente, así que lo que
+ * corresponde es abrir la ventana por la que se mira: el panel está siempre a
+ * tamaño real y lo único que crece es el recorte. Y es obligado además de
+ * bonito — escalar el panel escala también su `backdrop-filter`, y a
+ * `scale(0.14)` los 24px de blur valen ~3, así que el vidrio llegaba al final
+ * en vez de estar desde el principio.
  *
- * **Sin vidrio: `transform`.** En los temas sólidos no hay `backdrop-filter` que
- * preservar, así que desaparece la única razón por la que `clip-path` valía la
- * pena y queda su costo: obliga a rasterizar cada cuadro. `transform` + `opacity`
- * son las dos propiedades que el compositor mueve sin repintar nada.
+ * **Sin vidrio, el deslizamiento: `translate`.** Solid Modern no es "liquid sin
+ * blur": es el tema de superficies opacas y rectas, para equipos de pocos
+ * recursos. Ahí una gota en píldora es prestada —no hay lente que justifique
+ * la forma— y encima cara: recortar obliga a rasterizar cada cuadro.
+ * `translate` es de las dos únicas propiedades que el compositor mueve sin
+ * repintar nada, y una hoja que sube y baja es exactamente la gramática recta
+ * que el tema promete.
  *
- * La condición es **si el elemento tiene vidrio**, no cómo se llama el tema: así
- * no hay una lista que actualizar cuando aparezca el quinto, y la regla se lee
- * sola — *si no hay blur que preservar, usá lo barato*.
+ * ── Lo que NO puede diferir: el asa siempre cierra ────────────────────────
+ * Hasta v2.293.0 la rama sin vidrio era `transform: scale(0.94) → scale(1)`, y
+ * era mala por tres motivos que solo se vieron midiendo:
+ *
+ * · **Escalar re-rasteriza.** La capa de sombra es HIJA del panel, así que el
+ *   `scale` la arrastraba: 18px de difuminado redibujados en cada cuadro. El
+ *   camino "barato" pagaba lo caro del otro. `translate` no la deforma: la
+ *   mueve ya rasterizada.
+ * · **Un zoom del 6% no dice nada** — ni de dónde salió (la gota) ni hacia
+ *   dónde se va (el deslizamiento). Era movimiento sin gramática.
+ * · **El arrastre quedaba muerto.** El asa reproduce la animación bajo el dedo
+ *   leyendo `__gota`, y `__gota` solo se colgaba en la rama del vidrio; medido
+ *   en solid, el dedo no despeinaba un cuadro. Un asa que promete "esto se
+ *   cierra hacia abajo" y no cumple es peor que no tener asa.
+ *
+ * Por eso `__gota` se cuelga en LAS DOS ramas, y dice cuál técnica está en
+ * juego. La forma de la animación es del material; poder cerrarla con el dedo
+ * no se negocia por tema.
  *
  * ── El origen se congela ──────────────────────────────────────────────────
  * Al cerrar hay que volver al mismo sitio del que se salió, y para entonces
@@ -45,7 +64,39 @@ import { leerUltimoToque } from './ultimoToque';
 // el problema nunca fue solo el número: es la combinación. 340ms con una curva
 // que arranca decidida y se asienta cae dentro de la referencia y resuelve las
 // dos quejas.
+//
+// Y el número sale del TEMA, no de acá: Solid Modern existe para responder
+// rápido y ya declara su propio reloj (`--dur-*` al 60% desde el 2026-07-28).
+// Esta animación era la única del portal que lo ignoraba, así que el tema
+// "rápido" abría sus hojas al mismo ritmo que el expresivo. Los valores de
+// abajo son el respaldo para cuando la hoja de estilos todavía no aplicó.
 const ENTRADA_MS = 340;
+const SALIDA_MS = 240;
+
+/**
+ * Las dos duraciones de la gota, según el tema activo.
+ *
+ * Se leen del elemento raíz en el momento de animar y no por contexto de React:
+ * el tema se cambia estampando `data-theme` en `<html>`, así que la hoja de
+ * estilos ya es la fuente de verdad y cualquier copia en JS sería una segunda
+ * que hay que mantener sincronizada.
+ */
+export function tiemposGota() {
+    const raiz = getComputedStyle(document.documentElement);
+    const ms = (nombre, respaldo) => {
+        // **La unidad hay que leerla.** El token se escribe `200ms`, pero
+        // Lightning CSS lo minifica a `.2s` — es más corto y vale lo mismo en
+        // CSS—, así que un `parseFloat` a secas devuelve 0.2 y la transición
+        // sale de **0.2 milisegundos**: instantánea, indistinguible de no tener
+        // animación. En `npm run dev` no pasa (no hay minificador), así que solo
+        // aparece contra el build, que es justo donde se probó y se vio.
+        const bruto = String(raiz.getPropertyValue(nombre)).trim();
+        const v = parseFloat(bruto);
+        if (!Number.isFinite(v) || v <= 0) return respaldo;
+        return /ms$/.test(bruto) ? v : /s$/.test(bruto) ? v * 1000 : v;
+    };
+    return { entrada: ms('--gota-entrada', ENTRADA_MS), salida: ms('--gota-salida', SALIDA_MS) };
+}
 
 /**
  * Fuerza que el navegador FIJE el estilo actual como punto de partida.
@@ -96,7 +147,8 @@ export function insetEn(vidrio, lados, t) {
 }
 
 /**
- * El elemento que hay que recortar: **el que lleva el vidrio**, no su envoltorio.
+ * El elemento que hay que recortar: **el que lleva el material**, no su
+ * envoltorio.
  *
  * `clip-path` en un ANCESTRO crea un backdrop root, igual que `transform` y que
  * `opacity`. Medido: con el clip en el envoltorio de `ModalShell`, el texto de la
@@ -107,17 +159,42 @@ export function insetEn(vidrio, lados, t) {
  * Es la séptima vez que esta familia de reglas muerde en el proyecto, y la
  * primera por `clip-path`. La forma de no volver a pisarla: animar siempre el
  * elemento que tiene el material, nunca uno que lo contenga.
+ *
+ * Devuelve `null` cuando no hay vidrio en ningún lado, y ese `null` es la
+ * bifurcación: sin blur que preservar se desliza el panel entero, que es más
+ * barato y además la gramática recta del tema.
  */
-function objetivoVidrio(el) {
+function elVidrio(el) {
     if (!el) return null;
     if (getComputedStyle(el).backdropFilter !== 'none') return el;
     // Entre TODOS los hijos, no solo el primero: el panel lleva además la capa
     // de sombra, y si esa queda primera —como quedó al agregarla— la búsqueda
-    // devolvía `null`, todo modal se iba por el camino de `transform` y ese
-    // transform, siendo ANCESTRO del vidrio, lo mataba. Un detector que mira
-    // "el primer hijo" asume un orden que nadie prometió.
+    // devolvía `null`, todo modal se iba por el otro camino y ese `transform`,
+    // siendo ANCESTRO del vidrio, lo mataba. Un detector que mira "el primer
+    // hijo" asume un orden que nadie prometió.
     for (const h of el.children) {
         if (getComputedStyle(h).backdropFilter !== 'none') return h;
+    }
+    return null;
+}
+
+/**
+ * El descriptor que dejó la animación de entrada, buscándolo hacia ARRIBA.
+ *
+ * `useGotaApertura` lo cuelga del elemento que anima, y cuál es depende de la
+ * técnica: con vidrio es la hoja misma, deslizando es el envoltorio de
+ * `ModalShell` —que es quien lleva la capa de sombra y tiene que viajar con
+ * ella—. `useArrastreHoja`, en cambio, solo conoce la hoja.
+ *
+ * Antes cada uno resolvía el elemento por su cuenta con una copia de la misma
+ * función, y las copias ya habían divergido (una devolvía `null` donde la otra
+ * devolvía `el`). Buscar el descriptor en vez de recalcular el elemento saca
+ * del medio la posibilidad de que discrepen: hay una sola verdad y la escribió
+ * quien animó.
+ */
+export function descriptorGota(desde) {
+    for (let n = desde; n; n = n.parentElement) {
+        if (n.__gota) return n.__gota;
     }
     return null;
 }
@@ -189,6 +266,44 @@ function transformarSombra(sombra, el, desde, ms, curva, ladosGuardados) {
     sombra.style.opacity = ms ? '0' : '1';
 }
 
+/**
+ * El deslizamiento, para el camino sin vidrio.
+ *
+ * Una hoja inferior sale por abajo y vuelve por abajo: el recorrido es su propio
+ * alto, más un margen para que la sombra de arriba también quede fuera de
+ * cuadro. Un diálogo CENTRADO no tiene borde del que venir, así que se le da el
+ * mínimo que igual comunica presencia —8px y un fundido corto—; empujarlo media
+ * pantalla lo convertiría en otra cosa.
+ *
+ * La sombra de arriba delata a la hoja: `[data-sombra-hoja]` solo lo rendea
+ * `ModalShell` cuando `align === "bottom"`, así que preguntar por ella es
+ * preguntar "¿esto es una hoja?" sin agregar una prop que alguien tenga que
+ * acordarse de pasar.
+ */
+function deslizamientoDe(el, r) {
+    const esHoja = !!el.querySelector('[data-sombra-hoja]');
+    if (!esHoja) return { esHoja: false, conFundido: true, recorrido: 8, fuera: 'translate3d(0, 8px, 0)' };
+    // En px y no en `100%`: el arrastre trabaja en píxeles —es lo que mide un
+    // dedo— y mezclar unidades obliga al navegador a interpolar por matriz. Con
+    // la misma unidad en los dos extremos, soltar el dedo continúa el número que
+    // ya venía en vez de reiniciar la cuenta.
+    const recorrido = Math.ceil(r.height) + 48;
+    return { esHoja: true, conFundido: false, recorrido, fuera: `translate3d(0, ${recorrido}px, 0)` };
+}
+
+/**
+ * Se retira el `transform` al llegar, y no es cosmético: **un ancestro con
+ * `transform` es el bloque contenedor de todo `position: fixed` que tenga
+ * adentro**. Los popovers de `LiquidSelect` —que es justo lo que vive dentro de
+ * la hoja de filtros— se posicionan así. Dejarlo puesto los anclaría al panel.
+ * Es la misma familia de reglas que ya mordió por `clip-path` y por `opacity`.
+ */
+function limpiarDeslizamiento(el) {
+    el.style.transform = '';
+    el.style.opacity = '';
+    el.style.transition = '';
+}
+
 function soltarSombra(sombra, ms, curva) {
     if (!sombra) return;
     sombra.style.transition = `transform ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`;
@@ -202,9 +317,12 @@ function soltarSombra(sombra, ms, curva) {
  *   ref            – el elemento que se anima (el que lleva el material)
  *   activo         – false lo apaga entero (reduced-motion, o el llamador se anima solo)
  *   cerrando       – la salida
- *   salidaMs       – cuánto dura la salida
+ *
+ * La duración ya no se recibe: la pone el tema (`tiemposGota()`). Pasarla por
+ * prop obligaba a que `ModalShell` supiera de temas para reenviar un número que
+ * la hoja de estilos ya declara.
  */
-export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs = 180 }) {
+export function useGotaApertura({ ref, activo = true, cerrando = false }) {
     // El origen se lee AL ABRIR, dentro del efecto — no al montar.
     // `ModalShell` no se desmonta entre aperturas: vive mientras viva la vista.
     // Congelarlo en el primer render lo dejaba en `null` para siempre, porque en
@@ -235,21 +353,40 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return undefined;
 
-        // El recorte va sobre el elemento con vidrio; el `transform` puede ir en
-        // el envoltorio porque en ese camino no hay blur que preservar.
-        const vidrio = objetivoVidrio(el);
+        const vidrio = elVidrio(el);
+        const { entrada } = tiemposGota();
 
+        // ── Sin vidrio: DESLIZAR el panel entero ──────────────────────────
+        // El panel y no la hoja: la capa de sombra es hija del panel, y una hoja
+        // que sube dejando su sombra clavada arriba es justo el corte a la vista
+        // que esa capa existe para evitar. Moviéndolos juntos la sombra viaja ya
+        // rasterizada — el compositor la traslada, no la vuelve a pintar.
         if (!vidrio) {
-            el.style.transformOrigin =
-                `${Math.round(desde.x + desde.w / 2 - r.left)}px ${Math.round(desde.y + desde.h / 2 - r.top)}px`;
+            const desliza = deslizamientoDe(el, r);
+            el.__gota = { tecnica: 'deslizar', el, ...desliza };
             el.style.transition = 'none';
-            el.style.transform = 'scale(0.94)';
-            el.style.opacity = '0';
+            el.style.transform = desliza.fuera;
+            if (desliza.conFundido) el.style.opacity = '0';
             fijarEstilo(el, 'transform');
-            el.style.transition = 'transform 240ms cubic-bezier(0.22,1,0.36,1), opacity 160ms ease-out';
-            el.style.transform = 'scale(1)';
-            el.style.opacity = '1';
-            return () => { el.style.transform = ''; el.style.opacity = ''; el.style.transition = ''; };
+            el.style.transition = `transform ${entrada}ms ${CURVA}`
+                + (desliza.conFundido ? `, opacity ${Math.round(entrada * 0.7)}ms ease-out` : '');
+            el.style.transform = 'translate3d(0, 0, 0)';
+            if (desliza.conFundido) el.style.opacity = '1';
+            // Filtrando por propiedad **y por objetivo**. `transitionend` BURBUJEA,
+            // y `transform` es la propiedad más transicionada de la app —cada
+            // botón del contenido la lleva—, así que el primer hover o el primer
+            // reveal de adentro terminaba una transición ajena, el evento subía
+            // hasta acá y esto borraba el desplazamiento a los pocos milisegundos.
+            // Medido: `panelTransform` ya estaba en `none` a los 57ms de una
+            // animación de 200. Con `clip-path` el filtro por propiedad alcanzaba
+            // porque nadie más la anima; con `transform` no alcanza ni de lejos.
+            const alLlegar = (ev) => {
+                if (ev && (ev.target !== el || ev.propertyName !== 'transform')) return;
+                limpiarDeslizamiento(el);
+                el.removeEventListener('transitionend', alLlegar);
+            };
+            el.addEventListener('transitionend', alLlegar);
+            return () => el.removeEventListener('transitionend', alLlegar);
         }
 
         vidrio.style.transition = 'none';
@@ -263,20 +400,20 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // Se cuelgan del propio elemento para que el ARRASTRE pueda reproducir la
         // misma gota bajo el dedo. Pasarlos por contexto obligaría a que cada
         // hoja los reenvíe, y una prop de reenvío es una prop que se olvida.
-        vidrio.__gota = { lados: ladosIniciales.current, sombra };
+        vidrio.__gota = { tecnica: 'gota', el: vidrio, lados: ladosIniciales.current, sombra };
         transformarSombra(sombra, vidrio, desde, 0, '', ladosIniciales.current);
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
         fijarEstilo(vidrio, 'clipPath');
 
-        vidrio.style.transition = `clip-path ${ENTRADA_MS}ms ${CURVA}`;
+        vidrio.style.transition = `clip-path ${entrada}ms ${CURVA}`;
         // El radio final se LEE del elemento: en los temas de vidrio son 28px y en
         // `solid` el token baja a 12, así que escribirlo lo rompía en la mitad.
         const radio = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
         const abajo = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
         vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} ${abajo} ${abajo})`;
-        soltarSombra(sombra, ENTRADA_MS, CURVA);
+        soltarSombra(sombra, entrada, CURVA);
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que el panel quiera sacar fuera de su caja.
@@ -289,7 +426,11 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // Se veía como que solo la sombra hacía el efecto, porque la sombra es
         // otro elemento y no tiene transiciones que compitan.
         const alTerminar = (ev) => {
-            if (ev && ev.propertyName !== 'clip-path') return;
+            // `ev.target` además de la propiedad: el evento burbujea, así que sin
+            // esto un descendiente que animara `clip-path` cancelaría la gota.
+            // Hoy no hay ninguno, pero es la misma trampa que sí mordió con
+            // `transform` en la rama de deslizamiento.
+            if (ev && (ev.target !== vidrio || ev.propertyName !== 'clip-path')) return;
             vidrio.style.clipPath = ''; vidrio.style.transition = '';
             if (sombra) {
                 sombra.style.transition = ''; sombra.style.opacity = '';
@@ -312,13 +453,31 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         if (!el || !cerrando || !desde || !activo) return;
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return;
-        const vidrio = objetivoVidrio(el);
+        const vidrio = elVidrio(el);
+        const salidaMs = tiemposGota().salida;
+
+        // ── Sin vidrio: se va por donde vino ──────────────────────────────
         if (!vidrio) {
-            el.style.transition = `transform ${salidaMs}ms cubic-bezier(0.4,0,1,1), opacity ${salidaMs}ms ease-in`;
-            el.style.transform = 'scale(0.96)';
-            el.style.opacity = '0';
+            // El recorrido GUARDADO, no uno recalculado: entre abrir y cerrar la
+            // hoja pudo cambiar de alto (se eligió un filtro, se plegó una
+            // sección), y entonces la salida viajaría una distancia distinta de
+            // la que viajó la entrada. Es la misma razón por la que la gota
+            // guarda su recorte en vez de volver a medirlo.
+            const desliza = el.__gota?.tecnica === 'deslizar' ? el.__gota : deslizamientoDe(el, r);
+            // Se fija el estado actual antes de pedir la transición. Si el dedo
+            // ya movió la hoja, ese desplazamiento ES el punto de partida y la
+            // salida lo continúa; si no, el punto de partida es la identidad.
+            // Sin fijarlo, el navegador puede juntar los dos y saltar al final —
+            // el mismo defecto que en Safari hacía "no se ve, solo desaparece".
+            if (!el.style.transform) el.style.transform = 'translate3d(0, 0, 0)';
+            fijarEstilo(el, 'transform');
+            el.style.transition = `transform ${salidaMs}ms ${CURVA_SALIDA}`
+                + (desliza.conFundido ? `, opacity ${salidaMs}ms ease-in` : '');
+            el.style.transform = desliza.fuera;
+            if (desliza.conFundido) el.style.opacity = '0';
             return;
         }
+
         // La sombra hace el mismo recorrido, encogiéndose hasta el control.
         const sombra = el.querySelector('[data-sombra-hoja]');
         // El arrastre pudo dejarla desplazada: se suelta antes de encogerla, o el
@@ -349,5 +508,5 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         vidrio.style.transition = `clip-path ${salidaMs}ms ${CURVA_SALIDA}`;
         // El MISMO recorte con el que entró, no uno recalculado.
         vidrio.style.clipPath = recorteInicial.current || insetHacia(vidrio, desde);
-    }, [ref, cerrando, salidaMs, activo]);
+    }, [ref, cerrando, activo]);
 }

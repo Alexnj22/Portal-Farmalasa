@@ -16,8 +16,77 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.293.0';
+export const APP_VERSION = '2.294.0';
 
+// v2.294.0 — Solid deja de imitar la gota: se desliza, y el asa por fin cierra.
+//
+// Reportado: en Liquid Glass la animacion y el arrastre funcionan; en Solid "se
+// siente mas trabado", cuando deberia ser al reves porque es el tema pensado
+// para equipos de pocos recursos. Filmado en WebKit/iPhone con el tema puesto,
+// las tres causas resultaron ser una sola decision mal tomada.
+//
+// La rama sin vidrio era `transform: scale(0.94) → scale(1)`, elegida porque el
+// compositor mueve `transform` sin repintar. El razonamiento valia; la eleccion
+// no:
+//
+// · **Escalar SI repinta.** La capa `data-sombra-hoja` es HIJA del panel, asi
+//   que el `scale` la deformaba: 18px de difuminado re-rasterizados en cada
+//   cuadro. Y sin efecto a cambio — medido, `somTransform` se quedo en `none`
+//   los 700ms. El camino "barato" pagaba lo caro del otro sin cobrar lo suyo.
+// · **Un zoom del 6% no es una gramatica.** No dice de donde salio (la gota) ni
+//   hacia donde se va (el deslizamiento).
+// · **El asa no hacia nada.** El arrastre reproduce la animacion de entrada
+//   leyendo `__gota`, y `__gota` solo se colgaba en la rama del vidrio: en Solid
+//   el dedo no despeinaba un cuadro. Un asa que promete "esto se cierra hacia
+//   abajo" y no cumple es peor que no tenerla.
+//
+// Ahora hay DOS gramaticas, una por material, y el asa cierra en las dos:
+//
+//   con vidrio  → la gota (`clip-path`): el vidrio es una lente, corresponde
+//                 abrir la ventana por la que se mira. Sin cambios.
+//   sin vidrio  → deslizamiento (`translate3d`): superficie opaca y recta, una
+//                 sola propiedad compuesta, cero repintado. El panel entero y no
+//                 la hoja, para que la sombra viaje con ella ya rasterizada.
+//
+// `__gota` se cuelga en las dos ramas y dice que tecnica esta en juego;
+// `arrastreHoja` la lee y alimenta esa, no una tercera. El descriptor se busca
+// hacia ARRIBA (`descriptorGota`) en vez de recalcular el elemento: habia dos
+// copias de la misma funcion y ya habian divergido —una devolvia `null` donde la
+// otra devolvia `el`—, que es exactamente como el arrastre y la animacion
+// llegaron a discrepar sobre cual era el elemento.
+//
+// Y el reloj sale del TEMA: `--gota-entrada`/`--gota-salida` valen 340/240ms en
+// liquid y 200/140 en solid —los mismos 340/240 por el 0.6 que ya aplican sus
+// `--dur-*` desde el 2026-07-28—. `ModalShell` cuenta el desmontaje desde ese
+// token y no desde una constante: con `EXIT_MS` fijo, acortar la animacion
+// habria AGREGADO una espera visible (la hoja termina a los 140 y el nodo se
+// quedaba 160ms mas en pantalla).
+//
+// Dos defectos que apagaban todo esto y solo se ven contra el build:
+//
+// · **`transitionend` BURBUJEA.** El limpiador filtraba por `propertyName` pero
+//   no por `ev.target`, y `transform` es la propiedad mas transicionada de la
+//   app —cada boton del contenido la lleva—. El primer evento ajeno borraba el
+//   desplazamiento: medido, ya estaba en `none` a los 57ms de una animacion de
+//   200. Con `clip-path` el filtro por propiedad alcanzaba porque nadie mas la
+//   anima; con `transform` no alcanza ni de lejos. Ahora se filtra por objetivo
+//   tambien, en las dos ramas.
+// · **Lightning CSS minifica `200ms` a `.2s`.** `parseFloat` devolvia 0.2 y la
+//   transicion salia de **0.2 milisegundos** — instantanea, indistinguible de no
+//   tener animacion. En `npm run dev` no pasa (no hay minificador): solo aparece
+//   contra el build. `tiemposGota()` lee la unidad.
+//
+// Filmado despues, Solid: la entrada va `186 → 138 → 86 → 52 → 30 → 16 → 7.9 →
+// 2.8 → 0.4` y limpia a los 254ms; el dedo deja `translate3d(0,144px,0)` con
+// `transition: none`; el cierre corre a 140ms. Liquid sin cambios: `.34s/.24s`,
+// `blur(24px)` vivo durante toda la gota y la sombra morfando con ella.
+//
+// De paso, dos correcciones del mismo archivo: la segunda pasada de foco corria
+// `EXIT_MS + 40` = 280ms contra un desmontaje a los 300, o sea 20ms ANTES de que
+// el panel se fuera —justo lo que su comentario decia estar evitando—; y la
+// salida deslizando reusa el recorrido GUARDADO en vez de recalcularlo, por la
+// misma razon por la que la gota guarda su recorte.
+//
 // v2.293.0 — `offsetWidth` fuerza LAYOUT, no estilo: por eso Safari saltaba.
 //
 // La version llegaba bien al telefono —confirmado— asi que la diferencia era del

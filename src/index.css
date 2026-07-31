@@ -161,6 +161,15 @@
   --dur-base: 200ms;
   --dur-slow: 300ms;
 
+  /* ── La gota, por tema ──────────────────────────────────────────────────
+     Tokens propios y no `--dur-slow`: los 340ms de la entrada se ajustaron a
+     mano contra dos quejas opuestas —520 se sintió apurada, 560 lenta— y
+     colgarlos de una duración compartida haría que el próximo retoque de
+     `--dur-slow` los reescriba sin que nadie lo pida. Los lee
+     `tiemposGota()` en gotaApertura.js. */
+  --gota-entrada: 340ms;
+  --gota-salida:  240ms;
+
   /* Page background */
   --bg-page: radial-gradient(ellipse at 38% 28%, #ddd8ff 0%, #e4e0ff 22%, #eae8ff 50%, #e2deff 100%);
 
@@ -1245,6 +1254,12 @@
   --dur-fast:  90ms;
   --dur-base: 120ms;
   --dur-slow: 180ms;
+  /* La gota es LA MISMA en los cuatro temas —mismo recorte, mismo recorrido,
+     mismo gesto bajo el dedo—: lo que cambia es el reloj. Son los 340/240 de
+     liquid por el mismo 0.6 que ya aplican las tres duraciones de arriba, así
+     que Solid no estrena un criterio: sigue el suyo. */
+  --gota-entrada: 200ms;
+  --gota-salida:  140ms;
 }
 
 /* ═══ MOTION COMO EJE DEL TEMA (D2.4, 2026-07-26) ══════════════════════════

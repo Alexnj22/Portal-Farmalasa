@@ -12,6 +12,45 @@ retomar; acá está todo.
 
 ---
 
+## v2.294.0 — Solid deja de imitar la gota: se desliza, y el asa por fin cierra
+
+En Liquid Glass la animación y el arrastre funcionaban; en Solid se sentía **más
+trabado**, al revés de lo que promete el tema pensado para equipos de pocos
+recursos. Filmado en WebKit/iPhone con el tema puesto, las tres cosas salían de
+una sola decisión mal tomada.
+
+La rama sin vidrio era `transform: scale(0.94) → scale(1)`, elegida porque el
+compositor mueve `transform` sin repintar. El razonamiento valía; la elección no:
+
+- **Escalar sí repinta.** La capa `data-sombra-hoja` es *hija* del panel, así que
+  el `scale` la deformaba: 18px de difuminado re-rasterizados en cada cuadro, y
+  sin efecto a cambio (medido, `somTransform` se quedó en `none` los 700ms).
+- **Un zoom del 6% no es una gramática**: no dice de dónde salió ni hacia dónde va.
+- **El asa no hacía nada.** El arrastre reproduce la entrada leyendo `__gota`, y
+  `__gota` solo se colgaba en la rama del vidrio.
+
+Ahora hay **dos gramáticas, una por material**, y el asa cierra en las dos: con
+vidrio la gota (`clip-path`, sin cambios); sin vidrio un deslizamiento
+(`translate3d`) del panel entero, una sola propiedad compuesta y cero repintado.
+El reloj sale del tema: `--gota-entrada`/`--gota-salida` son 340/240ms en liquid
+y 200/140 en solid.
+
+Dos defectos que apagaban todo esto y solo se ven contra el build:
+
+- **`transitionend` burbujea.** El limpiador filtraba por `propertyName` pero no
+  por `ev.target`, y `transform` es la propiedad más transicionada de la app: el
+  primer evento ajeno borraba el desplazamiento a los 57ms de una animación de
+  200. Con `clip-path` el filtro por propiedad alcanzaba; con `transform` no.
+- **Lightning CSS minifica `200ms` a `.2s`.** `parseFloat` daba 0.2 y la
+  transición salía de **0.2 milisegundos**. En `npm run dev` no pasa.
+
+Filmado después, Solid: entrada `186 → 138 → 86 → 52 → 30 → 16 → 7.9 → 2.8 →
+0.4`, limpia a los 254ms; el dedo deja `translate3d(0,144px,0)` sin transición;
+el cierre corre a 140ms. Liquid intacto: `.34s/.24s` y `blur(24px)` vivo durante
+toda la gota.
+
+---
+
 ## v2.293.0 — `offsetWidth` fuerza layout, no estilo: por eso Safari saltaba
 
 La versión llegaba bien al teléfono, así que la diferencia era del motor. El

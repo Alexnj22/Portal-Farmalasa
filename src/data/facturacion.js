@@ -24,14 +24,28 @@ export function fetchNulaInvoices(filterBranch) {
     });
 }
 
-// ── Pendientes de confirmación Hacienda (recibido_mh IS NULL) ──────────────
+// ── El sello de recepción de Hacienda son exactamente 40 caracteres ─────────
+//
+// `IS NOT NULL` **no** significa "tiene sello". Ese fue el bug: 24 facturas
+// llegaron con `recibido_mh = 'undefined'` (la cadena, no el valor — el `??` del
+// sync no la filtra) y como no eran NULL cayeron del lado "confirmada por
+// Hacienda". No es que el módulo no las detectara: las reportaba como buenas.
+// Lo destapó la diferencia contra el libro IVA del ERP (2026-07-31).
+//
+// PostgREST no expone `length()`, pero `like` con 40 `_` es equivalente: `_`
+// matchea exactamente un carácter. Verificado contra prod — `like repeat('_',40)`
+// y `length(...) = 40` devuelven la misma cuenta.
+const SELLO_MH_LARGO = 40;
+const SELLO_MH_LIKE = '_'.repeat(SELLO_MH_LARGO);
+
+// ── Pendientes de confirmación Hacienda (sin sello válido) ──────────────────
 
 export function fetchPendingMhInvoices(filterBranch) {
     return fetchAllRows(() => {
         let q = supabase
             .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado')
-            .is('recibido_mh', null)
+            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, recibido_mh')
+            .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`)
             .not('estado', 'eq', 'NULA')
             .order('branch_id', { ascending: true })
             .order('fecha',     { ascending: true })
@@ -42,20 +56,42 @@ export function fetchPendingMhInvoices(filterBranch) {
 }
 
 // `recibido_mh` es **text**: guarda el sello de recepción de Hacienda (40
-// caracteres), no un booleano. El filtro era `.eq('recibido_mh', true)`, o sea
-// `text = 'true'` — cero filas SIEMPRE, y una query que devuelve 0 no falla, así
-// que el historial de solventados perdió entera la rama de confirmadas por
-// Hacienda sin que nadie lo notara (en julio: 0 de 21,666). Ver CLAUDE.md,
+// caracteres), no un booleano. Este filtro pasó por dos versiones malas antes de
+// la buena, y las dos fallaban en silencio:
+//
+//   1. `.eq('recibido_mh', true)`     → `text = 'true'`: cero filas SIEMPRE
+//                                       (en julio: 0 de 21,666).
+//   2. `.not('recibido_mh','is',null)` → demasiadas: 'undefined' y '' entraban
+//                                       como confirmadas.
+//
+// La buena exige la forma del dato, no su ausencia de NULL. Ver CLAUDE.md,
 // "el tipo de la columna manda, no el nombre".
 export function fetchConfirmedMhInvoices(filterBranch, fini, ffin) {
     let q = supabase
         .from('sales_invoices')
         .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
-        .not('recibido_mh', 'is', null)
+        .like('recibido_mh', SELLO_MH_LIKE)
         .gte('fecha', fini).lte('fecha', ffin)
         .order('fecha', { ascending: false });
     if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
     return q;
+}
+
+// ── Observaciones: cualquier anomalía, no solo el sello ─────────────────────
+//
+// Contraparte del RPC `get_invoice_observations` (migración 20260731172746).
+// La gracia es que el catálogo de anomalías vive en UN solo lugar y del lado del
+// servidor: agregar una clase nueva no requiere tocar el frontend, y los
+// catch-alls (ESTADO_DESCONOCIDO, TIPO_DOC_DESCONOCIDO) hacen que un valor que
+// el sync todavía no escribe aparezca solo el día que aparezca.
+//
+// Devuelve `observaciones` como array — una factura puede tener varias.
+export function fetchInvoiceObservations(desde, hasta, filterBranch) {
+    return supabase.rpc('get_invoice_observations', {
+        p_desde: desde,
+        p_hasta: hasta,
+        p_branch_id: filterBranch ? Number(filterBranch) : null,
+    });
 }
 
 // Acá vivía `updateInvoiceReceivedMh`, que hacía `update({ recibido_mh: true })`

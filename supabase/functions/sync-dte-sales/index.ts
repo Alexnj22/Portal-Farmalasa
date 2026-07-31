@@ -65,6 +65,22 @@ function numEq(a: any, b: any): boolean {
   return Math.abs(parseFloat(a) - parseFloat(b)) < 0.005;
 }
 
+// El sello de recepción de Hacienda son exactamente 40 caracteres.
+//
+// `venta.recibido_mh ?? …` NO alcanza: el `??` atrapa el valor `undefined`, pero
+// no la **cadena** "undefined", que es truthy y pasaba derecho. Llegaron 23 así
+// a producción (más una cadena vacía), y como no eran NULL el módulo de
+// Facturación las clasificaba como confirmadas por Hacienda en vez de
+// pendientes. Se destapó cuadrando contra el libro IVA del ERP (2026-07-31).
+//
+// Guardar NULL ante cualquier cosa que no sea un sello es lo correcto: la
+// factura cae en pendientes, que es donde alguien la mira.
+const SELLO_MH_LARGO = 40;
+
+function selloValido(v: unknown): string | null {
+  return typeof v === 'string' && v.length === SELLO_MH_LARGO ? v : null;
+}
+
 async function syncBranch(
   supabase: any,
   branchId: number,
@@ -135,8 +151,12 @@ async function syncBranch(
         changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'tipo_pago', valor_anterior: existing.tipo_pago, valor_nuevo: venta.tipo_pago });
         hasChange = true;
       }
-      if (!existing.recibido_mh && venta.recibido_mh) {
-        changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'recibido_mh', valor_anterior: null, valor_nuevo: venta.recibido_mh });
+      // Ojo con el `existing`: si ya tiene basura guardada ('undefined'), el
+      // viejo `!existing.recibido_mh` daba false —truthy— y el changelog del
+      // sello REAL nunca se habría escrito. Por eso se valida de los dos lados.
+      const selloNuevo = selloValido(venta.recibido_mh);
+      if (!selloValido(existing.recibido_mh) && selloNuevo) {
+        changelogs.push({ invoice_id: existing.id, codigo_generacion: venta.codigo_generacion, branch_id: branchId, tipo_documento: tipoDoc, campo: 'recibido_mh', valor_anterior: existing.recibido_mh, valor_nuevo: selloNuevo });
         hasChange = true;
       }
       if ((existing.cliente ?? null) !== clienteName) {
@@ -172,7 +192,10 @@ async function syncBranch(
         cod_vendedor:      venta.cod_vendedor,
         tipo_pago:         venta.tipo_pago,
         estado:            venta.estado,
-        recibido_mh:       venta.recibido_mh ?? existing?.recibido_mh ?? null,
+        // Validado de los dos lados: si lo que llega no es un sello y lo
+        // guardado tampoco, queda NULL y la factura cae en pendientes. Eso
+        // además sana sola cualquier fila con basura que el sync vuelva a tocar.
+        recibido_mh:       selloValido(venta.recibido_mh) ?? selloValido(existing?.recibido_mh) ?? null,
         subtotal:          venta.totales?.subtotal ?? 0,
         iva:               venta.totales?.iva ?? 0,
         total:             newTotal,

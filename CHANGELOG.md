@@ -12,6 +12,52 @@ retomar; acá está todo.
 
 ---
 
+## v2.307.0 — "No es NULL" no es "tiene sello": 24 facturas contadas como buenas
+
+Salió cuadrando `sales_invoices` contra el libro IVA del ERP: sobraban **$282.58**
+en 6 sucursal-meses. Era el 0.03% del total, muy fácil de escribir como diferencia
+de redondeo. No lo era — cada caso correspondía **exactamente** a la suma de las
+facturas cuyo `recibido_mh` tiene basura en vez del sello de Hacienda.
+
+**El sync guardaba la cadena `"undefined"`.** `venta.recibido_mh ?? …` atrapa el
+*valor* `undefined`, pero no el **string**, que además es truthy y pasaba derecho.
+Llegaron 23 así a producción (más un `''`), y **21 el mismo día** —7 de mayo de
+2026, correlativos consecutivos en Salud 3 y Salud 4—, o sea una falla puntual de
+sincronización, no goteo. Ahora hay `selloValido()`: un sello son 40 caracteres y
+cualquier otra cosa se guarda `NULL`. Se valida de los dos lados, así que una fila
+con basura se sana sola la próxima vez que el sync la toque.
+
+**El módulo las reportaba como confirmadas.** `facturacion.js` partía el universo
+en `recibido_mh IS NULL` (pendiente) contra `IS NOT NULL` (confirmada por
+Hacienda). `'undefined'` no es NULL, así que caían del lado bueno: no es que el
+módulo no las detectara, las daba por selladas.
+
+Este filtro ya iba por su **segunda** versión mala. La primera era
+`.eq('recibido_mh', true)`, que sobre una columna `text` compara contra la cadena
+`'true'` y devolvía **cero filas siempre**. Las dos fallaron en silencio por el
+mismo motivo: una query que devuelve 0 filas no es un error. La versión buena
+exige la **forma** del dato en vez de su ausencia de NULL — `like` con 40 `_`, que
+es como se expresa `length() = 40` en PostgREST. Verificado contra producción
+(misma cuenta que `length(...) = 40`) y el parseo del filtro confirmado contra la
+API, con un filtro roto a propósito como control.
+
+**RPC `get_invoice_observations`** (migración `20260731172746`) — la parte que
+evita el *próximo* caso, no este. Un solo catálogo de anomalías del lado del
+servidor, con `observaciones` como array porque una factura puede tener varias.
+Lo que importa son los catch-alls (`ESTADO_DESCONOCIDO`, `TIPO_DOC_DESCONOCIDO`):
+un valor que el sync todavía no escribe aparece solo el día que aparezca, en vez
+de repartirse en silencio entre los buckets que ya existen.
+
+Al correrlo salieron tres clases que nadie estaba mirando: **16 finalizadas sin
+código de generación**, 1 sin correlativo y 1 con tipo de documento fuera de
+CCF/COF.
+
+Los 24 registros históricos **no se tocaron**: son datos fiscales, y qué pasó con
+ellos en Hacienda no se decide desde el portal. Con el filtro corregido ya
+aparecen solos en pendientes, así que no hacía falta escribirles nada.
+
+---
+
 ## v2.306.0 — El blur que costaba el scroll, y el pie que se comía el panel
 
 **El scroll lento era un `backdrop-filter` que no se veía.** El cuerpo de

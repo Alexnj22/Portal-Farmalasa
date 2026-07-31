@@ -759,6 +759,18 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
 }
 
 // ─── Tab: Pendiente MH ────────────────────────────────────────────────────────
+//
+// Esta pestaña es la cola de ESPERA: facturas con `recibido_mh IS NULL`, o sea
+// que el sello de Hacienda todavía no llegó. Un sello presente pero corrupto ya
+// no entra acá — no se resuelve esperando, así que vive en Observaciones.
+//
+// El mismo número de gracia que usa el RPC de Observaciones para el código de
+// generación: Hacienda tarda hasta 2 días en emitir sello y código, que llegan
+// juntos. Antes de eso una factura sin sello no tiene nada de raro. Desde que
+// `SIN_SELLO_VENCIDO` salió de aquel catálogo, esta pestaña es la única que
+// marca el vencimiento — de ahí el badge en warning de la fila de fecha.
+const GRACIA_SELLO_DIAS = 2;
+
 function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
@@ -813,11 +825,14 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
         }
         toggleVisited(erpId);
     };
-    const daysAgoLabel = (fechaStr) => {
+    const diasDesde = (fechaStr) => {
         const today = svNow();
         const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
-        const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
+        return Math.round((todayMidnight - fechaMidnight) / 86400000);
+    };
+    const daysAgoLabel = (fechaStr) => {
+        const diff = diasDesde(fechaStr);
         if (diff === 0) return 'hoy';
         if (diff === 1) return 'ayer';
         return `hace ${diff}d`;
@@ -1053,13 +1068,18 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
                                         const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
                                         const isToday = fecha === todayStr;
                                         const dLabel = daysAgoLabel(fecha);
+                                        // Pasada la gracia, "hace 3d" deja de ser un dato y pasa a
+                                        // ser un aviso: el sello ya tendría que estar. Es lo que
+                                        // decía `SIN_SELLO_VENCIDO` en Observaciones, dicho en la
+                                        // pestaña que sí puede hacer algo al respecto.
+                                        const vencida = diasDesde(fecha) > GRACIA_SELLO_DIAS;
 
                                         return (
                                             <div key={fecha} className="px-4 py-3">
                                                 {/* Date label */}
                                                 <div className="flex items-center gap-2 mb-2.5">
                                                     <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
-                                                    <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : 'neutral'} size="sm">{dLabel}</Badge>
+                                                    <Badge variant={isToday ? 'info' : hasCCF ? 'danger' : vencida ? 'warning' : 'neutral'} size="sm">{dLabel}</Badge>
                                                 </div>
 
                                                 {/* Pills row */}
@@ -2066,9 +2086,12 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 
 // Etiquetas cortas a propósito: la tarjeta de `StatCard` corta alrededor de los
 // 14 caracteres, y una etiqueta truncada ("Sin código ge…") no dice nada.
+// `SIN_SELLO_VENCIDO` no está y no es un olvido: una factura sin sello es de
+// Pendiente MH, que es la cola con la cuenta regresiva del plazo fiscal. El RPC
+// dejó de emitirlo (migración de este mismo commit) — ver la nota de la frontera
+// en `fetchPendingMhInvoices`.
 const OBSERVACIONES = {
     SELLO_INVALIDO:        { label: 'Sello inválido',  variant: 'danger'  },
-    SIN_SELLO_VENCIDO:     { label: 'Sello vencido',   variant: 'warning' },
     SIN_CODIGO_VENCIDO:    { label: 'Sin código',      variant: 'warning' },
     ESTADO_DESCONOCIDO:    { label: 'Estado inválido', variant: 'danger'  },
     TIPO_DOC_DESCONOCIDO:  { label: 'Tipo inválido',   variant: 'warning' },

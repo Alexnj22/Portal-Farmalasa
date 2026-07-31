@@ -16,7 +16,47 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.312.0';
+export const APP_VERSION = '2.313.0';
+
+// v2.313.0 — la misma factura estaba en dos pestañas: la frontera es la CAUSA.
+//
+// Reportado: las facturas que la detección nueva levanta salían TAMBIÉN en
+// Pendiente MH. Medido en prod: 185 pendientes, 27 observaciones y **25 en las
+// dos listas**. No era casualidad — dos de los códigos ERAN la condición de
+// Pendiente MH mirada desde el otro lado.
+//
+// La frontera queda en por qué está mal, no en qué lista la agarró primero:
+//
+//   · falta el sello y se espera a Hacienda → **Pendiente MH** (la cola tiene
+//     la cuenta regresiva del plazo fiscal, que es lo que hay que mirar)
+//   · el dato está mal escrito              → **Observaciones** (no se arregla
+//     esperando: hay que corregirlo en el ERP)
+//
+// Tres cortes, uno por lado de la frontera:
+//
+// **Pendiente MH deja de listar sellos corruptos.** El filtro era "sin sello
+// VÁLIDO" (`recibido_mh IS NULL OR NOT LIKE 40 chars`), así que los 23
+// `'undefined'` engordaban una cola de espera de la que nunca iban a salir
+// solos. Ahora es `recibido_mh IS NULL`: esperando, punto. 185 → 157.
+//
+// **`SIN_SELLO_VENCIDO` sale del catálogo del RPC** (20260731203801). Era un
+// subconjunto exacto de Pendiente MH —que ya lista TODAS las facturas sin
+// sello, viejas incluidas—, y como cada pestaña tiene su propia tabla de
+// resoluciones, la misma factura pedía solventarse dos veces. Ya había pasado:
+// de las 3, una estaba solventada en Pendiente MH y seguía apareciendo acá.
+//
+// **`SIN_CODIGO_VENCIDO` ahora exige que el sello SÍ haya llegado**
+// (20260731203846). Sin esa condición quedaba 1 factura en las dos pestañas por
+// el mismo hecho: Hacienda emite sello y código juntos —por eso comparten
+// `p_dias_gracia_sello`—, así que "sin ninguno de los dos" es la espera, no una
+// anomalía. La anomalía es la asimetría: llegó el sello y el código no. Hoy son
+// 0 facturas, que es la respuesta correcta y no una clase muerta.
+//
+// Lo que `SIN_SELLO_VENCIDO` sí aportaba —"ya pasó la ventana de 2 días"— no se
+// pierde: la fila de fecha de Pendiente MH pasa a `warning` cuando el grupo
+// pasó la gracia. El aviso queda en la pestaña que puede hacer algo con él.
+//
+// Verificado contra prod después de aplicar: 157 · 24 · **0 en ambas**.
 
 // v2.312.0 — Observaciones: copiar el id y solventar, y al lado de Pendiente MH.
 //

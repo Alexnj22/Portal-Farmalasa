@@ -38,14 +38,25 @@ export function fetchNulaInvoices(filterBranch) {
 const SELLO_MH_LARGO = 40;
 const SELLO_MH_LIKE = '_'.repeat(SELLO_MH_LARGO);
 
-// ── Pendientes de confirmación Hacienda (sin sello válido) ──────────────────
-
+// ── Pendientes de confirmación Hacienda (SIN sello, esperando) ──────────────
+//
+// `recibido_mh IS NULL` a secas, y no "sin sello válido": un sello presente
+// pero corrupto (`'undefined'`, largo != 40) NO es una espera. Esa factura no
+// va a cambiar sola por más que pase el plazo — hay que corregirla en el ERP—,
+// así que su lugar es Observaciones (`SELLO_INVALIDO`) y no esta cola.
+//
+// Medido el 2026-07-31 antes del cambio: de 185 pendientes, 23 eran sellos
+// corruptos que además ya figuraban en Observaciones. La misma factura pedía
+// solventarse dos veces, en dos tablas de resoluciones distintas.
+//
+// La frontera entre las dos pestañas es la CAUSA: falta el sello → acá;
+// el dato está mal escrito → Observaciones.
 export function fetchPendingMhInvoices(filterBranch) {
     return fetchAllRows(() => {
         let q = supabase
             .from('sales_invoices')
             .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, recibido_mh')
-            .or(`recibido_mh.is.null,recibido_mh.not.like.${SELLO_MH_LIKE}`)
+            .is('recibido_mh', null)
             .not('estado', 'eq', 'NULA')
             .order('branch_id', { ascending: true })
             .order('fecha',     { ascending: true })

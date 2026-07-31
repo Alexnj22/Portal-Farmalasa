@@ -1,4 +1,5 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
+import CuerpoDialogo from '../components/common/CuerpoDialogo';
 import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
@@ -725,17 +726,28 @@ const RequestsView = () => {
                 pasarlo a `ModalShell` en v2.183.0, porque `open={!!actionModal}`
                 LEE como si condicionara los hijos y no los condiciona. */}
             {actionModal && (
-            <ModalShell open={!!actionModal} onClose={() => !isActioning && setActionModal(null)} maxWidthClass="max-w-md" zClass="z-toast" closeOnEsc={!isActioning} ariaLabel={actionModal?.mode === 'approve' ? 'Aprobar la solicitud' : 'Rechazar la solicitud'}>
-                    <div data-surface="card" className="relative w-full max-w-md p-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                        <div className={`w-14 h-14 rounded-card flex items-center justify-center mx-auto mb-4 border ${actionModal.mode === 'approve' ? 'bg-success/10 border-success/30 shadow-[var(--shadow-glow-success)]' : 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)]'}`}>
-                            {actionModal.mode === 'approve' ? <CheckCircle2 size={26} className="text-success" strokeWidth={2} /> : <XCircle size={26} className="text-danger" strokeWidth={2} />}
-                        </div>
-                        <h3 className="text-title-sm font-bold text-content text-center mb-1">
-                            {actionModal.mode === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
-                        </h3>
-                        <p className="text-body-sm text-content-3 text-center mb-5">
-                            {REQUEST_TYPES[actionModal.req.type]?.label} · {actionModal.req.employee?.name}
-                        </p>
+            <ModalShell open={!!actionModal} onClose={() => !isActioning && setActionModal(null)} maxWidthClass="max-w-md" zClass="z-toast" closeOnEsc={!isActioning} surface={null} ariaLabel={actionModal?.mode === 'approve' ? 'Aprobar la solicitud' : 'Rechazar la solicitud'}>
+                    <CuerpoDialogo
+                        titulo={actionModal.mode === 'approve' ? 'Aprobar solicitud' : 'Rechazar solicitud'}
+                        subtitulo={`${REQUEST_TYPES[actionModal.req.type]?.label} · ${actionModal.req.employee?.name}`}
+                        icono={actionModal.mode === 'approve' ? CheckCircle2 : XCircle}
+                        tono={actionModal.mode === 'approve' ? 'success' : 'danger'}
+                        anchoEscritorio="max-w-md"
+                        pie={<>
+                            <Button
+                                onClick={handleConfirmAction}
+                                loading={isActioning}
+                                disabled={!canApprove || (actionModal.mode === 'reject' && !actionNote.trim())}
+                                tone={actionModal.mode === 'approve' ? 'success' : 'danger'}
+                                icon={actionModal.mode === 'approve' ? Check : X}
+                            >
+                                {actionModal.mode === 'approve' ? 'Aprobar' : 'Rechazar'}
+                            </Button>
+                            <Button variant="secondary" disabled={isActioning}
+                                onClick={() => !isActioning && setActionModal(null)}>Cancelar</Button>
+                        </>}
+                    >
+                        <div className="text-left">
                         <label className="text-label font-black uppercase tracking-widest text-content-2 mb-1.5 block">
                             {actionModal.mode === 'reject' ? 'Motivo de rechazo' : 'Nota para el empleado'}
                             {actionModal.mode === 'reject' && <span className="text-danger ml-1">*</span>}
@@ -748,34 +760,26 @@ const RequestsView = () => {
                             readOnly={isActioning}
                             textareaClassName="disabled:opacity-50"
                         />
-                        <div className="flex items-center gap-2 mt-4">
-                            <Button variant="secondary" disabled={isActioning} onClick={() => !isActioning && setActionModal(null)}>Cancelar</Button>
-                            <Button
-                                onClick={handleConfirmAction}
-                                loading={isActioning}
-                                disabled={!canApprove || (actionModal.mode === 'reject' && !actionNote.trim())}
-                                className="flex-1"
-                                tone={actionModal.mode === 'approve' ? 'success' : 'danger'}
-                                icon={actionModal.mode === 'approve' ? Check : X}
-                            >
-                                {actionModal.mode === 'approve' ? 'Aprobar' : 'Rechazar'}
-                            </Button>
                         </div>
-                    </div>
+                    </CuerpoDialogo>
             </ModalShell>
             )}
 
-            <ModalShell open={createModalOpen} onClose={() => !isCreatingReq && setCreateModalOpen(false)} maxWidthClass="max-w-lg" zClass="z-toast" closeOnEsc={!isCreatingReq} ariaLabel="Nueva solicitud">
-                    <div data-surface="card" className="relative w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="w-11 h-11 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center shrink-0">
-                                <ClipboardList size={20} className="text-brand-text" strokeWidth={2} />
-                            </div>
-                            <div>
-                                <h3 className="text-body-xl font-bold text-content">Nueva Solicitud</h3>
-                                <p className="text-label text-content-3">A nombre de un empleado</p>
-                            </div>
-                        </div>
+            <ModalShell open={createModalOpen} onClose={() => !isCreatingReq && setCreateModalOpen(false)} maxWidthClass="max-w-lg" zClass="z-toast" closeOnEsc={!isCreatingReq} surface={null} ariaLabel="Nueva solicitud">
+                    <CuerpoDialogo
+                        titulo="Nueva solicitud"
+                        subtitulo="A nombre de un empleado"
+                        icono={ClipboardList}
+                        anchoEscritorio="max-w-lg"
+                        pie={<>
+                            <Button disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
+                                loading={isCreatingReq} icon={Check}
+                                onClick={handleCreateRequest}>Enviar</Button>
+                            <Button variant="secondary" disabled={isCreatingReq}
+                                onClick={() => !isCreatingReq && setCreateModalOpen(false)}>Cancelar</Button>
+                        </>}
+                    >
+                        <div className="space-y-4 text-left">
 
                         <div>
                             <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1.5">Empleado <span className="text-danger">*</span></p>
@@ -845,11 +849,8 @@ const RequestsView = () => {
                             />
                         </div>
 
-                        <div className="flex items-center gap-2 pt-1">
-                            <Button variant="secondary" disabled={isCreatingReq} onClick={() => !isCreatingReq && setCreateModalOpen(false)}>Cancelar</Button>
-                            <Button disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()} onClick={handleCreateRequest}>{isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}</Button>
                         </div>
-                    </div>
+                    </CuerpoDialogo>
             </ModalShell>
         </GlassViewLayout>
     );

@@ -12,6 +12,21 @@ retomar; acá está todo.
 
 ---
 
+## v2.281.0 — El asa arrastra, y cuatro diálogos más al canónico
+
+**El asa cumple lo que promete.** La hoja sigue al dedo cuadro a cuadro y decide
+al soltar: cierra si pasó 1/4 de su alto **o** si iba a más de 0.5 px/ms — solo
+por distancia, un tirón corto y rápido no alcanzaba y la hoja volvía sola.
+
+Se arrastra el elemento del **vidrio**, no el envoltorio: `transform` en un
+ancestro crea backdrop root. Medido en los dos temas: `translateY(40px)` con
+`blur(24px)` vivo. Durante el arrastre no hay transición — ahí se lee como lag.
+
+**`CuerpoDialogo` en cuatro diálogos más**: corrección de marcaje, aprobar y
+rechazar solicitud, y nueva solicitud.
+
+---
+
 ## v2.280.0 — `clip-path` en un ancestro también mata el vidrio
 
 v2.279.0 subió la gota a `ModalShell`, que recorta su **envoltorio**. Eso rompió

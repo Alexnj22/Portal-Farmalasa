@@ -17,12 +17,29 @@ import React from 'react';
  * `aria-hidden`: para un lector de pantalla el diálogo ya se anuncia como tal y
  * tiene su botón de cierre; el asa es una afordancia de pulgar y anunciarla
  * sería una parada de foco que no lleva a ninguna parte.
+ *
+ * ── Y ARRASTRA ────────────────────────────────────────────────────────────
+ * Con las props de `useArrastreHoja`, la hoja sigue al dedo y decide al soltar.
+ * Un asa que dice "esto se cierra hacia abajo" y después no cumple es peor que
+ * ninguna: enseña a no confiar en las demás afordancias.
+ *
+ * El área agarrable es más grande que el dibujo — 4px de alto no se toman con el
+ * pulgar—: `py-2 -my-2` da 20px de zona sin mover el layout, la misma técnica que
+ * `CarrilCards` usa para su sombra. Y `touch-none` porque sin él el navegador se
+ * queda el gesto vertical para hacer scroll y el arrastre nunca llega.
  */
-export default function AsaHoja({ className = '' }) {
+export default function AsaHoja({ className = '', ...gesto }) {
+    const agarrable = !!gesto.onPointerDown;
     return (
+        // El área táctil es MÁS GRANDE que el dibujo: 4px de alto no se agarran
+        // con el pulgar. El `py-2 -my-2` le da 20px de zona sin cambiar el layout,
+        // que es la misma técnica que el carril usa para su sombra.
         <div
             aria-hidden="true"
-            className={`w-9 h-1 rounded-full bg-content-3/40 mx-auto shrink-0 ${className}`}
-        />
+            {...gesto}
+            className={`mx-auto shrink-0 ${agarrable ? 'py-2 -my-2 px-6 cursor-grab active:cursor-grabbing touch-none w-max' : 'w-9'} ${className}`}
+        >
+            <div className={`h-1 rounded-full bg-content-3/40 ${agarrable ? 'w-9' : 'w-full'}`} />
+        </div>
     );
 }

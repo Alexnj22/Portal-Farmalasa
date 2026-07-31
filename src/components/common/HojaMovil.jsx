@@ -1,5 +1,8 @@
-import React, { memo, useRef } from 'react';
+import React, { memo, useRef, useContext } from 'react';
 import AsaHoja from './AsaHoja';
+import { useArrastreHoja } from './arrastreHoja';
+import { EstadoDialogoCtx } from './estadoDialogo';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.
@@ -91,6 +94,9 @@ const HojaMovil = memo(({
     className = '',
 }) => {
     const hojaRef = useRef(null);
+    const { alCerrar } = useContext(EstadoDialogoCtx);
+    const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
+    const gesto = useArrastreHoja({ refPanel: hojaRef, alCerrar, activo: !sinMovimiento && !!alCerrar });
 
     return (
     <div
@@ -109,7 +115,7 @@ const HojaMovil = memo(({
         className={`flex flex-col max-h-[88dvh] rounded-t-modal rounded-b-none! overflow-hidden ${className}`}
     >
     <div className="flex flex-col min-h-0">
-        <AsaHoja className="mt-3 mb-1" />
+        <AsaHoja className="mt-3 mb-1" {...gesto} />
 
         {(titulo || Icono) && (
             <div className="flex items-start gap-3 px-4 pt-3 pb-3 shrink-0">

@@ -16,8 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.280.0';
+export const APP_VERSION = '2.281.0';
 
+// v2.281.0 — El asa ARRASTRA, y cuatro dialogos mas al canonico.
+//
+// **El asa cumple lo que promete.** Decia "esto se cierra hacia abajo" y despues
+// no hacia nada: una afordancia que miente es peor que ninguna, porque ensena a
+// no confiar en las demas. Ahora la hoja sigue al dedo cuadro a cuadro y decide
+// al soltar — cierra si paso 1/4 de su alto **o** si iba a mas de 0.5 px/ms.
+// Solo por distancia, un tiron corto y rapido —que es como la gente cierra de
+// verdad— no alcanzaba y la hoja volvia sola, que se lee como gesto fallido.
+//
+// Se arrastra el elemento del VIDRIO, no el envoltorio: `transform` en un
+// ancestro crea backdrop root, asi que la hoja habria perdido el material justo
+// mientras el dedo la mueve, que es cuando mas se mira. Medido en los dos temas:
+// `translateY(40px)` con `blur(24px)` vivo. Y durante el arrastre no hay
+// transicion — una transicion ahi se lee como lag.
+//
+// Hacia arriba se permite un poco con resistencia (raiz del desplazamiento): un
+// tope duro se siente roto. El area agarrable es de 20px y no de 4: `py-2 -my-2`
+// sin mover el layout, mas `touch-none`, sin el cual el navegador se queda el
+// gesto vertical para hacer scroll y el arrastre nunca llega.
+//
+// **`CuerpoDialogo` en cuatro dialogos mas**: correccion de marcaje, aprobar y
+// rechazar solicitud, y nueva solicitud. Los tres traian su material escrito en
+// clases (`bg-surface-card backdrop-blur-2xl`) en vez de `data-surface`, su
+// propia fila de titulo y sus botones en fila fija.
+//
 // v2.280.0 — `clip-path` en un ANCESTRO tambien mata el vidrio. Regresion corregida.
 //
 // v2.279.0 subio la gota a `ModalShell`, que recorta su ENVOLTORIO. Eso rompio

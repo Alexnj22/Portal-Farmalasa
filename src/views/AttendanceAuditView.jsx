@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from "react";
+import CuerpoDialogo from '../components/common/CuerpoDialogo';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Button from '../components/common/Button';
@@ -290,20 +291,14 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
   };
 
   return (
-    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" ariaLabel={`Corrección de marcaje — ${fmtDia}`}>
-      {/* Glass card — propio contenedor con liquid glass */}
-      <div className="bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal shadow-[var(--shadow-glass-5)] overflow-hidden">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">
-          <div>
-            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-0.5">Corrección de marcaje</p>
-            <p className="text-body-xl font-black text-content">{fmtDia}</p>
-          </div>
-          <Button variant="ghost" size="sm" iconOnly icon={X} title="Cerrar" onClick={onClose} />
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
+    <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-lg" surface={null} ariaLabel={`Corrección de marcaje — ${fmtDia}`}>
+      {/* El contenedor y la cabecera los pone `CuerpoDialogo`: hoja en el
+          teléfono, panel centrado en escritorio. Antes eran un `bg-surface-card
+          backdrop-blur-2xl` a mano —o sea material escrito en clases, no en
+          `data-surface`— más su propia fila de título con la ✕. */}
+      <CuerpoDialogo titulo="Corrección de marcaje" subtitulo={fmtDia} icono={Calendar}
+        anchoEscritorio="max-w-lg">
+        <div className="space-y-4 text-left">
 
           {/* Horario planificado */}
           {shift ? (
@@ -391,7 +386,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             </div>
           )}
         </div>
-      </div>
+      </CuerpoDialogo>
     </ModalShell>
   );
 }

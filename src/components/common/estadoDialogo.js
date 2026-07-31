@@ -13,4 +13,4 @@ import { createContext } from 'react';
  * rompe el fast-refresh de React, y el lint lo marca. Un contexto no es un
  * componente.
  */
-export const EstadoDialogoCtx = createContext({ cerrando: false, salidaMs: 180 });
+export const EstadoDialogoCtx = createContext({ cerrando: false, salidaMs: 180, alCerrar: null });

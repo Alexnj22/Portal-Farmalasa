@@ -313,7 +313,7 @@ export default function ModalShell({
                          "items-center justify-center p-4 sm:p-6";
 
   return createPortal(
-    <EstadoDialogoCtx.Provider value={{ cerrando: !open, salidaMs: EXIT_MS }}>
+    <EstadoDialogoCtx.Provider value={{ cerrando: !open, salidaMs: EXIT_MS, alCerrar: onClose }}>
     <div
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,

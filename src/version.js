@@ -16,9 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.301.0';
+export const APP_VERSION = '2.302.0';
 
-// v2.301.0 — El clúster se apaga bajo una hoja, y LiquidModal aprende el costado.
+// v2.302.0 — No Efectivo al canonico: una tabla que ordena y una paginacion que se ve.
+//
+// Opcion A del mockup aprobado. Se conserva la separacion por forma de pago —no
+// es decorativa: tarjeta se concilia con el banco y credito se cobra al cliente—
+// y se corrige todo lo demas.
+//
+// - `TablePagination` en los TRES sitios. El `Pagination` local pintaba todos los
+//   numeros con variant="primary" sin compararlos nunca contra `page`, o sea que
+//   LA PAGINA ACTUAL NO SE DISTINGUIA (verificado en vivo: cinco botones con la
+//   misma clase, ninguno con aria-current). El canonico dice el rango, ofrece
+//   tamano de pagina, es un <nav> con aria-live y baja de 7 tab stops a 3.
+//   `PAGE_SIZE = 10` fijo se va: lo elige el usuario.
+// - Las cabeceras de bloque dejan de ser un relleno saturado con texto blanco:
+//   el color vive en el icono y en el monto (regla de §17.0).
+// - La tabla de pendientes ORDENA. No se podia; la del historial si.
+// - `useExpandStyle` en la fila de confirmar — el canonico exporta ese hook para
+//   filas expandidas de <tr> crudo y no lo usaba NADIE.
+// - Los filtros del historial van a `toolbar` de DataTable, no a la pildora:
+//   §17 la reserva para lo que filtra la VISTA, y esos filtran una sub-tabla.
+// - Un solo `BloqueFormaPago`: inmediatos y credito eran el mismo bloque escrito
+//   dos veces, y por eso habian divergido.
+//
+// Efecto lateral: al simplificarse, TabNoEfectivo paso a ser analizable por el
+// React Compiler y afloraron tres set-state-in-effect que YA estaban (la version
+// anterior daba 0 porque el linter no llegaba a verlos). Anotados con su motivo.
+//
+// v2.301.0 — El cluster se apaga bajo una hoja, y LiquidModal aprende el costado.
 //
 // 1 · **El clúster flotante se apaga con un dialogo encima.** Reportado con el
 //     panel lateral acostado: quedaba debajo del vidrio y se transparentaba a

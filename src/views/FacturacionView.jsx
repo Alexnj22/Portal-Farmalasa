@@ -6,8 +6,8 @@ import Badge from '../components/common/Badge';
 import { useSearchParams } from 'react-router-dom';
 import {
     FileText, AlertTriangle, Clock, CreditCard, Building2,
-    Loader2, Search, X, Check, History, ChevronRight,
-    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, ChevronLeft, Copy, Info,
+    Loader2, Search, X, Check, History,
+    ChevronDown, ChevronUp, CheckCircle2, Paperclip, ExternalLink, Copy, Info,
     Pause, Play
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -21,7 +21,8 @@ import FilterBar from '../components/common/FilterBar';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import ListRow from '../components/common/ListRow';
-import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
+import TablePagination from '../components/common/TablePagination';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
 import FileField from '../components/common/FileField';
@@ -55,7 +56,6 @@ const fmt = (n) => formatMoney(n || 0);
 const NON_CASH_TYPES = ['tarjeta', 'credito', 'transferencia', 'bitcoin', 'cheque'];
 const IMMEDIATE_TIPOS = ['tarjeta', 'transferencia', 'cheque', 'bitcoin'];
 const CREDIT_TIPOS    = ['credito'];
-const PAGE_SIZE = 10;
 
 // Categórico puro (T7, paleta cerrada cat-1..9) — 5 métodos de pago sin
 // severidad, solo necesitan distinguirse entre sí en la tabla.
@@ -175,11 +175,11 @@ const TIPO_PAGO_LABELS = {
 };
 
 const TIPO_PAGO_THEME = {
- tarjeta: { card: 'border-chart-1/30', header: 'from-chart-1 to-brand', rowHover: 'hover:bg-chart-1/10', expand: 'bg-chart-1/10 border-chart-1/30', input: 'border-chart-1/30', btn: 'bg-chart-1 hover:bg-brand' },
- credito: { card: 'border-chart-3/30', header: 'from-chart-3 to-chart-6', rowHover: 'hover:bg-chart-3/10', expand: 'bg-chart-3/10 border-chart-3/30', input: 'border-chart-3/30', btn: 'bg-chart-3 hover:bg-chart-6' },
- transferencia: { card: 'border-chart-9/30', header: 'from-chart-9 to-chart-1', rowHover: 'hover:bg-chart-9/10', expand: 'bg-chart-9/10 border-chart-9/20', input: 'border-chart-9/30', btn: 'bg-chart-9 hover:bg-chart-1' },
- cheque: { card: 'border-chart-9/30', header: 'from-chart-9 to-success', rowHover: 'hover:bg-chart-9/10', expand: 'bg-chart-9/10 border-chart-9/20', input: 'border-chart-9/30', btn: 'bg-chart-9 hover:bg-success' },
- bitcoin: { card: 'border-chart-4/30', header: 'from-chart-4 to-warning', rowHover: 'hover:bg-chart-4/10', expand: 'bg-chart-4/10 border-chart-4/30', input: 'border-chart-4/30', btn: 'bg-chart-4 hover:bg-warning' },
+ tarjeta:       { ico: 'bg-chart-1/10 text-chart-1-text', texto: 'text-chart-1-text' },
+ credito:       { ico: 'bg-chart-3/10 text-chart-3-text', texto: 'text-chart-3-text' },
+ transferencia: { ico: 'bg-chart-9/10 text-chart-9-text', texto: 'text-chart-9-text' },
+ cheque:        { ico: 'bg-chart-9/10 text-chart-9-text', texto: 'text-chart-9-text' },
+ bitcoin:       { ico: 'bg-chart-4/10 text-chart-4-text', texto: 'text-chart-4-text' },
 };
 
 // SV time
@@ -223,21 +223,132 @@ function useSortable(defaultKey, defaultDir = 'asc') {
 
 
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-function Pagination({ page, total, onChange }) {
-    if (total <= 1) return null;
-    const pages = [];
-    let start = Math.max(1, page - 2);
-    let end   = Math.min(total, start + 4);
-    if (end - start < 4) start = Math.max(1, end - 4);
-    for (let p = start; p <= end; p++) pages.push(p);
+// Acá vivía un `Pagination` escrito a mano. No era solo divergencia estética:
+// pintaba TODOS los números con `variant="primary"` sin compararlos nunca contra
+// `page`, así que la página actual no se distinguía —verificado en vivo: los
+// cinco botones con la misma clase y ninguno con `aria-current`—. El canónico
+// `TablePagination` además dice el rango ("1–25 de 816") en vez de números
+// sueltos, ofrece tamaño de página, es un `<nav>` con `aria-live`, baja de 7
+// paradas de tabulación a 3 y deja la paginación a la vista al cambiar de página.
+
+// ─── Fila expandida: confirmar un pago ────────────────────────────────────────
+// Va en su propio componente porque `useExpandStyle` lee el contexto de
+// `DataTable`: es el hook que el canónico exporta justo para las filas
+// expandidas de `<tr>` crudo, y hasta ahora no lo usaba nadie. Antes el tinte
+// salía de `TIPO_PAGO_THEME.expand`, o sea fuera del sistema de tokens.
+function FilaConfirmar({ colSpan, notas, setNotas, archivo, setArchivo, guardando, onConfirmar, onCancelar, textoNotas, textoArchivo }) {
+    const tk = useExpandStyle();
     return (
-        <div className="flex items-center justify-center gap-1.5 px-5 py-3 border-t border-divider">
-            <Button variant="secondary" size="sm" icon={ChevronLeft} disabled={page === 1} iconOnly onClick={() => onChange(page - 1)} />
-            {pages.map(p => (
-                <Button size="sm" variant="primary" key={p} onClick={() => onChange(p)}>{p}</Button>
-            ))}
-            <Button variant="secondary" size="sm" icon={ChevronRight} disabled={page === total} iconOnly onClick={() => onChange(page + 1)} />
+        <tr>
+            <td colSpan={colSpan} className={`px-5 py-4 border-t ${tk.expandBg} ${tk.expandBorderColor}`}>
+                <div className="flex items-start gap-3 max-w-3xl">
+                    <div className="flex-1 space-y-2">
+                        <PortalTextarea rows={2} autoFocus placeholder={textoNotas}
+                            value={notas} onChange={e => setNotas(e.target.value)} />
+                        <FileField accept="image/*,application/pdf" density="sm"
+                            file={archivo} onChange={setArchivo} hint={textoArchivo} />
+                    </div>
+                    <div className="flex flex-col gap-2 shrink-0">
+                        <Button tone="success" disabled={guardando} onClick={onConfirmar}>
+                            {guardando ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
+                        </Button>
+                        <Button variant="destructive" icon={X} onClick={onCancelar}>Cancelar</Button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    );
+}
+
+// ─── Bloque de una forma de pago ──────────────────────────────────────────────
+// Estaba escrito DOS veces —pagos inmediatos y ventas a crédito— con la única
+// diferencia de los textos del formulario. Un solo componente: cualquier arreglo
+// se hace una vez, que es la razón por la que las dos copias habían divergido.
+function BloqueFormaPago({
+    tipo, filas, total, pagina, tamano, onPagina, onTamano,
+    sortKey, sortDir, onSort, canEdit, nombreSucursal,
+    confirmandoId, setConfirmandoId, notas, setNotas, archivo, setArchivo,
+    guardando, onConfirmar, textoNotas, textoArchivo,
+}) {
+    const t = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
+    const totalPaginas = Math.max(1, Math.ceil(filas.length / tamano));
+    const visibles = filas.slice((pagina - 1) * tamano, pagina * tamano);
+    return (
+        <div data-surface="card" className="rounded-2xl border border-border-card overflow-hidden shadow-[var(--shadow-glass-sm)]">
+            {/* Cabecera sobria: el color vive en el ícono y en el monto, no en un
+                relleno. Antes era `bg-gradient-to-r` saturado con el rótulo en
+                blanco y el "Total pendiente" en `text-white/60`. */}
+            <div className="px-5 py-3.5 border-b border-divider bg-surface-card-hover/50 flex items-center gap-3 flex-wrap">
+                <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${t.ico}`}>
+                    <CreditCard size={15} strokeWidth={2.5} />
+                </span>
+                <h3 className={`text-label font-black uppercase tracking-widest ${t.texto}`}>
+                    {TIPO_PAGO_LABELS[tipo] || tipo}
+                </h3>
+                <Badge uppercase={false}>{filas.length} transacci{filas.length !== 1 ? 'ones' : 'ón'}</Badge>
+                <div className="ml-auto text-right">
+                    <div className="text-micro font-bold uppercase tracking-widest text-content-3">Total pendiente</div>
+                    <div className={`text-title-sm font-black leading-none mt-0.5 ${t.texto}`}>{fmt(total)}</div>
+                </div>
+            </div>
+            <DataTable
+                columns={[
+                    { key: 'correlativo', label: 'Correlativo', sortable: true },
+                    { key: 'sucursal',    label: 'Sucursal',    sortable: true, hideBelow: 'md' },
+                    { key: 'cliente',     label: 'Cliente',     sortable: true, hideBelow: 'lg' },
+                    { key: 'fecha',       label: 'Fecha',       sortable: true },
+                    { key: 'total',       label: 'Total',       sortable: true },
+                    { key: 'accion',      label: '',            align: 'right' },
+                ]}
+                sortKey={sortKey} sortDir={sortDir} onSort={onSort}
+                empty={{ message: 'Sin transacciones' }}
+                minWidth="560px"
+                footer={
+                    <div className="px-5 py-3 flex justify-end">
+                        <TablePagination
+                            page={pagina} totalPages={totalPaginas} onPageChange={onPagina}
+                            pageSize={tamano} onPageSizeChange={onTamano}
+                            total={filas.length} unit="transacciones"
+                        />
+                    </div>
+                }
+            >
+                {visibles.map((r, ri) => {
+                    const confirmando = confirmandoId === r.id;
+                    return (
+                        <React.Fragment key={r.id}>
+                            <DataRow index={ri}>
+                                <DataCell>
+                                    <Badge size="sm">{r.tipo_documento}</Badge>
+                                    <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
+                                </DataCell>
+                                <DataCell hideBelow="md">{nombreSucursal(r.branch_id)}</DataCell>
+                                <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
+                                <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
+                                <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                                <DataCell align="right">
+                                    {canEdit && (
+                                        <Button variant="ghost" icon={Check}
+                                            onClick={() => { setConfirmandoId(confirmando ? null : r.id); setNotas(''); setArchivo(null); }}>
+                                            Confirmar
+                                        </Button>
+                                    )}
+                                </DataCell>
+                            </DataRow>
+                            {confirmando && (
+                                <FilaConfirmar
+                                    colSpan={6} notas={notas} setNotas={setNotas}
+                                    archivo={archivo} setArchivo={setArchivo}
+                                    guardando={guardando}
+                                    onConfirmar={() => onConfirmar(r.id)}
+                                    onCancelar={() => setConfirmandoId(null)}
+                                    textoNotas={textoNotas} textoArchivo={textoArchivo}
+                                />
+                            )}
+                        </React.Fragment>
+                    );
+                })}
+            </DataTable>
         </div>
     );
 }
@@ -1542,6 +1653,13 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 
     // Confirmed sort
     const { sortKey: cSortKey, sortDir: cSortDir, toggle: cToggle, sortFn: cSortFn } = useSortable('confirmed_at', 'desc');
+    // Los pendientes no se podían ordenar (la tabla del historial sí: dos tablas
+    // con dos comportamientos). Un solo estado para los bloques: "de mayor a
+    // menor monto" es una intención del usuario, no de una forma de pago.
+    const { sortKey: pSortKey, sortDir: pSortDir, toggle: pToggle, sortFn: pSortFn } = useSortable('fecha', 'desc');
+    const [pendingSize, setPendingSize] = useState(25);
+    const [confirmedSize, setConfirmedSize] = useState(25);
+
 
 
     const loadData = useCallback(async () => {
@@ -1576,9 +1694,17 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
         setLoading(false);
     }, [filterBranch, selectedMonth]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
-    const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
+    const getBranch = useCallback((id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`, [branches]);
+
+    const ordenarPendientes = useCallback((filas) => pSortFn(filas, {
+        correlativo: r => r.correlativo || '',
+        sucursal:    r => getBranch(r.branch_id),
+        cliente:     r => r.cliente || '',
+        fecha:       r => `${r.fecha || ''} ${r.hora || ''}`,
+        total:       r => parseFloat(r.total || 0),
+    }), [pSortFn, getBranch]);
 
     const { pendingFiltered, isNoEfectivoFuzzy } = useMemo(() => {
         const base = pending.filter(r => !confirmedIds.has(r.id));
@@ -1599,7 +1725,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
     }, [pendingFiltered]);
 
     // Reset pending pages when data changes
-    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]);
+    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect -- volver a la página 1 cuando cambia el conjunto
 
     const CONFIRMED_SORT_ACCESSORS = useMemo(() => ({
         correlativo:   r => r.invoice?.correlativo,
@@ -1619,10 +1745,10 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
         return cSortFn(list, CONFIRMED_SORT_ACCESSORS);
     }, [confirmed, filterConfirmedTipo, filterConfirmedBranch, cSortFn, CONFIRMED_SORT_ACCESSORS]);
 
-    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]);
+    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]); // eslint-disable-line react-hooks/set-state-in-effect -- volver a la página 1 cuando cambia el filtro
 
-    const confirmedTotalPages = Math.ceil(confirmedFiltered.length / PAGE_SIZE);
-    const confirmedPageRows = confirmedFiltered.slice((confirmedPage - 1) * PAGE_SIZE, confirmedPage * PAGE_SIZE);
+    const confirmedTotalPages = Math.max(1, Math.ceil(confirmedFiltered.length / confirmedSize));
+    const confirmedPageRows = confirmedFiltered.slice((confirmedPage - 1) * confirmedSize, confirmedPage * confirmedSize);
 
     const handleConfirm = async (invoiceId) => {
         setConfirmSaving(true);
@@ -1639,7 +1765,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
             // degradaba por un `ref` usado dentro de handlers (el gotcha del React
             // Compiler ya documentado); al migrar a `FileField` ese ref desapareció
             // y el linter pasa a ver el archivo entero.
-            // eslint-disable-next-line react-hooks/purity
             const path = `invoices/${invoiceId}/${Date.now()}.${ext}`;
             const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, confirmFile);
             if (!upErr) {
@@ -1774,93 +1899,24 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                         </Notice>
                     )}
                     {/* ── Pagos inmediatos ── */}
-                    {IMMEDIATE_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {
-                        const theme = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
-                        const tipoRows = byTipo[tipo] || [];
-                        const tipoTotal = tipoRows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
-                        const tipoPg = getPendingPage(tipo);
-                        const tipoTotalPages = Math.ceil(tipoRows.length / PAGE_SIZE);
-                        const tipoPageRows = tipoRows.slice((tipoPg - 1) * PAGE_SIZE, tipoPg * PAGE_SIZE);
-                        return (
-                            <div key={tipo} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${theme.card}`}>
-                                {/* Bold colored header */}
-                                <div className={`bg-gradient-to-r ${theme.header} px-6 py-4 flex items-center justify-between`}>
-                                    <div className="flex items-center gap-3">
-                                        <CreditCard size={20} className="text-white/80 shrink-0" />
-                                        <h3 className="text-white font-black text-subtitle uppercase tracking-widest">
-                                            {TIPO_PAGO_LABELS[tipo] || tipo}
-                                        </h3>
-                                        <Badge uppercase={false}>{tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}</Badge>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-white/60 text-micro font-bold uppercase tracking-widest">Total pendiente</div>
-                                        <div className="text-white font-black text-title-sm leading-none mt-0.5">{fmt(tipoTotal)}</div>
-                                    </div>
-                                </div>
-                                {/* Table */}
-                                <DataTable
-                                    columns={[
-                                        { key: 'correlativo', label: 'Correlativo' },
-                                        { key: 'sucursal',    label: 'Sucursal',  hideBelow: 'md' },
-                                        { key: 'cliente',     label: 'Cliente',   hideBelow: 'lg' },
-                                        { key: 'fecha',       label: 'Fecha' },
-                                        { key: 'total',       label: 'Total' },
-                                        { key: 'accion',      label: '',          align: 'right' },
-                                    ]}
-                                    empty={{ message: 'Sin transacciones' }}
-                                    footer={<Pagination page={tipoPg} total={tipoTotalPages} onChange={(p) => setPendingPage(tipo, p)} />}
-                                    minWidth="560px"
-                                >
-                                    {tipoPageRows.map((r, ri) => {
-                                        const isConfirming = confirmingId === r.id;
-                                        return (
-                                            <React.Fragment key={r.id}>
-                                                <DataRow index={ri}>
-                                                    <DataCell>
-                                                        <Badge size="sm">{r.tipo_documento}</Badge>
-                                                        <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
-                                                    </DataCell>
-                                                    <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
-                                                    <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
-                                                    <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
-                                                    <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
-                                                    <DataCell align="right">
-                                                        {canEdit && <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>}
-                                                    </DataCell>
-                                                </DataRow>
-                                                {isConfirming && (
-                                                    <tr>
-                                                        <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
-                                                            <div className="flex items-start gap-3 max-w-3xl">
-                                                                <div className="flex-1 space-y-2">
-                                                                    <PortalTextarea
-                                                                        rows={2} autoFocus
-                                                                        placeholder="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
-                                                                        value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
-                                                                    />
-                                                                    <FileField
-                                                                        accept="image/*,application/pdf"
-                                                                        density="sm"
-                                                                        file={confirmFile}
-                                                                        onChange={setConfirmFile}
-                                                                        hint="Comprobante del pago — imagen o PDF"
-                                                                    />
-                                                                </div>
-                                                                <div className="flex flex-col gap-2 shrink-0">
-                                                                    <Button variant="ghost" disabled={confirmSaving} className={theme.btn} onClick={() => handleConfirm(r.id)}>{confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar</Button>
-                                                                    <Button variant="destructive" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </DataTable>
-                            </div>
-                        );
-                    })}
+                    {IMMEDIATE_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => (
+                        <BloqueFormaPago
+                            key={tipo} tipo={tipo}
+                            filas={ordenarPendientes(byTipo[tipo] || [])}
+                            total={(byTipo[tipo] || []).reduce((a, r) => a + parseFloat(r.total || 0), 0)}
+                            pagina={getPendingPage(tipo)} tamano={pendingSize}
+                            onPagina={(pg) => setPendingPage(tipo, pg)}
+                            onTamano={(sz) => { setPendingSize(sz); setPendingPages({}); }}
+                            sortKey={pSortKey} sortDir={pSortDir} onSort={pToggle}
+                            canEdit={canEdit} nombreSucursal={getBranch}
+                            confirmandoId={confirmingId} setConfirmandoId={setConfirmingId}
+                            notas={confirmNotes} setNotas={setConfirmNotes}
+                            archivo={confirmFile} setArchivo={setConfirmFile}
+                            guardando={confirmSaving} onConfirmar={handleConfirm}
+                            textoNotas="Notas del pago — ej: referencia, últimos 4 dígitos, nombre del emisor…"
+                            textoArchivo="Comprobante del pago — imagen o PDF"
+                        />
+                    ))}
 
                     {/* ── Ventas a Crédito ── */}
                     {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).length > 0 && (
@@ -1870,91 +1926,24 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                 <span className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Ventas a crédito</span>
                                 <div className="flex-1 h-px bg-surface-card-hover" />
                             </div>
-                            {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {
-                                const theme = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;
-                                const tipoRows = byTipo[tipo] || [];
-                                const tipoTotal = tipoRows.reduce((a, r) => a + parseFloat(r.total || 0), 0);
-                                const tipoPg = getPendingPage(tipo);
-                                const tipoTotalPages = Math.ceil(tipoRows.length / PAGE_SIZE);
-                                const tipoPageRows = tipoRows.slice((tipoPg - 1) * PAGE_SIZE, tipoPg * PAGE_SIZE);
-                                return (
-                                    <div key={tipo} className={`rounded-2xl border-2 overflow-hidden shadow-sm ${theme.card}`}>
-                                        <div className={`bg-gradient-to-r ${theme.header} px-6 py-4 flex items-center justify-between`}>
-                                            <div className="flex items-center gap-3">
-                                                <CreditCard size={20} className="text-white/80 shrink-0" />
-                                                <h3 className="text-white font-black text-subtitle uppercase tracking-widest">
-                                                    {TIPO_PAGO_LABELS[tipo] || tipo}
-                                                </h3>
-                                                <Badge uppercase={false}>{tipoRows.length} transacci{tipoRows.length !== 1 ? 'ones' : 'ón'}</Badge>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-white/60 text-micro font-bold uppercase tracking-widest">Total pendiente</div>
-                                                <div className="text-white font-black text-title-sm leading-none mt-0.5">{fmt(tipoTotal)}</div>
-                                            </div>
-                                        </div>
-                                        <DataTable
-                                            columns={[
-                                                { key: 'correlativo', label: 'Correlativo' },
-                                                { key: 'sucursal',    label: 'Sucursal',  hideBelow: 'md' },
-                                                { key: 'cliente',     label: 'Cliente',   hideBelow: 'lg' },
-                                                { key: 'fecha',       label: 'Fecha' },
-                                                { key: 'total',       label: 'Total' },
-                                                { key: 'accion',      label: '',          align: 'right' },
-                                            ]}
-                                            empty={{ message: 'Sin transacciones' }}
-                                            footer={<Pagination page={tipoPg} total={tipoTotalPages} onChange={(p) => setPendingPage(tipo, p)} />}
-                                            minWidth="560px"
-                                        >
-                                            {tipoPageRows.map((r, ri) => {
-                                                const isConfirming = confirmingId === r.id;
-                                                return (
-                                                    <React.Fragment key={r.id}>
-                                                        <DataRow index={ri}>
-                                                            <DataCell>
-                                                                <Badge size="sm">{r.tipo_documento}</Badge>
-                                                                <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo}</div>
-                                                            </DataCell>
-                                                            <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
-                                                            <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
-                                                            <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
-                                                            <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
-                                                            <DataCell align="right">
-                                                                {canEdit && <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>}
-                                                            </DataCell>
-                                                        </DataRow>
-                                                        {isConfirming && (
-                                                            <tr>
-                                                                <td colSpan={6} className={`px-5 py-4 border-t ${theme.expand}`}>
-                                                                    <div className="flex items-start gap-3 max-w-3xl">
-                                                                        <div className="flex-1 space-y-2">
-                                                                            <PortalTextarea
-                                                                                rows={2} autoFocus
-                                                                                placeholder="Notas del crédito — ej: referencia, plazo acordado, responsable…"
-                                                                                value={confirmNotes} onChange={e => setConfirmNotes(e.target.value)}
-                                                                            />
-                                                                            <FileField
-                                                                                accept="image/*,application/pdf"
-                                                                                density="sm"
-                                                                                file={confirmFile}
-                                                                                onChange={setConfirmFile}
-                                                                                hint="Documento del crédito — imagen o PDF"
-                                                                            />
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-2 shrink-0">
-                                                                            <Button variant="ghost" disabled={confirmSaving} className={theme.btn} onClick={() => handleConfirm(r.id)}>{confirmSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar</Button>
-                                                                            <Button variant="destructive" icon={X} onClick={() => setConfirmingId(null)}>Cancelar</Button>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </React.Fragment>
-                                                );
-                                            })}
-                                        </DataTable>
-                                    </div>
-                                );
-                            })}
+                            {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => (
+                                <BloqueFormaPago
+                                    key={tipo} tipo={tipo}
+                                    filas={ordenarPendientes(byTipo[tipo] || [])}
+                                    total={(byTipo[tipo] || []).reduce((a, r) => a + parseFloat(r.total || 0), 0)}
+                                    pagina={getPendingPage(tipo)} tamano={pendingSize}
+                                    onPagina={(pg) => setPendingPage(tipo, pg)}
+                                    onTamano={(sz) => { setPendingSize(sz); setPendingPages({}); }}
+                                    sortKey={pSortKey} sortDir={pSortDir} onSort={pToggle}
+                                    canEdit={canEdit} nombreSucursal={getBranch}
+                                    confirmandoId={confirmingId} setConfirmandoId={setConfirmingId}
+                                    notas={confirmNotes} setNotas={setConfirmNotes}
+                                    archivo={confirmFile} setArchivo={setConfirmFile}
+                                    guardando={confirmSaving} onConfirmar={handleConfirm}
+                                    textoNotas="Notas del crédito — ej: referencia, plazo acordado, responsable…"
+                                    textoArchivo="Documento del crédito — imagen o PDF"
+                                />
+                            ))}
                         </>
                     )}
                 </div>
@@ -1967,19 +1956,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                         {showConfirmed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</Button>
                     {showConfirmed && (
                         <div>
-                            <div className="px-5 pl-8 py-3 border-b border-divider flex items-center gap-3 bg-surface-card-hover/40">
-                                <span className="text-caption font-bold uppercase text-content-3 tracking-widest shrink-0">Filtrar:</span>
-                                <div className="w-[160px]">
-                                    <LiquidSelect value={filterConfirmedTipo} onChange={setFilterConfirmedTipo} options={tipoFilterOpts} placeholder="Tipo pago" compact bare />
-                                </div>
-                                <div className="w-[180px]">
-                                    <LiquidSelect value={filterConfirmedBranch} onChange={setFilterConfirmedBranch} options={branchFilterOpts} placeholder="Sucursal" compact bare />
-                                </div>
-                                {(filterConfirmedTipo || filterConfirmedBranch) && (
-                                    <Button variant="ghost" icon={X} onClick={() => { setFilterConfirmedTipo(''); setFilterConfirmedBranch(''); }}>Limpiar</Button>
-                                )}
-                                <span className="ml-auto text-caption text-content-3">{confirmedFiltered.length} resultado{confirmedFiltered.length !== 1 ? 's' : ''}</span>
-                            </div>
                             <DataTable
                                 columns={[
                                     { key: 'tipo_pago',     label: 'Tipo Pago',     sortable: true },
@@ -1997,8 +1973,35 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                 sortDir={cSortDir}
                                 onSort={cToggle}
                                 empty={{ message: 'Sin pagos confirmados' }}
-                                footer={<Pagination page={confirmedPage} total={confirmedTotalPages} onChange={setConfirmedPage} />}
                                 minWidth="800px"
+                                toolbar={
+                                    /* Los dos filtros vivían en un `<div>` propio encima de la
+                                       tabla. No van a la píldora —§17 la reserva para lo que filtra
+                                       la VISTA, y esto filtra una sub-tabla— sino a `toolbar`, que
+                                       es la ranura que `DataTable` tiene justo para eso. El recuento
+                                       lo da ahora `TablePagination` con `filteredTotal`. */
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <span className="text-caption font-bold uppercase text-content-3 tracking-widest shrink-0">Filtrar:</span>
+                                        <div className="w-[160px]">
+                                            <LiquidSelect value={filterConfirmedTipo} onChange={setFilterConfirmedTipo} options={tipoFilterOpts} placeholder="Tipo pago" compact bare />
+                                        </div>
+                                        <div className="w-[180px]">
+                                            <LiquidSelect value={filterConfirmedBranch} onChange={setFilterConfirmedBranch} options={branchFilterOpts} placeholder="Sucursal" compact bare />
+                                        </div>
+                                        {(filterConfirmedTipo || filterConfirmedBranch) && (
+                                            <Button variant="ghost" icon={X} onClick={() => { setFilterConfirmedTipo(''); setFilterConfirmedBranch(''); }}>Limpiar</Button>
+                                        )}
+                                    </div>
+                                }
+                                footer={
+                                    <div className="px-5 py-3 flex justify-end">
+                                        <TablePagination
+                                            page={confirmedPage} totalPages={confirmedTotalPages} onPageChange={setConfirmedPage}
+                                            pageSize={confirmedSize} onPageSizeChange={(sz) => { setConfirmedSize(sz); setConfirmedPage(1); }}
+                                            total={confirmed.length} filteredTotal={confirmedFiltered.length} unit="confirmados"
+                                        />
+                                    </div>
+                                }
                             >
                                 {confirmedPageRows.map((r, ci) => {
                                     const inv = r.invoice;

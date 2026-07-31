@@ -12,6 +12,44 @@ retomar; acá está todo.
 
 ---
 
+## v2.302.0 — No Efectivo al canónico: una tabla que ordena y una paginación que se ve
+
+Opción A del mockup aprobado. Se conserva la separación por forma de pago —no es
+decorativa: tarjeta se concilia con el banco y crédito se cobra al cliente— y se
+corrige todo lo demás.
+
+- **`TablePagination` en los tres sitios.** El `Pagination` local pintaba TODOS
+  los números con `variant="primary"` sin compararlos nunca contra `page`, así
+  que **la página actual no se distinguía** — verificado en vivo: cinco botones
+  con la misma clase y ninguno con `aria-current`. El canónico dice el rango
+  (`1–25 de 816 transacciones`), ofrece tamaño de página, es un `<nav>` con
+  `aria-live` y baja de 7 paradas de tabulación a 3. `PAGE_SIZE = 10` fijo se va:
+  lo elige el usuario.
+- **Las cabeceras de bloque dejan de ser un relleno.** Eran `bg-gradient-to-r`
+  saturado con el rótulo en blanco y el "Total pendiente" en `text-white/60`.
+  Ahora el color vive en el ícono y en el monto, que es la regla de §17.0.
+- **La tabla de pendientes ordena.** No se podía; la del historial sí. Dos tablas
+  con dos comportamientos. Un solo estado de orden para los bloques: "de mayor a
+  menor monto" es intención del usuario, no de una forma de pago.
+- **`useExpandStyle` en la fila de confirmar.** El canónico exporta ese hook
+  justo para las filas expandidas de `<tr>` crudo y **no lo usaba nadie**: el
+  tinte salía de `TIPO_PAGO_THEME.expand`, fuera del sistema de tokens.
+- **Los filtros del historial van a `toolbar`.** No a la píldora — §17 la reserva
+  para lo que filtra la VISTA, y esos filtran una sub-tabla. `DataTable` ya tenía
+  la ranura. El recuento de resultados lo da `TablePagination` con `filteredTotal`.
+- **Un solo `BloqueFormaPago`.** Pagos inmediatos y ventas a crédito eran el mismo
+  bloque escrito dos veces, con la única diferencia de los textos del formulario;
+  por eso las dos copias habían divergido.
+
+Efecto lateral del refactor: al simplificarse, `TabNoEfectivo` pasó a ser
+analizable por el React Compiler y afloraron tres `set-state-in-effect` que ya
+estaban (la versión anterior daba 0 porque el linter no llegaba a verlos —el
+mismo fenómeno que este archivo ya documentaba en el `upload` del comprobante).
+Anotados con su motivo, como en las otras pestañas.
+
+Verificado en Chromium a 1512px: las tres paginaciones dicen su rango, hay
+`th[aria-sort]`, 0 px de desborde y cero errores de consola.
+
 ## v2.301.0 — El clúster se apaga bajo una hoja, y LiquidModal aprende el costado
 
 **El clúster flotante se apaga con un diálogo encima.** Reportado con el panel

@@ -12,6 +12,40 @@ retomar; acá está todo.
 
 ---
 
+## v2.295.0 — El buscador alterna, y el clúster cierra con LIMPIAR
+
+**Buscar alterna.** Antes solo abría: el campo quedaba abierto mientras tuviera
+texto (`campoAbierto = buscando || conTexto`), así que la única forma de dejar de
+verlo era borrar el término — cerrar costaba perder el filtro. El estado se anota
+en `pointerdown` y se lee de un ref: `blur` llega **antes** que `click`, así que
+un toggle que mirara el estado actual vería "cerrado" y volvería a abrir. Y
+`onBlur` ahora cierra solo si el campo está vacío.
+
+**Indicador de término aplicado.** Un punto, no una cuenta: una búsqueda no se
+cuenta, está o no está. Va en el mismo sitio y con el mismo aro que el badge de
+las acciones, porque es la misma señal dicha sin número.
+
+**Quinto botón: LIMPIAR** (✕, tono destructivo, **último**). Último porque abarca
+todo lo que tiene a su izquierda —filtros y búsqueda—, así que cierra la fila en
+vez de partirla. Se rotula LIMPIAR y no FILTROS porque también borra el término:
+FILTROS prometería menos de lo que hace. Solo aparece cuando hay algo que quitar,
+y lo decide mirando el `badge` que ya se dibuja en el clúster.
+
+**Las columnas no entraban.** Medido con cinco botones en WebKit/iPhone: a 320px
+se cortaban 35px contra el borde y a 280px, 75. Y no era por el quinto — con
+**cuatro**, a 280px ya se perdían 9px. Ahora la columna es elástica entre 60 y
+44px (el mínimo táctil): medido, 280→44px, 320→52px, 360+→60px, sin recorte en
+ninguno. Se usa `w-[60px] shrink` y no `basis-[60px]`, porque con `flex-grow: 0`
+el navegador dimensiona por el *contenido* y las columnas se cerraban a 49px
+incluso a 430px. Y `hyphens-auto` junto a `break-words`: a 52px "ACCIONES" se
+partía en "ACCIONE" + "S", y esa letra suelta se lee como un error de dibujo.
+
+De paso el ARIA que el toggle volvió obligatorio: `aria` separado del rótulo
+visible ("Quitar todos los filtros y la búsqueda") y `aria-expanded` en lo que
+abre algo que se queda.
+
+---
+
 ## v2.294.0 — Solid deja de imitar la gota: se desliza, y el asa por fin cierra
 
 En Liquid Glass la animación y el arrastre funcionaban; en Solid se sentía **más

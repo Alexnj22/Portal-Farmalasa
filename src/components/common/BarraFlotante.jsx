@@ -126,6 +126,12 @@ const BarraFlotante = memo(({
     buscador = null,
     acciones = [],
     principal = null,
+    // Quita los filtros de la vista. El clúster le agrega el término del
+    // buscador y dibuja el botón **último**, solo cuando hay algo que quitar.
+    // Va al final y no entre medio porque abarca todo lo que tiene a su
+    // izquierda —la búsqueda incluida—, así que cierra la fila en vez de
+    // partirla en dos.
+    alLimpiar = null,
     autoOcultar = true,
     // Los rótulos bajo los íconos aparecen solos cuando hay MÁS DE UN botón: con
     // uno solo el ícono no compite con nada y el rótulo es ruido. Se puede forzar.
@@ -168,6 +174,12 @@ const BarraFlotante = memo(({
         ro.observe(el);
         return () => { ro.disconnect(); raiz.style.setProperty('--alto-barra-flotante', '0px'); };
     }, [compacto, enPantalla]);
+
+    // El espejo de `campoAbierto` para `marcarBuscar`. En un efecto y no en el
+    // cuerpo del render: escribir un ref durante el render es lo que marca
+    // `react-hooks`, y acá no hace falta — el valor solo se lee dentro de un
+    // manejador de eventos, que siempre corre después de pintar.
+    useEffect(() => { abiertoRef.current = !!buscador && buscando; });
 
     useEffect(() => {
         if (!compacto || !autoOcultar) return undefined;
@@ -221,11 +233,37 @@ const BarraFlotante = memo(({
         return () => obs.disconnect();
     }, [compacto]);
 
-    const abrirBusqueda = useCallback(() => {
+    // ── El botón de buscar ALTERNA ────────────────────────────────────────
+    // Antes solo abría, y el campo se quedaba abierto para siempre mientras
+    // tuviera texto (`campoAbierto = buscando || conTexto`): la única salida era
+    // borrar el término, o sea que para dejar de ver el campo había que perder
+    // el filtro. Ahora se cierra con el mismo botón que lo abrió y el término
+    // sigue aplicado — lo dice el indicador del botón, que es la pieza que
+    // faltaba para que cerrarlo no signifique perderlo de vista.
+    //
+    // El estado se lee de un ref y no del render: `blur` llega ANTES que
+    // `click`, así que si el campo se cerrara por perder el foco, el `onClick`
+    // vería "cerrado" y volvería a abrirlo — el botón nunca podría cerrar. Se
+    // anota en `pointerdown`, que sí corre antes de que el foco se mueva.
+    const abiertoRef = useRef(false);
+    const tocadoAbierto = useRef(false);
+    const marcarBuscar = useCallback(() => { tocadoAbierto.current = abiertoRef.current; }, []);
+    const alternarBusqueda = useCallback(() => {
+        if (tocadoAbierto.current) { setBuscando(false); return; }
         setBuscando(true);
         // El foco va después del render, o el navegador no levanta el teclado.
         setTimeout(() => inputRef.current?.focus(), 60);
     }, []);
+
+    // Limpia TODO: los filtros de la vista y el término del buscador. El texto
+    // del buscador es un filtro más —por eso el botón lleva indicador—, y un
+    // "limpiar" que dejara el término puesto mostraría el clúster diciendo "sin
+    // filtros" y "con búsqueda" al mismo tiempo.
+    const limpiarTodo = useCallback(() => {
+        alLimpiar?.();
+        buscador?.onChange?.('');
+        setBuscando(false);
+    }, [alLimpiar, buscador]);
 
     // El ancla se renderiza SIEMPRE en el flujo (1px, invisible): es lo que sabe
     // si esta instancia está en un tab oculto. Sin ella no hay forma de
@@ -236,8 +274,16 @@ const BarraFlotante = memo(({
     if (!enPantalla) return ancla;
 
     const conTexto = !!buscador?.value;
-    const campoAbierto = !!buscador && (buscando || conTexto);
-    const botones = (buscador ? 1 : 0) + acciones.length + (principal ? 1 : 0);
+    // `buscando` a secas, sin `|| conTexto`: con el término abierto por tener
+    // texto, el botón no podía cerrarlo. Que el filtro siga aplicado con el
+    // campo cerrado lo comunica el indicador.
+    const campoAbierto = !!buscador && buscando;
+    // Hay algo que limpiar si el buscador tiene texto o alguna acción muestra
+    // cuenta. Se pregunta por el `badge` en vez de recibir un `activeCount`
+    // propio: es el MISMO número que ya se dibuja en el clúster, así que el
+    // botón no puede contradecir a lo que se ve.
+    const hayQueLimpiar = !!alLimpiar && (conTexto || acciones.some((a) => a.badge > 0));
+    const botones = (buscador ? 1 : 0) + acciones.length + (principal ? 1 : 0) + (hayQueLimpiar ? 1 : 0);
     const rotulos = mostrarRotulos ?? botones > 1;
     const panelAbierto = acciones.find((a) => a.key === abierta && a.panel);
 
@@ -253,7 +299,9 @@ const BarraFlotante = memo(({
                     buscador={buscador}
                     inputRef={inputRef}
                     setBuscando={setBuscando}
-                    abrirBusqueda={abrirBusqueda}
+                    alternarBusqueda={alternarBusqueda}
+                    marcarBuscar={marcarBuscar}
+                    limpiarTodo={hayQueLimpiar ? limpiarTodo : null}
                     acciones={acciones}
                     principal={principal}
                     clusterRef={clusterRef}
@@ -270,8 +318,8 @@ const BarraFlotante = memo(({
 /** El árbol que va al `body`. Separado solo para que el guard de arriba se lea. */
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
-    abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
-    clusterRef,
+    alternarBusqueda, marcarBuscar, limpiarTodo, acciones, principal, rotulos,
+    setAbierta, panelAbierto, clusterRef,
 }) => {
     return (
         <>
@@ -397,7 +445,14 @@ const BarraPortal = ({
                             inputMode="search"
                             value={buscador.value}
                             onChange={(e) => buscador.onChange?.(e.target.value)}
-                            onBlur={() => setBuscando(false)}
+                            // Se cierra al perder el foco SOLO si está vacío. Con
+                            // texto, cerrarlo por un toque en cualquier otra
+                            // parte se llevaría de la vista un filtro que sigue
+                            // aplicado; y como el campo ya no depende de tener
+                            // texto para quedarse abierto, la única forma de
+                            // cerrarlo sería borrar el término. Vacío no hay nada
+                            // que perder, así que ahí sí se recoge solo.
+                            onBlur={() => { if (!buscador.value) setBuscando(false); }}
                             placeholder={buscador.placeholder || 'Buscar...'}
                             aria-label={buscador.placeholder || 'Buscar'}
                             // 16px como mínimo: por debajo, iOS hace zoom al enfocar
@@ -442,6 +497,11 @@ const BarraPortal = ({
                             rotulo={rotulos}
                             badge={a.badge}
                             activo={a.activo ?? (a.badge > 0)}
+                            // Solo las que abren hoja: una acción que dispara y
+                            // se va no tiene nada que expandir, y anunciar
+                            // `aria-expanded="false"` en ella prometería un
+                            // panel que no existe.
+                            expandido={a.panel ? panelAbierto?.key === a.key : undefined}
                             // El origen de la gota ya no se mide acá: lo lee
                             // `useGotaApertura` del último toque global, así que
                             // vale para TODO diálogo y no solo para esta barra.
@@ -453,9 +513,44 @@ const BarraPortal = ({
                         <Boton
                             icon={Search}
                             label="Buscar"
+                            aria={campoAbierto ? 'Cerrar el campo de búsqueda'
+                                : conTexto ? `Abrir la búsqueda — filtrando por "${buscador.value}"`
+                                    : 'Buscar'}
+                            expandido={campoAbierto}
                             rotulo={rotulos}
-                            activo={campoAbierto}
-                            onClick={abrirBusqueda}
+                            // Encendido mientras el campo esté abierto **o**
+                            // haya un término aplicado: cerrar el campo no
+                            // apaga el filtro, así que tampoco puede apagar el
+                            // botón.
+                            activo={campoAbierto || conTexto}
+                            // Un PUNTO y no una cuenta: un término de búsqueda
+                            // no se cuenta, está o no está. `Contador` con un
+                            // "1" ahí adentro diría "un resultado" o "un filtro
+                            // de búsqueda", dos cosas que no son.
+                            punto={conTexto && !campoAbierto}
+                            onPointerDown={marcarBuscar}
+                            onClick={alternarBusqueda}
+                        />
+                    )}
+
+                    {/* ── LIMPIAR, al final ────────────────────────────────
+                        Último y no entre medio: quita todo lo que está a su
+                        izquierda —los filtros y el término del buscador—, así
+                        que cerrando la fila se lee como el alcance que tiene.
+                        Metido entre BUSCAR y FILTROS parecería pertenecer a uno
+                        de los dos.
+
+                        Y solo aparece cuando hay algo que quitar: un botón de
+                        limpiar permanentemente inerte ocupa una columna de las
+                        cinco que caben, y enseña que no hace nada. */}
+                    {limpiarTodo && (
+                        <Boton
+                            icon={X}
+                            label="Limpiar"
+                            aria="Quitar todos los filtros y la búsqueda"
+                            rotulo={rotulos}
+                            tono="danger"
+                            onClick={limpiarTodo}
                         />
                     )}
                 </div>
@@ -498,30 +593,65 @@ const BarraPortal = ({
  * que un `title` no existe. Igual se emite `aria-label` porque el rótulo puede
  * estar apagado (un solo botón).
  */
-const Boton = memo(({ icon: Icono, label, rotulo, badge, activo, principal, onClick }) => (
+const Boton = memo(({ icon: Icono, label, aria, expandido, rotulo, badge, punto, activo, tono,
+    principal, onClick, onPointerDown }) => (
     <button
         type="button"
         onClick={onClick}
-        aria-label={label}
-        // Ancho fijo por columna: el rótulo es más ancho que el ícono ("AGREGAR"
-        // mide más que sus 48px) y sin esto se desbordaba del clúster y quedaba
-        // cortado contra el borde de la pantalla. 60px entra "FILTROS" en
-        // text-micro; el ícono queda centrado dentro.
-        className="shrink-0 w-[60px] flex flex-col items-center gap-1 group/bf"
+        onPointerDown={onPointerDown}
+        // `aria` separado del rótulo: el rótulo tiene 60px y por eso es un verbo
+        // suelto ("LIMPIAR", "BUSCAR"), pero quien no ve el clúster no tiene el
+        // contexto que hace que ese verbo alcance. Sin esto, "Limpiar" no dice
+        // qué limpia y "Buscar" no dice que además cierra.
+        aria-label={aria || label}
+        // Solo donde el botón ABRE algo que se queda: es lo que convierte
+        // "Buscar" en un interruptor y no en una acción suelta.
+        aria-expanded={expandido}
+        // Ancho por columna, pero ELÁSTICO entre 44 y 60px. Era fijo en 60 con
+        // `shrink-0`, y eso alcanzaba mientras el clúster no pasaba de cuatro
+        // botones. Medido con cinco: a 320px se cortaban 35px contra el borde de
+        // la pantalla y a 280px, 75 — y el caso de cuatro ya perdía 9px a 280.
+        // O sea que el ancho fijo no estaba de más por el quinto botón: ya
+        // estaba justo.
+        //
+        // 60px es lo que necesita "FILTROS" en `text-micro`; 44 es el mínimo
+        // táctil, y es el suelo al que puede llegar sin dejar de ser un objetivo
+        // válido. Entre los dos, el rótulo se reparte en dos líneas —que
+        // `line-clamp-2` ya contemplaba— en vez de que el botón se salga.
+        // `w-[60px] shrink min-w-11` y no `basis-[60px]`: con `flex-grow: 0` el
+        // navegador dimensiona el clúster por el contenido de cada botón, no por
+        // su base, así que con `basis` las columnas se cerraban al ancho del
+        // rótulo más largo —medido: 49px incluso a 430px, donde sobra sitio— y
+        // los íconos quedaban apretados. El `width` sí fija la columna; `shrink`
+        // es lo que le permite ceder cuando de verdad no entra.
+        className="w-[60px] shrink min-w-11 flex flex-col items-center gap-1 group/bf"
     >
         <span className={`relative grid place-items-center rounded-full
             transition-[background-color,border-color] duration-150
             ${principal
                 ? 'w-12 h-12 bg-chart-9-solid text-white shadow-md'
-                : `w-11 h-11 border ${activo
-                    ? 'bg-brand/12 border-brand/40 text-brand-text'
-                    : 'bg-surface-card-hover border-border-card text-content-2'}`}`}
+                : `w-11 h-11 border ${tono === 'danger'
+                    ? 'bg-danger/12 border-danger/30 text-danger-text'
+                    : activo
+                        ? 'bg-brand/12 border-brand/40 text-brand-text'
+                        : 'bg-surface-card-hover border-border-card text-content-2'}`}`}
         >
             <Icono size={principal ? 22 : 17} strokeWidth={principal ? 2.5 : 2.2} />
             {badge > 0 && (
                 <Contador valor={badge} tono="brand" max={9}
                     className="absolute -top-0.5 -right-0.5 ring-2 ring-surface-card"
                     aria-label={`${badge} aplicado${badge === 1 ? '' : 's'}`} />
+            )}
+            {/* El punto va en el MISMO sitio que la cuenta y con el mismo aro:
+                son la misma señal —"esto tiene algo aplicado"— dicha con y sin
+                número, así que moverlo de sitio las haría leer como dos cosas
+                distintas. `aria-hidden` porque el estado ya lo dice el
+                `aria-label` del botón, y un punto anunciado aparte sería ruido
+                sin significado para un lector de pantalla. */}
+            {!badge && punto && (
+                <span aria-hidden="true"
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full
+                        bg-brand ring-2 ring-surface-card" />
             )}
         </span>
         {rotulo && (
@@ -530,8 +660,19 @@ const Boton = memo(({ icon: Icono, label, rotulo, badge, activo, principal, onCl
             // mitad no dice qué hace el botón, que es justo para lo que está.
             // `line-clamp-2` acota el peor caso; `items-start` en el clúster ya
             // mantiene alineados los íconos aunque un rótulo ocupe dos líneas.
-            <span className={`text-micro font-black uppercase leading-tight text-center w-full line-clamp-2 break-words
-                ${principal ? 'text-chart-9-text' : activo ? 'text-brand-text' : 'text-content-3'}`}>
+            // `hyphens-auto` además de `break-words`: con las columnas
+            // comprimidas a 52px, "ACCIONES" se partía en "ACCIONE" + "S" y esa
+            // letra suelta en la segunda línea se lee como un error de dibujo,
+            // no como una palabra cortada. `break-words` parte donde caiga;
+            // `hyphens-auto` prefiere una sílaba y pone el guion — el documento
+            // ya declara `lang="es"`, que es lo que el navegador necesita para
+            // saber dónde cortar. Se dejan los dos: la separación silábica no
+            // cubre nombres propios ni siglas, y ahí `break-words` sigue siendo
+            // la red de seguridad que evita el desborde.
+            <span className={`text-micro font-black uppercase leading-tight text-center w-full line-clamp-2 break-words hyphens-auto
+                ${principal ? 'text-chart-9-text'
+                    : tono === 'danger' ? 'text-danger-text'
+                        : activo ? 'text-brand-text' : 'text-content-3'}`}>
                 {label}
             </span>
         )}

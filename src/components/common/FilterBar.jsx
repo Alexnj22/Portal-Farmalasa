@@ -576,6 +576,11 @@ const FilterBar = memo(({
                 <BarraFlotante
                     ariaLabel={`${title} y acciones`}
                     buscador={buscadorEfectivo}
+                    // El clúster decide CUÁNDO mostrarlo —cuando hay filtros con
+                    // cuenta o término de búsqueda— y le suma el buscador a lo
+                    // que borra. Acá solo se dice qué limpia los filtros: quién
+                    // sabe si hay algo aplicado es el que dibuja las cuentas.
+                    alLimpiar={onClear || null}
                     principal={principal && !principal.disabled ? {
                         icon: principal.icon,
                         label: principal.label,

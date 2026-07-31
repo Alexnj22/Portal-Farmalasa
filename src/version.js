@@ -16,8 +16,65 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.294.0';
+export const APP_VERSION = '2.295.0';
 
+// v2.295.0 — El buscador ALTERNA, y el clúster cierra con LIMPIAR.
+//
+// Tres cosas pedidas sobre el clúster móvil, y una cuarta que apareció al medir.
+//
+// 1 · **Buscar alterna.** Antes solo abría: el campo quedaba abierto para
+//     siempre mientras tuviera texto (`campoAbierto = buscando || conTexto`), o
+//     sea que la única forma de dejar de verlo era borrar el término — cerrar el
+//     campo costaba perder el filtro. Ahora el mismo botón lo cierra y el
+//     término sigue aplicado.
+//
+//     El estado se anota en `pointerdown` y se lee de un ref, no del render:
+//     `blur` llega ANTES que `click`, así que un toggle que mirara el estado
+//     actual vería "cerrado" y volvería a abrir — el botón no podría cerrar
+//     nunca. Y `onBlur` ahora cierra SOLO si el campo está vacío: con texto,
+//     recogerlo por un toque en cualquier otra parte se llevaría de la vista un
+//     filtro que sigue vivo.
+//
+// 2 · **Indicador de término aplicado.** Un PUNTO, no una cuenta: una búsqueda
+//     no se cuenta, está o no está, y un `Contador` con un "1" ahí diría "un
+//     resultado". Va en el mismo sitio y con el mismo aro que el badge de las
+//     acciones, porque es la misma señal —"esto tiene algo aplicado"— dicha sin
+//     número.
+//
+// 3 · **Quinto botón: LIMPIAR.** Ícono ✕, tono destructivo, y **último**. Va al
+//     final porque abarca todo lo que tiene a su izquierda —los filtros y la
+//     búsqueda—, así que cierra la fila en vez de partirla; entre BUSCAR y
+//     FILTROS parecería pertenecer a uno de los dos. Se rotula LIMPIAR y no
+//     FILTROS porque también borra el término del buscador: FILTROS prometería
+//     menos de lo que hace, y además ya hay un botón con ese rótulo al lado.
+//     Solo aparece cuando hay algo que quitar, y decide eso mirando el `badge`
+//     que YA se dibuja en el clúster — así no puede contradecir a lo que se ve.
+//
+// 4 · **Las columnas no entraban.** Medido con cinco botones en WebKit/iPhone:
+//     a 320px se cortaban 35px contra el borde de la pantalla y a 280px, 75. Y
+//     no era culpa del quinto: con CUATRO, a 280px ya se perdían 9px — el ancho
+//     fijo de 60px con `shrink-0` estaba justo desde antes.
+//
+//     Ahora la columna es elástica entre 60 y 44px (el mínimo táctil): 60 en
+//     cuanto hay sitio, y cede solo cuando de verdad no entra. Medido con los
+//     cinco: 280→44px, 320→52px, 360 en adelante→60px, sin recorte en ninguno.
+//     Se usa `w-[60px] shrink` y no `basis-[60px]`: con `flex-grow: 0` el
+//     navegador dimensiona el clúster por el CONTENIDO de cada botón, así que
+//     con `basis` las columnas se cerraban al ancho del rótulo más largo —49px
+//     incluso a 430px, donde sobra sitio—.
+//
+//     Y `hyphens-auto` junto a `break-words`: comprimido a 52px, "ACCIONES" se
+//     partía en "ACCIONE" + "S", y esa letra suelta en la segunda línea se lee
+//     como un error de dibujo. Con separación silábica queda "ACCIO-NES". El
+//     documento ya declara `lang="es"`, que es lo que el navegador necesita.
+//
+// De paso, el ARIA que el toggle volvió obligatorio: el rótulo tiene 60px y por
+// eso es un verbo suelto, pero quien no ve el clúster no tiene el contexto que
+// hace que ese verbo alcance. `aria` va separado del rótulo visible ("Quitar
+// todos los filtros y la búsqueda", "Abrir la búsqueda — filtrando por X") y
+// `aria-expanded` marca los botones que abren algo que se queda — el campo y
+// las acciones con hoja, no las que disparan y se van.
+//
 // v2.294.0 — Solid deja de imitar la gota: se desliza, y el asa por fin cierra.
 //
 // Reportado: en Liquid Glass la animacion y el arrastre funcionan; en Solid "se

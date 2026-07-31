@@ -32,7 +32,29 @@ import { leerUltimoToque } from './ultimoToque';
  * cancelar—, no el que abrió.
  */
 
-const ENTRADA_MS = 520;
+const ENTRADA_MS = 560;
+
+/**
+ * La curva. `cubic-bezier(0.22,1,0.36,1)` es un ease-out muy adelantado: hace el
+ * 46% del recorrido en los primeros 110ms, así que aunque dure medio segundo se
+ * SIENTE rápida —"la animación es muy rápida al abrir"—. Esta reparte el
+ * movimiento de forma más pareja y llega igual de suave, sin arrastrarse.
+ */
+export const CURVA = 'cubic-bezier(0.32,0.72,0,1)';
+
+/** La de salida arranca más decidida: cerrar es una respuesta, no una invitación. */
+const CURVA_SALIDA = 'cubic-bezier(0.4,0.1,0.2,1)';
+
+/** Interpola los cuatro lados: 0 = abierta, 1 = del tamaño del control. */
+export function insetEn(vidrio, lados, t) {
+    if (!lados) return '';
+    const radioA = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
+    const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
+    const r = (a) => `${Math.round(a * t)}px`;
+    const ra = t > 0 ? `${Math.round(9999 * t + parseFloat(radioA) * (1 - t))}px` : radioA;
+    const rb = t > 0 ? `${Math.round(9999 * t + parseFloat(radioB) * (1 - t))}px` : radioB;
+    return `inset(${r(lados.arriba)} ${r(lados.derecha)} ${r(lados.abajo)} ${r(lados.izq)} round ${ra} ${ra} ${rb} ${rb})`;
+}
 
 /**
  * El elemento que hay que recortar: **el que lleva el vidrio**, no su envoltorio.
@@ -174,19 +196,23 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // de crecer con la hoja.
         const sombra = el.querySelector('[data-sombra-hoja]');
         ladosIniciales.current = ladosHacia(vidrio, desde);
+        // Se cuelgan del propio elemento para que el ARRASTRE pueda reproducir la
+        // misma gota bajo el dedo. Pasarlos por contexto obligaría a que cada
+        // hoja los reenvíe, y una prop de reenvío es una prop que se olvida.
+        vidrio.__gota = { lados: ladosIniciales.current, sombra };
         encogerSombra(sombra, vidrio, desde, 0, '', ladosIniciales.current);
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
         void vidrio.offsetWidth;
 
-        vidrio.style.transition = `clip-path ${ENTRADA_MS}ms cubic-bezier(0.22,1,0.36,1)`;
+        vidrio.style.transition = `clip-path ${ENTRADA_MS}ms ${CURVA}`;
         // El radio final se LEE del elemento: en los temas de vidrio son 28px y en
         // `solid` el token baja a 12, así que escribirlo lo rompía en la mitad.
         const radio = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
         const abajo = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
         vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} ${abajo} ${abajo})`;
-        soltarSombra(sombra, ENTRADA_MS, 'cubic-bezier(0.22,1,0.36,1)');
+        soltarSombra(sombra, ENTRADA_MS, CURVA);
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que el panel quiera sacar fuera de su caja.
@@ -235,22 +261,29 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // El arrastre pudo dejarla desplazada: se suelta antes de encogerla, o el
         // recorrido saldría desde el sitio equivocado.
         if (sombra) { sombra.style.transform = ''; }
-        encogerSombra(sombra, vidrio, desde, salidaMs, 'cubic-bezier(0.4,0,0.6,1)', ladosIniciales.current);
+        encogerSombra(sombra, vidrio, desde, salidaMs, CURVA_SALIDA, ladosIniciales.current);
 
-        // ── Hay que SEMBRAR el estado inicial del recorte ─────────────────
+        // ── Sembrar el estado inicial SOLO si no hay ninguno ──────────────
         // Al terminar la entrada el clip se retira (`clipPath = ''`), así que al
         // cerrar la transición iría de `none` a `inset(...)` — y `none` no es una
-        // forma: no hay nada que interpolar y el navegador SALTA al valor final.
-        // Eso es exactamente "el cierre no hace la gota, se cierra de golpe".
-        // Se vuelve a poner el recorte abierto, se fuerza el reflujo y recién ahí
-        // se transiciona: dos formas del mismo tipo, con los mismos cuatro radios.
-        const radioA = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
-        const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
-        vidrio.style.transition = 'none';
-        vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radioA} ${radioA} ${radioB} ${radioB})`;
-        void vidrio.offsetWidth;
+        // forma: no hay nada que interpolar y el navegador salta al valor final.
+        // Por eso se siembra el recorte abierto antes de transicionar.
+        //
+        // **Pero solo si hace falta.** Cuando el cierre viene de un arrastre, el
+        // dedo ya dejó un recorte a mitad de camino, y sembrar el abierto lo
+        // descartaba: filmado, el gesto llevaba la hoja a `inset(139 76 20 254)`
+        // y a los 165ms SALTABA de vuelta a `5 3 1 10` para recomenzar. Si ya hay
+        // una forma, se sigue desde ella — que es lo que hace que soltar el dedo
+        // continúe el gesto en vez de reiniciarlo.
+        if (getComputedStyle(vidrio).clipPath === 'none') {
+            const radioA = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
+            const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
+            vidrio.style.transition = 'none';
+            vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radioA} ${radioA} ${radioB} ${radioB})`;
+            void vidrio.offsetWidth;
+        }
 
-        vidrio.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
+        vidrio.style.transition = `clip-path ${salidaMs}ms ${CURVA_SALIDA}`;
         // El MISMO recorte con el que entró, no uno recalculado.
         vidrio.style.clipPath = recorteInicial.current || insetHacia(vidrio, desde);
     }, [ref, cerrando, salidaMs, activo]);

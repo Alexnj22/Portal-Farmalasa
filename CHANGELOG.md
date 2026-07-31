@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.289.0 — El dedo maneja la gota, y la apertura deja de sentirse apurada
+
+**El arrastre ya no usa `transform`.** Movía la hoja con `translateY`, así que al
+soltar había dos animaciones peleándose sobre el mismo elemento y lo que se veía
+era el deslizamiento. Ahora el desplazamiento del dedo es un **avance de 0 a 1**
+sobre el mismo recorte de la entrada: arrastrar es previsualizar el cierre.
+
+**Y la salida ya no reinicia el gesto.** Sembraba el recorte abierto antes de
+transicionar, descartando lo avanzado — filmado, saltaba de `139 76 20 254` a
+`5 3 1 10`. Ahora solo siembra si el recorte está en `none`.
+
+**La apertura pasa de 520 a 560ms y cambia de curva**: no era la duración, era que
+la anterior hacía el 46% del recorrido en los primeros 110ms.
+
+---
+
 ## v2.288.0 — La gota, filmada cuadro a cuadro
 
 Se dejó de muestrear a mano y se **grabó** la animación desde dentro de la página

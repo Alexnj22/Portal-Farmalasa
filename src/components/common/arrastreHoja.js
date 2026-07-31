@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { insetEn, CURVA } from './gotaApertura';
 
 /**
  * El asa ARRASTRA: la hoja sigue al dedo y decide al soltar.
@@ -8,22 +9,33 @@ import { useCallback, useRef } from 'react';
  * demás. Con el gesto, cerrar deja de ser "encontrar el botón" y pasa a ser lo
  * que la mano ya iba a hacer.
  *
- * ── Se mueve el elemento del VIDRIO, nunca su envoltorio ──────────────────
- * Es la misma regla que ya mordió siete veces: `transform` en un ANCESTRO crea
- * un backdrop root y el `backdrop-filter` del hijo deja de pintar. Arrastrando el
- * envoltorio, la hoja perdería el vidrio justo mientras el dedo la mueve — el
- * momento en que más se mira. Se arrastra el mismo elemento que lleva el
- * material, cuyo `transform` PROPIO no rompe nada.
+ * ── El dedo maneja LA GOTA, no un desplazamiento ──────────────────────────
+ * La primera versión arrastraba con `transform: translateY`. Funcionaba como
+ * gesto, pero al soltar se peleaban dos animaciones sobre el mismo elemento —el
+ * `transform` volviendo a cero y el `clip-path` cerrando— y lo que se veía era el
+ * deslizamiento, no la gota: *"en vez de cerrarse en forma de gota, se desliza el
+ * asa con la card para abajo"*.
+ *
+ * Ahora el dedo mueve **la misma animación de apertura, hacia atrás**. El
+ * desplazamiento se convierte en un avance de 0 a 1 sobre el recorte que uso la
+ * entrada, así que arrastrar ES previsualizar el cierre. Soltar solo decide si
+ * ese avance sigue hasta 1 o vuelve a 0 — nunca hay dos cosas animándose, y no
+ * queda ningún `transform` que pudiera romper el vidrio.
+ *
+ * Los lados de la entrada los deja `useGotaApertura` colgados del elemento
+ * (`__gota`): pasarlos por contexto obligaría a cada hoja a reenviarlos, y una
+ * prop de reenvío es una prop que se olvida.
  *
  * ── Durante el arrastre no hay transición ─────────────────────────────────
  * El seguimiento tiene que ser cuadro a cuadro: una transición acá se lee como
  * lag, y en un gesto directo el lag es lo único que hace que se sienta barato.
  * La transición vuelve al soltar, que es cuando sí hay una animación que contar.
  *
- * ── Solo hacia abajo, y con resistencia arriba ────────────────────────────
- * Tirar hacia arriba no tiene a dónde ir: la hoja ya está tope. Se permite un
- * poco con resistencia (la raíz del desplazamiento) porque un tope duro se
- * siente roto; es el mismo gesto elástico que hace iOS al final de una lista.
+ * ── Solo hacia abajo ──────────────────────────────────────────────────────
+ * Tirar hacia arriba no tiene a dónde ir: la hoja ya está abierta del todo, y el
+ * avance se topa en 0. Antes se permitía un rebote elástico, pero eso era un
+ * `transform`; con el recorte manejando el gesto, "más abierta que abierta" no
+ * existe como forma.
  *
  * ── Al soltar para cerrar, cierra con LA GOTA ─────────────────────────────
  * No deslizando hacia abajo. Deslizar es otra animación que la de entrada, y
@@ -40,7 +52,6 @@ import { useCallback, useRef } from 'react';
 
 const UMBRAL_FRACCION = 0.25;
 const UMBRAL_VELOCIDAD = 0.5;   // px por ms
-const RESISTENCIA_ARRIBA = 0.35;
 
 function objetivoVidrio(el) {
     if (!el) return null;
@@ -70,16 +81,12 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
         if (!el) return;
 
         const alto = el.getBoundingClientRect().height;
-        // La sombra viaja CON la hoja. Clavada en su sitio dejaba una banda en el
-        // lugar viejo mientras el dedo bajaba la hoja: un corte a la vista.
-        //
-        // Se busca en el PADRE y no dentro: la capa es HERMANA de la hoja —vive
-        // en el panel de `ModalShell`—, así que `panel.querySelector` no la
-        // encontraba nunca y la sombra se quedaba quieta. `refPanel` acá recibe
-        // la hoja, no el panel; el nombre venía de antes de que la sombra
-        // existiera.
-        const sombra = (panel.parentElement || panel).querySelector('[data-sombra-hoja]');
-        est.current = { y0: e.clientY, t0: performance.now(), yPrev: e.clientY, tPrev: performance.now(), v: 0, alto, el, sombra, panel };
+        const gota = el.__gota;
+        // Sin los lados de la entrada no hay gota que reproducir: se deja pasar
+        // el gesto en vez de inventar una animación distinta.
+        if (!gota?.lados) return;
+        const sombra = gota.sombra || (panel.parentElement || panel).querySelector('[data-sombra-hoja]');
+        est.current = { y0: e.clientY, tPrev: performance.now(), yPrev: e.clientY, v: 0, alto, el, sombra, lados: gota.lados, t: 0 };
         el.style.transition = 'none';
         if (sombra) sombra.style.transition = 'none';
         e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -92,14 +99,18 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             s.yPrev = ev.clientY; s.tPrev = ahora;
 
             const d = ev.clientY - s.y0;
-            const y = d >= 0 ? d : -((-d) ** RESISTENCIA_ARRIBA) * 3;
-            s.el.style.transform = `translateY(${y}px)`;
+            // El recorrido útil es 60% del alto: con el 100%, cerrar exigía
+            // arrastrar la hoja entera y el gesto se sentía pesado.
+            const t = Math.max(0, Math.min(1, d / (s.alto * 0.6)));
+            s.t = t;
+            s.el.style.clipPath = insetEn(s.el, s.lados, t);
             if (s.sombra) {
-                s.sombra.style.transform = `translateY(${y}px)`;
-                // Y se va apagando: a medida que la hoja baja, lo que separa deja
-                // de haber. Mantenerla al 100% con la hoja a medio camino se lee
-                // como una sombra flotando sola.
-                s.sombra.style.opacity = String(Math.max(0, 1 - Math.max(0, y) / s.alto));
+                const l = s.lados;
+                s.sombra.style.top = `${Math.round(l.arriba * t)}px`;
+                s.sombra.style.right = `${Math.round(l.derecha * t)}px`;
+                s.sombra.style.bottom = `${Math.round(l.abajo * t)}px`;
+                s.sombra.style.left = `${Math.round(l.izq * t)}px`;
+                s.sombra.style.opacity = String(1 - t);
             }
         };
 
@@ -114,37 +125,31 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             const cierra = d > s.alto * UMBRAL_FRACCION || s.v > UMBRAL_VELOCIDAD;
 
             if (cierra) {
-                // Cierra con LA GOTA, no deslizando. Deslizar hacia abajo es otra
-                // animación que la de entrada, y tener dos gramáticas para el
-                // mismo objeto —una para abrir, otra para cerrar— hace que el
-                // cierre se sienta de otra pieza. Se suelta el `transform` y se
-                // deja que `useGotaApertura` haga el recorrido inverso, que es
-                // exactamente el mismo camino que hizo al abrirse.
-                //
-                // El `transform` se retira con transición para que el salto del
-                // sitio arrastrado al sitio de reposo no se vea: los dos
-                // movimientos se solapan y se leen como uno.
-                s.el.style.transition = 'transform 160ms cubic-bezier(0.22,1,0.36,1)';
-                s.el.style.transform = '';
-                if (s.sombra) { s.sombra.style.transition = 'none'; s.sombra.style.transform = ''; }
+                // El avance que ya hizo el dedo se conserva: `alCerrar` dispara la
+                // salida de `useGotaApertura`, que sigue desde donde quedó hasta
+                // el control. No se toca el recorte acá o habría un salto.
                 alCerrar?.();
-                setTimeout(() => { s.el.style.transition = ''; }, 200);
                 return;
             }
-            // Vuelve a su sitio. Un poco más lenta y con más rebote que la salida:
-            // volver es la confirmación de que NO pasó nada, y ahí la suavidad es
-            // el mensaje.
-            s.el.style.transition = 'transform 320ms cubic-bezier(0.22,1,0.36,1)';
-            s.el.style.transform = '';
+            // Vuelve a abrirse del todo. Un poco más lenta que el cierre: volver
+            // es la confirmación de que NO pasó nada, y ahí la suavidad es el
+            // mensaje.
+            const VUELTA = 340;
+            s.el.style.transition = `clip-path ${VUELTA}ms ${CURVA}`;
+            s.el.style.clipPath = insetEn(s.el, s.lados, 0);
             if (s.sombra) {
-                s.sombra.style.transition = 'transform 320ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease-out';
-                s.sombra.style.transform = ''; s.sombra.style.opacity = '';
+                s.sombra.style.transition = `top ${VUELTA}ms ${CURVA}, right ${VUELTA}ms ${CURVA}, bottom ${VUELTA}ms ${CURVA}, left ${VUELTA}ms ${CURVA}, opacity ${VUELTA}ms ease-out`;
+                s.sombra.style.top = '0px'; s.sombra.style.right = '0px';
+                s.sombra.style.bottom = '0px'; s.sombra.style.left = '0px';
+                s.sombra.style.opacity = '1';
             }
-            const limpiar = () => {
-                s.el.style.transition = '';
+            const limpiar = (ev) => {
+                if (ev && ev.propertyName !== 'clip-path') return;
+                s.el.style.transition = ''; s.el.style.clipPath = '';
                 if (s.sombra) s.sombra.style.transition = '';
+                s.el.removeEventListener('transitionend', limpiar);
             };
-            s.el.addEventListener('transitionend', limpiar, { once: true });
+            s.el.addEventListener('transitionend', limpiar);
         };
 
         window.addEventListener('pointermove', alMover);

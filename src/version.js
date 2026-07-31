@@ -16,8 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.288.0';
+export const APP_VERSION = '2.289.0';
 
+// v2.289.0 — El dedo maneja LA GOTA, y la apertura deja de sentirse apurada.
+//
+// **El arrastre ya no usa `transform`.** Movia la hoja con `translateY`, asi que
+// al soltar habia dos animaciones sobre el mismo elemento —el transform volviendo
+// a cero y el clip cerrando— y lo que se veia era el deslizamiento: *"en vez de
+// cerrarse en forma de gota, se desliza el asa con la card para abajo"*. Ahora el
+// desplazamiento del dedo se convierte en un AVANCE de 0 a 1 sobre el mismo
+// recorte que uso la entrada, asi que arrastrar es previsualizar el cierre.
+// Soltar solo decide si ese avance sigue hasta 1 o vuelve a 0.
+//
+// **Y la salida ya no reinicia el gesto.** Sembraba el recorte abierto antes de
+// transicionar —necesario cuando se cierra por el fondo, porque ahi no hay
+// ninguna forma de la que partir— pero eso descartaba lo que el dedo habia
+// avanzado: filmado, el gesto llevaba la hoja a `inset(139 76 20 254)` y a los
+// 165ms SALTABA a `5 3 1 10` para recomenzar. Ahora se siembra solo si el recorte
+// esta en `none`. Filmado despues: `139 76 20 254` → `146` → `151` → `156`, sin
+// corte.
+//
+// **La apertura pasa de 520 a 560ms y cambia de curva.** No era la duracion: era
+// que `cubic-bezier(0.22,1,0.36,1)` hace el 46% del recorrido en los primeros
+// 110ms, asi que aunque durara medio segundo se SENTIA apurada. `(0.32,0.72,0,1)`
+// reparte el movimiento parejo y llega igual de suave.
+//
 // v2.288.0 — La gota, filmada cuadro a cuadro: dos defectos que los estilos
 // computados no podian mostrar.
 //

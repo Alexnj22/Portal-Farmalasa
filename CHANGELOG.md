@@ -12,48 +12,7 @@ retomar; acá está todo.
 
 ---
 
-## v2.296.0 — Un teléfono acostado seguía siendo un teléfono
-
-Al girar el teléfono desaparecía el clúster flotante y volvía la barra de
-filtros de escritorio. El corte era `(max-width: 719px)` a secas, y eso da por
-sentado que un teléfono es angosto — **acostado no lo es**. Medido en WebKit:
-
-| dispositivo | acostado | clúster (antes) |
-|---|---|---|
-| iPhone 13 | 844 × 390 | ❌ |
-| iPhone 15 Pro Max | 932 × 430 | ❌ |
-| Android grande | 915 × 412 | ❌ |
-| iPhone SE | 667 × 375 | ✅ *por accidente* |
-
-Todo teléfono del iPhone 13 en adelante perdía los controles de pulgar al girar
-y recibía objetivos pensados para mouse. El SE se salvaba porque 667 cae debajo
-de 719 — no había intención ahí, los teléfonos crecieron y se pasaron del número.
-
-La regla correcta ya estaba escrita en el repo (`useCoarsePointer`: *"lo que
-decide no es cuánto mide la ventana sino con qué se apunta"*). Pero
-`(hover: none)` solo tampoco sirve: metería a las tablets en el layout del
-teléfono. Lo que las distingue no es el ancho sino el **alto** —teléfonos
-375-430px, tablets 744-834px—, así que 500 cae limpio en el medio:
-
-```
-(max-width: 719px), (hover: none) and (max-height: 500px)
-```
-
-Vive en **`useLayoutCompacto`** y no en un literal repetido, que es la otra
-mitad del arreglo: `BarraFlotante`, `FilterBar` y `ConteoDetailView` deben
-coincidir y estaban sincronizados a mano. Eso mordió en esta misma edición — al
-cambiar `FilterBar` y dejar `ConteoDetailView` con su copia, el segmentado de esa
-vista se habría dibujado en riel dentro de la hoja, justo lo que su comentario
-advertía.
-
-Verificado en las dos orientaciones: los 4 teléfonos muestran el clúster de pie
-y acostados, 5 columnas a 60px sin recorte; las 2 tablets siguen en escritorio.
-`TablePagination` y `AbcXyzMatrix` se dejaron con el corte por ancho a propósito:
-ahí la pregunta es "¿entra esto?", que sí es de espacio.
-
----
-
-## v2.296.0 — Solventar no escribía nada, y dos de cuatro lo auditaban igual
+## v2.297.0 — Solventar no escribía nada, y dos de cuatro lo auditaban igual
 
 Las tres tablas de resoluciones de Facturación (`sales_invoice_resolutions`,
 `sales_gap_resolutions`, `sales_null_resolutions`) tenían RLS activo con **una
@@ -95,6 +54,47 @@ invoice 6616294 con cero filas de resolución, y ése es exactamente el CCF
   —el mismo permiso que pide el RLS—, así que la UI dejó de ofrecer un botón que
   el servidor iba a rechazar. `ChipDoc` no dibuja el segmento sin `onResolver`,
   igual que ya hacía con `onCopiar`.
+
+## v2.296.0 — Un teléfono acostado seguía siendo un teléfono
+
+Al girar el teléfono desaparecía el clúster flotante y volvía la barra de
+filtros de escritorio. El corte era `(max-width: 719px)` a secas, y eso da por
+sentado que un teléfono es angosto — **acostado no lo es**. Medido en WebKit:
+
+| dispositivo | acostado | clúster (antes) |
+|---|---|---|
+| iPhone 13 | 844 × 390 | ❌ |
+| iPhone 15 Pro Max | 932 × 430 | ❌ |
+| Android grande | 915 × 412 | ❌ |
+| iPhone SE | 667 × 375 | ✅ *por accidente* |
+
+Todo teléfono del iPhone 13 en adelante perdía los controles de pulgar al girar
+y recibía objetivos pensados para mouse. El SE se salvaba porque 667 cae debajo
+de 719 — no había intención ahí, los teléfonos crecieron y se pasaron del número.
+
+La regla correcta ya estaba escrita en el repo (`useCoarsePointer`: *"lo que
+decide no es cuánto mide la ventana sino con qué se apunta"*). Pero
+`(hover: none)` solo tampoco sirve: metería a las tablets en el layout del
+teléfono. Lo que las distingue no es el ancho sino el **alto** —teléfonos
+375-430px, tablets 744-834px—, así que 500 cae limpio en el medio:
+
+```
+(max-width: 719px), (hover: none) and (max-height: 500px)
+```
+
+Vive en **`useLayoutCompacto`** y no en un literal repetido, que es la otra
+mitad del arreglo: `BarraFlotante`, `FilterBar` y `ConteoDetailView` deben
+coincidir y estaban sincronizados a mano. Eso mordió en esta misma edición — al
+cambiar `FilterBar` y dejar `ConteoDetailView` con su copia, el segmentado de esa
+vista se habría dibujado en riel dentro de la hoja, justo lo que su comentario
+advertía.
+
+Verificado en las dos orientaciones: los 4 teléfonos muestran el clúster de pie
+y acostados, 5 columnas a 60px sin recorte; las 2 tablets siguen en escritorio.
+`TablePagination` y `AbcXyzMatrix` se dejaron con el corte por ancho a propósito:
+ahí la pregunta es "¿entra esto?", que sí es de espacio.
+
+---
 
 ## v2.295.0 — El buscador alterna, y el clúster cierra con LIMPIAR
 

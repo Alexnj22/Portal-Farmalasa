@@ -26,12 +26,27 @@ import FileField from '../components/common/FileField';
 import PortalTextarea from '../components/common/PortalTextarea';
 import { formatMoney } from '../utils/formatNumber';
 import {
-    fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, updateInvoiceReceivedMh,
+    fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices,
     fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
     fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
 } from '../data/facturacion';
+import { useToastStore } from '../store/toastStore';
+
+// Los cuatro "Solventar" fallaban en silencio: las tablas de resoluciones tenían
+// RLS sin policy de INSERT, así que Postgres rechazaba la escritura y la vista no
+// avisaba (dos de los cuatro handlers ni desestructuraban `error`, y auditaban
+// igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
+// existe; esto es la otra mitad: que un fallo se VEA.
+function avisarFalloAlSolventar(error, contexto) {
+    console.error(`${contexto}: insert resolution failed:`, error.message);
+    useToastStore.getState().showToast(
+        'No se pudo solventar',
+        'No quedó registrado. Si el problema sigue, es que tu rol no tiene permiso de edición en Facturación.',
+        'error',
+    );
+}
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => formatMoney(n || 0);
@@ -118,15 +133,21 @@ const ChipDoc = memo(({
             <div className={`flex items-center gap-1 px-2 py-1.5 border-r border-divider ${t.medio} ${t.medioTxt}`}>
                 {children}
             </div>
-            <button
-                aria-pressed={resuelto}
-                aria-label={resuelto ? `Cancelar la resolución de ${nombreResolver}` : `Marcar ${nombreResolver} como resuelta`}
-                onClick={onResolver}
-                className={`flex items-center justify-center px-2 py-1.5 min-h-[var(--tap-min)] min-w-[var(--tap-min)] transition-all ${
-                    resuelto ? 'bg-danger/10 text-danger hover:bg-danger/10'
-                             : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
-                {resuelto ? <X size={10} /> : <Check size={10} />}
-            </button>
+            {/* Sin `onResolver` no se dibuja el segmento: quien no tiene
+                `can_edit` en Facturación no puede solventar (lo frena el RLS de
+                las tablas de resoluciones), así que tampoco se le ofrece el
+                botón. Mismo criterio que el primer segmento con `onCopiar`. */}
+            {onResolver && (
+                <button
+                    aria-pressed={resuelto}
+                    aria-label={resuelto ? `Cancelar la resolución de ${nombreResolver}` : `Marcar ${nombreResolver} como resuelta`}
+                    onClick={onResolver}
+                    className={`flex items-center justify-center px-2 py-1.5 min-h-[var(--tap-min)] min-w-[var(--tap-min)] transition-all ${
+                        resuelto ? 'bg-danger/10 text-danger hover:bg-danger/10'
+                                 : 'bg-success/10 text-success hover:bg-success-solid hover:text-white'}`}>
+                    {resuelto ? <X size={10} /> : <Check size={10} />}
+                </button>
+            )}
         </div>
     );
 });
@@ -277,7 +298,7 @@ function Pagination({ page, total, onChange }) {
 }
 
 // ─── Tab: Anuladas ────────────────────────────────────────────────────────────
-function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
+function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -358,17 +379,19 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         const { data, error } = await insertInvoiceResolution({
             invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
         }, 'id, invoice_id, comment, resolved_by, resolved_at');
-        if (error) { console.error('handleSolve: insert resolution failed:', error.message); setSaving(false); return; }
+        if (error) { avisarFalloAlSolventar(error, 'handleSolve'); setSaving(false); return; }
         setResolvedIds(prev => new Set([...prev, invoiceId]));
         const newRec = data?.[0];
         if (newRec) {
             const inv = rows.find(r => r.id === invoiceId);
             setResolved(prev => [{ ...newRec, invoice: inv || null }, ...prev]);
         }
+        const correlativo = rows.find(r => r.id === invoiceId)?.correlativo;
         useStaff.getState().appendAuditLog('SOLVENTAR_ANULACION', String(invoiceId), {
-            correlativo: rows.find(r => r.id === invoiceId)?.correlativo,
+            correlativo,
             comment: comment.trim() || null,
         });
+        useToastStore.getState().showToast('Anulación solventada', correlativo || '', 'success');
         setSolvingId(null); setComment(''); setSaving(false);
     };
 
@@ -559,7 +582,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     onCopiar={() => copyErpId(r.erp_invoice_id)}
                                                                     etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     nombreResolver="esta factura"
-                                                                    onResolver={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                    onResolver={canEdit ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
                                                                 >
                                                                     <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
                                                                 </ChipDoc>
@@ -676,7 +699,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 }
 
 // ─── Tab: Pendiente MH ────────────────────────────────────────────────────────
-function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
+function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -837,15 +860,18 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const inv = rows.find(r => r.id === invoiceId);
-        await Promise.all([
-            updateInvoiceReceivedMh(invoiceId),
-            insertInvoiceResolution({
-                invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
-            }),
-        ]);
+        // Solo se registra la resolución manual. El sello de Hacienda NO se
+        // fabrica desde acá: lo trae el sync cuando MH lo emite, y la factura
+        // queda con `recibido_mh` NULL hasta entonces — que es lo que el camino
+        // de lectura de abajo ya espera (`manuallyResolvedIds`).
+        const { error } = await insertInvoiceResolution({
+            invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
+        });
+        if (error) { avisarFalloAlSolventar(error, 'handleSolve (pendiente MH)'); setSaving(false); return; }
         useStaff.getState().appendAuditLog('SOLVENTAR_PENDIENTE_MH', String(invoiceId), {
             correlativo: inv?.correlativo, comment: comment.trim() || null, resolved_by: resolvedBy,
         });
+        useToastStore.getState().showToast('Pendiente solventado', inv?.correlativo || '', 'success');
         setResolved(prev => [{ ...inv, resolution: { comment: comment.trim() || null, resolved_by: resolvedBy, resolved_at: new Date().toISOString() } }, ...prev]);
         setRows(prev => prev.filter(r => r.id !== invoiceId));
         setSolvingId(null); setComment(''); setSaving(false);
@@ -1002,7 +1028,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                                     onCopiar={() => copyErpId(r.erp_invoice_id)}
                                                                     etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
                                                                     nombreResolver="esta factura"
-                                                                    onResolver={() => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); }}
+                                                                    onResolver={canEdit ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
                                                                 >
                                                                     <span className="text-micro font-black uppercase select-none">{r.tipo_documento}</span>
                                                                 </ChipDoc>
@@ -1131,7 +1157,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
 }
 
 // ─── Tab: Saltos ──────────────────────────────────────────────────────────────
-function TabSaltos({ branches, filterBranch, currentUser }) {
+function TabSaltos({ branches, filterBranch, currentUser, canEdit }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -1209,25 +1235,29 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const payload = { branch_id: gap.branch_id, tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to, comment: comment.trim() || null, resolved_by: resolvedBy };
         const { data, error } = await insertGapResolution(payload);
-        if (error) { console.error('handleSolveGap: insert resolution failed:', error.message); setSaving(false); return; }
+        if (error) { avisarFalloAlSolventar(error, 'handleSolveGap'); setSaving(false); return; }
         if (data?.[0]) setGapResolutions(prev => [data[0], ...prev]);
         useStaff.getState().appendAuditLog('SOLVENTAR_SALTO_CORRELATIVO', String(gap.branch_id), {
             tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to,
             branch_name: getBranch(gap.branch_id), comment: comment.trim() || null,
         });
+        useToastStore.getState().showToast(
+            'Salto solventado', `${gap.tipo_documento} ${gap.gap_from}–${gap.gap_to}`, 'success');
         setSolvingGap(null); setComment(''); setSaving(false);
     };
 
     const handleSolveNull = async (n) => {
         setNullSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        await insertNullResolution({
+        const { error } = await insertNullResolution({
             null_id: n.id, comment: nullComment.trim() || null, resolved_by: resolvedBy,
         });
+        if (error) { avisarFalloAlSolventar(error, 'handleSolveNull'); setNullSaving(false); return; }
         useStaff.getState().appendAuditLog('SOLVENTAR_CAMPO_NULO', String(n.id), {
             branch: getBranch(n.branch_id), correlativo: n.correlativo, campos: n.campos_nulos,
             comment: nullComment.trim() || null,
         });
+        useToastStore.getState().showToast('Campos nulos solventados', n.correlativo || '', 'success');
         setNullResolvedIds(prev => new Set([...prev, n.id]));
         setSolvingNull(null); setNullComment(''); setNullSaving(false);
     };
@@ -1326,7 +1356,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 resuelto={isSolving}
                                                                 etiquetaCopia={`${pad7(g.gap_from)}–${pad7(g.gap_to)}`}
                                                                 nombreResolver="este salto de correlativo"
-                                                                onResolver={() => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); }}
+                                                                onResolver={canEdit ? () => { isSolving ? (setSolvingGap(null), setComment('')) : (setSolvingGap(key), setComment('')); } : undefined}
                                                             >
                                                                 <span className="text-micro font-black uppercase select-none">{g.tipo_documento}</span>
                                                             </ChipDoc>
@@ -1421,7 +1451,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                                 onCopiar={() => copyNullId(copyVal)}
                                                                 etiquetaCopia={n.erp_invoice_id ? `#${n.erp_invoice_id}` : n.correlativo || `ID ${n.id}`}
                                                                 nombreResolver="esta anulada"
-                                                                onResolver={() => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); }}
+                                                                onResolver={canEdit ? () => { isSolving ? (setSolvingNull(null), setNullComment('')) : (setSolvingNull(n.id), setNullComment('')); } : undefined}
                                                             >
                                                                 {(n.campos_nulos || []).slice(0, 2).map(c => (
                                                                     <span key={c} className="text-micro font-black uppercase">{c}</span>
@@ -1536,7 +1566,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 }
 
 // ─── Tab: No Efectivo ─────────────────────────────────────────────────────────
-function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
+function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdit }) {
     const [pending, setPending] = useState([]);
     const [confirmedIds, setConfirmedIds] = useState(new Set());
     const [confirmed, setConfirmed] = useState([]);
@@ -1684,7 +1714,15 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         };
 
         const { data, error } = await insertPaymentConfirmation(payload);
-        if (error) { console.error('handleConfirm: insert confirmation failed:', error.message); setConfirmSaving(false); return; }
+        if (error) {
+            console.error('handleConfirm: insert confirmation failed:', error.message);
+            useToastStore.getState().showToast(
+                'No se pudo confirmar',
+                'El pago no quedó registrado. Si el problema sigue, es que tu rol no tiene permiso de edición en Facturación.',
+                'error',
+            );
+            setConfirmSaving(false); return;
+        }
         setConfirmedIds(prev => new Set([...prev, invoiceId]));
         if (data?.[0]) setConfirmed(prev => [{ ...data[0], invoice: inv || null }, ...prev]);
 
@@ -1692,6 +1730,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             correlativo: inv?.correlativo, tipo_pago: inv?.tipo_pago,
             branch_id: inv?.branch_id, has_proof: !!proofUrl,
         });
+        useToastStore.getState().showToast('Pago confirmado', inv?.correlativo || '', 'success');
 
         setConfirmingId(null); setConfirmNotes(''); setConfirmFile(null);
         setConfirmSaving(false);
@@ -1819,7 +1858,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                     <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
                                                     <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                     <DataCell align="right">
-                                                        <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>
+                                                        {canEdit && <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>}
                                                     </DataCell>
                                                 </DataRow>
                                                 {isConfirming && (
@@ -1913,7 +1952,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                             <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
                                                             <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
                                                             <DataCell align="right">
-                                                                <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>
+                                                                {canEdit && <Button variant="ghost" icon={Check} className={theme.btn} onClick={() => { setConfirmingId(isConfirming ? null : r.id); setConfirmNotes(''); setConfirmFile(null); }}>Confirmar</Button>}
                                                             </DataCell>
                                                         </DataRow>
                                                         {isConfirming && (
@@ -2054,6 +2093,12 @@ export default function FacturacionView() {
     const { user: currentUser, hasPermission, getScope } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
+    // Las pestañas se muestran por `facturacion_tab_*`, pero SOLVENTAR es
+    // escritura y va por el módulo padre: es el mismo `can_edit` que exigen las
+    // policies de INSERT de las tablas de resoluciones, así que la UI y el RLS
+    // dicen lo mismo en vez de ofrecer un botón que el servidor va a rechazar.
+    const canEdit = hasPermission('facturacion', 'can_edit');
+
     // Pestañas filtradas según permisos
     const VALID_TABS = new Set(['anuladas', 'pendiente_mh', 'saltos', 'no_efectivo']);
     const allowedTabs = TABS.filter(t => hasPermission(`facturacion_tab_${t.key}`));
@@ -2147,16 +2192,16 @@ export default function FacturacionView() {
             {filtrosCuerpo && <div className="flex justify-end pb-4">{filtrosCuerpo}</div>}
             <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-3xl lg:rounded-header border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                    <TabAnuladas branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
+                    <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>
                 <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                    <TabPendienteMH branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
+                    <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>
                 <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                    <TabSaltos branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
+                    <TabSaltos canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
                 </div>
                 <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                    <TabNoEfectivo branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
+                    <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
                 </div>
             </div>
         </GlassViewLayout>

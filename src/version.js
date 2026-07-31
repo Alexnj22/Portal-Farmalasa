@@ -16,8 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.296.0';
+export const APP_VERSION = '2.297.0';
 
+// v2.297.0 — Solventar no escribia nada, y dos de cuatro lo auditaban igual.
+//
+// Las tres tablas de resoluciones de Facturacion tenian RLS activo con UNA sola
+// policy, de SELECT. Sin policy de INSERT, Postgres rechazaba toda escritura del
+// cliente: los cuatro "Solventar" no guardaban nada, y las tablas no recibian una
+// fila desde mayo (12 / 2 / 2).
+//
+// Nadie lo vio porque la vista no avisaba. El handler de Pendiente MH y el de
+// Campos Nulos hacian `await insertX(...)` SIN desestructurar `error`:
+// actualizaban el estado local y llamaban `appendAuditLog`, asi que la fila
+// desaparecia —volvia al recargar— y la bitacora registraba algo que nunca paso.
+// `audit_logs` tiene un SOLVENTAR_PENDIENTE_MH del 25-jun sobre el invoice
+// 6616294 con cero filas de resolucion: ese es el CCF que seguia atorado el 31-jul.
+//
+// - Migracion 20260731153235: INSERT con (SELECT auth_can_edit_any(['facturacion']))
+//   en las tres — la misma que ya usaba sales_payment_confirmations, el unico
+//   camino de escritura sano de la vista. Append-only: sin UPDATE ni DELETE,
+//   porque el boton de cancelar solo cierra el formulario. Probado con
+//   BEGIN…ROLLBACK: con can_edit escribe, sin can_edit sigue bloqueado.
+// - Los cinco handlers chequean el error y avisan con toast; el audit log se
+//   escribe solo si la fila entro.
+// - `updateInvoiceReceivedMh` eliminado: escribia la cadena 'true' encima del
+//   sello fiscal de 40 caracteres. El sello lo pone Hacienda via sync, y una
+//   resolucion manual deja recibido_mh NULL — que es lo que la lectura ya esperaba.
+// - `fetchConfirmedMhInvoices` filtraba .eq('recibido_mh', true) sobre una
+//   columna text → 0 de 21,666 filas con sello en julio. Ahora .not(..., 'is', null).
+// - Gating `can_edit` en `facturacion`: el mismo permiso que exige el RLS, asi que
+//   la UI dejo de ofrecer un boton que el servidor iba a rechazar.
+//
 // v2.296.0 — Un telefono ACOSTADO seguia siendo un telefono.
 //
 // Reportado: al girar el telefono desaparece el clúster flotante y vuelve la

@@ -41,20 +41,32 @@ export function fetchPendingMhInvoices(filterBranch) {
     });
 }
 
+// `recibido_mh` es **text**: guarda el sello de recepción de Hacienda (40
+// caracteres), no un booleano. El filtro era `.eq('recibido_mh', true)`, o sea
+// `text = 'true'` — cero filas SIEMPRE, y una query que devuelve 0 no falla, así
+// que el historial de solventados perdió entera la rama de confirmadas por
+// Hacienda sin que nadie lo notara (en julio: 0 de 21,666). Ver CLAUDE.md,
+// "el tipo de la columna manda, no el nombre".
 export function fetchConfirmedMhInvoices(filterBranch, fini, ffin) {
     let q = supabase
         .from('sales_invoices')
         .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
-        .eq('recibido_mh', true)
+        .not('recibido_mh', 'is', null)
         .gte('fecha', fini).lte('fecha', ffin)
         .order('fecha', { ascending: false });
     if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
     return q;
 }
 
-export function updateInvoiceReceivedMh(invoiceId) {
-    return supabase.from('sales_invoices').update({ recibido_mh: true }).eq('id', invoiceId);
-}
+// Acá vivía `updateInvoiceReceivedMh`, que hacía `update({ recibido_mh: true })`
+// al solventar un pendiente de MH: escribía la cadena 'true' ENCIMA del sello
+// fiscal. Nunca corrompió nada porque `sales_invoices` no tiene policy de UPDATE
+// y el RLS lo frenaba, pero era una bomba de tiempo.
+//
+// No se reemplaza por nada: el sello lo pone Hacienda vía sync, no el portal.
+// Una resolución manual se registra en `sales_invoice_resolutions` y la factura
+// queda con `recibido_mh` NULL — que es justo lo que el camino de lectura de
+// FacturacionView ya esperaba ("manually resolved ... recibido_mh still null").
 
 // ── Genérico: lookup de facturas por lote de IDs (columnas varían por caller) ─
 

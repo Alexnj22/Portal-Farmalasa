@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { supabase } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
-import { getSignedFileUrl } from "../utils/storageFiles";
+import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
@@ -301,6 +301,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(LS_LAST);
     localStorage.removeItem(LS_PERMS);
     localStorage.removeItem(LS_PRICE);
+    clearSignedUrlCache();
   };
 
   const doLogout = () => {

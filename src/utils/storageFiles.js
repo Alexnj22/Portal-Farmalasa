@@ -93,19 +93,73 @@ export const downloadStoredFile = async (storedUrl, filename) => {
     }
 };
 
+// ── Cache de firmas ─────────────────────────────────────────────────────────
+//
+// Una firma vale 12h, pero se regeneraba en CADA arranque. Y como el token va en
+// la query string, una firma nueva es una URL nueva: el navegador no puede
+// acertarle a su propio cache y vuelve a bajar el archivo entero.
+//
+// Medido el 2026-07-30 sobre una recarga de /dashboard: las 26 fotos de perfil
+// se bajaban DOS VECES en la misma carga (~500 kB de más). Primero con las
+// firmas que ya venían en el cache de datos, y otra vez cuando el boot las
+// re-firmaba y React veía un `src` distinto.
+//
+// Guardando firma + vencimiento, la URL es estable mientras la firma siga viva,
+// así que el `src` no cambia y el cache HTTP del navegador sí acierta.
+const LS_FIRMAS = 'sb_signed_urls';
+// No se reusa una firma a la que le queda menos de 1h: la pestaña puede quedar
+// abierta un buen rato después del boot y la imagen tiene que seguir cargando.
+const MARGEN_MS = 60 * 60 * 1000;
+// Tope de entradas — el cache cubre 4 buckets, no solo fotos de perfil.
+const MAX_FIRMAS = 600;
+
+const leerFirmas = () => {
+    try {
+        const raw = localStorage.getItem(LS_FIRMAS);
+        return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+};
+
+const guardarFirmas = (firmas) => {
+    try {
+        const ahora = Date.now();
+        let entradas = Object.entries(firmas).filter(([, v]) => v?.exp > ahora);
+        if (entradas.length > MAX_FIRMAS) {
+            entradas.sort((a, b) => b[1].exp - a[1].exp);      // se conservan las más longevas
+            entradas = entradas.slice(0, MAX_FIRMAS);
+        }
+        localStorage.setItem(LS_FIRMAS, JSON.stringify(Object.fromEntries(entradas)));
+    } catch { /* storage lleno o bloqueado — la firma igual se devolvió */ }
+};
+
+// Una firma es un token portador: da acceso a ESE archivo por 12h a quien tenga
+// la URL, sin sesión. En el kiosco el dispositivo es compartido, así que al
+// cerrar sesión se van con el resto del cache (lo llama `clearAuthCache`).
+export const clearSignedUrlCache = () => {
+    try { localStorage.removeItem(LS_FIRMAS); } catch { /* ignore */ }
+};
+
 // Firma EN LOTE: recibe URLs crudas y devuelve Map url→firmada (12h default).
 // Las URLs de buckets públicos o externas se mapean a sí mismas.
 export const signStorageUrls = async (urls, expiresIn = 43200) => {
     const map = new Map();
     const byBucket = new Map();
+    const firmas = leerFirmas();
+    const corte = Date.now() + MARGEN_MS;
+    let huboFirmaNueva = false;
+
     for (const u of urls || []) {
         if (!u || map.has(u)) continue;
         const m = String(u).match(STORAGE_PATH_RE);
         if (!m || !PRIVATE_BUCKETS.includes(m[1])) { map.set(u, u); continue; }
         const path = decodeURIComponent(m[2]);
+        const clave = `${m[1]}/${path}`;
+        const cacheada = firmas[clave];
+        if (cacheada?.url && cacheada.exp > corte) { map.set(u, cacheada.url); continue; }
         if (!byBucket.has(m[1])) byBucket.set(m[1], []);
-        byBucket.get(m[1]).push({ url: u, path });
+        byBucket.get(m[1]).push({ url: u, path, clave });
     }
+
     for (const [bucket, items] of byBucket) {
         try {
             const { data, error } = await supabase.storage.from(bucket)
@@ -113,11 +167,17 @@ export const signStorageUrls = async (urls, expiresIn = 43200) => {
             items.forEach((it, i) => {
                 const signed = !error && data?.[i]?.signedUrl ? data[i].signedUrl : null;
                 map.set(it.url, signed || it.url);
+                if (signed) {
+                    firmas[it.clave] = { url: signed, exp: Date.now() + expiresIn * 1000 };
+                    huboFirmaNueva = true;
+                }
             });
         } catch {
             items.forEach(it => map.set(it.url, it.url));
         }
     }
+
+    if (huboFirmaNueva) guardarFirmas(firmas);
     return map;
 };
 

@@ -12,6 +12,38 @@ retomar; acá está todo.
 
 ---
 
+## v2.274.0 — Una firma nueva es una URL nueva, y el cache del navegador no acierta ni una
+
+Hallazgo que salió midiendo el arranque en v2.272.0: las 26 fotos de perfil se
+bajaban **dos veces en la misma recarga**. No era la vista pidiéndolas dos veces.
+
+Una firma de storage vale 12 h, pero se regeneraba en cada arranque. Y el token
+va en la query string, así que **una firma nueva es una URL nueva**: primero se
+pintaban los avatares con las firmas que ya traía el cache de datos (26
+descargas), después el boot re-firmaba todo, React veía un `src` distinto y el
+navegador —que tenía esos bytes— los volvía a pedir enteros (26 más).
+
+`signStorageUrls` ahora guarda firma + vencimiento en `sb_signed_urls` y reusa la
+firma mientras le quede más de 1 h de vida. La URL es estable, el `src` no
+cambia, y el cache HTTP acierta.
+
+| recarga de /dashboard | sin cache de firmas | con cache de firmas |
+|---|---|---|
+| fotos pedidas | 53 | 28 |
+| bytes de red | 588 kB | 60 kB |
+| `POST object/sign` | 3 | 2 |
+
+Medido en `vite preview`, mismo build, A/B borrando el cache de firmas para
+reproducir el comportamiento viejo. La primera recarga tras un login limpio
+sigue pagando la descarga completa (~590 kB): ahí no hay firma previa que
+reusar. El ahorro es de la segunda en adelante, que es como se usa el portal.
+
+**La firma es un token portador**: da acceso a ese archivo por 12 h a quien tenga
+la URL, sin sesión. En el kiosco el dispositivo es compartido, así que
+`clearAuthCache` la borra junto con el resto del cache al cerrar sesión.
+
+---
+
 ## v2.273.0 — El modal de móvil como canónico propio: sin velo, y la gota
 
 No es una adaptación del de escritorio: son dos piezas con reglas propias.

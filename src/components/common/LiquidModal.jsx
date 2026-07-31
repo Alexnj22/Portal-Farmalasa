@@ -1,6 +1,7 @@
 import React from 'react';
 import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
+import { usePanelLateral } from '../../hooks/useLayoutCompacto';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
 /**
@@ -44,6 +45,10 @@ export default function LiquidModal({
     children,
 }) {
     const enTactil = useMediaQuery('(hover: none)');
+    // Acostado, `ModalShell` ancla el panel al costado. El cuerpo tiene que
+    // enterarse o sigue calculando su alto contra `88dvh` dentro de un panel que
+    // ya mide 100%, y pone el radio en un borde que no está a la vista.
+    const lateral = usePanelLateral();
     return (
         <ModalShell
             open={open}
@@ -58,17 +63,29 @@ export default function LiquidModal({
                 data-hoja={enTactil ? 'true' : undefined}
                 data-surface="modal"
                 className={`w-full flex flex-col overflow-hidden relative
-                    ${enTactil
-                        // Sin `zoom-in`: una hoja sube, no aparece creciendo. Y
-                        // `rounded-b-none!` con importancia porque el radio lo fija
-                        // `[data-surface="modal"]`, selector de atributo que le gana
-                        // por orden de hoja.
-                        ? 'max-h-[88dvh] rounded-t-modal rounded-b-none!'
-                        : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]'}
-                    ${className}`}
+                    ${lateral
+                        // Acostado la hoja entra de COSTADO: alto completo y el
+                        // radio en el borde izquierdo, que es el único a la
+                        // vista. Sin esto el cuerpo seguía calculando su alto
+                        // contra `88dvh` dentro de un panel que ya mide 100%, y
+                        // el radio quedaba arriba en un panel sin borde arriba.
+                        ? 'h-full rounded-l-modal rounded-r-none!'
+                        : enTactil
+                            // Sin `zoom-in`: una hoja sube, no aparece creciendo. Y
+                            // `rounded-b-none!` con importancia porque el radio lo fija
+                            // `[data-surface="modal"]`, selector de atributo que le gana
+                            // por orden de hoja.
+                            ? 'max-h-[88dvh] rounded-t-modal rounded-b-none!'
+                            : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]'}
+                    ${lateral ? '' : className}`}
             >
                 {enTactil && (
-                    <AsaHoja className="mt-3 -mb-1 relative z-base" />
+                    // El asa acompaña al borde por el que entró: acostada se para
+                    // y se corre a la izquierda, igual que en `HojaMovil`.
+                    <AsaHoja vertical={lateral}
+                        className={lateral
+                            ? 'my-auto ml-1 absolute left-0 top-0 bottom-0 z-base'
+                            : 'mt-3 -mb-1 relative z-base'} />
                 )}
                 {/* Glass layer — sits behind all content; color por tema y
                     apagada en solid/solid-dark (ver .modal-glass-layer en index.css) */}

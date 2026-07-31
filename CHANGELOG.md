@@ -12,6 +12,43 @@ retomar; acá está todo.
 
 ---
 
+## v2.301.0 — El clúster se apaga bajo una hoja, y LiquidModal aprende el costado
+
+**El clúster flotante se apaga con un diálogo encima.** Reportado con el panel
+lateral acostado: quedaba debajo del vidrio y se transparentaba. Se **cuenta** en
+vez de encender un booleano (`dialogosAbiertos.js`), porque los diálogos se
+anidan y cerrar el de adentro encendería la barra con el de afuera abierto. La
+variable `--barra-flotante-display` conserva un solo escritor: `AppLayout`, que
+ahora mira las dos señales.
+
+**`LiquidModal` no sabía del panel lateral.** Fijaba `max-h-[88dvh]
+rounded-t-modal` en cuanto el dispositivo era táctil, sin mirar la orientación:
+acostado calculaba su alto contra `88dvh` dentro de un panel que ya mide 100 %, y
+ponía el radio arriba en un panel cuyo único borde visible es el izquierdo.
+Importa porque por ahí pasa `UnifiedModal`, o sea casi todos los formularios.
+
+### Auditoría de modales
+
+6 modales × 2 orientaciones, midiendo posición, tamaño, desborde interno y si el
+pie queda dentro de pantalla. **Los 12 casos en verde.** Cadena verificada:
+`UnifiedModal → LiquidModal → ModalShell` y `ConfirmModal → HojaMovil →
+ModalShell`.
+
+**Lo que no es canónico** — 4 diálogos que arman su propio overlay con
+`createPortal` + `fixed inset-0` y nunca tocan `ModalShell`, así que no reciben
+hoja en táctil, ni gota, ni panel lateral, ni arrastre, ni el bloqueo de scroll
+de iOS:
+
+- `RangeDatePicker.jsx` · popover anclado
+- `PeriodPicker.jsx` · popover anclado
+- `PhotoLightbox.jsx` · visor a pantalla completa
+- `InlineDayEditor.jsx` · editor anclado
+
+Quedan anotados y sin tocar: son popovers anclados o visores, un patrón distinto
+del modal.
+
+---
+
 ## v2.300.0 — Acostado, la hoja entra de costado
 
 La hoja inferior es la gramática correcta de pie. Acostada deja de serlo, y se

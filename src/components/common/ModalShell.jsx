@@ -3,6 +3,7 @@ import { EstadoDialogoCtx } from "./estadoDialogo";
 import { useGotaApertura, tiemposGota } from "./gotaApertura";
 import useMediaQuery from "../../hooks/useMediaQuery";
 import { usePanelLateral } from "../../hooks/useLayoutCompacto";
+import { marcarDialogoAbierto } from "./dialogosAbiertos";
 import { createPortal } from "react-dom";
 
 // Lo que un diálogo debe poder enfocar. `[tabindex="-1"]` queda fuera a
@@ -181,6 +182,12 @@ export default function ModalShell({
   const [mounted, setMounted] = useState(open);
   const panelRef = useRef(null);
   const disparadorRef = useRef(null);
+
+  // Mientras esté abierto, el clúster flotante se apaga: es cromo de la vista y
+  // no tiene nada que hacer debajo de una hoja —transparentándose a través del
+  // vidrio, que fue lo reportado—. Se cuenta en vez de encender un booleano
+  // porque los diálogos se anidan.
+  useEffect(() => (open ? marcarDialogoAbierto() : undefined), [open]);
 
   useEffect(() => {
     if (open) {

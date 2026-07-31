@@ -16,8 +16,58 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.300.0';
+export const APP_VERSION = '2.301.0';
 
+// v2.301.0 — El clúster se apaga bajo una hoja, y LiquidModal aprende el costado.
+//
+// 1 · **El clúster flotante se apaga con un dialogo encima.** Reportado con el
+//     panel lateral acostado: quedaba debajo del vidrio y se transparentaba a
+//     traves del panel. Pasa igual de pie —la hoja inferior tambien lo tapa—
+//     pero acostado se nota mas porque el panel cae justo encima.
+//
+//     Se CUENTA en vez de encender un booleano (`dialogosAbiertos.js`): los
+//     dialogos se anidan —una hoja de filtros abre un `SelectorTactil`, una
+//     confirmacion se abre sobre un formulario— y con un booleano, cerrar el de
+//     adentro encenderia la barra estando el de afuera todavia abierto.
+//
+//     Y la variable `--barra-flotante-display` sigue teniendo UN solo escritor.
+//     `AppLayout` ya la escribia para el menu; ahora mira las dos señales. Con
+//     dos efectos escribiendola, gana el que corra segundo y cual es depende del
+//     orden de render.
+//
+// 2 · **`LiquidModal` no sabia del panel lateral.** Fijaba
+//     `max-h-[88dvh] rounded-t-modal rounded-b-none!` en cuanto el dispositivo
+//     era tactil, sin mirar la orientacion: acostado calculaba su alto contra
+//     `88dvh` DENTRO de un panel que ya mide 100%, y ponia el radio arriba en un
+//     panel cuyo unico borde a la vista es el izquierdo. Importa mas de lo que
+//     suena porque por ahi pasa `UnifiedModal`, o sea casi todos los formularios
+//     del portal. Ahora recibe el mismo trato que `HojaMovil`: alto completo,
+//     radio a la izquierda y asa vertical.
+//
+// ── Auditoria de modales (pedida) ─────────────────────────────────────────
+// 6 modales abiertos en vertical y acostado, midiendo posicion, tamaño,
+// desborde interno y si el pie queda dentro de la pantalla. Los 12 casos en
+// verde: canonicos, sin desborde, sin botones fuera de cuadro.
+//
+//   MinMax Calcular · MinMax Filtros · Personal Filtros/Acciones/Nuevo ·
+//   Sucursales Nueva
+//
+// Cadena de canonicos verificada: `UnifiedModal` → `LiquidModal` → `ModalShell`,
+// y `ConfirmModal`/`PromptModal` → `HojaMovil` → `ModalShell`. Todos heredan.
+//
+// **Lo que NO es canonico** (4 dialogos que arman su propio overlay con
+// `createPortal` + `fixed inset-0` y nunca tocan `ModalShell`, asi que no
+// reciben hoja en tactil, ni gota, ni panel lateral, ni arrastre, ni el bloqueo
+// de scroll de iOS):
+//
+//   src/components/common/RangeDatePicker.jsx        (popover anclado)
+//   src/components/common/PeriodPicker.jsx           (popover anclado)
+//   src/components/common/PhotoLightbox.jsx          (visor a pantalla completa)
+//   src/views/schedule-tabs/components/InlineDayEditor.jsx  (editor anclado)
+//
+// Quedan ANOTADOS y sin tocar: los cuatro son popovers anclados o visores, o
+// sea un patron distinto del modal, y convertirlos es un rediseño de cada uno.
+//
 // v2.300.0 — Acostado, la hoja entra de COSTADO (opcion B de los mockups).
 //
 // La hoja inferior es la gramatica correcta de pie. Acostada deja de serlo, y

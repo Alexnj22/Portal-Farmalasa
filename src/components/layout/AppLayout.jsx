@@ -33,6 +33,7 @@ import Contador from '../common/Contador';
 import { MODULE_MAP } from '../../constants/moduleMap';
 import { prefetchRuta } from '../../constants/routeImporters';
 import { webpSignedUrl } from '../../utils/storageFiles';
+import { useHayDialogo } from '../common/dialogosAbiertos';
 
 // MODULE_MAP vive en constants/moduleMap.js (lo comparte ModuleLockBanner).
 
@@ -149,6 +150,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     useThemeSync();
 
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
+    // ¿Hay una hoja o modal encima? Apaga el clúster flotante (ver el efecto de
+    // `--barra-flotante-display` más abajo).
+    const hayDialogo = useHayDialogo();
     const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
     // Densidad "ultra" (§7.4 AUDITORIA-TEMA-2026-07.md): <1152 ancho O <700 alto —
     // incluye el mínimo soportado 1024×768. Colapsa el sidebar a rail (ya existe
@@ -511,12 +515,21 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     useEffect(() => {
         const raiz = document.documentElement;
         raiz.style.setProperty('--alto-nav-inferior', hasSelfOnly && isMobile ? '5.5rem' : '0px');
-        raiz.style.setProperty('--barra-flotante-display', isMobile && isSidebarOpen ? 'none' : 'flex');
+        // Y también con un DIÁLOGO encima, por el mismo motivo que con el menú:
+        // el clúster es cromo de la vista y no tiene nada que hacer debajo de
+        // una hoja. Se notó con el panel lateral acostado —el clúster se
+        // transparentaba a través del vidrio— pero vale igual de pie.
+        //
+        // Las dos señales se combinan ACÁ y no en dos efectos separados: son un
+        // solo escritor de la variable. Con dos, gana el que corra segundo y
+        // cuál es depende del orden de render.
+        raiz.style.setProperty('--barra-flotante-display',
+            (isMobile && isSidebarOpen) || hayDialogo ? 'none' : 'flex');
         return () => {
             raiz.style.removeProperty('--alto-nav-inferior');
             raiz.style.removeProperty('--barra-flotante-display');
         };
-    }, [hasSelfOnly, isMobile, isSidebarOpen]);
+    }, [hasSelfOnly, isMobile, isSidebarOpen, hayDialogo]);
 
     const renderNavItem = (module, indent = false) => {
         const { key, path, label, icon: Icon, comingSoon } = module;

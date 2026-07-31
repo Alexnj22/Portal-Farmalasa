@@ -130,10 +130,6 @@ const BarraFlotante = memo(({
     const [enPantalla, setEnPantalla] = useState(true);
     const anclaRef = useRef(null);
     const [abierta, setAbierta] = useState(null);   // key de la acción con panel abierto
-    // El rectángulo del botón que abrió el panel: la hoja arranca SIENDO ese
-    // botón y se despliega desde ahí. Se mide al tocar y no se recalcula,
-    // porque para cuando la hoja está en pantalla el clúster ya se movió.
-    const [origen, setOrigen] = useState(null);
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
     const inputRef = useRef(null);
@@ -232,8 +228,6 @@ const BarraFlotante = memo(({
                     acciones={acciones}
                     principal={principal}
                     clusterRef={clusterRef}
-                    origen={origen}
-                    setOrigen={setOrigen}
                     rotulos={rotulos}
                     setAbierta={setAbierta}
                     panelAbierto={panelAbierto}
@@ -248,7 +242,7 @@ const BarraFlotante = memo(({
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
     abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
-    clusterRef, origen, setOrigen,
+    clusterRef,
 }) => {
     return (
         <>
@@ -419,12 +413,10 @@ const BarraPortal = ({
                             rotulo={rotulos}
                             badge={a.badge}
                             activo={a.activo ?? (a.badge > 0)}
-                            onClick={(e) => {
-                                if (!a.panel) return a.onClick?.();
-                                const r = e.currentTarget.getBoundingClientRect();
-                                setOrigen({ x: r.left, y: r.top, w: r.width, h: r.height });
-                                setAbierta(a.key);
-                            }}
+                            // El origen de la gota ya no se mide acá: lo lee
+                            // `useGotaApertura` del último toque global, así que
+                            // vale para TODO diálogo y no solo para esta barra.
+                            onClick={() => (a.panel ? setAbierta(a.key) : a.onClick?.())}
                         />
                     ))}
 
@@ -450,7 +442,6 @@ const BarraPortal = ({
                     maxWidthClass="max-w-none"
                     surface={null}
                     ariaLabel={panelAbierto?.tituloPanel || panelAbierto?.label || 'Panel'}
-                    animacionPropia
                 >
                     {/* `HojaMovil` y no el asa + título + relleno a mano que había
                         acá (2026-07-30). Esta hoja fue el MODELO al que se mandó
@@ -461,7 +452,6 @@ const BarraPortal = ({
                     <HojaMovil
                         titulo={panelAbierto?.tituloPanel || panelAbierto?.label}
                         superficie={MATERIAL_HOJA}
-                        origen={origen}
                     >
                         {panelAbierto?.panel}
                     </HojaMovil>

@@ -1,6 +1,7 @@
 // src/components/common/RangeDatePicker.jsx
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import AsaHoja from './AsaHoja';
 import Badge from './Badge';
 import Button from './Button';
 import { createPortal } from 'react-dom';
@@ -455,7 +456,7 @@ const RangeDatePicker = ({
                 style={esTactil ? undefined : { ...popupStyle, width: months === 1 ? '332px' : '596px', maxWidth: 'calc(100vw - 32px)' }}
                 onMouseLeave={() => !rangeConfirmed && selecting === 'end' && setHoverDate(null)}
             >
-                {esTactil && <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />}
+                {esTactil && <AsaHoja className="mb-3" />}
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">

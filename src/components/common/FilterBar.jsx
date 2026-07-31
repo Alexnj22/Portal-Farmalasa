@@ -1,4 +1,5 @@
 import React, { memo, Children, isValidElement, useState, useEffect, useLayoutEffect, useId, useRef, createContext, useContext } from 'react';
+import AsaHoja from './AsaHoja';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -676,7 +677,7 @@ const FilterBar = memo(({
                                 animate-in slide-in-from-bottom duration-300 ease-out">
                             {/* Tirador: no es decorativo, es lo que dice que la
                                 hoja se arrastra para cerrar. */}
-                            <div aria-hidden="true" className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mb-3" />
+                            <AsaHoja className="mb-3" />
 
                             <div className="flex items-center justify-between gap-3 mb-3">
                                 <h2 className="text-body-lg font-black text-content">{title}</h2>

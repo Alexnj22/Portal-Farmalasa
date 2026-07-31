@@ -16,8 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.278.0';
+export const APP_VERSION = '2.279.0';
 
+// v2.279.0 — La base de la decision sobre los 12 modales: asa canonica, gota para
+// TODO dialogo, y el pie que decide solo.
+//
+// **`AsaHoja`.** El tirador estaba a mano en SEIS sitios y en dos variantes
+// (`w-9`/`.40` y `w-10`/`.30`), asi que dos hojas del mismo portal tenian
+// tiradores distintos. No es decoracion: es la unica senal de que eso se cierra
+// hacia abajo, porque el fondo no se ve y `Escape` en un telefono no existe.
+//
+// **La gota sube a `ModalShell`.** El gesto no es de las hojas sino de cualquier
+// cosa que se abra por un toque —una alerta centrada, el ⌘K—, asi que ahora lo
+// hereda todo el portal. Dos defectos que solo aparecieron al subirla:
+//
+// · **El origen se lee AL ABRIR, no al montar.** `ModalShell` no se desmonta
+//   entre aperturas, asi que congelarlo en el primer render lo dejaba en `null`
+//   para siempre. En `HojaMovil` no se notaba porque esa si se remonta.
+// · **`hayVidrio()` mira el elemento Y su primer hijo.** `ModalShell` anima su
+//   envoltorio, que no lleva material propio; preguntandole solo a el, todo
+//   modal parecia no tener vidrio y se llevaba el camino de `transform` — o sea
+//   un transform ANCESTRO del hijo, o sea el vidrio muerto.
+//
+// **El pie decide solo.** Apilar cuesta ~52px, el 11% del area util con el
+// teclado abierto — justo donde mas falta hace. Pero en fila, tres acciones o un
+// rotulo largo se aprietan. `flex-wrap` con `basis-36` resuelve cada caso sin
+// que nadie elija, y `flex-row-reverse` deja la principal a la derecha en fila y
+// ARRIBA al envolver.
+//
+// Aplicado: `SelectorTactil` y `LiquidDatePicker` (A3) reciben asa y sombra;
+// `AlertModal` y el ⌘K (A1/A2) heredan la gota sin moverse de sitio. Medido en
+// los dos temas: liquid usa `clip-path` con el blur vivo, solido usa `transform`.
+//
 // v2.278.0 — Auditoria completa: 29 rutas × 6 resoluciones, y el ultimo hueco.
 //
 // **Runtime, 174 muestras** (390/430/768/1280/1512/1920 × 29 rutas):

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import AsaHoja from './AsaHoja';
 import Button from './Button';
 import { createPortal } from 'react-dom';
 import ModalShell from './ModalShell';
@@ -321,7 +322,7 @@ const LiquidDatePicker = ({
             panelClassName="rounded-t-modal rounded-b-none px-4 pt-3 font-sans pb-[max(1rem,env(safe-area-inset-bottom))]"
             ariaLabel="Elegir fecha"
         >
-            <div className="w-10 h-1 rounded-full bg-content-3/30 mx-auto mb-3" />
+            <AsaHoja className="mb-3" />
             {contenido}
         </ModalShell>
     ) : (

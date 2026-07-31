@@ -12,6 +12,23 @@ retomar; acá está todo.
 
 ---
 
+## v2.279.0 — Asa canónica, la gota para todo diálogo, y el pie que decide solo
+
+**`AsaHoja`**: el tirador estaba a mano en seis sitios y en dos variantes
+distintas. Es la única señal de que algo se cierra hacia abajo — el fondo no se
+ve y `Escape` en un teléfono no existe.
+
+**La gota sube a `ModalShell`**, así que la hereda todo el portal. Dos defectos
+que solo aparecieron al subirla: el origen hay que leerlo **al abrir** y no al
+montar (`ModalShell` no se desmonta entre aperturas), y `hayVidrio()` tiene que
+mirar el elemento **y su primer hijo**, porque el envoltorio no lleva material y
+sin eso todo modal se llevaba el camino de `transform` — matando el vidrio.
+
+**El pie decide solo**: `flex-wrap` con `basis-36`. Dos rótulos cortos van en
+fila; una tercera acción o un rótulo largo se apilan sin que nadie lo decida.
+
+---
+
 ## v2.278.0 — Auditoría completa: 29 rutas × 6 resoluciones, y el último hueco
 
 **Runtime, 174 muestras** (390/430/768/1280/1512/1920 × 29 rutas): cero

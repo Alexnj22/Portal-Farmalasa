@@ -1,4 +1,5 @@
 import React from 'react';
+import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
@@ -67,8 +68,7 @@ export default function LiquidModal({
                     ${className}`}
             >
                 {enTactil && (
-                    <div aria-hidden="true"
-                        className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mt-3 -mb-1 shrink-0 relative z-base" />
+                    <AsaHoja className="mt-3 -mb-1 relative z-base" />
                 )}
                 {/* Glass layer — sits behind all content; color por tema y
                     apagada en solid/solid-dark (ver .modal-glass-layer en index.css) */}

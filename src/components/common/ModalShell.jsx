@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { EstadoDialogoCtx } from "./estadoDialogo";
-import { createPortal } from "react-dom";
+import { useGotaApertura } from "./gotaApertura";
 import useMediaQuery from "../../hooks/useMediaQuery";
+import { createPortal } from "react-dom";
 
 // Lo que un diálogo debe poder enfocar. `[tabindex="-1"]` queda fuera a
 // propósito: es enfocable por código, no por Tab.
@@ -128,6 +129,7 @@ export default function ModalShell({
   // descarta. No es una excepción de conveniencia — es que el gesto de entrada
   // dice de qué tipo de cosa se trata.
   const sinHover = useMediaQuery("(hover: none)");
+  const sinMovimiento = useMediaQuery("(prefers-reduced-motion: reduce)");
   const autoHoja = sinHover && alignPedido === "center" && hojaEnTactil;
 
   // ── En el teléfono la hoja NO oscurece la pantalla ────────────────────
@@ -260,6 +262,18 @@ export default function ModalShell({
     };
   }, [open]);
 
+  // ── La gota, para TODO diálogo ────────────────────────────────────────
+  // No es un gesto de las hojas: es de cualquier cosa que se abra por un toque.
+  // Una alerta centrada y el ⌘K también salen de un botón, y decirlo vale igual
+  // en las tres posiciones. `animacionPropia` la cede al hijo (lo usa
+  // `BarraFlotante`, cuya hoja se anima ella misma).
+  useGotaApertura({
+    ref: panelRef,
+    activo: !animacionPropia && !sinMovimiento,
+    cerrando: !open,
+    salidaMs: EXIT_MS,
+  });
+
   if (!open && !mounted) return null;
 
   // Entrada y salida salen de tw-animate-css (ver el @import comentado en
@@ -285,7 +299,12 @@ export default function ModalShell({
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
   const esHoja = align === "bottom";
-  const panelAnim = animacionPropia ? "" : open
+
+
+  // Con la gota puesta, el panel no lleva ADEMÁS su animación de clases: dos
+  // animaciones sobre el mismo elemento se pelean, y la de clases usa `opacity`,
+  // que crea un backdrop root y mata el vidrio mientras dura.
+  const panelAnim = (animacionPropia || !sinMovimiento) ? "" : open
     ? (esHoja ? "animate-in slide-in-from-bottom duration-300" : "animate-in fade-in zoom-in-95 duration-300")
     : (esHoja ? `animate-out slide-out-to-bottom duration-200 ${HOLD_EXIT}` : `animate-out fade-out zoom-out-95 duration-150 ${HOLD_EXIT}`);
   const alignCls =

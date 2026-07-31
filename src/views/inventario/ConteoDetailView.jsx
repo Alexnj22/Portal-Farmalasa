@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import AsaHoja from '../../components/common/AsaHoja';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import Badge from '../../components/common/Badge';
@@ -1717,7 +1718,7 @@ export default function ConteoDetailView() {
                 >
                     <div data-surface="modal" className="max-h-[88dvh] overflow-y-auto rounded-t-modal
                         px-3 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
-                        <div aria-hidden="true" className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mb-3" />
+                        <AsaHoja className="mb-3" />
                         <AddManualItemForm
                             branchId={conteo.branch_id}
                             onAdd={async (payload) => {

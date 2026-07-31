@@ -1,4 +1,5 @@
 import React, { memo, useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import AsaHoja from './AsaHoja';
 import { X, Check, Search } from 'lucide-react';
 import ModalShell from './ModalShell';
 import SearchInput from './SearchInput';
@@ -153,6 +154,7 @@ const SelectorTactil = memo(({
         >
             <div data-surface="modal" data-selector-tactil=""
                 className="flex flex-col h-full overflow-hidden">
+            <AsaHoja className="mt-3 mb-1" />
                 {/* Encabezado */}
                 <div className="flex-none flex items-center justify-between gap-3 px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 border-b border-border-card">
                     <div className="min-w-0">

@@ -1769,6 +1769,52 @@ la abrió — se entiende sin atenuar nada, y oscurecer la vista la hace leerse 
 solo en táctil (`scrim` lo fuerza si hiciera falta). El diálogo **sigue siendo
 modal**: el fondo es un objetivo de cierre invisible, no ausente.
 
+#### `AsaHoja` — el tirador es canónico, no un div repetido
+
+Estaba escrito a mano en **seis** sitios, en dos variantes distintas (`w-9`/`/40`
+y `w-10`/`/30`), así que dos hojas del mismo portal tenían tiradores diferentes.
+
+No es decoración: es **la única señal de que eso se cierra hacia abajo.** En una
+hoja sin asa la salida es el fondo —que no se ve— o `Escape`, que en un teléfono
+no existe. Por eso va en un canónico y no como opción de cada hoja: un elemento
+que entra desde abajo tiene que decir cómo se sale, y eso no puede depender de
+que su autor se acuerde.
+
+#### El pie decide solo: fila cuando entran, apilados cuando no
+
+Apilar cuesta ~52px de alto, y con el teclado abierto en un teléfono de 844px eso
+es el **11% del área útil** — justo en las hojas que abren teclado, que son las
+que más necesitan el espacio. Pero en fila, tres acciones o un rótulo largo se
+aprietan.
+
+Así que no se elige por modal: `flex-wrap` con `basis-36` deja que el layout
+resuelva cada caso. Dos rótulos cortos entran en fila; una tercera acción o un
+rótulo largo empujan el salto solos. Una prop para decidirlo sería una prop que
+alguien olvida.
+
+`flex-row-reverse`: en escritorio la principal va a la derecha, o sea que es la
+última del DOM. Invertida, en fila queda a la derecha igual, y **al envolver cae
+arriba** — que es donde llega el pulgar.
+
+#### La gota es de `ModalShell`, no de las hojas
+
+El gesto no es de las hojas: es de **cualquier cosa que se abra por un toque**.
+Una alerta centrada y el ⌘K también salen de un botón, y decir de dónde salieron
+vale igual en las tres posiciones. Por eso `useGotaApertura` lo usa `ModalShell`
+y lo hereda todo el portal sin que ningún llamador pida nada.
+
+**El origen se lee al ABRIR, dentro del efecto — no al montar.** `ModalShell` no
+se desmonta entre aperturas: vive mientras viva la vista. Congelarlo en el primer
+render lo dejaba en `null` para siempre, porque ahí el usuario todavía no había
+tocado nada. En `HojaMovil` no se notaba porque esa sí se remonta en cada
+apertura, y por eso el defecto apareció recién al subir la gota al canónico.
+
+**`hayVidrio()` mira el elemento Y su primer hijo.** `ModalShell` anima su
+envoltorio, que no lleva material propio —el `data-surface` vive en el hijo—.
+Preguntándole solo al envoltorio, todo modal parecería no tener vidrio y se
+llevaría el camino barato… que usa `transform`, o sea un transform **ancestro**
+del hijo, o sea el vidrio muerto.
+
 #### La hoja NACE del control que la abrió — y se RECORTA, no se escala
 
 Un `@keyframes` fijo solo sabe escalar "un poco desde abajo": no conoce la

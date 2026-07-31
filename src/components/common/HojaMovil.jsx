@@ -1,7 +1,5 @@
-import React, { memo, useRef, useLayoutEffect, useContext } from 'react';
-import useMediaQuery from '../../hooks/useMediaQuery';
-import { leerUltimoToque } from './ultimoToque';
-import { EstadoDialogoCtx } from './estadoDialogo';
+import React, { memo, useRef } from 'react';
+import AsaHoja from './AsaHoja';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.
@@ -90,120 +88,9 @@ const HojaMovil = memo(({
     // literal — esas usaban `modal` (85%) y la de la barra `card` (16%). Un
     // canónico con dos materiales no es un canónico.
     superficie = MATERIAL_HOJA,
-    // El rectángulo del control que abrió la hoja, `{ x, y, w, h }`. Opcional:
-    // sin él se usa el último toque del usuario. Ver la nota de la gota.
-    origen,
     className = '',
 }) => {
     const hojaRef = useRef(null);
-    const cuerpoRef = useRef(null);
-    const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
-    const { cerrando, salidaMs } = useContext(EstadoDialogoCtx);
-    // El origen se congela en el primer render: al cerrar hay que volver al MISMO
-    // sitio del que se salió, y para entonces `leerUltimoToque()` ya devuelve el
-    // toque que cerró (el fondo, o el botón de cancelar), no el que abrió.
-    const origenFijo = useRef(null);
-    if (origenFijo.current === null) origenFijo.current = origen || leerUltimoToque() || false;
-
-    // ── La apertura, y por qué son DOS técnicas ───────────────────────────
-    //
-    // **Con vidrio: `clip-path`.** Escalar la hoja escala también su
-    // `backdrop-filter` —a `scale(0.14)` los 24px de blur valen ~3— así que la
-    // hoja arrancaba casi transparente y ganaba el efecto al crecer. Recortando,
-    // está siempre a tamaño real y lo único que crece es la ventana por la que
-    // se la ve. Cuesta más: animar `clip-path` obliga al navegador a rasterizar
-    // cada cuadro, y encima con un `backdrop-filter` vivo detrás.
-    //
-    // **Sin vidrio: `transform`.** En los temas sólidos no hay `backdrop-filter`
-    // que romper, así que desaparece la única razón por la que `clip-path` valía
-    // la pena — y `transform` + `opacity` son las dos propiedades que el
-    // compositor mueve sin volver a pintar nada. Es el camino barato, y en el
-    // tema que justamente eligió no pagar por el vidrio.
-    //
-    // La condición NO es el nombre del tema: es si el elemento tiene vidrio. Así
-    // no hay una lista de temas que actualizar cuando aparezca el quinto, y la
-    // regla se lee sola — "si no hay blur que preservar, usá lo barato".
-    const animarApertura = (el, desde) => {
-        const conVidrio = getComputedStyle(el).backdropFilter !== 'none';
-        const cuerpo = cuerpoRef.current;
-        if (cuerpo) { cuerpo.style.transition = 'none'; cuerpo.style.opacity = '0'; }
-
-        if (!conVidrio) {
-            const r = el.getBoundingClientRect();
-            el.style.transformOrigin =
-                `${Math.round(desde.x + desde.w / 2 - r.left)}px ${Math.round(desde.y + desde.h / 2 - r.top)}px`;
-            el.style.transition = 'none';
-            el.style.transform = 'scale(0.94)';
-            el.style.opacity = '0';
-            void el.offsetWidth;
-            el.style.transition = 'transform 240ms cubic-bezier(0.22,1,0.36,1), opacity 160ms ease-out';
-            el.style.transform = 'scale(1)';
-            el.style.opacity = '1';
-            if (cuerpo) { cuerpo.style.transition = 'opacity 180ms ease-out 60ms'; cuerpo.style.opacity = '1'; }
-            return () => { el.style.transform = ''; el.style.opacity = ''; el.style.transition = ''; };
-        }
-
-        const r = el.getBoundingClientRect();
-        const tope = (n) => Math.max(0, Math.round(n));
-        el.style.transition = 'none';
-        el.style.clipPath = `inset(${tope(desde.y - r.top)}px ${tope((r.left + r.width) - (desde.x + desde.w))}px `
-            + `${tope((r.top + r.height) - (desde.y + desde.h))}px ${tope(desde.x - r.left)}px round 9999px)`;
-
-        // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
-        // final en un solo estilo computado y no hay transición que interpolar.
-        void el.offsetWidth;
-
-        el.style.transition = 'clip-path 520ms cubic-bezier(0.22,1,0.36,1)';
-        // El radio final se LEE del elemento: estaba quemado en 28px y eso solo
-        // es cierto en los temas de vidrio (en `solid` el token baja a 12).
-        const radio = getComputedStyle(el).borderTopLeftRadius || '28px';
-        el.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} 0px 0px)`;
-        if (cuerpo) { cuerpo.style.transition = 'opacity 260ms ease-out 140ms'; cuerpo.style.opacity = '1'; }
-
-        // El clip se retira al terminar: dejarlo puesto recortaría cualquier
-        // sombra o popover que la hoja quiera sacar fuera de su caja.
-        const alTerminar = () => { el.style.clipPath = ''; el.style.transition = ''; };
-        el.addEventListener('transitionend', alTerminar, { once: true });
-        return () => el.removeEventListener('transitionend', alTerminar);
-    };
-
-    useLayoutEffect(() => {
-        const el = hojaRef.current;
-        const desde = origenFijo.current;
-        if (!el || !desde || sinMovimiento || cerrando) return undefined;
-        const r = el.getBoundingClientRect();
-        if (!r.width || !r.height) return undefined;
-        return animarApertura(el, desde);
-    }, [sinMovimiento, cerrando]);
-
-    // ── La salida: la misma gota, al revés ────────────────────────────────
-    // Una hoja que se abre con cuidado y desaparece de golpe se siente rota,
-    // aunque cada mitad por separado esté bien. Vuelve al rectángulo del que
-    // salió, y el contenido se va primero para no verse aplastado.
-    //
-    // Más rápida que la entrada a propósito: abrir es una invitación y admite
-    // demorarse; cerrar es una respuesta y cualquier demora ahí se siente lenta.
-    useLayoutEffect(() => {
-        const el = hojaRef.current;
-        const desde = origenFijo.current;
-        if (!el || !cerrando || !desde || sinMovimiento) return;
-        const r = el.getBoundingClientRect();
-        if (!r.width || !r.height) return;
-        const cuerpo = cuerpoRef.current;
-        if (cuerpo) { cuerpo.style.transition = `opacity ${Math.round(salidaMs * 0.4)}ms ease-in`; cuerpo.style.opacity = '0'; }
-
-        // La salida usa la MISMA técnica que la entrada, por lo mismo.
-        if (getComputedStyle(el).backdropFilter === 'none') {
-            el.style.transition = `transform ${salidaMs}ms cubic-bezier(0.4,0,1,1), opacity ${salidaMs}ms ease-in`;
-            el.style.transform = 'scale(0.96)';
-            el.style.opacity = '0';
-            return;
-        }
-        const tope = (n) => Math.max(0, Math.round(n));
-        el.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
-        el.style.clipPath = `inset(${tope(desde.y - r.top)}px ${tope((r.left + r.width) - (desde.x + desde.w))}px `
-            + `${tope((r.top + r.height) - (desde.y + desde.h))}px ${tope(desde.x - r.left)}px round 9999px)`;
-    }, [cerrando, salidaMs, sinMovimiento]);
 
     return (
     <div
@@ -221,11 +108,8 @@ const HojaMovil = memo(({
         // sombra propia con la que pelearse.
         className={`flex flex-col max-h-[88dvh] rounded-t-modal rounded-b-none! overflow-hidden ${className}`}
     >
-    <div ref={cuerpoRef} className="flex flex-col min-h-0">
-        {/* El asa. No arrastra —eso es un gesto que habría que implementar y
-            mantener—, pero es lo que dice "esto se cierra hacia abajo", que es
-            la mitad del trabajo que hace en las hojas nativas. */}
-        <div aria-hidden="true" className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mt-3 mb-1 shrink-0" />
+    <div className="flex flex-col min-h-0">
+        <AsaHoja className="mt-3 mb-1" />
 
         {(titulo || Icono) && (
             <div className="flex items-start gap-3 px-4 pt-3 pb-3 shrink-0">
@@ -256,10 +140,24 @@ const HojaMovil = memo(({
             </div>
         )}
 
+        {/* ── El pie: fila cuando entran, apilados cuando no ───────────────
+            Apilar cuesta ~52px de alto, y con el teclado abierto en un teléfono
+            de 844px eso es el 11% del área útil — justo en las hojas que abren
+            teclado, que son las que más lo necesitan. Pero en fila, tres
+            acciones o un rótulo largo se aprietan.
+
+            Así que no se elige: `flex-wrap` con un mínimo de 9rem deja que el
+            layout resuelva cada caso. Dos rótulos cortos entran en fila; una
+            tercera acción o un rótulo largo empujan el salto solos. Una prop
+            para decidirlo sería una prop que alguien olvida.
+
+            `flex-row-reverse`: en escritorio la principal va a la DERECHA, o sea
+            que es la última del DOM. Invertida, en fila queda a la derecha
+            igual, y al envolver cae ARRIBA — que es donde llega el pulgar. */}
         {pie && (
-            <div className="shrink-0 flex flex-col gap-2 px-4 pt-3 border-t border-divider
+            <div className="shrink-0 flex flex-row-reverse flex-wrap gap-2 px-4 pt-3 border-t border-divider
                 pb-[max(16px,env(safe-area-inset-bottom))] bg-surface-card-hover
-                [&>*]:w-full">
+                [&>*]:flex-1 [&>*]:basis-36 [&>*]:min-w-0">
                 {pie}
             </div>
         )}

@@ -5,6 +5,11 @@ arranque a `/overview`) con **caché caliente** y **sin capítulo de seguridad n
 de fallos**. Esta cubre las 8 dimensiones que hacen a "sesión estable, segura y
 rápida", sobre **todas** las vistas y **toda** la capa de datos.
 
+El documento anterior **no se borró**: quedó anotado en los tres puntos donde
+esta auditoría lo corrige (§3.1 la atribución de los 706 ms, §3.2 la medición
+con caché caliente, §6 el orden de prioridades). Lo que midió sigue siendo
+válido; lo que no vio está acá.
+
 **Método.** Nada acá es lectura de código a ojo: cada hallazgo sale de un
 analizador que quedó versionado en `scripts/`, del build de producción, o de una
 consulta contra prod. Los números son reproducibles.

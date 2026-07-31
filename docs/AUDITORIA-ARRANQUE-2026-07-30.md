@@ -1,5 +1,22 @@
 # Auditoría de arranque: login, sesión y carga de vista — 2026-07-30
 
+> ⚠️ **SUPERADA por `AUDITORIA-COMPLETA-2026-07-30.md`.** Este documento sigue
+> siendo válido en lo que midió, pero midió **un camino** (el arranque a
+> `/overview`), **con caché caliente**, y **sin capítulo de seguridad ni de
+> caminos de fallo**. Tres correcciones concretas, marcadas abajo en el cuerpo:
+>
+> 1. **§3.1 atribuye mal los 706 ms de Pedidos.** No eran Suspense: eran 809 kB
+>    gzip de fuentes PDF que `pedidoPrint.js` importaba de forma estática.
+>    Corregido en v2.283.0 — PedidosView 939 → 131 kB.
+> 2. **§3.2 y §0 miden con caché caliente.** "JS de la app: 42 peticiones · 7 kB"
+>    son 42 respuestas de caché, no 42 descargas. El costo en frío nunca se midió.
+> 3. **El orden del §6 ya no es el correcto.** Su punto 1 (Suspense) no era el
+>    número más grande del informe.
+>
+> Lo que este documento NO cubrió y sí está en el completo: peso real por vista,
+> capa de datos (2 bugs vivos: `is_admin`, `recibido_mh`), seguridad (2 policies
+> con `WITH CHECK (true)`, sin CSP), y caminos de fallo de la sesión.
+
 Alcance: todo el camino desde que alguien escribe su usuario hasta que un módulo
 está en pantalla y operable. Escritorio y móvil. Todo lo que sigue está **medido
 sobre el build de producción** (`vite build` + `vite preview`), nunca en dev —
@@ -165,6 +182,18 @@ O sea: el prefetch que se agregó en v2.236.0 sirve —elimina la descarga, y co
 este piso**, porque el piso no es red. Mientras la ruta suspenda, React va a
 cobrar sus ~300 ms.
 
+> ⚠️ **CORRECCIÓN (auditoría completa, v2.283.0).** El piso de 291 ms es real y
+> está bien medido. Lo que está mal es la lectura del caso de Pedidos: esos
+> 706 ms que el prefetch se ahorró **no** son este throttle — son más del doble.
+> Con 70 ms de latencia, 706 ms es el tiempo de bajar **809 kB gzip de fuentes
+> PDF** que `pedidoPrint.js` importaba de forma estática. El prefetch no
+> adelantaba "el módulo": adelantaba las fuentes. Corregido pasándolas a
+> `await import()` — PedidosView 939 → 131 kB, ConteoDetailView 865 → 56 kB.
+>
+> La lección de método: medir **tiempo con caché caliente** no puede distinguir
+> "React esperando" de "el navegador bajando 800 kB". Hay que medir el **cierre
+> estático** de cada ruta — `npm run gate:bundle`.
+
 **Dirección de arreglo (no aplicada):** que la navegación no suspenda. El
 prefetch ya resolvió el módulo; si se guarda el módulo resuelto en un registro
 y la ruta lo renderiza directo en vez de pasar por `React.lazy`, no hay
@@ -185,6 +214,14 @@ Peso de una recarga de `/overview`, medido por CDP (bytes reales de red):
 | `user_dashboard_prefs` | 4 | 4 |
 | resto (13 endpoints) | — | ~29 |
 | **total** | **92** | **207** |
+
+> ⚠️ **CORRECCIÓN: esta tabla es de CACHÉ CALIENTE.** La fila "JS de la app: 42
+> peticiones · 7 kB" son 42 respuestas de caché, no 42 descargas — por eso el JS
+> parece pesar menos que un par de fotos. El costo real en frío es **261 kB gzip
+> sólo el entry**, y como Vercel cambia los hashes en cada deploy, **todos los
+> usuarios pagan el camino frío después de cada deploy** (React incluido, porque
+> viaja en el mismo chunk que el código de la app). El bundle completo son
+> 2,416 kB gzip en 225 chunks. Nada de eso es visible con este método.
 
 `WidgetMinMaxRequest` baja **el catálogo completo de productos activos** en su
 `useEffect` de montaje, paginado en 5 chunks, para alimentar un `smartFilter`
@@ -280,11 +317,22 @@ desactualizadas.
 
 ## 6. Qué haría, en orden
 
+> ⚠️ **ORDEN SUPERADO.** El punto 1 no era "el número más grande del informe":
+> las 809 kB de fuentes PDF de Pedidos lo eran, y este informe no las vio porque
+> midió tiempo con caché caliente. Ese ítem **ya está cerrado** (v2.283.0). El
+> orden vigente está en el §9 de `AUDITORIA-COMPLETA-2026-07-30.md`, y arranca
+> por los bugs vivos: `employees.is_admin` (solicitudes sin aprobador),
+> `recibido_mh` (sello fiscal leído como booleano) y las dos policies con
+> `WITH CHECK (true)`. Los puntos 2 a 5 de abajo siguen vigentes tal cual.
+
 Ordenado por lo que devuelve, no por lo que cuesta:
 
-1. **Que la navegación no suspenda** — 291 ms en cada entrada a cada módulo,
-   para todos los usuarios, escritorio y móvil. Es el número más grande del
-   informe y el prefetch no puede tocarlo.
+1. ~~**Que la navegación no suspenda**~~ — 291 ms en cada entrada a cada módulo,
+   para todos los usuarios, escritorio y móvil. Sigue siendo cierto que el
+   prefetch no puede tocarlo, pero **no** era el número más grande del informe
+   (ver la corrección del §3.1). Baja de prioridad: toca 44 rutas y cambia el
+   comportamiento ante deploys, porque hoy `vite:preloadError` depende de que
+   `React.lazy` tire.
 2. **Que el catálogo de productos se cargue cuando alguien escriba**, no al
    montar el widget — la mitad del peso del tablero, en el teléfono también.
 3. **No reescribir preferencias que nadie cambió** — dos escrituras por carga,

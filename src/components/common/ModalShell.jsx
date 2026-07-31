@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { EstadoDialogoCtx } from "./estadoDialogo";
 import { useGotaApertura, tiemposGota } from "./gotaApertura";
 import useMediaQuery from "../../hooks/useMediaQuery";
+import { usePanelLateral } from "../../hooks/useLayoutCompacto";
 import { createPortal } from "react-dom";
 
 // Lo que un diálogo debe poder enfocar. `[tabindex="-1"]` queda fuera a
@@ -163,7 +164,18 @@ export default function ModalShell({
   // atrás scrolleaba** mientras la hoja estaba abierta. Invisible no es ausente:
   // el contenedor sigue capturando, solo que sin pintar nada.
   const conVelo = scrim ?? !(autoHoja || alignPedido === "bottom");
-  const align = autoHoja ? "bottom" : alignPedido;
+  // ── Acostado, la hoja entra de COSTADO ────────────────────────────────
+  // Medido en un iPhone 13 acostado (844 × 390): la hoja inferior ocupaba el
+  // 63% del alto para mostrar dos controles en una columna de 150px, con 694px
+  // de vacío al lado. El alto es lo escaso acostado y la hoja gasta justo eso.
+  // De costado usa el alto completo y deja la lista entera visible al lado.
+  //
+  // Solo afecta a lo que YA sería hoja: `align="top"` (el ⌘K) y las alertas
+  // centradas (`hojaEnTactil={false}`) siguen donde estaban, porque su posición
+  // dice de qué tipo de cosa se trata y eso no cambia al girar el teléfono.
+  const lateralPosible = usePanelLateral();
+  const esLateral = lateralPosible && (autoHoja || alignPedido === "bottom");
+  const align = esLateral ? "side" : autoHoja ? "bottom" : alignPedido;
 
   // `mounted` sobrevive a `open=false` el tiempo de la animación de salida.
   const [mounted, setMounted] = useState(open);
@@ -343,7 +355,10 @@ export default function ModalShell({
   // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
-  const esHoja = align === "bottom";
+  // "Hoja" abarca las dos posiciones: de abajo y de costado. Son la misma pieza
+  // —el panel que tapa la vista hasta que lo cerrás— y comparten sombra propia,
+  // asa y arrastre; lo único que cambia es por qué borde entra.
+  const esHoja = align === "bottom" || align === "side";
 
 
   // El panel NUNCA lleva su animación de clases. Dos animaciones sobre el mismo
@@ -360,6 +375,11 @@ export default function ModalShell({
   const alignCls =
     align === "top"    ? "items-start justify-center pt-[10vh] px-4" :
     align === "bottom" ? "items-end justify-center" :
+    // De costado: pegado al borde DERECHO y de alto completo. Derecho y no
+    // izquierdo porque es el lado donde ya vive el clúster flotante, o sea
+    // donde está el pulgar que lo abrió — y porque el notch, cuando cae a la
+    // izquierda, dejaría el asa debajo del hardware.
+    align === "side"   ? "items-stretch justify-end" :
                          "items-center justify-center p-4 sm:p-6";
 
   return createPortal(
@@ -427,9 +447,22 @@ export default function ModalShell({
         // dejaba una sombra RECTANGULAR de ancho completo que no se animaba
         // nunca: al cerrar, la hoja se recogía en píldora y el recuadro seguía
         // ahí. Fue exactamente lo que se reportó como "trae un recuadro también".
-        className={`relative w-full ${autoHoja
+        // El EJE por el que entra y sale, para que `useGotaApertura` y
+        // `useArrastreHoja` lo lean sin que ningún llamador tenga que
+        // reenviarlo. Es la misma técnica que `data-sombra-hoja`: `ModalShell`
+        // es el único que posiciona paneles, así que lo escribe una vez y los
+        // dos lo encuentran. Una prop de reenvío es una prop que se olvida.
+        data-eje={esHoja ? (align === "side" ? "x" : "y") : undefined}
+        className={`relative ${align === "side"
+            // De costado: alto completo y ancho de MEDIA pantalla, con tope. El
+            // punto de la posición es que la lista siga viéndose al lado, así
+            // que el panel no puede crecer hasta taparla. `max-w` en px y no en
+            // `%` porque lo que limita la lectura es la medida del texto, no la
+            // proporción de la pantalla.
+            ? 'h-full w-[47%] max-w-[420px] min-w-[280px] pr-[env(safe-area-inset-right)]'
+            : 'w-full'} ${autoHoja && align !== "side"
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,env(safe-area-inset-bottom))]'
-            : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
+            : align === "side" ? '' : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── La sombra de la hoja, como CAPA propia ───────────────────
@@ -447,8 +480,13 @@ export default function ModalShell({
             // Sin `z-index`: va ANTES que el contenido en el DOM, y eso ya la
             // deja debajo. `-z-base` no existía como utilidad —`z-base` sí, pero
             // no su negativo— así que era una clase escrita que nunca pintó nada.
-            className="absolute inset-0 rounded-t-modal pointer-events-none
-              shadow-[var(--shadow-hoja)]" />
+            // El radio y la sombra siguen al borde por el que entra: arriba si
+            // sube, a la izquierda si entra de costado. `--shadow-hoja` proyecta
+            // hacia arriba (`0 -14px 44px`), que de costado apuntaría al vacío;
+            // `--shadow-hoja-lateral` es la misma sombra girada 90°.
+            className={`absolute inset-0 pointer-events-none ${align === "side"
+              ? 'rounded-l-modal shadow-[var(--shadow-hoja-lateral)]'
+              : 'rounded-t-modal shadow-[var(--shadow-hoja)]'}`} />
         )}
         {children}
       </div>

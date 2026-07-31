@@ -3,6 +3,7 @@ import AsaHoja from './AsaHoja';
 import { useArrastreHoja } from './arrastreHoja';
 import { EstadoDialogoCtx } from './estadoDialogo';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import { usePanelLateral } from '../../hooks/useLayoutCompacto';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.
@@ -97,6 +98,11 @@ const HojaMovil = memo(({
     const { alCerrar } = useContext(EstadoDialogoCtx);
     const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
     const gesto = useArrastreHoja({ refPanel: hojaRef, alCerrar, activo: !sinMovimiento && !!alCerrar });
+    // De costado con el teléfono acostado. Se lee del `data-eje` que puso
+    // `ModalShell` en el envoltorio en vez de recibirlo por prop: los 18
+    // llamadores no tienen por qué enterarse de la orientación, y una prop que
+    // hay que reenviar es una prop que alguien va a olvidar.
+    const lateral = usePanelLateral();
 
     return (
     <div
@@ -112,10 +118,18 @@ const HojaMovil = memo(({
         // gana por orden de hoja, igual que hace con el radio. La pone
         // `ModalShell` en el envoltorio, que calza exacto con la hoja y no tiene
         // sombra propia con la que pelearse.
-        className={`flex flex-col max-h-[88dvh] rounded-t-modal rounded-b-none! overflow-hidden ${className}`}
+        // De costado toma el alto COMPLETO —es el motivo de la posición— y el
+        // radio se muda al borde izquierdo, que pasa a ser el único a la vista.
+        className={`flex flex-col overflow-hidden ${lateral
+            ? 'h-full rounded-l-modal rounded-r-none!'
+            : 'max-h-[88dvh] rounded-t-modal rounded-b-none!'} ${className}`}
     >
-    <div className="flex flex-col min-h-0">
-        <AsaHoja className="mt-3 mb-1" {...gesto} />
+    {/* De costado el asa va a la IZQUIERDA y en vertical, así que la fila
+        principal se vuelve un renglón horizontal con el asa a un lado y el
+        contenido al otro. Es el mismo árbol: solo cambia la dirección. */}
+    <div className={`flex min-h-0 ${lateral ? 'flex-row h-full' : 'flex-col'}`}>
+        <AsaHoja className={lateral ? 'my-3 ml-1' : 'mt-3 mb-1'} vertical={lateral} {...gesto} />
+        <div className={`flex flex-col min-h-0 ${lateral ? 'flex-1' : ''}`}>
 
         {(titulo || Icono) && (
             <div className="flex items-start gap-3 px-4 pt-3 pb-3 shrink-0">
@@ -167,6 +181,7 @@ const HojaMovil = memo(({
                 {pie}
             </div>
         )}
+        </div>
     </div>
     </div>
     );

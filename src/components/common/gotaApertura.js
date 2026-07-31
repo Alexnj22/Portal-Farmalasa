@@ -282,13 +282,20 @@ function transformarSombra(sombra, el, desde, ms, curva, ladosGuardados) {
  */
 function deslizamientoDe(el, r) {
     const esHoja = !!el.querySelector('[data-sombra-hoja]');
-    if (!esHoja) return { esHoja: false, conFundido: true, recorrido: 8, fuera: 'translate3d(0, 8px, 0)' };
+    if (!esHoja) return { esHoja: false, eje: 'y', conFundido: true, recorrido: 8, fuera: 'translate3d(0, 8px, 0)' };
+    // El eje lo declara `ModalShell` en el envoltorio: con el teléfono acostado
+    // la hoja entra por el costado, no por abajo, y una salida vertical la haría
+    // irse hacia un borde que no es el suyo.
+    const eje = el.dataset?.eje === 'x' ? 'x' : 'y';
     // En px y no en `100%`: el arrastre trabaja en píxeles —es lo que mide un
     // dedo— y mezclar unidades obliga al navegador a interpolar por matriz. Con
     // la misma unidad en los dos extremos, soltar el dedo continúa el número que
     // ya venía en vez de reiniciar la cuenta.
-    const recorrido = Math.ceil(r.height) + 48;
-    return { esHoja: true, conFundido: false, recorrido, fuera: `translate3d(0, ${recorrido}px, 0)` };
+    const recorrido = Math.ceil(eje === 'x' ? r.width : r.height) + 48;
+    return {
+        esHoja: true, eje, conFundido: false, recorrido,
+        fuera: eje === 'x' ? `translate3d(${recorrido}px, 0, 0)` : `translate3d(0, ${recorrido}px, 0)`,
+    };
 }
 
 /**
@@ -400,7 +407,15 @@ export function useGotaApertura({ ref, activo = true, cerrando = false }) {
         // Se cuelgan del propio elemento para que el ARRASTRE pueda reproducir la
         // misma gota bajo el dedo. Pasarlos por contexto obligaría a que cada
         // hoja los reenvíe, y una prop de reenvío es una prop que se olvida.
-        vidrio.__gota = { tecnica: 'gota', el: vidrio, lados: ladosIniciales.current, sombra };
+        // El `eje` también en la rama del vidrio: la gota en sí es
+        // direccional-agnóstica —el recorte sale del rectángulo del control, esté
+        // donde esté— pero el ARRASTRE necesita saber si el dedo cuenta en X o en
+        // Y. Sin esto, en un panel lateral el gesto se leería en el eje
+        // equivocado y arrastrar hacia el borde no cerraría nada.
+        vidrio.__gota = {
+            tecnica: 'gota', el: vidrio, lados: ladosIniciales.current, sombra,
+            eje: el.dataset?.eje === 'x' ? 'x' : 'y',
+        };
         transformarSombra(sombra, vidrio, desde, 0, '', ladosIniciales.current);
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el

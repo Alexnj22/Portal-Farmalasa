@@ -554,6 +554,12 @@
      se lee plano. No es una variante de color —la paleta sigue cerrada—, es el
      eje que a la escala le faltaba. */
   --shadow-hoja: 0 -14px 44px rgba(0,0,0,.16);
+  /* La misma sombra girada 90°, para la hoja que entra de COSTADO con el
+     teléfono acostado. No es un valor nuevo de la escala: es el mismo desenfoque
+     y la misma opacidad, proyectados hacia el borde que sí está a la vista —
+     `0 -14px` apuntaría al techo en un panel cuyo único borde visible es el
+     izquierdo. */
+  --shadow-hoja-lateral: -14px 0 44px rgba(0,0,0,.16);
 
   --shadow-glass-sm: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 10px rgba(0,0,0,.06);
 
@@ -1397,6 +1403,7 @@
   /* En sólido las sombras son más cortas y duras: misma decisión que el resto de
      la escala en este tema. */
   --shadow-hoja: 0 -6px 18px rgba(0,0,0,.14);
+  --shadow-hoja-lateral: -6px 0 18px rgba(0,0,0,.14);
 
   /* El hover del botón de marca dejaba un halo azul de 20px. En Solid el
      realce es un aro, igual que los demás glows. */

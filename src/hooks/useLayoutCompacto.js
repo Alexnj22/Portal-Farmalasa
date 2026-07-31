@@ -50,4 +50,29 @@ export function useLayoutCompacto() {
     return useMediaQuery(CONSULTA);
 }
 
+/**
+ * ¿El diálogo tiene que entrar de COSTADO en vez de desde abajo?
+ *
+ * Acostado, una hoja inferior es la forma equivocada y se puede medir: en un
+ * iPhone 13 (844 × 390) la hoja de filtros ocupaba el **63% del alto** —247 de
+ * 390px— y usaba **150 de sus 844px de ancho**. O sea que tapaba casi toda la
+ * pantalla para mostrar dos controles en una columna, con 694px de vacío al
+ * lado. El alto es el recurso escaso acostado, y la hoja inferior gasta
+ * justamente ese.
+ *
+ * Un panel lateral usa el alto COMPLETO (390 contra 247), deja la lista entera
+ * visible en la otra mitad —así se la ve filtrarse mientras se elige— y no
+ * obliga a ningún modal a rediseñar su cuerpo: el contenido apilado de vertical
+ * entra tal cual.
+ *
+ * La condición es la misma que la de arriba menos el ancho: dedo **y** poca
+ * altura. `(max-height: 500px)` sin `(hover: none)` atraparía una ventana de
+ * escritorio achatada, que tiene mouse y todo el ancho del mundo.
+ */
+const LATERAL = '(hover: none) and (max-height: 500px)';
+
+export function usePanelLateral() {
+    return useMediaQuery(LATERAL);
+}
+
 export default useLayoutCompacto;

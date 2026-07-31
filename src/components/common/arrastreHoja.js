@@ -81,9 +81,16 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
         const el = gota?.el;
         if (!el) return;
 
-        const alto = el.getBoundingClientRect().height;
+        // El EJE del gesto sale del descriptor: acostado la hoja entra de
+        // costado, así que el dedo que la cierra se mide en X y el recorrido
+        // útil es el ANCHO del panel, no su alto. Todo lo de abajo trabaja sobre
+        // una sola coordenada `p` para no duplicar la lógica por eje.
+        const enX = gota.eje === 'x';
+        const caja = el.getBoundingClientRect();
+        const largo = enX ? caja.width : caja.height;
+        const p0 = enX ? e.clientX : e.clientY;
         const sombra = gota.sombra || null;
-        est.current = { y0: e.clientY, tPrev: performance.now(), yPrev: e.clientY, v: 0, alto, el, sombra,
+        est.current = { enX, p0, tPrev: performance.now(), pPrev: p0, v: 0, largo, el, sombra,
             tecnica: gota.tecnica, lados: gota.lados, t: 0,
             rSombra: sombra ? sombra.getBoundingClientRect() : { width: 1, height: 1 } };
         el.style.transition = 'none';
@@ -92,25 +99,30 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
 
         const alMover = (ev) => {
             const s = est.current; if (!s) return;
+            const p = s.enX ? ev.clientX : ev.clientY;
             const ahora = performance.now();
             const dt = ahora - s.tPrev;
-            if (dt > 0) s.v = (ev.clientY - s.yPrev) / dt;
-            s.yPrev = ev.clientY; s.tPrev = ahora;
+            if (dt > 0) s.v = (p - s.pPrev) / dt;
+            s.pPrev = p; s.tPrev = ahora;
 
-            const d = Math.max(0, ev.clientY - s.y0);
+            // Solo hacia AFUERA: hacia abajo si la hoja sube, hacia la derecha
+            // si entra por el costado derecho. Tirar al revés no tiene a dónde
+            // ir — la hoja ya está abierta del todo.
+            const d = Math.max(0, p - s.p0);
 
             // ── Deslizando: los píxeles del dedo, sin traducir ────────────
             // Nada de opacidad ni de radio acompañando: en el tema pensado para
             // equipos de pocos recursos, el gesto es UNA propiedad compuesta y
             // el compositor no repinta un solo píxel mientras dura.
             if (s.tecnica === 'deslizar') {
-                s.el.style.transform = `translate3d(0, ${d}px, 0)`;
+                s.el.style.transform = s.enX
+                    ? `translate3d(${d}px, 0, 0)` : `translate3d(0, ${d}px, 0)`;
                 return;
             }
 
-            // El recorrido útil es 60% del alto: con el 100%, cerrar exigía
+            // El recorrido útil es 60% del largo: con el 100%, cerrar exigía
             // arrastrar la hoja entera y el gesto se sentía pesado.
-            const t = Math.max(0, Math.min(1, d / (s.alto * 0.6)));
+            const t = Math.max(0, Math.min(1, d / (s.largo * 0.6)));
             s.t = t;
             s.el.style.clipPath = insetEn(s.el, s.lados, t);
             if (s.sombra) {
@@ -134,8 +146,8 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             window.removeEventListener('pointerup', alSoltar);
             window.removeEventListener('pointercancel', alSoltar);
 
-            const d = s.yPrev - s.y0;
-            const cierra = d > s.alto * UMBRAL_FRACCION || s.v > UMBRAL_VELOCIDAD;
+            const d = s.pPrev - s.p0;
+            const cierra = d > s.largo * UMBRAL_FRACCION || s.v > UMBRAL_VELOCIDAD;
 
             if (cierra) {
                 // El avance que ya hizo el dedo se conserva: `alCerrar` dispara la

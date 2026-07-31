@@ -12,6 +12,42 @@ retomar; acá está todo.
 
 ---
 
+## v2.300.0 — Acostado, la hoja entra de costado
+
+La hoja inferior es la gramática correcta de pie. Acostada deja de serlo, y se
+mide: en un iPhone 13 (844×390) ocupaba el **63 % del alto** —247 de 390px— para
+mostrar dos controles en una columna de 150px, con **694px de vacío al lado**.
+El alto es el recurso escaso acostado y la hoja inferior gasta justo ese.
+
+Se presentaron tres formas con mockups a escala; la elegida fue el **panel
+lateral**: usa el alto completo (390 contra 247), deja la lista entera visible en
+la otra mitad —así se la ve filtrarse mientras se elige— y ningún modal rediseña
+su cuerpo. Va pegado al borde **derecho**, que es donde vive el clúster flotante
+(donde está el pulgar que lo abrió) y donde el notch no tapa el asa.
+
+**El eje viaja por el DOM, no por props.** `ModalShell` estampa
+`data-eje="x"|"y"` y lo leen `useGotaApertura` y `useArrastreHoja` — la misma
+técnica que `data-sombra-hoja`. Los 18 llamadores no se enteran. El eje cambia el
+`translate` de los temas sólidos, la coordenada del arrastre, la orientación del
+asa, y muda radio y sombra al borde izquierdo (`--shadow-hoja-lateral`: la misma
+sombra girada 90°). La gota (`clip-path`) no necesitó cambios — el recorte sale
+del rectángulo del control, esté donde esté; solo el arrastre necesitaba el eje.
+
+Solo afecta a lo que ya sería hoja: `align="top"` (el ⌘K) y las alertas centradas
+siguen donde estaban, porque su posición dice de qué tipo de cosa se trata.
+
+| caso | posición | tamaño | eje | asa |
+|---|---|---|---|---|
+| acostado 844×390 | lateral | 397×390 · 47 %×100 % | x | vertical |
+| acostado 932×430 | lateral | 420×430 · 45 %×100 % | x | vertical |
+| vertical 390×844 | inferior | 390×247 · 100 %×29 % | y | horizontal |
+| iPad 1133×744 | escritorio | sin cambio | — | — |
+
+En liquid la gota crece desde el control con `blur(44px)` vivo todo el recorrido
+y el dedo la maneja en X; en solid entra con `translate3d` en X a 200ms.
+
+---
+
 ## v2.299.0 — La barra de Facturación, al canónico: tarjetas, píldora y pausa
 
 Seis correcciones del usuario sobre la pasada de diseño anterior, que había dado

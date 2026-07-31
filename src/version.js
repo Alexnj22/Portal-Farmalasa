@@ -16,8 +16,58 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.299.0';
+export const APP_VERSION = '2.300.0';
 
+// v2.300.0 — Acostado, la hoja entra de COSTADO (opcion B de los mockups).
+//
+// La hoja inferior es la gramatica correcta de pie. Acostada deja de serlo, y
+// se puede medir: en un iPhone 13 (844 x 390) la hoja de filtros ocupaba el
+// **63% del alto** —247 de 390px— para mostrar dos controles en una columna de
+// 150px, con **694px de vacio al lado**. El alto es el recurso escaso acostado
+// y la hoja inferior gasta justo ese.
+//
+// Se presentaron tres formas con mockups a escala (hoja en columnas, panel
+// lateral, dialogo centrado). El usuario eligio el **panel lateral**:
+//
+//   · usa el alto COMPLETO (390 contra 247)
+//   · deja la lista entera visible en la otra mitad, asi que se la ve filtrarse
+//   · ningun modal rediseña su cuerpo: el contenido apilado de vertical entra tal cual
+//
+// Va pegado al borde DERECHO: es donde vive el clúster flotante —o sea donde
+// esta el pulgar que lo abrio— y ademas el notch, cuando cae a la izquierda,
+// dejaria el asa debajo del hardware.
+//
+// ── El eje viaja por el DOM, no por props ─────────────────────────────────
+// `ModalShell` estampa `data-eje="x"|"y"` en el envoltorio y lo leen
+// `useGotaApertura` y `useArrastreHoja`. Es la misma tecnica que
+// `data-sombra-hoja`: `ModalShell` es el unico que posiciona paneles, asi que
+// lo escribe una vez y los dos lo encuentran. Los 18 llamadores no se enteran —
+// una prop de reenvio es una prop que alguien olvida.
+//
+// Lo que el eje cambia:
+//   · `deslizamientoDe` (temas solidos) sale por X y el recorrido es el ANCHO
+//   · `useArrastreHoja` mide el dedo en X, con el ancho como recorrido util
+//   · `AsaHoja` se para: dibujo 4x36 y zona agarrable `px-2 -mx-2`
+//   · el radio y la sombra se mudan al borde izquierdo (`--shadow-hoja-lateral`,
+//     la misma sombra girada 90°: mismo desenfoque, misma opacidad)
+//
+// La gota (`clip-path`) NO necesito cambios: el recorte sale del rectangulo del
+// control, este donde este. Solo el ARRASTRE necesitaba saber el eje.
+//
+// Solo afecta a lo que YA seria hoja. `align="top"` (el ⌘K) y las alertas
+// centradas siguen donde estaban: su posicion dice de que tipo de cosa se
+// trata, y eso no cambia al girar el telefono.
+//
+// Verificado en WebKit, los dos temas y las dos orientaciones:
+//   acostado 844x390   lateral  397x390  47%x100%  eje x  asa vertical
+//   acostado 932x430   lateral  420x430  45%x100%  eje x  asa vertical
+//   vertical 390x844   inferior 390x247  100%x29%  eje y  asa horizontal
+//   iPad 1133x744      escritorio, sin cambio
+// En liquid la gota crece desde el control —inset(294 151 36 186) → none a los
+// 414ms— con `blur(44px)` vivo todo el recorrido; el dedo la maneja en X
+// (`inset(190 98 23 120)`) y soltar pasado el umbral cierra. En solid entra con
+// `translate3d` en X a 200ms y el dedo deja `translate3d(154px, 0, 0)`.
+//
 // v2.299.0 — La barra de Facturacion, al canonico: tarjetas, pildora y pausa.
 //
 // Seis correcciones del usuario sobre la pasada de diseno anterior, que habia

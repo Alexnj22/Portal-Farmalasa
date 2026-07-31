@@ -12,6 +12,21 @@ retomar; acá está todo.
 
 ---
 
+## v2.282.0 — Cerrados los 7 pendientes y el editor de foto
+
+"Agregar producto al conteo" tenía su propio envoltorio de hoja —todo lo que
+`HojaMovil` ya hace, y sin el arrastre—. El historial de MIN·MAX traía su fila de
+título con la ✕; ahora el cierre es un botón explícito en el pie, que en un
+teléfono importa: no hay `Escape` y el fondo no se ve.
+
+**El editor de foto va a pantalla completa en táctil.** Recortar necesita área, y
+una hoja le quita la mitad de la pantalla justo a lo único que importa ahí.
+
+Estado final: **12 diálogos con el cuerpo canónico**, 3 fuera a propósito, y
+ninguno con cuerpo de escritorio sin querer.
+
+---
+
 ## v2.281.0 — El asa arrastra, y cuatro diálogos más al canónico
 
 **El asa cumple lo que promete.** La hoja sigue al dedo cuadro a cuadro y decide

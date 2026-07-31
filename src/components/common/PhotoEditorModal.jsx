@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Button from './Button';
 import Cropper from 'react-easy-crop';
 import ModalShell from './ModalShell';
+import useMediaQuery from '../../hooks/useMediaQuery';
 import {
     X, ZoomIn, ZoomOut, Scissors, Loader2, Check,
     RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus,
@@ -118,6 +119,9 @@ function BrushCursor({ pos, shape, size, type }) {
 // ── PhotoEditorModal ───────────────────────────────────────────────────────────
 
 export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
+    // Arriba de todo: hay `return` tempranos más abajo y un hook no puede quedar
+    // detrás de uno.
+    const enTactil = useMediaQuery('(hover: none)');
     const originalUrl    = useRef(null);
     const originalImgRef = useRef(null);
     const brushCanvasRef = useRef(null);
@@ -342,19 +346,30 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     // tiraría un recorte a medias sin preguntar, y el modal ya tiene dos
     // salidas explícitas (la X del encabezado y "Cancelar").
     return (
+        // ── En el teléfono, PANTALLA COMPLETA (2026-07-30) ────────────────
+        // No es una hoja y no debería serlo: recortar necesita ÁREA. Cuanto más
+        // grande la foto, más preciso el gesto de encuadre, y una hoja le quita
+        // la mitad de la pantalla justo a lo único que importa acá. Es el caso
+        // donde el canónico de hoja sería peor, no mejor — pero el panel de
+        // escritorio metido en un teléfono tampoco servía.
+        //
+        // `hojaEnTactil={false}` evita la conversión a hoja, y `max-w-none` con
+        // `h-dvh` toma la pantalla. En escritorio se queda como estaba.
         <ModalShell
             open
             onClose={onCancel}
-            maxWidthClass="max-w-md"
+            maxWidthClass={enTactil ? 'max-w-none' : 'max-w-md'}
+            hojaEnTactil={false}
             zClass="z-confirm"
             closeOnBackdrop={false}
-            panelClassName="flex flex-col overflow-hidden"
+            panelClassName={`flex flex-col overflow-hidden ${enTactil ? 'h-dvh' : ''}`}
             ariaLabel={brushMode ? 'Retocar fondo' : 'Editar foto'}
         >
             <>
 
                 {/* ── Header ── */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-divider shrink-0">
+                <div className={`flex items-center justify-between px-5 border-b border-divider shrink-0
+                    ${enTactil ? 'pt-[max(16px,env(safe-area-inset-top))] pb-4' : 'py-4'}`}>
                     <div>
                         <p className="text-body-lg font-black text-content">
                             {brushMode ? 'Retocar fondo' : 'Editar foto'}

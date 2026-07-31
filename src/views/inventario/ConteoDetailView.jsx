@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import HojaMovil from '../../components/common/HojaMovil';
 import AsaHoja from '../../components/common/AsaHoja';
 import Button from '../../components/common/Button';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -8,7 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2,
     Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff,
-    FileSpreadsheet, Download,
+    FileSpreadsheet, Download, PackagePlus,
 } from 'lucide-react';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -1715,10 +1716,14 @@ export default function ConteoDetailView() {
                     maxWidthClass="max-w-none"
                     surface={null}
                     ariaLabel="Agregar producto o lote al conteo"
+                    surface={null}
                 >
-                    <div data-surface="modal" className="max-h-[88dvh] overflow-y-auto rounded-t-modal
-                        px-3 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
-                        <AsaHoja className="mb-3" />
+                    {/* `HojaMovil` en vez del envoltorio a mano: traía su propio
+                        `max-h`, su propio `rounded-t-modal`, su propia área segura
+                        y su asa suelta — todo lo que el canónico ya hace, y sin el
+                        arrastre. El formulario lleva sus propios botones, así que
+                        va sin `pie`. */}
+                    <HojaMovil titulo="Agregar producto" subtitulo="Al conteo en curso" icono={PackagePlus}>
                         <AddManualItemForm
                             branchId={conteo.branch_id}
                             onAdd={async (payload) => {
@@ -1728,7 +1733,7 @@ export default function ConteoDetailView() {
                             }}
                             onCancel={() => setShowAddForm(false)}
                         />
-                    </div>
+                    </HojaMovil>
                 </ModalShell>
             )}
 

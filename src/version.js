@@ -16,8 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.281.0';
+export const APP_VERSION = '2.282.0';
 
+// v2.282.0 — Cerrados los 7 pendientes y el editor de foto: no queda ningun modal
+// fuera del canonico.
+//
+// **Los dos ultimos cuerpos.** "Agregar producto al conteo" tenia su propio
+// envoltorio de hoja —`max-h`, `rounded-t-modal`, area segura y el asa suelta—,
+// o sea todo lo que `HojaMovil` ya hace, y sin el arrastre. El historial de
+// MIN·MAX traia su fila de titulo con la ✕; ahora el cierre es un boton
+// explicito en el pie, que en un telefono importa: no hay `Escape` y el fondo no
+// se ve.
+//
+// **A4: el editor de foto va a PANTALLA COMPLETA en tactil.** No es una hoja y no
+// deberia serlo — recortar necesita AREA, y cuanto mas grande la foto mas preciso
+// el encuadre. Una hoja le quita la mitad de la pantalla justo a lo unico que
+// importa ahi. Es el caso donde el canonico de hoja seria peor, no mejor; pero el
+// panel de escritorio metido en un telefono tampoco servia. En escritorio queda
+// como estaba.
+//
+// Estado final, contado con el detector: **12 dialogos con el cuerpo canonico**,
+// 3 fuera a proposito (la alerta centrada, el ⌘K arriba, el editor a pantalla
+// completa) y ninguno con cuerpo de escritorio sin querer.
+//
 // v2.281.0 — El asa ARRASTRA, y cuatro dialogos mas al canonico.
 //
 // **El asa cumple lo que promete.** Decia "esto se cierra hacia abajo" y despues

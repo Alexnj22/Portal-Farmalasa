@@ -44,6 +44,7 @@ import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import ModalShell from '../../components/common/ModalShell';
+import CuerpoDialogo from '../../components/common/CuerpoDialogo';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -1381,26 +1382,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 maxWidthClass="max-w-md"
                 zClass="z-tooltip"
                 surface={null}
+                surface={null}
                 ariaLabel="Historial de MIN/MAX">
-                <div data-surface="modal" className="max-h-[82dvh] flex flex-col rounded-modal overflow-hidden">
-
-                        {/* Header */}
-                        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
-                            {/* Product photo */}
-                            <div className="w-12 h-12 rounded-2xl bg-surface-card border border-divider shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
-                                {historyRow.foto_url
-                                    ? <img src={historyRow.foto_url} alt="" className="w-full h-full object-contain" />
-                                    : <Package size={22} className="text-content-3" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-body font-black text-content truncate leading-tight">{historyRow.product_name}</p>
-                                <p className="text-caption text-content-3 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
-                            </div>
-                            <Button variant="secondary" size="sm" icon={X} iconOnly onClick={() => setHistoryRow(null)} />
-                        </div>
-
-                        {/* List */}
-                        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
+                {/* `CuerpoDialogo` en vez del envoltorio a mano: traía su propio
+                    `max-h`, su propio `rounded-modal` y su fila de título con la ✕.
+                    El botón de cerrar pasa al pie —explícito, porque en un teléfono
+                    no hay `Escape` y el fondo no se ve— y la foto del producto se
+                    queda en el cuerpo, que es donde identifica de qué historial se
+                    trata sin competir con el título. */}
+                <CuerpoDialogo
+                    titulo={historyRow.product_name}
+                    subtitulo={`${ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN·MAX`}
+                    icono={History}
+                    anchoEscritorio="max-w-md"
+                    pie={<Button variant="secondary" onClick={() => setHistoryRow(null)}>Cerrar</Button>}
+                >
+                        <div className="flex flex-col gap-2 text-left">
                             {historyLoading && (
                                 <div className="flex justify-center py-10"><SkeletonText lines={4} className="w-full max-w-md" /></div>
                             )}
@@ -1448,7 +1445,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 );
                             })}
                         </div>
-                </div>
+                </CuerpoDialogo>
             </ModalShell>
             )}
 

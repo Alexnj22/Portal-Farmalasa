@@ -72,7 +72,13 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
         const alto = el.getBoundingClientRect().height;
         // La sombra viaja CON la hoja. Clavada en su sitio dejaba una banda en el
         // lugar viejo mientras el dedo bajaba la hoja: un corte a la vista.
-        const sombra = panel.querySelector('[data-sombra-hoja]');
+        //
+        // Se busca en el PADRE y no dentro: la capa es HERMANA de la hoja —vive
+        // en el panel de `ModalShell`—, así que `panel.querySelector` no la
+        // encontraba nunca y la sombra se quedaba quieta. `refPanel` acá recibe
+        // la hoja, no el panel; el nombre venía de antes de que la sombra
+        // existiera.
+        const sombra = (panel.parentElement || panel).querySelector('[data-sombra-hoja]');
         est.current = { y0: e.clientY, t0: performance.now(), yPrev: e.clientY, tPrev: performance.now(), v: 0, alto, el, sombra, panel };
         el.style.transition = 'none';
         if (sombra) sombra.style.transition = 'none';

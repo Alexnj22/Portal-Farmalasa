@@ -68,7 +68,12 @@ const visible = (el) => {
 // `prefers-reduced-motion` (120ms !important), y desde JS no hay forma de
 // saberlo. Por eso la salida ya no depende de que los dos números coincidan
 // —ver `fill-mode-forwards` abajo—: si divergen, no se ve.
-const EXIT_MS = 180;
+// La salida tiene que durar lo suficiente para LEERSE como el camino inverso.
+// Estuvo en 180ms contra los 520 de la entrada —casi 3× más rápido— y a esa
+// velocidad el recorrido no se ve: la hoja parpadea y desaparece. Cerrar sigue
+// siendo más rápido que abrir (abrir es una invitación, cerrar es una respuesta),
+// pero la diferencia es de un tercio, no de tres veces.
+const EXIT_MS = 380;
 
 
 

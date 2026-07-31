@@ -62,10 +62,47 @@ function objetivoVidrio(el) {
 }
 const tope = (n) => Math.max(0, Math.round(n));
 
-function insetHacia(el, desde) {
+function ladosHacia(el, desde) {
     const r = el.getBoundingClientRect();
-    return `inset(${tope(desde.y - r.top)}px ${tope((r.left + r.width) - (desde.x + desde.w))}px `
-        + `${tope((r.top + r.height) - (desde.y + desde.h))}px ${tope(desde.x - r.left)}px round 9999px)`;
+    return {
+        arriba:  tope(desde.y - r.top),
+        derecha: tope((r.left + r.width) - (desde.x + desde.w)),
+        abajo:   tope((r.top + r.height) - (desde.y + desde.h)),
+        izq:     tope(desde.x - r.left),
+    };
+}
+
+function insetHacia(el, desde) {
+    const l = ladosHacia(el, desde);
+    return `inset(${l.arriba}px ${l.derecha}px ${l.abajo}px ${l.izq}px round 9999px)`;
+}
+
+/**
+ * La sombra no se puede RECORTAR con la forma —un `clip-path` se comería
+ * justamente lo que cae fuera de la caja, que es toda la sombra—. Lo que se
+ * anima es su CAJA: la capa se encoge hasta el rectángulo del control y su
+ * `box-shadow` se dibuja alrededor de eso. Así la sombra crece con la gota en
+ * vez de aparecer puesta encima.
+ */
+function encogerSombra(sombra, el, desde, ms, curva) {
+    if (!sombra) return;
+    const l = ladosHacia(el, desde);
+    sombra.style.transition = ms
+        ? `top ${ms}ms ${curva}, right ${ms}ms ${curva}, bottom ${ms}ms ${curva}, left ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`
+        : 'none';
+    sombra.style.top = `${l.arriba}px`;
+    sombra.style.right = `${l.derecha}px`;
+    sombra.style.bottom = `${l.abajo}px`;
+    sombra.style.left = `${l.izq}px`;
+    sombra.style.borderRadius = '9999px';
+}
+
+function soltarSombra(sombra, ms, curva) {
+    if (!sombra) return;
+    sombra.style.transition = `top ${ms}ms ${curva}, right ${ms}ms ${curva}, bottom ${ms}ms ${curva}, left ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`;
+    sombra.style.top = '0px'; sombra.style.right = '0px';
+    sombra.style.bottom = '0px'; sombra.style.left = '0px';
+    sombra.style.borderRadius = '';
 }
 
 /**
@@ -119,7 +156,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // durante la gota y volvía al final, así que se veía puesta encima en vez
         // de crecer con la hoja.
         const sombra = el.querySelector('[data-sombra-hoja]');
-        if (sombra) { sombra.style.transition = 'none'; sombra.style.opacity = '0'; }
+        encogerSombra(sombra, vidrio, desde, 0);
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
@@ -131,16 +168,17 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         const radio = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
         const abajo = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
         vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} ${abajo} ${abajo})`;
-        if (sombra) {
-            sombra.style.transition = `opacity ${ENTRADA_MS}ms cubic-bezier(0.22,1,0.36,1)`;
-            sombra.style.opacity = '1';
-        }
+        soltarSombra(sombra, ENTRADA_MS, 'cubic-bezier(0.22,1,0.36,1)');
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que el panel quiera sacar fuera de su caja.
         const alTerminar = () => {
             vidrio.style.clipPath = ''; vidrio.style.transition = '';
-            if (sombra) { sombra.style.transition = ''; sombra.style.opacity = ''; }
+            if (sombra) {
+                sombra.style.transition = ''; sombra.style.opacity = '';
+                sombra.style.top = ''; sombra.style.right = '';
+                sombra.style.bottom = ''; sombra.style.left = ''; sombra.style.borderRadius = '';
+            }
         };
         vidrio.addEventListener('transitionend', alTerminar, { once: true });
         return () => vidrio.removeEventListener('transitionend', alTerminar);
@@ -162,11 +200,12 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             el.style.opacity = '0';
             return;
         }
+        // La sombra hace el mismo recorrido, encogiéndose hasta el control.
         const sombra = el.querySelector('[data-sombra-hoja]');
-        if (sombra) {
-            sombra.style.transition = `opacity ${salidaMs}ms ease-in`;
-            sombra.style.opacity = '0';
-        }
+        // El arrastre pudo dejarla desplazada: se suelta antes de encogerla, o el
+        // recorrido saldría desde el sitio equivocado.
+        if (sombra) { sombra.style.transform = ''; }
+        encogerSombra(sombra, vidrio, desde, salidaMs, 'cubic-bezier(0.4,0,0.6,1)');
         vidrio.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
         vidrio.style.clipPath = insetHacia(vidrio, desde);
     }, [ref, cerrando, salidaMs, activo]);

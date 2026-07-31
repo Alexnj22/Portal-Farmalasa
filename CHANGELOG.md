@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.286.0 — El cierre ahora sí es la gota, y la sombra hace el recorrido
+
+**La sombra no se movía con el dedo: se buscaba en el sitio equivocado.** El
+arrastre la buscaba *dentro* de la hoja, pero la capa es **hermana** — vive en el
+panel de `ModalShell`—, así que nunca la encontraba.
+
+**El cierre duraba 180ms contra los 520 de la entrada.** Casi 3× más rápido: a esa
+velocidad el recorrido no se lee, la hoja parpadea. Ahora son 380.
+
+**Y la sombra solo se desvanecía.** No se puede recortar con la forma —un
+`clip-path` se comería justamente lo que cae fuera de la caja, que es toda la
+sombra—: lo que se anima es su **caja**, que se encoge hasta el rectángulo del
+control. Así crece y se encoge con la gota.
+
+---
+
 ## v2.285.0 — Auditado en WebKit: la gota no corría, y el fondo no estaba bloqueado
 
 **La gota no corría: el detector de vidrio miraba solo el primer hijo.** Al

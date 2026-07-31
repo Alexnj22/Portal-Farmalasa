@@ -16,8 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.285.0';
+export const APP_VERSION = '2.286.0';
 
+// v2.286.0 — El cierre ahora SI es la gota, y la sombra hace el recorrido.
+//
+// Tres causas, las tres mias.
+//
+// **La sombra no se movia con el dedo: se buscaba en el sitio equivocado.** El
+// arrastre hacia `panel.querySelector('[data-sombra-hoja]')`, pero la capa es
+// HERMANA de la hoja —vive en el panel de `ModalShell`—, asi que nunca la
+// encontraba. Ahora se busca en el padre. (El nombre `refPanel` venia de antes de
+// que la capa existiera y ayudo a la confusion.)
+//
+// **El cierre duraba 180ms contra los 520 de la entrada.** Casi 3× mas rapido: a
+// esa velocidad el recorrido no se LEE, la hoja parpadea y desaparece. Ahora son
+// 380 — cerrar sigue siendo mas rapido que abrir, porque abrir es una invitacion
+// y cerrar una respuesta, pero la diferencia es de un tercio y no de tres veces.
+//
+// **Y la sombra solo se desvanecia.** No se puede recortar con la forma: un
+// `clip-path` se comeria justamente lo que cae fuera de la caja, que es toda la
+// sombra. Lo que se anima es su CAJA — la capa se encoge hasta el rectangulo del
+// control y su `box-shadow` se dibuja alrededor de eso—, asi que ahora crece y
+// se encoge CON la gota en vez de aparecer y desaparecer encima.
+//
+// Medido en WebKit: al cerrar por el fondo y por el asa, el recorte va al
+// rectangulo del boton y la capa de sombra lo acompana (lados 0,43 y 0,71 con el
+// radio subiendo a pildora); durante el arrastre la sombra lleva `translateY`,
+// que antes era `none` — esa era la prueba del bug de la hermana.
+//
 // v2.285.0 — Auditado EN WEBKIT: la gota no corria, y el fondo no estaba bloqueado.
 //
 // Las tres cosas reportadas tenian dos causas, y las dos las introduje yo.

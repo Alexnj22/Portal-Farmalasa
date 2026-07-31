@@ -12,6 +12,31 @@ retomar; acá está todo.
 
 ---
 
+## v2.305.0 — El material se parte en dos: el clúster vuelve a su vidrio
+
+Corrección de v2.304.0, que se pasó de alcance. Cambiar `MATERIAL_HOJA` de `card`
+(16 %) a `dropdown` (72 %) arreglaba la hoja —que dejaba ver la tabla de atrás—
+pero esa constante la comparten **tres** superficies, y una es el clúster
+flotante. Le cambié el vidrio a una pieza que se había pedido explícitamente que
+fuera vidrio, sin mostrarlo antes.
+
+Dos aclaraciones sobre lo que sí y lo que no se hizo:
+
+- **No se inventó ningún valor.** `MATERIAL_*` elige *cuál* token usar, y los dos
+  ya existían. La paleta sigue cerrada.
+- **No se quitó el efecto glass.** Las dos superficies conservan
+  `backdrop-filter: blur(24px) saturate(1.6)` idéntico; lo que cambia es la
+  opacidad del velo *detrás* del blur.
+
+Ahora son dos constantes, porque son dos trabajos distintos:
+
+| constante | token | opacidad | por qué |
+|---|---|---|---|
+| `MATERIAL_CLUSTER` | `card` | 16 % | flota sobre la vista; ver la lista por detrás es la gracia |
+| `MATERIAL_HOJA` | `dropdown` | 72 % | es donde se lee y se decide; atrás es ruido, no ambiente |
+
+---
+
 ## v2.304.0 — Los paneles de MinMax al canónico, y la hoja deja de ser translúcida
 
 **`ConfigPanel` y `LabsPanel` no eran canónicos.** Pasaban

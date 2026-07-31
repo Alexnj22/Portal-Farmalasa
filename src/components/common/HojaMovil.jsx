@@ -58,27 +58,31 @@ import { usePanelLateral } from '../../hooks/useLayoutCompacto';
  */
 
 /**
- * El material de la capa móvil, definido UNA vez.
+ * DOS materiales, porque son dos superficies con dos trabajos distintos.
  *
- * La barra flotante y todas las hojas lo comparten a propósito: en el teléfono
- * son la misma capa —la barra y lo que la barra despliega—, y con superficies
- * distintas se leían como piezas de dos sistemas. `BarraFlotante` lo importa de
- * acá en vez de tener el suyo, así que cambiarlo (o revertir la prueba de
- * `card`) sigue siendo una línea, pero ahora una línea que manda sobre todo.
+ * Vivían en una sola constante —"la barra y lo que la barra despliega son la
+ * misma capa"— y el argumento era bueno para el color, pero esconde que no
+ * hacen lo mismo:
+ *
+ * · **El clúster FLOTA sobre la vista.** Es cromo: se lo mira de reojo y se lo
+ *   toca. Que se vea la lista pasar por detrás es la gracia, y por eso está en
+ *   `card` (16%) — fue una decisión explícita del usuario cuando reportó que "el
+ *   liquidglass del filterpill no es liquidglass". No se toca.
+ *
+ * · **La hoja es donde se LEE y se decide.** Ahí lo de atrás no es ambiente: es
+ *   ruido encima del texto que hay que leer. A 16% el usuario preguntó "¿qué son
+ *   esos recuadros en los botones?" — no había ningún recuadro dibujado, eran
+ *   los bordes de las celdas de la tabla de atrás atravesando la hoja.
+ *
+ * La medición que ya estaba escrita en `BarraFlotante` decía exactamente esto y
+ * se leyó como si valiera para las dos: con `card`, *"SALUD 2 se lee ENTERO y
+ * cae encima de ACCIONES. Es vidrio, pero ilegible"*; con `dropdown` (72%), *"lo
+ * de atrás queda como un fantasma y los rótulos se leen limpios"*. Vidrio pero
+ * ilegible es un buen trato para el clúster y uno malo para un formulario.
+ *
+ * Ninguno de los dos es un color nuevo: los dos son tokens que ya existían.
  */
-// `dropdown` (72%) y no `card` (16%). El 16% se puso "EN PRUEBA" el 2026-07-30
-// para que el clúster se leyera como vidrio, y la nota de `BarraFlotante` dejó
-// escrita la forma de revertirlo junto con la medición que lo condenaba: con
-// `card`, *"SALUD 2 se lee ENTERO y cae encima de ACCIONES. Es vidrio, pero
-// ilegible"*; con `dropdown`, *"lo de atrás queda como un fantasma y los rótulos
-// se leen limpios"*.
-//
-// Lo reportó el usuario sin saber que era eso: preguntó qué eran *"esos
-// recuadros en los botones"*. No había ningún recuadro dibujado — eran los
-// bordes de las celdas de la tabla de atrás, atravesando la hoja. Una hoja es
-// una superficie sobre la que se LEE y se decide; el criterio que `index.css`
-// fija para lo que flota sobre contenido es que lo de atrás sea LUZ, no texto, y
-// a 16% era texto.
+export const MATERIAL_CLUSTER = 'card';
 export const MATERIAL_HOJA = 'dropdown';
 
 const TONO = {
@@ -100,10 +104,12 @@ const HojaMovil = memo(({
     // que la principal va PRIMERA: es la que queda más arriba, más lejos del
     // borde y más cerca del pulgar en reposo.
     pie,
-    // La superficie. El MISMO material para todas: el usuario reportó que
-    // "Calcular" y "Parámetros" no se veían igual que la hoja de la barra, y era
-    // literal — esas usaban `modal` (85%) y la de la barra `card` (16%). Un
-    // canónico con dos materiales no es un canónico.
+    // La superficie. El MISMO material para TODAS las hojas: el usuario reportó
+    // que "Calcular" y "Parámetros" no se veían igual que la hoja de la barra, y
+    // era literal — esas usaban `modal` (85%) y la de la barra `card` (16%). Un
+    // canónico con dos materiales no es un canónico. Lo que sí es otra cosa es
+    // el CLÚSTER (`MATERIAL_CLUSTER`): flota sobre la vista en vez de ser la
+    // superficie sobre la que se lee.
     superficie = MATERIAL_HOJA,
     className = '',
 }) => {

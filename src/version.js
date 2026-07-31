@@ -16,8 +16,44 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.304.0';
+export const APP_VERSION = '2.305.0';
 
+// v2.305.0 — El material se parte en dos: el cluster vuelve a su vidrio.
+//
+// Correccion de v2.304.0, que se paso de alcance. Ahi se cambio `MATERIAL_HOJA`
+// de `card` (16%) a `dropdown` (72%) para que la hoja dejara de dejar ver la
+// tabla de atras — y esa parte estaba bien—, pero esa constante la comparten
+// TRES superficies, y una es el **cluster flotante**. O sea que se le cambio el
+// vidrio a una pieza que el usuario habia pedido explicitamente que fuera
+// vidrio ("el liquidglass del filterpill no es liquidglass"), sin mostrarlo.
+//
+// Dos aclaraciones sobre lo que SI y lo que NO se hizo:
+//
+// · **No se invento ningun valor.** `MATERIAL_*` elige CUAL token usar, y los
+//   dos —`--surface-card` y `--surface-dropdown`— ya existian. La paleta sigue
+//   cerrada.
+// · **No se quito el efecto glass.** Las dos superficies conservan
+//   `backdrop-filter: blur(24px) saturate(1.6)` identico. Lo que cambia es la
+//   opacidad del velo DETRAS del blur.
+//
+// Ahora son dos constantes, porque son dos trabajos distintos:
+//
+//   MATERIAL_CLUSTER = 'card'      16%  — FLOTA sobre la vista. Que se vea la
+//                                         lista pasar por detras es la gracia.
+//   MATERIAL_HOJA    = 'dropdown'  72%  — es donde se LEE y se decide. Ahi lo de
+//                                         atras no es ambiente, es ruido encima
+//                                         del texto.
+//
+// La medicion que ya estaba escrita en `BarraFlotante` decia esto mismo y se
+// habia leido como si valiera para las dos: "vidrio pero ilegible" es un buen
+// trato para el cluster y uno malo para un formulario.
+//
+// Verificado: cluster `card` rgba(230,245,255,0.16) + blur(24px); hoja
+// `dropdown` rgba(240,248,255,0.72) + blur(24px).
+//
+// Y se corrigieron los dos comentarios que quedaron diciendo lo contrario del
+// codigo ("el material es uno solo y vive en un solo sitio").
+//
 // v2.304.0 — Los paneles de MinMax al canonico, y la hoja deja de ser traslucida.
 //
 // 1 · **`ConfigPanel` y `LabsPanel` no eran canonicos, y se podia senalar donde.**

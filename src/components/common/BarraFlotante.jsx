@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 import Contador from './Contador';
 import ModalShell from './ModalShell';
 import HojaMovil, { MATERIAL_HOJA } from './HojaMovil';
@@ -67,10 +67,16 @@ import HojaMovil, { MATERIAL_HOJA } from './HojaMovil';
  * z-index/overflow que creen contexto de apilamiento — el fixed anidado era lo
  * que standalone no pintaba)"*.
  *
- * ── El corte es 719px, el mismo de `FilterBar` ─────────────────────────────
- * No `md` (768). Una vista que use esto le pasa `soloEscritorio` a su `FilterBar`,
- * y si los cortes divergen queda una franja de 50px con las dos cosas visibles o
- * ninguna. Una sola fuente de verdad.
+ * ── El corte lo decide `useLayoutCompacto`, no un ancho ────────────────────
+ * Y tiene que ser EL MISMO que usa `FilterBar`: si divergen queda una franja
+ * con las dos cosas visibles, o ninguna. Estaban sincronizados a mano, cada uno
+ * con su copia de `(max-width: 719px)` — o sea sincronizados hasta que alguien
+ * tocara uno. Ahora los dos llaman al mismo hook.
+ *
+ * Y ese hook ya no pregunta solo por el ancho: un teléfono ACOSTADO mide 844px
+ * y caía del lado de escritorio, así que girar el teléfono hacía desaparecer
+ * este clúster y devolvía la barra de mouse a una pantalla que se maneja con el
+ * pulgar. El razonamiento completo vive en `useLayoutCompacto`.
  *
  * ── `z-tabs` (30), y antes estaba mal en `z-header` (2026-07-30) ───────────
  * Es cromo de la vista, no un diálogo: va DEBAJO de cualquier hoja que se abra
@@ -138,7 +144,7 @@ const BarraFlotante = memo(({
     mostrarRotulos,
     ariaLabel = 'Acciones de la vista',
 }) => {
-    const compacto = useMediaQuery('(max-width: 719px)');
+    const compacto = useLayoutCompacto();
     const [visible, setVisible] = useState(true);
     // ¿Este `FilterBar` está realmente en pantalla? Medido el 2026-07-30 en
     // Productos: sus tabs se montan TODOS y se ocultan con `hidden`, así que había

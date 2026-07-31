@@ -12,6 +12,90 @@ retomar; acá está todo.
 
 ---
 
+## v2.296.0 — Un teléfono acostado seguía siendo un teléfono
+
+Al girar el teléfono desaparecía el clúster flotante y volvía la barra de
+filtros de escritorio. El corte era `(max-width: 719px)` a secas, y eso da por
+sentado que un teléfono es angosto — **acostado no lo es**. Medido en WebKit:
+
+| dispositivo | acostado | clúster (antes) |
+|---|---|---|
+| iPhone 13 | 844 × 390 | ❌ |
+| iPhone 15 Pro Max | 932 × 430 | ❌ |
+| Android grande | 915 × 412 | ❌ |
+| iPhone SE | 667 × 375 | ✅ *por accidente* |
+
+Todo teléfono del iPhone 13 en adelante perdía los controles de pulgar al girar
+y recibía objetivos pensados para mouse. El SE se salvaba porque 667 cae debajo
+de 719 — no había intención ahí, los teléfonos crecieron y se pasaron del número.
+
+La regla correcta ya estaba escrita en el repo (`useCoarsePointer`: *"lo que
+decide no es cuánto mide la ventana sino con qué se apunta"*). Pero
+`(hover: none)` solo tampoco sirve: metería a las tablets en el layout del
+teléfono. Lo que las distingue no es el ancho sino el **alto** —teléfonos
+375-430px, tablets 744-834px—, así que 500 cae limpio en el medio:
+
+```
+(max-width: 719px), (hover: none) and (max-height: 500px)
+```
+
+Vive en **`useLayoutCompacto`** y no en un literal repetido, que es la otra
+mitad del arreglo: `BarraFlotante`, `FilterBar` y `ConteoDetailView` deben
+coincidir y estaban sincronizados a mano. Eso mordió en esta misma edición — al
+cambiar `FilterBar` y dejar `ConteoDetailView` con su copia, el segmentado de esa
+vista se habría dibujado en riel dentro de la hoja, justo lo que su comentario
+advertía.
+
+Verificado en las dos orientaciones: los 4 teléfonos muestran el clúster de pie
+y acostados, 5 columnas a 60px sin recorte; las 2 tablets siguen en escritorio.
+`TablePagination` y `AbcXyzMatrix` se dejaron con el corte por ancho a propósito:
+ahí la pregunta es "¿entra esto?", que sí es de espacio.
+
+---
+
+## v2.296.0 — Solventar no escribía nada, y dos de cuatro lo auditaban igual
+
+Las tres tablas de resoluciones de Facturación (`sales_invoice_resolutions`,
+`sales_gap_resolutions`, `sales_null_resolutions`) tenían RLS activo con **una
+sola policy, de SELECT**. Sin policy de INSERT, Postgres rechazaba toda escritura
+del cliente: los cuatro botones "Solventar" no guardaban nada. Las tablas no
+recibían una fila desde mayo (12 / 2 / 2).
+
+Nadie lo vio porque la vista no avisaba. De los cuatro handlers, el de Pendiente
+MH y el de Campos Nulos hacían `await insertX(...)` **sin desestructurar
+`error`**: actualizaban el estado local y llamaban `appendAuditLog`, así que la
+fila desaparecía de la lista —volvía al recargar— y la bitácora registraba una
+acción que nunca ocurrió. Los otros dos mandaban el error a `console.error` sin
+toast. Prueba: `audit_logs` tiene un `SOLVENTAR_PENDIENTE_MH` del 25-jun sobre el
+invoice 6616294 con cero filas de resolución, y ése es exactamente el CCF
+`0000000031_CCF` que seguía atorado en Anuladas el 31-jul.
+
+- **Migración `20260731153235`.** Policy de INSERT en las tres, con
+  `(SELECT auth_can_edit_any(ARRAY['facturacion']))` — la misma que ya usaba
+  `sales_payment_confirmations`, que era el único camino de escritura sano de la
+  vista. Append-only a propósito: sin UPDATE ni DELETE, porque el botón de
+  cancelar solo cierra el formulario. Verificado con `BEGIN…ROLLBACK` como
+  `authenticated`: con `can_edit` escribe, sin `can_edit` sigue bloqueado. De
+  paso se le quitan a `anon` los grants ALL que dejó el baseline sin ACLs.
+- **Los cinco handlers chequean el error** y avisan con toast; el audit log se
+  escribe solo si la fila entró.
+- **`updateInvoiceReceivedMh` se elimina.** Hacía `update({ recibido_mh: true })`
+  sobre una columna `text` que guarda el sello de 40 caracteres de Hacienda: la
+  cadena `'true'` encima del sello fiscal. Nunca corrompió nada porque
+  `sales_invoices` tampoco tiene policy de UPDATE, pero era una bomba de tiempo.
+  No se reemplaza: el sello lo pone Hacienda vía sync, y una resolución manual
+  deja `recibido_mh` NULL — que es lo que el camino de lectura ya esperaba.
+- **`fetchConfirmedMhInvoices`** filtraba `.eq('recibido_mh', true)` → `text =
+  'true'` → **cero filas siempre**. En julio devolvía 0 de 21,666 con sello: el
+  historial de solventados perdía entera la rama de confirmadas por Hacienda.
+  Ahora `.not('recibido_mh', 'is', null)`. Baja `tipo-booleano` del data-gate de
+  5 a 3 (quedan las tres de `is_admin`).
+- **Gating `can_edit`.** La vista solo miraba `facturacion_tab_*`, que es
+  visibilidad; solventar es escritura y ahora exige `can_edit` en `facturacion`
+  —el mismo permiso que pide el RLS—, así que la UI dejó de ofrecer un botón que
+  el servidor iba a rechazar. `ChipDoc` no dibuja el segmento sin `onResolver`,
+  igual que ya hacía con `onCopiar`.
+
 ## v2.295.0 — El buscador alterna, y el clúster cierra con LIMPIAR
 
 **Buscar alterna.** Antes solo abría: el campo quedaba abierto mientras tuviera

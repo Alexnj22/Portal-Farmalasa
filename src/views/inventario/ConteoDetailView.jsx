@@ -37,7 +37,7 @@ import Notice from '../../components/common/Notice';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import FilterBar from '../../components/common/FilterBar';
 import Contador from '../../components/common/Contador';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { inputHoverClass } from '../../utils/inputStyles';
 
@@ -1106,9 +1106,12 @@ export default function ConteoDetailView() {
     const fetchConteoResumen = useStaffStore((s) => s.fetchConteoResumen);
     const fetchConteoLaboratorios = useStaffStore((s) => s.fetchConteoLaboratorios);
 
-    // Mismo corte que usa FilterBar para colapsar a hoja inferior (719px):
-    // si divergen, el segmentado se dibujaría en riel dentro de la hoja.
-    const compacto = useMediaQuery('(max-width: 719px)');
+    // El MISMO corte que usa FilterBar para colapsar a hoja inferior: si
+    // divergen, el segmentado se dibujaría en riel dentro de la hoja. Por eso
+    // sale del hook y no de un literal repetido — con la copia a mano, el
+    // arreglo del teléfono acostado dejaba a este lado en `false` y a la hoja
+    // en `true`, que es exactamente el caso que este comentario advertía.
+    const compacto = useLayoutCompacto();
 
     const [conteo, setConteo] = useState(null);
     const [products, setProducts] = useState([]);

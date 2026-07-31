@@ -16,8 +16,56 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.295.0';
+export const APP_VERSION = '2.296.0';
 
+// v2.296.0 — Un telefono ACOSTADO seguia siendo un telefono.
+//
+// Reportado: al girar el telefono desaparece el clúster flotante y vuelve la
+// barra de filtros de escritorio. El corte era `(max-width: 719px)` a secas, y
+// eso da por sentado que un telefono es angosto — acostado no lo es. Medido en
+// WebKit sobre /staff:
+//
+//   iPhone 13 acostado        844 × 390  → clúster NO
+//   iPhone 15 Pro Max acost.  932 × 430  → clúster NO
+//   Android grande acostado   915 × 412  → clúster NO
+//
+// O sea que TODO telefono del iPhone 13 en adelante perdia los controles de
+// pulgar al girar, y recibia en su lugar objetivos pensados para mouse. El
+// único que se salvaba era el iPhone SE (667 acostado), y se salvaba **por
+// accidente**: 667 cae debajo de 719. No habia ninguna intencion ahi — los
+// telefonos crecieron y se pasaron del numero.
+//
+// La regla correcta ya estaba escrita en este repo: `useCoarsePointer` dice
+// textual *"lo que decide no es cuanto mide la ventana sino con que se
+// apunta"*, y `TabBarAction`/`ModalShell` deciden por `(hover: none)` por eso
+// mismo. Faltaba aplicarla aca.
+//
+// Pero `(hover: none)` SOLO tampoco sirve: metería a las tablets en el layout
+// del telefono, y ahi sobra sitio para la barra completa — el clúster existe
+// para llegar con el pulgar en una pantalla chica, no para toda pantalla
+// tactil. Lo que distingue un telefono acostado de una tablet acostada no es el
+// ancho, es el **alto**: telefonos 375-430px, tablets 744-834px. 500 cae limpio
+// en el medio con mas del doble de margen a cada lado.
+//
+//   (max-width: 719px), (hover: none) and (max-height: 500px)
+//
+// Vive en `useLayoutCompacto` y NO en un literal repetido, que es la otra mitad
+// del arreglo: `BarraFlotante`, `FilterBar` y `ConteoDetailView` tienen que
+// coincidir —lo dice el comentario de las tres— y estaban sincronizados a mano,
+// o sea sincronizados hasta que alguien tocara uno. Y eso paso en esta misma
+// edicion: al cambiar `FilterBar` y dejar `ConteoDetailView` con su copia, el
+// segmentado de esa vista se habria dibujado en riel dentro de la hoja, que es
+// EXACTAMENTE lo que su comentario advertia. El hook lo vuelve imposible.
+//
+// Verificado despues, en las dos orientaciones: los 4 telefonos muestran el
+// clúster de pie y acostados, con las 5 columnas a 60px y sin recorte (la barra
+// ocupa 111px, 26-30% del alto acostado); y las 2 tablets siguen en escritorio,
+// sin cambio.
+//
+// `TablePagination` y `AbcXyzMatrix` se dejaron con el corte por ancho a
+// proposito: ahi la pregunta es "¿entra esto?", que SI es de espacio y no de
+// como se apunta — la distincion que el propio `useMediaQuery` documenta.
+//
 // v2.295.0 — El buscador ALTERNA, y el clúster cierra con LIMPIAR.
 //
 // Tres cosas pedidas sobre el clúster móvil, y una cuarta que apareció al medir.

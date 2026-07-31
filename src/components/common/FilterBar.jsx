@@ -2,7 +2,7 @@ import React, { memo, Children, isValidElement, useState, useEffect, useLayoutEf
 import AsaHoja from './AsaHoja';
 import { createPortal } from 'react-dom';
 import { X, SlidersHorizontal, MoreHorizontal, Building2 } from 'lucide-react';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 import Contador from './Contador';
 import BarraFlotante from './BarraFlotante';
 import TabBarAction from './TabBarAction';
@@ -489,7 +489,7 @@ const FilterBar = memo(({
     className = '',
     ...rest
 }) => {
-    const compacto = useMediaQuery('(max-width: 719px)');
+    const compacto = useLayoutCompacto();
     const [abierto, setAbierto] = useState(false);
     const idHoja = useId();
 

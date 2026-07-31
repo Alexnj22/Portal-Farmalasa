@@ -91,7 +91,12 @@ export default function LabsPanel({ onClose, onChanged }) {
         // `role="dialog"`, sin Escape y sin atrapar el foco, este panel no era un
         // diálogo para nadie más que para el ojo. La entrada la anima el canónico,
         // que ya pasa por los dos gates de movimiento (tema y reduced-motion).
-        <ModalShell open onClose={onClose} align="top" maxWidthClass="max-w-xs"
+        // Sin `align`: el default. Estaba en `"top"`, que `ModalShell` respeta
+        // siempre por ser el gesto del ⌘K — y en un teléfono eso deja el panel
+        // flotando a 10vh del borde de arriba, que es exactamente el
+        // antipatrón que el paso a hojas vino a quitar. Este no es una paleta
+        // de comandos, es un formulario.
+        <ModalShell open onClose={onClose} maxWidthClass="max-w-xs"
             zClass="z-modal" ariaLabel="Laboratorios ocultos en Min/Max"
             panelClassName="overflow-hidden">
             <div className="flex flex-col">

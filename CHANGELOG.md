@@ -12,6 +12,28 @@ retomar; acá está todo.
 
 ---
 
+## v2.266.0 — Hojas para todos los modales menos las alertas, y tres huecos cerrados
+
+Al comprobar el alcance de v2.265.0 aparecieron tres cosas que no pasaban por el
+canónico y se quedaban centradas en el teléfono:
+
+1. **`ConfigPanel` y `LabsPanel` tenían `align="top"`**, que `ModalShell` respeta
+   siempre por ser el gesto del ⌘K. En un teléfono deja el panel flotando a 10vh
+   del borde superior. No son paletas de comandos, son formularios.
+2. **El historial de MIN·MAX era el último modal escrito a mano**: `fixed
+   inset-0` propio, scrim propio, `backdrop-filter` en `style`, `rounded-3xl`
+   fijo, sin `role="dialog"`, sin Escape, sin foco atrapado y sin bloquear el
+   scroll de atrás.
+3. **`hojaEnTactil={false}`**, la única salida, para las alertas: un aviso corto
+   con un botón es una interrupción, no un panel con el que se trabaja.
+
+Dos trampas del camino, las dos invisibles al build: `<ModalShell>` **sin su
+`import`** (compila, revienta en runtime) y los children de JSX evaluándose al
+crear el elemento, así que `open={!!historyRow}` no protege el cuerpo. El guard va
+afuera.
+
+---
+
 ## v2.265.0 — Móvil: los modales son hojas, y el buscador sube encima de la barra
 
 **Todo modal entra como hoja en táctil.** Centrado y con *zoom* es la gramática

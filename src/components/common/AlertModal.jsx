@@ -39,7 +39,13 @@ const AlertModal = ({
     const Icon = currentConfig.icon;
 
     return (
-        <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-toast" ariaLabel={title}>
+        <ModalShell
+            // Una alerta NO se convierte en hoja: es un aviso corto con un
+            // botón, o sea una interrupción, no un panel con el que se trabaja.
+            // Centrada se lee como interrupción; subiendo desde abajo se
+            // confundiría con la hoja de filtros, que es algo que se usa y se
+            // descarta.
+            hojaEnTactil={false} open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-toast" ariaLabel={title}>
             <div data-surface="modal" className="overflow-hidden relative">
 
                 {/* 🚨 Glow de fondo dinámico que tiñe el cristal superior */}

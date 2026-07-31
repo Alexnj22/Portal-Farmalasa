@@ -1694,6 +1694,23 @@ centrado, así que trae esquinas redondeadas abajo —contra el filo de la panta
 se ven como un error— y ningún respeto por el área segura. Medido en un iPhone:
 "Cancelar" quedaba debajo del indicador de inicio.
 
+La única salida es `hojaEnTactil={false}`, y existe para **las alertas**. Un
+aviso corto con un botón no es un panel con el que se trabaja: es una
+interrupción. Centrado en medio de la pantalla se lee como tal; subiendo desde
+abajo se confundiría con la hoja de filtros, que es algo que se usa y se
+descarta. No es una excepción de conveniencia — el gesto de entrada dice de qué
+tipo de cosa se trata.
+
+`align="top"` no es un permiso para quedarse arriba en el teléfono. `ConfigPanel`
+y `LabsPanel` lo tenían y ahí dejaba el panel flotando a 10vh del borde superior,
+que es el antipatrón que este cambio vino a quitar. Se lo sacaron: no son paletas
+de comandos, son formularios. `top` queda solo para el ⌘K.
+
+**El guard va afuera, nunca en `open`.** Los children de JSX se evalúan al crear
+el elemento, no al montarlo, así que `open={!!fila}` no protege un cuerpo que
+dereferencie `fila` — revienta con null antes de que `ModalShell` decida nada. Va
+`{fila && <ModalShell open …>}`, o todo el cuerpo con encadenamiento opcional.
+
 #### En la barra flotante el campo sube ENCIMA, y el buscador va último
 
 Orden canónico: **`principal · acciones · buscador`**. Lo que más se toca queda

@@ -43,6 +43,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { clickable } from '../../utils/clickable';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
+import ModalShell from '../../components/common/ModalShell';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -1361,14 +1362,27 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             )}
 
             {/* ── Historial MIN/MAX ── */}
-            {historyRow && createPortal(
-                <div className="fixed inset-0 z-tooltip flex items-center justify-center p-4" onClick={() => setHistoryRow(null)}>
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-scrim backdrop-blur-sm" />
-                    {/* Card */}
-                    <div className="relative z-base w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-border-card shadow-[var(--shadow-elevation-xl)] overflow-hidden"
-                        style={{ background: 'var(--surface-modal)', backdropFilter: 'blur(40px) saturate(200%)' }}
-                        onClick={e => e.stopPropagation()}>
+            {/* `ModalShell` y no un overlay a mano (2026-07-30). Era el último modal
+                escrito a mano del proyecto: su propio `fixed inset-0`, su propio
+                scrim, su propio `backdrop-filter` en `style` y su propio
+                `rounded-3xl` — sin `role="dialog"`, sin Escape, sin atrapar el
+                foco y sin bloquear el scroll de atrás. Y como no pasaba por el
+                canónico, se quedaba centrado en el teléfono mientras todos los
+                demás pasaban a hoja. */}
+            {/* El guard va AFUERA y no en `open`: los children de JSX se evalúan
+                al crear el elemento, no al montarlo, así que `open={!!historyRow}`
+                no protege nada — el cuerpo dereferencia `historyRow` y revienta
+                con null. Es el mismo defecto que el refactor a ModalShell dejó en
+                RequestsView y EmployeeDetailView. */}
+            {historyRow && (
+            <ModalShell
+                open
+                onClose={() => setHistoryRow(null)}
+                maxWidthClass="max-w-md"
+                zClass="z-tooltip"
+                surface={null}
+                ariaLabel="Historial de MIN/MAX">
+                <div data-surface="modal" className="max-h-[82dvh] flex flex-col rounded-modal overflow-hidden">
 
                         {/* Header */}
                         <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
@@ -1434,9 +1448,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 );
                             })}
                         </div>
-                    </div>
-                </div>,
-                document.body
+                </div>
+            </ModalShell>
             )}
 
             <PhotoLightbox src={zoomPhoto} alt="Foto del producto" onClose={() => setZoomPhoto(null)} zClass="z-toast" />

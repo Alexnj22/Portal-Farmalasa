@@ -16,8 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.265.0';
+export const APP_VERSION = '2.266.0';
 
+// v2.266.0 — Hojas para TODOS los modales menos las alertas, y se cierran 3 huecos.
+//
+// Al comprobar el alcance de v2.265.0 aparecieron tres cosas que NO pasaban por
+// el canonico y por lo tanto se quedaban centradas en el telefono:
+//
+// 1. **`ConfigPanel` y `LabsPanel` tenian `align="top"`**, que `ModalShell`
+//    respeta siempre por ser el gesto del ⌘K. En un telefono eso deja el panel
+//    flotando a 10vh del borde de arriba — el antipatron que el paso a hojas
+//    vino a quitar. No son paletas de comandos, son formularios: se les saco.
+// 2. **El historial de MIN·MAX era el ultimo modal escrito a mano** del
+//    proyecto: `fixed inset-0` propio, scrim propio, `backdrop-filter` en
+//    `style` y `rounded-3xl` fijo, sin `role="dialog"`, sin Escape, sin atrapar
+//    el foco y sin bloquear el scroll de atras. Ahora es `ModalShell`.
+// 3. **`hojaEnTactil={false}`**, la unica salida, para las ALERTAS. Un aviso
+//    corto con un boton no es un panel con el que se trabaja, es una
+//    interrupcion: centrado se lee como tal, subiendo desde abajo se confunde
+//    con la hoja de filtros. El gesto de entrada dice de que tipo de cosa se
+//    trata.
+//
+// Dos trampas del camino, las dos ya conocidas y las dos invisibles al build:
+// **`<ModalShell>` sin su `import`** (compila y revienta en runtime — el barrido
+// ahora cubre los 17 llamadores) y **los children de JSX se evaluan al crear el
+// elemento**, asi que `open={!!historyRow}` no protege un cuerpo que
+// dereferencia `historyRow`. El guard va AFUERA.
+//
 // v2.265.0 — Movil: los modales son hojas, y el buscador sube encima de la barra.
 //
 // **Todo modal entra como hoja en tactil.** Centrado y con zoom es la gramatica

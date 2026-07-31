@@ -42,6 +42,9 @@ const visible = (el) => {
  *                      contenedor, el panel pone el suyo).
  *                      EN TÁCTIL, "center" se resuelve a "bottom" solo — ver la
  *                      nota en el cuerpo. "top" se respeta siempre.
+ *   hojaEnTactil     – default true. En false el diálogo se queda centrado
+ *                      también en táctil: es para las ALERTAS, que son una
+ *                      interrupción y no un panel con el que se trabaja.
  *   surface          – data-surface del panel (default "modal"; el ⌘K usa
  *                      "dropdown", que es lo que ese material es). En `null`
  *                      el panel no declara superficie: para los consumidores
@@ -87,6 +90,7 @@ export default function ModalShell({
   closeOnBackdrop = true,
   lockScroll = true,
   align: alignPedido = "center",
+  hojaEnTactil = true,
   surface = "modal",
   panelClassName = "",
   ariaLabel = "Ventana modal",
@@ -102,8 +106,15 @@ export default function ModalShell({
   // Se decide por `(hover: none)` y no por ancho, igual que `TabBarAction`: lo
   // que manda es el dispositivo de entrada. `align="top"` se respeta siempre —
   // es el ⌘K, que quiere estar bajo los ojos y no bajo el pulgar.
+  //
+  // `hojaEnTactil={false}` es la única salida, y existe para **las alertas**: un
+  // aviso corto con un botón no es un panel con el que se trabaja, es una
+  // interrupción. Centrado en medio de la pantalla se lee como tal; subido desde
+  // abajo se confunde con la hoja de filtros, que es algo que se usa y se
+  // descarta. No es una excepción de conveniencia — es que el gesto de entrada
+  // dice de qué tipo de cosa se trata.
   const sinHover = useMediaQuery("(hover: none)");
-  const autoHoja = sinHover && alignPedido === "center";
+  const autoHoja = sinHover && alignPedido === "center" && hojaEnTactil;
   const align = autoHoja ? "bottom" : alignPedido;
 
   // `mounted` sobrevive a `open=false` el tiempo de la animación de salida.

@@ -74,7 +74,12 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         // sin Escape y sin atrapar el foco — o sea que para un lector de pantalla
         // no era un diálogo y con el teclado se seguía tabulando por la tabla de
         // atrás. Y su `rounded-2xl` era un radio fijo contra el token del tema.
-        <ModalShell open onClose={onClose} align="top" maxWidthClass="max-w-sm"
+        // Sin `align`: el default. Estaba en `"top"`, que `ModalShell` respeta
+        // siempre por ser el gesto del ⌘K — y en un teléfono eso deja el panel
+        // flotando a 10vh del borde de arriba, que es exactamente el
+        // antipatrón que el paso a hojas vino a quitar. Este no es una paleta
+        // de comandos, es un formulario.
+        <ModalShell open onClose={onClose} maxWidthClass="max-w-sm"
             zClass="z-modal" ariaLabel="Configuración de Min/Max"
             panelClassName="overflow-hidden">
             <div>

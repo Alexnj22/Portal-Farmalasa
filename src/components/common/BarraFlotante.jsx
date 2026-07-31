@@ -109,6 +109,10 @@ const UMBRAL = 8;
 // Arriba de la página nunca se esconde: si el usuario está en el principio, no
 // está leyendo hacia abajo, está por empezar.
 const ZONA_SEGURA = 96;
+// Arriba de esto, el desplazamiento no lo hizo un dedo: es una restauración de
+// posición o un `scrollIntoView`. Un flick real reparte el recorrido en muchos
+// eventos de pocas decenas de píxeles.
+const SALTO = 120;
 
 const BarraFlotante = memo(({
     buscador = null,
@@ -171,6 +175,13 @@ const BarraFlotante = memo(({
                 const dy = y - ultimaY.current;
                 if (Math.abs(dy) < UMBRAL) return;
                 ultimaY.current = y;
+                // Un SALTO no es un gesto. Al cerrar una hoja, el bloqueo de
+                // scroll restaura la posición con `scrollTo`, y eso llega acá como
+                // un desplazamiento de cientos de píxeles en un solo evento: la
+                // barra lo leía como "el usuario bajó" y se escondía justo al
+                // cerrar. Un dedo produce muchos deltas chicos; un salto produce
+                // uno enorme. Se ignora, y la barra se queda donde estaba.
+                if (Math.abs(dy) > SALTO) return;
                 setVisible(y < ZONA_SEGURA || dy < 0);
             });
         };

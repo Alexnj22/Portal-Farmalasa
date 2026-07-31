@@ -86,7 +86,8 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
         // el gesto en vez de inventar una animación distinta.
         if (!gota?.lados) return;
         const sombra = gota.sombra || (panel.parentElement || panel).querySelector('[data-sombra-hoja]');
-        est.current = { y0: e.clientY, tPrev: performance.now(), yPrev: e.clientY, v: 0, alto, el, sombra, lados: gota.lados, t: 0 };
+        est.current = { y0: e.clientY, tPrev: performance.now(), yPrev: e.clientY, v: 0, alto, el, sombra,
+            lados: gota.lados, t: 0, rSombra: sombra ? sombra.getBoundingClientRect() : { width: 1, height: 1 } };
         el.style.transition = 'none';
         if (sombra) sombra.style.transition = 'none';
         e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -105,11 +106,14 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             s.t = t;
             s.el.style.clipPath = insetEn(s.el, s.lados, t);
             if (s.sombra) {
-                const l = s.lados;
-                s.sombra.style.top = `${Math.round(l.arriba * t)}px`;
-                s.sombra.style.right = `${Math.round(l.derecha * t)}px`;
-                s.sombra.style.bottom = `${Math.round(l.abajo * t)}px`;
-                s.sombra.style.left = `${Math.round(l.izq * t)}px`;
+                // `transform` y no los cuatro lados: son propiedades de layout y
+                // repintar una sombra de 44px de difuminado en cada cuadro del
+                // gesto es justo lo que hace que se sienta pesado.
+                const l = s.lados, R = s.rSombra;
+                const sx = Math.max(0.01, (R.width - (l.izq + l.derecha) * t) / R.width);
+                const sy = Math.max(0.01, (R.height - (l.arriba + l.abajo) * t) / R.height);
+                s.sombra.style.transformOrigin = '0 0';
+                s.sombra.style.transform = `translate(${l.izq * t}px, ${l.arriba * t}px) scale(${sx}, ${sy})`;
                 s.sombra.style.opacity = String(1 - t);
             }
         };
@@ -138,9 +142,8 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             s.el.style.transition = `clip-path ${VUELTA}ms ${CURVA}`;
             s.el.style.clipPath = insetEn(s.el, s.lados, 0);
             if (s.sombra) {
-                s.sombra.style.transition = `top ${VUELTA}ms ${CURVA}, right ${VUELTA}ms ${CURVA}, bottom ${VUELTA}ms ${CURVA}, left ${VUELTA}ms ${CURVA}, opacity ${VUELTA}ms ease-out`;
-                s.sombra.style.top = '0px'; s.sombra.style.right = '0px';
-                s.sombra.style.bottom = '0px'; s.sombra.style.left = '0px';
+                s.sombra.style.transition = `transform ${VUELTA}ms ${CURVA}, opacity ${VUELTA}ms ease-out`;
+                s.sombra.style.transform = 'translate(0px, 0px) scale(1, 1)';
                 s.sombra.style.opacity = '1';
             }
             const limpiar = (ev) => {

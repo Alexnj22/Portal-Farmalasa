@@ -32,7 +32,20 @@ import { leerUltimoToque } from './ultimoToque';
  * cancelar—, no el que abrió.
  */
 
-const ENTRADA_MS = 560;
+// ── Cuánto debe durar ─────────────────────────────────────────────────────
+// La referencia de las guías de interfaz coincide bastante: Material pone las
+// transiciones de superficie grande en 200-300ms (entrar 225, salir 195, y 375
+// para lo "complejo"); las hojas de iOS rondan los 350; y el umbral clásico de
+// percepción dice que por encima de 400ms una respuesta empieza a leerse como
+// espera, no como movimiento.
+//
+// Este componente pasó por los dos extremos y los dos se reportaron: 520ms con
+// una curva muy adelantada se sintió **apurada** —hacía el 46% del recorrido en
+// los primeros 110ms— y 560 con una curva pareja se sintió **lenta**. O sea que
+// el problema nunca fue solo el número: es la combinación. 340ms con una curva
+// que arranca decidida y se asienta cae dentro de la referencia y resuelve las
+// dos quejas.
+const ENTRADA_MS = 340;
 
 /**
  * La curva. `cubic-bezier(0.22,1,0.36,1)` es un ease-out muy adelantado: hace el
@@ -40,10 +53,13 @@ const ENTRADA_MS = 560;
  * SIENTE rápida —"la animación es muy rápida al abrir"—. Esta reparte el
  * movimiento de forma más pareja y llega igual de suave, sin arrastrarse.
  */
-export const CURVA = 'cubic-bezier(0.32,0.72,0,1)';
+// Arranca rápido y se asienta: es la "emphasized decelerate" de Material, la
+// forma estándar para algo que ENTRA. Una curva pareja (`0.32,0.72,0,1`) se
+// siente lenta a esta duración porque nunca da la sensación de haber llegado.
+export const CURVA = 'cubic-bezier(0.2,0,0,1)';
 
 /** La de salida arranca más decidida: cerrar es una respuesta, no una invitación. */
-const CURVA_SALIDA = 'cubic-bezier(0.4,0.1,0.2,1)';
+const CURVA_SALIDA = 'cubic-bezier(0.3,0,0.8,0.15)';
 
 /** Interpola los cuatro lados: 0 = abierta, 1 = del tamaño del control. */
 export function insetEn(vidrio, lados, t) {
@@ -106,31 +122,39 @@ function insetHacia(el, desde) {
 
 /**
  * La sombra no se puede RECORTAR con la forma —un `clip-path` se comería
- * justamente lo que cae fuera de la caja, que es toda la sombra—. Lo que se
- * anima es su CAJA: la capa se encoge hasta el rectángulo del control y su
- * `box-shadow` se dibuja alrededor de eso. Así la sombra crece con la gota en
- * vez de aparecer puesta encima.
+ * justamente lo que cae fuera de la caja, que es toda la sombra—, así que lo que
+ * se mueve es la capa entera hasta el rectángulo del control.
+ *
+ * **Con `transform`, no con `top/right/bottom/left`.** Esos cuatro son
+ * propiedades de LAYOUT: cambiarlas obliga al navegador a recalcular posición y
+ * repintar en cada cuadro, y encima esta capa proyecta un `box-shadow` de 44px de
+ * difuminado sobre 430px de ancho — repintar eso 60 veces por segundo es de lo
+ * más caro que se puede pedir en un teléfono. `transform` y `opacity` son las dos
+ * únicas propiedades que el compositor mueve sin volver a pintar nada.
+ *
+ * La capa no lleva vidrio, así que escalarla no tiene el problema del
+ * `backdrop-filter`: acá el `transform` es gratis y correcto.
  */
-function encogerSombra(sombra, el, desde, ms, curva, ladosGuardados) {
+function transformarSombra(sombra, el, desde, ms, curva, ladosGuardados) {
     if (!sombra) return;
     const l = ladosGuardados || ladosHacia(el, desde);
+    const r = sombra.getBoundingClientRect();
+    const anchoDestino = Math.max(1, r.width - l.izq - l.derecha);
+    const altoDestino  = Math.max(1, r.height - l.arriba - l.abajo);
+    sombra.style.transformOrigin = '0 0';
     sombra.style.transition = ms
-        ? `top ${ms}ms ${curva}, right ${ms}ms ${curva}, bottom ${ms}ms ${curva}, left ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`
+        ? `transform ${ms}ms ${curva}, opacity ${ms}ms ease-out`
         : 'none';
-    sombra.style.top = `${l.arriba}px`;
-    sombra.style.right = `${l.derecha}px`;
-    sombra.style.bottom = `${l.abajo}px`;
-    sombra.style.left = `${l.izq}px`;
-    sombra.style.borderRadius = '9999px';
+    sombra.style.transform =
+        `translate(${l.izq}px, ${l.arriba}px) scale(${anchoDestino / r.width}, ${altoDestino / r.height})`;
     sombra.style.opacity = ms ? '0' : '1';
 }
 
 function soltarSombra(sombra, ms, curva) {
     if (!sombra) return;
-    sombra.style.transition = `top ${ms}ms ${curva}, right ${ms}ms ${curva}, bottom ${ms}ms ${curva}, left ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`;
-    sombra.style.top = '0px'; sombra.style.right = '0px';
-    sombra.style.bottom = '0px'; sombra.style.left = '0px';
-    sombra.style.borderRadius = '';
+    sombra.style.transition = `transform ${ms}ms ${curva}, opacity ${ms}ms ease-out`;
+    sombra.style.transform = 'translate(0px, 0px) scale(1, 1)';
+    sombra.style.opacity = '1';
 }
 
 /**
@@ -200,7 +224,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // misma gota bajo el dedo. Pasarlos por contexto obligaría a que cada
         // hoja los reenvíe, y una prop de reenvío es una prop que se olvida.
         vidrio.__gota = { lados: ladosIniciales.current, sombra };
-        encogerSombra(sombra, vidrio, desde, 0, '', ladosIniciales.current);
+        transformarSombra(sombra, vidrio, desde, 0, '', ladosIniciales.current);
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
@@ -229,8 +253,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             vidrio.style.clipPath = ''; vidrio.style.transition = '';
             if (sombra) {
                 sombra.style.transition = ''; sombra.style.opacity = '';
-                sombra.style.top = ''; sombra.style.right = '';
-                sombra.style.bottom = ''; sombra.style.left = ''; sombra.style.borderRadius = '';
+                sombra.style.transform = '';
             }
             vidrio.removeEventListener('transitionend', alTerminar);
         };
@@ -261,7 +284,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // El arrastre pudo dejarla desplazada: se suelta antes de encogerla, o el
         // recorrido saldría desde el sitio equivocado.
         if (sombra) { sombra.style.transform = ''; }
-        encogerSombra(sombra, vidrio, desde, salidaMs, CURVA_SALIDA, ladosIniciales.current);
+        transformarSombra(sombra, vidrio, desde, salidaMs, CURVA_SALIDA, ladosIniciales.current);
 
         // ── Sembrar el estado inicial SOLO si no hay ninguno ──────────────
         // Al terminar la entrada el clip se retira (`clipPath = ''`), así que al

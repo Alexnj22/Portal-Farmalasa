@@ -16,8 +16,42 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.289.0';
+export const APP_VERSION = '2.290.0';
 
+// v2.290.0 — Tiempos segun la referencia, la sombra deja de repintar, y el recuadro.
+//
+// **Los tiempos.** Las guias de interfaz coinciden bastante: Material pone las
+// transiciones de superficie grande en 200-300ms (225 al entrar, 195 al salir,
+// 375 lo "complejo"); las hojas de iOS rondan los 350; y el umbral clasico dice
+// que arriba de 400ms una respuesta se lee como espera y no como movimiento.
+// Este componente paso por los dos extremos y los dos se reportaron: 520ms con
+// curva muy adelantada se sintio APURADA, 560 con curva pareja se sintio LENTA.
+// No era el numero solo: era la combinacion. Ahora 340 al entrar y 240 al salir,
+// con `cubic-bezier(0.2,0,0,1)` —arranca decidido y se asienta—, que cae dentro
+// de la referencia y resuelve las dos quejas. Medido: la gota termina a los
+// ~372ms contra 574 antes.
+//
+// **La sombra SI era la lentitud, y no por existir sino por COMO se movia.** Se
+// animaba con `top/right/bottom/left`, que son propiedades de LAYOUT: cada cuadro
+// obliga a recalcular posicion y repintar, y esa capa proyecta un `box-shadow` de
+// 44px de difuminado sobre 430px de ancho. Repintar eso 60 veces por segundo es
+// de lo mas caro que se le puede pedir a un telefono. Ahora se mueve con
+// `transform` + `opacity`, las dos unicas propiedades que el compositor mueve sin
+// repintar. La capa no lleva vidrio, asi que escalarla no tiene el problema del
+// `backdrop-filter`.
+//
+// **El recuadro: el panel TODAVIA llevaba `shadow-[var(--shadow-hoja)]`.** Una
+// edicion anterior no lo quito porque la cadena ya habia cambiado, asi que habia
+// dos sombras — la de la capa, que morfa, y una rectangular de ancho completo que
+// no se animaba nunca. Al cerrar, la hoja se recogia en pildora y el recuadro
+// seguia ahi.
+//
+// **Y la pildora ya no se esconde al cerrar.** El bloqueo de scroll restaura la
+// posicion con `scrollTo`, y eso llegaba al autoocultado de la barra como un
+// desplazamiento de cientos de pixeles: lo leia como "el usuario bajo". Un dedo
+// produce muchos deltas chicos; un salto produce uno enorme. Arriba de 120px se
+// ignora.
+//
 // v2.289.0 — El dedo maneja LA GOTA, y la apertura deja de sentirse apurada.
 //
 // **El arrastre ya no usa `transform`.** Movia la hoja con `translateY`, asi que

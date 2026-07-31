@@ -12,6 +12,26 @@ retomar; acá está todo.
 
 ---
 
+## v2.290.0 — Tiempos según la referencia, la sombra deja de repintar, y el recuadro
+
+**Los tiempos.** Material pone las transiciones de superficie grande en 200–300ms;
+las hojas de iOS rondan 350; arriba de 400 una respuesta se lee como espera. Este
+componente pasó por los dos extremos —520ms con curva adelantada se sintió
+apurada, 560 con curva pareja se sintió lenta—: no era el número solo, era la
+combinación. Ahora **340 al entrar y 240 al salir** con `cubic-bezier(0.2,0,0,1)`.
+
+**La sombra sí era la lentitud**, y no por existir sino por cómo se movía: con
+`top/right/bottom/left`, que son propiedades de layout, repintando un difuminado
+de 44px sobre 430px de ancho en cada cuadro. Ahora `transform` + `opacity`.
+
+**El recuadro**: el panel todavía llevaba `shadow-[var(--shadow-hoja)]` — dos
+sombras, una que morfa y una rectangular que no se animaba nunca.
+
+**Y la píldora ya no se esconde al cerrar**: la restauración de scroll llegaba al
+autoocultado como un desplazamiento de cientos de píxeles.
+
+---
+
 ## v2.289.0 — El dedo maneja la gota, y la apertura deja de sentirse apurada
 
 **El arrastre ya no usa `transform`.** Movía la hoja con `translateY`, así que al

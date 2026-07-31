@@ -73,7 +73,10 @@ const visible = (el) => {
 // velocidad el recorrido no se ve: la hoja parpadea y desaparece. Cerrar sigue
 // siendo más rápido que abrir (abrir es una invitación, cerrar es una respuesta),
 // pero la diferencia es de un tercio, no de tres veces.
-const EXIT_MS = 380;
+// Salir dura ~70% de entrar: es la proporción que usan las guías (Material:
+// 225 al entrar, 195 al salir) y la razón es de significado — entrar es una
+// invitación y admite demorarse, salir es una respuesta.
+const EXIT_MS = 240;
 
 
 
@@ -406,7 +409,12 @@ export default function ModalShell({
         // automática, así que atarla a `autoHoja` la dejaba justamente fuera de
         // las que más se ven. Los parches del hijo sí son de `autoHoja`: existen
         // para los cuerpos heredados, no para toda hoja.
-        className={`relative w-full ${esHoja ? 'shadow-[var(--shadow-hoja)]' : ''} ${autoHoja
+        // SIN `shadow-hoja` acá: la sombra vive en la capa `data-sombra-hoja`,
+        // que es la que sabe morfar con la gota. Tenerla también en el panel
+        // dejaba una sombra RECTANGULAR de ancho completo que no se animaba
+        // nunca: al cerrar, la hoja se recogía en píldora y el recuadro seguía
+        // ahí. Fue exactamente lo que se reportó como "trae un recuadro también".
+        className={`relative w-full ${autoHoja
             ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,env(safe-area-inset-bottom))]'
             : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}

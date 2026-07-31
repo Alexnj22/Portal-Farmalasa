@@ -16,8 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.268.0';
+export const APP_VERSION = '2.269.0';
 
+// v2.269.0 — EN PRUEBA: el cluster de la barra flotante pasa a `card` (16%).
+//
+// El usuario reporto que no se ve que sea liquidglass, y tiene fundamento: el
+// 72% de `dropdown` se subio para tapar un blur que estaba MUERTO por el bug del
+// ancestro con `transform`, y una vez arreglado el blur nadie volvio a bajar la
+// opacidad. O sea que el valor actual compensa un problema que ya no existe.
+//
+// **Para revertir: una linea** — `data-surface` del cluster, de `card` a
+// `dropdown`. El campo de busqueda NO se toco: es texto editable sobre la lista
+// y ahi la legibilidad no se negocia.
+//
+// Lo que la medicion dice, para que la decision se tome con el dato: con `card`
+// sobre la lista de productos, un nombre en mayusculas pasando por detras SE LEE
+// y choca con los rotulos "ACCIONES"/"BUSCAR". Es el mismo hallazgo que en su
+// momento eligio `dropdown` sobre la lista de empleados. El A/B se corrio en
+// Chromium: **headless WebKit no rasteriza `backdrop-filter`**, asi que ahi la
+// comparacion visual no vale nada.
+//
 // v2.268.0 — El filtro unico con la anatomia del cluster, y la pagina termina
 // donde termina el contenido.
 //

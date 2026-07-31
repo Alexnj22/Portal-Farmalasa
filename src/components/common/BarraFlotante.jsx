@@ -285,10 +285,28 @@ const BarraPortal = ({
                     clases Tailwind solo dan el color de fondo, así que con
                     `bg-surface-card` el clúster salía SIN vidrio: translúcido, no glass.
 
-                    La superficie sigue siendo `dropdown`, y eso se midió, no se
-                    heredó. Con el blur ya vivo (ver la nota del contenedor de arriba)
-                    se compararon las tres superficies existentes sobre la lista de
-                    empleados, a 390px y con las filas pasando por detrás:
+                    ── EN PRUEBA (2026-07-30): la superficie es `card`. ────────
+                    El usuario reportó que el clúster "no se ve que sea
+                    liquidglass". Tiene fundamento: el 72% de `dropdown` se subió
+                    para tapar un blur que estaba MUERTO por el bug del ancestro
+                    con `transform` —lo dice la nota de abajo— y una vez arreglado
+                    el blur nadie volvió a bajar la opacidad. O sea que el valor
+                    actual compensa un problema que ya no existe.
+
+                    A/B medido en Chromium sobre la lista de productos a 430px
+                    (headless WebKit NO rasteriza `backdrop-filter`, así que ahí
+                    la comparación no vale): con `card` se ve la fila pasar por
+                    detrás como color, con `dropdown` queda apenas un fantasma.
+
+                    **Para revertir: cambiar esta línea a `dropdown`.** Nada más.
+                    La contraevidencia sigue abajo y sigue siendo válida —es de
+                    otra vista, con texto más grueso—, así que si molesta ahí, se
+                    vuelve.
+
+                    ── La medición que eligió `dropdown` en su momento ──────────
+                    Con el blur ya vivo se compararon las tres superficies
+                    existentes sobre la lista de EMPLEADOS, a 390px y con las
+                    filas pasando por detrás:
 
                       · `card` (16%)     "SALUD 2" se lee ENTERO y cae encima de
                                          "ACCIONES". Es vidrio, pero ilegible.
@@ -296,12 +314,11 @@ const BarraPortal = ({
                                          rótulos del clúster se leen limpios.
                       · `modal` (85%)    ya no deja ver nada; es un panel.
 
-                    O sea que `dropdown` era la elección correcta por la razón
-                    equivocada: se había subido a 72% para tapar un blur que no
-                    existía. Con el blur andando, el 72% es vidrio esmerilado de
-                    verdad —se ve el movimiento y el color de la lista a través— y
-                    encima cumple el criterio que index.css ya fija para lo que flota
-                    sobre contenido: que lo de atrás sea LUZ, no texto.
+                    Esa medición es la que hay que releer si `card` molesta: en
+                    Personal los nombres son texto grueso en mayúsculas y a 16%
+                    asoman. En Productos no pasa. El criterio que index.css fija
+                    para lo que flota sobre contenido —que lo de atrás sea LUZ, no
+                    texto— es el que decide el empate.
 
                     NO agregar una superficie nueva para esto: la paleta es cerrada.
 
@@ -366,7 +383,7 @@ const BarraPortal = ({
                 )}
 
                 <div
-                    data-surface="dropdown"
+                    data-surface="card"
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
                         transition-transform duration-200 ease-out
                         max-w-full

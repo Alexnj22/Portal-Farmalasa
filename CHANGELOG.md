@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.269.0 — En prueba: el clúster de la barra flotante pasa a `card` (16%)
+
+El 72% de `dropdown` se subió para tapar un blur que estaba **muerto** por el bug
+del ancestro con `transform`; arreglado el blur, nadie volvió a bajar la opacidad.
+El valor actual compensa un problema que ya no existe.
+
+**Para revertir: una línea** — `data-surface` del clúster, de `card` a
+`dropdown`. El campo de búsqueda no se tocó: es texto editable sobre la lista.
+
+Lo que la medición dice: con `card`, un nombre de producto en mayúsculas pasando
+por detrás **se lee** y choca con los rótulos. Es el mismo hallazgo que en su
+momento eligió `dropdown` sobre la lista de empleados. El A/B corrió en Chromium
+porque headless WebKit no rasteriza `backdrop-filter`.
+
+---
+
 ## v2.268.0 — El filtro único con la anatomía del clúster, y la página termina donde termina el contenido
 
 **El filtro único ya no es un select embebido.** En la barra todo lo demás es un

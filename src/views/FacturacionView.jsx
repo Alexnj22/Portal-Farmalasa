@@ -34,6 +34,7 @@ import {
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
     fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
+    fetchInvoiceObservations,
 } from '../data/facturacion';
 import { useToastStore } from '../store/toastStore';
 
@@ -2051,11 +2052,194 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 }
 
 // ─── Main View ────────────────────────────────────────────────────────────────
+// ─── Tab: Observaciones ───────────────────────────────────────────────────────
+//
+// Las otras cuatro pestañas miran UN problema conocido cada una. Esta mira
+// cualquier cosa que no cuadre, y por eso su catálogo vive del lado del servidor
+// (RPC `get_invoice_observations`, migración 20260731172746) en vez de estar
+// repartido en filtros de PostgREST.
+//
+// El caso que la originó: 24 facturas con `recibido_mh = 'undefined'` figuraban
+// como CONFIRMADAS por Hacienda, porque el filtro preguntaba `IS NOT NULL` en
+// vez de exigir un sello de 40 caracteres. No las vio nadie hasta que el libro
+// IVA del ERP no cuadró por $282.58.
+
+const OBSERVACIONES = {
+    SELLO_INVALIDO:        { label: 'Sello inválido',        variant: 'danger'  },
+    SIN_SELLO:             { label: 'Sin sello',             variant: 'info'    },
+    SIN_CODIGO_GENERACION: { label: 'Sin código gen.',       variant: 'danger'  },
+    ESTADO_DESCONOCIDO:    { label: 'Estado desconocido',    variant: 'danger'  },
+    TIPO_DOC_DESCONOCIDO:  { label: 'Tipo doc. desconocido', variant: 'warning' },
+    SIN_CORRELATIVO:       { label: 'Sin correlativo',       variant: 'warning' },
+    TOTAL_INVALIDO:        { label: 'Total inválido',        variant: 'danger'  },
+    SUMA_NO_CUADRA:        { label: 'Suma no cuadra',        variant: 'warning' },
+};
+
+// Un código que este mapa no conoce NO se oculta: se muestra crudo, en warning.
+// Es la misma idea que los catch-alls del RPC — si el servidor empieza a
+// reportar una clase nueva, tiene que llegar a la pantalla aunque nadie haya
+// tocado el frontend todavía. Ocultarla sería repetir el defecto original.
+const metaObs = (code) => OBSERVACIONES[code] || { label: code, variant: 'warning' };
+
+const TONO_OBS = {
+    danger:  { bg: 'bg-danger/10',  cls: 'text-danger'       },
+    warning: { bg: 'bg-warning/10', cls: 'text-warning-text' },
+    info:    { bg: 'bg-brand/10',   cls: 'text-brand-text'   },
+};
+
+// Rango completo a propósito: las observaciones son raras (~190 sobre 338 mil
+// facturas) y lo que hace falta es verlas TODAS, no las del mes en curso.
+const OBS_DESDE = '2000-01-01';
+const OBS_HASTA = '2099-12-31';
+
+function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) {
+    const [rows, setRows]       = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError]     = useState(null);
+    const [pagina, setPagina]   = useState(1);
+    const [tamano, setTamano]   = useState(25);
+    const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha', 'desc');
+    const getBranch = useCallback((id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`, [branches]);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        const { data, error: err } = await fetchInvoiceObservations(OBS_DESDE, OBS_HASTA, filterBranch);
+        // Un RPC que falla NO puede quedar como "no hay observaciones": ese
+        // silencio es exactamente el defecto que esta pestaña vino a cerrar.
+        if (err) { setError(err.message); setRows([]); }
+        else     { setError(null);        setRows(data || []); }
+        setLoading(false);
+    }, [filterBranch]);
+
+    // Sin sondeo, a diferencia de Anuladas y Pendiente MH: esto es una superficie
+    // de revisión, no una cola en vivo, y el RPC recorre la tabla entera.
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+
+    useEffect(() => { setPagina(1); }, [searchTerm, filterBranch]); // eslint-disable-line react-hooks/set-state-in-effect -- volver a la página 1 cuando cambia el filtro
+
+    const conteos = useMemo(() => {
+        const m = new Map();
+        for (const r of rows) for (const o of (r.observaciones || [])) m.set(o, (m.get(o) || 0) + 1);
+        return [...m.entries()].sort((a, b) => b[1] - a[1]);
+    }, [rows]);
+
+    const filtered = useMemo(() => {
+        if (!searchTerm) return rows;
+        const { results } = smartFilter(searchTerm, rows,
+            r => [r.correlativo, r.cliente, String(r.erp_invoice_id || ''), ...(r.observaciones || [])]);
+        return results;
+    }, [rows, searchTerm]);
+
+    const ordenadas = useMemo(() => sortFn(filtered, {
+        observaciones: r => (r.observaciones || []).length,
+        correlativo:   r => r.correlativo || '',
+        sucursal:      r => getBranch(r.branch_id),
+        cliente:       r => r.cliente || '',
+        fecha:         r => r.fecha || '',
+        estado:        r => r.estado || '',
+        total:         r => Number(r.total) || 0,
+    }), [filtered, sortFn, getBranch]);
+
+    const totalPaginas = Math.max(1, Math.ceil(ordenadas.length / tamano));
+    const visibles = useMemo(
+        () => ordenadas.slice((pagina - 1) * tamano, pagina * tamano),
+        [ordenadas, pagina, tamano]);
+
+    return (
+        <div className="p-5 md:p-6 space-y-5">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de observaciones">
+                    <StatCard
+                        icon={AlertTriangle} label="Facturas" value={rows.length}
+                        iconBg={rows.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={rows.length > 0 ? 'text-danger' : 'text-content-3'}
+                        valueCls={rows.length > 0 ? 'text-danger' : 'text-content'}
+                    />
+                    {conteos.map(([code, n]) => {
+                        const meta = metaObs(code);
+                        const tono = TONO_OBS[meta.variant] || TONO_OBS.warning;
+                        return (
+                            <StatCard key={code} icon={AlertTriangle} label={meta.label} value={n}
+                                iconBg={tono.bg} iconCls={tono.cls} valueCls={tono.cls} />
+                        );
+                    })}
+                </CarrilCards>
+                {barraFiltros}
+            </div>
+
+            {error && (
+                <Notice variant="danger" icon={AlertTriangle}>
+                    No se pudieron cargar las observaciones: {error}
+                </Notice>
+            )}
+
+            {loading ? (
+                <div className="flex justify-center py-24"><SkeletonText lines={4} className="w-full max-w-md" /></div>
+            ) : !error && rows.length === 0 ? (
+                <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
+                    title="Sin observaciones" subtitle="Ninguna factura tiene datos fuera de lo esperado." />
+            ) : !error && (
+                <DataTable
+                    columns={[
+                        { key: 'observaciones', label: 'Observación',  sortable: true },
+                        { key: 'correlativo',   label: 'Correlativo',  sortable: true },
+                        { key: 'sucursal',      label: 'Sucursal',     sortable: true, hideBelow: 'md' },
+                        { key: 'cliente',       label: 'Cliente',      sortable: true, hideBelow: 'lg' },
+                        { key: 'fecha',         label: 'Fecha',        sortable: true },
+                        { key: 'estado',        label: 'Estado',       sortable: true, hideBelow: 'md' },
+                        { key: 'total',         label: 'Total',        sortable: true },
+                    ]}
+                    sortKey={sortKey} sortDir={sortDir} onSort={toggle}
+                    empty={{ message: 'Sin coincidencias' }}
+                    minWidth="780px"
+                    footer={
+                        <div className="px-5 py-3 flex justify-end">
+                            <TablePagination
+                                page={pagina} totalPages={totalPaginas} onPageChange={setPagina}
+                                pageSize={tamano} onPageSizeChange={(sz) => { setTamano(sz); setPagina(1); }}
+                                total={rows.length} filteredTotal={ordenadas.length} unit="facturas"
+                            />
+                        </div>
+                    }
+                >
+                    {visibles.map((r, ri) => (
+                        <DataRow key={r.id} index={ri}>
+                            <DataCell>
+                                <div className="flex flex-wrap gap-1">
+                                    {(r.observaciones || []).map(code => {
+                                        const meta = metaObs(code);
+                                        return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
+                                    })}
+                                </div>
+                            </DataCell>
+                            <DataCell>
+                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
+                                <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo || '—'}</div>
+                                {/* El valor crudo del sello cuando NO es un sello: es el dato que
+                                    delata el bug, así que se muestra en vez de esconderse. */}
+                                {r.recibido_mh && r.recibido_mh.length !== 40 && (
+                                    <div className="font-mono text-micro text-danger-text mt-0.5">sello: "{r.recibido_mh}"</div>
+                                )}
+                            </DataCell>
+                            <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
+                            <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
+                            <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
+                            <DataCell hideBelow="md" className="whitespace-nowrap">{r.estado || '—'}</DataCell>
+                            <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
+            )}
+        </div>
+    );
+}
+
 const TABS = [
-    { key: 'anuladas',     label: 'Anuladas'     },
-    { key: 'pendiente_mh', label: 'Pendiente MH' },
-    { key: 'saltos',       label: 'Saltos'        },
-    { key: 'no_efectivo',  label: 'No Efectivo'   },
+    { key: 'anuladas',      label: 'Anuladas'      },
+    { key: 'pendiente_mh',  label: 'Pendiente MH'  },
+    { key: 'saltos',        label: 'Saltos'        },
+    { key: 'no_efectivo',   label: 'No Efectivo'   },
+    { key: 'observaciones', label: 'Observaciones' },
 ];
 
 export default function FacturacionView() {
@@ -2087,7 +2271,7 @@ export default function FacturacionView() {
     const monthOpts = useMemo(() => monthOptions(), []);
 
     // Pestañas filtradas según permisos
-    const VALID_TABS = new Set(['anuladas', 'pendiente_mh', 'saltos', 'no_efectivo']);
+    const VALID_TABS = new Set(['anuladas', 'pendiente_mh', 'saltos', 'no_efectivo', 'observaciones']);
     const allowedTabs = TABS.filter(t => hasPermission(`facturacion_tab_${t.key}`));
     const defaultTab  = allowedTabs[0]?.key ?? 'anuladas';
     const rawTab      = searchParams.get('tab');
@@ -2119,9 +2303,10 @@ export default function FacturacionView() {
     const hasSearch = activeTab !== 'saltos';
 
     const searchPlaceholder = {
-        anuladas:     'Buscar correlativo o cliente...',
-        pendiente_mh: 'Buscar correlativo o cliente...',
-        no_efectivo:  'Buscar correlativo, cliente o método...',
+        anuladas:      'Buscar correlativo o cliente...',
+        pendiente_mh:  'Buscar correlativo o cliente...',
+        no_efectivo:   'Buscar correlativo, cliente o método...',
+        observaciones: 'Buscar correlativo, cliente u observación...',
     }[activeTab] || 'Buscar...';
 
     // D3.9 (2026-07-27): barra reescrita a mano → canónico. Los tabs pasan por la
@@ -2221,6 +2406,10 @@ export default function FacturacionView() {
                 <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
                     <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
                         barraFiltros={activeTab === 'no_efectivo' ? filtrosCuerpo : null} selectedMonth={selectedMonth} />
+                </div>
+                <div className={activeTab === 'observaciones' ? '' : 'hidden'}>
+                    <TabObservaciones branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
+                        barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
                 </div>
             </div>
         </GlassViewLayout>

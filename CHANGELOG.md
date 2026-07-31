@@ -12,6 +12,36 @@ retomar; acá está todo.
 
 ---
 
+## v2.308.0 — Facturación gana la pestaña que faltaba: Observaciones
+
+`v2.307.0` arregló el bug y dejó el RPC `get_invoice_observations` listo, pero sin
+pantalla que lo consumiera. Esta entrada le pone la superficie.
+
+**Una pestaña que no mira un problema, sino cualquiera.** Las otras cuatro tienen
+su defecto conocido cada una; esta lista toda factura con algo fuera de lo
+esperado, y el catálogo vive en el servidor en vez de estar repartido en filtros
+de PostgREST. Tarjetas por tipo de observación, tabla ordenable y paginada, y el
+valor **crudo** del sello cuando no es un sello — que es el dato que delata el
+bug, así que se muestra en vez de esconderse.
+
+**Un código desconocido no se oculta.** `metaObs()` cae en mostrar el código tal
+cual si el mapa no lo tiene. Es la contraparte en el frontend de los catch-alls
+del RPC: si el servidor empieza a reportar una clase nueva, llega a la pantalla
+aunque nadie haya tocado esta vista. Ocultarla sería repetir el defecto original
+con otra ropa.
+
+**El permiso, en las dos capas** (migración `20260731174500`). Una pestaña sin
+fila en `role_permissions` no la ve **nadie**: `allowedTabs` filtra por
+`hasPermission('facturacion_tab_*')`, así que la funcionalidad habría quedado
+escrita y muerta. Espeja los 21 roles que ya ven Anuladas, con `can_edit` en
+false: una observación se corrige arreglando el dato de origen, no marcándola
+como vista.
+
+Sin sondeo automático, a diferencia de Anuladas y Pendiente MH: es una superficie
+de revisión, no una cola en vivo, y el RPC recorre la tabla entera.
+
+---
+
 ## v2.307.0 — "No es NULL" no es "tiene sello": 24 facturas contadas como buenas
 
 Salió cuadrando `sales_invoices` contra el libro IVA del ERP: sobraban **$282.58**

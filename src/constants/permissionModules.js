@@ -68,11 +68,12 @@ export const MODULE_GROUPS = [
                 { key: 'ventas_tab_vendedores', label: 'Vendedores' },
                 { key: 'ventas_tab_productos',  label: 'Productos'  },
             ]},
-            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false, hasScope: true, tabs: [
-                { key: 'facturacion_tab_anuladas',     label: 'Anuladas'     },
-                { key: 'facturacion_tab_pendiente_mh', label: 'Pendiente MH' },
-                { key: 'facturacion_tab_saltos',       label: 'Saltos'       },
-                { key: 'facturacion_tab_no_efectivo',  label: 'No Efectivo'  },
+            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo, pagos no-efectivo y observaciones', icon: FileText,   hasApprove: false, hasScope: true, tabs: [
+                { key: 'facturacion_tab_anuladas',      label: 'Anuladas'      },
+                { key: 'facturacion_tab_pendiente_mh',  label: 'Pendiente MH'  },
+                { key: 'facturacion_tab_saltos',        label: 'Saltos'        },
+                { key: 'facturacion_tab_no_efectivo',   label: 'No Efectivo'   },
+                { key: 'facturacion_tab_observaciones', label: 'Observaciones' },
             ]},
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
             { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas (próximamente)', icon: Target,        hasApprove: false, comingSoon: true },

@@ -12,6 +12,51 @@ retomar; acá está todo.
 
 ---
 
+## v2.303.0 — El hueco del borde, el asa que no arrastraba, y el blur duplicado
+
+**El hueco a la derecha era mío.** Puse el área segura como `pr-` del
+*envoltorio*, y el envoltorio es transparente —la superficie la pinta el hijo—,
+así que el relleno no corría el contenido: encogía el panel y dejaba una franja
+por la que se veía la lista contra el filo. Ahora va sobre el **contenido**, y el
+material llega al borde. Medido: hueco 0px.
+
+**El asa de `LiquidModal` era decoración.** Se rendeaba sin las props del gesto,
+así que todos los modales de ese canónico —y por él pasa `UnifiedModal`, o sea
+casi todos los formularios— dibujaban un asa que prometía "esto se cierra
+arrastrando" y no cumplía. Y no alcanzaba con pasarle el gesto: el asa quedaba
+**debajo** del contenido (los dos con `z-base`, gana el último del DOM), así que
+el dedo tocaba el formulario. Medido: el `pointerdown` aterrizaba en el cuerpo.
+Se le reserva el carril y se le quita el margen negativo que la sacaba fuera del
+`overflow-hidden`.
+
+**Lo "lento/trabado" no era el modal: era la lista.** `GlassViewLayout` pinta el
+cuerpo como `data-surface="card"` y `DataTable` pinta **otra card adentro**, las
+dos con `blur(44px) saturate(2)`. Medido en un 17 Pro Max acostado (956×440):
+
+| ruta | card exterior | card anidada |
+|---|---|---|
+| `/minmax` | 4.8× la pantalla (2197px) | 4.2× la pantalla |
+| `/staff` | 3.1× la pantalla (1408px) | 2.4× la pantalla |
+
+~2 millones de píxeles difuminados **dos veces**, de forma permanente y no solo
+con un modal abierto. Un `backdrop-filter` dentro de otro muestrea una imagen ya
+difuminada: aporte visual casi nulo, costo de una segunda pasada completa.
+
+```css
+[data-surface="card"] [data-surface="card"] { backdrop-filter: none; }
+```
+
+Se apaga solo el blur —fondo, borde, radio y sombra siguen— y se limita a `card`
+dentro de `card`: un `dropdown` o un `modal` sobre una card sí flotan sobre
+contenido propio y su vidrio se gana.
+
+Auditoría re-corrida: 12 casos en verde salvo 5px de desborde en "Personal ·
+Nuevo" acostado, recortado por el `overflow-hidden` del panel. **Pendiente:** la
+card exterior sigue difuminando 4.8× la pantalla — bajarla es una decisión de
+identidad visual, no una corrección.
+
+---
+
 ## v2.302.0 — No Efectivo al canónico: una tabla que ordena y una paginación que se ve
 
 Opción A del mockup aprobado. Se conserva la separación por forma de pago —no es

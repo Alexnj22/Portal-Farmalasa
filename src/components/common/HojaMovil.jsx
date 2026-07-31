@@ -129,7 +129,12 @@ const HojaMovil = memo(({
         contenido al otro. Es el mismo árbol: solo cambia la dirección. */}
     <div className={`flex min-h-0 ${lateral ? 'flex-row h-full' : 'flex-col'}`}>
         <AsaHoja className={lateral ? 'my-3 ml-1' : 'mt-3 mb-1'} vertical={lateral} {...gesto} />
-        <div className={`flex flex-col min-h-0 ${lateral ? 'flex-1' : ''}`}>
+        {/* El área segura va acá, sobre el CONTENIDO, y no en el envoltorio: así
+            el material sigue llegando al filo de la pantalla y lo único que se
+            corre es lo que hay que poder leer y tocar. Acostado, el notch se
+            come ~59px del costado derecho. */}
+        <div className={`flex flex-col min-h-0 ${lateral
+            ? 'flex-1 pr-[env(safe-area-inset-right)]' : ''}`}>
 
         {(titulo || Icono) && (
             <div className="flex items-start gap-3 px-4 pt-3 pb-3 shrink-0">

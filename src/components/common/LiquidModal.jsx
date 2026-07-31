@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import AsaHoja from './AsaHoja';
 import ModalShell from './ModalShell';
+import { useArrastreHoja } from './arrastreHoja';
 import { usePanelLateral } from '../../hooks/useLayoutCompacto';
 import useMediaQuery from '../../hooks/useMediaQuery';
 
@@ -49,6 +50,22 @@ export default function LiquidModal({
     // enterarse o sigue calculando su alto contra `88dvh` dentro de un panel que
     // ya mide 100%, y pone el radio en un borde que no está a la vista.
     const lateral = usePanelLateral();
+    // ── El asa ARRASTRA, también acá ──────────────────────────────────────
+    // Era decorativa: `AsaHoja` se rendeaba sin las props del gesto, así que
+    // TODOS los modales de este canónico —y por él pasa `UnifiedModal`, o sea
+    // casi todos los formularios— dibujaban un asa que prometía "esto se cierra
+    // arrastrando" y después no cumplía. Reportado.
+    //
+    // `alCerrar` sale de la prop y no de `EstadoDialogoCtx`: el proveedor vive
+    // DENTRO de `ModalShell`, así que un `useContext` acá arriba leería el valor
+    // por defecto. `onClose` ya es exactamente lo mismo y está a mano.
+    const hojaRef = useRef(null);
+    const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
+    const gesto = useArrastreHoja({
+        refPanel: hojaRef,
+        alCerrar: onClose,
+        activo: enTactil && !sinMovimiento && !!onClose,
+    });
     return (
         <ModalShell
             open={open}
@@ -58,6 +75,7 @@ export default function LiquidModal({
             ariaLabel={ariaLabel}
         >
             <div
+                ref={hojaRef}
                 // `data-hoja` le dice a `ModalShell` que no la parchee: el parche
                 // es para los cuerpos heredados, y acá la anatomía ya es de hoja.
                 data-hoja={enTactil ? 'true' : undefined}
@@ -77,14 +95,22 @@ export default function LiquidModal({
                             // por orden de hoja.
                             ? 'max-h-[88dvh] rounded-t-modal rounded-b-none!'
                             : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]'}
-                    ${lateral ? '' : className}`}
+                    ${lateral
+                        // `pl-5` reserva el carril del asa. Sin él, el contenido
+                        // se dibuja ENCIMA —los dos llevan `z-base` y gana el que
+                        // va después en el DOM—, así que el dedo tocaba el
+                        // formulario en vez del asa y el arrastre no arrancaba
+                        // nunca. Medido: el `pointerdown` aterrizaba en el cuerpo.
+                        // Y `pr` para el área segura, que acostado se come ~59px.
+                        ? 'pl-6 pr-[env(safe-area-inset-right)]'
+                        : className}`}
             >
                 {enTactil && (
                     // El asa acompaña al borde por el que entró: acostada se para
                     // y se corre a la izquierda, igual que en `HojaMovil`.
-                    <AsaHoja vertical={lateral}
+                    <AsaHoja vertical={lateral} {...gesto}
                         className={lateral
-                            ? 'my-auto ml-1 absolute left-0 top-0 bottom-0 z-base'
+                            ? 'absolute left-0 top-1/2 -translate-y-1/2 z-base'
                             : 'mt-3 -mb-1 relative z-base'} />
                 )}
                 {/* Glass layer — sits behind all content; color por tema y

@@ -16,8 +16,63 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.302.0';
+export const APP_VERSION = '2.303.0';
 
+// v2.303.0 — El hueco del borde, el asa que no arrastraba, y el blur duplicado.
+//
+// Tres cosas reportadas sobre el panel lateral, y las tres tenian causa distinta.
+//
+// 1 · **El hueco a la derecha era mio.** Puse el area segura como `pr-` del
+//     ENVOLTORIO, y ese envoltorio es transparente —la superficie la pinta el
+//     hijo—, asi que el relleno no corria el contenido: encogia el panel y
+//     dejaba una franja por la que se veia la lista de atras contra el filo de
+//     la pantalla. Es exactamente lo que se ve en la captura. El area segura va
+//     sobre el CONTENIDO, adentro de la hoja, para que el material siga llegando
+//     al borde. Medido despues: hueco 0px.
+//
+// 2 · **El asa de `LiquidModal` era decoracion.** Se rendeaba sin las props del
+//     gesto, asi que TODOS los modales de ese canonico —y por el pasa
+//     `UnifiedModal`, o sea casi todos los formularios del portal— dibujaban un
+//     asa que prometia "esto se cierra arrastrando" y no cumplia. Ahora llama a
+//     `useArrastreHoja` con `onClose` (no por contexto: el proveedor vive DENTRO
+//     de `ModalShell`, asi que un `useContext` ahi arriba leeria el default).
+//
+//     Y no alcanzaba con pasarle el gesto: el asa quedaba DEBAJO del contenido
+//     —los dos con `z-base`, gana el que va despues en el DOM— asi que el dedo
+//     tocaba el formulario. Medido: el `pointerdown` aterrizaba en
+//     `flex flex-col w-full min-h-full px-6`. Se le reserva el carril (`pl-6`) y
+//     se le saca el margen negativo al asa vertical, que la sacaba fuera de la
+//     caja donde el `overflow-hidden` la recorta.
+//
+// 3 · **Lo "lento/trabado" no era el modal: era la lista.** `GlassViewLayout`
+//     pinta el cuerpo como `data-surface="card"` y `DataTable` pinta OTRA card
+//     adentro, las dos con `blur(44px) saturate(2)`. Medido en un 17 Pro Max
+//     acostado (956x440):
+//
+//       /minmax   4.8x la pantalla (2197px de alto) + 4.2x ANIDADA adentro
+//       /staff    3.1x la pantalla (1408px de alto) + 2.4x ANIDADA adentro
+//
+//     O sea ~2 millones de pixeles difuminados DOS VECES, de forma permanente y
+//     no solo con un modal abierto. Un `backdrop-filter` dentro de otro muestrea
+//     una imagen ya difuminada: el aporte visual es casi nulo y el costo es una
+//     segunda pasada completa. Regla nueva en index.css:
+//
+//       [data-surface="card"] [data-surface="card"] { backdrop-filter: none }
+//
+//     Se apaga SOLO el blur —fondo, borde, radio y sombra siguen, asi que el
+//     apilado intencional de superficies se ve igual— y se limita a `card`
+//     dentro de `card`: un `dropdown` o un `modal` sobre una card SI flotan
+//     sobre contenido propio y su vidrio se gana. Verificado: las capas
+//     anidadas desaparecieron, la mitad del area difuminada se fue.
+//
+// Auditoria re-corrida: 12 casos (6 modales x 2 orientaciones) en verde salvo un
+// desborde de 5px en "Personal · Nuevo" acostado, que queda recortado por el
+// `overflow-hidden` del panel y no se ve. ANOTADO, sin perseguir.
+//
+// PENDIENTE de esta tanda: la card exterior sigue difuminando 4.8x la pantalla.
+// Bajarla es una decision de identidad visual (es el vidrio de Liquid Glass
+// sobre la lista), no una correccion — se deja planteada.
+//
 // v2.302.0 — No Efectivo al canonico: una tabla que ordena y una paginacion que se ve.
 //
 // Opcion A del mockup aprobado. Se conserva la separacion por forma de pago —no

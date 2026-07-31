@@ -47,7 +47,11 @@ export default function AsaHoja({ className = '', vertical = false, ...gesto }) 
             {...gesto}
             className={`shrink-0 ${vertical ? 'my-auto' : 'mx-auto'} ${agarrable
                 ? `cursor-grab active:cursor-grabbing touch-none ${vertical
-                    ? 'px-2 -mx-2 py-6 h-max' : 'py-2 -my-2 px-6 w-max'}`
+                    // Vertical SIN margen negativo: en la hoja lateral el asa se
+                    // posiciona en absoluto contra el borde, y un `-mx-2` la
+                    // sacaría fuera de la caja —donde el `overflow-hidden` la
+                    // recorta y el contenido de al lado se le monta encima—.
+                    ? 'px-2 py-6 h-max' : 'py-2 -my-2 px-6 w-max'}`
                 : vertical ? 'h-9' : 'w-9'} ${className}`}
         >
             <div className={`rounded-full bg-content-3/40 ${vertical

@@ -1832,6 +1832,30 @@
 
    Los valores son los de la paleta CERRADA. El anillo va ANTES de la sombra
    de tarjeta para que se dibuje pegado al borde y la elevación quede afuera. */
+/* ── Una card DENTRO de otra card no vuelve a difuminar ────────────────────
+   Un `backdrop-filter` muestrea todo lo pintado detrás. Si el ancestro ya
+   difuminó, el hijo estaría difuminando una imagen YA difuminada: el aporte
+   visual es casi nulo y el costo es una segunda pasada completa de blur.
+
+   No es teórico. `GlassViewLayout` pinta el cuerpo como `card` y `DataTable`
+   pinta OTRA card adentro, así que toda vista con tabla tenía dos. Medido en un
+   iPhone 17 Pro Max acostado (956×440):
+
+     /minmax   4.8× la pantalla (2197px de alto)  +  4.2× anidada dentro
+     /staff    3.1× la pantalla (1408px de alto)  +  2.4× anidada dentro
+
+   O sea ~2 millones de píxeles difuminados dos veces, de forma permanente y no
+   solo con un modal abierto. Era la causa del "se siente lento" reportado.
+
+   Se apaga SOLO el blur: fondo, borde, radio y sombra siguen, así que el
+   apilado de superficies —que sí es intencional— se ve igual. Y se limita a
+   `card` dentro de `card`, que es el caso medido: un `dropdown` o un `modal`
+   sobre una card SÍ flotan sobre contenido propio y su vidrio se gana. */
+[data-surface="card"] [data-surface="card"] {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 [data-surface="card"][data-tono="warning"] { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning), var(--card-shadow); }
 [data-surface="card"][data-tono="danger"]  { border-color: var(--danger);  box-shadow: 0 0 0 1px var(--danger),  var(--card-shadow); }
 [data-surface="card"][data-tono="success"] { border-color: var(--success); box-shadow: 0 0 0 1px var(--success), var(--card-shadow); }

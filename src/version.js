@@ -16,8 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.286.0';
+export const APP_VERSION = '2.287.0';
 
+// v2.287.0 — Los tres del iPhone: el scroll, la sombra y el cierre. Tres causas
+// distintas, y ninguna se veia con estilos computados.
+//
+// **1. `overflow: hidden` NO bloquea el scroll en Safari de iOS.** Es un
+// comportamiento viejo y conocido; el documento sigue moviendose con el dedo.
+// Ahora el bloqueo saca el documento del flujo —`position: fixed` con el
+// desplazamiento como `top` negativo— y al cerrar restaura la posicion. Sin lo
+// segundo, cerrar devolveria al principio de la lista, que es peor que el
+// problema. Medido: fondo en 270 antes y despues de arrastrarlo, y 270 otra vez
+// al cerrar.
+//
+// **2. La capa de sombra llevaba `-z-base`, una clase QUE NO EXISTE.** `z-base`
+// esta definida como utilidad, su negativo no. O sea que era una clase escrita
+// que nunca pinto nada. Se retira: la capa va antes que el contenido en el DOM y
+// eso ya la deja debajo.
+//
+// **3. El cierre saltaba porque no habia nada que interpolar.** Al terminar la
+// entrada el recorte se retira (`clipPath = ''`), asi que al cerrar la transicion
+// iba de `none` a `inset(...)` — y `none` no es una forma. El navegador salta al
+// valor final: exactamente "se cierra de golpe y se siente torpe". Ahora se
+// SIEMBRA el recorte abierto, se fuerza el reflujo y recien ahi se transiciona.
+// Y los dos extremos llevan los CUATRO radios: con `round 9999px` de un lado y
+// cuatro valores del otro, Safari tampoco interpola.
+//
+// De paso, `prefers-reduced-motion` caia en `animate-out slide-out-to-bottom`:
+// quien pidio MENOS movimiento recibia el unico deslizamiento del portal. Sin
+// movimiento es sin movimiento.
+//
+// Medido en WebKit sobre el ciclo completo: al abrir, recorte a los 80ms
+// (`inset(67 36 9 122)`) y a los 320 (`inset(2.4 1.3 0.3 4.4)`); al cerrar, a los
+// 90 (`l35`) y a los 240 (`l203`), con la capa de sombra siguiendolo exacto.
+//
 // v2.286.0 — El cierre ahora SI es la gota, y la sombra hace el recorrido.
 //
 // Tres causas, las tres mias.

@@ -190,19 +190,40 @@ export default function ModalShell({
 
     window.addEventListener("keydown", onKeyDown);
 
-    // Guardamos el estilo original
-    const originalStyle = window.getComputedStyle(document.body).overflow;
+    // ── El bloqueo de scroll, a la manera que iOS respeta ────────────────
+    // `overflow: hidden` en `body` **no bloquea nada en Safari de iOS**. Es un
+    // comportamiento viejo y conocido: el documento sigue desplazándose con el
+    // dedo. Se reportó exactamente así — con la hoja de filtros abierta, el
+    // contenido de atrás se movía.
+    //
+    // Lo que sí funciona es sacar el documento del flujo: `position: fixed` con
+    // el desplazamiento actual como `top` negativo. La página queda congelada
+    // donde estaba, y al soltar se restaura la posición — sin eso, cerrar el
+    // diálogo devolvería al usuario al principio de la lista, que es peor que el
+    // problema original.
+    const yPrevio = window.scrollY;
+    const previo = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow,
+    };
 
     if (lockScroll) {
-        document.documentElement.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${yPrevio}px`;
+        document.body.style.width = "100%";
         document.body.style.overflow = "hidden";
     }
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       if (lockScroll) {
-          document.documentElement.style.overflow = "";
-          document.body.style.overflow = originalStyle;
+          document.body.style.position = previo.position;
+          document.body.style.top = previo.top;
+          document.body.style.width = previo.width;
+          document.body.style.overflow = previo.overflow;
+          window.scrollTo(0, yPrevio);
       }
     };
   }, [open, onClose, closeOnEsc, lockScroll]);
@@ -309,12 +330,17 @@ export default function ModalShell({
   const esHoja = align === "bottom";
 
 
-  // Con la gota puesta, el panel no lleva ADEMÁS su animación de clases: dos
-  // animaciones sobre el mismo elemento se pelean, y la de clases usa `opacity`,
-  // que crea un backdrop root y mata el vidrio mientras dura.
-  const panelAnim = (animacionPropia || !sinMovimiento) ? "" : open
-    ? (esHoja ? "animate-in slide-in-from-bottom duration-300" : "animate-in fade-in zoom-in-95 duration-300")
-    : (esHoja ? `animate-out slide-out-to-bottom duration-200 ${HOLD_EXIT}` : `animate-out fade-out zoom-out-95 duration-150 ${HOLD_EXIT}`);
+  // El panel NUNCA lleva su animación de clases. Dos animaciones sobre el mismo
+  // elemento se pelean, y la de clases usa `opacity`, que crea un backdrop root
+  // y mata el vidrio mientras dura.
+  //
+  // Y con `prefers-reduced-motion` tampoco: antes ahí caía en `animate-out
+  // slide-out-to-bottom`, o sea que quien pidió MENOS movimiento recibía el
+  // único deslizamiento del portal — y encima se leía como que el diálogo se
+  // cerraba hacia abajo en vez de volver por donde vino. Sin movimiento es sin
+  // movimiento: aparece y desaparece.
+  const panelAnim = "";
+
   const alignCls =
     align === "top"    ? "items-start justify-center pt-[10vh] px-4" :
     align === "bottom" ? "items-end justify-center" :
@@ -397,7 +423,10 @@ export default function ModalShell({
             ningún `backdrop-filter`. */}
         {esHoja && (
           <div data-sombra-hoja="true" aria-hidden="true"
-            className="absolute inset-0 rounded-t-modal pointer-events-none -z-base
+            // Sin `z-index`: va ANTES que el contenido en el DOM, y eso ya la
+            // deja debajo. `-z-base` no existía como utilidad —`z-base` sí, pero
+            // no su negativo— así que era una clase escrita que nunca pintó nada.
+            className="absolute inset-0 rounded-t-modal pointer-events-none
               shadow-[var(--shadow-hoja)]" />
         )}
         {children}

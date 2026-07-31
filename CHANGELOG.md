@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.287.0 — Los tres del iPhone: el scroll, la sombra y el cierre
+
+**`overflow: hidden` no bloquea el scroll en Safari de iOS.** El bloqueo ahora
+saca el documento del flujo (`position: fixed` con el desplazamiento como `top`
+negativo) y restaura la posición al cerrar.
+
+**La capa de sombra llevaba `-z-base`, una clase que no existe** — `z-base` está
+definida como utilidad, su negativo no. Era una clase escrita que nunca pintó.
+
+**El cierre saltaba porque no había nada que interpolar**: al terminar la entrada
+el recorte se retira, así que al cerrar iba de `none` a `inset(...)`, y `none` no
+es una forma. Ahora se siembra el recorte abierto antes de transicionar, y los dos
+extremos llevan los cuatro radios.
+
+---
+
 ## v2.286.0 — El cierre ahora sí es la gota, y la sombra hace el recorrido
 
 **La sombra no se movía con el dedo: se buscaba en el sitio equivocado.** El

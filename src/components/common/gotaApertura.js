@@ -74,7 +74,12 @@ function ladosHacia(el, desde) {
 
 function insetHacia(el, desde) {
     const l = ladosHacia(el, desde);
-    return `inset(${l.arriba}px ${l.derecha}px ${l.abajo}px ${l.izq}px round 9999px)`;
+    // Los CUATRO radios, aunque sean iguales: una transición de `clip-path` solo
+    // interpola si las dos formas tienen la misma estructura, y el extremo final
+    // lleva cuatro. Con `round 9999px` de un lado y cuatro valores del otro,
+    // Safari no interpola — **salta**, que es exactamente "no se ve la gota".
+    // Chromium es indulgente y por eso la prueba local no lo mostraba.
+    return `inset(${l.arriba}px ${l.derecha}px ${l.abajo}px ${l.izq}px round 9999px 9999px 9999px 9999px)`;
 }
 
 /**
@@ -95,6 +100,7 @@ function encogerSombra(sombra, el, desde, ms, curva) {
     sombra.style.bottom = `${l.abajo}px`;
     sombra.style.left = `${l.izq}px`;
     sombra.style.borderRadius = '9999px';
+    sombra.style.opacity = ms ? '0' : '1';
 }
 
 function soltarSombra(sombra, ms, curva) {
@@ -206,6 +212,20 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // recorrido saldría desde el sitio equivocado.
         if (sombra) { sombra.style.transform = ''; }
         encogerSombra(sombra, vidrio, desde, salidaMs, 'cubic-bezier(0.4,0,0.6,1)');
+
+        // ── Hay que SEMBRAR el estado inicial del recorte ─────────────────
+        // Al terminar la entrada el clip se retira (`clipPath = ''`), así que al
+        // cerrar la transición iría de `none` a `inset(...)` — y `none` no es una
+        // forma: no hay nada que interpolar y el navegador SALTA al valor final.
+        // Eso es exactamente "el cierre no hace la gota, se cierra de golpe".
+        // Se vuelve a poner el recorte abierto, se fuerza el reflujo y recién ahí
+        // se transiciona: dos formas del mismo tipo, con los mismos cuatro radios.
+        const radioA = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
+        const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
+        vidrio.style.transition = 'none';
+        vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radioA} ${radioA} ${radioB} ${radioB})`;
+        void vidrio.offsetWidth;
+
         vidrio.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
         vidrio.style.clipPath = insetHacia(vidrio, desde);
     }, [ref, cerrando, salidaMs, activo]);

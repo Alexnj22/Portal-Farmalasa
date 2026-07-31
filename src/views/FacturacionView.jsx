@@ -2098,10 +2098,18 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
     const [rows, setRows]       = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError]     = useState(null);
-    const [pagina, setPagina]   = useState(1);
-    const [tamano, setTamano]   = useState(25);
-    const { sortKey, sortDir, toggle, sortFn } = useSortable('fecha', 'desc');
+    const [collapsedBranches, setCollapsedBranches] = useState({});
     const getBranch = useCallback((id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`, [branches]);
+
+    const daysAgoLabel = (fechaStr) => {
+        const today = svNow();
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
+        const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
+        if (diff === 0) return 'hoy';
+        if (diff === 1) return 'ayer';
+        return `hace ${diff}d`;
+    };
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -2117,8 +2125,6 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
     // de revisión, no una cola en vivo, y el RPC recorre la tabla entera.
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
-    useEffect(() => { setPagina(1); }, [searchTerm, filterBranch]); // eslint-disable-line react-hooks/set-state-in-effect -- volver a la página 1 cuando cambia el filtro
-
     const conteos = useMemo(() => {
         const m = new Map();
         for (const r of rows) for (const o of (r.observaciones || [])) m.set(o, (m.get(o) || 0) + 1);
@@ -2132,20 +2138,17 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
         return results;
     }, [rows, searchTerm]);
 
-    const ordenadas = useMemo(() => sortFn(filtered, {
-        observaciones: r => (r.observaciones || []).length,
-        correlativo:   r => r.correlativo || '',
-        sucursal:      r => getBranch(r.branch_id),
-        cliente:       r => r.cliente || '',
-        fecha:         r => r.fecha || '',
-        estado:        r => r.estado || '',
-        total:         r => Number(r.total) || 0,
-    }), [filtered, sortFn, getBranch]);
-
-    const totalPaginas = Math.max(1, Math.ceil(ordenadas.length / tamano));
-    const visibles = useMemo(
-        () => ordenadas.slice((pagina - 1) * tamano, pagina * tamano),
-        [ordenadas, pagina, tamano]);
+    // Mismo agrupado que Pendiente MH: sucursal → fecha → documentos. El RPC ya
+    // devuelve ordenado por fecha desc, así que el orden de inserción alcanza.
+    const grouped = useMemo(() => {
+        const g = {};
+        for (const r of filtered) {
+            if (!g[r.branch_id]) g[r.branch_id] = {};
+            if (!g[r.branch_id][r.fecha]) g[r.branch_id][r.fecha] = [];
+            g[r.branch_id][r.fecha].push(r);
+        }
+        return g;
+    }, [filtered]);
 
     return (
         <div className="p-5 md:p-6 space-y-5">
@@ -2176,61 +2179,95 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
             )}
 
             {loading ? (
-                <div className="flex justify-center py-24"><SkeletonText lines={4} className="w-full max-w-md" /></div>
-            ) : !error && rows.length === 0 ? (
+                <div className="space-y-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="rounded-2xl border border-divider bg-surface-card shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2.5 bg-surface-card-hover/60">
+                                <div className="h-3 w-28 skeleton rounded-full" />
+                                <div className="h-3 w-12 skeleton rounded-full" />
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                                {Array.from({ length: 3 }).map((_, j) => (
+                                    <div key={j} className="h-7 w-full skeleton rounded-xl" />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : !error && filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
                     title="Sin observaciones" subtitle="Ninguna factura tiene datos fuera de lo esperado." />
             ) : !error && (
-                <DataTable
-                    columns={[
-                        { key: 'observaciones', label: 'Observación',  sortable: true },
-                        { key: 'correlativo',   label: 'Correlativo',  sortable: true },
-                        { key: 'sucursal',      label: 'Sucursal',     sortable: true, hideBelow: 'md' },
-                        { key: 'cliente',       label: 'Cliente',      sortable: true, hideBelow: 'lg' },
-                        { key: 'fecha',         label: 'Fecha',        sortable: true },
-                        { key: 'estado',        label: 'Estado',       sortable: true, hideBelow: 'md' },
-                        { key: 'total',         label: 'Total',        sortable: true },
-                    ]}
-                    sortKey={sortKey} sortDir={sortDir} onSort={toggle}
-                    empty={{ message: 'Sin coincidencias' }}
-                    minWidth="780px"
-                    footer={
-                        <div className="px-5 py-3 flex justify-end">
-                            <TablePagination
-                                page={pagina} totalPages={totalPaginas} onPageChange={setPagina}
-                                pageSize={tamano} onPageSizeChange={(sz) => { setTamano(sz); setPagina(1); }}
-                                total={rows.length} filteredTotal={ordenadas.length} unit="facturas"
-                            />
-                        </div>
-                    }
-                >
-                    {visibles.map((r, ri) => (
-                        <DataRow key={r.id} index={ri}>
-                            <DataCell>
-                                <div className="flex flex-wrap gap-1">
-                                    {(r.observaciones || []).map(code => {
-                                        const meta = metaObs(code);
-                                        return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
+                <div className="space-y-3">
+                    {/* Misma anatomía que Pendiente MH: sucursal colapsable → fecha →
+                        documentos. Lo que cambia es la hoja: acá cada documento lleva
+                        SUS observaciones, que es el dato de la pestaña. */}
+                    {Object.entries(grouped).map(([branchId, byFecha]) => {
+                        const docs = Object.values(byFecha).flat();
+                        const branchHasCCF = docs.some(r => r.tipo_documento === 'CCF');
+                        const isCollapsed  = !!collapsedBranches[branchId];
+                        return (
+                            <div key={branchId} className="rounded-2xl border border-divider bg-surface-card shadow-sm">
+                                <ListRow
+                                    density="sm" icon={Building2} iconBoxClass="bg-transparent border-transparent"
+                                    iconClass={branchHasCCF ? 'text-danger' : 'text-content-3'}
+                                    tone={branchHasCCF ? 'danger' : null}
+                                    title={<span className="flex items-center gap-2">{getBranch(Number(branchId))}{branchHasCCF && <Badge variant="danger" size="sm">CCF</Badge>}</span>}
+                                    onClick={() => setCollapsedBranches(prev => ({ ...prev, [branchId]: !prev[branchId] }))}
+                                    aria-expanded={!isCollapsed}
+                                    className={`rounded-none border-x-0 border-t-0 ${isCollapsed ? 'border-b-0' : ''}`}
+                                    trailing={<>
+                                        <span className="text-caption font-black text-content-3">{docs.length} doc</span>
+                                        <ChevronDown size={13} className={`text-content-3 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                    </>}
+                                />
+
+                                {!isCollapsed && <div className="divide-y divide-divider">
+                                    {Object.entries(byFecha).map(([fecha, fechaRows]) => {
+                                        const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
+                                        return (
+                                            <div key={fecha} className="px-4 py-3">
+                                                <div className="flex items-center gap-2 mb-2.5">
+                                                    <span className={`text-label font-black ${hasCCF ? 'text-danger-text' : 'text-content-2'}`}>{fecha}</span>
+                                                    <Badge variant={hasCCF ? 'danger' : 'neutral'} size="sm">{daysAgoLabel(fecha)}</Badge>
+                                                </div>
+
+                                                <div className="space-y-1.5">
+                                                    {fechaRows.map(r => {
+                                                        const isCCF = r.tipo_documento === 'CCF';
+                                                        return (
+                                                            <div key={r.id} className="flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2">
+                                                                <div className="flex flex-wrap gap-1 shrink-0">
+                                                                    {(r.observaciones || []).map(code => {
+                                                                        const meta = metaObs(code);
+                                                                        return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
+                                                                    })}
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
+                                                                        <span className={`font-mono text-body-sm font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo || '—'}</span>
+                                                                        {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
+                                                                    </div>
+                                                                    {/* El valor crudo del sello cuando NO es un sello: es el
+                                                                        dato que delata el problema, así que se muestra. */}
+                                                                    {r.recibido_mh && r.recibido_mh.length !== 40 && (
+                                                                        <div className="font-mono text-micro text-danger-text mt-0.5">sello: &ldquo;{r.recibido_mh}&rdquo;</div>
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-body-sm font-black text-content-2 shrink-0 ml-auto">{fmt(r.total)}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
                                     })}
-                                </div>
-                            </DataCell>
-                            <DataCell>
-                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
-                                <div className="font-mono text-body-sm text-content-2 mt-1">{r.correlativo || '—'}</div>
-                                {/* El valor crudo del sello cuando NO es un sello: es el dato que
-                                    delata el bug, así que se muestra en vez de esconderse. */}
-                                {r.recibido_mh && r.recibido_mh.length !== 40 && (
-                                    <div className="font-mono text-micro text-danger-text mt-0.5">sello: "{r.recibido_mh}"</div>
-                                )}
-                            </DataCell>
-                            <DataCell hideBelow="md">{getBranch(r.branch_id)}</DataCell>
-                            <DataCell hideBelow="lg" className="max-w-[160px] truncate">{r.cliente || '—'}</DataCell>
-                            <DataCell className="whitespace-nowrap">{r.fecha}</DataCell>
-                            <DataCell hideBelow="md" className="whitespace-nowrap">{r.estado || '—'}</DataCell>
-                            <DataCell className="text-body-lg font-bold whitespace-nowrap">{fmt(r.total)}</DataCell>
-                        </DataRow>
-                    ))}
-                </DataTable>
+                                </div>}
+                            </div>
+                        );
+                    })}
+                </div>
             )}
         </div>
     );

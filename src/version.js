@@ -16,7 +16,23 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.310.0';
+export const APP_VERSION = '2.311.0';
+
+// v2.311.0 — Observaciones toma la anatomia de Pendiente MH: sucursal y fecha.
+//
+// La tabla plana ordenaba bien pero no respondia la pregunta con la que uno
+// abre esta pantalla — "que sucursal tiene problemas y de que dias" — porque
+// mezclaba las 7 sucursales en una sola lista paginada. Pendiente MH ya tenia
+// resuelto ese agrupado, asi que se reusa en vez de inventar otro.
+//
+// Sucursal colapsable (con su contador y su badge CCF) → fecha (con "hace 41d")
+// → documentos. Lo unico que cambia es la hoja: donde Pendiente MH pone una
+// pildora `ChipDoc`, acá va el documento con SUS observaciones, que es el dato
+// de esta pestaña. Se fue la paginacion y el orden por columna: con 31 filas
+// agrupadas no aportaban, y el agrupado ya da la jerarquia.
+//
+// Se mantiene el valor CRUDO del sello cuando no es un sello (`sello:
+// "undefined"`), que es lo que permite reconocer el caso de un vistazo.
 
 // v2.310.0 — Observaciones era 84% ruido: el sello tarda hasta 2 dias en llegar.
 //

@@ -39,6 +39,26 @@ documentó tres veces. Escalar al 95 % no lo tiene: el blur pasa de 24px a ~23.
 
 ---
 
+## v2.311.0 — Observaciones toma la anatomía de Pendiente MH: sucursal y fecha
+
+La tabla plana ordenaba bien, pero no respondía la pregunta con la que uno abre
+esta pantalla — *qué sucursal tiene problemas y de qué días* — porque mezclaba
+las 7 sucursales en una sola lista paginada. Pendiente MH ya tenía resuelto ese
+agrupado, así que se reusa en vez de inventar otro.
+
+Sucursal colapsable (con su contador y su badge CCF) → fecha (con "hace 41d") →
+documentos. Lo único que cambia es la hoja: donde Pendiente MH pone una píldora
+`ChipDoc`, acá va el documento con **sus** observaciones, que es el dato de esta
+pestaña.
+
+Se fueron la paginación y el orden por columna: con 31 filas agrupadas no
+aportaban, y la jerarquía ya la da el agrupado.
+
+Se mantiene el valor **crudo** del sello cuando no es un sello
+(`sello: "undefined"`), que es lo que permite reconocer el caso de un vistazo.
+
+---
+
 ## v2.310.0 — Observaciones era 84% ruido: el sello tarda hasta 2 días en llegar
 
 La captura de la pestaña recién hecha mostró lo que ni el build ni el lint podían:

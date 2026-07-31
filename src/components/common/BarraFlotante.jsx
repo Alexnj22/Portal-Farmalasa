@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import Contador from './Contador';
 import ModalShell from './ModalShell';
+import HojaMovil from './HojaMovil';
 
 /**
  * BarraFlotante — los controles de la vista, al alcance del pulgar. Solo táctil.
@@ -100,6 +101,13 @@ import ModalShell from './ModalShell';
 
 // Cuánto hay que mover el dedo para que la barra reaccione. Sin umbral, el
 // rebote elástico de iOS y cualquier micro-scroll la hacen titilar.
+// ── El material de la barra, en UN solo sitio ─────────────────────────────
+// El clúster y sus hojas usan el mismo `data-surface` a propósito: la hoja es la
+// barra desplegándose, no un diálogo aparte, y con dos materiales distintos se
+// leían como dos piezas apiladas. Estando acá, la prueba de `card` se revierte a
+// `dropdown` cambiando ESTA línea y nada más.
+const MATERIAL = 'card';
+
 const UMBRAL = 8;
 // Arriba de la página nunca se esconde: si el usuario está en el principio, no
 // está leyendo hacia abajo, está por empezar.
@@ -125,6 +133,10 @@ const BarraFlotante = memo(({
     const [enPantalla, setEnPantalla] = useState(true);
     const anclaRef = useRef(null);
     const [abierta, setAbierta] = useState(null);   // key de la acción con panel abierto
+    // La x del botón que abrió el panel: la hoja se despliega DESDE ahí. Se
+    // guarda al tocar y no se recalcula, porque para cuando la hoja está en
+    // pantalla el clúster ya se movió.
+    const [origenX, setOrigenX] = useState(null);
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
     const inputRef = useRef(null);
@@ -223,6 +235,8 @@ const BarraFlotante = memo(({
                     acciones={acciones}
                     principal={principal}
                     clusterRef={clusterRef}
+                    origenX={origenX}
+                    setOrigenX={setOrigenX}
                     rotulos={rotulos}
                     setAbierta={setAbierta}
                     panelAbierto={panelAbierto}
@@ -237,7 +251,7 @@ const BarraFlotante = memo(({
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
     abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
-    clusterRef,
+    clusterRef, origenX, setOrigenX,
 }) => {
     return (
         <>
@@ -383,7 +397,7 @@ const BarraPortal = ({
                 )}
 
                 <div
-                    data-surface="card"
+                    data-surface={MATERIAL}
                     className={`pointer-events-auto flex items-start gap-1.5 p-1.5 shadow-lg
                         transition-transform duration-200 ease-out
                         max-w-full
@@ -408,7 +422,12 @@ const BarraPortal = ({
                             rotulo={rotulos}
                             badge={a.badge}
                             activo={a.activo ?? (a.badge > 0)}
-                            onClick={() => (a.panel ? setAbierta(a.key) : a.onClick?.())}
+                            onClick={(e) => {
+                                if (!a.panel) return a.onClick?.();
+                                const r = e.currentTarget.getBoundingClientRect();
+                                setOrigenX(Math.round(r.left + r.width / 2));
+                                setAbierta(a.key);
+                            }}
                         />
                     ))}
 
@@ -434,15 +453,22 @@ const BarraPortal = ({
                     maxWidthClass="max-w-none"
                     surface={null}
                     ariaLabel={panelAbierto?.tituloPanel || panelAbierto?.label || 'Panel'}
+                    animacionPropia
                 >
-                    <div data-surface="modal" className="max-h-[85dvh] overflow-y-auto rounded-t-modal
-                        px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
-                        <div aria-hidden="true" className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mb-3" />
-                        <h2 className="text-body-lg font-black text-content mb-3">
-                            {panelAbierto?.tituloPanel || panelAbierto?.label}
-                        </h2>
+                    {/* `HojaMovil` y no el asa + título + relleno a mano que había
+                        acá (2026-07-30). Esta hoja fue el MODELO al que se mandó
+                        igualar el resto de los modales, y sin embargo era la única
+                        que seguía escrita a mano: mismo asa, mismo título, misma
+                        área segura, duplicados. Si el canónico nació de copiar
+                        esto, esto tiene que ser lo primero en usarlo. */}
+                    <HojaMovil
+                        titulo={panelAbierto?.tituloPanel || panelAbierto?.label}
+                        // La MISMA superficie del clúster — ver `MATERIAL`.
+                        superficie={MATERIAL}
+                        origenX={origenX}
+                    >
                         {panelAbierto?.panel}
-                    </div>
+                    </HojaMovil>
                 </ModalShell>
             )}
         </>

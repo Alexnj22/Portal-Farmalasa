@@ -16,8 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.270.0';
+export const APP_VERSION = '2.271.0';
 
+// v2.271.0 — La hoja de la barra NACE del boton que se toco, y comparte material.
+//
+// La barra flotante y sus hojas son UNA sola pieza: la hoja es la barra
+// desplegandose, no un dialogo aparte. Faltaban las dos cosas que lo dicen.
+//
+// · **Mismo material.** El cluster y sus hojas leen el mismo `data-surface`
+//   desde una constante unica (`MATERIAL`). Con dos superficies distintas se
+//   leian como dos piezas apiladas — y en un solo sitio, cambiarlo (o revertir
+//   la prueba de `card`) es UNA linea.
+// · **Animacion de origen.** `HojaMovil` recibe `origenX` —la x real del boton
+//   tocado, medida del DOM— y se despliega desde ahi con
+//   `@keyframes hoja-desde-origen`. Lo que se lee es "este boton se abrio", no
+//   "algo entro por abajo". Medido: origen 249px para Filtros, 315px para
+//   Acciones, que son las x exactas de esos botones.
+//
+// La animacion va EN LA HOJA y no en el envoltorio, y por eso `ModalShell`
+// acepta `animacionPropia`: un `transform` propio no rompe el `backdrop-filter`
+// del elemento, uno ANCESTRO si. Con la animacion en el panel, la hoja perderia
+// el vidrio justo mientras se abre. Quinta vez que esta regla aparece.
+//
+// De paso, la hoja de la barra dejo de estar escrita a mano: era la unica que
+// seguia con su asa, su titulo y su area segura duplicados, **siendo el modelo
+// del que salio `HojaMovil`**. Si el canonico nacio de copiar esto, esto tiene
+// que ser lo primero en usarlo.
+//
 // v2.270.0 — La hoja canonica llega a los envoltorios que faltaban.
 //
 // v2.267.0 dejo `HojaMovil` usado solo por `ConfirmModal`. Ahora tambien:

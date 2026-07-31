@@ -2216,6 +2216,20 @@ a:focus-visible,
   0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.00), 0 4px 20px rgba(0,0,0,0.55); }
   50%       { box-shadow: 0 0 18px 3px rgba(251,191,36,0.28), 0 4px 20px rgba(0,0,0,0.55); }
 }
+/* La hoja de la barra flotante NACE del botón que se tocó.
+   `transform-origin` lo fija el componente en línea con la x real del botón, así
+   que la hoja se despliega desde ahí en vez de subir desde el centro. Escala en
+   los dos ejes y no solo `translateY`: lo que se quiere leer es "este botón se
+   abrió", no "algo entró por abajo".
+
+   Va como keyframe y no en `framer-motion` (§11, y el gate lo exige). Un
+   `transform` PROPIO no rompe el `backdrop-filter` del elemento — solo uno
+   ANCESTRO lo haría—, así que la hoja conserva su vidrio mientras se abre. */
+@keyframes hoja-desde-origen {
+  from { transform: scale(0.82) translateY(28px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
 @keyframes badge-pulse-anim {
   0%, 100% { opacity: 0.85; }
   50%       { opacity: 1.00; }

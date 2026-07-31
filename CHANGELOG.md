@@ -12,6 +12,25 @@ retomar; acá está todo.
 
 ---
 
+## v2.271.0 — La hoja de la barra nace del botón que se tocó, y comparte material
+
+La barra flotante y sus hojas son **una sola pieza**. Faltaban las dos cosas que
+lo dicen: el clúster y sus hojas ahora leen el mismo `data-surface` desde una
+constante única (`MATERIAL`), y la hoja se despliega desde la **x real del botón
+tocado** con `@keyframes hoja-desde-origen` (medido: 249px para Filtros, 315px
+para Acciones).
+
+La animación va en la hoja y no en el envoltorio — `ModalShell` acepta
+`animacionPropia`—: un `transform` propio no rompe el `backdrop-filter`, uno
+ancestro sí, y con la animación en el panel la hoja perdería el vidrio justo
+mientras se abre. Quinta vez que esta regla aparece.
+
+De paso, la hoja de la barra dejó de estar escrita a mano: era la única con su
+asa, su título y su área segura duplicados, **siendo el modelo del que salió
+`HojaMovil`**.
+
+---
+
 ## v2.270.0 — La hoja canónica llega a los envoltorios que faltaban
 
 `PromptModal` pasa a `HojaMovil` — ahí el centrado pesaba el doble, porque ese

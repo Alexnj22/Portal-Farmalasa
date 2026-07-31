@@ -91,6 +91,9 @@ export default function ModalShell({
   lockScroll = true,
   align: alignPedido = "center",
   hojaEnTactil = true,
+  // El hijo se anima solo. Sin esto la animación viviría en el ENVOLTORIO, que
+  // es ancestro del vidrio: `transform` ancestro = backdrop root = blur muerto.
+  animacionPropia = false,
   surface = "modal",
   panelClassName = "",
   ariaLabel = "Ventana modal",
@@ -246,7 +249,7 @@ export default function ModalShell({
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
   const esHoja = align === "bottom";
-  const panelAnim = open
+  const panelAnim = animacionPropia ? "" : open
     ? (esHoja ? "animate-in slide-in-from-bottom duration-300" : "animate-in fade-in zoom-in-95 duration-300")
     : (esHoja ? `animate-out slide-out-to-bottom duration-200 ${HOLD_EXIT}` : `animate-out fade-out zoom-out-95 duration-150 ${HOLD_EXIT}`);
   const alignCls =

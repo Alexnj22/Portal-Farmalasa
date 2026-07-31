@@ -1756,6 +1756,26 @@ Solo el **cuerpo** scrollea. El título se queda arriba y las acciones abajo, as
 que en una hoja larga nunca hay que scrollear para recordar qué se está
 decidiendo ni para confirmarlo.
 
+#### La hoja de la barra NACE del control que la abrió
+
+La barra flotante y sus hojas son **una sola pieza**: la hoja es la barra
+desplegándose, no un diálogo aparte. Dos consecuencias en el canónico:
+
+* **Mismo material.** El clúster y sus hojas leen el mismo `data-surface` desde
+  una constante única (`MATERIAL` en `BarraFlotante`). Con dos superficies
+  distintas se leían como dos piezas apiladas — y tenerlo en un solo sitio hace
+  que cambiar el material sea una línea, no una búsqueda.
+* **Misma animación de origen.** `HojaMovil` recibe `origenX` —la x real del
+  botón tocado, medida del DOM— y se despliega desde ahí con
+  `@keyframes hoja-desde-origen`. Lo que se lee es "este botón se abrió", no
+  "algo entró por abajo".
+
+La animación va **en la hoja, no en el envoltorio**, y por eso `ModalShell`
+acepta `animacionPropia`. Un `transform` PROPIO no rompe el `backdrop-filter` del
+elemento; uno **ancestro** sí. Si la animación viviera en el panel de
+`ModalShell`, la hoja perdería el vidrio justo mientras se abre — es la quinta
+vez que esta regla aparece en el proyecto.
+
 #### `LiquidModal` en táctil: la misma hoja, por composición
 
 `HojaMovil` es de **props** (`titulo`, `icono`, `pie`); `LiquidModal` es de

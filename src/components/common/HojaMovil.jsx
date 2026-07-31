@@ -24,6 +24,16 @@ import React, { memo } from 'react';
  * misma lección que ya está escrita en `GlassViewLayout` y en `BarraFlotante`:
  * con `bg-surface-*` a mano se obtiene un translúcido, no vidrio.
  *
+ * ── Nace del control que la abrió ─────────────────────────────────────────
+ * Con `origenX`, la hoja se despliega desde la x de ese botón en vez de subir
+ * desde el centro: lo que se lee es "este botón se abrió", no "algo entró por
+ * abajo". El `transform-origin` va en línea porque el valor es una medida del
+ * DOM, no una constante de diseño.
+ *
+ * Es un `transform` PROPIO, así que no rompe el `backdrop-filter` de la hoja —
+ * solo un ancestro lo haría. Por eso `ModalShell` recibe `animacionPropia` y
+ * apaga la suya: si animara el envoltorio, ese sí sería ancestro.
+ *
  * ── `data-hoja`, para que `ModalShell` no la parchee ──────────────────────
  * `ModalShell` le corrige al hijo las esquinas de abajo y el área segura, porque
  * los 17 llamadores traen cuerpos pensados para un panel centrado. Esta hoja ya
@@ -57,11 +67,23 @@ const HojaMovil = memo(({
     // que la principal va PRIMERA: es la que queda más arriba, más lejos del
     // borde y más cerca del pulgar en reposo.
     pie,
+    // La superficie. Por defecto `modal`, que es lo que un diálogo debe ser. Las
+    // hojas que abre `BarraFlotante` pasan la MISMA del clúster: son la barra
+    // desplegándose, no un diálogo aparte, y con dos materiales distintos se
+    // leían como dos piezas apiladas.
+    superficie = 'modal',
+    // La x (en px de viewport) del control que abrió la hoja. Con ella la hoja
+    // se despliega DESDE ahí en vez de subir desde el centro.
+    origenX,
     className = '',
 }) => (
     <div
         data-hoja="true"
-        data-surface="modal"
+        data-surface={superficie}
+        style={origenX != null ? {
+            transformOrigin: `${origenX}px 100%`,
+            animation: 'hoja-desde-origen 340ms cubic-bezier(0.23,1,0.32,1) both',
+        } : undefined}
         // `rounded-b-none!` con el modificador de importancia, no a secas: el
         // radio lo fija `[data-surface="modal"]` en index.css, que es un selector
         // de atributo —misma especificidad que una clase— y le gana por orden de

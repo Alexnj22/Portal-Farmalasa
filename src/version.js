@@ -16,8 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.283.0';
+export const APP_VERSION = '2.284.0';
 
+// v2.284.0 — Se recupera el arrastre de las tarjetas, y la sombra acompana al gesto.
+//
+// **1. Volvio el deslizamiento horizontal de las tarjetas.** v2.278.0 le puso
+// `pointer-events: none` a la pista para que el aire de la sombra no robara
+// clics, y eso rompio el arrastre tactil: **WebKit no desplaza un contenedor con
+// scroll que no es alcanzable por el puntero**. Quedaban solo las flechas.
+// Chromium SI lo arrastra, asi que la prueba automatizada no lo vio — el mismo
+// motivo por el que el QA movil de este proyecto va en WebKit.
+//
+// Ahora el reparto es por entrada, y es el correcto para cada una:
+// `[@media(hover:hover)]` apaga los eventos solo donde hay mouse —ahi manda no
+// robar clics, y hay flechas y rueda para desplazar—; con dedo manda poder
+// arrastrar, que es la unica forma natural de moverlas.
+//
+// **2a/2b. La sombra pasa a ser una CAPA propia.** Era el `box-shadow` del
+// envoltorio, y eso la dejaba clavada mientras el dedo bajaba la hoja: quedaba
+// una banda de sombra en el sitio viejo, o sea un corte a la vista. Y al abrir
+// aparecia de golpe al final, porque no habia como animarla con la forma. Como
+// capa, la gota la desvanece CON la forma y el arrastre la mueve y la apaga
+// segun cuanto bajo la hoja — a media altura, una sombra al 100% se lee como una
+// sombra flotando sola.
+//
+// **2c. Al soltar para cerrar, cierra con LA GOTA.** Antes deslizaba hacia abajo,
+// que es otra animacion que la de entrada: dos gramaticas para el mismo objeto
+// hacen que el cierre se lea como de otra pieza. Ahora se suelta el `transform`
+// con una transicion corta y `useGotaApertura` hace el recorrido inverso — el
+// mismo camino que la hoja hizo al abrirse, de vuelta al control que la abrio.
+//
 // v2.283.0 — Auditoria completa: Pedidos pesaba 939 kB por unas fuentes que nadie
 // pidio, y dos columnas se estaban leyendo con el tipo equivocado.
 //

@@ -164,7 +164,7 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
                 className={`flex items-stretch gap-2 scroll-smooth
                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
                     pt-6 pb-14 -mt-6 -mb-14
-                    pointer-events-none [&>*]:pointer-events-auto
+                    [@media(hover:hover)]:pointer-events-none [&>*]:pointer-events-auto
                     ${desliza ? 'overflow-x-auto' : 'overflow-visible'}`}
                 style={{
                     maskImage: mascara,

@@ -12,6 +12,24 @@ retomar; acá está todo.
 
 ---
 
+## v2.284.0 — Vuelve el arrastre de las tarjetas, y la sombra acompaña al gesto
+
+**Volvió el deslizamiento horizontal de las tarjetas.** v2.278.0 le puso
+`pointer-events: none` a la pista para que el aire de la sombra no robara clics, y
+eso rompió el arrastre táctil: **WebKit no desplaza un contenedor con scroll que
+no es alcanzable por el puntero**. Chromium sí, así que la prueba no lo vio.
+Ahora se apaga solo donde hay mouse.
+
+**La sombra pasa a ser una capa propia.** Era el `box-shadow` del envoltorio, y
+quedaba clavada mientras el dedo bajaba la hoja —una banda en el sitio viejo— y al
+abrir aparecía de golpe al final. Como capa, la gota la desvanece con la forma y
+el arrastre la mueve y la apaga según cuánto bajó.
+
+**Al soltar para cerrar, cierra con la gota**, no deslizando: dos gramáticas para
+el mismo objeto hacen que el cierre se lea como de otra pieza.
+
+---
+
 ## v2.282.0 — Cerrados los 7 pendientes y el editor de foto
 
 "Agregar producto al conteo" tenía su propio envoltorio de hoja —todo lo que

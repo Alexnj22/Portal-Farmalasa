@@ -377,6 +377,21 @@ export default function ModalShell({
             : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* ── La sombra de la hoja, como CAPA propia ───────────────────
+            Estaba como `box-shadow` del envoltorio, y eso la dejaba clavada
+            mientras el dedo arrastraba la hoja: quedaba una banda de sombra en
+            el sitio viejo, o sea un corte a la vista. Y al abrir aparecía de
+            golpe al final, porque no había cómo animarla con la forma.
+
+            Como capa, la gota y el arrastre la mueven y la desvanecen junto con
+            el vidrio — se marca con `data-sombra-hoja` para que los dos la
+            encuentren. No es ancestro de nada, así que mover ESTA no rompe
+            ningún `backdrop-filter`. */}
+        {esHoja && (
+          <div data-sombra-hoja="true" aria-hidden="true"
+            className="absolute inset-0 rounded-t-modal pointer-events-none -z-base
+              shadow-[var(--shadow-hoja)]" />
+        )}
         {children}
       </div>
     </div>

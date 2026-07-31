@@ -25,6 +25,13 @@ import { useCallback, useRef } from 'react';
  * poco con resistencia (la raíz del desplazamiento) porque un tope duro se
  * siente roto; es el mismo gesto elástico que hace iOS al final de una lista.
  *
+ * ── Al soltar para cerrar, cierra con LA GOTA ─────────────────────────────
+ * No deslizando hacia abajo. Deslizar es otra animación que la de entrada, y
+ * tener dos gramáticas para el mismo objeto —una para abrir, otra para cerrar—
+ * hace que el cierre se lea como de otra pieza. Se suelta el `transform` con una
+ * transición corta y `useGotaApertura` hace el recorrido inverso: el mismo camino
+ * que la hoja hizo al abrirse, de vuelta al control que la abrió.
+ *
  * ── El umbral es distancia O velocidad ────────────────────────────────────
  * Solo por distancia, un tirón corto y rápido —que es cómo la gente cierra de
  * verdad— no alcanzaría y la hoja volvería sola, que se lee como que el gesto
@@ -59,8 +66,12 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
         if (!el) return;
 
         const alto = el.getBoundingClientRect().height;
-        est.current = { y0: e.clientY, t0: performance.now(), yPrev: e.clientY, tPrev: performance.now(), v: 0, alto, el };
+        // La sombra viaja CON la hoja. Clavada en su sitio dejaba una banda en el
+        // lugar viejo mientras el dedo bajaba la hoja: un corte a la vista.
+        const sombra = panel.querySelector('[data-sombra-hoja]');
+        est.current = { y0: e.clientY, t0: performance.now(), yPrev: e.clientY, tPrev: performance.now(), v: 0, alto, el, sombra, panel };
         el.style.transition = 'none';
+        if (sombra) sombra.style.transition = 'none';
         e.currentTarget.setPointerCapture?.(e.pointerId);
 
         const alMover = (ev) => {
@@ -73,6 +84,13 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             const d = ev.clientY - s.y0;
             const y = d >= 0 ? d : -((-d) ** RESISTENCIA_ARRIBA) * 3;
             s.el.style.transform = `translateY(${y}px)`;
+            if (s.sombra) {
+                s.sombra.style.transform = `translateY(${y}px)`;
+                // Y se va apagando: a medida que la hoja baja, lo que separa deja
+                // de haber. Mantenerla al 100% con la hoja a medio camino se lee
+                // como una sombra flotando sola.
+                s.sombra.style.opacity = String(Math.max(0, 1 - Math.max(0, y) / s.alto));
+            }
         };
 
         const alSoltar = () => {
@@ -86,15 +104,21 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             const cierra = d > s.alto * UMBRAL_FRACCION || s.v > UMBRAL_VELOCIDAD;
 
             if (cierra) {
-                // Termina el recorrido que el dedo empezó: sale por abajo y recién
-                // ahí se avisa. Cerrar en el momento del `up` cortaba el gesto a
-                // mitad de camino, que es justo lo que se siente barato.
-                s.el.style.transition = 'transform 200ms cubic-bezier(0.4,0,1,1)';
-                s.el.style.transform = `translateY(${s.alto}px)`;
-                setTimeout(() => {
-                    s.el.style.transition = ''; s.el.style.transform = '';
-                    alCerrar?.();
-                }, 190);
+                // Cierra con LA GOTA, no deslizando. Deslizar hacia abajo es otra
+                // animación que la de entrada, y tener dos gramáticas para el
+                // mismo objeto —una para abrir, otra para cerrar— hace que el
+                // cierre se sienta de otra pieza. Se suelta el `transform` y se
+                // deja que `useGotaApertura` haga el recorrido inverso, que es
+                // exactamente el mismo camino que hizo al abrirse.
+                //
+                // El `transform` se retira con transición para que el salto del
+                // sitio arrastrado al sitio de reposo no se vea: los dos
+                // movimientos se solapan y se leen como uno.
+                s.el.style.transition = 'transform 160ms cubic-bezier(0.22,1,0.36,1)';
+                s.el.style.transform = '';
+                if (s.sombra) { s.sombra.style.transition = 'none'; s.sombra.style.transform = ''; }
+                alCerrar?.();
+                setTimeout(() => { s.el.style.transition = ''; }, 200);
                 return;
             }
             // Vuelve a su sitio. Un poco más lenta y con más rebote que la salida:
@@ -102,7 +126,14 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             // el mensaje.
             s.el.style.transition = 'transform 320ms cubic-bezier(0.22,1,0.36,1)';
             s.el.style.transform = '';
-            const limpiar = () => { s.el.style.transition = ''; };
+            if (s.sombra) {
+                s.sombra.style.transition = 'transform 320ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease-out';
+                s.sombra.style.transform = ''; s.sombra.style.opacity = '';
+            }
+            const limpiar = () => {
+                s.el.style.transition = '';
+                if (s.sombra) s.sombra.style.transition = '';
+            };
             s.el.addEventListener('transitionend', limpiar, { once: true });
         };
 

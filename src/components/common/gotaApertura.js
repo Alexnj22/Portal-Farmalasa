@@ -109,10 +109,11 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
 
         vidrio.style.transition = 'none';
         vidrio.style.clipPath = insetHacia(vidrio, desde);
-        // La sombra vive en el envoltorio, que NO se recorta: sin esto la hoja
-        // proyectaría su sombra entera mientras todavía es una gota.
-        const sombraPrevia = el.style.boxShadow;
-        el.style.boxShadow = 'none';
+        // La sombra entra CON la forma, no después. Antes se apagaba entera
+        // durante la gota y volvía al final, así que se veía puesta encima en vez
+        // de crecer con la hoja.
+        const sombra = el.querySelector('[data-sombra-hoja]');
+        if (sombra) { sombra.style.transition = 'none'; sombra.style.opacity = '0'; }
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
@@ -124,12 +125,16 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         const radio = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
         const abajo = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
         vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} ${abajo} ${abajo})`;
+        if (sombra) {
+            sombra.style.transition = `opacity ${ENTRADA_MS}ms cubic-bezier(0.22,1,0.36,1)`;
+            sombra.style.opacity = '1';
+        }
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que el panel quiera sacar fuera de su caja.
         const alTerminar = () => {
             vidrio.style.clipPath = ''; vidrio.style.transition = '';
-            el.style.boxShadow = sombraPrevia;
+            if (sombra) { sombra.style.transition = ''; sombra.style.opacity = ''; }
         };
         vidrio.addEventListener('transitionend', alTerminar, { once: true });
         return () => vidrio.removeEventListener('transitionend', alTerminar);
@@ -151,7 +156,11 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             el.style.opacity = '0';
             return;
         }
-        el.style.boxShadow = 'none';
+        const sombra = el.querySelector('[data-sombra-hoja]');
+        if (sombra) {
+            sombra.style.transition = `opacity ${salidaMs}ms ease-in`;
+            sombra.style.opacity = '0';
+        }
         vidrio.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
         vidrio.style.clipPath = insetHacia(vidrio, desde);
     }, [ref, cerrando, salidaMs, activo]);

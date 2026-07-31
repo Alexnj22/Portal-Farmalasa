@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.315.0';
+export const APP_VERSION = '2.316.0';
+
+// v2.316.0 — `customers` deja de ser un catálogo de nombres.
+//
+// La tabla tenía 24,482 filas y CERO datos en `nit`, `dui`, `email`, `phone` y
+// `erp_id`: el sync sólo escribe `venta.cliente`. Ahora tiene la ficha que el
+// ERP guarda de verdad — 9 columnas nuevas (`telefono2`, `direccion`,
+// `departamento`, `municipio`, `distrito`, `categoria`, `giro`, `pasaporte`,
+// `retencion_pct`) más un índice único parcial sobre `erp_id`.
+//
+// Y los 93 clientes que facturan CCF quedan poblados desde el ERP: **93 con
+// `erp_id`** (la llave que faltaba: sin ella todo cruce era por nombre), 80 con
+// NRC y NIT, 92 con teléfono, 85 con dirección, 81 con correo y giro.
+//
+// **El índice único de `nit` atajó un problema real**: dos pares resultaron ser
+// la misma persona con el nombre invertido, duplicada en los DOS sistemas
+// (494≡17015, 7414≡21268). Abortó en vez de escribir basura. Los
+// identificadores fiscales van al registro con más facturas; el gemelo queda
+// marcado para fusionar — fusionarlos es decisión aparte, hay facturas
+// colgando de los dos.
+//
+// Los 11 sin NRC no son un hueco del cruce: en el ERP están como categoría
+// "Consumidor", o sea que se les emitió un CCF a alguien sin registro de
+// contribuyente. El libro los muestra con la marca "Falta".
+//
+// `distrito` queda en 0 a propósito: **el ERP no lo tiene** — de 87 clientes
+// medidos, 76 sin distrito, y DTE 2.0 lo exige junto con departamento y
+// municipio. Es el trabajo que sigue.
 
 // v2.315.0 — Datos Contables: los libros de IVA se generan desde el portal.
 //

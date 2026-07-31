@@ -12,6 +12,50 @@ retomar; acá está todo.
 
 ---
 
+## v2.316.0 — `customers` deja de ser un catálogo de nombres
+
+La tabla tenía **24,482 filas y cero datos** en `nit`, `dui`, `email`, `phone` y
+`erp_id`. El sync de ventas sólo escribe `venta.cliente`, así que el "cliente"
+del portal era un nombre y nada más.
+
+Ahora refleja la ficha que el ERP guarda de verdad: 9 columnas nuevas
+(`telefono2`, `direccion`, `departamento`, `municipio`, `distrito`, `categoria`,
+`giro`, `pasaporte`, `retencion_pct`) más un índice único parcial sobre
+`erp_id`. Los catálogos van como **texto** y no como ids del ERP: replicar
+cuatro catálogos ajenos garantiza que se desincronicen, y lo que se lee y se
+declara es el texto.
+
+Y los **93 clientes que facturan CCF** quedan poblados desde el ERP:
+
+| campo | antes | ahora |
+|---|---|---|
+| `erp_id` | 0 | **93** |
+| NRC · NIT | 0 | **80** |
+| teléfono | 0 | **92** |
+| municipio | 0 | **92** |
+| dirección | 0 | **85** |
+| correo · giro | 0 | **81** |
+
+`erp_id` es el que más importa a futuro: sin él, todo cruce con el ERP era por
+nombre.
+
+**El índice único de `nit` atajó un problema real.** Dos pares resultaron ser la
+misma persona con el nombre invertido, duplicada en los *dos* sistemas —
+`494 ≡ 17015` y `7414 ≡ 21268`—; la migración abortó en vez de escribir basura.
+Los identificadores fiscales van al registro con más facturas y el gemelo queda
+marcado para fusionar (fusionarlos es decisión aparte: hay facturas colgando de
+los dos).
+
+Los **11 sin NRC** no son un hueco del cruce: en el ERP están como categoría
+*"Consumidor"*, o sea que se les emitió un CCF a alguien sin registro de
+contribuyente. El libro los muestra con la marca "Falta".
+
+`distrito` queda en **0 a propósito**: el ERP no lo tiene — de 87 clientes
+medidos, 76 sin distrito— y **DTE 2.0 lo exige** junto con departamento y
+municipio. Es el trabajo que sigue.
+
+---
+
 ## v2.315.0 — Datos Contables: los libros de IVA se generan desde el portal
 
 Grupo nuevo en el menú con **Facturas de Compra** y el módulo nuevo **Libros

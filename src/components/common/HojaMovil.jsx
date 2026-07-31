@@ -1,5 +1,6 @@
 import React, { memo, useRef, useLayoutEffect } from 'react';
 import useMediaQuery from '../../hooks/useMediaQuery';
+import { leerUltimoToque } from './ultimoToque';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.
@@ -26,14 +27,18 @@ import useMediaQuery from '../../hooks/useMediaQuery';
  * con `bg-surface-*` a mano se obtiene un translúcido, no vidrio.
  *
  * ── Nace del control que la abrió ─────────────────────────────────────────
- * Con `origenX`, la hoja se despliega desde la x de ese botón en vez de subir
- * desde el centro: lo que se lee es "este botón se abrió", no "algo entró por
- * abajo". El `transform-origin` va en línea porque el valor es una medida del
- * DOM, no una constante de diseño.
+ * La hoja no "aparece": empieza siendo el rectángulo exacto del control que se
+ * tocó y se abre hasta el panel. No hace falta pasarle nada — si nadie da un
+ * `origen`, lo toma de `leerUltimoToque()`, así que la gota es canónica y no una
+ * prop que alguien tenga que recordar.
  *
- * Es un `transform` PROPIO, así que no rompe el `backdrop-filter` de la hoja —
- * solo un ancestro lo haría. Por eso `ModalShell` recibe `animacionPropia` y
- * apaga la suya: si animara el envoltorio, ese sí sería ancestro.
+ * Se anima `clip-path` y NO `transform`: escalar la hoja escala también su
+ * `backdrop-filter`, y a `scale(0.14)` los 24px de blur valen ~3 — el vidrio
+ * llegaba al final en vez de estar desde el principio. Recortando, la hoja está
+ * siempre a tamaño real y lo único que crece es la ventana por la que se la ve.
+ *
+ * `ModalShell` recibe `animacionPropia` para apagar la suya: si animara el
+ * envoltorio, ese `transform` sí sería ANCESTRO y mataría el vidrio.
  *
  * ── `data-hoja`, para que `ModalShell` no la parchee ──────────────────────
  * `ModalShell` le corrige al hijo las esquinas de abajo y el área segura, porque
@@ -73,9 +78,8 @@ const HojaMovil = memo(({
     // desplegándose, no un diálogo aparte, y con dos materiales distintos se
     // leían como dos piezas apiladas.
     superficie = 'modal',
-    // El rectángulo (en px de viewport) del control que abrió la hoja:
-    // `{ x, y, w, h }`. Con él la hoja no "aparece": ARRANCA SIENDO ese botón y
-    // se despliega hasta su tamaño final. Ver la nota de la gota.
+    // El rectángulo del control que abrió la hoja, `{ x, y, w, h }`. Opcional:
+    // sin él se usa el último toque del usuario. Ver la nota de la gota.
     origen,
     className = '',
 }) => {
@@ -83,52 +87,63 @@ const HojaMovil = memo(({
     const cuerpoRef = useRef(null);
     const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
 
-    // ── La gota: FLIP, no un keyframe ─────────────────────────────────────
-    // Un `@keyframes` fijo solo puede escalar "un poco desde abajo": no sabe
-    // dónde está el botón ni cuánto mide, así que el gesto se lee como "algo
-    // entró", no como "esto se abrió". Acá se mide la hoja YA COLOCADA, se la
-    // manda de vuelta al rectángulo exacto del botón —translate + scale por eje,
-    // con el radio de píldora— y se la suelta. El navegador interpola el camino
-    // completo: la píldora se estira y se convierte en el panel.
+    // ── La gota: se RECORTA, no se escala ─────────────────────────────────
+    // Primera versión: FLIP con `transform: scale()`. La forma era correcta pero
+    // el vidrio llegaba tarde, y el motivo es que **el blur se escala con el
+    // elemento**: a `scale(0.14)` los 24px de `backdrop-filter` valen ~3, así
+    // que la hoja arrancaba casi sin efecto y lo ganaba al crecer. El usuario lo
+    // describió exacto: "al inicio solo se ve transparente y luego queda con el
+    // efecto correcto".
     //
-    // El contenido entra DESPUÉS. Durante la primera mitad la hoja está
-    // aplastada a la altura de un botón y el texto ahí dentro se vería
-    // deformado; apareciendo a los 150ms lo que se ve es el vidrio abriéndose y
-    // el contenido asentándose adentro.
+    // `clip-path: inset()` no toca la escala: la hoja está SIEMPRE a tamaño real
+    // —con su blur a 24px desde el primer cuadro— y lo que se anima es la
+    // ventana por la que se la ve. Empieza siendo el rectángulo exacto del
+    // control, con radio de píldora, y se abre hasta el panel entero. De paso el
+    // contenido nunca se deforma, porque nunca se escala.
     //
-    // `useLayoutEffect` y no `useEffect`: el estado inicial tiene que estar
-    // aplicado ANTES del primer pintado, o se alcanza a ver la hoja entera un
-    // fotograma antes de encogerse.
+    // El origen sale de `leerUltimoToque()` si nadie lo pasa: la gota tiene que
+    // ser canónica, no opt-in.
     useLayoutEffect(() => {
         const el = hojaRef.current;
-        if (!el || !origen || sinMovimiento) return;
+        const desde = origen || leerUltimoToque();
+        if (!el || !desde || sinMovimiento) return;
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return;
 
-        const sx = Math.max(origen.w / r.width, 0.04);
-        const sy = Math.max(origen.h / r.height, 0.04);
-        const tx = origen.x - r.left;
-        const ty = origen.y - r.top;
+        // Los cuatro recortes, en coordenadas de la propia hoja. Se topan en 0
+        // porque el control puede estar fuera de ella —la barra flotante queda
+        // por debajo del borde inferior de la hoja— y un inset negativo no
+        // recorta: desborda.
+        const tope = (n) => Math.max(0, Math.round(n));
+        const arriba  = tope(desde.y - r.top);
+        const izq     = tope(desde.x - r.left);
+        const derecha = tope((r.left + r.width) - (desde.x + desde.w));
+        const abajo   = tope((r.top + r.height) - (desde.y + desde.h));
 
         const cuerpo = cuerpoRef.current;
-        el.style.transformOrigin = '0 0';
         el.style.transition = 'none';
-        el.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
-        el.style.borderRadius = '9999px';
+        el.style.clipPath = `inset(${arriba}px ${derecha}px ${abajo}px ${izq}px round 9999px)`;
         if (cuerpo) { cuerpo.style.transition = 'none'; cuerpo.style.opacity = '0'; }
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
         void el.offsetWidth;
 
-        el.style.transition =
-            'transform 520ms cubic-bezier(0.22,1,0.36,1), border-radius 460ms cubic-bezier(0.22,1,0.36,1)';
-        el.style.transform = 'translate(0px, 0px) scale(1, 1)';
-        el.style.borderRadius = '';
+        el.style.transition = 'clip-path 520ms cubic-bezier(0.22,1,0.36,1)';
+        // El radio final es el de la hoja arriba y recto abajo, igual que su
+        // `border-radius`: si el clip terminara redondo se vería una curva
+        // fantasma contra el filo de la pantalla.
+        el.style.clipPath = 'inset(0px 0px 0px 0px round 28px 28px 0px 0px)';
         if (cuerpo) {
-            cuerpo.style.transition = 'opacity 260ms ease-out 150ms';
+            cuerpo.style.transition = 'opacity 260ms ease-out 140ms';
             cuerpo.style.opacity = '1';
         }
+
+        // El clip se retira al terminar: dejarlo puesto recortaría cualquier
+        // sombra o popover que la hoja quiera sacar fuera de su caja.
+        const alTerminar = () => { el.style.clipPath = ''; el.style.transition = ''; };
+        el.addEventListener('transitionend', alTerminar, { once: true });
+        return () => el.removeEventListener('transitionend', alTerminar);
     }, [origen, sinMovimiento]);
 
     return (

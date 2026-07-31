@@ -1769,31 +1769,40 @@ la abrió — se entiende sin atenuar nada, y oscurecer la vista la hace leerse 
 solo en táctil (`scrim` lo fuerza si hiciera falta). El diálogo **sigue siendo
 modal**: el fondo es un objetivo de cierre invisible, no ausente.
 
-#### La hoja NACE del control que la abrió — y es un FLIP, no un keyframe
+#### La hoja NACE del control que la abrió — y se RECORTA, no se escala
 
 Un `@keyframes` fijo solo sabe escalar "un poco desde abajo": no conoce la
-posición ni el tamaño del botón, así que el gesto se lee como *algo entró*, no
-como *esto se abrió*. Se probó y no alcanzaba.
+posición ni el tamaño del botón, así que se lee como *algo entró*, no como *esto
+se abrió*. Se probó y no alcanzaba.
 
-`HojaMovil` recibe `origen = {x, y, w, h}` —el rectángulo real del control,
-medido al tocarlo— mide la hoja **ya colocada**, la manda de vuelta a ese
-rectángulo (`translate` + `scale` por eje, radio de píldora) y la suelta. El
-navegador interpola el camino entero: la píldora se estira y **se convierte** en
-el panel. Medido a 40ms: la hoja mide 60×61 en la x/y exactas del botón, con
-`border-radius: 9999px`.
+Tampoco sirve un FLIP con `transform: scale()`, y el motivo es específico del
+vidrio: **el `backdrop-filter` se escala con el elemento.** A `scale(0.14)` los
+24px de blur valen ~3, así que la hoja arrancaba casi transparente y ganaba el
+efecto recién al llegar a su tamaño. Se ve exactamente como lo que es: el vidrio
+llegando tarde.
 
-El contenido entra **después** (opacidad, 150ms de retraso): durante la primera
-mitad la hoja está aplastada a la altura de un botón y el texto ahí dentro se
-vería deformado. Lo que se ve es el vidrio abriéndose y el contenido asentándose.
+Lo que se anima es **`clip-path: inset()`**. La hoja está siempre a tamaño real
+—con su blur a 24px desde el primer cuadro— y lo único que crece es la ventana
+por la que se la ve: empieza en el rectángulo exacto del control, con radio de
+píldora, y se abre hasta el panel. De paso el contenido nunca se deforma, porque
+nunca se escala. Medido: `transform: none` y `blur(24px)` en todos los cuadros.
 
-`useLayoutEffect`, no `useEffect`: el estado inicial tiene que estar aplicado
-antes del primer pintado o se alcanza a ver la hoja entera un fotograma antes de
-encogerse. Y el `void el.offsetWidth` no es supersticioso — sin ese reflujo el
-navegador junta los dos estados en uno y no hay nada que interpolar.
+**Y no hace falta pasarle nada.** Si nadie da un `origen`, `HojaMovil` lo toma de
+`leerUltimoToque()` —un listener de `pointerdown` en fase de captura, con una
+vigencia de 1.2s—, así que **toda** hoja del portal nace del control que se tocó.
+La primera versión lo pedía por prop y solo la tenían las hojas de
+`BarraFlotante`: una prop opcional es una prop que alguien va a olvidar, que es
+la misma lección del `buscador` que 1 de 22 vistas pasaba.
+
+Con teclado no hay gota: el foco no es un gesto espacial, y hacer nacer la hoja
+de un sitio que nadie tocó contaría algo falso.
+
+El clip se **retira al terminar**: dejarlo puesto recortaría cualquier sombra o
+popover que la hoja quiera sacar fuera de su caja.
 
 **La animación va en la hoja, nunca en el envoltorio**, y por eso `ModalShell`
 acepta `animacionPropia`. Un `transform` propio no rompe el `backdrop-filter`;
-uno **ancestro** sí. Es la quinta vez que esta regla aparece en el proyecto.
+uno **ancestro** sí.
 
 #### La hoja de la barra NACE del control que la abrió
 

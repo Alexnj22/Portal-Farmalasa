@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.275.0 — La gota se recorta en vez de escalarse, y es canónica
+
+**El vidrio llegaba tarde.** El FLIP anterior usaba `transform: scale()`, y el
+`backdrop-filter` **se escala con el elemento**: a `scale(0.14)` los 24px de blur
+valen ~3. Ahora se anima `clip-path: inset()`: la hoja está siempre a tamaño real
+—blur a 24px desde el primer cuadro— y solo crece la ventana por la que se la ve.
+Medido: `transform: none` y `blur(24px)` en todos los cuadros.
+
+**La gota era opt-in.** Se pedía el rectángulo por prop, así que solo la tenían
+las hojas de `BarraFlotante`. Ahora, sin `origen`, `HojaMovil` lo toma de
+`leerUltimoToque()` —`pointerdown` en fase de captura, vigencia 1.2s— y toda hoja
+del portal nace del control que se tocó. Verificado con `ConfirmModal`, que no
+pasa nada y aun así sale del botón correcto.
+
+---
+
 ## v2.274.0 — Una firma nueva es una URL nueva, y el cache del navegador no acierta ni una
 
 Hallazgo que salió midiendo el arranque en v2.272.0: las 26 fotos de perfil se

@@ -16,8 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.274.0';
+export const APP_VERSION = '2.275.0';
 
+// v2.275.0 — La gota se RECORTA en vez de escalarse, y es canonica.
+//
+// Dos correcciones sobre la apertura en gota.
+//
+// **1. El vidrio llegaba tarde.** El FLIP anterior usaba `transform: scale()`, y
+// **el `backdrop-filter` se escala con el elemento**: a `scale(0.14)` los 24px
+// de blur valen ~3, asi que la hoja arrancaba casi transparente y ganaba el
+// efecto recien al llegar a su tamano. Ahora lo que se anima es
+// `clip-path: inset()`: la hoja esta SIEMPRE a tamano real —blur a 24px desde el
+// primer cuadro— y lo unico que crece es la ventana por la que se la ve. Medido:
+// `transform: none` y `blur(24px)` en todos los cuadros. De paso el contenido
+// nunca se deforma, porque nunca se escala.
+//
+// **2. La gota era opt-in.** Se pedia el rectangulo por prop, asi que solo la
+// tenian las hojas de `BarraFlotante` y el resto de los modales se abrian sin
+// ella. Ahora, sin `origen`, `HojaMovil` lo toma de `leerUltimoToque()` —un
+// listener de `pointerdown` en fase de CAPTURA, con vigencia de 1.2s— y TODA
+// hoja del portal nace del control que se toco. Verificado con `ConfirmModal`,
+// que no pasa nada y aun asi sale del boton correcto.
+//
+// Captura y no `click` porque para cuando el click llega al handler que abre el
+// modal, React ya pudo re-renderizar y el boton haber cambiado de sitio. Y solo
+// puntero: con teclado no hay un "de donde" fisico, asi que ahi no hay gota.
+//
+// El clip se retira al terminar: dejarlo puesto recortaria cualquier sombra o
+// popover que la hoja quiera sacar fuera de su caja.
+//
 // v2.274.0 — Una firma nueva es una URL nueva, y el cache del navegador no acierta ni una.
 //
 // Hallazgo que salio midiendo el arranque en v2.272.0: las 26 fotos de perfil se

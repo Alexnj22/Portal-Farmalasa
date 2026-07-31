@@ -16,7 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.311.0';
+export const APP_VERSION = '2.312.0';
+
+// v2.312.0 — Observaciones: copiar el id y solventar, y al lado de Pendiente MH.
+//
+// Faltaban las dos manos de la pestaña. Se veía el problema pero no se podía
+// hacer nada con él: ni llevarse el id al ERP ni dejar constancia de haberlo
+// revisado. Ahora la hoja usa el MISMO `ChipDoc` de Pendiente MH —copiar
+// #erp_invoice_id │ tipo │ ✓— y el ✓ abre el formulario de comentario debajo
+// del grupo de la fecha, igual que allá. El botón de solventar solo se dibuja
+// con `can_edit` en Facturación, que es lo que exige el RLS.
+//
+// Las resoluciones NO van a `sales_invoice_resolutions`: esa tabla es la cola
+// de Hacienda. Una factura observada suele estar ADEMÁS pendiente de sello, y
+// compartir la tabla haría que "ya revisé la suma" la sacara de una cola con
+// fecha límite fiscal. Tabla propia: `sales_observation_resolutions`
+// (migración 20260731193337), append-only, RLS con INSERT por can_edit.
+//
+// De paso: `CREATE TABLE` deja los default privileges del esquema, que dan ALL
+// a `authenticated` — y un `GRANT SELECT, INSERT` posterior SUMA, no acota.
+// RLS tapa UPDATE y DELETE, pero TRUNCATE no pasa por RLS. Revocado en
+// 20260731193824. Las otras tres tablas de resoluciones del módulo tienen el
+// mismo grant ancho de origen; queda anotado, no tocado.
+//
+// La pestaña se movió al tercer lugar, pegada a Pendiente MH: las dos miran el
+// mismo documento en la misma ventana y uno salta entre ellas.
 
 // v2.311.0 — Observaciones toma la anatomia de Pendiente MH: sucursal y fecha.
 //

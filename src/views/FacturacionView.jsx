@@ -34,7 +34,7 @@ import {
     fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
     fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
     fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
-    fetchInvoiceObservations,
+    fetchInvoiceObservations, fetchObservationResolutions, insertObservationResolution,
 } from '../data/facturacion';
 import { useToastStore } from '../store/toastStore';
 
@@ -2094,12 +2094,36 @@ const TONO_OBS = {
 const OBS_DESDE = '2000-01-01';
 const OBS_HASTA = '2099-12-31';
 
-function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) {
+function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros }) {
+    const employees = useStaff((state) => state.employees);
+    const empPhotoMap = useMemo(() => {
+        const m = {};
+        for (const e of employees) if (e.name) m[e.name] = e.photo || e.photo_url || null;
+        return m;
+    }, [employees]);
     const [rows, setRows]       = useState([]);
+    const [resoluciones, setResoluciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError]     = useState(null);
+    const [avisoRes, setAvisoRes] = useState(null);
     const [collapsedBranches, setCollapsedBranches] = useState({});
+    const [copiedId, setCopiedId]   = useState(null);
+    const [solvingId, setSolvingId] = useState(null);
+    const [comment, setComment]     = useState('');
+    const [saving, setSaving]       = useState(false);
+    const [showResolved, setShowResolved] = useState(false);
     const getBranch = useCallback((id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`, [branches]);
+
+    // El id del ERP es lo que se pega en el sistema para ir a buscar el
+    // documento — el mismo dato y el mismo gesto que en Pendiente MH. Acá sin
+    // la marca "visitado" persistida: esta pestaña sí tiene cómo cerrar un
+    // caso (solventar), así que no necesita el tachado provisorio.
+    const copyErpId = (erpId) => {
+        if (!erpId) return;
+        navigator.clipboard.writeText(String(erpId));
+        setCopiedId(erpId);
+        setTimeout(() => setCopiedId(null), 1500);
+    };
 
     const daysAgoLabel = (fechaStr) => {
         const today = svNow();
@@ -2113,11 +2137,21 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
 
     const load = useCallback(async () => {
         setLoading(true);
-        const { data, error: err } = await fetchInvoiceObservations(OBS_DESDE, OBS_HASTA, filterBranch);
+        const [{ data, error: err }, { data: resData, error: resErr }] = await Promise.all([
+            fetchInvoiceObservations(OBS_DESDE, OBS_HASTA, filterBranch),
+            fetchObservationResolutions('invoice_id, comment, resolved_by, resolved_at'),
+        ]);
         // Un RPC que falla NO puede quedar como "no hay observaciones": ese
         // silencio es exactamente el defecto que esta pestaña vino a cerrar.
         if (err) { setError(err.message); setRows([]); }
         else     { setError(null);        setRows(data || []); }
+        // Si las resoluciones fallan se muestra TODO como pendiente y se avisa.
+        // Falla hacia mostrar de más: una fila ya solventada que reaparece se
+        // reconoce; una anomalía escondida por un error de red, no.
+        if (resErr) {
+            console.error('load (observaciones): fetch sales_observation_resolutions failed:', resErr.message);
+            setAvisoRes(resErr.message); setResoluciones([]);
+        } else { setAvisoRes(null); setResoluciones(resData || []); }
         setLoading(false);
     }, [filterBranch]);
 
@@ -2125,18 +2159,57 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
     // de revisión, no una cola en vivo, y el RPC recorre la tabla entera.
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
+    // Una factura puede tener varias resoluciones (la tabla es append-only);
+    // manda la más reciente, y el orden del select ya viene por resolved_at desc.
+    const resueltasMap = useMemo(() => {
+        const m = new Map();
+        for (const x of resoluciones) if (!m.has(x.invoice_id)) m.set(x.invoice_id, x);
+        return m;
+    }, [resoluciones]);
+
+    const pendientes = useMemo(() => rows.filter(r => !resueltasMap.has(r.id)), [rows, resueltasMap]);
+
+    const resueltas = useMemo(() =>
+        rows.filter(r => resueltasMap.has(r.id))
+            .map(r => ({ ...r, resolution: resueltasMap.get(r.id) }))
+            .sort((a, b) => String(b.resolution?.resolved_at || '').localeCompare(String(a.resolution?.resolved_at || ''))),
+        [rows, resueltasMap]);
+
     const conteos = useMemo(() => {
         const m = new Map();
-        for (const r of rows) for (const o of (r.observaciones || [])) m.set(o, (m.get(o) || 0) + 1);
+        for (const r of pendientes) for (const o of (r.observaciones || [])) m.set(o, (m.get(o) || 0) + 1);
         return [...m.entries()].sort((a, b) => b[1] - a[1]);
-    }, [rows]);
+    }, [pendientes]);
 
     const filtered = useMemo(() => {
-        if (!searchTerm) return rows;
-        const { results } = smartFilter(searchTerm, rows,
+        if (!searchTerm) return pendientes;
+        const { results } = smartFilter(searchTerm, pendientes,
             r => [r.correlativo, r.cliente, String(r.erp_invoice_id || ''), ...(r.observaciones || [])]);
         return results;
-    }, [rows, searchTerm]);
+    }, [pendientes, searchTerm]);
+
+    // La resolución NO toca `sales_invoices`: igual que en Pendiente MH, el
+    // portal registra que alguien revisó el caso; el dato de la factura lo
+    // corrige el ERP y lo trae el sync.
+    const handleSolve = async (invoiceId) => {
+        setSaving(true);
+        const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
+        const inv = rows.find(r => r.id === invoiceId);
+        const { error: err } = await insertObservationResolution({
+            invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
+        });
+        if (err) { avisarFalloAlSolventar(err, 'handleSolve (observaciones)'); setSaving(false); return; }
+        useStaff.getState().appendAuditLog('SOLVENTAR_OBSERVACION', String(invoiceId), {
+            correlativo: inv?.correlativo, observaciones: inv?.observaciones || [],
+            comment: comment.trim() || null, resolved_by: resolvedBy,
+        });
+        useToastStore.getState().showToast('Observación solventada', inv?.correlativo || '', 'success');
+        setResoluciones(prev => [{
+            invoice_id: invoiceId, comment: comment.trim() || null,
+            resolved_by: resolvedBy, resolved_at: new Date().toISOString(),
+        }, ...prev]);
+        setSolvingId(null); setComment(''); setSaving(false);
+    };
 
     // Mismo agrupado que Pendiente MH: sucursal → fecha → documentos. El RPC ya
     // devuelve ordenado por fecha desc, así que el orden de inserción alcanza.
@@ -2155,10 +2228,10 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de observaciones">
                     <StatCard
-                        icon={AlertTriangle} label="Facturas" value={rows.length}
-                        iconBg={rows.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
-                        iconCls={rows.length > 0 ? 'text-danger' : 'text-content-3'}
-                        valueCls={rows.length > 0 ? 'text-danger' : 'text-content'}
+                        icon={AlertTriangle} label="Facturas" value={pendientes.length}
+                        iconBg={pendientes.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={pendientes.length > 0 ? 'text-danger' : 'text-content-3'}
+                        valueCls={pendientes.length > 0 ? 'text-danger' : 'text-content'}
                     />
                     {conteos.map(([code, n]) => {
                         const meta = metaObs(code);
@@ -2175,6 +2248,13 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
             {error && (
                 <Notice variant="danger" icon={AlertTriangle}>
                     No se pudieron cargar las observaciones: {error}
+                </Notice>
+            )}
+
+            {avisoRes && (
+                <Notice variant="warning" icon={AlertTriangle}>
+                    No se pudo leer qué observaciones ya fueron solventadas: {avisoRes}. La lista
+                    de abajo las incluye a todas.
                 </Notice>
             )}
 
@@ -2196,7 +2276,10 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
                 </div>
             ) : !error && filtered.length === 0 ? (
                 <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
-                    title="Sin observaciones" subtitle="Ninguna factura tiene datos fuera de lo esperado." />
+                    title="Sin observaciones"
+                    subtitle={resueltas.length > 0 && !searchTerm
+                        ? 'Todas las observaciones abiertas fueron solventadas.'
+                        : 'Ninguna factura tiene datos fuera de lo esperado.'} />
             ) : !error && (
                 <div className="space-y-3">
                     {/* Misma anatomía que Pendiente MH: sucursal colapsable → fecha →
@@ -2234,9 +2317,25 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
 
                                                 <div className="space-y-1.5">
                                                     {fechaRows.map(r => {
-                                                        const isCCF = r.tipo_documento === 'CCF';
+                                                        const isCCF     = r.tipo_documento === 'CCF';
+                                                        const isSolving = solvingId === r.id;
+                                                        const isCopied  = copiedId === r.erp_invoice_id;
                                                         return (
                                                             <div key={r.id} className="flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2">
+                                                                {/* El MISMO control de Pendiente MH: copiar el id del ERP │
+                                                                    tipo de documento │ solventar. Acá el segmento del medio
+                                                                    lleva el tipo, que antes era un `Badge` suelto. */}
+                                                                <ChipDoc
+                                                                    estado={isCCF ? 'ccf' : 'normal'}
+                                                                    copiado={isCopied}
+                                                                    resuelto={isSolving}
+                                                                    onCopiar={() => copyErpId(r.erp_invoice_id)}
+                                                                    etiquetaCopia={r.erp_invoice_id ? `#${r.erp_invoice_id}` : '—'}
+                                                                    nombreResolver="esta observación"
+                                                                    onResolver={canEdit ? () => { isSolving ? (setSolvingId(null), setComment('')) : (setSolvingId(r.id), setComment('')); } : undefined}
+                                                                >
+                                                                    <span className="text-micro font-black uppercase select-none">{r.tipo_documento || '—'}</span>
+                                                                </ChipDoc>
                                                                 <div className="flex flex-wrap gap-1 shrink-0">
                                                                     {(r.observaciones || []).map(code => {
                                                                         const meta = metaObs(code);
@@ -2245,7 +2344,6 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
                                                                 </div>
                                                                 <div className="min-w-0 flex-1">
                                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                                        <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
                                                                         <span className={`font-mono text-body-sm font-black ${isCCF ? 'text-danger-text' : 'text-content'}`}>{r.correlativo || '—'}</span>
                                                                         {r.cliente && <span className="text-label text-content-3 truncate">· {r.cliente}</span>}
                                                                     </div>
@@ -2260,6 +2358,39 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
                                                         );
                                                     })}
                                                 </div>
+
+                                                {/* Formulario de solventar — debajo del grupo de la fecha,
+                                                    igual que en Pendiente MH. */}
+                                                {fechaRows.some(r => r.id === solvingId) && (() => {
+                                                    const r     = fechaRows.find(x => x.id === solvingId);
+                                                    const isCCF = r.tipo_documento === 'CCF';
+                                                    return (
+                                                        <div className="mt-2.5 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
+                                                            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                                                                <span className={`font-mono text-label font-black ${isCCF ? 'text-danger-text' : 'text-content-2'}`}>{r.correlativo}</span>
+                                                                {(r.observaciones || []).map(code => {
+                                                                    const meta = metaObs(code);
+                                                                    return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
+                                                                })}
+                                                                <span className="ml-auto text-body-sm font-black text-content-2">{fmt(r.total)}</span>
+                                                            </div>
+                                                            <div className="flex items-start gap-3">
+                                                                <PortalTextarea
+                                                                    textareaClassName="flex-1"
+                                                                    rows={2}
+                                                                    autoFocus
+                                                                    placeholder="Qué se revisó o corrigió (opcional)…"
+                                                                    value={comment}
+                                                                    onChange={e => setComment(e.target.value)}
+                                                                />
+                                                                <div className="flex flex-col gap-1.5 shrink-0">
+                                                                    <Button tone="success" disabled={saving} onClick={() => handleSolve(r.id)}>{saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar</Button>
+                                                                    <Button variant="destructive" icon={X} onClick={() => { setSolvingId(null); setComment(''); }}>Cancelar</Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         );
                                     })}
@@ -2269,16 +2400,77 @@ function TabObservaciones({ branches, filterBranch, searchTerm, barraFiltros }) 
                     })}
                 </div>
             )}
+
+            {/* Historial de solventadas. Lo que se solventa sale de la lista de
+                arriba, así que sin esta sección desaparecería sin dejar rastro
+                visible — y la observación sigue existiendo en la factura. */}
+            {!loading && resueltas.length > 0 && (
+                <div className="rounded-2xl border border-divider overflow-hidden bg-surface-card shadow-sm">
+                    <ListRow
+                        icon={Check} iconClass="text-success" iconBoxClass="bg-success/10 border-success/20"
+                        title={`${resueltas.length} solventada${resueltas.length !== 1 ? 's' : ''}`}
+                        subtitle="Observaciones ya revisadas"
+                        onClick={() => setShowResolved(v => !v)}
+                        aria-expanded={showResolved}
+                        className="rounded-none border-x-0 border-t-0"
+                        trailing={<ChevronDown size={16} className={`text-content-3 transition-transform duration-300 ${showResolved ? 'rotate-180' : ''}`} />}
+                    />
+                    {showResolved && (
+                        <div className="border-t border-divider">
+                            {resueltas.map((r, i) => {
+                                const resolvedBy = r.resolution?.resolved_by || null;
+                                const photo = resolvedBy ? (empPhotoMap[resolvedBy] || null) : null;
+                                const initials = (resolvedBy || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                                return (
+                                    <div key={r.id} className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${i > 0 ? 'border-t border-divider' : ''}`}>
+                                        {photo
+                                            ? <img src={photo} alt={resolvedBy} className="w-8 h-8 rounded-full object-cover border border-divider shrink-0 mt-0.5" />
+                                            : <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
+                                                <span className="text-micro font-black text-success-text">{initials}</span>
+                                              </div>
+                                        }
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                <Badge variant={VARIANTE_DOC[r.tipo_documento] || 'neutral'} size="sm">{r.tipo_documento || '—'}</Badge>
+                                                {r.erp_invoice_id && <span className="font-mono text-body-sm font-black text-content">#{r.erp_invoice_id}</span>}
+                                                <span className="font-mono text-label text-content-3">{r.correlativo}</span>
+                                                <span className="text-label text-content-3">{getBranch(r.branch_id)}</span>
+                                                {r.total != null && <span className="text-body-sm font-bold text-content-2 ml-auto">{fmt(r.total)}</span>}
+                                            </div>
+                                            <div className="flex flex-wrap gap-1 mb-1">
+                                                {(r.observaciones || []).map(code => {
+                                                    const meta = metaObs(code);
+                                                    return <Badge key={code} variant={meta.variant} size="sm">{meta.label}</Badge>;
+                                                })}
+                                            </div>
+                                            {r.resolution?.comment && <p className="text-body-sm text-content-3 mb-1">&ldquo;{r.resolution.comment}&rdquo;</p>}
+                                            <p className="text-label text-content-3">
+                                                {resolvedBy
+                                                    ? <span className="font-semibold text-content-2">{resolvedBy}</span>
+                                                    : 'Solventada'}
+                                                {r.resolution?.resolved_at && <> · {new Date(r.resolution.resolved_at).toLocaleString('es-SV', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</>}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
 
+// Observaciones va PEGADA a Pendiente MH: las dos miran el mismo documento en la
+// misma ventana de tiempo (una el sello, la otra cualquier otra anomalía) y en la
+// práctica se saltan entre sí. Saltos y No Efectivo son otro trabajo.
 const TABS = [
     { key: 'anuladas',      label: 'Anuladas'      },
     { key: 'pendiente_mh',  label: 'Pendiente MH'  },
+    { key: 'observaciones', label: 'Observaciones' },
     { key: 'saltos',        label: 'Saltos'        },
     { key: 'no_efectivo',   label: 'No Efectivo'   },
-    { key: 'observaciones', label: 'Observaciones' },
 ];
 
 export default function FacturacionView() {
@@ -2447,8 +2639,8 @@ export default function FacturacionView() {
                         barraFiltros={activeTab === 'no_efectivo' ? filtrosCuerpo : null} selectedMonth={selectedMonth} />
                 </div>
                 <div className={activeTab === 'observaciones' ? '' : 'hidden'}>
-                    <TabObservaciones branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
-                        barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
+                    <TabObservaciones canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
+                        currentUser={currentUser} barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
                 </div>
             </div>
         </GlassViewLayout>

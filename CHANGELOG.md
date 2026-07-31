@@ -12,30 +12,38 @@ retomar; acá está todo.
 
 ---
 
-## v2.309.0 — La gota es de táctil: escritorio recupera su entrada
+## v2.312.0 — Observaciones: copiar el id, solventar, y al lado de Pendiente MH
 
-La compuerta **nunca existió**: `useGotaApertura` se llamaba con
-`activo: !animacionPropia && !sinMovimiento`, sin preguntar por el dispositivo de
-entrada, desde v2.279.0 ("la gota para TODO diálogo"). Ese commit la subió de
-`HojaMovil` a `ModalShell` para que la heredaran las alertas y el ⌘K, y de paso
-se la llevó al escritorio.
+Faltaban las dos manos de la pestaña. Se veía el problema pero no se podía hacer
+nada con él: ni llevarse el id al ERP para ir a buscar el documento, ni dejar
+constancia de haberlo revisado. La hoja usa ahora el **mismo `ChipDoc`** de
+Pendiente MH —copiar `#erp_invoice_id` │ tipo │ ✓— y el ✓ abre el formulario de
+comentario debajo del grupo de la fecha, igual que allá. El botón de solventar
+solo se dibuja con `can_edit` en Facturación: el mismo gate que exige el RLS, así
+que la UI no ofrece un botón que el servidor va a rechazar.
 
-La gota dice *"esto nació del control que tocaste"*. En escritorio no hay tal
-toque — hay un clic con un puntero que ya está donde apunta—, así que la premisa
-del gesto no existe. Ahora se pide `sinHover`, el mismo criterio con el que
-`ModalShell` ya decide hoja-contra-centrado.
+Lo solventado sale de la lista y baja al historial —quién, cuándo y con qué
+comentario—, porque la observación sigue existiendo en la factura: sin esa
+sección desaparecería sin dejar rastro.
 
-Y escritorio recupera su entrada, porque apagar la gota a secas lo dejaba
-apareciendo de golpe. Es la que tenía antes de v2.279.0 con una resta
-deliberada: **sin `fade-in`**. La opacidad por debajo de 1 hace que el panel
-componga como grupo y su propio `backdrop-filter` deje de muestrear el fondo, así
-que el vidrio aparecía recién al terminar — el mismo defecto que el proyecto ya
-documentó tres veces. Escalar al 95 % no lo tiene: el blur pasa de 24px a ~23.
+**Tabla propia, no `sales_invoice_resolutions`.** Esa tabla es la cola de
+Hacienda, con fecha límite fiscal. Una factura observada suele estar *además*
+pendiente de sello, así que compartirla haría que "ya revisé la suma" la sacara
+de esa cola. Dos preguntas distintas → dos registros distintos:
+`sales_observation_resolutions` (migración `20260731193337`), append-only, RLS
+con INSERT por `can_edit` — probado en los dos sentidos con `BEGIN … ROLLBACK`:
+el rol QA inserta, el rol sin `can_edit` recibe `42501`.
 
-| | `hover:none` | gota | animación |
-|---|---|---|---|
-| escritorio (mouse) | false | no | `animate-in zoom-in-95` |
-| táctil (dedo) | true | sí | la gota |
+De paso, un hallazgo que vale para toda tabla nueva: `CREATE TABLE` deja los
+**default privileges** del esquema, que dan `ALL` a `authenticated`, y un
+`GRANT SELECT, INSERT` posterior **suma, no acota**. RLS tapa UPDATE y DELETE
+(no hay policy), pero **TRUNCATE no pasa por RLS** — cualquier autenticado podía
+vaciar la tabla. Revocado en `20260731193824`. Las otras tres tablas de
+resoluciones del módulo tienen el mismo grant ancho de origen: queda anotado, no
+tocado.
+
+La pestaña se movió al tercer lugar, pegada a Pendiente MH: las dos miran el
+mismo documento en la misma ventana de tiempo y uno salta entre ellas.
 
 ---
 
@@ -99,6 +107,33 @@ corta cerca de los 14 caracteres y "Sin código ge…" no le dice nada a nadie.
 > **Nota de método.** Este bug lo encontró una captura de pantalla, no una
 > prueba. Un gate verde no ve que una lista esté llena de lo que no debería
 > estar ahí.
+
+---
+
+## v2.309.0 — La gota es de táctil: escritorio recupera su entrada
+
+La compuerta **nunca existió**: `useGotaApertura` se llamaba con
+`activo: !animacionPropia && !sinMovimiento`, sin preguntar por el dispositivo de
+entrada, desde v2.279.0 ("la gota para TODO diálogo"). Ese commit la subió de
+`HojaMovil` a `ModalShell` para que la heredaran las alertas y el ⌘K, y de paso
+se la llevó al escritorio.
+
+La gota dice *"esto nació del control que tocaste"*. En escritorio no hay tal
+toque — hay un clic con un puntero que ya está donde apunta—, así que la premisa
+del gesto no existe. Ahora se pide `sinHover`, el mismo criterio con el que
+`ModalShell` ya decide hoja-contra-centrado.
+
+Y escritorio recupera su entrada, porque apagar la gota a secas lo dejaba
+apareciendo de golpe. Es la que tenía antes de v2.279.0 con una resta
+deliberada: **sin `fade-in`**. La opacidad por debajo de 1 hace que el panel
+componga como grupo y su propio `backdrop-filter` deje de muestrear el fondo, así
+que el vidrio aparecía recién al terminar — el mismo defecto que el proyecto ya
+documentó tres veces. Escalar al 95 % no lo tiene: el blur pasa de 24px a ~23.
+
+| | `hover:none` | gota | animación |
+|---|---|---|---|
+| escritorio (mouse) | false | no | `animate-in zoom-in-95` |
+| táctil (dedo) | true | sí | la gota |
 
 ---
 

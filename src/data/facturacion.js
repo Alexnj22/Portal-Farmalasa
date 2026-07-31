@@ -94,6 +94,19 @@ export function fetchInvoiceObservations(desde, hasta, filterBranch) {
     });
 }
 
+// Tabla propia y no `sales_invoice_resolutions`: ver el comentario de la
+// migración 20260731193337. Resumen — esa tabla es la cola del MH, y una
+// factura observada suele estar además pendiente de sello; compartirla haría
+// que "ya revisé la suma" la sacara de la cola con fecha límite de Hacienda.
+export function fetchObservationResolutions(columns) {
+    return supabase.from('sales_observation_resolutions')
+        .select(columns).order('resolved_at', { ascending: false });
+}
+
+export function insertObservationResolution(payload) {
+    return supabase.from('sales_observation_resolutions').insert(payload);
+}
+
 // Acá vivía `updateInvoiceReceivedMh`, que hacía `update({ recibido_mh: true })`
 // al solventar un pendiente de MH: escribía la cadena 'true' ENCIMA del sello
 // fiscal. Nunca corrompió nada porque `sales_invoices` no tiene policy de UPDATE

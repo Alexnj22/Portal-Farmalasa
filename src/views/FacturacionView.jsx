@@ -186,6 +186,15 @@ const TIPO_PAGO_THEME = {
 // SV time
 function svNow() { return new Date(Date.now() - 6 * 3600_000); }
 
+// Días cumplidos desde una fecha `YYYY-MM-DD`, contra medianoche de hoy en SV.
+// Va a nivel de módulo porque lo usan dos pestañas y además entra en un
+// `useMemo`: como función local se recrearía en cada render.
+function diasDesde(fechaStr) {
+    const today = svNow();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round((todayMidnight - new Date(`${fechaStr}T00:00:00`)) / 86400000);
+}
+
 function monthOptions() {
     const opts = [];
     const now = svNow();
@@ -198,6 +207,42 @@ function monthOptions() {
         opts.push({ value: `${y}-${pad(m)}-01|${y}-${pad(m)}-${pad(last)}`, label: label.charAt(0).toUpperCase() + label.slice(1) });
     }
     return opts;
+}
+
+// ─── La marca "ya me llevé este id al ERP" ────────────────────────────────────
+//
+// Se apaga la fila y se tacha el chip: es lo que permite recorrer una lista de
+// 157 documentos sin perder el hilo de cuáles ya se fueron a buscar al sistema.
+//
+// La clave de localStorage es UNA para todas las pestañas, a propósito: la marca
+// es del DOCUMENTO, no de la lista donde se lo encontró. Era el mismo bloque
+// copiado en Anuladas y en Pendiente MH; Observaciones habría sido la tercera
+// copia (pedido del usuario, 2026-07-31).
+const VISITED_KEY = 'facturacion_visited';
+
+function useVisitados() {
+    const [visitedIds, setVisitedIds] = useState(() => {
+        try { return new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || '[]')); }
+        catch { return new Set(); }
+    });
+
+    const toggleVisited = useCallback((erpId) => {
+        if (!erpId) return;
+        setVisitedIds(prev => {
+            const next = new Set(prev);
+            const key = String(erpId);
+            if (next.has(key)) next.delete(key); else next.add(key);
+            try { localStorage.setItem(VISITED_KEY, JSON.stringify([...next])); } catch { /* localStorage no disponible (privado/cuota) */ }
+            return next;
+        });
+    }, []);
+
+    const clearVisited = useCallback(() => {
+        setVisitedIds(new Set());
+        try { localStorage.removeItem(VISITED_KEY); } catch { /* localStorage no disponible (privado/cuota) */ }
+    }, []);
+
+    return { visitedIds, toggleVisited, clearVisited };
 }
 
 // ─── Sort hook ────────────────────────────────────────────────────────────────
@@ -376,25 +421,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit,
     const resolvedSectionRef = useRef(null);
     const [collapsedBranches, setCollapsedBranches] = useState({});
     const [copiedId, setCopiedId] = useState(null);
-    const [visitedIds, setVisitedIds] = useState(() => {
-        try { return new Set(JSON.parse(localStorage.getItem('facturacion_visited') || '[]')); }
-        catch { return new Set(); }
-    });
-
-    const toggleVisited = (erpId) => {
-        if (!erpId) return;
-        setVisitedIds(prev => {
-            const next = new Set(prev);
-            const key = String(erpId);
-            if (next.has(key)) next.delete(key); else next.add(key);
-            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch { /* localStorage no disponible (privado/cuota) */ }
-            return next;
-        });
-    };
-    const clearVisited = () => {
-        setVisitedIds(new Set());
-        try { localStorage.removeItem('facturacion_visited'); } catch { /* localStorage no disponible (privado/cuota) */ }
-    };
+    const { visitedIds, toggleVisited, clearVisited } = useVisitados();
 
     const loadData = useCallback(async () => {
         if (pollingRef.current) return;
@@ -791,25 +818,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const [copiedId, setCopiedId]             = useState(null);
     const [nullCamposIds, setNullCamposIds]   = useState(new Set());
     const [collapsedBranches, setCollapsedBranches] = useState({});
-    const [visitedIds, setVisitedIds] = useState(() => {
-        try { return new Set(JSON.parse(localStorage.getItem('facturacion_visited') || '[]')); }
-        catch { return new Set(); }
-    });
-
-    const toggleVisited = (erpId) => {
-        if (!erpId) return;
-        setVisitedIds(prev => {
-            const next = new Set(prev);
-            const key = String(erpId);
-            if (next.has(key)) next.delete(key); else next.add(key);
-            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch { /* localStorage no disponible (privado/cuota) */ }
-            return next;
-        });
-    };
-    const clearVisited = () => {
-        setVisitedIds(new Set());
-        try { localStorage.removeItem('facturacion_visited'); } catch { /* localStorage no disponible (privado/cuota) */ }
-    };
+    const { visitedIds, toggleVisited, clearVisited } = useVisitados();
 
     const now      = svNow();
     const todayStr = now.toISOString().slice(0, 10);
@@ -824,12 +833,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
             setTimeout(() => setCopiedId(null), 1500);
         }
         toggleVisited(erpId);
-    };
-    const diasDesde = (fechaStr) => {
-        const today = svNow();
-        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
-        return Math.round((todayMidnight - fechaMidnight) / 86400000);
     };
     const daysAgoLabel = (fechaStr) => {
         const diff = diasDesde(fechaStr);
@@ -2106,18 +2109,12 @@ const OBSERVACIONES = {
 // tocado el frontend todavía. Ocultarla sería repetir el defecto original.
 const metaObs = (code) => OBSERVACIONES[code] || { label: code, variant: 'warning' };
 
-const TONO_OBS = {
-    danger:  { bg: 'bg-danger/10',  cls: 'text-danger'       },
-    warning: { bg: 'bg-warning/10', cls: 'text-warning-text' },
-    info:    { bg: 'bg-brand/10',   cls: 'text-brand-text'   },
-};
-
 // Rango completo a propósito: las observaciones son raras (~190 sobre 338 mil
 // facturas) y lo que hace falta es verlas TODAS, no las del mes en curso.
 const OBS_DESDE = '2000-01-01';
 const OBS_HASTA = '2099-12-31';
 
-function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros }) {
+function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, obsCode, onConteos }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -2135,24 +2132,29 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
     const [comment, setComment]     = useState('');
     const [saving, setSaving]       = useState(false);
     const [showResolved, setShowResolved] = useState(false);
+    const { visitedIds, toggleVisited, clearVisited } = useVisitados();
     const getBranch = useCallback((id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`, [branches]);
 
     // El id del ERP es lo que se pega en el sistema para ir a buscar el
-    // documento — el mismo dato y el mismo gesto que en Pendiente MH. Acá sin
-    // la marca "visitado" persistida: esta pestaña sí tiene cómo cerrar un
-    // caso (solventar), así que no necesita el tachado provisorio.
+    // documento — el mismo dato, el mismo gesto y la MISMA marca que en
+    // Pendiente MH. Nació sin la marca, con el argumento de que acá se puede
+    // solventar y por tanto el tachado provisorio sobraba; el argumento estaba
+    // mal (pedido del usuario, 2026-07-31): solventar es "esto ya se revisó y
+    // queda constancia", la marca es "de éste ya me llevé el id", que es lo que
+    // se necesita mientras se recorre la lista y todavía no se sabe si hay algo
+    // que corregir. Segundo clic la quita.
     const copyErpId = (erpId) => {
         if (!erpId) return;
-        navigator.clipboard.writeText(String(erpId));
-        setCopiedId(erpId);
-        setTimeout(() => setCopiedId(null), 1500);
+        if (!visitedIds.has(String(erpId))) {
+            navigator.clipboard.writeText(String(erpId));
+            setCopiedId(erpId);
+            setTimeout(() => setCopiedId(null), 1500);
+        }
+        toggleVisited(erpId);
     };
 
     const daysAgoLabel = (fechaStr) => {
-        const today = svNow();
-        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const fechaMidnight = new Date(`${fechaStr}T00:00:00`);
-        const diff = Math.round((todayMidnight - fechaMidnight) / 86400000);
+        const diff = diasDesde(fechaStr);
         if (diff === 0) return 'hoy';
         if (diff === 1) return 'ayer';
         return `hace ${diff}d`;
@@ -2204,12 +2206,30 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         return [...m.entries()].sort((a, b) => b[1] - a[1]);
     }, [pendientes]);
 
+    // Los conteos suben a la píldora, que es quien dibuja la ranura. `conteos`
+    // es un memo estable, así que el efecto corre sólo cuando cambian de verdad.
+    useEffect(() => { onConteos?.(conteos); }, [conteos, onConteos]);
+
+    // La edad de la observación más vieja. Es la métrica que dice si esto se
+    // está atendiendo, y sin ella hay que bajar hasta el último grupo para
+    // enterarse: la más vieja del portal tenía 266 días.
+    const diasMasVieja = useMemo(() =>
+        pendientes.reduce((max, r) => Math.max(max, diasDesde(r.fecha)), 0),
+        [pendientes]);
+
+    const activeVisitedCount = useMemo(() =>
+        pendientes.filter(r => r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id))).length,
+        [pendientes, visitedIds]);
+
     const filtered = useMemo(() => {
-        if (!searchTerm) return pendientes;
-        const { results } = smartFilter(searchTerm, pendientes,
+        const porCodigo = obsCode
+            ? pendientes.filter(r => (r.observaciones || []).includes(obsCode))
+            : pendientes;
+        if (!searchTerm) return porCodigo;
+        const { results } = smartFilter(searchTerm, porCodigo,
             r => [r.correlativo, r.cliente, String(r.erp_invoice_id || ''), ...(r.observaciones || [])]);
         return results;
-    }, [pendientes, searchTerm]);
+    }, [pendientes, searchTerm, obsCode]);
 
     // La resolución NO toca `sales_invoices`: igual que en Pendiente MH, el
     // portal registra que alguien revisó el caso; el dato de la factura lo
@@ -2249,21 +2269,32 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
     return (
         <div className="p-5 md:p-6 space-y-5">
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {/* Tarjetas FIJAS, tres a lo sumo (§17.0): el carril lo dibuja la
+                    vista, no el dato. El desglose por código —que era una tarjeta
+                    por clase de anomalía, con techo abierto— es ahora la ranura
+                    "Observación" de la píldora, con su conteo por opción. */}
                 <CarrilCards className="flex-1" ariaLabel="Resumen de observaciones">
                     <StatCard
                         icon={AlertTriangle} label="Facturas" value={pendientes.length}
+                        sub={obsCode ? `${filtered.length} en el filtro` : undefined}
                         iconBg={pendientes.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
                         iconCls={pendientes.length > 0 ? 'text-danger' : 'text-content-3'}
                         valueCls={pendientes.length > 0 ? 'text-danger' : 'text-content'}
                     />
-                    {conteos.map(([code, n]) => {
-                        const meta = metaObs(code);
-                        const tono = TONO_OBS[meta.variant] || TONO_OBS.warning;
-                        return (
-                            <StatCard key={code} icon={AlertTriangle} label={meta.label} value={n}
-                                iconBg={tono.bg} iconCls={tono.cls} valueCls={tono.cls} />
-                        );
-                    })}
+                    <StatCard
+                        icon={History} label="Más antigua"
+                        value={pendientes.length > 0 ? `${diasMasVieja}d` : '—'}
+                        sub="Sin solventar"
+                    />
+                    {/* Aparece sólo con algo marcado, igual que en Pendiente MH:
+                        es la única forma de soltar la marca de todas a la vez. */}
+                    {activeVisitedCount > 0 && (
+                        <StatCard
+                            icon={Check} label="Marcados" value={activeVisitedCount}
+                            sub="Limpiar" onClick={clearVisited} active tono="warning"
+                            iconBg="bg-warning/10" iconCls="text-warning-text"
+                        />
+                    )}
                 </CarrilCards>
                 {barraFiltros}
             </div>
@@ -2298,11 +2329,15 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                     ))}
                 </div>
             ) : !error && filtered.length === 0 ? (
+                // Vacío por FILTRO no es lo mismo que vacío de verdad: con la
+                // ranura puesta hay pendientes, sólo que ninguna de esa clase.
                 <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
-                    title="Sin observaciones"
-                    subtitle={resueltas.length > 0 && !searchTerm
-                        ? 'Todas las observaciones abiertas fueron solventadas.'
-                        : 'Ninguna factura tiene datos fuera de lo esperado.'} />
+                    title={obsCode && pendientes.length > 0 ? 'Sin resultados' : 'Sin observaciones'}
+                    subtitle={obsCode && pendientes.length > 0
+                        ? `Ninguna de las ${pendientes.length} pendientes cae en "${metaObs(obsCode).label}".`
+                        : resueltas.length > 0 && !searchTerm
+                            ? 'Todas las observaciones abiertas fueron solventadas.'
+                            : 'Ninguna factura tiene datos fuera de lo esperado.'} />
             ) : !error && (
                 <div className="space-y-3">
                     {/* Misma anatomía que Pendiente MH: sucursal colapsable → fecha →
@@ -2343,13 +2378,18 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
                                                         const isCCF     = r.tipo_documento === 'CCF';
                                                         const isSolving = solvingId === r.id;
                                                         const isCopied  = copiedId === r.erp_invoice_id;
+                                                        const isVisited = visitedIds.has(String(r.erp_invoice_id));
                                                         return (
-                                                            <div key={r.id} className="flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2">
+                                                            // La fila entera se apaga, no sólo el chip: es lo que
+                                                            // deja ver de un vistazo cuánto queda por recorrer.
+                                                            // Mientras se solventa vuelve a opacidad plena — es la
+                                                            // fila con la que se está trabajando.
+                                                            <div key={r.id} className={`flex items-start gap-3 flex-wrap rounded-xl border border-divider bg-surface-card-hover/40 px-3 py-2 transition-opacity duration-300 ${isVisited && !isSolving ? 'opacity-40' : ''}`}>
                                                                 {/* El MISMO control de Pendiente MH: copiar el id del ERP │
                                                                     tipo de documento │ solventar. Acá el segmento del medio
                                                                     lleva el tipo, que antes era un `Badge` suelto. */}
                                                                 <ChipDoc
-                                                                    estado={isCCF ? 'ccf' : 'normal'}
+                                                                    estado={isVisited ? 'visitado' : isCCF ? 'ccf' : 'normal'}
                                                                     copiado={isCopied}
                                                                     resuelto={isSolving}
                                                                     onCopiar={() => copyErpId(r.erp_invoice_id)}
@@ -2534,6 +2574,12 @@ export default function FacturacionView() {
     const [filterBranch, setFilterBranch] = useState(
         getScope('facturacion') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
     );
+    // El desglose por código de Observaciones vive acá arriba porque es una
+    // RANURA de la píldora (§17.0): la pestaña reporta sus conteos y el filtro
+    // se elige donde se eligen todos los filtros de la vista. Como tarjetas en
+    // el carril eran N métricas para una sola pregunta, y encima no filtraban.
+    const [obsCode, setObsCode] = useState('');
+    const [obsConteos, setObsConteos] = useState([]);
     const [rawSearch, setRawSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     useEffect(() => {
@@ -2607,8 +2653,12 @@ export default function FacturacionView() {
     const puedeElegirSucursal = getScope('facturacion') !== 'BRANCH';
     const filtrosCuerpo = (
         <FilterBar
-            onClear={() => { setFilterBranch(''); setSelectedMonth(mesPorDefecto); }}
-            activeCount={[filterBranch, activeTab === 'no_efectivo' && selectedMonth !== mesPorDefecto].filter(Boolean).length}
+            onClear={() => { setFilterBranch(''); setSelectedMonth(mesPorDefecto); setObsCode(''); }}
+            activeCount={[
+                filterBranch,
+                activeTab === 'no_efectivo' && selectedMonth !== mesPorDefecto,
+                activeTab === 'observaciones' && !!obsCode,
+            ].filter(Boolean).length}
             acciones={accionesFacturacion}>
             {puedeElegirSucursal && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
@@ -2621,6 +2671,24 @@ export default function FacturacionView() {
                     onClear={() => setSelectedMonth(mesPorDefecto)} label="período">
                     <LiquidSelect value={selectedMonth} onChange={setSelectedMonth}
                         options={monthOpts} placeholder="Mes" compact bare />
+                </FilterBar.Section>
+            )}
+            {/* El conteo va DENTRO de la opción, como en MIN·MAX: "23 Sello
+                inválido" pesa distinto que "1 Sin correlativo", y es el dato por
+                el que se elige. `umbral={0}` fuerza el select siempre — con el
+                umbral por defecto la forma del control cambiaría según cuántas
+                clases de anomalía haya ese día, que es justo lo que se saca. */}
+            {activeTab === 'observaciones' && obsConteos.length > 0 && (
+                <FilterBar.Section active={!!obsCode}
+                    onClear={() => setObsCode('')} label="observación">
+                    <FilterBar.Opciones
+                        icon={AlertTriangle} label="Observación" placeholder="Observación"
+                        ancho="180px" umbral={0}
+                        value={obsCode} onChange={setObsCode}
+                        options={obsConteos.map(([code, n]) => ({
+                            value: code, label: `${n} ${metaObs(code).label}`,
+                        }))}
+                    />
                 </FilterBar.Section>
             )}
         </FilterBar>
@@ -2663,7 +2731,8 @@ export default function FacturacionView() {
                 </div>
                 <div className={activeTab === 'observaciones' ? '' : 'hidden'}>
                     <TabObservaciones canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch}
-                        currentUser={currentUser} barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
+                        currentUser={currentUser} obsCode={obsCode} onConteos={setObsConteos}
+                        barraFiltros={activeTab === 'observaciones' ? filtrosCuerpo : null} />
                 </div>
             </div>
         </GlassViewLayout>

@@ -12,6 +12,48 @@ retomar; acá está todo.
 
 ---
 
+## v2.314.0 — el carril lo dibuja la VISTA, no el dato (y la marca de copiado)
+
+De las cuatro medidas canónicas de `StatCard` en §17.0 —148, 200, 8 y **cinco**—
+las tres primeras viven en clases (`basis-[148px]`, `max-w-[200px]`, `gap-2`) y
+la cuarta vivía sólo en prosa. Era la única que se podía romper sin que nada
+avisara, y se rompió: Observaciones dibujaba 1 tarjeta **+ una por código de
+anomalía**, o sea un carril cuyo largo lo decidía el dato. Seis ese día, con
+techo abierto — `metaObs` muestra crudo cualquier código que el servidor
+empiece a reportar, y eso es a propósito.
+
+**El cupo se queda, pero dicho por lo que es: un presupuesto de la vista, no una
+medida de la tarjeta.** Un desglose por categoría contesta *una* pregunta —qué
+recorte quiero ver— dibujada como N métricas independientes. Su lugar es una
+ranura de la píldora, con el conteo en cada opción. Es exactamente lo que hizo
+MIN·MAX en v2.261.0 con sus ocho chips de estado.
+
+Observaciones queda con **dos tarjetas fijas**: "Facturas" y "Más antigua" —dato
+que la pestaña no mostraba y hay que bajar hasta el último grupo para ver: la
+más vieja sin solventar tiene **441 días**—. El desglose pasa a la ranura
+**"Observación"**, con el conteo dentro de cada opción (*"23 Sello inválido"*), y
+de paso gana lo que como tarjeta no tenía: **filtra**.
+
+Lo vigila un `console.warn` de dev en `CarrilCards`, no el `design-gate`: el
+conteo real sólo existe en ejecución — un `.map()` sobre datos no se cuenta
+leyendo el JSX. Avisa en vez de recortar; quedarse con las primeras cinco
+escondería métricas en silencio.
+
+**Y la marca de copiado llega a Observaciones** (pedido del usuario). Había
+nacido sin ella, con el argumento de que acá se puede solventar y el tachado
+provisorio sobraba. El argumento estaba mal: solventar es *"ya se revisó y queda
+constancia"*; la marca es *"de éste ya me llevé el id"*, que es lo que hace falta
+mientras se recorre la lista y todavía no se sabe si hay algo que corregir. Con
+esto eran **tres copias** del mismo bloque de localStorage, así que sale un
+`useVisitados()` — y la clave sigue siendo una sola para las tres pestañas,
+porque la marca es del **documento**, no de la lista donde se lo encontró.
+
+Verificado en navegador a 1512px: carril de 2 tarjetas → 3 al marcar, ranura con
+`["23 Sello inválido","1 Tipo inválido","1 Sin correlativo"]`, el filtro deja
+*"23 en el filtro"*, la fila marcada se apaga, 0 errores de consola.
+
+---
+
 ## v2.313.0 — la misma factura estaba en dos pestañas: la frontera es la CAUSA
 
 Reportado por el usuario: con la detección nueva, las facturas observadas salían

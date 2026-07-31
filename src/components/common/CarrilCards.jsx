@@ -92,6 +92,18 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // El umbral bajo el cual la tarjeta suelta su línea de detalle. Ver `StatCard`.
 const ANCHO_CON_DETALLE = 176;
 
+// El cupo de §17.0. De las cuatro medidas canónicas de `StatCard` —148, 200, 8
+// y cinco— las tres primeras viven en clases y ésta vivía sólo en prosa, así que
+// era la única que se podía romper sin que nada avisara: Observaciones llegó a
+// dibujar 1 + una tarjeta POR CÓDIGO de anomalía, o sea un carril cuyo largo lo
+// decidía el dato (2026-07-31).
+//
+// El aviso va en dev y no en un gate porque el conteo real sólo existe en
+// tiempo de ejecución: un `.map()` sobre datos no se puede contar leyendo el
+// JSX. Y avisa en vez de recortar — quedarse con cinco escondería métricas en
+// silencio, que es peor que un carril largo.
+const CUPO = 5;
+
 // El desvanecido de los bordes. `#000`/`transparent` acá no son color: una
 // máscara solo mira el canal alfa, así que esto no toca la paleta.
 //
@@ -114,6 +126,15 @@ const CarrilCards = memo(({ children, className = '', ariaLabel = 'Métricas de 
     const [compacta, setCompacta] = useState(false);
 
     const tarjetas = Children.toArray(children).filter(isValidElement);
+
+    if (import.meta.env.DEV && tarjetas.length > CUPO) {
+        console.warn(
+            `CarrilCards ("${ariaLabel}"): ${tarjetas.length} tarjetas, el cupo de §17.0 es ${CUPO}. ` +
+            'El carril las desliza igual, pero un desglose que crece con el dato ' +
+            'es UNA pregunta dibujada como N métricas: va a una ranura de la ' +
+            'píldora con su conteo (FilterBar.Opciones), no al carril.'
+        );
+    }
 
     // Solo se desvanece el lado que tiene algo cortado: al principio del carril
     // el borde izquierdo es el borde de la vista, y difuminarlo ahí haría que la

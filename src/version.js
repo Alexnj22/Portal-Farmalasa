@@ -16,7 +16,43 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.313.0';
+export const APP_VERSION = '2.314.0';
+
+// v2.314.0 — el carril lo dibuja la VISTA, no el dato (y la marca de copiado).
+//
+// De las cuatro medidas canónicas de `StatCard` en §17.0 —148, 200, 8 y cinco—
+// las tres primeras viven en clases y la cuarta vivía sólo en prosa. Era la
+// única que se podía romper sin que nada avisara, y se rompió: Observaciones
+// dibujaba 1 tarjeta + una POR CÓDIGO de anomalía, o sea un carril cuyo largo
+// lo decidía el dato. Seis ese día, con techo abierto (`metaObs` muestra crudo
+// cualquier código nuevo, que es a propósito).
+//
+// **El cupo se queda, pero dicho por lo que es: un presupuesto de la vista.**
+// Un desglose por categoría contesta UNA pregunta —qué recorte quiero ver—
+// dibujada como N métricas, y su lugar es una ranura de la píldora. Es
+// exactamente lo que hizo MIN·MAX en v2.261.0 con sus 8 chips de estado.
+//
+// Observaciones queda con dos tarjetas fijas —"Facturas" y "Más antigua", que
+// es dato nuevo: la más vieja sin solventar tiene 441 días— y el desglose pasa
+// a la ranura "Observación", con el conteo dentro de cada opción ("23 Sello
+// inválido"). De paso gana lo que como tarjeta no tenía: filtra.
+//
+// Lo vigila un `console.warn` de dev en `CarrilCards`, no el `design-gate`: el
+// conteo real sólo existe en ejecución, un `.map()` sobre datos no se cuenta
+// leyendo el JSX. Avisa en vez de recortar — quedarse con las primeras cinco
+// escondería métricas en silencio.
+//
+// **Y la marca de copiado llega a Observaciones** (pedido del usuario). Había
+// nacido sin ella con el argumento de que acá se puede solventar; el argumento
+// estaba mal: solventar es "ya se revisó y queda constancia", la marca es "de
+// éste ya me llevé el id", que es lo que hace falta mientras se recorre la
+// lista. Con eso eran tres copias del mismo bloque de localStorage, así que
+// sale un `useVisitados()`: una clave para las tres pestañas, porque la marca
+// es del DOCUMENTO y no de la lista donde se lo encontró.
+//
+// Verificado en navegador (1512px): carril de 2 tarjetas → 3 al marcar, ranura
+// con ["23 Sello inválido","1 Tipo inválido","1 Sin correlativo"], el filtro
+// deja "23 en el filtro", la fila marcada se apaga y 0 errores de consola.
 
 // v2.313.0 — la misma factura estaba en dos pestañas: la frontera es la CAUSA.
 //

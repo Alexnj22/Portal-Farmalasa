@@ -2947,7 +2947,7 @@ tarjetas, 3 filtros, 3 acciones) entre 1024 y 2560px.
 
 | pieza | medida |
 |---|---|
-| `StatCard` | mínimo **148**, máximo **200**, separación 8, tope 5 |
+| `StatCard` | mínimo **148**, máximo **200**, separación 8, cupo **5** |
 | detalle de la tarjeta | cede bajo **176** |
 | `CarrilCards` | **una sola fila**, siempre; lo que no entra se desliza |
 | ranura de `FilterBar` | 150 (el control) + 8 de relleno |
@@ -2965,6 +2965,32 @@ tarjetas, 3 filtros, 3 acciones) entre 1024 y 2560px.
 Medido después de implementarlo, en Personal: 1280→2 tarjetas · 1440→3 ·
 1512→4 · 1728→5 · 1920→5 con detalle. Monótono: al agrandar la ventana nunca se
 ve menos que antes.
+
+#### El cupo es de la VISTA, no del dato (2026-07-31)
+
+Las otras tres medidas de la tabla son de la tarjeta y viven en sus clases
+(`basis-[148px]`, `max-w-[200px]`, `gap-2`). **El cupo de 5 no es una medida: es
+un presupuesto del llamador**, y por eso era la única que se podía romper sin
+que nada avisara — la escribía la vista, no el canónico.
+
+La regla, dicha entera: **cuántas tarjetas hay lo fija la vista, nunca el dato.**
+Un carril de largo variable es un desglose por categoría disfrazado de métricas,
+y un desglose contesta **una sola pregunta** —qué recorte quiero ver— dibujada
+como N preguntas independientes. Su lugar es una ranura de la píldora
+(`FilterBar.Opciones`, `umbral={0}`) **con el conteo en cada opción**, que además
+le da la función que como tarjeta no tenía: filtrar.
+
+Ya se resolvió así dos veces, y las dos midiendo:
+
+| vista | antes | después |
+|---|---|---|
+| MIN·MAX (v2.261.0) | 8 chips de estado, ranura de ~700px | select: píldora 809→640, carril 338→474 (2→3 tarjetas visibles) |
+| Facturación · Observaciones (v2.314.0) | 1 + una tarjeta por código de anomalía (6, techo abierto) | 2 tarjetas fijas + ranura "Observación" |
+
+Lo vigila un `console.warn` de dev en `CarrilCards` y no el `design-gate`: el
+conteo real sólo existe en ejecución — un `.map()` sobre datos no se cuenta
+leyendo el JSX. Avisa en vez de recortar; quedarse con las primeras cinco
+escondería métricas en silencio.
 
 #### El ancho se MIDE, no se estima
 

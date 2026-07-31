@@ -50,8 +50,14 @@ const ENTRADA_MS = 520;
 function objetivoVidrio(el) {
     if (!el) return null;
     if (getComputedStyle(el).backdropFilter !== 'none') return el;
-    const h = el.firstElementChild;
-    if (h && getComputedStyle(h).backdropFilter !== 'none') return h;
+    // Entre TODOS los hijos, no solo el primero: el panel lleva además la capa
+    // de sombra, y si esa queda primera —como quedó al agregarla— la búsqueda
+    // devolvía `null`, todo modal se iba por el camino de `transform` y ese
+    // transform, siendo ANCESTRO del vidrio, lo mataba. Un detector que mira
+    // "el primer hijo" asume un orden que nadie prometió.
+    for (const h of el.children) {
+        if (getComputedStyle(h).backdropFilter !== 'none') return h;
+    }
     return null;
 }
 const tope = (n) => Math.max(0, Math.round(n));

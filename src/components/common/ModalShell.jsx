@@ -139,8 +139,11 @@ export default function ModalShell({
   // abrió — se entiende sin atenuar nada, y atenuar la vista entera hace que se
   // lea como "otra pantalla" en vez de como la misma que se desplegó.
   //
-  // Se sigue pudiendo forzar con `scrim`. El diálogo sigue siendo modal: el
-  // fondo es un objetivo de cierre invisible, no ausente.
+  // Se sigue pudiendo forzar con `scrim`. El diálogo sigue siendo modal, y eso
+  // NO es una figura retórica: sin velo el contenedor llevaba
+  // `pointer-events: none`, así que los toques lo atravesaban y **la lista de
+  // atrás scrolleaba** mientras la hoja estaba abierta. Invisible no es ausente:
+  // el contenedor sigue capturando, solo que sin pintar nada.
   const conVelo = scrim ?? !(autoHoja || alignPedido === "bottom");
   const align = autoHoja ? "bottom" : alignPedido;
 
@@ -319,7 +322,7 @@ export default function ModalShell({
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,
       // el navegador deja de monitorear cambios de opacidad, liberando el CPU.
       className={`fixed inset-0 ${zClass} flex ${alignCls} ${backdropAnim}
-        ${conVelo ? 'bg-scrim backdrop-blur-sm' : 'bg-transparent pointer-events-none [&>*]:pointer-events-auto'}`}
+        ${conVelo ? 'bg-scrim backdrop-blur-sm' : 'bg-transparent'}`}
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}

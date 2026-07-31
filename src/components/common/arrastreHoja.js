@@ -45,8 +45,12 @@ const RESISTENCIA_ARRIBA = 0.35;
 function objetivoVidrio(el) {
     if (!el) return null;
     if (getComputedStyle(el).backdropFilter !== 'none') return el;
-    const h = el.firstElementChild;
-    return (h && getComputedStyle(h).backdropFilter !== 'none') ? h : el;
+    // Entre TODOS los hijos: el panel lleva además la capa de sombra, y mirar
+    // solo el primero asume un orden que nadie prometió.
+    for (const h of el.children) {
+        if (getComputedStyle(h).backdropFilter !== 'none') return h;
+    }
+    return el;
 }
 
 /**

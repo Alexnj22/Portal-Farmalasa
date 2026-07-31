@@ -16,8 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.284.0';
+export const APP_VERSION = '2.285.0';
 
+// v2.285.0 — Auditado EN WEBKIT: la gota no corria, y el fondo no estaba bloqueado.
+//
+// Las tres cosas reportadas tenian dos causas, y las dos las introduje yo.
+//
+// **La gota no corria: el detector de vidrio miraba solo el PRIMER hijo.** Al
+// agregar la capa de sombra quedo ella primera, `objetivoVidrio()` devolvia
+// `null`, y TODO modal se iba por el camino de `transform` — que ademas, siendo
+// ancestro del vidrio, lo mata. De ahi los tres sintomas juntos: sin gota al
+// abrir, sin gota al cerrar, y la sombra al 100% desde el primer cuadro porque
+// su codigo vive en la rama del recorte. Ahora busca entre TODOS los hijos: un
+// detector que mira "el primer hijo" asume un orden que nadie prometio.
+//
+// **El fondo scrolleaba porque el contenedor sin velo llevaba
+// `pointer-events: none`.** Los toques lo atravesaban y la lista de atras se
+// movia con la hoja abierta. Invisible no es ausente: el contenedor sigue
+// capturando, solo que sin pintar nada. Medido: un gesto real sobre el fondo deja
+// `scrollY` en 0.
+//
+// **Y por que no se vio antes: las pruebas corrian en Chromium.** Es la segunda
+// vez en esta tanda —la primera fue el arrastre de las tarjetas—, y las dos veces
+// el motor que importa es WebKit. Esta verificacion se corrio ahi: en liquid,
+// recorte al abrir con la sombra entrando en 0.55, recorte al cerrar por fondo y
+// por arrastre, y `backdrop-filter` vivo en todos los cuadros; en solido, el
+// camino de `transform`.
+//
 // v2.284.0 — Se recupera el arrastre de las tarjetas, y la sombra acompana al gesto.
 //
 // **1. Volvio el deslizamiento horizontal de las tarjetas.** v2.278.0 le puso

@@ -12,6 +12,23 @@ retomar; acá está todo.
 
 ---
 
+## v2.285.0 — Auditado en WebKit: la gota no corría, y el fondo no estaba bloqueado
+
+**La gota no corría: el detector de vidrio miraba solo el primer hijo.** Al
+agregar la capa de sombra quedó ella primera, `objetivoVidrio()` devolvía `null`,
+y todo modal se iba por el camino de `transform` — que además, siendo ancestro
+del vidrio, lo mata. De ahí los tres síntomas juntos.
+
+**El fondo scrolleaba porque el contenedor sin velo llevaba
+`pointer-events: none`.** Invisible no es ausente: sigue capturando, solo que sin
+pintar nada.
+
+**Por qué no se vio antes: las pruebas corrían en Chromium.** Segunda vez en esta
+tanda. Verificado en WebKit: recorte al abrir con la sombra entrando, recorte al
+cerrar por fondo y por arrastre, `backdrop-filter` vivo en todos los cuadros.
+
+---
+
 ## v2.284.0 — Vuelve el arrastre de las tarjetas, y la sombra acompaña al gesto
 
 **Volvió el deslizamiento horizontal de las tarjetas.** v2.278.0 le puso

@@ -16,8 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.287.0';
+export const APP_VERSION = '2.288.0';
 
+// v2.288.0 — La gota, filmada cuadro a cuadro: dos defectos que los estilos
+// computados no podian mostrar.
+//
+// Se dejo de muestrear a mano y se GRABO la animacion desde dentro de la pagina
+// con `requestAnimationFrame`. Recien ahi aparecieron los dos:
+//
+// **1. `transitionend` escucha CUALQUIER propiedad.** La hoja lleva
+// `data-surface`, y en `index.css` esa superficie declara
+// `transition: transform, …` con varias. Al abrirse, la primera de ELLAS en
+// terminar disparaba el handler que retira el recorte, y la gota se cortaba a
+// los pocos milisegundos. Se veia como que solo la sombra hacia el efecto —
+// porque la sombra es otro elemento y no tiene transiciones que compitan. Ahora
+// se filtra por `propertyName === 'clip-path'`. Filmado: la apertura pasa de
+// `inset(156 85 23 285)` a `0 0 0 0` en 520ms, los cuatro lados interpolando.
+//
+// **2. El cierre recalculaba el recorte y le daba otro.** Medido: la entrada
+// arrancaba en `156 85 23 285` y la salida terminaba en `0 80 22 268` — sin
+// encogerse verticalmente, o sea una rendija en vez de una gota. Entre abrir y
+// cerrar cambia lo que hay alrededor, asi que dos calculos separados no
+// coinciden. Ahora la salida **reproduce la cadena exacta que uso la entrada**:
+// la simetria queda garantizada por construccion y no por que dos cuentas den lo
+// mismo. Filmado: el cierre va `10 6 2 19` → `62 34 9 114` → `147 80 22 268`,
+// que es el camino de la apertura al reves.
+//
 // v2.287.0 — Los tres del iPhone: el scroll, la sombra y el cierre. Tres causas
 // distintas, y ninguna se veia con estilos computados.
 //

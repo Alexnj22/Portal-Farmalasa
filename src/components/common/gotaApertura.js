@@ -89,9 +89,9 @@ function insetHacia(el, desde) {
  * `box-shadow` se dibuja alrededor de eso. Así la sombra crece con la gota en
  * vez de aparecer puesta encima.
  */
-function encogerSombra(sombra, el, desde, ms, curva) {
+function encogerSombra(sombra, el, desde, ms, curva, ladosGuardados) {
     if (!sombra) return;
-    const l = ladosHacia(el, desde);
+    const l = ladosGuardados || ladosHacia(el, desde);
     sombra.style.transition = ms
         ? `top ${ms}ms ${curva}, right ${ms}ms ${curva}, bottom ${ms}ms ${curva}, left ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`
         : 'none';
@@ -128,7 +128,17 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
     //
     // Se guarda en un ref para que la SALIDA vuelva al mismo sitio: al cerrar,
     // `leerUltimoToque()` ya devuelve el toque que cerró, no el que abrió.
+    //
+    // Y se guarda **el recorte exacto que usó la entrada**, no solo el
+    // rectángulo. Recalcularlo al cerrar daba otro resultado —medido: la entrada
+    // arrancaba en `inset(156 85 23 285)` y la salida terminaba en
+    // `inset(0 80 22 268)`, o sea sin encogerse verticalmente— porque entre
+    // abrir y cerrar cambia lo que hay alrededor. Reproducir la cadena guardada
+    // hace la simetría exacta por construcción, en vez de depender de que dos
+    // cálculos separados coincidan.
     const origen = useRef(null);
+    const recorteInicial = useRef(null);
+    const ladosIniciales = useRef(null);
 
     useLayoutEffect(() => {
         const el = ref.current;
@@ -157,12 +167,14 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         }
 
         vidrio.style.transition = 'none';
-        vidrio.style.clipPath = insetHacia(vidrio, desde);
+        recorteInicial.current = insetHacia(vidrio, desde);
+        vidrio.style.clipPath = recorteInicial.current;
         // La sombra entra CON la forma, no después. Antes se apagaba entera
         // durante la gota y volvía al final, así que se veía puesta encima en vez
         // de crecer con la hoja.
         const sombra = el.querySelector('[data-sombra-hoja]');
-        encogerSombra(sombra, vidrio, desde, 0);
+        ladosIniciales.current = ladosHacia(vidrio, desde);
+        encogerSombra(sombra, vidrio, desde, 0, '', ladosIniciales.current);
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
@@ -178,15 +190,27 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que el panel quiera sacar fuera de su caja.
-        const alTerminar = () => {
+        //
+        // **Filtrando por `propertyName`**, y esa palabra era todo el bug: la hoja
+        // lleva `data-surface`, y en `index.css` esa superficie declara
+        // `transition: transform, …` con varias propiedades. Al abrirse, la
+        // primera de ELLAS en terminar disparaba este handler y borraba el
+        // recorte a los pocos milisegundos — la gota arrancaba y se cortaba sola.
+        // Se veía como que solo la sombra hacía el efecto, porque la sombra es
+        // otro elemento y no tiene transiciones que compitan.
+        const alTerminar = (ev) => {
+            if (ev && ev.propertyName !== 'clip-path') return;
             vidrio.style.clipPath = ''; vidrio.style.transition = '';
             if (sombra) {
                 sombra.style.transition = ''; sombra.style.opacity = '';
                 sombra.style.top = ''; sombra.style.right = '';
                 sombra.style.bottom = ''; sombra.style.left = ''; sombra.style.borderRadius = '';
             }
+            vidrio.removeEventListener('transitionend', alTerminar);
         };
-        vidrio.addEventListener('transitionend', alTerminar, { once: true });
+        // Sin `once`: con el filtro por propiedad, los `transitionend` ajenos ya
+        // no cuentan, así que el listener tiene que seguir vivo hasta el que sí.
+        vidrio.addEventListener('transitionend', alTerminar);
         return () => vidrio.removeEventListener('transitionend', alTerminar);
     }, [ref, activo, cerrando]);
 
@@ -211,7 +235,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         // El arrastre pudo dejarla desplazada: se suelta antes de encogerla, o el
         // recorrido saldría desde el sitio equivocado.
         if (sombra) { sombra.style.transform = ''; }
-        encogerSombra(sombra, vidrio, desde, salidaMs, 'cubic-bezier(0.4,0,0.6,1)');
+        encogerSombra(sombra, vidrio, desde, salidaMs, 'cubic-bezier(0.4,0,0.6,1)', ladosIniciales.current);
 
         // ── Hay que SEMBRAR el estado inicial del recorte ─────────────────
         // Al terminar la entrada el clip se retira (`clipPath = ''`), así que al
@@ -227,6 +251,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         void vidrio.offsetWidth;
 
         vidrio.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
-        vidrio.style.clipPath = insetHacia(vidrio, desde);
+        // El MISMO recorte con el que entró, no uno recalculado.
+        vidrio.style.clipPath = recorteInicial.current || insetHacia(vidrio, desde);
     }, [ref, cerrando, salidaMs, activo]);
 }

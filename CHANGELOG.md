@@ -12,6 +12,23 @@ retomar; acá está todo.
 
 ---
 
+## v2.288.0 — La gota, filmada cuadro a cuadro
+
+Se dejó de muestrear a mano y se **grabó** la animación desde dentro de la página
+con `requestAnimationFrame`. Recién ahí aparecieron los dos defectos:
+
+**`transitionend` escucha cualquier propiedad.** La hoja lleva `data-surface`, que
+declara `transition: transform, …`; la primera de esas en terminar disparaba el
+handler que retira el recorte y cortaba la gota a los pocos milisegundos. Se veía
+como que solo la sombra hacía el efecto.
+
+**El cierre recalculaba el recorte y le daba otro** — terminaba en
+`0 80 22 268` en vez de `156 85 23 285`, o sea una rendija en vez de una gota.
+Ahora reproduce la cadena exacta de la entrada: la simetría queda garantizada por
+construcción.
+
+---
+
 ## v2.287.0 — Los tres del iPhone: el scroll, la sombra y el cierre
 
 **`overflow: hidden` no bloquea el scroll en Safari de iOS.** El bloqueo ahora

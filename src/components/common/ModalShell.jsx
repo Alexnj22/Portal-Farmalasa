@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { EstadoDialogoCtx } from "./estadoDialogo";
 import { createPortal } from "react-dom";
 import useMediaQuery from "../../hooks/useMediaQuery";
 
@@ -67,6 +68,8 @@ const visible = (el) => {
 // saberlo. Por eso la salida ya no depende de que los dos números coincidan
 // —ver `fill-mode-forwards` abajo—: si divergen, no se ve.
 const EXIT_MS = 180;
+
+
 
 // Los keyframes `exit` de tw-animate-css son solo `to`, y el shorthand
 // `--animate-out` trae `var(--tw-animation-fill-mode, none)`. Sin declarar el
@@ -263,7 +266,21 @@ export default function ModalShell({
   // index.css). Los dos gates de movimiento las alcanzan: en Solid duran
   // 130ms lineales y con prefers-reduced-motion pierden la geometría y queda
   // solo el fade.
-  const backdropAnim = open ? "animate-in fade-in duration-500" : `animate-out fade-out duration-150 ${HOLD_EXIT}`;
+  // ── El contenedor NO se anima cuando no hay velo ──────────────────────
+  // `animate-in fade-in` le pone `opacity` entre 0 y 1 durante 500ms, y **un
+  // ancestro con opacidad < 1 es un backdrop root**: mientras dura el fade, el
+  // `backdrop-filter` de la hoja está muerto y el vidrio aparece de golpe al
+  // terminar. Medido: op 0 → 0.29 → 0.68 → 0.90 mientras la hoja se abría, que
+  // es exactamente lo que se reportó como "se ve transparente hasta que finaliza
+  // la animación". La misma regla que ya mordió por `transform`, ahora por
+  // `opacity`.
+  //
+  // Sin velo no hay nada que desvanecer —el contenedor es transparente— así que
+  // la animación no solo sobra: es la que rompe el efecto. La hoja se anima
+  // sola.
+  const backdropAnim = !conVelo
+    ? ""
+    : open ? "animate-in fade-in duration-500" : `animate-out fade-out duration-150 ${HOLD_EXIT}`;
   // Una hoja inferior no hace zoom: sube y baja. Es la misma distinción que el
   // resto del sistema hace entre movimiento decorativo y movimiento que dice de
   // dónde viene la cosa.
@@ -277,6 +294,7 @@ export default function ModalShell({
                          "items-center justify-center p-4 sm:p-6";
 
   return createPortal(
+    <EstadoDialogoCtx.Provider value={{ cerrando: !open, salidaMs: EXIT_MS }}>
     <div
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,
@@ -332,7 +350,8 @@ export default function ModalShell({
       >
         {children}
       </div>
-    </div>,
+    </div>
+    </EstadoDialogoCtx.Provider>,
     document.body
   );
 }

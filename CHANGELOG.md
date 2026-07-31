@@ -12,6 +12,26 @@ retomar; acá está todo.
 
 ---
 
+## v2.276.0 — El vidrio ya vive durante la animación, y la hoja cierra en gota
+
+**La causa no era la escala: era la opacidad del ancestro.** El contenedor de
+`ModalShell` lleva `animate-in fade-in duration-500` — `opacity` entre 0 y 1
+durante medio segundo—, y un ancestro con opacidad < 1 es un backdrop root igual
+que uno con `transform`. Medido: `0 → 0.29 → 0.68 → 0.90` mientras la hoja se
+abría. Sin velo no hay nada que desvanecer, así que esa animación no solo
+sobraba: era la que rompía el efecto. Sexta vez que esta regla aparece.
+
+**La salida es la gota al revés**, y más rápida (180ms contra 520): abrir es una
+invitación, cerrar es una respuesta. El origen se congela en el primer render —al
+cerrar hay que volver al sitio del que se salió, no al toque que cerró—, y el
+radio del recorte se lee del elemento en vez de estar quemado en 28px, que solo
+es cierto en los temas de vidrio.
+
+**En los temas sólidos el gesto se queda y el material no**: la animación es
+información, el vidrio es material. Verificado en los cuatro temas.
+
+---
+
 ## v2.275.0 — La gota se recorta en vez de escalarse, y es canónica
 
 **El vidrio llegaba tarde.** El FLIP anterior usaba `transform: scale()`, y el

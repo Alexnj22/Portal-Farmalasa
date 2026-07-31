@@ -1804,6 +1804,39 @@ popover que la hoja quiera sacar fuera de su caja.
 acepta `animacionPropia`. Un `transform` propio no rompe el `backdrop-filter`;
 uno **ancestro** sí.
 
+Y por la misma razón, **cuando no hay velo el contenedor no se anima**.
+`animate-in fade-in` le pone `opacity` entre 0 y 1 durante 500ms, y un ancestro
+con opacidad < 1 **también** es un backdrop root: medido `0 → 0.29 → 0.68 → 0.90`
+mientras la hoja se abría, o sea el vidrio muerto durante toda la entrada y
+apareciendo de golpe al terminar. Es la misma regla que ya mordió por
+`transform`, ahora por `opacity`. Sin velo no hay nada que desvanecer, así que la
+animación del contenedor no solo sobra: era la que rompía el efecto.
+
+**La salida es la misma gota al revés**, y más rápida (180ms contra 520): abrir
+es una invitación y admite demorarse, cerrar es una respuesta y cualquier demora
+ahí se siente lenta. El contenido se va primero para no verse aplastado.
+`ModalShell` avisa del cierre por `EstadoDialogoCtx` — un contexto en su propio
+`.js`, porque un módulo que exporta un componente y además otra cosa rompe el
+fast-refresh.
+
+**El origen se congela en el primer render.** Al cerrar hay que volver al mismo
+sitio del que se salió, y para entonces `leerUltimoToque()` ya devuelve el toque
+que CERRÓ —el fondo, o el botón de cancelar—, no el que abrió.
+
+**El radio final del recorte se lee del elemento, no se escribe.** Estaba quemado
+en 28px, y eso solo es cierto en los temas de vidrio: en `solid` el token baja a
+12px y las esquinas del recorte no coincidían con las del panel.
+
+#### En los temas sólidos: el gesto se queda, el material no
+
+`solid` y `solid-dark` son temas deliberadamente sin vidrio, así que la hoja
+entra **con la misma gota** sobre un panel opaco. Es la división correcta: la
+animación es *información* —de dónde salió esto— y el vidrio es *material*. Un
+tema puede renunciar al material sin renunciar a lo que la interfaz dice.
+Verificado en los cuatro: la animación corre en todos, `backdrop-filter` vive en
+los dos de vidrio y es `none` en los dos sólidos, con el radio correcto de cada
+uno (28px / 12px).
+
 #### La hoja de la barra NACE del control que la abrió
 
 La barra flotante y sus hojas son **una sola pieza**: la hoja es la barra

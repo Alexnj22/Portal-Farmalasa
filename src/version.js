@@ -16,8 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.275.0';
+export const APP_VERSION = '2.276.0';
 
+// v2.276.0 — El vidrio ya vive DURANTE la animacion, y la hoja cierra en gota.
+//
+// **La causa del vidrio tardio no era la escala: era la OPACIDAD del ancestro.**
+// El contenedor de `ModalShell` lleva `animate-in fade-in duration-500`, o sea
+// `opacity` entre 0 y 1 durante medio segundo — y un ancestro con opacidad < 1
+// es un backdrop root igual que uno con `transform`. Medido mientras la hoja se
+// abria: 0 → 0.29 → 0.68 → 0.90. El `backdrop-filter` estaba muerto toda la
+// entrada y aparecia de golpe al terminar, que es exactamente lo reportado.
+// Sin velo no hay nada que desvanecer: la animacion del contenedor no solo
+// sobraba, era la que rompia el efecto. Sexta vez que esta regla aparece.
+//
+// **La salida es la gota al reves**, y mas rapida (180ms contra 520): abrir es
+// una invitacion y admite demorarse, cerrar es una respuesta. El contenido se va
+// primero para no verse aplastado. El aviso de cierre viaja por
+// `EstadoDialogoCtx`, en su propio `.js` porque un modulo que exporta un
+// componente y ademas otra cosa rompe el fast-refresh.
+//
+// **El origen se congela en el primer render**: al cerrar hay que volver al
+// mismo sitio del que se salio, y para entonces `leerUltimoToque()` ya devuelve
+// el toque que CERRO, no el que abrio.
+//
+// **El radio del recorte se lee del elemento.** Estaba quemado en 28px y eso
+// solo es cierto en los temas de vidrio: en `solid` el token baja a 12.
+//
+// **En los temas solidos el gesto se queda y el material no.** La animacion es
+// informacion —de donde salio esto— y el vidrio es material; un tema puede
+// renunciar al segundo sin renunciar al primero. Verificado en los cuatro.
+//
 // v2.275.0 — La gota se RECORTA en vez de escalarse, y es canonica.
 //
 // Dos correcciones sobre la apertura en gota.

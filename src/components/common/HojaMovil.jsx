@@ -1,6 +1,7 @@
-import React, { memo, useRef, useLayoutEffect } from 'react';
+import React, { memo, useRef, useLayoutEffect, useContext } from 'react';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { leerUltimoToque } from './ultimoToque';
+import { EstadoDialogoCtx } from './estadoDialogo';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.
@@ -86,6 +87,12 @@ const HojaMovil = memo(({
     const hojaRef = useRef(null);
     const cuerpoRef = useRef(null);
     const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
+    const { cerrando, salidaMs } = useContext(EstadoDialogoCtx);
+    // El origen se congela en el primer render: al cerrar hay que volver al MISMO
+    // sitio del que se salió, y para entonces `leerUltimoToque()` ya devuelve el
+    // toque que cerró (el fondo, o el botón de cancelar), no el que abrió.
+    const origenFijo = useRef(null);
+    if (origenFijo.current === null) origenFijo.current = origen || leerUltimoToque() || false;
 
     // ── La gota: se RECORTA, no se escala ─────────────────────────────────
     // Primera versión: FLIP con `transform: scale()`. La forma era correcta pero
@@ -105,8 +112,8 @@ const HojaMovil = memo(({
     // ser canónica, no opt-in.
     useLayoutEffect(() => {
         const el = hojaRef.current;
-        const desde = origen || leerUltimoToque();
-        if (!el || !desde || sinMovimiento) return;
+        const desde = origenFijo.current;
+        if (!el || !desde || sinMovimiento || cerrando) return;
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return;
 
@@ -130,10 +137,13 @@ const HojaMovil = memo(({
         void el.offsetWidth;
 
         el.style.transition = 'clip-path 520ms cubic-bezier(0.22,1,0.36,1)';
-        // El radio final es el de la hoja arriba y recto abajo, igual que su
-        // `border-radius`: si el clip terminara redondo se vería una curva
-        // fantasma contra el filo de la pantalla.
-        el.style.clipPath = 'inset(0px 0px 0px 0px round 28px 28px 0px 0px)';
+        // El radio final se LEE del elemento, no se escribe. Estaba quemado en
+        // 28px y eso solo es cierto en los temas de vidrio: en `solid` el token
+        // `--card-radius` baja a 12px, así que durante la animación las esquinas
+        // del recorte no coincidían con las del panel. Abajo va recto, igual que
+        // su `border-radius`, o se vería una curva fantasma contra el filo.
+        const radio = getComputedStyle(el).borderTopLeftRadius || '28px';
+        el.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} 0px 0px)`;
         if (cuerpo) {
             cuerpo.style.transition = 'opacity 260ms ease-out 140ms';
             cuerpo.style.opacity = '1';
@@ -144,7 +154,30 @@ const HojaMovil = memo(({
         const alTerminar = () => { el.style.clipPath = ''; el.style.transition = ''; };
         el.addEventListener('transitionend', alTerminar, { once: true });
         return () => el.removeEventListener('transitionend', alTerminar);
-    }, [origen, sinMovimiento]);
+    }, [sinMovimiento, cerrando]);
+
+    // ── La salida: la misma gota, al revés ────────────────────────────────
+    // Una hoja que se abre con cuidado y desaparece de golpe se siente rota,
+    // aunque cada mitad por separado esté bien. Vuelve al rectángulo del que
+    // salió, y el contenido se va primero para no verse aplastado.
+    //
+    // Más rápida que la entrada a propósito: abrir es una invitación y admite
+    // demorarse; cerrar es una respuesta y cualquier demora ahí se siente lenta.
+    useLayoutEffect(() => {
+        const el = hojaRef.current;
+        const desde = origenFijo.current;
+        if (!el || !cerrando || !desde || sinMovimiento) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const tope = (n) => Math.max(0, Math.round(n));
+        const cuerpo = cuerpoRef.current;
+        if (cuerpo) { cuerpo.style.transition = `opacity ${Math.round(salidaMs * 0.4)}ms ease-in`; cuerpo.style.opacity = '0'; }
+        const radio = getComputedStyle(el).borderTopLeftRadius || '28px';
+        el.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
+        el.style.clipPath = `inset(${tope(desde.y - r.top)}px ${tope((r.left + r.width) - (desde.x + desde.w))}px `
+            + `${tope((r.top + r.height) - (desde.y + desde.h))}px ${tope(desde.x - r.left)}px round 9999px)`;
+        void radio;
+    }, [cerrando, salidaMs, sinMovimiento]);
 
     return (
     <div

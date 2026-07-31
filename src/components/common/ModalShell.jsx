@@ -298,8 +298,12 @@ export default function ModalShell({
         // abajo —que contra el filo de la pantalla se ven como un error— y ningún
         // respeto por el área segura: medido en un iPhone, "Cancelar" quedaba
         // debajo del indicador de inicio.
+        //
+        // `:not([data-hoja])` deja fuera a `HojaMovil`, que es el cuerpo canónico
+        // de una hoja y ya hace las dos cosas bien. El parche es para los cuerpos
+        // heredados, no para el canónico.
         className={`relative w-full ${autoHoja
-            ? 'max-w-none [&>*]:rounded-b-none [&>*]:pb-[max(16px,env(safe-area-inset-bottom))]'
+            ? 'max-w-none [&>*:not([data-hoja])]:rounded-b-none [&>*:not([data-hoja])]:pb-[max(16px,env(safe-area-inset-bottom))]'
             : maxWidthClass} ${panelAnim} ease-[cubic-bezier(0.23,1,0.32,1)] outline-none ${panelClassName}`}
         onClick={(e) => e.stopPropagation()}
       >

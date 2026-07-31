@@ -12,6 +12,27 @@ retomar; acá está todo.
 
 ---
 
+## v2.267.0 — `HojaMovil`: el cuerpo canónico de un modal en el teléfono
+
+v2.265.0 resolvió *cómo entra* un modal en táctil. Faltaba **cómo se ve por
+dentro**: cada uno seguía rendeando el cuerpo escrito para un panel centrado de
+escritorio. `HojaMovil` es asa + título a la izquierda con su ícono en línea +
+cuerpo scrollable + pie con los botones **apilados a ancho completo** (medido:
+356px) y área segura. Solo el cuerpo scrollea. El material sale de
+`data-surface="modal"`: `blur(24px)` real y el fondo cambia con el tema solo.
+
+Lo usa `ConfirmModal`, que está en **19 archivos**. El cuerpo de escritorio no
+cambia — un panel centrado de 384px sí quiere su ícono grande.
+
+**Una sola ranura no merece una hoja.** Con exactamente un filtro, ese control va
+dentro del clúster y el botón "Filtros" no existe.
+
+**Y la barra avisa cuánto ocupa.** Está en `fixed`, así que el final de la lista
+quedaba debajo del clúster. Publica `--alto-barra-flotante` con `ResizeObserver` y
+el contenedor de scroll lo suma a su relleno. Medido: barra 107px, relleno 147px.
+
+---
+
 ## v2.266.0 — Hojas para todos los modales menos las alertas, y tres huecos cerrados
 
 Al comprobar el alcance de v2.265.0 aparecieron tres cosas que no pasaban por el

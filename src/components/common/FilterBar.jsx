@@ -553,7 +553,13 @@ const FilterBar = memo(({
                         label: principal.label,
                         onClick: principal.onClick,
                     } : null}
-                    acciones={[...(secciones.length ? [{
+                    // ── Una sola ranura NO merece una hoja (2026-07-30) ──
+                    // Tocar "Filtros", esperar la hoja, ver UN control y cerrarla
+                    // son tres gestos para lo que cabe en el clúster. Con dos o
+                    // más sí: ahí la hoja los apila con su rótulo y se aplican de
+                    // una pasada.
+                    ranura={secciones.length === 1 ? secciones[0].props?.children : null}
+                    acciones={[...(secciones.length > 1 ? [{
                         key: 'filtros',
                         icon: SlidersHorizontal,
                         // El rótulo del botón es corto y fijo: `title` puede ser

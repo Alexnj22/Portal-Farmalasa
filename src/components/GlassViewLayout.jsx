@@ -79,7 +79,7 @@ const GlassViewLayout = ({
             {/* ── Scroll container ── */}
             <div
                 ref={scrollContainerRef}
-                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-10 lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden overflow-x-hidden ${
+                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-[calc(2.5rem+var(--alto-barra-flotante,0px))] lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden overflow-x-hidden ${
                     fixedScrollMode ? 'lg:overflow-hidden lg:overscroll-contain scroll-smooth' : 'lg:overflow-y-auto lg:overscroll-contain scroll-smooth'
                 }`}
                 onScroll={handleInternalScroll}

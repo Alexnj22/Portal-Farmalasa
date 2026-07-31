@@ -1711,6 +1711,68 @@ el elemento, no al montarlo, así que `open={!!fila}` no protege un cuerpo que
 dereferencie `fila` — revienta con null antes de que `ModalShell` decida nada. Va
 `{fila && <ModalShell open …>}`, o todo el cuerpo con encadenamiento opcional.
 
+#### `HojaMovil` — el CUERPO canónico de un modal en el teléfono
+
+`ModalShell` resuelve *cómo entra* (desde abajo, en táctil). `HojaMovil` resuelve
+*cómo se ve por dentro*, que era lo que faltaba: cada modal seguía rendeando el
+cuerpo escrito para un panel centrado de escritorio, y en una hoja eso falla por
+tres razones concretas.
+
+* **El título centrado no tiene con qué alinearse.** Una hoja ocupa el ancho
+  entero y el ojo entra por el borde izquierdo. La hoja de filtros y la de
+  acciones ya ponen su título ahí.
+* **Los botones en fila se reparten el ancho**: en 390px quedan dos blancos de
+  ~180px con el texto apretado. Apilados son dos objetivos de ancho completo
+  (medido: 356px), que es lo que el pulgar acierta sin mirar. **La acción
+  principal va primera** — queda arriba, lejos del borde.
+* **El ícono de 64px centrado** se come la mitad del alto útil de una hoja corta.
+  Al lado del título dice lo mismo en una línea.
+
+```jsx
+<ModalShell open={abierto} onClose={cerrar} surface={null}>
+    <HojaMovil titulo="¿Recalcular MIN/MAX?" icono={Info} tono="brand"
+        pie={<><Button …>Calcular</Button><Button variant="secondary" …>Cancelar</Button></>}>
+        Se generarán nuevos borradores…
+    </HojaMovil>
+</ModalShell>
+```
+
+El material sale de **`data-surface="modal"`**, no de clases sueltas: fondo,
+borde, sombra, radio y `backdrop-filter` vienen de `index.css`, así que la hoja
+responde a los cuatro temas sola. Medido: `blur(24px)` real, y el fondo pasa de
+`rgba(240,248,255,.85)` a `rgba(12,17,43,.9)` sin tocar nada.
+
+Dos detalles que costaron una corrida cada uno:
+
+* **`rounded-b-none!` con el modificador de importancia.** El radio lo fija
+  `[data-surface="modal"]`, que es un selector de atributo —misma especificidad
+  que una clase— y le gana por orden de hoja. Sin el `!`, las cuatro esquinas
+  quedaban en 32px y las de abajo curvaban contra el filo de la pantalla.
+* **`data-hoja`** marca la hoja para que el parche de `ModalShell`
+  (`:not([data-hoja])`) la saltee: ese parche existe para los cuerpos heredados,
+  no para el canónico.
+
+Solo el **cuerpo** scrollea. El título se queda arriba y las acciones abajo, así
+que en una hoja larga nunca hay que scrollear para recordar qué se está
+decidiendo ni para confirmarlo.
+
+#### Una sola ranura no merece una hoja
+
+En el teléfono, si la vista tiene **exactamente un filtro**, ese control se dibuja
+DENTRO del clúster de la barra flotante y el botón "Filtros" no existe. Tocar
+"Filtros", esperar la hoja, ver un control y cerrarla son tres gestos para lo que
+cabe en la barra. Con dos o más sí aparece: ahí la hoja los apila con su rótulo y
+se aplican de una pasada.
+
+#### La barra flotante avisa cuánto ocupa
+
+Está en `position: fixed`, así que no empuja nada: el final de la lista quedaba
+**debajo** del clúster y las últimas filas eran inalcanzables. La barra publica
+`--alto-barra-flotante` midiéndose con `ResizeObserver` —el alto cambia con los
+rótulos, con el campo de búsqueda abierto y con el área segura— y el contenedor
+de scroll de `GlassViewLayout` lo suma a su relleno inferior. Medido: 107px de
+barra, 147px de `padding-bottom`.
+
 #### En la barra flotante el campo sube ENCIMA, y el buscador va último
 
 Orden canónico: **`principal · acciones · buscador`**. Lo que más se toca queda

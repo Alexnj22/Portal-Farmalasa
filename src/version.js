@@ -16,8 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.266.0';
+export const APP_VERSION = '2.267.0';
 
+// v2.267.0 — `HojaMovil`: el cuerpo canonico de un modal en el telefono.
+//
+// v2.265.0 resolvio COMO ENTRA un modal en tactil (desde abajo). Faltaba como se
+// ve POR DENTRO: cada uno seguia rendeando el cuerpo escrito para un panel
+// centrado de escritorio, y en una hoja eso falla por tres razones concretas —
+// el titulo centrado no tiene con que alinearse, los botones en fila quedan en
+// dos blancos de ~180px con el texto apretado, y el icono de 64px centrado se
+// come la mitad del alto util. `HojaMovil` es asa + titulo a la izquierda con su
+// icono en linea + cuerpo scrollable + pie con los botones APILADOS a ancho
+// completo (medido: 356px) y area segura. Solo el cuerpo scrollea.
+//
+// El material sale de `data-surface="modal"`, no de clases sueltas: medido,
+// `blur(24px)` real y el fondo pasa de `rgba(240,248,255,.85)` a
+// `rgba(12,17,43,.9)` con el tema sin tocar nada.
+//
+// Lo usa `ConfirmModal`, que esta en **19 archivos**. El cuerpo de escritorio se
+// queda como estaba: un panel centrado de 384px SI quiere su icono grande.
+//
+// **Una sola ranura no merece una hoja.** Si la vista tiene exactamente un
+// filtro, ese control va DENTRO del cluster y el boton "Filtros" no existe.
+// Tocar "Filtros", esperar la hoja, ver un control y cerrarla son tres gestos
+// para lo que cabe en la barra.
+//
+// **Y la barra avisa cuanto ocupa.** Esta en `fixed`, asi que no empuja nada: el
+// final de la lista quedaba DEBAJO del cluster y las ultimas filas eran
+// inalcanzables. Publica `--alto-barra-flotante` con `ResizeObserver` —el alto
+// cambia con los rotulos, con el campo abierto y con el area segura— y el
+// contenedor de scroll lo suma a su relleno. Medido: barra 107px, relleno 147px.
+//
 // v2.266.0 — Hojas para TODOS los modales menos las alertas, y se cierran 3 huecos.
 //
 // Al comprobar el alcance de v2.265.0 aparecieron tres cosas que NO pasaban por

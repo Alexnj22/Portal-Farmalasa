@@ -2,6 +2,8 @@ import React from 'react';
 import { AlertTriangle, Loader2, Info } from 'lucide-react';
 import ModalShell from './ModalShell';
 import Button from './Button';
+import HojaMovil from './HojaMovil';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 // El diálogo de confirmación del portal — el que pregunta antes de borrar.
 //
@@ -28,6 +30,51 @@ const ConfirmModal = ({
     isDestructive = true,
     isProcessing = false,
 }) => {
+    // En táctil el cuerpo es el canónico de hoja: título a la izquierda, ícono
+    // en línea y botones apilados de ancho completo. El de abajo es el cuerpo de
+    // escritorio y se queda como está — un panel centrado de 384px SÍ quiere su
+    // ícono grande y su título al medio.
+    const enTactil = useMediaQuery('(hover: none)');
+    const Icono = isProcessing ? Loader2 : isDestructive ? AlertTriangle : Info;
+
+    if (enTactil) {
+        return (
+            <ModalShell
+                open={isOpen}
+                onClose={isProcessing ? undefined : onClose}
+                closeOnEsc={!isProcessing}
+                closeOnBackdrop={!isProcessing}
+                zClass="z-confirm"
+                surface={null}
+                ariaLabel={title}
+            >
+                <HojaMovil
+                    titulo={isProcessing ? 'Procesando…' : title}
+                    subtitulo={isProcessing ? 'No cierres esta ventana.' : undefined}
+                    icono={Icono}
+                    tono={isDestructive ? 'danger' : 'brand'}
+                    className={isProcessing ? '[&_svg:first-of-type]:animate-spin' : ''}
+                    pie={<>
+                        <Button
+                            variant={isDestructive ? 'destructive' : 'primary'}
+                            loading={isProcessing}
+                            onClick={onConfirm}
+                        >
+                            {isProcessing
+                                ? (isDestructive ? 'Eliminando…' : 'Confirmando…')
+                                : confirmText}
+                        </Button>
+                        {!isProcessing && (
+                            <Button variant="secondary" onClick={onClose}>{cancelText}</Button>
+                        )}
+                    </>}
+                >
+                    {!isProcessing && message}
+                </HojaMovil>
+            </ModalShell>
+        );
+    }
+
     return (
         <ModalShell
             open={isOpen}

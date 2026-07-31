@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef, useState, useCallback } from 'react';
+import React, { memo, useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import useMediaQuery from '../../hooks/useMediaQuery';
@@ -114,6 +114,10 @@ const BarraFlotante = memo(({
     // uno solo el ícono no compite con nada y el rótulo es ruido. Se puede forzar.
     mostrarRotulos,
     ariaLabel = 'Acciones de la vista',
+    // Un control de filtro dibujado DENTRO del clúster, en vez de escondido tras
+    // el botón "Filtros". Lo usa `FilterBar` cuando la vista tiene una sola
+    // ranura — ver la nota allá.
+    ranura = null,
 }) => {
     const compacto = useMediaQuery('(max-width: 719px)');
     const [visible, setVisible] = useState(true);
@@ -128,6 +132,28 @@ const BarraFlotante = memo(({
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
     const inputRef = useRef(null);
+
+    // ── La barra le avisa al layout cuánto ocupa ──────────────────────────
+    // Está en `position: fixed`, así que no empuja nada: el final de la lista
+    // quedaba DEBAJO del clúster y las últimas filas eran inalcanzables. El
+    // contenedor de scroll de `GlassViewLayout` suma esta variable a su relleno
+    // inferior. Se mide, no se estima: el alto cambia con los rótulos, con el
+    // campo de búsqueda abierto y con el área segura del teléfono.
+    const clusterRef = useRef(null);
+    useLayoutEffect(() => {
+        const raiz = document.documentElement;
+        const el = clusterRef.current;
+        if (!compacto || !enPantalla || !el) {
+            raiz.style.setProperty('--alto-barra-flotante', '0px');
+            return undefined;
+        }
+        const medir = () => raiz.style.setProperty(
+            '--alto-barra-flotante', `${Math.round(el.getBoundingClientRect().height)}px`);
+        medir();
+        const ro = new ResizeObserver(medir);
+        ro.observe(el);
+        return () => { ro.disconnect(); raiz.style.setProperty('--alto-barra-flotante', '0px'); };
+    }, [compacto, enPantalla]);
 
     useEffect(() => {
         if (!compacto || !autoOcultar) return undefined;
@@ -200,6 +226,8 @@ const BarraFlotante = memo(({
                     abrirBusqueda={abrirBusqueda}
                     acciones={acciones}
                     principal={principal}
+                    ranura={ranura}
+                    clusterRef={clusterRef}
                     rotulos={rotulos}
                     setAbierta={setAbierta}
                     panelAbierto={panelAbierto}
@@ -214,6 +242,7 @@ const BarraFlotante = memo(({
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
     abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
+    ranura, clusterRef,
 }) => {
     return (
         <>
@@ -237,6 +266,7 @@ const BarraPortal = ({
                 Es exactamente por eso que el vidrio de `ViewTabBar` sí funciona
                 teniendo `transform-gpu` en el mismo div que su `data-surface`. */}
             <div
+                ref={clusterRef}
                 role="toolbar"
                 aria-label={ariaLabel}
                 // `display` por variable y no por clase: quien sabe si hay un
@@ -356,6 +386,10 @@ const BarraPortal = ({
                             principal
                             onClick={principal.onClick}
                         />
+                    )}
+
+                    {ranura && (
+                        <div className="min-w-0 flex-1 flex items-center h-11">{ranura}</div>
                     )}
 
                     {acciones.map((a) => (

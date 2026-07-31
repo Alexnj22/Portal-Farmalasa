@@ -113,6 +113,9 @@ const ZONA_SEGURA = 96;
 // posición o un `scrollIntoView`. Un flick real reparte el recorrido en muchos
 // eventos de pocas decenas de píxeles.
 const SALTO = 120;
+// Cuánto hay que bajar, acumulado, para que la barra se aparte. Un umbral chico
+// la hace titilar con cualquier micro gesto.
+const OCULTAR = 70;
 
 const BarraFlotante = memo(({
     buscador = null,
@@ -136,6 +139,7 @@ const BarraFlotante = memo(({
     const [abierta, setAbierta] = useState(null);   // key de la acción con panel abierto
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
+    const bajado = useRef(0);
     const inputRef = useRef(null);
 
     // ── La barra le avisa al layout cuánto ocupa ──────────────────────────
@@ -182,7 +186,14 @@ const BarraFlotante = memo(({
                 // cerrar. Un dedo produce muchos deltas chicos; un salto produce
                 // uno enorme. Se ignora, y la barra se queda donde estaba.
                 if (Math.abs(dy) > SALTO) return;
-                setVisible(y < ZONA_SEGURA || dy < 0);
+                // Subir la muestra SIEMPRE; bajar solo cuando el recorrido es de
+                // verdad. Con el umbral de 8px, medio toque hacia abajo ya la
+                // escondía —reportado—, y una barra que parpadea con cada micro
+                // gesto es peor que una que se queda. Acumular hasta `OCULTAR`
+                // hace que haga falta un desplazamiento intencional.
+                if (y < ZONA_SEGURA || dy < 0) { bajado.current = 0; setVisible(true); return; }
+                bajado.current += dy;
+                if (bajado.current >= OCULTAR) { bajado.current = 0; setVisible(false); }
             });
         };
         window.addEventListener('scroll', alScrollear, { passive: true });

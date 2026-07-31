@@ -283,6 +283,13 @@ const iconoDeSeccion = (sec) => {
     return ctrl?.props?.icon ?? ctrl?.type?.iconoRanura;
 };
 const rotuloDeSeccion = (sec) => {
+    // El VALOR gana sobre el nombre del filtro. Un botón que dice "Período" te
+    // obliga a abrirlo para saber cuál; uno que dice "Este mes" ya contestó. Lo
+    // calcula el control —`PeriodPicker.textoRanura`— y no la vista, por lo mismo
+    // que el ícono: un dato que el control ya sabe no se declara dos veces.
+    const ctrl = sec?.props?.children;
+    const valor = ctrl?.type?.textoRanura?.(ctrl.props);
+    if (valor) return valor;
     const l = sec?.props?.label;
     return l ? l.charAt(0).toUpperCase() + l.slice(1) : undefined;
 };

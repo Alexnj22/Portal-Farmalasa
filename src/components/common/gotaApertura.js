@@ -59,7 +59,11 @@ const ENTRADA_MS = 340;
 export const CURVA = 'cubic-bezier(0.2,0,0,1)';
 
 /** La de salida arranca más decidida: cerrar es una respuesta, no una invitación. */
-const CURVA_SALIDA = 'cubic-bezier(0.3,0,0.8,0.15)';
+// La de salida NO puede ser trasera. `cubic-bezier(0.3,0,0.8,0.15)` dejaba el
+// recorrido casi entero para el final —medido: a los 224ms de 240 iba por el 53%,
+// y ahí ya se desmonta—, así que lo único que se veía era la hoja desapareciendo.
+// Esta reparte y llega: es la estándar de Material para lo que sale.
+const CURVA_SALIDA = 'cubic-bezier(0.4,0,0.2,1)';
 
 /** Interpola los cuatro lados: 0 = abierta, 1 = del tamaño del control. */
 export function insetEn(vidrio, lados, t) {
@@ -142,9 +146,15 @@ function transformarSombra(sombra, el, desde, ms, curva, ladosGuardados) {
     const anchoDestino = Math.max(1, r.width - l.izq - l.derecha);
     const altoDestino  = Math.max(1, r.height - l.arriba - l.abajo);
     sombra.style.transformOrigin = '0 0';
+    // El RADIO también. Sin esto la capa conserva sus 32px de esquina superior y,
+    // al escalarla, el radio se encoge con ella: sobre una caja del tamaño de un
+    // botón queda casi recta y se lee como un **recuadro** acompañando a la gota.
+    // Fue exactamente lo reportado. Con `50%` el borde es siempre una elipse,
+    // escale lo que escale.
     sombra.style.transition = ms
-        ? `transform ${ms}ms ${curva}, opacity ${ms}ms ease-out`
+        ? `transform ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`
         : 'none';
+    sombra.style.borderRadius = '50%';
     sombra.style.transform =
         `translate(${l.izq}px, ${l.arriba}px) scale(${anchoDestino / r.width}, ${altoDestino / r.height})`;
     sombra.style.opacity = ms ? '0' : '1';
@@ -152,8 +162,9 @@ function transformarSombra(sombra, el, desde, ms, curva, ladosGuardados) {
 
 function soltarSombra(sombra, ms, curva) {
     if (!sombra) return;
-    sombra.style.transition = `transform ${ms}ms ${curva}, opacity ${ms}ms ease-out`;
+    sombra.style.transition = `transform ${ms}ms ${curva}, border-radius ${ms}ms ${curva}, opacity ${ms}ms ease-out`;
     sombra.style.transform = 'translate(0px, 0px) scale(1, 1)';
+    sombra.style.borderRadius = '';
     sombra.style.opacity = '1';
 }
 
@@ -253,7 +264,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             vidrio.style.clipPath = ''; vidrio.style.transition = '';
             if (sombra) {
                 sombra.style.transition = ''; sombra.style.opacity = '';
-                sombra.style.transform = '';
+                sombra.style.transform = ''; sombra.style.borderRadius = '';
             }
             vidrio.removeEventListener('transitionend', alTerminar);
         };

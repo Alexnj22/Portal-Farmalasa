@@ -492,3 +492,18 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
         </>
     );
 }
+
+// ── El texto y el ícono de esta ranura, para cuando es la ÚNICA ───────────
+// En el teléfono, una sola ranura se dibuja como botón del clúster. Con el rótulo
+// genérico decía "Período" y había que abrirlo para saber cuál — el dato estaba a
+// un `labelFromRange` de distancia. Ahora dice "Este mes", "Últimos 3 meses" o el
+// rango, que es la información por la que se mira el control.
+//
+// Estático y no prop: la vista no debería tener que declarar dos veces algo que
+// el control ya sabe calcular. Misma decisión que `Sucursal.iconoRanura`.
+PeriodPicker.textoRanura = ({ value }) => {
+    if (!value) return undefined;
+    const [s, e] = String(value).split('|');
+    return labelFromRange(s, e) || undefined;
+};
+PeriodPicker.iconoRanura = CalendarDays;

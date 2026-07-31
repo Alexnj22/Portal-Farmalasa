@@ -12,6 +12,24 @@ retomar; acá está todo.
 
 ---
 
+## v2.291.0 — El recuadro era el radio de la sombra, y el cierre no llegaba a verse
+
+**El recuadro**: la capa de sombra conserva su `rounded-t-modal` de 32px, y al
+escalarla el radio se encoge con ella hasta quedar casi recta. Con
+`border-radius: 50%` es siempre una elipse.
+
+**El cierre "solo desaparecía"**: la curva de salida era trasera —a los 224ms de
+240 iba por el 53%— y el desmontaje ocurría a la vez que la animación. Ahora la
+curva estándar de salida y 60ms de margen: llega a completo a los 279ms y
+desmonta a los 345.
+
+**La píldora ya no titila**: había que bajar 8px para esconderla; ahora hay que
+acumular 70. Medido: 25px la deja, 100 la esconde.
+
+**Y el filtro único dice el valor, no el nombre**: "Este mes" en vez de "Período".
+
+---
+
 ## v2.290.0 — Tiempos según la referencia, la sombra deja de repintar, y el recuadro
 
 **Los tiempos.** Material pone las transiciones de superficie grande en 200–300ms;

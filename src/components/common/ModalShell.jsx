@@ -77,6 +77,11 @@ const visible = (el) => {
 // 225 al entrar, 195 al salir) y la razón es de significado — entrar es una
 // invitación y admite demorarse, salir es una respuesta.
 const EXIT_MS = 240;
+// El desmontaje va DESPUÉS de la animación, no al mismo tiempo. Con los dos en
+// 240ms el último tramo se cortaba —el navegador todavía estaba interpolando
+// cuando el nodo desaparecía— y el cierre se leía como que la hoja simplemente se
+// esfuma. 60ms de margen alcanzan y no se notan.
+const DESMONTAJE_MS = EXIT_MS + 60;
 
 
 
@@ -165,7 +170,7 @@ export default function ModalShell({
       setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta en respuesta a `open`; el estado ES la animación de entrada
       return undefined;
     }
-    const t = setTimeout(() => setMounted(false), EXIT_MS);
+    const t = setTimeout(() => setMounted(false), DESMONTAJE_MS);
     return () => clearTimeout(t);
   }, [open]);
 

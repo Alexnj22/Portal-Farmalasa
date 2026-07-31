@@ -16,8 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.290.0';
+export const APP_VERSION = '2.291.0';
 
+// v2.291.0 — El recuadro era el RADIO de la sombra, y el cierre no llegaba a verse.
+//
+// **El recuadro.** La capa de sombra conserva su `rounded-t-modal` de 32px, y al
+// escalarla con `transform` el radio se encoge con ella: sobre una caja del
+// tamano de un boton queda casi recta y se lee como un recuadro acompanando a la
+// gota. Con `border-radius: 50%` el borde es siempre una elipse, escale lo que
+// escale.
+//
+// **El cierre "solo desaparecia".** Dos causas sumadas: la curva de salida era
+// TRASERA —`cubic-bezier(0.3,0,0.8,0.15)` deja el recorrido casi entero para el
+// final: medido, a los 224ms de 240 iba por el 53%— y el desmontaje ocurria al
+// mismo tiempo que la animacion, asi que el ultimo tramo se cortaba. Ahora la
+// curva es la estandar de salida y el desmontaje va 60ms despues. Medido: el
+// recorte llega a 156 (completo) a los 279ms y recien se desmonta a los 345.
+//
+// **La pildora ya no titila.** El umbral era de 8px: medio toque hacia abajo la
+// escondia. Ahora hay que acumular 70px de bajada intencional; subir la muestra
+// siempre, y cualquier salto grande (una restauracion de scroll) se sigue
+// ignorando. Medido: 25px la deja, 100 la esconde.
+//
+// **Y el filtro unico dice el VALOR, no el nombre.** En Facturas de Compra el
+// boton decia "Periodo" y habia que abrirlo para saber cual; ahora dice "Este
+// mes". Lo calcula el control (`PeriodPicker.textoRanura`) y no la vista, por lo
+// mismo que el icono: un dato que el control ya sabe no se declara dos veces.
+//
 // v2.290.0 — Tiempos segun la referencia, la sombra deja de repintar, y el recuadro.
 //
 // **Los tiempos.** Las guias de interfaz coinciden bastante: Material pone las

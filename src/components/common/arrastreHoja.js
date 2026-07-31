@@ -113,6 +113,7 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
                 const sx = Math.max(0.01, (R.width - (l.izq + l.derecha) * t) / R.width);
                 const sy = Math.max(0.01, (R.height - (l.arriba + l.abajo) * t) / R.height);
                 s.sombra.style.transformOrigin = '0 0';
+                s.sombra.style.borderRadius = t > 0.02 ? '50%' : '';
                 s.sombra.style.transform = `translate(${l.izq * t}px, ${l.arriba * t}px) scale(${sx}, ${sy})`;
                 s.sombra.style.opacity = String(1 - t);
             }
@@ -144,6 +145,7 @@ export function useArrastreHoja({ refPanel, alCerrar, activo = true }) {
             if (s.sombra) {
                 s.sombra.style.transition = `transform ${VUELTA}ms ${CURVA}, opacity ${VUELTA}ms ease-out`;
                 s.sombra.style.transform = 'translate(0px, 0px) scale(1, 1)';
+                s.sombra.style.borderRadius = '';
                 s.sombra.style.opacity = '1';
             }
             const limpiar = (ev) => {

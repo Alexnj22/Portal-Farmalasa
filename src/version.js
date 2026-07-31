@@ -16,8 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.279.0';
+export const APP_VERSION = '2.280.0';
 
+// v2.280.0 — `clip-path` en un ANCESTRO tambien mata el vidrio. Regresion corregida.
+//
+// v2.279.0 subio la gota a `ModalShell`, que recorta su ENVOLTORIO. Eso rompio
+// el efecto: **`clip-path` en un ancestro crea un backdrop root**, igual que
+// `transform` y que `opacity`. Medido a mitad de la apertura: el texto de la
+// lista se leia NITIDO a traves de la hoja y el vidrio aparecia al terminar —
+// exactamente el sintoma que v2.276.0 habia arreglado.
+//
+// El clip PROPIO no rompe nada, y por eso la primera version —dentro de
+// `HojaMovil`— funcionaba: el defecto aparecio justo al generalizarla. Ahora
+// `objetivoVidrio()` devuelve el elemento con `backdrop-filter` y se recorta ESE.
+// La sombra vive en el envoltorio y no se recorta, asi que se apaga mientras dura
+// la gota: si no, la hoja proyectaba su sombra entera siendo todavia una gota.
+//
+// Septima vez que esta familia de reglas muerde, primera por `clip-path`. La
+// forma de no volver a pisarla queda escrita: animar siempre el elemento que
+// TIENE el material, nunca uno que lo contenga.
+//
+// **`CuerpoDialogo`** (nuevo): elige entre la anatomia de hoja y la de escritorio.
+// Faltaba esa pieza, y sin ella cada llamador escribia el `useMediaQuery` y las
+// dos ramas a mano — asi terminaron `ConfirmModal`, `PromptModal`, `ConfigPanel`
+// y `LabsPanel` con cuatro copias del mismo condicional. Migrados los dos
+// dialogos de `EmployeeDetailView`.
+//
 // v2.279.0 — La base de la decision sobre los 12 modales: asa canonica, gota para
 // TODO dialogo, y el pie que decide solo.
 //

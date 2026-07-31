@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.280.0 — `clip-path` en un ancestro también mata el vidrio
+
+v2.279.0 subió la gota a `ModalShell`, que recorta su **envoltorio**. Eso rompió
+el efecto: `clip-path` en un ancestro crea un backdrop root, igual que
+`transform` y que `opacity`. Medido a mitad de la apertura: el texto de la lista
+se leía nítido a través de la hoja.
+
+El clip **propio** no rompe nada — por eso la primera versión funcionaba y el
+defecto apareció al generalizarla. Ahora se recorta el elemento que lleva el
+material, y la sombra del envoltorio se apaga mientras dura la gota.
+
+**`CuerpoDialogo`** (nuevo) elige entre la anatomía de hoja y la de escritorio;
+sin esa pieza cada llamador escribía las dos ramas a mano.
+
+---
+
 ## v2.279.0 — Asa canónica, la gota para todo diálogo, y el pie que decide solo
 
 **`AsaHoja`**: el tirador estaba a mano en seis sitios y en dos variantes

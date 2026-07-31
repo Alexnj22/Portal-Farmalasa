@@ -1809,11 +1809,20 @@ render lo dejaba en `null` para siempre, porque ahí el usuario todavía no hab�
 tocado nada. En `HojaMovil` no se notaba porque esa sí se remonta en cada
 apertura, y por eso el defecto apareció recién al subir la gota al canónico.
 
-**`hayVidrio()` mira el elemento Y su primer hijo.** `ModalShell` anima su
-envoltorio, que no lleva material propio —el `data-surface` vive en el hijo—.
-Preguntándole solo al envoltorio, todo modal parecería no tener vidrio y se
-llevaría el camino barato… que usa `transform`, o sea un transform **ancestro**
-del hijo, o sea el vidrio muerto.
+**Se recorta el elemento QUE LLEVA EL VIDRIO, nunca su envoltorio.**
+`clip-path` en un ancestro crea un backdrop root, igual que `transform` y que
+`opacity`. Medido: con el clip en el envoltorio de `ModalShell`, el texto de la
+lista se leía **nítido** a través de la hoja durante toda la apertura y el vidrio
+aparecía recién al terminar. El clip PROPIO no rompe nada — por eso la primera
+versión, que vivía dentro de `HojaMovil`, funcionaba, y el defecto apareció justo
+al generalizarla.
+
+Es la séptima vez que esta familia de reglas muerde en el proyecto y la primera
+por `clip-path`. La forma de no volver a pisarla: **animar siempre el elemento
+que tiene el material, nunca uno que lo contenga.** `objetivoVidrio()` lo
+resuelve; la sombra, que vive en el envoltorio y no se recorta, se apaga mientras
+dura la gota para que la hoja no proyecte su sombra entera siendo todavía una
+gota.
 
 #### La hoja NACE del control que la abrió — y se RECORTA, no se escala
 

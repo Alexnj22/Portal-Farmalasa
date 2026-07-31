@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import CuerpoDialogo from '../components/common/CuerpoDialogo';
 import Button from '../components/common/Button';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Badge from '../components/common/Badge';
@@ -1114,15 +1115,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             defecto que tenía RequestsView; los dos vienen del pase a `ModalShell`
             de v2.183.0, donde los modales a mano sí traían la guarda. */}
         {resetResult && (
-        <ModalShell open={!!resetResult} onClose={() => setResetResult(null)} maxWidthClass="max-w-sm" zClass="z-confirm" ariaLabel="Contraseña temporal generada">
-                <div className="relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)]">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-success" />
-                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 border bg-surface-card border-success/30 shadow-sm text-success">
-                            <KeyRound size={26} strokeWidth={2.5} />
-                        </div>
-                        <h3 className="text-title-sm font-black uppercase tracking-tight mb-1 text-content text-center">Contraseña temporal</h3>
-                        <p className="text-body-sm text-content-3 font-medium text-center mb-4 leading-relaxed">
+        <ModalShell open={!!resetResult} onClose={() => setResetResult(null)} maxWidthClass="max-w-sm" zClass="z-confirm" ariaLabel="Contraseña temporal generada" surface={null}>
+                <CuerpoDialogo
+                    titulo="Contraseña temporal"
+                    icono={KeyRound}
+                    tono="success"
+                    pie={<Button variant="secondary" onClick={() => setResetResult(null)}>Listo</Button>}
+                >
+                        <p className="text-body-sm text-content-3 font-medium mb-4 leading-relaxed">
                             Compártela con <span className="font-bold text-content-2">{emp.name}</span>. Deberá cambiarla en su próximo acceso.
                             <br /><span className="text-warning font-bold">No se volverá a mostrar.</span>
                         </p>
@@ -1141,25 +1141,40 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 }}
                             />
                         </div>
-                        <Button variant="secondary" onClick={() => setResetResult(null)}>Listo</Button>
-                    </div>
-                </div>
+                </CuerpoDialogo>
         </ModalShell>
         )}
 
-        <ModalShell open={cancelModalRender} onClose={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : () => {}} maxWidthClass="max-w-sm" zClass="z-confirm" closeOnEsc={!isCancelling} ariaLabel="Cancelar el evento del expediente">
-                <div className={`relative w-full max-w-sm bg-surface-card backdrop-blur-2xl border border-border-card rounded-modal overflow-hidden shadow-[var(--shadow-elevation-xl)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${showCancelModal ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}>
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-danger"></div>
-                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-base">
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 border bg-surface-card border-border-card shadow-sm text-danger">
-                            {isCancelling ? <Loader2 size={28} strokeWidth={2.5} className="animate-spin"/> : <AlertTriangle size={28} strokeWidth={2.5}/>}
-                        </div>
-                        <h3 className="text-title-sm font-black uppercase tracking-tight mb-2 text-content text-center">
-                            {isCancelling ? 'Procesando...' : 'Cancelar Acción de RRHH'}
-                        </h3>
-                        <p className={`text-body font-medium text-content-3 text-center mb-5 transition-opacity duration-300 ${isCancelling ? 'opacity-60' : 'opacity-100'}`}>
-                            {isCancelling ? 'No cierres esta ventana.' : 'Esta acción quedará registrada como cancelada. No se puede deshacer.'}
-                        </p>
+        <ModalShell open={cancelModalRender} onClose={!isCancelling ? () => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); } : () => {}} maxWidthClass="max-w-sm" zClass="z-confirm" closeOnEsc={!isCancelling} ariaLabel="Cancelar el evento del expediente" surface={null}>
+                <CuerpoDialogo
+                    titulo={isCancelling ? 'Procesando…' : 'Cancelar acción de RRHH'}
+                    subtitulo={isCancelling
+                        ? 'No cierres esta ventana.'
+                        : 'Quedará registrada como cancelada. No se puede deshacer.'}
+                    icono={isCancelling ? Loader2 : AlertTriangle}
+                    tono="danger"
+                    className={isCancelling ? '[&_svg:first-of-type]:animate-spin' : ''}
+                    pie={<>
+                        <Button variant="destructive" disabled={!cancelReason.trim() || isCancelling}
+                            loading={isCancelling}
+                            onClick={async () => {
+                                setIsCancelling(true);
+                                const { cancelEmployeeEvent } = useStaffStore.getState();
+                                const ok = await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
+                                if (ok) useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
+                                setIsCancelling(false);
+                                setShowCancelModal(false);
+                                setCancelReason('');
+                                setCancelingEventId(null);
+                            }}>Confirmar cancelación</Button>
+                        {!isCancelling && (
+                            <Button variant="secondary"
+                                onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}>
+                                Volver
+                            </Button>
+                        )}
+                    </>}
+                >
                         {!isCancelling && (
                             <>
                                 <label className="text-caption font-black uppercase tracking-widest text-content-3 mb-2 self-start">Motivo de cancelación *</label>
@@ -1171,31 +1186,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 />
                             </>
                         )}
-                    </div>
-                    <div className="p-4 sm:p-5 backdrop-blur-md border-t bg-surface-card-hover/50 border-divider flex gap-3 relative z-base">
-                        {/* El `hidden` mientras cancela era un condicional de clase;
-                            ahora el propio condicional decide si se pinta. */}
-                        {!isCancelling && (
-                            <Button
-                                variant="secondary"
-                                className="flex-1"
-                                onClick={() => { setShowCancelModal(false); setCancelReason(''); setCancelingEventId(null); }}
-                            >
-                                Volver
-                            </Button>
-                        )}
-                        <Button variant="destructive" disabled={!cancelReason.trim() || isCancelling} onClick={async () => {
-                                setIsCancelling(true);
-                                const { cancelEmployeeEvent } = useStaffStore.getState();
-                                const ok = await cancelEmployeeEvent(cancelingEventId, cancelReason.trim());
-                                if (ok) useToastStore.getState().showToast('Acción Cancelada', 'El evento fue cancelado exitosamente.', 'success');
-                                setIsCancelling(false);
-                                setShowCancelModal(false);
-                                setCancelReason('');
-                                setCancelingEventId(null);
-                            }}>Confirmar Cancelación</Button>
-                    </div>
-                </div>
+                </CuerpoDialogo>
         </ModalShell>
         </>
     );

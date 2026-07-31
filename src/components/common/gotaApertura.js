@@ -35,19 +35,24 @@ import { leerUltimoToque } from './ultimoToque';
 const ENTRADA_MS = 520;
 
 /**
- * ¿Hay vidrio en juego? Mira el elemento **y su primer hijo**, y eso no es
- * defensivo: `ModalShell` anima su ENVOLTORIO, que no lleva material propio —el
- * `data-surface` vive en el hijo—. Preguntándole solo al envoltorio, todo modal
- * parecería no tener vidrio y se llevaría el camino barato… que usa `transform`,
- * o sea un transform ANCESTRO del hijo, o sea el vidrio muerto. La pregunta
- * correcta es si hay blur que preservar en lo que se va a animar, incluyendo lo
- * que cuelga de ello.
+ * El elemento que hay que recortar: **el que lleva el vidrio**, no su envoltorio.
+ *
+ * `clip-path` en un ANCESTRO crea un backdrop root, igual que `transform` y que
+ * `opacity`. Medido: con el clip en el envoltorio de `ModalShell`, el texto de la
+ * lista se leía nítido a través de la hoja durante toda la apertura y el vidrio
+ * aparecía al terminar. En cambio el clip PROPIO no rompe nada — por eso la
+ * primera versión, que vivía dentro de `HojaMovil`, funcionaba.
+ *
+ * Es la séptima vez que esta familia de reglas muerde en el proyecto, y la
+ * primera por `clip-path`. La forma de no volver a pisarla: animar siempre el
+ * elemento que tiene el material, nunca uno que lo contenga.
  */
-function hayVidrio(el) {
-    if (!el) return false;
-    if (getComputedStyle(el).backdropFilter !== 'none') return true;
+function objetivoVidrio(el) {
+    if (!el) return null;
+    if (getComputedStyle(el).backdropFilter !== 'none') return el;
     const h = el.firstElementChild;
-    return !!h && getComputedStyle(h).backdropFilter !== 'none';
+    if (h && getComputedStyle(h).backdropFilter !== 'none') return h;
+    return null;
 }
 const tope = (n) => Math.max(0, Math.round(n));
 
@@ -85,9 +90,11 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return undefined;
 
-        const conVidrio = hayVidrio(el);
+        // El recorte va sobre el elemento con vidrio; el `transform` puede ir en
+        // el envoltorio porque en ese camino no hay blur que preservar.
+        const vidrio = objetivoVidrio(el);
 
-        if (!conVidrio) {
+        if (!vidrio) {
             el.style.transformOrigin =
                 `${Math.round(desde.x + desde.w / 2 - r.left)}px ${Math.round(desde.y + desde.h / 2 - r.top)}px`;
             el.style.transition = 'none';
@@ -100,25 +107,32 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             return () => { el.style.transform = ''; el.style.opacity = ''; el.style.transition = ''; };
         }
 
-        el.style.transition = 'none';
-        el.style.clipPath = insetHacia(el, desde);
+        vidrio.style.transition = 'none';
+        vidrio.style.clipPath = insetHacia(vidrio, desde);
+        // La sombra vive en el envoltorio, que NO se recorta: sin esto la hoja
+        // proyectaría su sombra entera mientras todavía es una gota.
+        const sombraPrevia = el.style.boxShadow;
+        el.style.boxShadow = 'none';
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
-        void el.offsetWidth;
+        void vidrio.offsetWidth;
 
-        el.style.transition = `clip-path ${ENTRADA_MS}ms cubic-bezier(0.22,1,0.36,1)`;
+        vidrio.style.transition = `clip-path ${ENTRADA_MS}ms cubic-bezier(0.22,1,0.36,1)`;
         // El radio final se LEE del elemento: en los temas de vidrio son 28px y en
         // `solid` el token baja a 12, así que escribirlo lo rompía en la mitad.
-        const radio = getComputedStyle(el).borderTopLeftRadius || '0px';
-        const abajo = getComputedStyle(el).borderBottomLeftRadius || '0px';
-        el.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} ${abajo} ${abajo})`;
+        const radio = getComputedStyle(vidrio).borderTopLeftRadius || '0px';
+        const abajo = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
+        vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radio} ${radio} ${abajo} ${abajo})`;
 
         // El clip se retira al terminar: dejarlo puesto recortaría cualquier
         // sombra o popover que el panel quiera sacar fuera de su caja.
-        const alTerminar = () => { el.style.clipPath = ''; el.style.transition = ''; };
-        el.addEventListener('transitionend', alTerminar, { once: true });
-        return () => el.removeEventListener('transitionend', alTerminar);
+        const alTerminar = () => {
+            vidrio.style.clipPath = ''; vidrio.style.transition = '';
+            el.style.boxShadow = sombraPrevia;
+        };
+        vidrio.addEventListener('transitionend', alTerminar, { once: true });
+        return () => vidrio.removeEventListener('transitionend', alTerminar);
     }, [ref, activo, cerrando]);
 
     // ── La salida: la misma gota al revés ─────────────────────────────────
@@ -130,13 +144,15 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
         if (!el || !cerrando || !desde || !activo) return;
         const r = el.getBoundingClientRect();
         if (!r.width || !r.height) return;
-        if (!hayVidrio(el)) {
+        const vidrio = objetivoVidrio(el);
+        if (!vidrio) {
             el.style.transition = `transform ${salidaMs}ms cubic-bezier(0.4,0,1,1), opacity ${salidaMs}ms ease-in`;
             el.style.transform = 'scale(0.96)';
             el.style.opacity = '0';
             return;
         }
-        el.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
-        el.style.clipPath = insetHacia(el, desde);
+        el.style.boxShadow = 'none';
+        vidrio.style.transition = `clip-path ${salidaMs}ms cubic-bezier(0.4,0,0.6,1)`;
+        vidrio.style.clipPath = insetHacia(vidrio, desde);
     }, [ref, cerrando, salidaMs, activo]);
 }

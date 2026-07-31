@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
-import useMediaQuery from '../../hooks/useMediaQuery';
+import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 
 // eslint-disable-next-line react-refresh/only-export-components -- constante chica usada solo junto a este componente; solo afecta Fast Refresh en dev
 export const PAGE_SIZE_OPTIONS = [25, 50, 100];
@@ -59,7 +59,7 @@ export default function TablePagination({
     const inputRef = useRef();
     const [editando, setEditando] = useState(false);
     const [borrador, setBorrador] = useState('');
-    const compacto = useMediaQuery('(max-width: 719px)');
+    const compacto = useLayoutCompacto();
 
     const mostrado = filteredTotal ?? total ?? 0;
     const desde = mostrado === 0 ? 0 : (page - 1) * pageSize + 1;

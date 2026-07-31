@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { BarChart2, ChevronDown } from 'lucide-react';
 import { normXyz } from './helpers';
 import Button from '../../../components/common/Button';
-import useMediaQuery from '../../../hooks/useMediaQuery';
+import useLayoutCompacto from '../../../hooks/useLayoutCompacto';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
 const ABC_KEYS = ['A', 'B', 'C'];
@@ -38,7 +38,7 @@ const TRAMO = { X: 100, Y: 55, Z: 24 };
  * directamente desplegada.
  */
 export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, loading }) {
-    const compacto = useMediaQuery('(max-width: 719px)');
+    const compacto = useLayoutCompacto();
     const [abierto, setAbierto] = useState(false);
     const [caja, setCaja] = useState(null);
     const btnRef = useRef(null);

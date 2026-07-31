@@ -12,6 +12,33 @@ retomar; acá está todo.
 
 ---
 
+## v2.298.0 — El corte por dispositivo, a los 5 sitios; y el notch acostado
+
+Continuación de v2.296.0. `TablePagination` y `AbcXyzMatrix` pasan también a
+`useLayoutCompacto`: acostado ya no reciben la versión de escritorio. Los **cinco**
+consumidores del corte salen ahora del mismo hook y no queda ninguna copia del
+`(max-width: 719px)` a mano.
+
+Y el **notch**. `viewport-fit=cover` ya estaba puesto —la app dibuja debajo del
+notch a propósito— pero en todo el código había *una sola* referencia a
+`safe-area-inset-left` (el sidebar de escritorio) y *ninguna* a `-right`. De pie
+no importa: valen 0. Acostado valen ~59px, y medido sobre `/staff` a 844×390:
+
+| elemento | lado | se mete |
+|---|---|---|
+| botón de menú (☰) | izquierda | 43px |
+| Mi Perfil | derecha | 43px |
+| celdas de la tabla | derecha | 51px |
+| clúster flotante | derecha | 40px |
+| tarjetas de métricas | ambos | 18–30px |
+
+Acá se corrige el clúster, que es el que se reportó: su contenedor pasa de `px-3`
+fijo a `pl/pr-[max(12px, env(safe-area-inset-left/right))]`. Con `max()` y no a
+secas, para que donde el inset es 0 quede el margen de siempre. El resto de la
+lista queda anotado y sin tocar — misma corrección, superficies no pedidas.
+
+---
+
 ## v2.297.0 — Solventar no escribía nada, y dos de cuatro lo auditaban igual
 
 Las tres tablas de resoluciones de Facturación (`sales_invoice_resolutions`,

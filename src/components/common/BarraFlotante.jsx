@@ -352,13 +352,26 @@ const BarraPortal = ({
                 ref={clusterRef}
                 role="toolbar"
                 aria-label={ariaLabel}
+                // ── El relleno lateral reserva el NOTCH ───────────────────
+                // Era `px-3` fijo. De pie da igual —`safe-area-inset-left/right`
+                // valen 0—, pero **acostado el notch se come ~59px de un
+                // costado** y el clúster quedaba a 12px del borde, o sea debajo
+                // del hardware: medido, el último botón se metía 40px en la
+                // banda. `viewport-fit=cover` ya estaba puesto, así que la app
+                // dibuja ahí abajo; lo que faltaba era reservar el sitio.
+                //
+                // Con `max()` y no a secas: donde el inset es 0 tiene que quedar
+                // el margen de siempre, no cero.
+                //
                 // `display` por variable y no por clase: quien sabe si hay un
                 // overlay global abierto es `AppLayout`, y esta barra cuelga del
                 // `body` por portal, así que no es descendiente suya. El valor por
                 // defecto es `flex` para que fuera de `AppLayout` —o antes del
                 // primer efecto— la barra se dibuje igual.
                 className="fixed inset-x-0 bottom-0 z-tabs
-                    px-3 pt-2
+                    pt-2
+                    pl-[max(12px,env(safe-area-inset-left))]
+                    pr-[max(12px,env(safe-area-inset-right))]
                     pb-[calc(var(--alto-nav-inferior,0px)+max(12px,env(safe-area-inset-bottom)))]
                     [display:var(--barra-flotante-display,flex)] flex-col items-end gap-2 pointer-events-none"
             >

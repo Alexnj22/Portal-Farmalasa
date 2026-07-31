@@ -16,8 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.297.0';
+export const APP_VERSION = '2.298.0';
 
+// v2.298.0 — El corte por dispositivo, a los 5 sitios; y el notch acostado.
+//
+// Continuacion de v2.296.0, que arreglo el telefono acostado en `BarraFlotante`,
+// `FilterBar` y `ConteoDetailView` pero dejo dos sitios con el literal viejo a
+// proposito. El usuario pidio aplicarlo tambien ahi, asi que `TablePagination` y
+// `AbcXyzMatrix` pasan a `useLayoutCompacto`: acostado ya no reciben la version
+// de escritorio. Con esto los CINCO consumidores del corte salen del mismo hook
+// y no queda ninguna copia del `(max-width: 719px)` a mano.
+//
+// Y el NOTCH. `viewport-fit=cover` ya estaba puesto —la app dibuja debajo del
+// notch a proposito— pero en todo el codigo habia **una sola** referencia a
+// `safe-area-inset-left` (el sidebar de escritorio) y **ninguna** a `-right`.
+// De pie no importa: esos valores son 0. Acostado valen ~59px, y medido sobre
+// /staff a 844x390 se metian en la banda del notch:
+//
+//   boton de menu (☰)       izquierda   43px
+//   Mi Perfil               derecha     43px
+//   celdas de la tabla      derecha     51px
+//   clúster flotante        derecha     40px
+//   tarjetas de metricas    ambos       18-30px
+//
+// Acá se corrige el clúster, que es el que se reporto: su contenedor pasa de
+// `px-3` fijo a `pl/pr-[max(12px, env(safe-area-inset-left/right))]`. Con
+// `max()` y no a secas, para que donde el inset es 0 quede el margen de siempre.
+// El resto de la lista (encabezado, tabla, metricas) queda anotado y sin tocar:
+// es la misma correccion pero en superficies que no se pidieron.
+//
 // v2.297.0 — Solventar no escribia nada, y dos de cuatro lo auditaban igual.
 //
 // Las tres tablas de resoluciones de Facturacion tenian RLS activo con UNA sola

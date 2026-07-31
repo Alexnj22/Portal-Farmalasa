@@ -12,6 +12,34 @@ retomar; acá está todo.
 
 ---
 
+## v2.306.0 — El blur que costaba el scroll, y el pie que se comía el panel
+
+**El scroll lento era un `backdrop-filter` que no se veía.** El cuerpo de
+`GlassViewLayout` envuelve la lista entera, así que mide mucho más que la
+pantalla —**4.8× en `/minmax`** (2197px de alto), 3.1× en `/staff`—. Un
+`backdrop-filter` cuesta en proporción al **área** del elemento, no a lo que se ve
+de él, así que se recalculaba sobre ~2 millones de píxeles en cada cuadro del
+scroll. Y no compraba nada: detrás solo está `--bg-page`, un degradado radial, y
+difuminar un degradado suave devuelve el mismo degradado. **Comprobado con un
+A/B**: las dos capturas son indistinguibles.
+
+Se apaga con `data-vidrio="no"`, un opt-out **explícito**. "Es más grande que la
+pantalla" no alcanza como criterio —una hoja a pantalla completa sí tiene
+contenido detrás que vale difuminar—; lo que decide es si hay algo atrás que
+mirar. Se conserva fondo, borde, radio y sombra.
+
+**El pie de `ConfigPanel`/`LabsPanel` se comía el 40 % del panel**, y la causa la
+introduje en v2.304.0: para pasar el pie por la ranura de `HojaMovil` lo envolví
+en un div. Pero `HojaMovil` estila `[&>*]` —los hijos *directos* del pie— y un div
+en el medio se come esa selección; `display: contents` tampoco ayuda, porque
+cambia cómo se dibuja y no quién es hijo directo para el selector. Los botones
+perdían `flex-1 basis-36` y se apilaban en dos filas.
+
+Ahora las acciones van sueltas (un Fragment) en táctil. Verificado acostado: el
+pie es **una fila** y el cuerpo muestra 5 campos en vez de 2.
+
+---
+
 ## v2.305.0 — El material se parte en dos: el clúster vuelve a su vidrio
 
 Corrección de v2.304.0, que se pasó de alcance. Cambiar `MATERIAL_HOJA` de `card`

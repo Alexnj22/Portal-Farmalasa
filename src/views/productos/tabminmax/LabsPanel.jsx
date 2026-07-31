@@ -101,7 +101,8 @@ export default function LabsPanel({ onClose, onChanged }) {
     // quedar anclado. `HojaMovil` tiene la ranura `pie` justo para eso.
     const envolver = (cuerpo, pie) => enTactil
         ? <HojaMovil titulo="Visibilidad de laboratorios" icono={FlaskConical} pie={pie}>{cuerpo}</HojaMovil>
-        : <div className="flex flex-col">{cuerpo}{pie}</div>;
+        : <div className="flex flex-col">{cuerpo}
+            <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>{pie}</div></div>;
 
     return (
         // `ModalShell` y no un overlay a mano (2026-07-30): sin scrim, sin
@@ -200,10 +201,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                     })}
                 </div>
             </>,
-            <div key="pie" className={enTactil ? 'contents' : 'px-3 pb-3 pt-1 border-t mt-auto'}
-                style={enTactil ? undefined : glass.divider}>
-                <Button variant="ghost" onClick={onClose}>Cerrar</Button>
-            </div>)}
+            <Button variant="ghost" onClick={onClose}>Cerrar</Button>)}
         </ModalShell>
     );
 }

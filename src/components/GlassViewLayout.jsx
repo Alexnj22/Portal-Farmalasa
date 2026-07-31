@@ -213,6 +213,24 @@ const GlassViewLayout = ({
                 {/* Content body */}
                 <div className="px-0 md:px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
                     <div data-surface={cuerpoConCard ? 'card' : undefined}
+                        // ── Esta card NO difumina ─────────────────────────
+                        // No es una decisión estética: es que no tiene nada que
+                        // difuminar. Detrás suyo está el fondo de la página, que
+                        // es un degradado radial — y difuminar un degradado suave
+                        // devuelve el mismo degradado. Comprobado con un A/B:
+                        // las dos capturas son indistinguibles.
+                        //
+                        // Lo que sí cuesta: esta card es el contenedor de la
+                        // lista, así que mide MUCHO más que la pantalla —medido,
+                        // 4.8× en /minmax (2197px de alto) y 3.1× en /staff— y su
+                        // `backdrop-filter` se recalcula sobre ~2 millones de
+                        // píxeles en cada cuadro del scroll. Era la causa del
+                        // "se siente lento" en un 17 Pro Max.
+                        //
+                        // El vidrio se gana donde hay algo detrás que valga la
+                        // pena mirar: el clúster flotante, las hojas, los
+                        // dropdowns. Una superficie apoyada sobre el fondo no.
+                        data-vidrio="no"
                         className={`group/table flex flex-col lg:flex-1 ${bodyCardCls}`}>
                         {children}
                     </div>

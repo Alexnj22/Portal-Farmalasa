@@ -1832,6 +1832,26 @@
 
    Los valores son los de la paleta CERRADA. El anillo va ANTES de la sombra
    de tarjeta para que se dibuje pegado al borde y la elevación quede afuera. */
+/* ── `data-vidrio="no"` — la superficie sin nada detrás que difuminar ──────
+   Un `backdrop-filter` cuesta en proporción al ÁREA del elemento, no a lo que
+   se ve de él. Una superficie que envuelve una lista larga mide varias veces la
+   pantalla, así que su blur se recalcula sobre millones de píxeles en cada
+   cuadro del scroll — y si lo único que tiene detrás es el fondo de la página
+   (un degradado radial), no compra nada: difuminar un degradado suave devuelve
+   el mismo degradado. Comprobado con un A/B en /minmax: las dos capturas son
+   indistinguibles.
+
+   El opt-out es explícito y no automático a propósito. "Es más grande que la
+   pantalla" no alcanza como criterio —una hoja a pantalla completa SÍ tiene
+   contenido detrás que vale difuminar—; lo que decide es si hay algo atrás que
+   mirar. Por eso lo declara quien conoce su contexto.
+
+   El resto del material se conserva: fondo, borde, radio y sombra. */
+[data-surface][data-vidrio="no"] {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* ── Una card DENTRO de otra card no vuelve a difuminar ────────────────────
    Un `backdrop-filter` muestrea todo lo pintado detrás. Si el ancestro ya
    difuminó, el hijo estaría difuminando una imagen YA difuminada: el aporte

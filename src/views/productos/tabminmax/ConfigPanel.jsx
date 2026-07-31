@@ -85,7 +85,19 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     // ancla y le pone su área segura.
     const envolver = (cuerpo, pie) => enTactil
         ? <HojaMovil titulo="Configuración Min/Max" icono={Settings2} pie={pie}>{cuerpo}</HojaMovil>
-        : <div>{cuerpo}{pie}</div>;
+        : <div>{cuerpo}<div className="px-4 py-3 border-t border-divider flex items-center gap-2">{pie}</div></div>;
+
+    // Las acciones, SUELTAS y no dentro de un envoltorio. `HojaMovil` estila
+    // `[&>*]` —los hijos DIRECTOS del pie— para repartirlos a ancho completo, y
+    // un div en el medio se come esa selección: los botones perdían `flex-1
+    // basis-36`, se apilaban en dos filas y el pie se comía el 40% del panel.
+    // Un `display: contents` tampoco sirve: no cambia quién es hijo directo
+    // para el selector, solo cómo se dibuja.
+    const acciones = <>
+        <Button disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
+            {saved ? 'Guardado' : 'Guardar'}</Button>
+        <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+    </>;
 
     return (
         // `ModalShell` y no un overlay a mano (2026-07-30). Este panel se montaba
@@ -203,11 +215,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
             </>,
             // El pie, como ranura y no como parte del cuerpo. En escritorio
             // conserva su borde y su relleno; en la hoja los pone `HojaMovil`.
-            <div key="pie" className={enTactil ? 'contents' : 'px-4 py-3 border-t border-divider flex items-center gap-2'}>
-                <Button disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
-                    {saved ? 'Guardado' : 'Guardar configuración'}</Button>
-                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-            </div>)}
+            acciones)}
         </ModalShell>
     );
 }

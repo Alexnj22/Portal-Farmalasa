@@ -16,8 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.305.0';
+export const APP_VERSION = '2.306.0';
 
+// v2.306.0 — El blur que costaba el scroll, y el pie que se comia el panel.
+//
+// 1 · **El scroll lento era un `backdrop-filter` que no se veia.** El cuerpo de
+//     `GlassViewLayout` es `data-surface="card"` y envuelve la lista entera, asi
+//     que mide MUCHO mas que la pantalla: medido, **4.8× en /minmax** (2197px de
+//     alto) y 3.1× en /staff. Un `backdrop-filter` cuesta en proporcion al AREA
+//     del elemento, no a lo que se ve de el, asi que ese blur se recalculaba
+//     sobre ~2 millones de pixeles en cada cuadro del scroll.
+//
+//     Y no compraba nada: lo unico que tiene detras es `--bg-page`, que es un
+//     degradado radial — difuminar un degradado suave devuelve el mismo
+//     degradado. **Comprobado con un A/B**: las dos capturas de /minmax, con y
+//     sin ese blur, son indistinguibles.
+//
+//     Se apaga con `data-vidrio="no"`, un opt-out EXPLICITO y no automatico.
+//     "Es mas grande que la pantalla" no alcanza como criterio: una hoja a
+//     pantalla completa SI tiene contenido detras que vale difuminar. Lo que
+//     decide es si hay algo atras que mirar, y eso lo sabe quien conoce el
+//     contexto. Se conserva fondo, borde, radio y sombra.
+//
+// 2 · **El pie de `ConfigPanel`/`LabsPanel` se comia el 40% del panel**, y la
+//     causa la introduje yo en v2.304.0: para pasar el pie por la ranura de
+//     `HojaMovil` lo envolvi en un div con `display: contents`. Pero `HojaMovil`
+//     estila `[&>*]` —los hijos DIRECTOS del pie— para repartirlos a ancho
+//     completo, y un div en el medio se come esa seleccion. `display: contents`
+//     no ayuda: cambia como se dibuja, no quien es hijo directo para el
+//     selector. Los botones perdian `flex-1 basis-36`, se apilaban en dos filas
+//     y el cuerpo quedaba con dos campos a la vista.
+//
+//     Ahora las acciones van SUELTAS (un Fragment) en tactil, y el envoltorio
+//     con su caja lo pone `envolver()` solo en escritorio. Y "Guardar
+//     configuracion" pasa a "Guardar": en un panel de 420px el rotulo largo era
+//     lo que forzaba el salto.
+//
+//     Verificado acostado: el pie es UNA fila y el cuerpo muestra 5 campos en
+//     vez de 2; los rotulos dejaron de partirse en tres lineas.
+//
 // v2.305.0 — El material se parte en dos: el cluster vuelve a su vidrio.
 //
 // Correccion de v2.304.0, que se paso de alcance. Ahi se cambio `MATERIAL_HOJA`

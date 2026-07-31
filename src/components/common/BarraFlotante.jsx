@@ -133,10 +133,10 @@ const BarraFlotante = memo(({
     const [enPantalla, setEnPantalla] = useState(true);
     const anclaRef = useRef(null);
     const [abierta, setAbierta] = useState(null);   // key de la acción con panel abierto
-    // La x del botón que abrió el panel: la hoja se despliega DESDE ahí. Se
-    // guarda al tocar y no se recalcula, porque para cuando la hoja está en
-    // pantalla el clúster ya se movió.
-    const [origenX, setOrigenX] = useState(null);
+    // El rectángulo del botón que abrió el panel: la hoja arranca SIENDO ese
+    // botón y se despliega desde ahí. Se mide al tocar y no se recalcula,
+    // porque para cuando la hoja está en pantalla el clúster ya se movió.
+    const [origen, setOrigen] = useState(null);
     const [buscando, setBuscando] = useState(false);
     const ultimaY = useRef(0);
     const inputRef = useRef(null);
@@ -235,8 +235,8 @@ const BarraFlotante = memo(({
                     acciones={acciones}
                     principal={principal}
                     clusterRef={clusterRef}
-                    origenX={origenX}
-                    setOrigenX={setOrigenX}
+                    origen={origen}
+                    setOrigen={setOrigen}
                     rotulos={rotulos}
                     setAbierta={setAbierta}
                     panelAbierto={panelAbierto}
@@ -251,7 +251,7 @@ const BarraFlotante = memo(({
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
     abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
-    clusterRef, origenX, setOrigenX,
+    clusterRef, origen, setOrigen,
 }) => {
     return (
         <>
@@ -425,7 +425,7 @@ const BarraPortal = ({
                             onClick={(e) => {
                                 if (!a.panel) return a.onClick?.();
                                 const r = e.currentTarget.getBoundingClientRect();
-                                setOrigenX(Math.round(r.left + r.width / 2));
+                                setOrigen({ x: r.left, y: r.top, w: r.width, h: r.height });
                                 setAbierta(a.key);
                             }}
                         />
@@ -465,7 +465,7 @@ const BarraPortal = ({
                         titulo={panelAbierto?.tituloPanel || panelAbierto?.label}
                         // La MISMA superficie del clúster — ver `MATERIAL`.
                         superficie={MATERIAL}
-                        origenX={origenX}
+                        origen={origen}
                     >
                         {panelAbierto?.panel}
                     </HojaMovil>

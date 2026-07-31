@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import React, { memo, useRef, useLayoutEffect } from 'react';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 /**
  * HojaMovil — el CUERPO canónico de un modal en el teléfono.
@@ -72,18 +73,69 @@ const HojaMovil = memo(({
     // desplegándose, no un diálogo aparte, y con dos materiales distintos se
     // leían como dos piezas apiladas.
     superficie = 'modal',
-    // La x (en px de viewport) del control que abrió la hoja. Con ella la hoja
-    // se despliega DESDE ahí en vez de subir desde el centro.
-    origenX,
+    // El rectángulo (en px de viewport) del control que abrió la hoja:
+    // `{ x, y, w, h }`. Con él la hoja no "aparece": ARRANCA SIENDO ese botón y
+    // se despliega hasta su tamaño final. Ver la nota de la gota.
+    origen,
     className = '',
-}) => (
+}) => {
+    const hojaRef = useRef(null);
+    const cuerpoRef = useRef(null);
+    const sinMovimiento = useMediaQuery('(prefers-reduced-motion: reduce)');
+
+    // ── La gota: FLIP, no un keyframe ─────────────────────────────────────
+    // Un `@keyframes` fijo solo puede escalar "un poco desde abajo": no sabe
+    // dónde está el botón ni cuánto mide, así que el gesto se lee como "algo
+    // entró", no como "esto se abrió". Acá se mide la hoja YA COLOCADA, se la
+    // manda de vuelta al rectángulo exacto del botón —translate + scale por eje,
+    // con el radio de píldora— y se la suelta. El navegador interpola el camino
+    // completo: la píldora se estira y se convierte en el panel.
+    //
+    // El contenido entra DESPUÉS. Durante la primera mitad la hoja está
+    // aplastada a la altura de un botón y el texto ahí dentro se vería
+    // deformado; apareciendo a los 150ms lo que se ve es el vidrio abriéndose y
+    // el contenido asentándose adentro.
+    //
+    // `useLayoutEffect` y no `useEffect`: el estado inicial tiene que estar
+    // aplicado ANTES del primer pintado, o se alcanza a ver la hoja entera un
+    // fotograma antes de encogerse.
+    useLayoutEffect(() => {
+        const el = hojaRef.current;
+        if (!el || !origen || sinMovimiento) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+
+        const sx = Math.max(origen.w / r.width, 0.04);
+        const sy = Math.max(origen.h / r.height, 0.04);
+        const tx = origen.x - r.left;
+        const ty = origen.y - r.top;
+
+        const cuerpo = cuerpoRef.current;
+        el.style.transformOrigin = '0 0';
+        el.style.transition = 'none';
+        el.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+        el.style.borderRadius = '9999px';
+        if (cuerpo) { cuerpo.style.transition = 'none'; cuerpo.style.opacity = '0'; }
+
+        // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
+        // final en un solo estilo computado y no hay transición que interpolar.
+        void el.offsetWidth;
+
+        el.style.transition =
+            'transform 520ms cubic-bezier(0.22,1,0.36,1), border-radius 460ms cubic-bezier(0.22,1,0.36,1)';
+        el.style.transform = 'translate(0px, 0px) scale(1, 1)';
+        el.style.borderRadius = '';
+        if (cuerpo) {
+            cuerpo.style.transition = 'opacity 260ms ease-out 150ms';
+            cuerpo.style.opacity = '1';
+        }
+    }, [origen, sinMovimiento]);
+
+    return (
     <div
+        ref={hojaRef}
         data-hoja="true"
         data-surface={superficie}
-        style={origenX != null ? {
-            transformOrigin: `${origenX}px 100%`,
-            animation: 'hoja-desde-origen 340ms cubic-bezier(0.23,1,0.32,1) both',
-        } : undefined}
         // `rounded-b-none!` con el modificador de importancia, no a secas: el
         // radio lo fija `[data-surface="modal"]` en index.css, que es un selector
         // de atributo —misma especificidad que una clase— y le gana por orden de
@@ -91,6 +143,7 @@ const HojaMovil = memo(({
         // dibujaban una curva contra el filo de la pantalla.
         className={`flex flex-col max-h-[88dvh] rounded-t-modal rounded-b-none! overflow-hidden ${className}`}
     >
+    <div ref={cuerpoRef} className="flex flex-col min-h-0">
         {/* El asa. No arrastra —eso es un gesto que habría que implementar y
             mantener—, pero es lo que dice "esto se cierra hacia abajo", que es
             la mitad del trabajo que hace en las hojas nativas. */}
@@ -133,7 +186,9 @@ const HojaMovil = memo(({
             </div>
         )}
     </div>
-));
+    </div>
+    );
+});
 
 HojaMovil.displayName = 'HojaMovil';
 export default HojaMovil;

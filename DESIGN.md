@@ -1756,6 +1756,45 @@ Solo el **cuerpo** scrollea. El título se queda arriba y las acciones abajo, as
 que en una hoja larga nunca hay que scrollear para recordar qué se está
 decidiendo ni para confirmarlo.
 
+#### El modal de MÓVIL es un canónico distinto al de escritorio
+
+No es una adaptación: son dos piezas con reglas propias, porque el tamaño de
+pantalla y la forma de tocar son otras. `HojaMovil` es el de móvil.
+
+**Sin velo.** El scrim es una convención de escritorio: ahí el diálogo es una
+ventana flotando sobre un lienzo grande y hay que decir cuál manda. En un
+teléfono la hoja ya ocupa el borde inferior entero y llega desde el control que
+la abrió — se entiende sin atenuar nada, y oscurecer la vista la hace leerse como
+*otra pantalla* en vez de como la misma que se desplegó. `ModalShell` lo apaga
+solo en táctil (`scrim` lo fuerza si hiciera falta). El diálogo **sigue siendo
+modal**: el fondo es un objetivo de cierre invisible, no ausente.
+
+#### La hoja NACE del control que la abrió — y es un FLIP, no un keyframe
+
+Un `@keyframes` fijo solo sabe escalar "un poco desde abajo": no conoce la
+posición ni el tamaño del botón, así que el gesto se lee como *algo entró*, no
+como *esto se abrió*. Se probó y no alcanzaba.
+
+`HojaMovil` recibe `origen = {x, y, w, h}` —el rectángulo real del control,
+medido al tocarlo— mide la hoja **ya colocada**, la manda de vuelta a ese
+rectángulo (`translate` + `scale` por eje, radio de píldora) y la suelta. El
+navegador interpola el camino entero: la píldora se estira y **se convierte** en
+el panel. Medido a 40ms: la hoja mide 60×61 en la x/y exactas del botón, con
+`border-radius: 9999px`.
+
+El contenido entra **después** (opacidad, 150ms de retraso): durante la primera
+mitad la hoja está aplastada a la altura de un botón y el texto ahí dentro se
+vería deformado. Lo que se ve es el vidrio abriéndose y el contenido asentándose.
+
+`useLayoutEffect`, no `useEffect`: el estado inicial tiene que estar aplicado
+antes del primer pintado o se alcanza a ver la hoja entera un fotograma antes de
+encogerse. Y el `void el.offsetWidth` no es supersticioso — sin ese reflujo el
+navegador junta los dos estados en uno y no hay nada que interpolar.
+
+**La animación va en la hoja, nunca en el envoltorio**, y por eso `ModalShell`
+acepta `animacionPropia`. Un `transform` propio no rompe el `backdrop-filter`;
+uno **ancestro** sí. Es la quinta vez que esta regla aparece en el proyecto.
+
 #### La hoja de la barra NACE del control que la abrió
 
 La barra flotante y sus hojas son **una sola pieza**: la hoja es la barra

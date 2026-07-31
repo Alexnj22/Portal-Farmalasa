@@ -45,6 +45,10 @@ const visible = (el) => {
  *   hojaEnTactil     – default true. En false el diálogo se queda centrado
  *                      también en táctil: es para las ALERTAS, que son una
  *                      interrupción y no un panel con el que se trabaja.
+ *   scrim            – el velo. Por defecto NO hay en táctil (ver la nota en el
+ *                      cuerpo); `true` lo fuerza.
+ *   animacionPropia  – el hijo se anima solo. Sin esto la animación viviría en
+ *                      el envoltorio, que es ancestro del vidrio.
  *   surface          – data-surface del panel (default "modal"; el ⌘K usa
  *                      "dropdown", que es lo que ese material es). En `null`
  *                      el panel no declara superficie: para los consumidores
@@ -94,6 +98,10 @@ export default function ModalShell({
   // El hijo se anima solo. Sin esto la animación viviría en el ENVOLTORIO, que
   // es ancestro del vidrio: `transform` ancestro = backdrop root = blur muerto.
   animacionPropia = false,
+  // Sin velo. El fondo sigue siendo objetivo de cierre —invisible, no ausente,
+  // así que el diálogo sigue siendo modal— pero no oscurece ni difumina.
+  // Por defecto sigue la regla de abajo: en táctil, NO hay velo.
+  scrim,
   surface = "modal",
   panelClassName = "",
   ariaLabel = "Ventana modal",
@@ -118,6 +126,17 @@ export default function ModalShell({
   // dice de qué tipo de cosa se trata.
   const sinHover = useMediaQuery("(hover: none)");
   const autoHoja = sinHover && alignPedido === "center" && hojaEnTactil;
+
+  // ── En el teléfono la hoja NO oscurece la pantalla ────────────────────
+  // El velo es una convención de escritorio: ahí el diálogo es una ventana
+  // flotando sobre un lienzo grande y hay que decir cuál manda. En un teléfono
+  // la hoja ya ocupa el borde inferior entero y llega desde el control que la
+  // abrió — se entiende sin atenuar nada, y atenuar la vista entera hace que se
+  // lea como "otra pantalla" en vez de como la misma que se desplegó.
+  //
+  // Se sigue pudiendo forzar con `scrim`. El diálogo sigue siendo modal: el
+  // fondo es un objetivo de cierre invisible, no ausente.
+  const conVelo = scrim ?? !(autoHoja || alignPedido === "bottom");
   const align = autoHoja ? "bottom" : alignPedido;
 
   // `mounted` sobrevive a `open=false` el tiempo de la animación de salida.
@@ -262,7 +281,8 @@ export default function ModalShell({
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina,
       // el navegador deja de monitorear cambios de opacidad, liberando el CPU.
-      className={`fixed inset-0 ${zClass} bg-scrim backdrop-blur-sm flex ${alignCls} ${backdropAnim}`}
+      className={`fixed inset-0 ${zClass} flex ${alignCls} ${backdropAnim}
+        ${conVelo ? 'bg-scrim backdrop-blur-sm' : 'bg-transparent pointer-events-none [&>*]:pointer-events-auto'}`}
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel}

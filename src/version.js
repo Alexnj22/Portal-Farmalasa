@@ -16,8 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.272.0';
+export const APP_VERSION = '2.273.0';
 
+// v2.273.0 — El modal de MOVIL como canonico propio: sin velo, y la gota.
+//
+// No es una adaptacion del de escritorio: son dos piezas con reglas propias,
+// porque el tamano de pantalla y la forma de tocar son otras.
+//
+// **Sin velo.** El scrim es convencion de escritorio —ahi el dialogo flota sobre
+// un lienzo grande y hay que decir cual manda—. En un telefono la hoja ya ocupa
+// el borde inferior entero y llega desde el control que la abrio: se entiende
+// sin atenuar nada, y oscurecer la vista la hace leerse como OTRA PANTALLA en
+// vez de como la misma que se desplego. Sigue siendo modal: el fondo es un
+// objetivo de cierre invisible, no ausente.
+//
+// **La gota: es un FLIP, no un keyframe.** El `@keyframes` anterior solo sabia
+// escalar un poco desde abajo —no conoce ni la posicion ni el tamano del
+// boton—, asi que se leia como "algo entro". Ahora `HojaMovil` recibe el
+// RECTANGULO del control, mide la hoja ya colocada, la manda de vuelta a ese
+// rectangulo (translate + scale por eje, radio de pildora) y la suelta: el
+// navegador interpola el camino entero y la pildora se CONVIERTE en el panel.
+// Medido a 40ms: la hoja mide 60×61 en la x/y exactas del boton, radio 9999px.
+//
+// El contenido entra despues (150ms de retraso): durante la primera mitad la
+// hoja esta aplastada a la altura de un boton y el texto se veria deformado.
+//
+// `useLayoutEffect` y no `useEffect` —el estado inicial tiene que estar antes
+// del primer pintado— y el `void el.offsetWidth` no es supersticion: sin ese
+// reflujo el navegador junta los dos estados en uno y no hay que interpolar.
+//
 // v2.272.0 — Una recarga entregaba DOS sesiones, y todo el arranque se hacia dos veces.
 //
 // Se investigaba por que `roles` y `role_permissions` se pedian 4 veces al

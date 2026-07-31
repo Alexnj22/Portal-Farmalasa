@@ -12,6 +12,26 @@ retomar; acá está todo.
 
 ---
 
+## v2.273.0 — El modal de móvil como canónico propio: sin velo, y la gota
+
+No es una adaptación del de escritorio: son dos piezas con reglas propias.
+
+**Sin velo.** El scrim es convención de escritorio. En un teléfono la hoja ya
+ocupa el borde inferior entero y llega desde el control que la abrió; oscurecer
+la vista la hace leerse como *otra pantalla* en vez de como la misma que se
+desplegó. Sigue siendo modal: el fondo es un objetivo de cierre invisible.
+
+**La gota es un FLIP, no un keyframe.** El keyframe anterior solo sabía escalar
+un poco desde abajo. Ahora `HojaMovil` recibe el **rectángulo** del control, mide
+la hoja ya colocada, la manda de vuelta a ese rectángulo (`translate` + `scale`
+por eje, radio de píldora) y la suelta: la píldora se **convierte** en el panel.
+Medido a 40ms: 60×61 en la x/y exactas del botón.
+
+El contenido entra 150ms después — durante la primera mitad la hoja está
+aplastada a la altura de un botón y el texto se vería deformado.
+
+---
+
 ## v2.272.0 — Una recarga entregaba dos sesiones, y todo el arranque se hacía dos veces
 
 Se investigaba por qué `roles` y `role_permissions` se pedían 4 veces al

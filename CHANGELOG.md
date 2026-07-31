@@ -12,6 +12,21 @@ retomar; acá está todo.
 
 ---
 
+## v2.278.0 — Auditoría completa: 29 rutas × 6 resoluciones, y el último hueco
+
+**Runtime, 174 muestras** (390/430/768/1280/1512/1920 × 29 rutas): cero
+ErrorBoundary, cero desborde horizontal, cero rutas rotas.
+
+**El único hueco real: `AttendanceAuditView`** tenía cuatro tarjetas de métrica a
+mano —grilla propia de 2×4, `p-4` propio, squircle propio y un `text-[1.85rem]`
+fuera de toda rampa—. Migradas a `StatCard` dentro de `CarrilCards`.
+
+**Por qué el barrido anterior no las vio:** buscaba las clases canónicas de
+tipografía, y estas eran *más* a mano de lo que el detector asumía. Un detector
+escrito a partir del canónico solo encuentra lo que casi lo cumple.
+
+---
+
 ## v2.277.0 — Un solo material para la capa móvil, sombra hacia arriba, y otra animación en sólido
 
 **"Calcular" y "Parámetros" no se veían igual que la hoja de la barra.** Era

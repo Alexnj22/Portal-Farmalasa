@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from "react";
+import CarrilCards from '../components/common/CarrilCards';
+import StatCard from '../components/common/StatCard';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { EmptyState } from '../components/common/StateViews';
@@ -1344,27 +1346,31 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
           return (
             <div className="space-y-4">
 
-              {/* Stat cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { Icon: Users,        label: 'Empleados',   val: withData,          unit: '',  c: 'text-brand-text', bg: 'bg-brand/10' },
-                  { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1), unit: 'h', c: 'text-content-2',  bg: 'bg-surface-card-hover' },
-                  { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-warning-text' : 'text-content-3', bg: totOT > 0 ? 'bg-warning/10' : 'bg-surface-card-hover' },
-                  { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-danger-text' : 'text-content-3', bg: totAbs > 0 ? 'bg-danger/10' : 'bg-surface-card-hover' },
-                ].map(({ Icon, label, val, unit, c, bg }) => (
-                  <div key={label} data-surface="card" className="p-4 flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
-                        <Icon size={13} className={c} strokeWidth={2.5} />
-                      </div>
-                      <span className="text-micro font-black uppercase tracking-widest text-content-3 leading-tight">{label}</span>
-                    </div>
-                    <p className={`text-[1.85rem] font-black leading-none tabular-nums tracking-tight ${c}`}>
-                      {val}<span className="text-body-lg font-bold opacity-50 ml-0.5">{unit}</span>
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {/* Las cuatro métricas de la quincena, en el canónico (§17).
+                  Eran tarjetas a mano: su propia grilla de 2×4, su propio
+                  `p-4`, su propio squircle y un `text-[1.85rem]` que no está en
+                  ninguna rampa. Se veían distintas a las de las otras 13 vistas
+                  y no deslizaban en el teléfono.
+
+                  El color va en el NÚMERO y en el ÍCONO, nunca en el fondo de la
+                  tarjeta: es la regla que `StatCard` documenta y la razón por la
+                  que `activeBg`/`inactiveBg` se retiraron. */}
+              <CarrilCards ariaLabel="Resumen de la quincena">
+                <StatCard icon={Users} label="Empleados" value={withData}
+                  iconBg="bg-brand/10" iconCls="text-brand-text" sub="Con marcajes" />
+                <StatCard icon={Clock} label="Horas regulares" value={`${totReg.toFixed(1)}h`}
+                  sub="En la quincena" />
+                <StatCard icon={TrendingUp} label="Horas extra" value={`${totOT.toFixed(1)}h`}
+                  valueCls={totOT > 0 ? 'text-warning-text' : 'text-content-3'}
+                  iconBg={totOT > 0 ? 'bg-warning/10' : undefined}
+                  iconCls={totOT > 0 ? 'text-warning-text' : undefined}
+                  sub="Sobre la jornada" />
+                <StatCard icon={CalendarRange} label="Ausencias" value={totAbs}
+                  valueCls={totAbs > 0 ? 'text-danger-text' : 'text-content-3'}
+                  iconBg={totAbs > 0 ? 'bg-danger/10' : undefined}
+                  iconCls={totAbs > 0 ? 'text-danger-text' : undefined}
+                  sub="Días sin marcaje" />
+              </CarrilCards>
 
               {/* Branch sections — accordion */}
               {Array.from(employeesByBranch.entries())

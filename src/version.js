@@ -16,8 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.277.0';
+export const APP_VERSION = '2.278.0';
 
+// v2.278.0 — Auditoria completa: 29 rutas × 6 resoluciones, y el ultimo hueco.
+//
+// **Runtime, 174 muestras** (390/430/768/1280/1512/1920 × 29 rutas):
+// cero ErrorBoundary, cero desborde horizontal, cero rutas rotas. La pildora
+// aparece en 20-22 vistas de escritorio y la barra flotante en 19 de telefono.
+//
+// **El unico hueco real: `AttendanceAuditView`** tenia cuatro tarjetas de
+// metrica a mano —grilla propia de 2×4, `p-4` propio, squircle propio y un
+// `text-[1.85rem]` que no esta en ninguna rampa—. Migradas a `StatCard` dentro
+// de `CarrilCards`: 148px en telefono, 200 en escritorio, sin desborde.
+//
+// **Y por que el barrido anterior no las vio**: buscaba las clases canonicas de
+// tipografia (`text-title`, `text-body-lg`). Estas eran MAS a mano de lo que el
+// detector asumia, asi que se colaron por el hueco de su propia hipotesis. El
+// detector nuevo busca cualquier tamano, incluido el arbitrario. Queda como
+// leccion: un detector escrito a partir del canonico solo encuentra lo que casi
+// cumple el canonico.
+//
+// Los `text-[Nrem]` que quedan son los digitos del reloj del kiosco
+// (`TimeClockView`), superficie bespoke de DESIGN.md §25.4.
+//
 // v2.277.0 — Un solo material para la capa movil, sombra hacia arriba, y en solido
 // otra animacion.
 //

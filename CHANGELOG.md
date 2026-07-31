@@ -12,6 +12,48 @@ retomar; acá está todo.
 
 ---
 
+## v2.272.0 — Una recarga entregaba dos sesiones, y todo el arranque se hacía dos veces
+
+Se investigaba por qué `roles` y `role_permissions` se pedían 4 veces al
+recargar. Medido en el build de **producción** (no en dev: lo primero que hubo
+que descartar era StrictMode, y se reproduce igual sin él), la causa no estaba
+en ninguna de las dos tablas.
+
+`onAuthStateChange` recibe **dos** eventos por recarga: `SIGNED_IN` y, ~130 ms
+después, `INITIAL_SESSION` — con idéntico `access_token`, `expires_at` y
+`user.id`. Es la misma sesión anunciada dos veces. El listener los trataba como
+dos, así que cada recarga corría el arranque completo por duplicado:
+`ensure_user_by_code` ×2 (una edge function, el duplicado más caro), perfil +
+permisos ×2, y refirmado de fotos de más.
+
+El filtro compara el **token**, no el usuario: `TOKEN_REFRESHED` trae uno nuevo
+y sí tiene que reprocesarse.
+
+Y se sacó la llamada explícita a `refreshPermissions(u)` de `procesarSesion`: el
+efecto de `[user?.id, user?.roleId, user?.secondaryRoleId]` ya cubre los dos
+casos — si el rol cambió en el servidor esos ids cambian y dispara solo, y si no
+cambió, el arranque desde el cache local ya trajo los permisos frescos de red
+~70 ms antes.
+
+| recarga en /dashboard | antes | después |
+|---|---|---|
+| peticiones a Supabase | 83 | 76 |
+| `ensure_user_by_code` | 2 | 1 |
+| `role_permissions` (permisos) | 3 | 1 |
+| `roles` (price/is_su) | 3 | 1 |
+
+Verificado que no rompe nada: login desde cero (contexto limpio, sin
+`localStorage`) aterriza en `/overview` con los 95 módulos de permisos y 36
+enlaces de menú, y la recarga los conserva.
+
+**Queda anotado un hallazgo del mismo arranque, sin resolver:** las fotos de los
+26 empleados se descargan **dos veces** (~500 kB de más). No es la vista
+pidiéndolas dos veces — se re-firman en cada boot aunque la firma cacheada siga
+viva, y el token nuevo cambia la URL, así que el cache del navegador no acierta
+ni una.
+
+---
+
 ## v2.271.0 — La hoja de la barra nace del botón que se tocó, y comparte material
 
 La barra flotante y sus hojas son **una sola pieza**. Faltaban las dos cosas que

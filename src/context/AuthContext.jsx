@@ -102,6 +102,9 @@ export const AuthProvider = ({ children }) => {
   const aliveRef         = useRef(true);
   const userRef          = useRef(null);
   const skipAuthListener = useRef(false);
+  // access_token de la última sesión que ya pasó por procesarSesion (ver el
+  // filtro en el listener: una recarga entrega dos eventos con la misma sesión).
+  const sesionProcesada = useRef(null);
 
   useEffect(() => { userRef.current = user; }, [user]);
 
@@ -452,7 +455,12 @@ export const AuthProvider = ({ children }) => {
           setUser(u);
           localStorage.setItem(LS_USER, JSON.stringify(u));
           startIdleWatcher(u);
-          refreshPermissions(u);
+          // NO se llama a refreshPermissions acá: el efecto de abajo
+          // ([user?.id, user?.roleId, user?.secondaryRoleId]) ya cubre los dos
+          // casos. Si el rol cambió en el servidor, estos ids cambian y el
+          // efecto dispara solo; si no cambió, el arranque desde el cache local
+          // ya trajo los permisos frescos de red ~70 ms antes y esta llamada
+          // repetía las mismas dos consultas.
         } catch {
           // silencioso
         }
@@ -467,6 +475,7 @@ export const AuthProvider = ({ children }) => {
           stopIdleWatcher();
           clearAuthCache();
           clearErpCache();
+          sesionProcesada.current = null;
           setUser(null);
           return;
         }
@@ -479,6 +488,17 @@ export const AuthProvider = ({ children }) => {
           clearErpCache();
           return;
         }
+
+        // Una recarga entrega DOS eventos para la MISMA sesión: SIGNED_IN y,
+        // ~130 ms después, INITIAL_SESSION — medido en el build de producción,
+        // con idéntico access_token, expires_at y user.id. El listener los
+        // trataba como dos sesiones distintas, así que cada recarga invocaba
+        // `ensure_user_by_code` DOS veces (una edge function) y disparaba dos
+        // rondas de perfil + permisos + refirmado de fotos.
+        // Se compara el token y no el usuario a propósito: TOKEN_REFRESHED trae
+        // uno nuevo y sí tiene que reprocesarse.
+        if (sesionProcesada.current === session.access_token) return;
+        sesionProcesada.current = session.access_token;
 
         setTimeout(() => procesarSesion(session), 0);
       } catch {

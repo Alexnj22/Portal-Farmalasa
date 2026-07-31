@@ -16,8 +16,51 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.271.0';
+export const APP_VERSION = '2.272.0';
 
+// v2.272.0 — Una recarga entregaba DOS sesiones, y todo el arranque se hacia dos veces.
+//
+// Se investigaba por que `roles` y `role_permissions` se pedian 4 veces al
+// recargar. Medido en el build de PRODUCCION (no en dev: lo primero que hubo que
+// descartar era StrictMode, y se reproduce igual sin el), la causa no estaba en
+// ninguna de las dos tablas.
+//
+// `onAuthStateChange` recibe DOS eventos por recarga: `SIGNED_IN` y, ~130 ms
+// despues, `INITIAL_SESSION` — con **identico access_token, expires_at y
+// user.id**. Es la misma sesion anunciada dos veces. El listener los trataba
+// como dos, asi que cada recarga corria el arranque completo por duplicado:
+//
+// · **`ensure_user_by_code` 2x** — una edge function, el duplicado mas caro.
+// · **perfil + permisos 2x** — de ahi los pares de `role_permissions` + `roles`.
+// · **refirmado de fotos de mas.**
+//
+// El filtro compara el **token**, no el usuario: `TOKEN_REFRESHED` trae uno
+// nuevo y si tiene que reprocesarse.
+//
+// Y se saco la llamada explicita a `refreshPermissions(u)` de `procesarSesion`.
+// El efecto de `[user?.id, user?.roleId, user?.secondaryRoleId]` ya cubre los dos
+// casos: si el rol cambio en el servidor esos ids cambian y dispara solo; si no
+// cambio, el arranque desde el cache local ya trajo los permisos frescos de red
+// ~70 ms antes.
+//
+// Medido en `vite preview`, una recarga en /dashboard:
+//
+//                          antes  despues
+//   peticiones a Supabase      83       76
+//   ensure_user_by_code         2        1
+//   role_permissions (perms)    3        1
+//   roles (price/is_su)         3        1
+//
+// Verificado ademas que no rompe nada: login desde cero (contexto limpio, sin
+// localStorage) aterriza en /overview con los 95 modulos de permisos y 36
+// enlaces de menu, y la recarga los conserva.
+//
+// **Queda anotado un hallazgo del mismo arranque, sin resolver:** las fotos de
+// los 26 empleados se descargan DOS veces (~500 kB de mas). No es la vista
+// pidiendolas dos veces — es que se re-firman en cada boot aunque la firma
+// cacheada siga viva, y el token nuevo cambia la URL, asi que el cache del
+// navegador no acierta ni una.
+//
 // v2.271.0 — La hoja de la barra NACE del boton que se toco, y comparte material.
 //
 // La barra flotante y sus hojas son UNA sola pieza: la hoja es la barra

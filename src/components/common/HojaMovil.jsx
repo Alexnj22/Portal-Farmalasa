@@ -66,7 +66,20 @@ import { usePanelLateral } from '../../hooks/useLayoutCompacto';
  * acá en vez de tener el suyo, así que cambiarlo (o revertir la prueba de
  * `card`) sigue siendo una línea, pero ahora una línea que manda sobre todo.
  */
-export const MATERIAL_HOJA = 'card';
+// `dropdown` (72%) y no `card` (16%). El 16% se puso "EN PRUEBA" el 2026-07-30
+// para que el clúster se leyera como vidrio, y la nota de `BarraFlotante` dejó
+// escrita la forma de revertirlo junto con la medición que lo condenaba: con
+// `card`, *"SALUD 2 se lee ENTERO y cae encima de ACCIONES. Es vidrio, pero
+// ilegible"*; con `dropdown`, *"lo de atrás queda como un fantasma y los rótulos
+// se leen limpios"*.
+//
+// Lo reportó el usuario sin saber que era eso: preguntó qué eran *"esos
+// recuadros en los botones"*. No había ningún recuadro dibujado — eran los
+// bordes de las celdas de la tabla de atrás, atravesando la hoja. Una hoja es
+// una superficie sobre la que se LEE y se decide; el criterio que `index.css`
+// fija para lo que flota sobre contenido es que lo de atrás sea LUZ, no texto, y
+// a 16% era texto.
+export const MATERIAL_HOJA = 'dropdown';
 
 const TONO = {
     brand:   'text-brand-text bg-brand/12',

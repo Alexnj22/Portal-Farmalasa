@@ -77,9 +77,15 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     // definir un componente ahí adentro lo re-crea en cada pasada y React
     // remonta el subárbol entero, perdiendo el estado del formulario. El lint lo
     // marca ("Cannot create components during render") y tiene razón.
-    const envolver = (hijos) => enTactil
-        ? <HojaMovil titulo="Configuración Min/Max" icono={Settings2}>{hijos}</HojaMovil>
-        : <div>{hijos}</div>;
+    //
+    // Recibe cuerpo y pie POR SEPARADO. Iban los dos como `children`, y en la
+    // hoja los `children` caen dentro del cuerpo scrolleable: el pie se iba con
+    // el scroll en vez de quedar fijo abajo, así que acostado quedaba debajo del
+    // pliegue y se veía cortado. `HojaMovil` ya tiene la ranura `pie`, que lo
+    // ancla y le pone su área segura.
+    const envolver = (cuerpo, pie) => enTactil
+        ? <HojaMovil titulo="Configuración Min/Max" icono={Settings2} pie={pie}>{cuerpo}</HojaMovil>
+        : <div>{cuerpo}{pie}</div>;
 
     return (
         // `ModalShell` y no un overlay a mano (2026-07-30). Este panel se montaba
@@ -95,7 +101,11 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         <ModalShell open onClose={onClose} maxWidthClass="max-w-sm"
             zClass="z-modal" ariaLabel="Configuración de Min/Max"
             surface={enTactil ? null : undefined}
-            animacionPropia={enTactil}
+            // SIN `animacionPropia`. La tenía, y `animacionPropia` significa "el
+            // hijo se anima solo" — pero este panel no se animaba: solo apagaba
+            // la de `ModalShell`. Resultado: aparecía de golpe, sin la gota, y
+            // como `useGotaApertura` es quien cuelga `__gota`, el asa tampoco
+            // arrastraba. Reportado como "no tienen la animación".
             panelClassName="overflow-hidden">
             {envolver(<>
                 {/* Header — solo en escritorio: en el teléfono el título y el asa
@@ -111,7 +121,13 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                 </div>
                 )}
 
-                <div className="px-4 py-3 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
+                {/* En táctil SIN `max-h`/`overflow` propios: `HojaMovil` ya da
+                    un cuerpo que scrollea, y dos contenedores scrolleables
+                    anidados es lo que se sentía como "el scroll es malo" — el
+                    dedo movía el de adentro o el de afuera según dónde cayera.
+                    En escritorio el panel no tiene alto propio, así que ahí el
+                    tope sigue haciendo falta. */}
+                <div className={`px-4 py-3 flex flex-col gap-4 ${enTactil ? '' : 'max-h-[70vh] overflow-y-auto'}`}>
                     {/* Ciclo */}
                     <section className="flex flex-col gap-2">
                         <span className="text-micro font-black uppercase tracking-widest text-content-2">Ciclo de reposición</span>
@@ -184,14 +200,14 @@ export default function ConfigPanel({ config, onSave, onClose }) {
 
                     {err && <p className="text-label text-danger-text font-semibold">{err}</p>}
                 </div>
-
-                {/* Footer */}
-                <div className="px-4 py-3 border-t border-divider flex items-center gap-2">
-                    <Button disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
-                        {saved ? 'Guardado' : 'Guardar configuración'}</Button>
-                    <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-                </div>
-            </>)}
+            </>,
+            // El pie, como ranura y no como parte del cuerpo. En escritorio
+            // conserva su borde y su relleno; en la hoja los pone `HojaMovil`.
+            <div key="pie" className={enTactil ? 'contents' : 'px-4 py-3 border-t border-divider flex items-center gap-2'}>
+                <Button disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
+                    {saved ? 'Guardado' : 'Guardar configuración'}</Button>
+                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+            </div>)}
         </ModalShell>
     );
 }

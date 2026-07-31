@@ -12,6 +12,34 @@ retomar; acá está todo.
 
 ---
 
+## v2.304.0 — Los paneles de MinMax al canónico, y la hoja deja de ser translúcida
+
+**`ConfigPanel` y `LabsPanel` no eran canónicos.** Pasaban
+`animacionPropia={enTactil}`, que significa "el hijo se anima solo" — pero
+ninguno se animaba: solo *apagaban* la del canónico. Aparecían de golpe, y como
+`useGotaApertura` es quien cuelga `__gota`, el asa tampoco arrastraba.
+
+**El pie iba como `children`**, y en una hoja los children caen dentro del cuerpo
+scrolleable: se iba con el scroll en vez de quedar anclado, así que acostado
+quedaba cortado. Ahora usa la ranura `pie` de `HojaMovil`.
+
+**El scroll malo era un scroll anidado**: el cuerpo traía `max-h-[70vh]
+overflow-y-auto` propio dentro del cuerpo que `HojaMovil` ya scrollea, así que el
+dedo movía uno u otro según dónde cayera.
+
+**"¿Qué es ese recuadro en los botones?" — no había ningún recuadro.** Eran los
+bordes de las celdas de la tabla de atrás atravesando la hoja. `MATERIAL_HOJA`
+estaba en `card` (16 %), puesto *en prueba* el 2026-07-30; la nota de
+`BarraFlotante` ya tenía escrita la medición que lo condenaba y cómo revertirlo.
+Vuelve a `dropdown` (72 %): "MIN · MAX" pasó de leerse entero a ser un fantasma.
+
+**El desborde de 5px no existía**: falso positivo de la métrica de auditoría. El
+span mide 41px dentro de un botón de 77 y está recortado por el `overflow-hidden`
+del propio botón. La métrica comparaba cajas de layout ignorando el recorte de
+los ancestros.
+
+---
+
 ## v2.303.0 — El hueco del borde, el asa que no arrastraba, y el blur duplicado
 
 **El hueco a la derecha era mío.** Puse el área segura como `pr-` del

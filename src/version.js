@@ -16,8 +16,49 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.303.0';
+export const APP_VERSION = '2.304.0';
 
+// v2.304.0 — Los paneles de MinMax al canonico, y la hoja deja de ser traslucida.
+//
+// 1 · **`ConfigPanel` y `LabsPanel` no eran canonicos, y se podia senalar donde.**
+//     Pasaban `animacionPropia={enTactil}` a `ModalShell`. Eso significa "el hijo
+//     se anima solo" — pero ninguno de los dos se animaba: solo APAGABAN la del
+//     canonico. Resultado: aparecian de golpe, y como `useGotaApertura` es quien
+//     cuelga `__gota`, el asa tampoco arrastraba. Reportado como "no tienen la
+//     animacion". Se quita la prop y los dos heredan gota y arrastre.
+//
+// 2 · **El pie iba como `children`, y en una hoja los children caen DENTRO del
+//     cuerpo scrolleable.** Asi que el pie se iba con el scroll en vez de quedar
+//     anclado: acostado quedaba debajo del pliegue y se veia cortado —"Guardar
+//     configuracion" a medias, en la captura del usuario—. `HojaMovil` ya tiene
+//     la ranura `pie`, que lo ancla y le pone el area segura; `envolver()` ahora
+//     recibe cuerpo y pie por separado.
+//
+// 3 · **El scroll malo era un scroll ANIDADO.** El cuerpo traia
+//     `max-h-[70vh] overflow-y-auto` propio, dentro del cuerpo que `HojaMovil` ya
+//     hace scrollear: el dedo movia uno u otro segun donde cayera. En tactil se
+//     quita el tope propio; en escritorio se conserva, porque ahi el panel no
+//     tiene alto propio y el tope si hace falta.
+//
+// 4 · **"¿Que es ese recuadro en los botones?" — no habia ningun recuadro.**
+//     Eran los bordes de las celdas de la tabla de atras ATRAVESANDO la hoja.
+//     `MATERIAL_HOJA` estaba en `card` (16% de opacidad), puesto "EN PRUEBA" el
+//     2026-07-30 para que el cluster se leyera como vidrio. La nota de
+//     `BarraFlotante` ya dejaba escrita la medicion que lo condenaba: con `card`
+//     *"SALUD 2 se lee ENTERO y cae encima de ACCIONES. Es vidrio, pero
+//     ilegible"*; con `dropdown` (72%) *"lo de atras queda como un fantasma"*.
+//     Vuelve a `dropdown`. Verificado en la captura: "MIN · MAX" paso de leerse
+//     entero a ser un fantasma.
+//
+// ── Y el desborde de 5px que quedo pendiente: NO existia ──────────────────
+// Era un falso positivo de MI metrica de auditoria. Medido: el span mide 41px
+// dentro de un boton de 77 (`seSaleDelBoton: -10`, `cortado: false`); lo que se
+// salia era la capa decorativa del `Button`, deliberadamente mas grande y
+// RECORTADA por el `overflow-hidden` del propio boton — el boton termina en 838
+// y el panel en 844, o sea que nada se pinta fuera. La metrica comparaba cajas
+// de layout ignorando el recorte de los ancestros. El defecto estaba en la
+// medicion, no en la app.
+//
 // v2.303.0 — El hueco del borde, el asa que no arrastraba, y el blur duplicado.
 //
 // Tres cosas reportadas sobre el panel lateral, y las tres tenian causa distinta.

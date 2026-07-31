@@ -95,9 +95,13 @@ export default function LabsPanel({ onClose, onChanged }) {
     // definir un componente ahí adentro lo re-crea en cada pasada y React
     // remonta el subárbol entero, perdiendo el estado del formulario. El lint lo
     // marca ("Cannot create components during render") y tiene razón.
-    const envolver = (hijos) => enTactil
-        ? <HojaMovil titulo="Visibilidad de laboratorios" icono={FlaskConical}>{hijos}</HojaMovil>
-        : <div className="flex flex-col">{hijos}</div>;
+    //
+    // Cuerpo y pie POR SEPARADO: en la hoja los `children` caen dentro del cuerpo
+    // scrolleable, así que un pie pasado como hijo se va con el scroll en vez de
+    // quedar anclado. `HojaMovil` tiene la ranura `pie` justo para eso.
+    const envolver = (cuerpo, pie) => enTactil
+        ? <HojaMovil titulo="Visibilidad de laboratorios" icono={FlaskConical} pie={pie}>{cuerpo}</HojaMovil>
+        : <div className="flex flex-col">{cuerpo}{pie}</div>;
 
     return (
         // `ModalShell` y no un overlay a mano (2026-07-30): sin scrim, sin
@@ -112,7 +116,9 @@ export default function LabsPanel({ onClose, onChanged }) {
         <ModalShell open onClose={onClose} maxWidthClass="max-w-xs"
             zClass="z-modal" ariaLabel="Laboratorios ocultos en Min/Max"
             surface={enTactil ? null : undefined}
-            animacionPropia={enTactil}
+            // SIN `animacionPropia`: significa "el hijo se anima solo", y este
+            // panel no se animaba — solo apagaba la de `ModalShell`. Sin la gota
+            // no hay `__gota`, y sin `__gota` el asa no arrastra.
             panelClassName="overflow-hidden">
             {envolver(<>
 
@@ -193,12 +199,11 @@ export default function LabsPanel({ onClose, onChanged }) {
                         );
                     })}
                 </div>
-
-                {/* Footer */}
-                <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>
-                    <Button variant="ghost" onClick={onClose}>Cerrar</Button>
-                </div>
-            </>)}
+            </>,
+            <div key="pie" className={enTactil ? 'contents' : 'px-3 pb-3 pt-1 border-t mt-auto'}
+                style={enTactil ? undefined : glass.divider}>
+                <Button variant="ghost" onClick={onClose}>Cerrar</Button>
+            </div>)}
         </ModalShell>
     );
 }

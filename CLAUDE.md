@@ -52,7 +52,68 @@ $$;
 
 **Tablas seguras para bulk load sin paginar** (siempre <1000 filas): `branches`, `roles`, `presentaciones`, `laboratorios`.
 
-**Tablas que REQUIEREN paginación**: `products`, `inventory`, `dte_sales`, `product_stock_params`, `get_stock_analysis` (RPC).
+**Tablas que REQUIEREN paginación**: `products`, `inventory`, `dte_sales`, `product_stock_params`, `sales_invoices`, `pedido_items`, `get_stock_analysis` (RPC).
+
+**El helper canónico es `fetchAllRows`** (`src/utils/supabaseUtils.js`) — no
+escribir el bucle de `.range()` a mano. Y **`.limit(1000)` está prohibido**: es
+el cap exacto, así que el día que la tabla lo cruza trunca en silencio sin
+error. Si querés un tope, que sea un número menor y deliberado.
+
+---
+
+## REGLA CRÍTICA: el tipo de la columna manda, no el nombre
+
+Descubierto en la auditoría del 2026-07-30 (`docs/AUDITORIA-COMPLETA-2026-07-30.md`).
+`sales_invoices.recibido_mh` **es `text`**: guarda el sello de recepción de
+Hacienda (40 caracteres), no un booleano. Pero el nombre suena a booleano, así
+que el frontend hizo las dos cosas mal:
+
+```js
+.eq('recibido_mh', true)        // text = 'true' → CERO filas, siempre
+.update({ recibido_mh: true })  // escribe la cadena 'true' SOBRE el sello fiscal
+```
+
+La lista "confirmadas por Hacienda" estuvo vacía desde siempre y nadie lo notó,
+porque una query que devuelve 0 filas no falla. Lo mismo con
+`employees.is_admin`: la columna se eliminó, tres funciones de
+`src/data/requests.js` la siguen consultando, y como son los fallbacks del
+enrutador de aprobadores, una solicitud puede quedarse **sin aprobador**.
+
+**Antes de comparar o escribir un literal `true`/`false`, verificar el tipo real
+de la columna.** `scripts/db/boolean-columns.json` es el snapshot de prod y
+`npm run gate:data` lo cruza contra el código. **Regenerar ese JSON al agregar o
+cambiar una columna booleana** (el SQL está en su encabezado).
+
+---
+
+## REGLA: librerías pesadas SOLO por `await import()`
+
+Una librería que sólo hace falta al apretar un botón no puede viajar en el chunk
+de la vista. `pedidoPrint.js` importaba `pdfmake`+`vfs_fonts` de forma estática:
+entrar a Pedidos costaba **939 kB gzip** (4× el tablero entero) aunque nadie
+imprimiera, y 3 de los 4 importadores de ese archivo sólo usan su matemática
+pura. Corregido en v2.280.0 → 131 kB.
+
+El patrón correcto ya existía en el repo (`LoginView` con `@zxing`,
+`PhotoEditorModal` con `@imgly`); lo que faltaba era la regla escrita:
+
+```js
+let libPromise = null;
+function getLib() {
+  if (!libPromise) {
+    libPromise = import('la-lib')
+      .then(m => m.default || m)
+      .catch(err => { libPromise = null; throw err; });  // reintentar, no quedar roto
+  }
+  return libPromise;
+}
+```
+
+Lo vigila `npm run gate:bundle` (necesita `npm run build` antes). La lista vive
+en la constante `PESADAS` de `scripts/bundle-gate.mjs`, **cada una con su motivo
+escrito**. El gate mide el cierre **estático** de cada ruta lazy — que es el
+peso real de entrar a una vista, y es justo lo que una medición con caché
+caliente no puede ver.
 
 ---
 
@@ -162,7 +223,13 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    sin RLS — `anon` no debe ver nada.
 2. **Toda FK**: con índice que la cubra (`CREATE INDEX ... ON tabla(col_fk)`), excepto
    columnas de puro audit (`*_por`, `created_by`) en tablas pequeñas.
-3. **Policies de escritura**: usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
+3. **Policies de escritura**: `USING (true)` está prohibido para UPDATE/DELETE
+   **y `WITH CHECK (true)` para INSERT** — el INSERT es el que faltaba en esta
+   regla y por ahí se colaron dos (auditoría 2026-07-30): `attendance` y
+   `audit_logs` aceptan hoy cualquier fila de cualquier usuario autenticado, o
+   sea que se puede fabricar una marcación y falsificar la bitácora. Una tabla
+   append-only no necesita policy de DELETE, pero **sí** necesita que su INSERT
+   diga quién puede escribir qué. Usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
    (helper que resuelve al empleado por uid/code/username y chequea can_edit en
    role_permissions) — NUNCA `USING (true)` para UPDATE/DELETE en tablas sensibles.
    **CRÍTICO (incidente 2026-07-08): TODA llamada a funciones `auth_*` en una policy

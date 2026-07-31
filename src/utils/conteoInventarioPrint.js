@@ -3,11 +3,29 @@
 // número de página, downloadPdf) pero autocontenido — pedidoPrint.js trae
 // lógica específica de despacho/factor que no aplica a un conteo físico.
 
-import pdfMake from 'pdfmake/build/pdfmake';
-import vfsFonts from 'pdfmake/build/vfs_fonts';
 import { exportCsv } from './csvExport';
 
-pdfMake.addVirtualFileSystem(vfsFonts);
+// pdfmake bajo demanda — mismo motivo que en pedidoPrint.js: estático metía
+// 809 kB gzip de fuentes embebidas en el chunk de ConteoDetailView, y esta
+// vista también exporta CSV (exportAjustesConteo) sin tocar el PDF.
+// Lo vigila `npm run gate:bundle` (auditoría 2026-07-30).
+let pdfMakePromise = null;
+function getPdfMake() {
+    if (!pdfMakePromise) {
+        pdfMakePromise = Promise.all([
+            import('pdfmake/build/pdfmake'),
+            import('pdfmake/build/vfs_fonts'),
+        ]).then(([mk, fonts]) => {
+            const pdfMake = mk.default || mk;
+            pdfMake.addVirtualFileSystem(fonts.default || fonts);
+            return pdfMake;
+        }).catch((err) => {
+            pdfMakePromise = null; // reintentar en el próximo click
+            throw err;
+        });
+    }
+    return pdfMakePromise;
+}
 
 const PAGE_MARGINS = [24, 22, 24, 44];
 
@@ -145,12 +163,13 @@ function footerFirmas(labelIzq, labelDer) {
     });
 }
 
-function downloadPdf(docDefinition, filename) {
+async function downloadPdf(docDefinition, filename) {
+    const pdfMake = await getPdfMake();
     pdfMake.createPdf(docDefinition).download(filename);
 }
 
 // items: filas de get_conteo_items_jsonb. ciego=true oculta la columna Sistema.
-export function printHojaConteo(conteo, items, { ciego = false } = {}) {
+export async function printHojaConteo(conteo, items, { ciego = false } = {}) {
     const docDefinition = {
         pageSize: 'LETTER',
         pageMargins: PAGE_MARGINS,
@@ -162,7 +181,7 @@ export function printHojaConteo(conteo, items, { ciego = false } = {}) {
         ],
         footer: footerFirmas('Contado por', 'Sucursal'),
     };
-    downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Hoja.pdf`);
+    await downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Hoja.pdf`);
 }
 
 // ── Reporte de resultados ────────────────────────────────────────────────────
@@ -354,7 +373,7 @@ function ajusteHeaderBlock(conteo, faltantes, sobrantes) {
     };
 }
 
-export function printAjustesConteo(conteo, items) {
+export async function printAjustesConteo(conteo, items) {
     const ajustes = items.filter(esAjuste);
     const faltantes = ajustes.filter((i) => i.diferencia < 0);
     const sobrantes = ajustes.filter((i) => i.diferencia > 0);
@@ -387,7 +406,7 @@ export function printAjustesConteo(conteo, items) {
         content,
         footer: footerFirmas('Aplicado en el ERP por', 'Fecha de aplicación'),
     };
-    downloadPdf(docDefinition, `Ajuste_ERP_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+    await downloadPdf(docDefinition, `Ajuste_ERP_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
 }
 
 // Mismo contenido en CSV: para filtrar, ordenar o cargar en lote si el ERP lo
@@ -422,7 +441,7 @@ export function exportAjustesConteo(conteo, items) {
 }
 
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.
-export function printResultadosConteo(conteo, items, { soloDiferencias = false } = {}) {
+export async function printResultadosConteo(conteo, items, { soloDiferencias = false } = {}) {
     const filtered = soloDiferencias ? items.filter((i) => i.diferencia != null && i.diferencia !== 0) : items;
     const docDefinition = {
         pageSize: 'LETTER',
@@ -437,5 +456,5 @@ export function printResultadosConteo(conteo, items, { soloDiferencias = false }
         ].filter(Boolean),
         footer: footerFirmas('Contado por', 'Revisado por'),
     };
-    downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Resultados.pdf`);
+    await downloadPdf(docDefinition, `Conteo_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}_Resultados.pdf`);
 }

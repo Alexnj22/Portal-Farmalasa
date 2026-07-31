@@ -3,11 +3,32 @@
 // las hojas vía headerRows, márgenes exactos, filas atómicas (dontBreakRows).
 // qty siempre en PACKS (cajas/blisters/frascos), no en unidades.
 
-import pdfMake from 'pdfmake/build/pdfmake';
-import vfsFonts from 'pdfmake/build/vfs_fonts';
 import { fetchErpSucursalAddressMap } from '../data/pedidos';
 
-pdfMake.addVirtualFileSystem(vfsFonts);
+// pdfmake se carga BAJO DEMANDA. Estático costaba 809 kB gzip en el chunk de
+// PedidosView (vfs_fonts son las fuentes embebidas en base64): se bajaban al
+// ENTRAR a Pedidos, imprimiera el usuario o no — 4× el peso del tablero entero.
+// Este módulo también exporta matemática pura (getPageGroups, buildPedidoCodigo,
+// fefoProject, toDispatch…) que 3 de sus 4 importadores usan SIN imprimir nada;
+// con el import estático esos tres pagaban las fuentes igual.
+// Lo vigila `npm run gate:bundle` (auditoría 2026-07-30).
+let pdfMakePromise = null;
+function getPdfMake() {
+    if (!pdfMakePromise) {
+        pdfMakePromise = Promise.all([
+            import('pdfmake/build/pdfmake'),
+            import('pdfmake/build/vfs_fonts'),
+        ]).then(([mk, fonts]) => {
+            const pdfMake = mk.default || mk;
+            pdfMake.addVirtualFileSystem(fonts.default || fonts);
+            return pdfMake;
+        }).catch((err) => {
+            pdfMakePromise = null; // reintentar en el próximo click, no quedar roto
+            throw err;
+        });
+    }
+    return pdfMakePromise;
+}
 
 const ERP_NAMES_DEFAULT = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -385,7 +406,8 @@ function buildDocDefinition(sections, title, meta, logo, addrMap) {
     };
 }
 
-function downloadPdf(docDefinition, filename) {
+async function downloadPdf(docDefinition, filename) {
+    const pdfMake = await getPdfMake();
     pdfMake.createPdf(docDefinition).download(filename);
 }
 
@@ -505,6 +527,7 @@ export async function getExactPageGroups(sucId, rawItems) {
     };
 
     // getBuffer() retorna una Promise (no usa callback en v0.3.11)
+    const pdfMake = await getPdfMake();
     await pdfMake.createPdf(docDef).getBuffer();
 
     const pageNums = Object.keys(pageFirstIdx).map(Number).sort((a, b) => a - b);
@@ -626,7 +649,8 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
     pdfs.forEach(({ section, filename }, idx) => {
         setTimeout(() => {
             const docDef = buildDocDefinition([section], section.codigo ?? section.nombre, meta, logo, addrMap);
-            downloadPdf(docDef, filename);
+            // dentro de setTimeout no hay a quién propagarle el rechazo
+            downloadPdf(docDef, filename).catch(err => console.error('[pedidoPrint] descarga falló:', err));
         }, idx * 150);
     });
 }
@@ -696,5 +720,5 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
             ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${ds}`
             : `Pedido_${String(pedidoNumero).padStart(3,'0')}_${ds}`);
     const filename = `${title.replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`;
-    downloadPdf(buildDocDefinition(sections, title, meta, logo, addrMap), filename);
+    await downloadPdf(buildDocDefinition(sections, title, meta, logo, addrMap), filename);
 }

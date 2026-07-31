@@ -16,8 +16,47 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.282.0';
+export const APP_VERSION = '2.283.0';
 
+// v2.283.0 — Auditoria completa: Pedidos pesaba 939 kB por unas fuentes que nadie
+// pidio, y dos columnas se estaban leyendo con el tipo equivocado.
+//
+// **809 kB de fuentes PDF que se bajaban al ENTRAR.** `pedidoPrint.js` importaba
+// `pdfmake` + `vfs_fonts` de forma ESTATICA, asi que abrir Pedidos costaba 939 kB
+// gzip —4x el tablero entero— imprimiera el usuario o no. Igual ConteoDetalle
+// (865 kB). Peor: ese archivo tambien exporta matematica pura (`getPageGroups`,
+// `buildPedidoCodigo`, `fefoProject`) y **3 de sus 4 importadores solo usan eso**
+// — pagaban las fuentes sin tocar un PDF. Ahora se cargan con `await import()` al
+// apretar imprimir. **PedidosView 939 → 131 kB. ConteoDetailView 865 → ~56 kB.**
+//
+// Esto explica un numero que la auditoria de arranque dejo sin explicar: decia que
+// el prefetch bajo Pedidos de 1,947 a 1,241 ms y lo atribuia al throttle de
+// Suspense (291 ms). Pero 706 ms con 70 ms de latencia es el tiempo de bajar
+// ~800 kB. El prefetch no arreglo Suspense: adelantaba las fuentes.
+//
+// **El tipo de la columna manda, no el nombre.** `sales_invoices.recibido_mh` es
+// `text` —guarda el sello de Hacienda, 40 caracteres, 337,815 filas lo tienen—
+// pero el frontend lo trata como booleano: `.eq('recibido_mh', true)` compara
+// `text = 'true'` y devuelve CERO filas **desde siempre** (la lista "confirmadas
+// por MH" nunca mostro nada), y `.update({recibido_mh: true})` escribiria la
+// cadena 'true' ENCIMA del sello fiscal. Y `employees.is_admin` **ya no existe**:
+// tres funciones de `requests.js` la siguen consultando, y son los fallbacks del
+// enrutador de aprobadores — cuando la jerarquia no encuentra a nadie, fallan las
+// dos y la solicitud queda SIN APROBADOR. Los dos quedan documentados con su
+// decision pendiente: cambiarlos altera semantica fiscal y ruteo de aprobaciones.
+//
+// **Dos gates nuevos, versionados.** `gate:data` (local, ~1s, corre en pre-commit
+// cuando el commit toca `src/` o `supabase/functions/`) cruza cada `.eq(col,true)`
+// contra un snapshot real del catalogo — es el que encontro los dos bugs de
+// arriba. `gate:bundle` (necesita build) mide el cierre ESTATICO de cada ruta
+// lazy, que es el peso real de entrar a una vista y justo lo que una medicion con
+// cache caliente no puede ver. Ambos con ratchet y baseline, como `gate:design`.
+//
+// Tambien: la regla 3 de CLAUDE.md decia `USING(true)` solo para UPDATE/DELETE —
+// por el hueco del INSERT se colaron `attendance` y `audit_logs` con
+// `WITH CHECK (true)`, o sea que hoy cualquier autenticado puede fabricar una
+// marcacion y falsificar la bitacora. Regla corregida; la migracion queda abierta.
+//
 // v2.282.0 — Cerrados los 7 pendientes y el editor de foto: no queda ningun modal
 // fuera del canonico.
 //

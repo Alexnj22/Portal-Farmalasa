@@ -67,3 +67,15 @@ node scripts/version-gate.mjs || exit 1
 if git diff --cached --name-only | grep -q '^supabase/migrations'; then
   node scripts/migration-gate.mjs || exit 1
 fi
+
+# data-gate: sólo si el commit toca código que habla con la base. Es local y
+# sin red, así que corre en ~1s. Acotado al diff preparado por el mismo motivo
+# que migration-gate: no bloquear a esta sesión por el árbol a medio editar de
+# otra. (Auditoría 2026-07-30 — cap de 1000, tipos booleanos, errores tragados.)
+if git diff --cached --name-only | grep -qE '^(src/|supabase/functions/)'; then
+  node scripts/data-gate.mjs || exit 1
+fi
+
+# bundle-gate NO va acá a propósito: necesita `npm run build` (~6 s) y un dist/
+# fresco, y un hook que obliga a buildear en cada commit se termina saltando con
+# --no-verify. Va antes de cerrar un trabajo, junto a gate:design.

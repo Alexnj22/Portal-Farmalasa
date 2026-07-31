@@ -336,13 +336,13 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                 </div>
             </div>
 
-            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
+            <LiquidModal.Footer>
                 <Button variant="secondary" size="lg" disabled={saving} onClick={handleClose}>Cancelar</Button>
                 <Button size="lg" onClick={handleSave} icon={Check}
                     disabled={saving || !isValid} loading={saving}>
                     {saving ? 'Procesando' : (isEditMode ? 'Guardar Cambios' : 'Registrar Practicante')}
                 </Button>
-            </div>
+            </LiquidModal.Footer>
         </LiquidModal>
     );
 }

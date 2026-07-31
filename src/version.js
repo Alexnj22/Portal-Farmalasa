@@ -16,8 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.269.0';
+export const APP_VERSION = '2.270.0';
 
+// v2.270.0 — La hoja canonica llega a los envoltorios que faltaban.
+//
+// v2.267.0 dejo `HojaMovil` usado solo por `ConfirmModal`. Ahora tambien:
+//
+// · **`PromptModal`** pasa a `HojaMovil`. Aca el centrado pesaba el doble que en
+//   `ConfirmModal`: este dialogo ABRE TECLADO, asi que el panel quedaba empujado
+//   hacia arriba y con los botones fuera de alcance justo cuando hay que tocarlos.
+// · **`LiquidModal`** (6 archivos) recibe la anatomia de hoja POR DENTRO: asa,
+//   esquinas rectas contra el filo, tope de 88dvh y pie apilado con area segura.
+//   No se reescribe sobre `HojaMovil` porque es un canonico de COMPOSICION
+//   —Header/Body/Footer con JSX arbitrario— y convertirlo obligaria a reescribir
+//   sus 6 llamadores. Las dos formas producen la misma hoja.
+//
+// El pie apila con `flex-col-reverse`: en escritorio la principal va a la
+// derecha, o sea que es la ultima del DOM, y en orden natural quedaba abajo del
+// todo contra el filo con "Cancelar" arriba.
+//
+// **`LiquidModal.Footer` adopto la forma que sus consumidores ya tenian a mano.**
+// El canonico existia y lo usaba 1 de 6; los otros 5 repetian el mismo div
+// caracter por caracter. Se adopto la forma real en vez de imponer otra y
+// romperlos, y se migraron los 5. Un canonico que nadie usa no es un canonico.
+//
+// **Regresion encontrada y corregida en la misma pasada:** el `pb-14` que
+// v2.264.0 le dio al carril para la sombra extendia su caja 56px hacia abajo y
+// **se comia los clics** de lo que quedara ahi. Medido en Conteo de Inventario:
+// el boton "Nuevo Conteo" era inalcanzable. `pointer-events-none` en la pista y
+// `auto` en las tarjetas deja el aire de la sombra como lo que es: aire.
+//
 // v2.269.0 — EN PRUEBA: el cluster de la barra flotante pasa a `card` (16%).
 //
 // El usuario reporto que no se ve que sea liquidglass, y tiene fundamento: el

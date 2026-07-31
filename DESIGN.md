@@ -1756,6 +1756,27 @@ Solo el **cuerpo** scrollea. El título se queda arriba y las acciones abajo, as
 que en una hoja larga nunca hay que scrollear para recordar qué se está
 decidiendo ni para confirmarlo.
 
+#### `LiquidModal` en táctil: la misma hoja, por composición
+
+`HojaMovil` es de **props** (`titulo`, `icono`, `pie`); `LiquidModal` es de
+**composición** (`Header`/`Body`/`Footer` con JSX arbitrario de cada consumidor).
+Convertir el segundo al primero obligaría a reescribir sus 6 llamadores, así que
+en táctil se le da la anatomía de hoja **por dentro** —asa, esquinas rectas
+contra el filo, tope de 88dvh y el pie apilado con su área segura— y los cubre a
+todos sin tocar ninguno. Las dos formas producen la misma hoja.
+
+El pie apila con **`flex-col-reverse`**, no `flex-col`: en escritorio la acción
+principal va a la derecha, o sea que es la última del DOM. En orden natural
+quedaba abajo del todo, contra el filo, con "Cancelar" arriba. Invertido, "la de
+más a la derecha" se vuelve "la de más arriba" — la misma jerarquía leída de otra
+manera.
+
+**Y `LiquidModal.Footer` adoptó la forma que sus consumidores ya tenían escrita a
+mano.** El canónico existía y lo usaba 1 de 6; los otros 5 repetían el mismo div
+carácter por carácter (`flex-none px-6 md:px-10 py-5 border-t flex
+justify-between items-center`). Se adoptó esa forma real en vez de imponer otra y
+romperlos — un canónico que nadie usa no es un canónico, es una opinión.
+
 #### Una sola ranura se anuncia por su NOMBRE, y con la anatomía del clúster
 
 En el teléfono, si la vista tiene **exactamente un filtro**, el botón no dice

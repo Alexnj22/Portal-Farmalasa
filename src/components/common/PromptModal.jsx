@@ -3,6 +3,8 @@ import Button from './Button';
 import { MessageSquarePlus } from 'lucide-react';
 import ModalShell from './ModalShell';
 import PortalTextarea from './PortalTextarea';
+import HojaMovil from './HojaMovil';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 // Mismo shell visual que ConfirmModal/AlertModal (glass modal, glow, footer
 // con 2 botones) — extendido con un textarea para pedir una nota corta antes
@@ -36,6 +38,54 @@ const PromptModal = ({
     }, [isOpen]);
 
     const canConfirm = !isProcessing && (!required || text.trim().length > 0);
+
+    // En táctil, el cuerpo canónico de hoja. Acá pesa el doble que en
+    // `ConfirmModal`: este diálogo ABRE TECLADO, así que el panel centrado
+    // quedaba empujado hacia arriba y con los botones fuera de alcance justo
+    // cuando hay que tocarlos.
+    const enTactil = useMediaQuery('(hover: none)');
+    const campo = (
+        <PortalTextarea
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={placeholder}
+            readOnly={isProcessing}
+            rows={3}
+        />
+    );
+
+    if (enTactil) {
+        return (
+            <ModalShell
+                open={isOpen}
+                onClose={isProcessing ? undefined : onClose}
+                zClass="z-confirm"
+                closeOnEsc={!isProcessing}
+                closeOnBackdrop={!isProcessing}
+                surface={null}
+                ariaLabel={title}
+            >
+                <HojaMovil
+                    titulo={title}
+                    subtitulo={message}
+                    icono={MessageSquarePlus}
+                    tono="brand"
+                    pie={<>
+                        <Button variant="primary" loading={isProcessing} disabled={!canConfirm}
+                            onClick={() => onConfirm(text.trim())}>
+                            {confirmText}
+                        </Button>
+                        <Button variant="secondary" disabled={isProcessing} onClick={onClose}>
+                            {cancelText}
+                        </Button>
+                    </>}
+                >
+                    {campo}
+                </HojaMovil>
+            </ModalShell>
+        );
+    }
 
     return (
         <ModalShell

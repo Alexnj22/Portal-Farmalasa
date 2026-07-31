@@ -900,7 +900,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const empSaveTitle = empError || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
                     if (isEmpForm) {
                         return (
-                            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
+                            <LiquidModal.Footer>
                                 {/* LEFT: Anterior */}
                                 {prevStep ? (
                                     <Button variant="secondary" icon={ChevronLeft} disabled={isSaving} onClick={() => setEmpActiveTab(prevStep)}>{EMP_STEP_LABELS[prevStep]}</Button>
@@ -923,18 +923,18 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 </Button>
                                     )}
                                 </div>
-                            </div>
+                            </LiquidModal.Footer>
                         );
                     }
 
                     return (
-                        <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-base shrink-0">
+                        <LiquidModal.Footer>
                             <Button variant="secondary" size="lg" disabled={isSaving} onClick={onClose}>Cancelar</Button>
                             <Button type="submit" form="unified-modal-form" size="lg"
                         disabled={isSaving || !isFormValid} loading={isSaving} icon={Save}>
                         {isSaving ? 'Procesando' : 'Guardar Cambios'}
                     </Button>
-                        </div>
+                        </LiquidModal.Footer>
                     );
                 })()}
         </LiquidModal>

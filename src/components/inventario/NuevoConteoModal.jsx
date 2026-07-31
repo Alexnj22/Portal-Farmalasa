@@ -299,13 +299,13 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 </div>
             </div>
 
-            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-border-card flex justify-between items-center relative z-base shrink-0">
+            <LiquidModal.Footer>
                 <Button variant="secondary" size="lg" disabled={saving} onClick={onClose}>Cancelar</Button>
                 <Button size="lg" onClick={handleCreate} icon={Check}
                     disabled={saving || !isValid || !canEdit} loading={saving}>
                     {saving ? 'Generando snapshot…' : 'Iniciar Conteo'}
                 </Button>
-            </div>
+            </LiquidModal.Footer>
         </LiquidModal>
     );
 }

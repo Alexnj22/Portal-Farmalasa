@@ -1,5 +1,6 @@
 import React from 'react';
 import ModalShell from './ModalShell';
+import useMediaQuery from '../../hooks/useMediaQuery';
 
 /**
  * Standard glass modal shell for the portal.
@@ -20,6 +21,17 @@ import ModalShell from './ModalShell';
  *   ariaLabel – accessible name announced by screen readers (pass the
  *               modal's actual title — without it every LiquidModal in the
  *               app announces as the generic ModalShell default)
+ *
+ * ── En táctil es una HOJA (2026-07-30) ────────────────────────────────────
+ * `ModalShell` ya la hace entrar desde abajo. Acá se le da la anatomía que le
+ * corresponde: asa, esquinas rectas contra el filo, alto tope de 88dvh y el pie
+ * con los botones APILADOS a ancho completo y su área segura.
+ *
+ * No se reescribe sobre `HojaMovil` porque este canónico es de composición
+ * —`Header`/`Body`/`Footer` con JSX arbitrario de cada consumidor— y `HojaMovil`
+ * es de props. Convertirlo obligaría a reescribir los 6 llamadores; darle la
+ * anatomía por dentro los cubre a todos sin tocar ninguno. Las dos formas
+ * producen la misma hoja.
  */
 export default function LiquidModal({
     open = true,
@@ -30,6 +42,7 @@ export default function LiquidModal({
     ariaLabel,
     children,
 }) {
+    const enTactil = useMediaQuery('(hover: none)');
     return (
         <ModalShell
             open={open}
@@ -39,9 +52,24 @@ export default function LiquidModal({
             ariaLabel={ariaLabel}
         >
             <div
+                // `data-hoja` le dice a `ModalShell` que no la parchee: el parche
+                // es para los cuerpos heredados, y acá la anatomía ya es de hoja.
+                data-hoja={enTactil ? 'true' : undefined}
                 data-surface="modal"
-                className={`w-full flex flex-col overflow-hidden relative animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${className}`}
+                className={`w-full flex flex-col overflow-hidden relative
+                    ${enTactil
+                        // Sin `zoom-in`: una hoja sube, no aparece creciendo. Y
+                        // `rounded-b-none!` con importancia porque el radio lo fija
+                        // `[data-surface="modal"]`, selector de atributo que le gana
+                        // por orden de hoja.
+                        ? 'max-h-[88dvh] rounded-t-modal rounded-b-none!'
+                        : 'animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]'}
+                    ${className}`}
             >
+                {enTactil && (
+                    <div aria-hidden="true"
+                        className="w-9 h-1 rounded-full bg-content-3/40 mx-auto mt-3 -mb-1 shrink-0 relative z-base" />
+                )}
                 {/* Glass layer — sits behind all content; color por tema y
                     apagada en solid/solid-dark (ver .modal-glass-layer en index.css) */}
                 <div
@@ -78,11 +106,31 @@ LiquidModal.Body = function LiquidModalBody({ children, className = '' }) {
 };
 
 /**
- * Footer section — slightly frosted so it reads as a distinct action area.
+ * Footer section — la zona de acciones.
+ *
+ * La forma de escritorio es la que **4 de los 6 consumidores ya tenían escrita a
+ * mano**, carácter por carácter: `flex-none px-6 md:px-10 py-5 border-t flex
+ * justify-between items-center`. El canónico existía y casi nadie lo usaba, así
+ * que se adopta la forma real en vez de imponer otra y romperlos.
  */
 LiquidModal.Footer = function LiquidModalFooter({ children, className = '' }) {
+    // En táctil los botones se APILAN a ancho completo. En fila se reparten los
+    // 390px del teléfono y quedan dos blancos apretados; apilados son dos
+    // objetivos enteros, que es lo que el pulgar acierta sin mirar. Y el pie
+    // toca el filo de la pantalla, así que se reserva el área segura.
+    //
+    // `flex-col-reverse` y no `flex-col`: en escritorio la acción principal va a
+    // la DERECHA, así que es la última del DOM. Apilando en orden natural quedaba
+    // abajo del todo —el peor sitio, contra el filo— y "Cancelar" arriba. Al
+    // invertir, "la de más a la derecha" se convierte en "la de más arriba", que
+    // es la misma jerarquía leída de otra manera.
+    const enTactil = useMediaQuery('(hover: none)');
     return (
-        <div className={`flex-none bg-surface-card-hover border-t border-divider px-6 py-4 relative z-base ${className}`}>
+        <div className={`flex-none border-t border-divider relative z-base shrink-0
+            ${enTactil
+                ? 'flex flex-col-reverse gap-2 px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] [&>*]:w-full [&_button]:w-full'
+                : 'bg-transparent px-6 md:px-10 py-5 flex justify-between items-center'}
+            ${className}`}>
             {children}
         </div>
     );

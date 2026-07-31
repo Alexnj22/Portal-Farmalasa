@@ -1071,12 +1071,12 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
                 )}
             </div>
 
-            <div className="flex-none px-6 py-4 border-t border-border-card flex justify-between items-center relative z-base">
+            <LiquidModal.Footer>
                 <Button variant="secondary" disabled={busy} onClick={handleClose}>Cancelar</Button>
                 <Button icon={CheckCircle2} disabled={busy} loading={busy} onClick={handleConfirm}>
                     Finalizar
                 </Button>
-            </div>
+            </LiquidModal.Footer>
         </LiquidModal>
     );
 }

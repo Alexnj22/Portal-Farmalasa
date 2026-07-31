@@ -12,6 +12,28 @@ retomar; acá está todo.
 
 ---
 
+## v2.270.0 — La hoja canónica llega a los envoltorios que faltaban
+
+`PromptModal` pasa a `HojaMovil` — ahí el centrado pesaba el doble, porque ese
+diálogo **abre teclado** y dejaba los botones fuera de alcance. `LiquidModal`
+(6 archivos) recibe la anatomía de hoja por dentro: asa, esquinas rectas, tope de
+88dvh y pie apilado con área segura. No se reescribe sobre `HojaMovil` porque es
+un canónico de composición y convertirlo obligaría a reescribir sus 6 llamadores.
+
+El pie apila con `flex-col-reverse`: en escritorio la principal va a la derecha,
+o sea que es la última del DOM, y en orden natural quedaba contra el filo.
+
+**`LiquidModal.Footer` adoptó la forma que sus consumidores ya tenían a mano** —
+lo usaba 1 de 6 y los otros 5 repetían el mismo div carácter por carácter. Se
+adoptó la forma real y se migraron los 5.
+
+**Regresión corregida:** el `pb-14` que v2.264.0 le dio al carril extendía su caja
+56px hacia abajo y se comía los clics de lo que quedara ahí (medido: "Nuevo
+Conteo" era inalcanzable). `pointer-events-none` en la pista, `auto` en las
+tarjetas.
+
+---
+
 ## v2.269.0 — En prueba: el clúster de la barra flotante pasa a `card` (16%)
 
 El 72% de `dropdown` se subió para tapar un blur que estaba **muerto** por el bug

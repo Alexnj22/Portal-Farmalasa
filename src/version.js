@@ -16,8 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.267.0';
+export const APP_VERSION = '2.268.0';
 
+// v2.268.0 — El filtro unico con la anatomia del cluster, y la pagina termina
+// donde termina el contenido.
+//
+// **El filtro unico ya no es un select embebido.** En la barra todo lo demas es
+// un circulo con su rotulo debajo; un select estirado ahi adentro era la unica
+// pieza con otra anatomia. Ahora es un boton del cluster que se anuncia POR SU
+// NOMBRE —"Sucursal", no "Filtros"— y lleva el icono de ese control, asi que se
+// sabe que hay adentro sin abrirlo.
+//
+// El icono se lee del propio control y no de una prop nueva en cada vista:
+// `FilterBar.Opciones` ya recibe el suyo y `FilterBar.Sucursal` lo publica como
+// estatico. Una prop opcional es una prop que alguien va a olvidar — la misma
+// leccion del `buscador` que solo 1 de 22 vistas pasaba.
+//
+// **Y la pagina termina donde termina el contenido.** v2.267.0 sumo el alto de
+// la barra a los 40px que ya habia: quedaban 50px de vacio despues del
+// paginador, que se lee como que la vista siguiera. Ahora es
+// `max(2.5rem, alto-barra + 0.75rem)` — el `max` deja intacto el relleno de
+// escritorio donde la barra no existe. Medido a 430×932: relleno 139→111px,
+// hueco visible 50→22px.
+//
 // v2.267.0 — `HojaMovil`: el cuerpo canonico de un modal en el telefono.
 //
 // v2.265.0 resolvio COMO ENTRA un modal en tactil (desde abajo). Faltaba como se

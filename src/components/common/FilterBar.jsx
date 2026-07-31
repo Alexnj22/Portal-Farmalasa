@@ -247,6 +247,10 @@ const Sucursal = memo(({ value, onChange, options = [], ancho = '150px', ...rest
     );
 });
 Sucursal.displayName = 'FilterBar.Sucursal';
+// El ícono de esta ranura, para cuando es la única y se dibuja como botón del
+// clúster en el teléfono. Estático y no prop: la vista no debería tener que
+// declarar dos veces algo que el control ya sabe.
+Sucursal.iconoRanura = Building2;
 
 /**
  * PanelDesborde — las ranuras que no entran en la píldora, tras un ícono.
@@ -266,6 +270,22 @@ Sucursal.displayName = 'FilterBar.Sucursal';
  * Va por portal y se posiciona contra el botón: dentro de la píldora quedaría
  * recortado por su propio `overflow`.
  */
+// El ícono y el rótulo de una ranura, para cuando hay UNA sola y se dibuja como
+// botón del clúster. Se leen del control que la ranura ya contiene en vez de
+// pedirle una prop nueva a cada vista: `FilterBar.Sucursal` pasa `Building2` y
+// `FilterBar.Opciones` recibe el suyo, así que el dato ya existe.
+const iconoDeSeccion = (sec) => {
+    const ctrl = sec?.props?.children;
+    // `FilterBar.Opciones` recibe su ícono por prop; `FilterBar.Sucursal` lo tiene
+    // adentro y lo publica como estático, que es la forma de que el dato salga sin
+    // pedirle nada nuevo a la vista.
+    return ctrl?.props?.icon ?? ctrl?.type?.iconoRanura;
+};
+const rotuloDeSeccion = (sec) => {
+    const l = sec?.props?.label;
+    return l ? l.charAt(0).toUpperCase() + l.slice(1) : undefined;
+};
+
 const PanelDesborde = memo(({ secciones, aplicadas }) => {
     const [abierto, setAbierto] = useState(false);
     const [caja, setCaja] = useState(null);
@@ -553,13 +573,37 @@ const FilterBar = memo(({
                         label: principal.label,
                         onClick: principal.onClick,
                     } : null}
-                    // ── Una sola ranura NO merece una hoja (2026-07-30) ──
-                    // Tocar "Filtros", esperar la hoja, ver UN control y cerrarla
-                    // son tres gestos para lo que cabe en el clúster. Con dos o
-                    // más sí: ahí la hoja los apila con su rótulo y se aplican de
-                    // una pasada.
-                    ranura={secciones.length === 1 ? secciones[0].props?.children : null}
-                    acciones={[...(secciones.length > 1 ? [{
+                    acciones={[...(secciones.length === 1 ? [{
+                        // ── Una sola ranura se anuncia POR SU NOMBRE ──────────
+                        // Con un filtro, "Filtros" es un rótulo genérico para algo
+                        // que ya tiene el suyo: el botón dice "Sucursal" y lleva el
+                        // ícono del control, así que se sabe qué hay adentro sin
+                        // abrirlo. El ícono sale del propio control —`LiquidSelect`
+                        // ya recibe uno— y no de una prop nueva en cada vista: una
+                        // prop opcional es una prop que alguien va a olvidar.
+                        //
+                        // Y es un botón del clúster, no un select embebido: en la
+                        // barra todo lo demás es un círculo con su rótulo debajo, y
+                        // un select estirado ahí adentro era la única pieza con otra
+                        // anatomía.
+                        key: 'filtro-unico',
+                        icon: iconoDeSeccion(secciones[0]) || SlidersHorizontal,
+                        label: rotuloDeSeccion(secciones[0]) || 'Filtros',
+                        tituloPanel: rotuloDeSeccion(secciones[0]) || title,
+                        badge: activeCount,
+                        panel: (
+                            <div className="[&_*]:!max-w-full flex flex-col gap-3">
+                                {secciones[0]}
+                                {onClear && activeCount > 0 && (
+                                    <button type="button" onClick={onClear}
+                                        className="h-11 rounded-btn bg-danger/12 ring-1 ring-inset ring-danger/30
+                                            text-danger-text text-caption font-black uppercase tracking-widest">
+                                        Limpiar
+                                    </button>
+                                )}
+                            </div>
+                        ),
+                    }] : []), ...(secciones.length > 1 ? [{
                         key: 'filtros',
                         icon: SlidersHorizontal,
                         // El rótulo del botón es corto y fijo: `title` puede ser

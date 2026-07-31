@@ -12,6 +12,22 @@ retomar; acá está todo.
 
 ---
 
+## v2.268.0 — El filtro único con la anatomía del clúster, y la página termina donde termina el contenido
+
+**El filtro único ya no es un select embebido.** En la barra todo lo demás es un
+círculo con su rótulo debajo; un select estirado ahí era la única pieza con otra
+anatomía. Ahora es un botón del clúster que se anuncia **por su nombre**
+—"Sucursal", no "Filtros"— y lleva el ícono de ese control. El ícono se lee del
+propio control (`Sucursal.iconoRanura`), no de una prop nueva por vista: una prop
+opcional es una prop que alguien va a olvidar.
+
+**Y la página termina donde termina el contenido.** v2.267.0 sumó el alto de la
+barra a los 40px que ya había y quedaban 50px de vacío tras el paginador. Ahora es
+`max(2.5rem, alto-barra + 0.75rem)`. Medido a 430×932: relleno 139→111px, hueco
+visible 50→22px.
+
+---
+
 ## v2.267.0 — `HojaMovil`: el cuerpo canónico de un modal en el teléfono
 
 v2.265.0 resolvió *cómo entra* un modal en táctil. Faltaba **cómo se ve por

@@ -114,10 +114,6 @@ const BarraFlotante = memo(({
     // uno solo el ícono no compite con nada y el rótulo es ruido. Se puede forzar.
     mostrarRotulos,
     ariaLabel = 'Acciones de la vista',
-    // Un control de filtro dibujado DENTRO del clúster, en vez de escondido tras
-    // el botón "Filtros". Lo usa `FilterBar` cuando la vista tiene una sola
-    // ranura — ver la nota allá.
-    ranura = null,
 }) => {
     const compacto = useMediaQuery('(max-width: 719px)');
     const [visible, setVisible] = useState(true);
@@ -226,7 +222,6 @@ const BarraFlotante = memo(({
                     abrirBusqueda={abrirBusqueda}
                     acciones={acciones}
                     principal={principal}
-                    ranura={ranura}
                     clusterRef={clusterRef}
                     rotulos={rotulos}
                     setAbierta={setAbierta}
@@ -242,7 +237,7 @@ const BarraFlotante = memo(({
 const BarraPortal = ({
     ariaLabel, visible, campoAbierto, conTexto, buscador, inputRef, setBuscando,
     abrirBusqueda, acciones, principal, rotulos, setAbierta, panelAbierto,
-    ranura, clusterRef,
+    clusterRef,
 }) => {
     return (
         <>
@@ -386,10 +381,6 @@ const BarraPortal = ({
                             principal
                             onClick={principal.onClick}
                         />
-                    )}
-
-                    {ranura && (
-                        <div className="min-w-0 flex-1 flex items-center h-11">{ranura}</div>
                     )}
 
                     {acciones.map((a) => (

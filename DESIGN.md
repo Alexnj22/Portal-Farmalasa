@@ -1756,13 +1756,20 @@ Solo el **cuerpo** scrollea. El título se queda arriba y las acciones abajo, as
 que en una hoja larga nunca hay que scrollear para recordar qué se está
 decidiendo ni para confirmarlo.
 
-#### Una sola ranura no merece una hoja
+#### Una sola ranura se anuncia por su NOMBRE, y con la anatomía del clúster
 
-En el teléfono, si la vista tiene **exactamente un filtro**, ese control se dibuja
-DENTRO del clúster de la barra flotante y el botón "Filtros" no existe. Tocar
-"Filtros", esperar la hoja, ver un control y cerrarla son tres gestos para lo que
-cabe en la barra. Con dos o más sí aparece: ahí la hoja los apila con su rótulo y
-se aplican de una pasada.
+En el teléfono, si la vista tiene **exactamente un filtro**, el botón no dice
+"Filtros" —rótulo genérico para algo que ya tiene el suyo— sino **"Sucursal"**, y
+lleva el ícono de ese control. Se sabe qué hay adentro sin abrirlo.
+
+Y es un **botón del clúster**, no un select estirado ahí adentro: en la barra
+todo lo demás es un círculo con su rótulo debajo, y un select embebido era la
+única pieza con otra anatomía.
+
+El ícono se lee del propio control y no de una prop nueva en cada vista:
+`FilterBar.Opciones` ya recibe el suyo y `FilterBar.Sucursal` lo publica como
+estático (`Sucursal.iconoRanura`). **Una prop opcional es una prop que alguien va
+a olvidar** — es la misma lección del `buscador` que solo 1 de 22 vistas pasaba.
 
 #### La barra flotante avisa cuánto ocupa
 
@@ -1770,8 +1777,14 @@ Está en `position: fixed`, así que no empuja nada: el final de la lista quedab
 **debajo** del clúster y las últimas filas eran inalcanzables. La barra publica
 `--alto-barra-flotante` midiéndose con `ResizeObserver` —el alto cambia con los
 rótulos, con el campo de búsqueda abierto y con el área segura— y el contenedor
-de scroll de `GlassViewLayout` lo suma a su relleno inferior. Medido: 107px de
-barra, 147px de `padding-bottom`.
+de scroll de `GlassViewLayout` lo suma a su relleno inferior:
+`pb-[max(2.5rem,calc(var(--alto-barra-flotante,0px)+0.75rem))]`. El `max` deja el
+relleno de escritorio intacto donde la barra no existe.
+
+Los 12px y no más: **la página tiene que terminar donde termina el contenido.**
+El primer intento sumaba la barra a los 40px que ya había y dejaba 50px de vacío
+después del paginador, que se lee como que la vista siguiera. Medido a 430×932:
+relleno 111px, hueco visible 22px.
 
 #### En la barra flotante el campo sube ENCIMA, y el buscador va último
 

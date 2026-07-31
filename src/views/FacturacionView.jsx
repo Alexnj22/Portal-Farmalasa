@@ -2064,15 +2064,17 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 // vez de exigir un sello de 40 caracteres. No las vio nadie hasta que el libro
 // IVA del ERP no cuadró por $282.58.
 
+// Etiquetas cortas a propósito: la tarjeta de `StatCard` corta alrededor de los
+// 14 caracteres, y una etiqueta truncada ("Sin código ge…") no dice nada.
 const OBSERVACIONES = {
-    SELLO_INVALIDO:        { label: 'Sello inválido',        variant: 'danger'  },
-    SIN_SELLO:             { label: 'Sin sello',             variant: 'info'    },
-    SIN_CODIGO_GENERACION: { label: 'Sin código gen.',       variant: 'danger'  },
-    ESTADO_DESCONOCIDO:    { label: 'Estado desconocido',    variant: 'danger'  },
-    TIPO_DOC_DESCONOCIDO:  { label: 'Tipo doc. desconocido', variant: 'warning' },
-    SIN_CORRELATIVO:       { label: 'Sin correlativo',       variant: 'warning' },
-    TOTAL_INVALIDO:        { label: 'Total inválido',        variant: 'danger'  },
-    SUMA_NO_CUADRA:        { label: 'Suma no cuadra',        variant: 'warning' },
+    SELLO_INVALIDO:        { label: 'Sello inválido',  variant: 'danger'  },
+    SIN_SELLO_VENCIDO:     { label: 'Sello vencido',   variant: 'warning' },
+    SIN_CODIGO_VENCIDO:    { label: 'Sin código',      variant: 'warning' },
+    ESTADO_DESCONOCIDO:    { label: 'Estado inválido', variant: 'danger'  },
+    TIPO_DOC_DESCONOCIDO:  { label: 'Tipo inválido',   variant: 'warning' },
+    SIN_CORRELATIVO:       { label: 'Sin correlativo', variant: 'warning' },
+    TOTAL_INVALIDO:        { label: 'Total inválido',  variant: 'danger'  },
+    SUMA_NO_CUADRA:        { label: 'No cuadra',       variant: 'warning' },
 };
 
 // Un código que este mapa no conoce NO se oculta: se muestra crudo, en warning.

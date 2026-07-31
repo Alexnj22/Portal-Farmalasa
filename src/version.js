@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.309.0';
+export const APP_VERSION = '2.310.0';
+
+// v2.310.0 — Observaciones era 84% ruido: el sello tarda hasta 2 dias en llegar.
+//
+// La captura de la pestaña recien hecha mostro lo que ni el build ni el lint
+// podian: de 180 filas, 151 eran facturas de HOY y AYER sin sello. Eso no es
+// una anomalia, es el estado normal de una factura recien emitida — y para eso
+// ya existe la pestaña "Pendiente MH". El ruido tapaba los 42 casos reales.
+//
+// 1 · **El umbral se MIDIO, no se estimo.** La distribucion de facturas sin
+//     sello tiene un corte limpio en 2 dias: hoy 27, 1 dia 124, **2 dias CERO**,
+//     3 dias 1, 5 dias 1, 336 dias 2. O sea el sello siempre llega dentro de 2
+//     dias; lo que pasa de ahi esta varado. `p_dias_gracia_sello` es parametro
+//     con default 2, no constante, para que ajustarlo no pida otra migracion.
+//
+// 2 · **El codigo de generacion tenia el MISMO corte** (hoy 4, 1 dia 12, 2 dias
+//     cero, 3 dias 1) porque llega junto con el sello. Comparte el parametro:
+//     es el mismo hecho fisico, no dos umbrales que coinciden de casualidad.
+//     Renombrados a SIN_SELLO_VENCIDO y SIN_CODIGO_VENCIDO — el nombre dice lo
+//     que la condicion hace.
+//
+// 3 · **Las otras clases NO llevan gracia, y eso tambien se verifico**:
+//     SELLO_INVALIDO va de 41 a 450 dias de antiguedad, y SIN_CORRELATIVO con
+//     TIPO_DOC_DESCONOCIDO son la misma factura de hace 266 dias. Ninguna es
+//     transitoria, asi que darles ventana solo las habria escondido.
+//
+// De 180 filas a 31, todas accionables. Y las etiquetas se acortaron: `StatCard`
+// corta cerca de los 14 caracteres y "Sin codigo ge…" no le dice nada a nadie.
+//
+// Nota de metodo: el bug lo encontro una captura de pantalla, no una prueba.
+// Un gate verde no ve que una lista este llena de lo que no deberia estar ahi.
 
 // v2.309.0 — La gota es de TÁCTIL: escritorio recupera su entrada.
 //

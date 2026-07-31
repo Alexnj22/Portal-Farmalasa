@@ -39,6 +39,49 @@ documentó tres veces. Escalar al 95 % no lo tiene: el blur pasa de 24px a ~23.
 
 ---
 
+## v2.310.0 — Observaciones era 84% ruido: el sello tarda hasta 2 días en llegar
+
+La captura de la pestaña recién hecha mostró lo que ni el build ni el lint podían:
+de 180 filas, **151 eran facturas de hoy y ayer sin sello**. Eso no es una
+anomalía, es el estado normal de una factura recién emitida — y para eso ya
+existe la pestaña "Pendiente MH". El ruido tapaba los 42 casos reales.
+
+**El umbral se midió, no se estimó.** La distribución de facturas sin sello tiene
+un corte limpio en 2 días:
+
+| Antigüedad | Facturas sin sello |
+|---|---|
+| hoy | 27 |
+| 1 día | 124 |
+| **2 días** | **0** ← acá sella todo |
+| 3 días | 1 |
+| 5 días | 1 |
+| 336 días | 2 |
+
+El sello siempre llega dentro de 2 días; lo que pasa de ahí está varado.
+`p_dias_gracia_sello` es parámetro con default 2, no constante, para que
+ajustarlo no pida otra migración.
+
+**El código de generación tenía el mismo corte** (hoy 4, 1 día 12, 2 días cero,
+3 días 1) porque llega junto con el sello. Comparte el parámetro: es el mismo
+hecho físico, no dos umbrales que coinciden de casualidad. Renombrados a
+`SIN_SELLO_VENCIDO` y `SIN_CODIGO_VENCIDO` — el nombre dice lo que la condición
+hace.
+
+**Las otras clases no llevan gracia, y eso también se verificó**:
+`SELLO_INVALIDO` va de 41 a 450 días de antigüedad, y `SIN_CORRELATIVO` con
+`TIPO_DOC_DESCONOCIDO` son la misma factura de hace 266 días. Ninguna es
+transitoria, así que darles ventana solo las habría escondido.
+
+De 180 filas a 31, todas accionables. Y las etiquetas se acortaron: `StatCard`
+corta cerca de los 14 caracteres y "Sin código ge…" no le dice nada a nadie.
+
+> **Nota de método.** Este bug lo encontró una captura de pantalla, no una
+> prueba. Un gate verde no ve que una lista esté llena de lo que no debería
+> estar ahí.
+
+---
+
 ## v2.308.0 — Facturación gana la pestaña que faltaba: Observaciones
 
 `v2.307.0` arregló el bug y dejó el RPC `get_invoice_observations` listo, pero sin

@@ -16,8 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.308.0';
+export const APP_VERSION = '2.309.0';
 
+// v2.309.0 — La gota es de TÁCTIL: escritorio recupera su entrada.
+//
+// Reportado: "¿por que en escritorio se ve la animacion? eso solo era para
+// movil". Tenia razon, y la compuerta nunca existio — no es algo que se rompio,
+// es que entro asi. `useGotaApertura` se llamaba con
+// `activo: !animacionPropia && !sinMovimiento`, sin preguntar por el dispositivo
+// de entrada, desde v2.279.0 ("la gota para TODO dialogo"). Ese commit la subio
+// de `HojaMovil` a `ModalShell` para que la heredaran las alertas y el ⌘K, y de
+// paso se la llevo al escritorio.
+//
+// La gota dice "esto nacio del control que TOCASTE". En escritorio no hay tal
+// toque: hay un clic con un puntero que ya esta donde apunta, asi que la premisa
+// del gesto no existe. Ahora se pide `sinHover`, el mismo criterio con el que
+// `ModalShell` ya decide hoja-contra-centrado.
+//
+// Y escritorio recupera su entrada, porque apagar la gota a secas lo dejaba
+// apareciendo de golpe — que es justo lo que la nota de motion del proyecto
+// llama "se lee como roto". Es la que tenia antes de v2.279.0
+// (`animate-in fade-in zoom-in-95`) con una resta deliberada: **sin `fade-in`**.
+// La opacidad por debajo de 1 hace que el panel componga como grupo y su propio
+// `backdrop-filter` deje de muestrear el fondo, asi que el vidrio aparecia
+// recien al terminar — el mismo defecto que este proyecto ya documento tres
+// veces. Escalar al 95% no lo tiene: el blur pasa de 24px a ~23, que no se ve. Y
+// el velo ya aporta el desvanecido por su lado.
+//
+// Verificado en los dos dispositivos de entrada:
+//   escritorio (mouse)  hover:none=false  gota=false  clases=[animate-in, zoom-in-95]
+//   tactil     (dedo)   hover:none=true   gota=true   clases=[]
+//
 // v2.308.0 — Facturación gana la pestaña que faltaba: Observaciones.
 //
 // v2.307.0 arreglo el bug y dejo el RPC `get_invoice_observations` listo, pero

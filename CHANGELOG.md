@@ -12,6 +12,33 @@ retomar; acá está todo.
 
 ---
 
+## v2.309.0 — La gota es de táctil: escritorio recupera su entrada
+
+La compuerta **nunca existió**: `useGotaApertura` se llamaba con
+`activo: !animacionPropia && !sinMovimiento`, sin preguntar por el dispositivo de
+entrada, desde v2.279.0 ("la gota para TODO diálogo"). Ese commit la subió de
+`HojaMovil` a `ModalShell` para que la heredaran las alertas y el ⌘K, y de paso
+se la llevó al escritorio.
+
+La gota dice *"esto nació del control que tocaste"*. En escritorio no hay tal
+toque — hay un clic con un puntero que ya está donde apunta—, así que la premisa
+del gesto no existe. Ahora se pide `sinHover`, el mismo criterio con el que
+`ModalShell` ya decide hoja-contra-centrado.
+
+Y escritorio recupera su entrada, porque apagar la gota a secas lo dejaba
+apareciendo de golpe. Es la que tenía antes de v2.279.0 con una resta
+deliberada: **sin `fade-in`**. La opacidad por debajo de 1 hace que el panel
+componga como grupo y su propio `backdrop-filter` deje de muestrear el fondo, así
+que el vidrio aparecía recién al terminar — el mismo defecto que el proyecto ya
+documentó tres veces. Escalar al 95 % no lo tiene: el blur pasa de 24px a ~23.
+
+| | `hover:none` | gota | animación |
+|---|---|---|---|
+| escritorio (mouse) | false | no | `animate-in zoom-in-95` |
+| táctil (dedo) | true | sí | la gota |
+
+---
+
 ## v2.308.0 — Facturación gana la pestaña que faltaba: Observaciones
 
 `v2.307.0` arregló el bug y dejó el RPC `get_invoice_observations` listo, pero sin

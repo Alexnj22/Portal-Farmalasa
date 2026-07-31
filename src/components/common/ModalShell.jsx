@@ -334,7 +334,12 @@ export default function ModalShell({
   // `BarraFlotante`, cuya hoja se anima ella misma).
   useGotaApertura({
     ref: panelRef,
-    activo: !animacionPropia && !sinMovimiento,
+    // `sinHover`: la gota es un gesto TÁCTIL. Dice "esto nació del control que
+    // TOCASTE", y en escritorio no hay tal toque — hay un clic con un puntero
+    // que ya está donde apunta, así que la premisa del gesto no existe. Entró
+    // sin esta compuerta en v2.279.0 ("la gota para TODO diálogo") y se coló al
+    // escritorio, donde la gramática es la otra: un panel que aparece.
+    activo: sinHover && !animacionPropia && !sinMovimiento,
     cerrando: !open,
   });
 
@@ -377,7 +382,19 @@ export default function ModalShell({
   // único deslizamiento del portal — y encima se leía como que el diálogo se
   // cerraba hacia abajo en vez de volver por donde vino. Sin movimiento es sin
   // movimiento: aparece y desaparece.
-  const panelAnim = "";
+  // En ESCRITORIO el panel sí lleva su animación de clases: la gota es de
+  // táctil y sin nada en su lugar el modal aparecería de golpe, que es
+  // justamente lo que la nota de motion del proyecto llama "se lee como roto".
+  // Es la que tenía antes de v2.279.0.
+  //
+  // Pero `zoom-in-95` SIN `fade-in`, y esa resta es el punto: la opacidad por
+  // debajo de 1 hace que el panel componga como grupo y su propio
+  // `backdrop-filter` deje de muestrear el fondo — el vidrio aparecía recién al
+  // terminar. Escalar al 95% no tiene ese problema: el blur pasa de 24px a ~23,
+  // que no se ve. El velo ya aporta el desvanecido por su lado.
+  const panelAnim = (animacionPropia || sinMovimiento || sinHover) ? "" : open
+    ? "animate-in zoom-in-95 duration-200"
+    : `animate-out zoom-out-95 duration-150 ${HOLD_EXIT}`;
 
   const alignCls =
     align === "top"    ? "items-start justify-center pt-[10vh] px-4" :

@@ -12,6 +12,43 @@ retomar; acá está todo.
 
 ---
 
+## v2.299.0 — La barra de Facturación, al canónico: tarjetas, píldora y pausa
+
+Seis correcciones del usuario sobre la pasada de diseño anterior, que había dado
+la vista por buena mirando el gate y no los componentes. El `gate:design` pasaba
+—y sigue pasando— porque ninguna de las seis es una clase suelta: son piezas
+escritas a mano donde ya existe un canónico, y eso el gate no lo ve.
+
+- **Tarjetas al canónico.** Las cuatro pestañas dibujaban su resumen con `<div>` a
+  mano: un cuadrito con degradado, y fondo y borde teñidos por estado. O sea el
+  vidrio del portal reescrito cuatro veces. Ahora es `StatCard` dentro de
+  `CarrilCards`, con la regla de §17.0 — el color va en el **número** y el
+  **ícono**, que es donde el color ES el dato; el fondo, nunca.
+- **La píldora, a la fila de las tarjetas.** Ocupaba un renglón entero para sí
+  sola encima de la tarjeta de contenido. Va a la derecha en la MISMA fila
+  (§17.0: las tres piezas se reparten el ancho). El nodo se construye una vez en
+  el padre y se le entrega a la pestaña activa, así que sigue habiendo una sola
+  `FilterBar` montada aunque las cuatro pestañas vivan en el DOM.
+- **Pausar/Reanudar es de la píldora.** Era un `<Button>` suelto dentro del
+  encabezado de dos pestañas —el mismo control escrito dos veces— y §17 no pone
+  controles de vista ahí. Ahora es un descriptor con `activo`, que le da
+  `aria-pressed` y el estado encendido en el clúster táctil. El estado `paused`
+  subió al padre: la decisión es de la vista, no de una pestaña.
+- **El limpiador de marcadores es una tarjeta.** Aparece solo si hay marcados,
+  con `tono="warning"` + `active` — anillo, no relleno.
+- **Fuera "Admin Facturas"** y fuera el sello `Act. hh:mm` de última
+  actualización, con su estado `lastRefresh`.
+- **El filtro de mes de No Efectivo entró a la píldora.** Era un `LiquidSelect`
+  suelto en la barra de la pestaña: un filtro fuera del contenedor, que es lo que
+  §17 prohíbe. Ocupa la ranura "período", después de sucursal (ámbito → tiempo).
+
+De paso salen `AuditThead` y `SolveRow`, definidos y nunca usados. `AuditThead`
+importaba: reintroducía el `<th onClick>` sin `tabIndex`, sin `onKeyDown` y sin
+`aria-sort` que el canónico `DataTable` arregló el 2026-07-28.
+
+Verificado en Chromium a 1512px sobre las cuatro pestañas: 0 px de desborde
+horizontal y cero errores de consola.
+
 ## v2.298.0 — El corte por dispositivo, a los 5 sitios; y el notch acostado
 
 Continuación de v2.296.0. `TablePagination` y `AbcXyzMatrix` pasan también a

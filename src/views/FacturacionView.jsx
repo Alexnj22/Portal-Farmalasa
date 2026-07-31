@@ -18,6 +18,8 @@ import { EmptyState, SkeletonText } from '../components/common/StateViews';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import FilterBar from '../components/common/FilterBar';
+import CarrilCards from '../components/common/CarrilCards';
+import StatCard from '../components/common/StatCard';
 import ListRow from '../components/common/ListRow';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
@@ -219,64 +221,7 @@ function useSortable(defaultKey, defaultDir = 'asc') {
     return { sortKey, sortDir, toggle, sortFn };
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
-// ─── Solve Row ────────────────────────────────────────────────────────────────
-function SolveRow({ colSpan, comment, setComment, onConfirm, onCancel, saving, placeholder }) {
-    return (
-        <tr>
-            <td colSpan={colSpan} className="px-5 py-4 bg-success/10 border-t border-success/30">
-                <div className="flex items-start gap-3 max-w-2xl">
-                    <PortalTextarea
-                        textareaClassName="flex-1"
-                        rows={2}
-                        autoFocus
-                        placeholder={placeholder || 'Comentario (opcional)'}
-                        value={comment}
-                        onChange={e => setComment(e.target.value)}
-                    />
-                    <div className="flex flex-col gap-2 shrink-0">
-                        <Button tone="success" disabled={saving} onClick={onConfirm}>{saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                            Confirmar</Button>
-                        <Button variant="destructive" icon={X} onClick={onCancel}>Cancelar</Button>
-                    </div>
-                </div>
-            </td>
-        </tr>
-    );
-}
 
-// ─── Sortable Table Header ────────────────────────────────────────────────────
-// cols: array of string (no sort) or { label, key } (sortable)
-function AuditThead({ cols, sortKey, sortDir, onSort, firstPl = 'pl-8', lastPr = 'pr-8' }) {
-    return (
-        <thead>
-            <tr className="bg-surface-card-hover/40 border-b border-divider">
-                {cols.map((col, i) => {
-                    const label = typeof col === 'string' ? col : col.label;
-                    const key   = typeof col === 'string' ? null : col.key;
-                    const active = key && sortKey === key;
-                    return (
-                        <th key={label}
-                            onClick={key ? () => onSort?.(key) : undefined}
-                            className={`p-5 text-label font-bold text-content-3 uppercase tracking-widest whitespace-nowrap
-                                ${i === 0 ? firstPl : ''} ${i === cols.length - 1 ? lastPr : ''}
-                                ${key ? 'cursor-pointer hover:text-content-2 select-none' : ''}`}>
-                            <span className="inline-flex items-center gap-1">
-                                {label}
-                                {key && (active
-                                    ? (sortDir === 'asc'
-                                        ? <ChevronUp size={10} className="text-brand-text" />
-                                        : <ChevronDown size={10} className="text-brand-text" />)
-                                    : <ChevronUp size={10} className="opacity-20" />
-                                )}
-                            </span>
-                        </th>
-                    );
-                })}
-            </tr>
-        </thead>
-    );
-}
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 function Pagination({ page, total, onChange }) {
@@ -298,7 +243,7 @@ function Pagination({ page, total, onChange }) {
 }
 
 // ─── Tab: Anuladas ────────────────────────────────────────────────────────────
-function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit }) {
+function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -310,8 +255,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit 
     const [resolved, setResolved] = useState([]);
     const [resolvedIds, setResolvedIds] = useState(new Set());
     const [loading, setLoading] = useState(true);
-    const [lastRefresh, setLastRefresh] = useState(null);
-    const [paused, setPaused] = useState(false);
     const [solvingId, setSolvingId] = useState(null);
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
@@ -365,7 +308,6 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit 
         setRows(invoicesData || []);
         setResolvedIds(resolvedIdSet);
         setResolved((historialRes.data || []).map(r => ({ ...r, invoice: invMap[r.invoice_id] || null })));
-        setLastRefresh(new Date());
         setLoading(false);
         pollingRef.current = false;
     }, [filterBranch]);
@@ -474,38 +416,44 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit 
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            {/* Stats strip */}
-            <div className="flex items-center gap-2 flex-wrap">
-                {[
-                    { label: 'Pendientes',   value: filtered.length, icon: AlertTriangle, grad: filtered.length > 0 ? 'from-danger to-chart-4' : 'from-chart-8 to-chart-8/70', text: filtered.length > 0 ? 'text-danger' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
-                    { label: 'CCF urgentes', value: ccfCount,        icon: AlertTriangle, grad: ccfCount > 0 ? 'from-danger to-danger/70' : 'from-chart-8 to-chart-8/70',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',        bg: 'border-border-card bg-surface-card' },
-                    { label: 'Solventadas',  value: resolved.length, icon: CheckCircle2,  grad: resolved.length > 0 ? 'from-success to-chart-9' : 'from-chart-8 to-chart-8/70', text: resolved.length > 0 ? 'text-success' : 'text-content-3', bg: 'border-border-card bg-surface-card' },
-                ].map(({ label, value, icon: Icon, grad, text, bg }) => (
-                    <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                            <Icon size={11} className="text-white" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-caption font-bold uppercase tracking-wider text-content-2">{label}</span>
-                        <span className={`text-subtitle font-black leading-none ${text}`}>{value}</span>
-                    </div>
-                ))}
-                {activeVisitedCount > 0 && (
-                    <Button tone="warning" icon={Check} onClick={clearVisited}>{activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar</Button>
-                )}
-                <div className="flex items-center gap-2 ml-auto">
-                    {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
-                    <Button
-                        size="xs"
-                        aria-pressed={paused}
-                        variant="secondary"
-                        tone={paused ? 'warning' : null}
-                        soft
-                        icon={paused ? Play : Pause}
-                        title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
-                        onClick={() => setPaused(p => !p)}>
-                        {paused ? 'Reanudar' : 'Pausar'}
-                    </Button>
-                </div>
+            {/* Carril de métricas + píldora, en UNA fila (§17.0). Las tarjetas
+                eran `<div>` a mano con un cuadrito degradado y su propio juego de
+                clases por estado — o sea el vidrio del portal reescrito, que es
+                justo lo que `StatCard` existe para evitar. El color va donde ES
+                el dato: el número y el ícono. El fondo, nunca. */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de anulaciones">
+                    <StatCard
+                        icon={AlertTriangle} label="Pendientes" value={filtered.length}
+                        iconBg={filtered.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={filtered.length > 0 ? 'text-danger' : 'text-content-3'}
+                        valueCls={filtered.length > 0 ? 'text-danger' : 'text-content'}
+                    />
+                    <StatCard
+                        icon={AlertTriangle} label="CCF urgentes" value={ccfCount}
+                        iconBg={ccfCount > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={ccfCount > 0 ? 'text-danger-text' : 'text-content-3'}
+                        valueCls={ccfCount > 0 ? 'text-danger-text' : 'text-content'}
+                    />
+                    <StatCard
+                        icon={CheckCircle2} label="Solventadas" value={resolved.length}
+                        iconBg={resolved.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
+                        iconCls={resolved.length > 0 ? 'text-success' : 'text-content-3'}
+                        valueCls={resolved.length > 0 ? 'text-success' : 'text-content'}
+                    />
+                    {/* Los marcadores son del usuario, no del dato: la tarjeta
+                        solo aparece cuando hay alguno y limpiarlos es su acción.
+                        `tono="warning"` + `active` la dibujan como seleccionada
+                        (anillo, no relleno — §17.0). */}
+                    {activeVisitedCount > 0 && (
+                        <StatCard
+                            icon={Check} label="Marcados" value={activeVisitedCount}
+                            sub="Limpiar" onClick={clearVisited} active tono="warning"
+                            iconBg="bg-warning/10" iconCls="text-warning-text"
+                        />
+                    )}
+                </CarrilCards>
+                {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
             </div>
 
             {loading ? (
@@ -699,7 +647,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser, canEdit 
 }
 
 // ─── Tab: Pendiente MH ────────────────────────────────────────────────────────
-function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit }) {
+function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEdit, paused, barraFiltros }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -713,8 +661,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
     const resolvedSectionRef = useRef(null);
     const pollingRef2 = useRef(false);
     const [loading, setLoading]         = useState(true);
-    const [lastRefresh, setLastRefresh] = useState(null);
-    const [paused, setPaused]           = useState(false);
     const [solvingId, setSolvingId]     = useState(null);
     const [comment, setComment]         = useState('');
     const [saving, setSaving]           = useState(false);
@@ -848,7 +794,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
         setRows(filteredPend);
         setResolved(allResolved);
-        setLastRefresh(new Date());
         setLoading(false);
         pollingRef2.current = false;
     }, [filterBranch]);
@@ -905,43 +850,38 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 
     const daysLeftLabel = daysLeft === 0 ? 'Último día' : daysLeft;
     const daysLeftText  = daysLeft === 0 ? 'text-danger-text' : daysLeft <= 2 ? 'text-danger-text' : daysLeft <= 5 ? 'text-warning-text' : 'text-success-text';
-    const daysLeftBg    = daysLeft === 0 ? 'bg-danger/10 border-danger/30' : daysLeft <= 2 ? 'bg-danger/10 border-danger/30' : daysLeft <= 5 ? 'bg-warning/10 border-warning/30' : 'bg-success/10 border-success/30';
-    const daysLeftGrad  = daysLeft === 0 ? 'from-danger to-danger/70' : daysLeft <= 2 ? 'from-danger to-danger/70' : daysLeft <= 5 ? 'from-warning to-chart-4' : 'from-success to-chart-9';
+    const daysLeftIconBg = daysLeft <= 2 ? 'bg-danger/10' : daysLeft <= 5 ? 'bg-warning/10' : 'bg-success/10';
 
     return (
         <div className="p-5 md:p-6 space-y-5">
-            {/* Stats strip */}
-            <div className="flex items-center gap-2 flex-wrap">
-                {[
-                    { label: 'Pendientes MH', value: filtered.length, icon: Clock,         grad: filtered.length > 0 ? 'from-warning to-chart-4' : 'from-chart-8 to-chart-8/70', text: filtered.length > 0 ? 'text-warning-text' : 'text-content-3', bg: filtered.length > 0 ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-border-card' },
-                    { label: 'CCF urgentes',  value: ccfCount,        icon: AlertTriangle,  grad: ccfCount > 0 ? 'from-danger to-chart-4' : 'from-chart-8 to-chart-8/70',           text: ccfCount > 0 ? 'text-danger-text' : 'text-content-3',           bg: ccfCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-surface-card-hover border-border-card' },
-                    { label: 'Días restantes', value: daysLeftLabel,  icon: History,        grad: daysLeftGrad, text: daysLeftText, bg: daysLeftBg },
-                ].map(({ label, value, icon: Icon, grad, text, bg }) => (
-                    <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${bg}`}>
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                            <Icon size={11} className="text-white" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-caption font-bold uppercase tracking-wider text-content-2">{label}</span>
-                        <span className={`text-subtitle font-black leading-none ${text}`}>{value}</span>
-                    </div>
-                ))}
-                {activeVisitedCount > 0 && (
-                    <Button tone="warning" icon={Check} onClick={clearVisited}>{activeVisitedCount} marcado{activeVisitedCount !== 1 ? 's' : ''} · limpiar</Button>
-                )}
-                <div className="flex items-center gap-2 ml-auto">
-                    {lastRefresh && <span className="text-caption font-bold text-content-2 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
-                    <Button
-                        size="xs"
-                        aria-pressed={paused}
-                        variant="secondary"
-                        tone={paused ? 'warning' : null}
-                        soft
-                        icon={paused ? Play : Pause}
-                        title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
-                        onClick={() => setPaused(p => !p)}>
-                        {paused ? 'Reanudar' : 'Pausar'}
-                    </Button>
-                </div>
+            {/* Carril de métricas + píldora en UNA fila (§17.0). */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de pendientes de Hacienda">
+                    <StatCard
+                        icon={Clock} label="Pendientes MH" value={filtered.length}
+                        iconBg={filtered.length > 0 ? 'bg-warning/10' : 'bg-surface-card-hover'}
+                        iconCls={filtered.length > 0 ? 'text-warning-text' : 'text-content-3'}
+                        valueCls={filtered.length > 0 ? 'text-warning-text' : 'text-content'}
+                    />
+                    <StatCard
+                        icon={AlertTriangle} label="CCF urgentes" value={ccfCount}
+                        iconBg={ccfCount > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={ccfCount > 0 ? 'text-danger-text' : 'text-content-3'}
+                        valueCls={ccfCount > 0 ? 'text-danger-text' : 'text-content'}
+                    />
+                    <StatCard
+                        icon={History} label="Días restantes" value={daysLeftLabel}
+                        iconBg={daysLeftIconBg} iconCls={daysLeftText} valueCls={daysLeftText}
+                    />
+                    {activeVisitedCount > 0 && (
+                        <StatCard
+                            icon={Check} label="Marcados" value={activeVisitedCount}
+                            sub="Limpiar" onClick={clearVisited} active tono="warning"
+                            iconBg="bg-warning/10" iconCls="text-warning-text"
+                        />
+                    )}
+                </CarrilCards>
+                {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
             </div>
 
             {/* Pending list */}
@@ -1157,7 +1097,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser, canEd
 }
 
 // ─── Tab: Saltos ──────────────────────────────────────────────────────────────
-function TabSaltos({ branches, filterBranch, currentUser, canEdit }) {
+function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros }) {
     const employees = useStaff((state) => state.employees);
     const empPhotoMap = useMemo(() => {
         const m = {};
@@ -1294,22 +1234,35 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit }) {
     return (
         <div className="p-5 md:p-6 space-y-6">
 
-            {/* Stats strip */}
-            <div className="flex items-center gap-2 flex-wrap">
-                {[
-                    { label: 'Saltos',       value: gaps.length,         icon: History,       grad: gaps.length > 0 ? 'from-chart-4 to-warning' : 'from-chart-8 to-chart-8/70',           text: gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3' },
-                    { label: 'Sin resolver', value: pendingGaps.length,  icon: AlertTriangle, grad: pendingGaps.length > 0 ? 'from-danger to-chart-4' : 'from-success to-chart-9',     text: pendingGaps.length > 0 ? 'text-danger' : 'text-success' },
-                    { label: 'Solventados',  value: resolvedGaps.length, icon: CheckCircle2,  grad: resolvedGaps.length > 0 ? 'from-success to-chart-9' : 'from-chart-8 to-chart-8/70',   text: resolvedGaps.length > 0 ? 'text-success' : 'text-content-3' },
-                    { label: 'Campos nulos', value: activeNulls.length,  icon: AlertTriangle, grad: activeNulls.length > 0 ? 'from-danger to-chart-6' : 'from-chart-8 to-chart-8/70',        text: activeNulls.length > 0 ? 'text-danger' : 'text-content-3' },
-                ].map(({ label, value, icon: Icon, grad, text }) => (
-                    <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-card bg-surface-card">
-                        <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                            <Icon size={11} className="text-white" strokeWidth={2.5} />
-                        </div>
-                        <span className="text-caption font-bold uppercase tracking-wider text-content-2">{label}</span>
-                        <span className={`text-subtitle font-black leading-none ${text}`}>{value}</span>
-                    </div>
-                ))}
+            {/* Carril de métricas + píldora en UNA fila (§17.0). */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <CarrilCards className="flex-1" ariaLabel="Resumen de saltos de correlativo">
+                    <StatCard
+                        icon={History} label="Saltos" value={gaps.length}
+                        iconBg={gaps.length > 0 ? 'bg-chart-4/10' : 'bg-surface-card-hover'}
+                        iconCls={gaps.length > 0 ? 'text-chart-4-text' : 'text-content-3'}
+                        valueCls={gaps.length > 0 ? 'text-chart-4-text' : 'text-content'}
+                    />
+                    <StatCard
+                        icon={AlertTriangle} label="Sin resolver" value={pendingGaps.length}
+                        iconBg={pendingGaps.length > 0 ? 'bg-danger/10' : 'bg-success/10'}
+                        iconCls={pendingGaps.length > 0 ? 'text-danger' : 'text-success'}
+                        valueCls={pendingGaps.length > 0 ? 'text-danger' : 'text-success'}
+                    />
+                    <StatCard
+                        icon={CheckCircle2} label="Solventados" value={resolvedGaps.length}
+                        iconBg={resolvedGaps.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
+                        iconCls={resolvedGaps.length > 0 ? 'text-success' : 'text-content-3'}
+                        valueCls={resolvedGaps.length > 0 ? 'text-success' : 'text-content'}
+                    />
+                    <StatCard
+                        icon={AlertTriangle} label="Campos nulos" value={activeNulls.length}
+                        iconBg={activeNulls.length > 0 ? 'bg-danger/10' : 'bg-surface-card-hover'}
+                        iconCls={activeNulls.length > 0 ? 'text-danger' : 'text-content-3'}
+                        valueCls={activeNulls.length > 0 ? 'text-danger' : 'text-content'}
+                    />
+                </CarrilCards>
+                {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
             </div>
 
             {/* ── Saltos pendientes ── */}
@@ -1566,17 +1519,11 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit }) {
 }
 
 // ─── Tab: No Efectivo ─────────────────────────────────────────────────────────
-function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdit }) {
+function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdit, barraFiltros, selectedMonth }) {
     const [pending, setPending] = useState([]);
     const [confirmedIds, setConfirmedIds] = useState(new Set());
     const [confirmed, setConfirmed] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedMonth, setSelectedMonth] = useState(() => {
-        const now = svNow();
-        const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0');
-        const last = new Date(y, now.getMonth() + 1, 0).getDate();
-        return `${y}-${m}-01|${y}-${m}-${last}`;
-    });
     const [confirmingId, setConfirmingId] = useState(null);
     const [confirmNotes, setConfirmNotes] = useState('');
     const [confirmFile, setConfirmFile] = useState(null);
@@ -1596,7 +1543,6 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
     // Confirmed sort
     const { sortKey: cSortKey, sortDir: cSortDir, toggle: cToggle, sortFn: cSortFn } = useSortable('confirmed_at', 'desc');
 
-    const monthOpts = useMemo(() => monthOptions(), []);
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -1763,19 +1709,40 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
 
     return (
         <div>
-            {/* Top bar */}
-            <div className="px-5 pl-8 py-4 bg-surface-card border-b border-divider flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-label font-bold uppercase text-content-3 tracking-widest">{pendingFiltered.length} pendientes</span>
-                    <span className="text-label font-bold text-chart-1-text">{fmt(totalPending)}</span>
+            {/* Carril de métricas + píldora en UNA fila (§17.0). Los dos números
+                eran texto suelto en una barra propia con su borde inferior: no
+                se leían como métrica y la fila no se parecía a la de las otras
+                pestañas. El desglose por forma de pago sigue siendo `Badge`,
+                que es lo suyo — son etiquetas, no métricas. */}
+            <div className="p-5 md:p-6 pb-0 space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    <CarrilCards className="flex-1" ariaLabel="Resumen de pagos no-efectivo">
+                        <StatCard
+                            icon={CreditCard} label="Pendientes" value={pendingFiltered.length}
+                            iconBg={pendingFiltered.length > 0 ? 'bg-chart-1/10' : 'bg-surface-card-hover'}
+                            iconCls={pendingFiltered.length > 0 ? 'text-chart-1-text' : 'text-content-3'}
+                            valueCls={pendingFiltered.length > 0 ? 'text-chart-1-text' : 'text-content'}
+                        />
+                        <StatCard
+                            icon={CreditCard} label="Total pendiente" value={fmt(totalPending)}
+                            iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
+                            valueCls="text-chart-1-text"
+                        />
+                        <StatCard
+                            icon={CheckCircle2} label="Confirmados" value={confirmed.length}
+                            iconBg={confirmed.length > 0 ? 'bg-success/10' : 'bg-surface-card-hover'}
+                            iconCls={confirmed.length > 0 ? 'text-success' : 'text-content-3'}
+                            valueCls={confirmed.length > 0 ? 'text-success' : 'text-content'}
+                        />
+                    </CarrilCards>
+                    {barraFiltros && <div className="flex justify-end min-w-0">{barraFiltros}</div>}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                     {Object.entries(byTipo).map(([tipo, rows]) => (
                         <Badge key={tipo} variant={TIPO_PAGO_VARIANTE[tipo] || 'neutral'} size="sm">
                             {tipo} {rows.length}
                         </Badge>
                     ))}
-                </div>
-                <div className="w-[170px] md:w-[200px]">
-                    <LiquidSelect value={selectedMonth} onChange={setSelectedMonth} options={monthOpts} placeholder="Mes" compact bare />
                 </div>
             </div>
 
@@ -2099,6 +2066,23 @@ export default function FacturacionView() {
     // dicen lo mismo en vez de ofrecer un botón que el servidor va a rechazar.
     const canEdit = hasPermission('facturacion', 'can_edit');
 
+    // Sondeo automático: decisión de la vista, no de cada pestaña. Ver el
+    // descriptor `pausa` de la píldora, más abajo.
+    const [paused, setPaused] = useState(false);
+
+    // El mes de No Efectivo vivía como un `LiquidSelect` suelto dentro de la
+    // pestaña — un filtro fuera de la píldora, que es justo lo que §17 prohíbe.
+    // Sube acá para poder ocupar su ranura; el orden de §17 lo pone después de
+    // sucursal (ámbito → tiempo).
+    const mesPorDefecto = useMemo(() => {
+        const now = svNow();
+        const y = now.getFullYear(); const m = String(now.getMonth() + 1).padStart(2, '0');
+        const last = new Date(y, now.getMonth() + 1, 0).getDate();
+        return `${y}-${m}-01|${y}-${m}-${last}`;
+    }, []);
+    const [selectedMonth, setSelectedMonth] = useState(mesPorDefecto);
+    const monthOpts = useMemo(() => monthOptions(), []);
+
     // Pestañas filtradas según permisos
     const VALID_TABS = new Set(['anuladas', 'pendiente_mh', 'saltos', 'no_efectivo']);
     const allowedTabs = TABS.filter(t => hasPermission(`facturacion_tab_${t.key}`));
@@ -2157,11 +2141,22 @@ export default function FacturacionView() {
         />
     );
 
-    const accionesFacturacion = [{
-        key: 'admin', icon: ExternalLink, label: 'Admin Facturas', as: 'a',
-        href: 'https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php',
-        target: '_blank', rel: 'noopener noreferrer',
-    }];
+    // Pausar la actualización automática es de la VISTA, no de una pestaña: las
+    // dos que sondean comparten la decisión, y como interruptor su sitio es la
+    // píldora (§17, campo `activo` → `aria-pressed` y encendido en el clúster
+    // táctil). Antes era un `<Button>` suelto dentro del encabezado de cada
+    // pestaña, o sea el mismo control escrito dos veces y en un sitio donde §17
+    // no pone controles de vista.
+    const puedePausar = activeTab === 'anuladas' || activeTab === 'pendiente_mh';
+    const accionesFacturacion = puedePausar ? [{
+        key: 'pausa',
+        icon: paused ? Play : Pause,
+        label: paused ? 'Reanudar' : 'Pausar',
+        title: paused ? 'Reanudar actualización automática' : 'Pausar actualización automática',
+        activo: paused,
+        tone: paused ? 'warning' : undefined,
+        onClick: () => setPaused(p => !p),
+    }] : [];
 
     // La píldora se dibuja SIEMPRE: quien tiene alcance de una sola sucursal no
     // ve la ranura de sucursal, pero sí la acción. Antes la condición envolvía la
@@ -2169,12 +2164,21 @@ export default function FacturacionView() {
     // todo el personal de sucursal.
     const puedeElegirSucursal = getScope('facturacion') !== 'BRANCH';
     const filtrosCuerpo = (
-        <FilterBar onClear={() => setFilterBranch('')} activeCount={filterBranch ? 1 : 0}
+        <FilterBar
+            onClear={() => { setFilterBranch(''); setSelectedMonth(mesPorDefecto); }}
+            activeCount={[filterBranch, activeTab === 'no_efectivo' && selectedMonth !== mesPorDefecto].filter(Boolean).length}
             acciones={accionesFacturacion}>
             {puedeElegirSucursal && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">
                     <FilterBar.Sucursal value={filterBranch}
                         onChange={val => setFilterBranch(val || '')} options={branchOptions} />
+                </FilterBar.Section>
+            )}
+            {activeTab === 'no_efectivo' && (
+                <FilterBar.Section active={selectedMonth !== mesPorDefecto}
+                    onClear={() => setSelectedMonth(mesPorDefecto)} label="período">
+                    <LiquidSelect value={selectedMonth} onChange={setSelectedMonth}
+                        options={monthOpts} placeholder="Mes" compact bare />
                 </FilterBar.Section>
             )}
         </FilterBar>
@@ -2188,20 +2192,32 @@ export default function FacturacionView() {
             filtersContent={filtersContent}
             transparentBody={true}
         >
-            {/* Barra de filtros: cuerpo, a la derecha (§17) */}
-            {filtrosCuerpo && <div className="flex justify-end pb-4">{filtrosCuerpo}</div>}
+            {/* La píldora va en la MISMA fila que el carril de tarjetas, a la
+                derecha (§17 + §17.0: las tres piezas se reparten el ancho entre
+                sí). Antes ocupaba un renglón entero para sí sola encima de la
+                tarjeta de contenido — el mismo defecto que se corrigió en
+                Personal el 2026-07-30.
+
+                El nodo se construye UNA vez acá y se le entrega a la pestaña
+                activa, así que sigue habiendo una sola `FilterBar` montada por
+                vista aunque las cuatro pestañas estén en el DOM (las inactivas
+                van con `hidden` para no perder su estado). */}
             <div className="bg-surface-card backdrop-blur-[15px] backdrop-saturate-[300%] rounded-3xl lg:rounded-header border border-border-card shadow-[var(--shadow-glass-sm)] overflow-hidden">
                 <div className={activeTab === 'anuladas' ? '' : 'hidden'}>
-                    <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
+                    <TabAnuladas canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                        paused={paused} barraFiltros={activeTab === 'anuladas' ? filtrosCuerpo : null} />
                 </div>
                 <div className={activeTab === 'pendiente_mh' ? '' : 'hidden'}>
-                    <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
+                    <TabPendienteMH canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                        paused={paused} barraFiltros={activeTab === 'pendiente_mh' ? filtrosCuerpo : null} />
                 </div>
                 <div className={activeTab === 'saltos' ? '' : 'hidden'}>
-                    <TabSaltos canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser} />
+                    <TabSaltos canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} currentUser={currentUser}
+                        barraFiltros={activeTab === 'saltos' ? filtrosCuerpo : null} />
                 </div>
                 <div className={activeTab === 'no_efectivo' ? '' : 'hidden'}>
-                    <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser} />
+                    <TabNoEfectivo canEdit={canEdit} branches={salesBranches} filterBranch={filterBranch} searchTerm={debouncedSearch} currentUser={currentUser}
+                        barraFiltros={activeTab === 'no_efectivo' ? filtrosCuerpo : null} selectedMonth={selectedMonth} />
                 </div>
             </div>
         </GlassViewLayout>

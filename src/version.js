@@ -16,8 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.298.0';
+export const APP_VERSION = '2.299.0';
 
+// v2.299.0 — La barra de Facturacion, al canonico: tarjetas, pildora y pausa.
+//
+// Seis correcciones del usuario sobre la pasada de diseno anterior, que habia
+// dado la vista por buena mirando el gate y no los componentes. `gate:design`
+// pasaba —y sigue pasando— porque ninguna es una clase suelta: son piezas
+// escritas a mano donde ya existe un canonico, y eso el gate no lo ve.
+//
+// - Tarjetas al canonico: las 4 pestanas dibujaban su resumen con <div> a mano
+//   (cuadrito con degradado, fondo y borde tenidos por estado). Ahora `StatCard`
+//   dentro de `CarrilCards`, con la regla de §17.0 — el color va en el NUMERO y
+//   el ICONO, que es donde el color ES el dato; el fondo, nunca.
+// - La pildora, a la fila de las tarjetas: ocupaba un renglon entero para si
+//   sola. El nodo se construye una vez en el padre y se le entrega a la pestana
+//   activa, asi que sigue habiendo UNA sola FilterBar montada.
+// - Pausar/Reanudar es un descriptor de la pildora (`activo` → aria-pressed);
+//   era un <Button> suelto escrito dos veces. `paused` subio al padre.
+// - El limpiador de marcadores es una tarjeta (tono warning + active).
+// - Fuera "Admin Facturas" y fuera el sello `Act. hh:mm` con su `lastRefresh`.
+// - El filtro de mes de No Efectivo entro a la pildora, ranura "periodo".
+//
+// De paso salen `AuditThead` y `SolveRow`, definidos y nunca usados; el primero
+// reintroducia el <th onClick> sin tabIndex/onKeyDown/aria-sort que DataTable
+// arreglo el 2026-07-28.
+//
+// Verificado en Chromium a 1512px sobre las 4 pestanas: 0px de desborde y cero
+// errores de consola.
+//
 // v2.298.0 — El corte por dispositivo, a los 5 sitios; y el notch acostado.
 //
 // Continuacion de v2.296.0, que arreglo el telefono acostado en `BarraFlotante`,

@@ -16,8 +16,25 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.291.0';
+export const APP_VERSION = '2.292.0';
 
+// v2.292.0 — La barra se esconde por FRACCION de pantalla, no por pixeles fijos.
+//
+// El umbral estaba en 70px acumulados y la barra se seguia yendo con medio toque
+// —reportado dos veces—. El motivo es del telefono, no del numero: ahi un flick
+// corto arrastra INERCIA y recorre 150-300px sin que la persona sienta que hizo
+// "un scroll grande". Cualquier constante en pixeles queda por debajo del gesto
+// minimo del sistema.
+//
+// Ahora es el 35% del alto de la ventana: en un telefono de 932px son ~325,
+// o sea un recorrido que se hizo a proposito. Medido: 40, 120 y 250px la dejan;
+// 500 la esconde.
+//
+// Se revisó tambien si el service worker estaba sirviendo un bundle viejo —seria
+// la explicacion mas simple de que varias correcciones "no llegaran"— y NO es
+// eso: `public/sw.js` es network-first y solo cachea la pagina offline y el logo.
+// La version se muestra en la interfaz, asi que se puede cotejar de un vistazo.
+//
 // v2.291.0 — El recuadro era el RADIO de la sombra, y el cierre no llegaba a verse.
 //
 // **El recuadro.** La capa de sombra conserva su `rounded-t-modal` de 32px, y al

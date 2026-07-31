@@ -12,6 +12,18 @@ retomar; acá está todo.
 
 ---
 
+## v2.292.0 — La barra se esconde por fracción de pantalla, no por píxeles fijos
+
+El umbral estaba en 70px acumulados y la barra se seguía yendo con medio toque. El
+motivo es del teléfono: ahí un flick corto arrastra **inercia** y recorre 150–300px
+sin que se sienta como "un scroll grande", así que cualquier constante en píxeles
+queda por debajo del gesto mínimo del sistema.
+
+Ahora es el **35% del alto de la ventana** (~325px en un teléfono de 932). Medido:
+40, 120 y 250px la dejan; 500 la esconde.
+
+---
+
 ## v2.291.0 — El recuadro era el radio de la sombra, y el cierre no llegaba a verse
 
 **El recuadro**: la capa de sombra conserva su `rounded-t-modal` de 32px, y al

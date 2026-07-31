@@ -113,9 +113,14 @@ const ZONA_SEGURA = 96;
 // posición o un `scrollIntoView`. Un flick real reparte el recorrido en muchos
 // eventos de pocas decenas de píxeles.
 const SALTO = 120;
-// Cuánto hay que bajar, acumulado, para que la barra se aparte. Un umbral chico
-// la hace titilar con cualquier micro gesto.
-const OCULTAR = 70;
+// Cuánto hay que bajar, acumulado, para que la barra se aparte.
+//
+// Es una FRACCIÓN de la pantalla y no un número fijo, y eso importa en un
+// teléfono: ahí un flick corto arrastra inercia y recorre 150-300px sin que la
+// persona sienta que hizo "un scroll grande". Con 70px fijos la barra se iba con
+// medio toque —reportado dos veces— porque el gesto mínimo del sistema ya los
+// supera. Media pantalla es un recorrido que se hizo a propósito.
+const FRACCION_OCULTAR = 0.35;
 
 const BarraFlotante = memo(({
     buscador = null,
@@ -193,7 +198,9 @@ const BarraFlotante = memo(({
                 // hace que haga falta un desplazamiento intencional.
                 if (y < ZONA_SEGURA || dy < 0) { bajado.current = 0; setVisible(true); return; }
                 bajado.current += dy;
-                if (bajado.current >= OCULTAR) { bajado.current = 0; setVisible(false); }
+                if (bajado.current >= window.innerHeight * FRACCION_OCULTAR) {
+                    bajado.current = 0; setVisible(false);
+                }
             });
         };
         window.addEventListener('scroll', alScrollear, { passive: true });

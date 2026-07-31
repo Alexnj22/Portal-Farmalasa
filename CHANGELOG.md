@@ -12,6 +12,21 @@ retomar; acá está todo.
 
 ---
 
+## v2.293.0 — `offsetWidth` fuerza layout, no estilo: por eso Safari saltaba
+
+La versión llegaba bien al teléfono, así que la diferencia era del motor. El
+truco de reflujo se hacía con `void el.offsetWidth`, que fuerza *layout*: en
+Chromium y en el WebKit de pruebas alcanza para que una transición fije su punto
+de partida, pero **en el Safari de iOS no siempre** — lo que hace falta es que el
+estilo **computado** esté recalculado. Sin punto de partida, el navegador junta
+los dos estados y salta al final.
+
+`fijarEstilo()` lee además `getComputedStyle(el)[prop]`. Y la sombra siembra su
+`transform` en identidad antes de animarlo, porque desde `none` Safari no siempre
+interpola y el `transform-origin` cambiaba a la vez.
+
+---
+
 ## v2.292.0 — La barra se esconde por fracción de pantalla, no por píxeles fijos
 
 El umbral estaba en 70px acumulados y la barra se seguía yendo con medio toque. El

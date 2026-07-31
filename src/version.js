@@ -16,8 +16,31 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.292.0';
+export const APP_VERSION = '2.293.0';
 
+// v2.293.0 — `offsetWidth` fuerza LAYOUT, no estilo: por eso Safari saltaba.
+//
+// La version llegaba bien al telefono —confirmado— asi que la diferencia era del
+// motor. El sospechoso resulto ser el truco de reflujo: se hacia con
+// `void el.offsetWidth`, que fuerza *layout*. En Chromium y en el WebKit de
+// pruebas eso alcanza para que una transicion fije su punto de partida; **en el
+// Safari de iOS no siempre**, porque lo que la transicion necesita es que el
+// estilo COMPUTADO este recalculado, y leer una medida geometrica no lo
+// garantiza. Sin punto de partida fijado, el navegador junta los dos estados y
+// salta al final: la animacion "no se ve, solo desaparece".
+//
+// `fijarEstilo(el, prop)` lee ADEMAS `getComputedStyle(el)[prop]`, que si obliga
+// al recalculo de estilo. Se aplica en los tres sitios donde se sembraba un
+// estado inicial.
+//
+// Y la sombra en la salida ahora siembra su `transform` en identidad antes de
+// animarlo: desde `none` Safari no siempre interpola, y encima `transform-origin`
+// cambiaba a la vez que el transform —lo que produce un salto en vez de un
+// recorrido—.
+//
+// Filmado despues: el cierre por fondo va `26 14 4 47` → `100 54 15 182` →
+// `140 76 21 255` → `156 85 23 285` y desmonta a los 325ms.
+//
 // v2.292.0 — La barra se esconde por FRACCION de pantalla, no por pixeles fijos.
 //
 // El umbral estaba en 70px acumulados y la barra se seguia yendo con medio toque

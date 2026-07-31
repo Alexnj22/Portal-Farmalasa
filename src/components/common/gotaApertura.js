@@ -48,6 +48,25 @@ import { leerUltimoToque } from './ultimoToque';
 const ENTRADA_MS = 340;
 
 /**
+ * Fuerza que el navegador FIJE el estilo actual como punto de partida.
+ *
+ * Se hacía con `void el.offsetWidth`, y eso fuerza *layout* — que en Chromium y
+ * en el WebKit de pruebas alcanza, pero **en el Safari de iOS no siempre**: una
+ * transición necesita que el estilo COMPUTADO esté recalculado, y leer una
+ * medida geométrica no lo garantiza. Cuando no queda fijado, el navegador junta
+ * el estado inicial y el final en uno solo y salta al valor final: la animación
+ * "no se ve, solo desaparece".
+ *
+ * Leer la propiedad que se va a animar del `getComputedStyle` sí obliga al
+ * recálculo de estilo, que es lo que hace falta. Se lee también `offsetWidth`
+ * porque hay casos donde el layout todavía está sucio.
+ */
+function fijarEstilo(el, prop) {
+    void el.offsetWidth;
+    void getComputedStyle(el)[prop];
+}
+
+/**
  * La curva. `cubic-bezier(0.22,1,0.36,1)` es un ease-out muy adelantado: hace el
  * 46% del recorrido en los primeros 110ms, así que aunque dure medio segundo se
  * SIENTE rápida —"la animación es muy rápida al abrir"—. Esta reparte el
@@ -143,6 +162,16 @@ function transformarSombra(sombra, el, desde, ms, curva, ladosGuardados) {
     if (!sombra) return;
     const l = ladosGuardados || ladosHacia(el, desde);
     const r = sombra.getBoundingClientRect();
+    // Sembrar el punto de partida: si el `transform` está en `none`, Safari no
+    // siempre interpola desde ahí —y encima `transform-origin` cambiaría a la vez
+    // que el transform, lo que produce un salto en vez de un recorrido—. Con la
+    // identidad explícita y el estilo fijado, los dos extremos son del mismo tipo.
+    if (ms) {
+        sombra.style.transition = 'none';
+        sombra.style.transformOrigin = '0 0';
+        sombra.style.transform = 'translate(0px, 0px) scale(1, 1)';
+        fijarEstilo(sombra, 'transform');
+    }
     const anchoDestino = Math.max(1, r.width - l.izq - l.derecha);
     const altoDestino  = Math.max(1, r.height - l.arriba - l.abajo);
     sombra.style.transformOrigin = '0 0';
@@ -216,7 +245,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             el.style.transition = 'none';
             el.style.transform = 'scale(0.94)';
             el.style.opacity = '0';
-            void el.offsetWidth;
+            fijarEstilo(el, 'transform');
             el.style.transition = 'transform 240ms cubic-bezier(0.22,1,0.36,1), opacity 160ms ease-out';
             el.style.transform = 'scale(1)';
             el.style.opacity = '1';
@@ -239,7 +268,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
 
         // Fuerza el reflujo: sin esto el navegador junta el estado inicial y el
         // final en un solo estilo computado y no hay transición que interpolar.
-        void vidrio.offsetWidth;
+        fijarEstilo(vidrio, 'clipPath');
 
         vidrio.style.transition = `clip-path ${ENTRADA_MS}ms ${CURVA}`;
         // El radio final se LEE del elemento: en los temas de vidrio son 28px y en
@@ -314,7 +343,7 @@ export function useGotaApertura({ ref, activo = true, cerrando = false, salidaMs
             const radioB = getComputedStyle(vidrio).borderBottomLeftRadius || '0px';
             vidrio.style.transition = 'none';
             vidrio.style.clipPath = `inset(0px 0px 0px 0px round ${radioA} ${radioA} ${radioB} ${radioB})`;
-            void vidrio.offsetWidth;
+            fijarEstilo(vidrio, 'clipPath');
         }
 
         vidrio.style.transition = `clip-path ${salidaMs}ms ${CURVA_SALIDA}`;

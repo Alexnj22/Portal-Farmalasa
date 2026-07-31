@@ -1,18 +1,20 @@
 # Auditoría completa — 2026-07-30
 
-Sucede a `AUDITORIA-ARRANQUE-2026-07-30.md`, que auditó **un camino** (el
-arranque a `/overview`) con **caché caliente** y **sin capítulo de seguridad ni
-de fallos**. Esta cubre las 8 dimensiones que hacen a "sesión estable, segura y
-rápida", sobre **todas** las vistas y **toda** la capa de datos.
+**Documento único.** Reemplaza y absorbe a `AUDITORIA-ARRANQUE-2026-07-30.md`
+(retirado en el mismo commit): aquella auditó **un camino** —el arranque a
+`/overview`— con **caché caliente** y sin capítulo de seguridad ni de fallos.
+Todo lo que midió y sigue vigente está acá, en el §7, con sus tres errores ya
+corregidos en el texto:
 
-El documento anterior **no se borró**: quedó anotado en los tres puntos donde
-esta auditoría lo corrige (§3.1 la atribución de los 706 ms, §3.2 la medición
-con caché caliente, §6 el orden de prioridades). Lo que midió sigue siendo
-válido; lo que no vio está acá.
+- la atribución de los 706 ms de Pedidos (eran 809 kB de fuentes PDF, no el
+  throttle de Suspense) → §1 y §7.3;
+- la medición con caché caliente ("42 peticiones de JS · 7 kB" eran 42
+  respuestas de caché) → §1;
+- el orden de prioridades → §10.
 
 **Método.** Nada acá es lectura de código a ojo: cada hallazgo sale de un
 analizador que quedó versionado en `scripts/`, del build de producción, o de una
-consulta contra prod. Los números son reproducibles.
+consulta contra prod. Los números son reproducibles (Anexo).
 
 | # | Dimensión | Herramienta | Resultado |
 |---|---|---|---|
@@ -20,16 +22,16 @@ consulta contra prod. Los números son reproducibles.
 | 2 | Librerías pesadas | grafo estático vs dinámico | 2 vistas, **corregidas** |
 | 3 | Capa de datos | `scripts/data-gate.mjs` | 45 hallazgos, 5 son bugs vivos |
 | 4 | Tipos contra el esquema real | `scripts/db/boolean-columns.json` | **2 bugs de datos fiscales** |
-| 5 | Errores silenciados | `data-gate` | 28 |
-| 6 | Realtime | escáner de canales | ✅ 0 fugas |
-| 7 | Seguridad | advisors + `pg_policies` | 0 ERRORES, 3 huecos reales |
-| 8 | Sesión y fallos | lectura dirigida de `AuthContext` | 4 huecos no cubiertos antes |
+| 5 | Realtime | escáner de canales | ✅ 0 fugas |
+| 6 | Seguridad | advisors + `pg_policies` | 0 ERRORES, 3 huecos reales |
+| 7 | Arranque y tablero | Playwright + CDP, build de prod | 4 abiertos |
+| 8 | Sesión y caminos de fallo | lectura dirigida de `AuthContext` | 4 huecos |
 
 ---
 
 ## 0. Lo más importante, en una pantalla
 
-**Corregido en esta sesión** (v2.280.0):
+**Corregido y en producción** (v2.283.0):
 
 - **Pedidos bajaba 809 kB gzip de fuentes PDF al entrar.** `pedidoPrint.js`
   importaba `pdfmake` + `vfs_fonts` de forma estática. Entrar a Pedidos costaba
@@ -317,7 +319,137 @@ desactivada en Supabase Auth — un toggle.
 
 ---
 
-## 7. Sesión y caminos de fallo
+## 7. Arranque: login, sesión y tablero
+
+Absorbido de la auditoría de arranque (documento retirado). Medido sobre el
+**build de producción** (`vite build` + `vite preview`), nunca en dev — en dev
+StrictMode duplica efectos y los módulos no están empaquetados, así que miente
+en las dos direcciones. Playwright + CDP, con throttling de CPU ×4 para móvil.
+
+Las tres correcciones que esta auditoría le hizo a ese documento ya están
+aplicadas abajo: la atribución de los 706 ms de Pedidos (era §1 de acá, no
+Suspense), la medición con caché caliente (§1) y el orden de prioridades (§10).
+
+### 7.1 Lo que está sano, y acota dónde buscar
+
+| | escritorio | móvil (CPU ×4) |
+|---|---|---|
+| Login: submit → aterrizaje | 1,489 ms | — |
+| Recarga: primer contenido | 107 ms | 249 ms |
+| Entrada a un módulo (spinner) | 291 ms | 291 ms + render |
+| 30 s en reposo | 0 peticiones | 0 peticiones |
+| Volver a la pestaña | 2 peticiones | 2 peticiones |
+
+**No hay polling** (30 s en reposo = 0 peticiones), **no hay bucle de
+`requestAnimationFrame`**, el hilo principal **nunca se bloquea** (cero long
+tasks), y las versiones están al día (React 19.2, supabase-js 2.97, React
+Router 7.13, Vite 7.3).
+
+Ojo con el alcance de ese "0 peticiones en reposo": la prueba duró 30 segundos y
+el ciclo de refresco del token dura ~50 minutos (§8a).
+
+### 7.2 El login son dos viajes en serie (~1.1 s)
+
+```
+    0 ms  click en "Entrar"
+   38 ms  POST /auth/v1/token              ─┐ dos viajes SERIE
+  624 ms  GET employees_safe ?username=eq.… ─┘ ~1.1 s sin poder hacer nada
+ 1106 ms  arranca fetchBoot (10 consultas en paralelo)
+ 1489 ms  aterrizaje en /overview
+ ~2.5 s   tablero completo
+```
+
+`loginWithUsername` hace `signInWithPassword` y **después** consulta
+`employees_safe` para el perfil. El segundo no puede salir antes: necesita la
+sesión para pasar RLS. Es correcto, pero es el tramo más lento del camino.
+
+**Observación:** ese perfil es el mismo que la edge function
+`ensure_user_by_code` devuelve en la recarga. Hay **dos caminos distintos para
+obtener lo mismo** — uno por tabla en el login, otro por edge function en la
+restauración. Un campo agregado a uno no llega al otro.
+
+### 7.3 Los 291 ms de spinner por módulo (throttle de Suspense)
+
+Con el chunk ya precargado, un clic en un módulo tarda 291 ms en los que **no
+pasa nada**: no es descarga (el clic pide 0 chunks), no es CPU (93 ms de JS en
+3 s, cero long tasks), no es evaluar el módulo (la segunda entrada tarda igual).
+
+Es un **plazo fijo**: el scheduler de React re-arma un `setTimeout` una vez por
+frame con retardo decreciente —292, 278, 261, 244… 61— todos apuntando al mismo
+instante absoluto. Es el throttle de Suspense: mostrado el fallback, React lo
+sostiene ~300 ms para que no parpadee. Verificado midiendo el spinner en el DOM.
+
+**Dirección de arreglo (no aplicada):** que la ruta no suspenda — guardar el
+módulo ya resuelto por el prefetch y renderizarlo directo en vez de pasar por
+`React.lazy`. **Baja prioridad:** toca 44 rutas y cambia el comportamiento ante
+deploys, porque hoy `vite:preloadError` (`main.jsx`) depende de que `React.lazy`
+tire cuando el chunk viejo ya no existe.
+
+### 7.4 El tablero baja el catálogo completo de productos (104 kB)
+
+`WidgetMinMaxRequest` baja **todos los productos activos** en su `useEffect` de
+montaje, paginado en 5 chunks, para alimentar un `smartFilter` en memoria. El
+buscador no hace nada hasta que alguien escribe 2 caracteres — pero el catálogo
+baja **siempre**, aunque nadie toque el widget, **y en el teléfono también**.
+
+Es la mitad del peso de datos del tablero, y contradice el estándar de búsqueda
+del propio proyecto, que ya resuelve esto server-side con `norm_search` /
+columnas `*_norm`.
+
+### 7.5 Dos escrituras por carga del tablero que no guardan nada
+
+- `useThemeSync` lee el tema, lo aplica con `setTheme(...)`, eso cambia la
+  dependencia `theme` del efecto de guardado, y **a los 800 ms lo reescribe**.
+- `DashboardView` hace lo mismo con el layout: `setPrefsReady(true)` está
+  comentado como *"flip → triggers save effect below"*, y el efecto dispara a
+  los 1.5 s del montaje. El payload incluye `updated_at: new Date()`.
+
+Es el mismo antipatrón que el proyecto ya prohíbe para los syncs: un upsert
+incondicional que reescribe una fila idéntica, más un `updated_at` puesto por el
+cliente que hace que la fila "cambie" siempre. Cada carga del tablero de cada
+usuario = 2 escrituras y su WAL, a cambio de cero información.
+
+### 7.6 Una consulta de permisos que ya está en `localStorage`
+
+`fetchBoot` arranca el grupo de empleados consultando `role_permissions` por
+`can_view` de `staff_list`, y **espera esa respuesta** antes de lanzar las 5
+consultas de empleados. Pero `AuthContext` ya tiene el mapa completo en memoria y
+en `localStorage` (`sb_role_perms`, 95 módulos). Es un viaje de red extra que
+además **serializa** el tramo más pesado del arranque detrás suyo.
+
+### 7.7 Móvil: misma carga de datos que escritorio
+
+Viewport 390×844, touch, CPU ×4. Primer contenido 249 ms contra 107 ms —
+proporción sana, el arranque no es CPU-bound. Pero **45 peticiones, las mismas
+que escritorio**: el teléfono baja el mismo catálogo, las mismas fotos y los
+mismos widgets. `DashboardView` distingue `mobile_layout` / `mobile_sizes` para
+*dibujar*, pero los widgets montados traen su propio dato igual.
+
+*Nota de método:* esto es Chromium con throttling, correcto para rendimiento.
+Para bugs de **layout** móvil sigue haciendo falta WebKit — no son la misma prueba.
+
+### 7.8 Cerrado durante aquella auditoría
+
+- **v2.272.0** — cada recarga procesaba la sesión **dos veces**:
+  `onAuthStateChange` entrega `SIGNED_IN` y, ~130 ms después, `INITIAL_SESSION`
+  con idéntico `access_token`. Filtrado por token (`TOKEN_REFRESHED` trae uno
+  nuevo y sí se reprocesa). Peticiones por recarga: 83 → 76.
+- **v2.274.0** — las fotos se bajaban dos veces: una firma de storage vale 12 h
+  pero se regeneraba en cada arranque, y como el token va en la query string,
+  **una firma nueva es una URL nueva**. 53 fotos / 588 kB → 28 / 60 kB.
+
+### 7.9 Patrones viejos anotados entonces, revisados ahora
+
+| qué | dónde | estado hoy |
+|---|---|---|
+| `.limit(1000)` a mano | 3 sitios | vigilado por `gate:data` (§3) |
+| Dos caminos para el mismo perfil | login vs recarga | abierto (§7.2) |
+| `updated_at` del cliente | `DashboardView.jsx:647` | abierto (§7.5) |
+| Catálogo completo en memoria | `WidgetMinMaxRequest.jsx` | abierto (§7.4) |
+
+---
+
+## 8. Sesión y caminos de fallo
 
 Lo que la auditoría anterior no cubrió, y es la mitad de "estable".
 
@@ -347,7 +479,7 @@ React. Requiere perfil de *paint*, no de JS.
 
 ---
 
-## 8. Las reglas nuevas
+## 9. Las reglas nuevas
 
 Tres gates versionados, en la misma filosofía que `gate:design`: **ratchet, no
 cero absoluto** — un gate permanentemente rojo no lo mira nadie.
@@ -396,28 +528,48 @@ extiende a **INSERT con `WITH CHECK (true)`**, que es por donde se colaron
 
 ---
 
-## 9. Qué haría, en orden
+## 10. Qué haría, en orden
 
-**Bugs, primero** (§4, §6.2a):
+### Fase A — bugs vivos (§4, §6.2a)
 
-1. `employees.is_admin` — decidir el reemplazo y arreglar las 3 funciones.
-   Hoy hay solicitudes que pueden quedar sin aprobador.
-2. `recibido_mh` — leer con `IS NOT NULL`; decidir qué hace el botón de
-   confirmar. Hoy escribe sobre un sello fiscal.
-3. Policies `WITH CHECK (true)` de `attendance` y `audit_logs`.
+Los tres corrompen o pierden datos hoy. Los dos primeros **necesitan una
+decisión de negocio**, no sólo código.
 
-**Rendimiento** (§1, §7):
+| # | qué | dónde | decisión que falta |
+|---|---|---|---|
+| A1 | `employees.is_admin` no existe → solicitudes sin aprobador | `data/requests.js:50,55,59` | quién es "admin" ahora: `system_role IN ('ADMIN','SUPERADMIN')` o `roles.is_su` |
+| A2 | `recibido_mh` leído/escrito como booleano | `data/facturacion.js:48,56` | leer con `IS NOT NULL`; qué debe hacer el botón "confirmar" |
+| A3 | `attendance` y `audit_logs` con `WITH CHECK (true)` | policies | ninguna — es migración directa |
 
-4. `Content-Security-Policy` en `vercel.json`.
-5. Separar vendors del entry en `vite.config` — 261 kB que hoy se rebajan en
-   cada deploy y podrían cachearse entre deploys.
-6. El catálogo de productos del widget del tablero y los 291 ms de Suspense
-   (puntos 1 y 2 de la auditoría anterior, siguen vigentes).
+A3 no necesita decisión, pero **sí** el cuidado de CLAUDE.md: `attendance` no es
+tabla caliente, pero la migración lleva `SET lock_timeout = '5s'` igual, y
+conviene probarla en el branch de staging (`ewcmerxqjvludtgskuin`) antes de prod.
 
-**Higiene** (§3.2, §7):
+### Fase B — rendimiento (§1, §7)
 
-7. Bajar `error-ignorado` de 28, empezando por `supabase/functions/`.
-8. Medir el preloader con perfil de paint en un teléfono real.
+| # | qué | ganancia | riesgo |
+|---|---|---|---|
+| B1 | CSP en `vercel.json` | cierra el único hueco de cabeceras | medio: una CSP mal armada rompe la app; arrancar en `Report-Only` |
+| B2 | Separar vendors del entry (`vite.config`) | 261 kB dejan de rebajarse en **cada** deploy | bajo, pero **medir**: partir mal empeora el arranque en frío |
+| B3 | Catálogo de productos del widget → server-side (§7.4) | ~104 kB por carga del tablero, también en móvil | bajo: el proyecto ya tiene `norm_search` |
+| B4 | No reescribir prefs que nadie cambió (§7.5) | 2 escrituras por carga de cada usuario | bajo |
+| B5 | `staff_list` desde `localStorage` en `fetchBoot` (§7.6) | un viaje menos y **destraba** el tramo más pesado | bajo |
+| B6 | Que la ruta no suspenda (§7.3) | 291 ms por entrada a módulo | **alto**: 44 rutas y cambia el manejo de chunks viejos tras deploy |
+
+Orden sugerido dentro de B: **B4 y B5 primero** (baratos, sin decisión), después
+B3, después B1 en `Report-Only`, y B2/B6 sólo con medición antes y después.
+
+### Fase C — higiene (§3.2, §8)
+
+| # | qué |
+|---|---|
+| C1 | Bajar `error-ignorado` de 28, empezando por `supabase/functions/` (25 de los 28) |
+| C2 | Un camino único para el perfil (§7.2): hoy login y recarga usan fuentes distintas |
+| C3 | Medir el preloader con perfil de **paint** en un teléfono real (§8d) |
+| C4 | Ventana mínima en el refresco por `visibilitychange` (§7.1) |
+
+Cada fase cierra con `npm run gate:data`, `gate:bundle` y `gate:design` en verde,
+y baja el baseline correspondiente si tocó deuda contada.
 
 ---
 

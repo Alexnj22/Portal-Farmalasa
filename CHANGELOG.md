@@ -21,6 +21,73 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.335.0 — Los CSV salen con el formato exacto de los reportes que replican
+
+Hasta ahora el portal exportaba archivos **con rótulos propios**: encabezado con
+nombres de columna, número de control con guiones, código de generación como
+UUID, NRC y NIT como se leen. Los archivos que replica no son así, y por eso no
+se podían contrastar uno contra otro.
+
+Se descargaron los archivos reales de junio 2026 **filtrados por sucursal** y se
+mapeó cada columna contra nuestros datos, una por una.
+
+### El formato real
+
+| | |
+|---|---|
+| Encabezado | **ninguno** — arrancan directo en datos |
+| Número de control | sin guiones: `DTE01S001P005000000000019619` |
+| Código de generación | consumidor: guiones → **espacios**. Contribuyentes y anulados: **pelado** |
+| NRC / NIT | sin guiones: `250887-5` → `2508875` |
+| Percepción de compras | **4 decimales**, no 2 |
+
+La puntuación del código de generación cambia entre reportes sin ninguna lógica
+detrás. Hay que copiar cada una como es.
+
+Dos columnas que estaban mal de nuestro lado y ahora cuadran: en compras esa
+columna es el **NIT** y no el NRC (`06142609031027`), y las gravadas son
+`subtotal − percepción` — LETERAGO: 577.71 − 5.72 = 571.99, exacto.
+
+### HALLAZGO — el libro de consumidor del origen reporta códigos de generación equivocados
+
+Verificado en **2 de 2 días**, con el archivo filtrado por sucursal:
+
+| Día | Columna | Reporta | Pertenece a | El correcto era |
+|---|---|---|---|---|
+| 01/06 | "del" | `010D5CAF…` | id 297861 | id 297361 |
+| 01/06 | "al" | `FF69D633…` | id 298050 | id 298111 |
+| 02/06 | "del" | `0042379F…` | id 298303 | id 298226 |
+| 02/06 | "al" | `FDA8EC5F…` | id 298228 | id 298920 |
+
+Los cuatro son documentos **del medio del día**. Y el 02/06 el que llama "al"
+tiene correlativo **menor** que el que llama "del": ni entre sí son consistentes.
+
+El resto de la fila sí es correcto —número de control, sello, IDs y montos
+coinciden con el primero y el último del día—, así que el problema está acotado
+a esas dos columnas.
+
+**El portal emite los correctos.** Es un dato que se declara: copiar un
+identificador equivocado sería replicar el error, no el formato. Misma decisión
+que con las notas de crédito. Conviene reportarlo al proveedor del ERP; mientras
+tanto los dos archivos difieren ahí, y la diferencia es a favor del portal.
+
+### Lo que no se pudo verificar, dicho en vez de adivinado
+
+Varias columnas van en cero en **toda** la muestra disponible, así que no se
+pudo determinar cuál es cuál: consumidor 11-13 y 15-19, contribuyentes 10-11,
+compras 7-8 y 10-12. Haría falta un período con ventas exentas, exportaciones o
+importaciones y no existe uno en el histórico. Se escriben como constantes en
+cero, igual que el origen. Las de compras `1;1;2;5;3` se copian tal cual.
+
+El **sello de compras** sale vacío y no en cero: no viene en la fuente que
+alimenta el módulo, y escribir un valor sería inventarlo.
+
+El formato completo, los endpoints y los hallazgos quedaron en
+`docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md`, junto con el pendiente del
+histórico 2025-05 → 2026-05 (junio y julio están cerrados y verificados).
+
+_(pendiente de redactar)_
+
 ## v2.334.2 — Trabajar en varias sesiones sin pisarse
 
 Este repo se trabaja con 2-3 sesiones a la vez sobre el mismo directorio, y eso

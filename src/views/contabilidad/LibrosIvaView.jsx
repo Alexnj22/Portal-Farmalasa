@@ -132,6 +132,24 @@ const num = (n) => (Number(n) || 0).toFixed(2);
 // libro va el número.
 const soloNumero = (correlativo) => String(correlativo || '').split('_')[0];
 
+// ── Formato de los archivos que se replican ──────────────────────────────────
+//
+// Los tres reportes escriben los mismos datos con puntuación DISTINTA, y no hay
+// lógica en la diferencia: hay que copiar cada una como es. Verificado sobre los
+// archivos reales de junio 2026 el 2026-08-01.
+//
+//   número de control     `DTE01S001P005000000000019619`  — sin guiones
+//   código de generación  `010D5CAF 6015 4E83 B0AC 43B…`  — guiones → ESPACIOS (consumidor)
+//   código de generación  `6A1977361C134042BD594F683B45`  — pelado (contribuyentes y anulados)
+//
+// Y ninguno lleva fila de encabezado: arrancan directo en datos.
+const ncPelado  = (nc) => String(nc || '').replace(/-/g, '');
+const cgEspacios = (cg) => String(cg || '').toUpperCase().replace(/-/g, ' ');
+const cgPelado   = (cg) => String(cg || '').toUpperCase().replace(/-/g, '');
+// El NRC y el NIT viajan sin guión: `250887-5` → `2508875`, `01274208-2` →
+// `012742082`. En el portal se guardan CON guión, que es como se leen.
+const docId = (v) => String(v || '').replace(/-/g, '');
+
 const COLS_CONSUMIDOR = [
     { key: 'fecha',     label: 'Fecha',      align: 'left'  },
     { key: 'sucursal',  label: 'Sucursal',   align: 'left', hideBelow: 'md' },
@@ -623,31 +641,37 @@ export default function LibrosIvaView() {
             // lleva: clase y tipo, el código de generación del primero y del
             // último del día, el sello del primero y los IDs del ERP. Los cinco
             // estaban guardados y este CSV no los sacaba.
-            exportCsv(
-                ['FECHA', 'CLASE', 'TIPO', 'DEL No', 'AL No',
-                 'NUMERO DE CONTROL DEL', 'NUMERO DE CONTROL AL',
-                 'CODIGO DE GENERACION DEL', 'CODIGO DE GENERACION AL',
-                 'SELLO DE RECEPCION DEL', 'ID INTERNO DEL', 'ID INTERNO AL',
-                 'ESTABLECIMIENTO', 'DOCUMENTOS', 'VENTAS EXENTAS',
-                 'VENTAS GRAVADAS LOCALES', 'EXPORTACIONES', 'TOTAL VENTAS DIARIAS',
-                 'VENTAS CUENTA DE TERCEROS'],
+            // Réplica del archivo real (22 columnas, sin encabezado), verificada
+            // columna por columna contra junio 2026 el 2026-08-01.
+            //
+            // Las columnas 10-13 y 15-19 van en cero porque están en cero en TODA
+            // la muestra disponible. No se pudo determinar cuál es cuál —haría
+            // falta un día con ventas exentas o exportaciones, y no existe uno en
+            // el histórico—, así que quedan escritas como constantes y dichas
+            // acá en vez de adivinadas.
+            //
+            // Las de código de generación son las DOS que el reporte original
+            // trae MAL: verificado en 2 de 2 días, no son las del primero ni las
+            // del último documento del día sino las de documentos del medio, y
+            // encima invertidas entre sí (el que llama "al" tenía correlativo
+            // MENOR que el "del"). Acá van las correctas. Replicar un dato
+            // equivocado en un libro que se declara sería copiar el error, no el
+            // formato — misma decisión que con las notas de crédito.
+            exportCsv(null,
                 [
                     ...consumidor.map(r => [
                         fmtFecha(r.fecha), '4', '01',
-                        soloNumero(r.correlativo_del), soloNumero(r.correlativo_al),
-                        r.numero_control_del || '', r.numero_control_al || '',
-                        (r.codigo_gen_del || '').toUpperCase(), (r.codigo_gen_al || '').toUpperCase(),
-                        r.sello_del || '', r.erp_id_del || '', r.erp_id_al || '',
-                        nombreSucursal(r.branch_id), r.documentos,
-                        num(r.ventas_exentas), num(r.ventas_gravadas),
-                        num(r.exportaciones), num(r.total_diario), '0.00',
+                        ncPelado(r.numero_control_del),
+                        r.sello_del || '',
+                        r.erp_id_del || '', r.erp_id_al || '',
+                        cgEspacios(r.codigo_gen_del), cgEspacios(r.codigo_gen_al),
+                        '',
+                        num(r.ventas_exentas), '0.00', '0.00', '0.0000',
+                        num(r.ventas_gravadas),
+                        '0.00', '0.00', '0.00', '0.00', '0.00',
+                        num(r.total_diario),
+                        '2',
                     ]),
-                    // Art. 83 pide totalizar el mes y consignar el resumen del
-                    // débito fiscal. Va en el archivo, no solo en la pantalla.
-                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', '', '', t.docs,
-                     num(t.exentas), num(t.gravadas), '0.00', num(t.total), '0.00'],
-                    ['DEBITO FISCAL DEL PERIODO', '', '', '', '', '', '', '', '', '', '', '',
-                     '', '', '', num(t.debito), '', '', ''],
                 ],
                 `libro-consumidor-final_${sufijoArchivo}.csv`);
             return;
@@ -662,31 +686,35 @@ export default function LibrosIvaView() {
             // no está verificado cuál de las dos consigna el reporte en esa
             // columna. Mientras la duda exista, el archivo lleva las dos —
             // sobra un dato, no falta.
-            exportCsv(
-                ['No', 'FECHA', 'CLASE', 'TIPO', 'No CCF', 'NUMERO DE CONTROL',
-                 'CODIGO DE GENERACION',
-                 'SELLO DE RECEPCION', 'ID INTERNO', 'CLIENTE', 'NRC', 'NIT', 'DUI',
-                 'VENTAS EXENTAS', 'VENTAS GRAVADAS', 'DEBITO FISCAL',
-                 'VENTAS CUENTA DE TERCEROS', 'DEBITO CUENTA DE TERCEROS',
-                 'IMPUESTO PERCIBIDO', 'TOTAL'],
+            // Réplica del archivo real (19 columnas, sin encabezado), verificada
+            // contra junio 2026. Clase 4 = documento tributario electrónico;
+            // tipo 03 = comprobante de crédito fiscal — códigos del catálogo de
+            // Hacienda, no una numeración nuestra.
+            //
+            // El NRC va en la columna 8 y el NIT en la 18, los dos SIN guión.
+            // Las columnas 11 y 12 quedan en cero: están en cero en toda la
+            // muestra y no se pudo determinar cuál es cuál.
+            //
+            // Este reporte SÍ trae bien sus identificadores —número de control,
+            // sello y código de generación coinciden con el documento de la
+            // fila—, a diferencia del de consumidor.
+            exportCsv(null,
                 [
-                    ...contribuyente.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha),
-                        // Clase 4 = documento tributario electrónico; tipo 03 =
-                        // comprobante de crédito fiscal. Son los códigos del
-                        // catálogo de Hacienda, no una numeración nuestra.
-                        '4', '03',
-                        soloNumero(r.correlativo),
-                        r.numero_control || '',
-                        (r.codigo_generacion || '').toUpperCase(),
-                        r.sello_recepcion || '', r.erp_invoice_id || '',
-                        r.cliente || '', r.nrc || '', r.nit || '', r.dui || '',
-                        num(r.ventas_exentas), num(r.ventas_gravadas), num(r.debito_fiscal),
-                        '0.00', '0.00', '0.00', num(r.total),
+                    ...contribuyente.map(r => [
+                        fmtFecha(r.fecha), '4', '03',
+                        ncPelado(r.numero_control),
+                        r.sello_recepcion || '',
+                        cgPelado(r.codigo_generacion),
+                        r.erp_invoice_id || '',
+                        docId(r.nrc),
+                        r.cliente || '',
+                        num(r.ventas_exentas), '0.00', '0',
+                        num(r.ventas_gravadas), num(r.debito_fiscal),
+                        '0.00', '0.00',
+                        num(r.total),
+                        docId(r.nit),
+                        '1',
                     ]),
-                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', '', '',
-                     num(t.exentas), num(t.gravadas), num(t.debito),
-                     '0.00', '0.00', '0.00', num(t.total)],
                 ],
                 `libro-contribuyentes_${sufijoArchivo}.csv`);
             return;
@@ -696,24 +724,26 @@ export default function LibrosIvaView() {
             // ERP los lleva y acá estaban guardados sin salir. Al revés, el ERP
             // NO trae fecha, cliente ni total — esas tres quedan porque hacen
             // el anexo legible sin tener que ir a buscar cada documento.
-            // El número de control va PRIMERO porque es la columna 1 del anexo,
-            // la única de las diez que no se podía llenar hasta hoy. Las seis
-            // del medio son constantes verificadas sobre las 80 filas de junio.
-            exportCsv(
-                ['No', 'NUMERO DE CONTROL', 'FECHA', 'CLASE', 'TIPO', 'CORRELATIVO',
-                 'CODIGO DE GENERACION',
-                 'SELLO DE RECEPCION', 'ID INTERNO', 'CLIENTE', 'TOTAL'],
+            // Réplica del archivo real (10 columnas, sin encabezado). El número
+            // de control es la PRIMERA, y era la única que no se podía llenar
+            // hasta el backfill del 2026-08-01.
+            //
+            // Las seis constantes (`4`, `0`, `0`, `D`, `0`, `0`) se verificaron
+            // sobre las 80 filas de junio: son iguales en todas. El anexo no
+            // lleva fecha, cliente ni total — por eso no van, aunque la pantalla
+            // sí los muestre para poder leer la fila sin ir a buscar cada
+            // documento.
+            exportCsv(null,
                 [
-                    ...anulados.map((r, i) => [
-                        i + 1, r.numero_control || '',
-                        fmtFecha(r.fecha), '4',
+                    ...anulados.map(r => [
+                        ncPelado(r.numero_control),
+                        '4', '0', '0',
                         r.tipo_documento === 'CCF' ? '03' : '01',
-                        soloNumero(r.correlativo),
-                        (r.codigo_generacion || '').toUpperCase(),
-                        r.sello_recepcion || '', r.erp_invoice_id || '',
-                        r.cliente || '', num(r.total),
+                        'D',
+                        r.sello_recepcion || '',
+                        '0', '0',
+                        cgPelado(r.codigo_generacion),
                     ]),
-                    ['TOTALES', '', '', '', '', '', '', '', '', '', num(t.total)],
                 ],
                 `anexo-anulados_${sufijoArchivo}.csv`);
             return;
@@ -722,28 +752,41 @@ export default function LibrosIvaView() {
             // Art. 86: correlativo · fecha · clase y número del documento ·
             // NRC · proveedor · exentas · gravadas internas · importaciones ·
             // crédito fiscal · total · percibido · retenido.
-            exportCsv(
-                ['No', 'FECHA', 'CLASE DE DOCUMENTO', 'No DOCUMENTO', 'NRC', 'NIT',
-                 'PROVEEDOR', 'ESTABLECIMIENTO', 'COMPRAS EXENTAS',
-                 'COMPRAS GRAVADAS INTERNAS', 'IMPORTACIONES GRAVADAS',
-                 'CREDITO FISCAL', 'TOTAL COMPRAS', 'IVA PERCIBIDO', 'IVA RETENIDO',
-                 'ANULADA'],
+            // Réplica del archivo real (23 columnas, sin encabezado), verificada
+            // contra junio 2026 en Bodega. La columna 5 es el **NIT**, no el NRC
+            // (INCOFA `06142609031027`, LETERAGO `06142505071078`), y las
+            // gravadas son `subtotal − percepción` — LETERAGO: 577.71 − 5.72 =
+            // 571.99, que es exactamente lo que trae el archivo.
+            //
+            // La percepción va con CUATRO decimales, no dos.
+            //
+            // Las constantes `1;1;2;5;3` de las columnas 17-21 son iguales en
+            // todas las filas de la muestra; no se pudo determinar qué
+            // significan, así que se copian tal cual.
+            //
+            // La última columna es el SELLO y sale vacía: no viene en la fuente
+            // que alimenta el módulo de Compras. Vacío y no un cero, porque no
+            // sabemos el valor — declararlo sería inventarlo.
+            exportCsv(null,
                 [
-                    ...compras.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha), r.documento_tipo || '',
-                        r.documento_numero || '', r.nrc || '', r.nit || '',
-                        r.proveedor || '', nombreSucursal(r.branch_id),
-                        num(r.compras_exentas), num(r.compras_gravadas), '0.00',
-                        num(r.credito_fiscal), num(r.total),
-                        // Vacío ≠ 0.00: si el documento se sincronizó antes de
+                    ...compras.map(r => [
+                        fmtFecha(r.fecha), '4', '',
+                        r.documento_numero || '',
+                        docId(r.nit),
+                        r.proveedor || '',
+                        num(r.compras_exentas), '0.00', '0.00',
+                        num(r.compras_gravadas),
+                        '0.00', '0.00', '0.00',
+                        num(r.credito_fiscal),
+                        num(r.total),
+                        '',
+                        '1', '1', '2', '5', '3',
+                        // Vacío ≠ 0.0000: si el documento se sincronizó antes de
                         // que existiera la columna no sabemos si hubo percepción,
-                        // y escribir 0.00 sería afirmarlo.
-                        r.percepcion_iva == null ? '' : num(r.percepcion_iva),
-                        r.retencion_iva  == null ? '' : num(r.retencion_iva),
-                        r.anulada ? 'SI' : '',
+                        // y escribir cero sería afirmar que no la hubo.
+                        r.percepcion_iva == null ? '' : (Number(r.percepcion_iva) || 0).toFixed(4),
+                        '',
                     ]),
-                    ['TOTALES', '', '', '', '', '', '', '', num(t.exentas), num(t.gravadas),
-                     '0.00', num(t.debito), num(t.total), '', '', ''],
                 ],
                 `libro-compras_${sufijoArchivo}.csv`);
             return;

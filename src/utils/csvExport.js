@@ -10,13 +10,18 @@ function escapeCell(value) {
 }
 
 /**
- * @param {string[]} headers
+ * `headers` en `null` escribe el archivo SIN fila de encabezado. Hace falta para
+ * los libros de IVA: los reportes que replican arrancan directo en datos, y una
+ * fila de rótulos de más los desalinea contra el archivo con el que se comparan.
+ *
+ * @param {string[]|null} headers
  * @param {Array<Array<string|number>>} rows
  * @param {string} filename
  */
 export function exportCsv(headers, rows, filename) {
     const SEP = ';';
-    const lines = [headers, ...rows].map(row => row.map(escapeCell).join(SEP));
+    const todas = headers == null ? rows : [headers, ...rows];
+    const lines = todas.map(row => row.map(escapeCell).join(SEP));
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), {
         href: URL.createObjectURL(blob),

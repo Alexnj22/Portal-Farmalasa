@@ -91,16 +91,36 @@ def main():
             time.sleep(0.4)
         veredicto, ganador, detalle = comparar(fichas)
         nombre = (fichas[d['erp_ids'][0]].get('nombre') or '').strip()
+
+        # Elegir una ficha entera DESCARTA lo que solo estaba en la otra. Pasa:
+        # MOISES RODOLFO HERNANDEZ ANAYA gana con la que tiene NIT, NRC y correo
+        # — y con eso se pierde el DUI, que solo estaba en la perdedora.
+        #
+        # No se resuelve solo: fusionar los campos daría una fila del portal que
+        # no coincide con NINGUNA ficha del ERP, y eso es otra decisión. Lo que
+        # sí corresponde es que la pérdida se vea, porque es justamente el dato
+        # que necesita quien después purgue el duplicado en el ERP.
+        pierde = {}
+        if ganador:
+            for perdedora in (i for i in fichas if i != ganador):
+                for k in COMPARABLES:
+                    if limpio(fichas[perdedora], k) and not limpio(fichas[ganador], k):
+                        pierde[k] = {'valor': limpio(fichas[perdedora], k),
+                                     'estaba_en': perdedora}
+
         filas.append({'nombre': nombre, 'normalizado': d['nombre_normalizado'],
                       'erp_ids': d['erp_ids'], 'difieren_en': d['difieren_en'],
                       'veredicto': veredicto, 'ganador': ganador,
-                      'detalle': detalle})
+                      'detalle': detalle, 'pierde': pierde})
 
         print(f'{veredicto:<13} {nombre[:44]:<46} {d["erp_ids"]}'
               f'{"" if not ganador else f"  -> gana {ganador}"}')
         for k, porficha in detalle.items():
             print(f'                 · {k}: ' +
                   ' | '.join(f'{i}={v!r}' for i, v in porficha.items()))
+        for k, x in pierde.items():
+            print(f'              ⚠ SE PIERDE {k}={x["valor"]!r} '
+                  f'(solo estaba en la ficha {x["estaba_en"]})')
 
         if ganador:
             # La llave es la del espejo: `customers.search_name`.
@@ -115,10 +135,23 @@ def main():
             pendientes.append(nombre)
 
     bloque.volcar_json(f'{D}/duplicados_resueltos.json', resueltos)
+    bloque.volcar_json(f'{D}/duplicados_analisis.json', filas)
     print(f'\nresueltos: {len(resueltos)} -> duplicados_resueltos.json '
           f'(y encolados en portal_pendiente.jsonl)')
+    print(f'análisis completo -> duplicados_analisis.json')
+
+    con_perdida = [f for f in filas if f['pierde']]
+    if con_perdida:
+        print(f'\n⚠ {len(con_perdida)} caso(s) donde elegir una ficha descarta un '
+              f'dato que solo estaba en la otra:')
+        for f in con_perdida:
+            detalle_perdida = ', '.join(
+                '{}={!r}'.format(k, x['valor']) for k, x in f['pierde'].items())
+            print(f'   {f["nombre"][:40]:<42} pierde {detalle_perdida}')
+        print('   Se arregla purgando el duplicado EN EL ERP, no acá.')
+
     if pendientes:
-        print(f'requieren una persona ({len(pendientes)}): '
+        print(f'\nrequieren una persona ({len(pendientes)}): '
               f'{", ".join(p[:30] for p in pendientes)}')
         print('  (chocan en DUI/NIT/NRC: pueden ser dos personas distintas)')
 

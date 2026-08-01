@@ -4,25 +4,42 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 (`clientesdte3.oss.com.sv/farma_salud`) y espejar el resultado a
 `customers` en el portal.
 
-**Estado al 2026-08-01, 05:00 UTC.** Escrito para retomar sin contexto previo.
+**Estado al 2026-08-01, 09:00 UTC.** Escrito para retomar sin contexto previo.
 
 ---
 
 ## 1. Dónde estamos
 
 ```
-catálogo del ERP        27,569 fichas   (crece: eran 27,551 el 31-jul)
-procesadas              585 fichas      (checkpoint.json)
-portadas al portal      582 de 24,502   (customers.erp_id no nulo)
-pendientes              ~27,000
+catálogo del ERP        27,575 fichas   (crece: 27,551 el 31-jul, 27,569 al alba)
+procesadas              1,085 fichas    (checkpoint.json)
+portadas al portal      993 de 24,509   (customers.erp_id no nulo)
+pendientes              26,576          (54 bloques de 500)
 ```
 
-Lo corregido: ~404 distritos, 3 nombres a mayúscula, 3 teléfonos y 11 DUI
-borrados (con su número original guardado en `revision_manual.json`). **Cero
-campos perdidos y cero alterados en 585 fichas.** El único fallo fue un
-transitorio del ERP que entró a la primera al reintentarlo.
+Bloques cerrados: el primero (por nombre, desde el portal) y **erp 283–1000**,
+el primero corrido con `--una-pasada`. Ese segundo bloque: 481 corregidos OK,
+17 sin cambios, 2 saltados, **0 a revisar, 0 rechazos, 0 reintentos**. Cero
+campos perdidos y cero alterados en las 1,085 fichas acumuladas.
 
-Medición real: **1.37s por petición**. El catálogo completo son ~34 horas.
+Medición real: **1.37s por petición**, ~5.4s por ficha con las pausas. Un bloque
+de 500 son ~45 min y el catálogo completo ~34 horas.
+
+### El hueco entre leer y escribir no era teórico
+
+En el bloque erp 283–1000 se midió: **1 de 499 fichas fue editada por una
+persona en el ERP** durante los ~50 minutos entre la simulación y la corrida.
+Fue la `erp 885` (PLACIDA ACOSTA DE PACHECO), que pasó de no tener distrito a
+tener CHALATENANGO — puesto a mano.
+
+El plan de la simulación decía escribirle `CONCEPCIÓN QUEZALTEPEQUE`, que es un
+sorteo determinista. Con `--una-pasada` la ficha se releyó justo antes de
+escribir, se vio el distrito real y **no se tocó**. Verificado en el portal:
+quedó CHALATENANGO.
+
+O sea que la tasa de edición concurrente no es cero, y el POST manda los 21
+campos. Por eso `--una-pasada` es el modo de la corrida larga y no una
+optimización opcional.
 
 ## 2. Puesta en marcha
 
@@ -103,7 +120,7 @@ primera al reintentarlo. A escala de 20,000 escrituras son ~55 cortes.
 | `checkpoint.json` | **el estado**. Una entrada por ficha, con la versión de reglas. Perderlo = releer todo |
 | `portal_pendiente.jsonl` | cola del espejo, append-only. Una línea por ficha procesada |
 | `ambiguos.json` | nombres sin match, duplicados, rechazos del ERP |
-| `revision_manual.json` | casos que requieren una persona (hoy: DUI inválidos) |
+| `revision_manual.json` | **el número original de cada DUI borrado**. ACUMULA entre bloques — es lo único que hace reversible el borrado, y hasta el 2026-08-01 cada corrida pisaba la anterior |
 | `bloque_plan.json` / `bloque_resultado.json` | plan y resultado del último bloque |
 | `duplicados_erp.json` | los 19 nombres duplicados del catálogo — lista de purga |
 
@@ -179,10 +196,28 @@ teléfono       99% con 8 dígitos · 0% vacíos
 DUI            66% válido · 30% vacío · 2% inválido
 ```
 
-Del matcher de distritos, medido sobre 85 direcciones reales: **~40% se resuelve
-por la dirección, ~16% queda ambiguo y ~44% es determinista** — o sea inventado
-dentro del municipio correcto. A escala del catálogo son del orden de 10,000
-fichas con un distrito sorteado. Está aceptado, pero conviene tenerlo presente.
+### El matcher de distritos rinde MENOS de lo que decía la primera medición
+
+La medición vieja (85 direcciones del `ccf_erp.json`) daba ~40% resuelto por
+dirección, ~16% ambiguo y ~44% determinista. **Esa muestra eran contribuyentes**
+—negocios, con direcciones fiscales completas— y el catálogo es 99% consumidor
+final. Medido sobre las 500 fichas del bloque erp 283–1000, que sí son la
+población real:
+
+```
+determinista (la dirección no dice)  374   78%   ← distrito sorteado
+dirección (nombre completo)           88   18%
+dirección (abreviatura)               19    4%
+ambiguo                                0    0%
+```
+
+O sea que a escala del catálogo no son ~10,000 fichas con un distrito inventado
+dentro del municipio correcto: son del orden de **21,000**. Sigue estando
+aceptado —el municipio, que es lo que importa, siempre es el real, y el sorteo
+es determinista y auditable— pero el número honesto es ese, no el anterior.
+
+Los 0 ambiguos no son una mejora: son la otra cara del mismo dato. Una dirección
+que no nombra ningún distrito no puede nombrar dos.
 
 ## 8. Decisiones pendientes
 
@@ -193,11 +228,27 @@ fichas con un distrito sorteado. Está aceptado, pero conviene tenerlo presente.
    corregir con el cliente después. Dato que acotó el riesgo: las 10 fichas del
    muestreo son consumidor final exclusivo (0 CCF), y ahí el DUI del receptor no
    es campo requerido — el número incorrecto no viajaba a Hacienda.
-2. **Las 4 fichas diferidas** — `FELIX ANTONIO RECINOS CARCAMO` (portal 5242),
-   `NURIA ROXANA VILLANUEVA` (18312) e `YNES ANTONIO ARDON` (13810) tienen dos
-   fichas cada uno en el ERP. Están **corregidas en el ERP**, pero el espejo no
-   se puede aplicar: `customers` tiene una fila por cliente y hay que decidir cuál
-   `erp_id` gana. Ver `duplicados_erp.json`.
+2. ~~Las fichas duplicadas~~ — **RESUELTO el 2026-08-01.**
+   `python3 revisar_duplicados.py` lee las dos fichas de cada nombre y compara
+   campo por campo: 17 de los 19 se resolvieron solos y ya están espejados
+   (los tres que estaban trabados —FELIX ANTONIO RECINOS CARCAMO, NURIA ROXANA
+   VILLANUEVA, YNES ANTONIO ARDON— ya tienen `erp_id` en el portal).
+
+   Quedan **dos que necesitan una persona**, porque las dos fichas traen DUI
+   distintos y eso ya no es un duplicado tipográfico — pueden ser dos personas
+   con el mismo nombre:
+
+   | nombre | fichas | DUI en conflicto |
+   |---|---|---|
+   | FLOR DE MARIA GUARDADO GUARDADO | 3883 / 8598 | `01404969-2` vs `02055661-5` |
+   | WILLIAM ENRIQUE ALEMAN ALFARO | 7280 / 7284 | `01347642-2` vs `08666142-6` |
+
+   Y **un caso donde elegir una ficha descarta un dato**: MOISES RODOLFO
+   HERNANDEZ ANAYA gana con la 26151 (NIT, NRC, correo) y con eso se pierde el
+   `dui='05216466-4'`, que solo estaba en la 3906. Eso se arregla purgando el
+   duplicado EN EL ERP, no en el espejo: fusionar los campos daría una fila del
+   portal que no coincide con ninguna ficha real. Está anotado en
+   `duplicados_analisis.json` bajo `pierde`.
 3. **Dos distritos probablemente mal**, ya escritos, del tramo débil del matcher:
    `BARRIO LAS FLORES → SAN JOSE FLORES` (erp 3461) y
    `COL SAN FRANCISCO → SAN FRANCISCO LEMPA` (erp 1672).

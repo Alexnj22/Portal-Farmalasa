@@ -343,6 +343,39 @@ def cargar_checkpoint():
     return {}
 
 
+def cargar_revisiones():
+    """Las revisiones de las corridas ANTERIORES.
+
+    `revision_manual.json` se escribía de cero en cada bloque, y ahí vive el
+    único registro del DUI original de una ficha antes de vaciarlo — o sea, la
+    razón entera por la que borrarlo se considera reversible. Un bloque nuevo
+    borraba los números del anterior. No es autorreparable como `ambiguos.json`:
+    un rechazo del ERP no se anota en el checkpoint y por eso se vuelve a
+    encontrar solo, pero un DUI borrado SÍ se anota, así que nadie lo vuelve a
+    mirar nunca. Se detectó en el bloque erp 283-1000: el archivo quedó con 12
+    entradas y las 10 anteriores solo se recuperaron del git.
+    """
+    ruta = f'{D}/revision_manual.json'
+    if os.path.exists(ruta):
+        with open(ruta) as fh:
+            return json.load(fh)
+    return []
+
+
+def anotar_revision(revisiones, nota):
+    """Agrega sin duplicar: la clave es (ficha, campo).
+
+    Reprocesar una ficha —al subir REGLAS, por ejemplo— reescribe su entrada en
+    vez de sumar una segunda.
+    """
+    clave = (str(nota.get('erp_id')), nota.get('campo'))
+    for i, previa in enumerate(revisiones):
+        if (str(previa.get('erp_id')), previa.get('campo')) == clave:
+            revisiones[i] = nota
+            return
+    revisiones.append(nota)
+
+
 def anotar_checkpoint(ck, erp_id, registro):
     ck[str(erp_id)] = registro
     volcar_json(CHECKPOINT, ck)
@@ -624,7 +657,7 @@ def planear_ficha(c, eid, marca, ambiguos, revisiones):
     for n in notas_ficha:
         n['erp_id'] = eid
         n['name'] = c['name']
-        revisiones.append(n)
+        anotar_revision(revisiones, n)
     if 'ambiguo' in cambios.get('distrito', ''):
         _, _, hits = elegir_distrito(c['id'], campos.get('direccion', ''),
                                      ops.get('distrito', []))
@@ -751,7 +784,13 @@ def main():
           f'({"ESCRITURA" if a.escribir else "SIMULACIÓN"})')
     print('═' * 78)
 
-    plan, ambiguos, revisiones = [], [], []
+    # `ambiguos` arranca vacío a propósito: sus hallazgos son autorreparables
+    # (un rechazo del ERP no se anota en el checkpoint, así que la próxima
+    # corrida lo vuelve a encontrar). `revisiones` NO — ver cargar_revisiones().
+    plan, ambiguos, revisiones = [], [], cargar_revisiones()
+    if revisiones:
+        print(f'revisión manual: {len(revisiones)} casos de corridas anteriores '
+              f'(se conservan)\n')
     for c in clientes:
         ids = [c['_erp']] if '_erp' in c else erp.get(norm(c['name']), [])
         if not ids:

@@ -78,5 +78,101 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "BESY GETSABEL GUARDADO ALAS"
+ },
+ {
+  "erp_id": "560",
+  "campo": "dui",
+  "valor": "00766922-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SANDRA ELIZABETH SERRANO ALVARENGA"
+ },
+ {
+  "erp_id": "571",
+  "campo": "dui",
+  "valor": "01268103-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "FELIX ANTONIO MONTERROSA"
+ },
+ {
+  "erp_id": "584",
+  "campo": "dui",
+  "valor": "05763988-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BERNARDO HERIBERTO GUERRERO LARA"
+ },
+ {
+  "erp_id": "663",
+  "campo": "dui",
+  "valor": "05395240-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BRENDA ARACELI MENJIVAR ERAZO"
+ },
+ {
+  "erp_id": "667",
+  "campo": "dui",
+  "valor": "01253469-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARTA ALICIA MENJIVAR DE CASTILLO"
+ },
+ {
+  "erp_id": "678",
+  "campo": "dui",
+  "valor": "04442489-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "GERSON ARNOLDO ALVARENGA CARTAGENA"
+ },
+ {
+  "erp_id": "727",
+  "campo": "dui",
+  "valor": "01153094-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "PABLO HERNANDEZ ORELLANA"
+ },
+ {
+  "erp_id": "743",
+  "campo": "dui",
+  "valor": "06160831-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "KEIRY YAMILETH LOPEZ ORELLANA"
+ },
+ {
+  "erp_id": "765",
+  "campo": "dui",
+  "valor": "05282922-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "REYES DOMITILA HERNANDEZ"
+ },
+ {
+  "erp_id": "822",
+  "campo": "dui",
+  "valor": "04958064-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "OSCAR ARNULFO CARTAGENA MEJIA"
+ },
+ {
+  "erp_id": "908",
+  "campo": "dui",
+  "valor": "01094815-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JUAN CARLOS RECINOS ALVARENGA"
+ },
+ {
+  "erp_id": "935",
+  "campo": "dui",
+  "valor": "01080008-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANA ELIZABETH SERRANO SERRANO"
  }
 ]

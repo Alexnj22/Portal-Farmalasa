@@ -746,6 +746,64 @@ check('y lo dice en el encabezado', 'SIMULACIÓN' in salida and 'UNA PASADA' not
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+print('\n8b. UN BLOQUE NUEVO NO BORRA LOS DUI QUE ANOTÓ EL ANTERIOR\n')
+
+# El agujero real, encontrado en el bloque erp 283-1000: revision_manual.json se
+# escribía de cero cada corrida. Ahí vive el ÚNICO registro del DUI original
+# antes de vaciarlo — o sea la razón entera por la que borrarlo se considera
+# reversible — y el bloque nuevo se llevaba puestos los números del anterior.
+# Las 10 entradas previas solo se recuperaron del git.
+#
+# No es autorreparable: un DUI borrado SÍ queda en el checkpoint, así que
+# ninguna corrida futura vuelve a mirar esa ficha.
+REV = f'{TMP}/revision_manual.json'
+limpiar()
+con_dui = []
+for f in FICHAS[:2]:
+    g = copy.deepcopy(f)
+    g['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
+    g['campos']['dui'] = DUI_MALO
+    con_dui.append(g)
+
+erp = montar(con_dui)
+correr(con_dui, escribir=True)
+primera = json.load(open(REV))
+check('el primer bloque anota sus DUI', len(primera) == 2, str(len(primera)))
+
+# Un segundo bloque, con fichas DISTINTAS: las del primero no se pueden perder.
+otras = []
+for f in FICHAS[2:4]:
+    g = copy.deepcopy(f)
+    g['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
+    g['campos']['dui'] = '045678901'
+    otras.append(g)
+erp = montar(otras)
+correr(otras, escribir=True)
+segunda = json.load(open(REV))
+check('el segundo bloque CONSERVA los del primero y suma los suyos',
+      len(segunda) == 4, f'{len(segunda)} entradas (esperaba 4)')
+check('y los números originales del primer bloque siguen ahí',
+      {x['erp_id'] for x in primera} <= {x['erp_id'] for x in segunda},
+      str([x['erp_id'] for x in segunda]))
+
+# Reprocesar la misma ficha (subir REGLAS) reescribe su entrada, no suma otra.
+bloque.REGLAS += 1
+erp = montar(con_dui)
+correr(con_dui, escribir=True)
+tercera = json.load(open(REV))
+bloque.REGLAS -= 1
+check('reprocesar una ficha no duplica su entrada', len(tercera) == 4,
+      f'{len(tercera)} entradas (esperaba 4)')
+
+r = [{'erp_id': '1', 'campo': 'dui', 'valor': 'A'}]
+bloque.anotar_revision(r, {'erp_id': '1', 'campo': 'dui', 'valor': 'B'})
+check('la clave es (ficha, campo): mismo par -> reemplaza',
+      len(r) == 1 and r[0]['valor'] == 'B', str(r))
+bloque.anotar_revision(r, {'erp_id': '1', 'campo': 'nit', 'valor': 'C'})
+check('otro campo de la misma ficha -> entrada nueva', len(r) == 2, str(r))
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 print('\n9. QUÉ FICHA GANA CUANDO UN NOMBRE ESTÁ DUPLICADO\n')
 
 import revisar_duplicados as dup  # noqa: E402

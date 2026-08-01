@@ -1,0 +1,581 @@
+[
+ {
+  "nombre": "....",
+  "normalizado": "",
+  "erp_ids": [
+   "9810",
+   "19575"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "MÁS COMPLETA",
+  "ganador": "9810",
+  "detalle": {
+   "direccion": {
+    "9810": "....",
+    "19575": "CHALATENANGO"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "BLANCA CONCEPCION MENDEZ DE CORTEZ",
+  "normalizado": "BLANCA CONCEPCION MENDEZ DE CORTEZ",
+  "erp_ids": [
+   "26428",
+   "11516"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "SUPERSET",
+  "ganador": "26428",
+  "detalle": {
+   "nit": {
+    "26428": "0462-8803--6",
+    "11516": ""
+   },
+   "nrc": {
+    "26428": "375864-3",
+    "11516": ""
+   },
+   "telefono1": {
+    "26428": "7726-7407",
+    "11516": ""
+   },
+   "correo": {
+    "26428": "blancamendez20140206@gmail.com",
+    "11516": ""
+   },
+   "direccion": {
+    "26428": "CANT. VALLE NUEVO, CRIO, LOS CORTECES, DISTRITO DE EL PARAISO, MUNICIPIO DE CHALATENANGO CENTRO, DEPARTAMENTO DE CHALATENANGO",
+    "11516": ""
+   },
+   "departamento": {
+    "26428": "4",
+    "11516": ""
+   },
+   "municipio": {
+    "26428": "35",
+    "11516": ""
+   },
+   "categoria": {
+    "26428": "2",
+    "11516": ""
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "CONSTRUCTORA BARUC, S.A. DE C.V.",
+  "normalizado": "CONSTRUCTORA BARUC  S A  DE C V",
+  "erp_ids": [
+   "10136",
+   "20454"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "SUPERSET",
+  "ganador": "20454",
+  "detalle": {
+   "nit": {
+    "10136": "",
+    "20454": "0614-280317-101-8"
+   },
+   "nrc": {
+    "10136": "",
+    "20454": "258637-7"
+   },
+   "telefono1": {
+    "10136": "7736-4242",
+    "20454": "6994-9998"
+   },
+   "correo": {
+    "10136": "",
+    "20454": "constructorabaruc022@gmail.com"
+   },
+   "direccion": {
+    "10136": "AV MONTERREY, COL 14 DE JULIO, #14,",
+    "20454": "AV. MONTERREY, COL 14 DE JULIO, ·14. SAN MIGUEL, SAN MIGUEL"
+   },
+   "departamento": {
+    "10136": "4",
+    "20454": "12"
+   },
+   "municipio": {
+    "10136": "36",
+    "20454": "22"
+   },
+   "categoria": {
+    "10136": "1",
+    "20454": "2"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "ELSY YANIRA\tMANCIA SERRANO DE REYES",
+  "normalizado": "ELSY YANIRA MANCIA SERRANO DE REYES",
+  "erp_ids": [
+   "21793",
+   "25412"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "SUPERSET",
+  "ganador": "21793",
+  "detalle": {
+   "dui": {
+    "21793": "00652739-3",
+    "25412": ""
+   },
+   "telefono1": {
+    "21793": "7985-4177",
+    "25412": "7842-9291"
+   },
+   "direccion": {
+    "21793": "NUEVA CONCEPCION",
+    "25412": "NUEVA CONCEPCI0N"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "EVELIN  TATIANA AGUILAR VILLEDA",
+  "normalizado": "EVELIN TATIANA AGUILAR VILLEDA",
+  "erp_ids": [
+   "23426",
+   "22659"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "MÁS COMPLETA",
+  "ganador": "22659",
+  "detalle": {
+   "telefono1": {
+    "23426": "1111-1111",
+    "22659": "6996-0811"
+   },
+   "direccion": {
+    "23426": "NUEVA CONCEPCION CHALATENANGO",
+    "22659": "nueva concepcion chalatenango"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "FELIX ANTONIO RECINOS CARCAMO",
+  "normalizado": "FELIX ANTONIO RECINOS CARCAMO",
+  "erp_ids": [
+   "22965",
+   "22971"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "MÁS COMPLETA",
+  "ganador": "22965",
+  "detalle": {
+   "direccion": {
+    "22965": "COL. SAN FRANCISCO",
+    "22971": "NUEVA CONCEPCION"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "FLOR DE MARIA GUARDADO GUARDADO",
+  "normalizado": "FLOR DE MARIA GUARDADO GUARDADO",
+  "erp_ids": [
+   "3883",
+   "8598"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "CONFLICTO",
+  "ganador": null,
+  "detalle": {
+   "dui": {
+    "3883": "01404969-2",
+    "8598": "02055661-5"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "JAQUELINE  TEJADA",
+  "normalizado": "JAQUELINE TEJADA",
+  "erp_ids": [
+   "21823",
+   "10505"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "SUPERSET",
+  "ganador": "21823",
+  "detalle": {
+   "dui": {
+    "21823": "06463403-1",
+    "10505": ""
+   },
+   "telefono1": {
+    "21823": "7937-4705",
+    "10505": "1111-1111"
+   },
+   "direccion": {
+    "21823": "NUEVA CONCEPCION",
+    "10505": "CHALATENANGO"
+   },
+   "municipio": {
+    "21823": "35",
+    "10505": "36"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "",
+  "normalizado": "JOSE GERARDO QUIJADA GUTIERREZ",
+  "erp_ids": [
+   "15697",
+   "22736"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "SUPERSET",
+  "ganador": "22736",
+  "detalle": {
+   "dui": {
+    "15697": "",
+    "22736": "00945168-0"
+   },
+   "nit": {
+    "15697": "",
+    "22736": "0432-250575-101-0"
+   },
+   "nrc": {
+    "15697": "",
+    "22736": "267366-7"
+   },
+   "telefono1": {
+    "15697": "",
+    "22736": "6456-8629"
+   },
+   "correo": {
+    "15697": "",
+    "22736": "josegerardogutierez0000@gmail.com"
+   },
+   "direccion": {
+    "15697": "",
+    "22736": "SANTA RITA"
+   },
+   "departamento": {
+    "15697": "",
+    "22736": "4"
+   },
+   "municipio": {
+    "15697": "",
+    "22736": "35"
+   },
+   "categoria": {
+    "15697": "",
+    "22736": "2"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "",
+  "normalizado": "JOSE MANUEL MENJIVAR MENJIVAR",
+  "erp_ids": [
+   "23830",
+   "8016"
+  ],
+  "difieren_en": "solo mayúsculas/minúsculas",
+  "veredicto": "SUPERSET",
+  "ganador": "8016",
+  "detalle": {
+   "dui": {
+    "23830": "",
+    "8016": "02509522-4"
+   },
+   "nit": {
+    "23830": "",
+    "8016": "0407-190381-101-2"
+   },
+   "nrc": {
+    "23830": "",
+    "8016": "185071-4"
+   },
+   "telefono1": {
+    "23830": "",
+    "8016": "7729-6443"
+   },
+   "correo": {
+    "23830": "",
+    "8016": "jmmenjivar.fdigital@gmail.com"
+   },
+   "direccion": {
+    "23830": "",
+    "8016": "CHALATENANGO, CHALATENANGO"
+   },
+   "departamento": {
+    "23830": "",
+    "8016": "4"
+   },
+   "municipio": {
+    "23830": "",
+    "8016": "36"
+   },
+   "categoria": {
+    "23830": "",
+    "8016": "2"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "normalizado": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "erp_ids": [
+   "16421",
+   "10290"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "SUPERSET",
+  "ganador": "16421",
+  "detalle": {
+   "dui": {
+    "16421": "01453695-8",
+    "10290": ""
+   },
+   "telefono1": {
+    "16421": "7913-0344",
+    "10290": "1111-1111"
+   },
+   "direccion": {
+    "16421": "LAS MINAS",
+    "10290": "CHALATENANGO"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "LORENA NOHEMY CARRILLO NAVARRETE",
+  "normalizado": "LORENA NOHEMY CARRILLO NAVARRETE",
+  "erp_ids": [
+   "27195",
+   "14268"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "SUPERSET",
+  "ganador": "27195",
+  "detalle": {
+   "nit": {
+    "27195": "0614-010491-138-0",
+    "14268": ""
+   },
+   "nrc": {
+    "27195": "309507-4",
+    "14268": ""
+   },
+   "telefono1": {
+    "27195": "7000-3983",
+    "14268": ""
+   },
+   "correo": {
+    "27195": "lorena.carrillo5556@gmail.com",
+    "14268": ""
+   },
+   "direccion": {
+    "27195": "SAN SALVADOR",
+    "14268": ""
+   },
+   "departamento": {
+    "27195": "6",
+    "14268": ""
+   },
+   "municipio": {
+    "27195": "23",
+    "14268": ""
+   },
+   "categoria": {
+    "27195": "2",
+    "14268": ""
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "MANUEL  ARTURO AYALA MEJIA",
+  "normalizado": "MANUEL ARTURO AYALA MEJIA",
+  "erp_ids": [
+   "20331",
+   "20795"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "SUPERSET",
+  "ganador": "20795",
+  "detalle": {
+   "distrito": {
+    "20331": "",
+    "20795": "7"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "MARIA LUZ\tLANDAVERDE DE LEMUS",
+  "normalizado": "MARIA LUZ LANDAVERDE DE LEMUS",
+  "erp_ids": [
+   "21801",
+   "22320"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "SUPERSET",
+  "ganador": "22320",
+  "detalle": {
+   "telefono1": {
+    "21801": "",
+    "22320": "7842-9291"
+   },
+   "direccion": {
+    "21801": "NUEVA CONCEPCION CHALATENANGO",
+    "22320": "nueva concepcion"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "MOISES RODOLFO HERNANDEZ ANAYA",
+  "normalizado": "MOISES RODOLFO HERNANDEZ ANAYA",
+  "erp_ids": [
+   "26151",
+   "3906"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "MÁS COMPLETA",
+  "ganador": "26151",
+  "detalle": {
+   "dui": {
+    "26151": "",
+    "3906": "05216466-4"
+   },
+   "nit": {
+    "26151": "0407-290795-102-8",
+    "3906": ""
+   },
+   "nrc": {
+    "26151": "273974-8",
+    "3906": ""
+   },
+   "correo": {
+    "26151": "mayalibreria16@gmail.com",
+    "3906": ""
+   },
+   "direccion": {
+    "26151": "2 CALLE ORIENTE 6AV.SUR,BO. SAN ANTONIO, CHALATENANGO",
+    "3906": "CIUDAD TOTOLCO"
+   },
+   "categoria": {
+    "26151": "2",
+    "3906": "1"
+   }
+  },
+  "pierde": {
+   "dui": {
+    "valor": "05216466-4",
+    "estaba_en": "3906"
+   }
+  }
+ },
+ {
+  "nombre": "NURIA ROXANA VILLANUEVA",
+  "normalizado": "NURIA ROXANA VILLANUEVA",
+  "erp_ids": [
+   "21807",
+   "21776"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "MÁS COMPLETA",
+  "ganador": "21776",
+  "detalle": {
+   "departamento": {
+    "21807": "6",
+    "21776": "4"
+   },
+   "municipio": {
+    "21807": "23",
+    "21776": "35"
+   },
+   "distrito": {
+    "21807": "8",
+    "21776": "16"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "SANTOS  CASTANEDA",
+  "normalizado": "SANTOS CASTANEDA",
+  "erp_ids": [
+   "19145",
+   "11174"
+  ],
+  "difieren_en": "difieren en acentos o puntuación",
+  "veredicto": "SUPERSET",
+  "ganador": "19145",
+  "detalle": {
+   "dui": {
+    "19145": "02088651-5",
+    "11174": ""
+   },
+   "telefono1": {
+    "19145": "2312-2836",
+    "11174": "1111-1111"
+   },
+   "direccion": {
+    "19145": "COLONIA SAN ANTONIO PASAJE 2",
+    "11174": "CHALATENANGO"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "WILLIAM ENRIQUE ALEMAN ALFARO",
+  "normalizado": "WILLIAM ENRIQUE ALEMAN ALFARO",
+  "erp_ids": [
+   "7280",
+   "7284"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "CONFLICTO",
+  "ganador": null,
+  "detalle": {
+   "dui": {
+    "7280": "01347642-2",
+    "7284": "08666142-6"
+   }
+  },
+  "pierde": {}
+ },
+ {
+  "nombre": "YNES ANTONIO ARDON",
+  "normalizado": "YNES ANTONIO ARDON",
+  "erp_ids": [
+   "22148",
+   "21974"
+  ],
+  "difieren_en": "solo espacios",
+  "veredicto": "SUPERSET",
+  "ganador": "21974",
+  "detalle": {
+   "dui": {
+    "22148": "",
+    "21974": "00738043-5"
+   },
+   "telefono1": {
+    "22148": "7842-9291",
+    "21974": "7562-8817"
+   },
+   "direccion": {
+    "22148": "nueva concepcion",
+    "21974": "BARRIO EL CALVARIO"
+   },
+   "distrito": {
+    "22148": "16",
+    "21974": "1"
+   }
+  },
+  "pierde": {}
+ }
+]

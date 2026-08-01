@@ -782,7 +782,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                         ) : noData ? (
                                             <div className="flex items-center gap-2 text-label py-1 text-content-3">
                                                 <Info size={12} className="shrink-0 text-content-3" />
-                                                Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
+                                                Esta sucursal todavía no tiene el detalle de productos.
                                             </div>
                                         ) : (
                                             (() => {

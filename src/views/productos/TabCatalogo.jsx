@@ -1111,7 +1111,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             {precios.length === 0 ? (
                                 <div className={`flex items-center gap-2 text-label py-3 px-3 rounded-xl border ${xk.emptyPresentaciones}`}>
                                     <Info size={12} className="shrink-0 opacity-60" />
-                                    Sin presentaciones en el ERP.
+                                    Sin presentaciones registradas.
                                 </div>
                             ) : (
                                 <div className={`overflow-x-auto rounded-xl border ${xk.pricingWrapper}`}>

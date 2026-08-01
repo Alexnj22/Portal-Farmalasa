@@ -218,7 +218,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
         // ambos casos hace falta ofrecer "Emparejar" al maestro.
         return (
             <div className="flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-warning shrink-0" title="Sin proveedor emparejado en el maestro" />
+                <AlertTriangle size={12} className="text-warning shrink-0" title="Todavía sin proveedor asignado" />
                 <span className="text-content-2 text-body-sm">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
                 {canEdit && (
                     <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}>Emparejar</Button>
@@ -334,7 +334,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         if (state === 'error') return <LiquidTooltip content={result.error}><span className="text-micro text-danger-text whitespace-nowrap">Error al detectar</span></LiquidTooltip>;
         if (state === 'not_found') return <LiquidTooltip content={`Código completo: ${result.code}`}><span className="text-micro text-content-3 whitespace-nowrap">Código sin sincronizar</span></LiquidTooltip>;
         return (
-            <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}</Button>
+            <Button variant="ghost" disabled={applying} title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`} onClick={(e) => { e.stopPropagation(); apply(); }}>{applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'el documento'}`}</Button>
         );
     }
 
@@ -376,9 +376,9 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
     }
     if (state === 'not_found') {
         return (
-            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" role="img" title={`Código completo: ${result.code} — sin sincronizar aún`}>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" role="img" title={`Código completo: ${result.code} — todavía no aparece entre los documentos`}>
                 <ScanSearch size={15} />
-                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Sin match</span>
+                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Sin hallar</span>
             </div>
         );
     }
@@ -388,7 +388,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
             label={applying ? 'Aplicando' : 'Emparejar'}
             color="emerald"
             disabled={applying}
-            title={`Encontrado: ${result.match.proveedor_nombre || 'match'} — ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
+            title={`Encontrado: ${result.match.proveedor_nombre || 'el documento'} — ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
             onClick={(e) => { e.stopPropagation(); apply(); }}
         />
     );

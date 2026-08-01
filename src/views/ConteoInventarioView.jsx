@@ -156,7 +156,7 @@ export default function ConteoInventarioView() {
                     icon={FileSpreadsheet} label="Sin ajustar" value={formatQty(resumen.sinAjuste)}
                     iconBg="bg-danger/10" iconCls="text-danger"
                     valueCls={resumen.sinAjuste ? 'text-danger' : 'text-content'}
-                    sub="el ERP sigue sin corregir"
+                    sub="el stock aún sin corregir"
                     active={foco === 'SIN_AJUSTE'} onClick={() => setFoco((f) => (f === 'SIN_AJUSTE' ? 'TODOS' : 'SIN_AJUSTE'))}
                 />
             </CarrilCards>
@@ -261,7 +261,7 @@ export default function ConteoInventarioView() {
                 icon: ClipboardCheck,
                 message: foco === 'TODOS' ? 'Sin conteos de inventario' : 'Nada pendiente acá',
                 subtext: foco === 'TODOS'
-                    ? 'Un conteo toma una foto del inventario del ERP y la compara con lo que hay en el anaquel.'
+                    ? 'Un conteo toma una foto del inventario del sistema y la compara con lo que hay en el anaquel.'
                     : 'Ningún conteo cae en este filtro. Prueba con "Todos".',
                 action: foco !== 'TODOS'
                     ? { label: 'Ver todos', onClick: () => setFoco('TODOS') }
@@ -302,7 +302,7 @@ export default function ConteoInventarioView() {
                                     {/* Aprobado no es el final: el stock lo corrige el ERP.
                                         Un conteo firmado y sin ajustar es trabajo a medias. */}
                                     {c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado && (
-                                        <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste ERP</Badge>
+                                        <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste</Badge>
                                     )}
                                 </div>
                             </DataCell>

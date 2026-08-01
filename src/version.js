@@ -16,7 +16,36 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.334.0';
+export const APP_VERSION = '2.334.1';
+
+// v2.334.1 — fuera el "ERP" y la jerga interna de TODA la interfaz.
+//
+// Barrido completo aplicando la regla del usuario: quien usa el portal no sabe
+// qué es un ERP, y todo tiene que parecer que sale del portal. Empezó por un
+// aviso de Libros IVA y terminó en 9 archivos, porque el vocabulario interno se
+// había filtrado a superficies que nadie revisa juntas.
+//
+// Lo que se cambió, por vista: Proveedores (columna "Match ERP" → "Registrado
+// como", "Sin match ERP" → "Sin vincular", el filtro y su placeholder),
+// Facturas de Compra ("emparejado en el maestro", el badge "Sin match" → "Sin
+// hallar", el fallback literal "match" → "el documento"), Conteo ("Falta ajuste
+// ERP" ×2, "el ERP sigue sin corregir", "inventario del ERP"), Clientes ("ERP
+// {id}" → "Código {id}" y el chip "Portado del ERP" → "Con código", que ahora
+// hace pareja con la columna), Compras ("sin proveedor linkeado — verificar en
+// ERP"), Ventas, Catálogo y las tres descripciones de módulo en Permisos.
+//
+// **El PDF de ajuste de conteo también**: es papel que se firma y se archiva —
+// "Cód. ERP" → "Código", "aplicar en el ERP" → "en el sistema", "Aplicado en el
+// ERP por" → "Aplicado por", y el archivo `Ajuste_ERP_*.pdf` → `Ajuste_*.pdf`.
+// Es la superficie más fácil de olvidar en un barrido de UI porque no está en
+// ninguna pantalla.
+//
+// **Grepear el fuente NO alcanza para verificar esto.** La mitad de estos
+// textos viven en `title`/`aria-label`/`placeholder`, y un `grep` sobre JSX los
+// pierde o los confunde con identificadores (`ERP_ORDER`, `erp_id`,
+// `matchErpFilter`, que sí deben quedarse). La verificación real fue recorrer
+// las 6 vistas en el navegador y barrer el DOM pintado MÁS esos tres atributos:
+// cero ocurrencias de "ERP", "match" o "linkeado".
 
 // v2.334.0 — las notas de crédito de compras, que no estaban en ningún libro.
 //

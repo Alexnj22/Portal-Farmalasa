@@ -44,7 +44,7 @@ const BASE_COLS = [
     // Con `lg` desaparece solo en pantallas donde igual no cabía, y en desktop
     // sigue visible; el match ERP además ya tiene filtro propio (H15) y se ve
     // completo en el detalle.
-    { key: 'match_erp',  label: 'Match ERP',  align: 'left', hideBelow: 'lg' },
+    { key: 'match_erp',  label: 'Registrado como', align: 'left', hideBelow: 'lg' },
     { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md', sortable: true },
     { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg', sortable: true },
 ];
@@ -139,8 +139,8 @@ function MatchErpCell({ row }) {
     }
     return (
         <div className="flex items-center gap-1.5">
-            <AlertTriangle size={12} className="text-warning shrink-0" title="Sin match con proveedor del ERP" />
-            <span className="text-content-3 text-label whitespace-nowrap">Sin match ERP</span>
+            <AlertTriangle size={12} className="text-warning shrink-0" title="Todavía no está vinculado a un proveedor registrado" />
+            <span className="text-content-3 text-label whitespace-nowrap">Sin vincular</span>
         </div>
     );
 }
@@ -335,8 +335,8 @@ export default function ProveedoresView({ openModal }) {
         ...categorias.map(c => ({ value: c.id, label: c.nombre })),
     ];
     const matchErpOptions = [
-        { value: 'con', label: 'Con match ERP' },
-        { value: 'sin', label: 'Sin match ERP' },
+        { value: 'con', label: 'Vinculados' },
+        { value: 'sin', label: 'Sin vincular' },
     ];
     const claseOptions = [
         { value: 'costo', label: 'Costo' },
@@ -383,10 +383,10 @@ export default function ProveedoresView({ openModal }) {
                         {/* H15: sección propia — antes era una opción dentro de
                             "Categoría", donde no es una categoría y no se podía
                             combinar con una real. */}
-                        <FilterBar.Section active={!!matchErpFilter} onClear={() => setMatchErpFilter('')} label="match ERP">
+                        <FilterBar.Section active={!!matchErpFilter} onClear={() => setMatchErpFilter('')} label="vínculo">
                             <div style={{ width: '165px' }}>
                                 <LiquidSelect value={matchErpFilter} onChange={setMatchErpFilter}
-                                    options={matchErpOptions} placeholder="Match ERP" icon={Building2} compact bare />
+                                    options={matchErpOptions} placeholder="Vínculo" icon={Building2} compact bare />
                             </div>
                         </FilterBar.Section>
 

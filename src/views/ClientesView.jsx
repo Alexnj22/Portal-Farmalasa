@@ -77,7 +77,7 @@ function ClienteCell({ row }) {
                 <div className="flex items-center gap-1.5 min-w-0">
                     {row.mostrador && <Badge size="sm" variant="neutral">Mostrador</Badge>}
                     {row.erp_id && !row.mostrador && (
-                        <span className="text-caption text-content-3 truncate">ERP {row.erp_id}</span>
+                        <span className="text-caption text-content-3 truncate">Código {row.erp_id}</span>
                     )}
                     {/* Dos formas de que el nombre no sirva, y el ojo no
                         distingue ninguna en una lista larga: la codificación
@@ -372,7 +372,7 @@ export default function ClientesView({ openModal }) {
                 "Portado del ERP" solo tiene sentido en un sentido: al revés son
                 24,323 de 24,502 fichas, o sea la lista entera. */}
             <FilterBar.Chip active={erp === 'con'} onToggle={() => setErp(v => (v === 'con' ? '' : 'con'))} tone="brand">
-                Portado del ERP
+                Con código
             </FilterBar.Chip>
             <FilterBar.Chip active={sinMostrador} onToggle={() => setSinMostrador(v => !v)} tone="brand">
                 Sin mostrador

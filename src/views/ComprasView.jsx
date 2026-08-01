@@ -183,7 +183,7 @@ function TabFacturas({
                     icon={AlertTriangle}
                     onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
                 >
-                    {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
+                    {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor vinculado
                     <span className="ml-1 text-caption font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
                 </Button>
             )}
@@ -235,7 +235,7 @@ function TabFacturas({
                             <DataCell>
                                 <div className="flex items-center gap-1.5">
                                     {!row.supplier_id && (
-                                        <AlertTriangle size={12} className="text-warning shrink-0" title="Proveedor no linkeado — verificar en ERP" />
+                                        <AlertTriangle size={12} className="text-warning shrink-0" title="Proveedor sin vincular" />
                                     )}
                                     <span className="text-content font-medium text-body-sm">{provName(row)}</span>
                                     {!row.supplier_id && (

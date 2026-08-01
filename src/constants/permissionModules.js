@@ -99,8 +99,8 @@ export const MODULE_GROUPS = [
                 { key: 'minmax_tab_solicitudes', label: 'Solicitudes' },
             ]},
             { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false },
-            { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega desde el ERP: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
-            { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y match manual con el proveedor del ERP', icon: Truck, hasApprove: false },
+            { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
+            { key: 'proveedores', label: 'Proveedores', desc: 'Maestro de proveedores auto-registrado desde los DTE de compra: datos fiscales, categoría contable y vinculación manual con el proveedor registrado', icon: Truck, hasApprove: false },
             { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true, tabs: [
                 // El conteo es CIEGO mientras está abierto: sin este permiso la
                 // existencia del sistema NO SALE de la base (no es un switch en
@@ -129,7 +129,7 @@ export const MODULE_GROUPS = [
             { key: 'facturas_compra', label: 'Facturas de Compra (Correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, tabs: [
                 { key: 'facturas_compra_ver_montos', label: 'Cards Contables' },
             ]},
-            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA del ERP, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido, desde el ERP', icon: BookOpen, hasApprove: false, hasScope: true },
+            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icon: BookOpen, hasApprove: false, hasScope: true },
         ],
     },
     {

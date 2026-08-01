@@ -274,7 +274,7 @@ function avisoParcialBlock(conteo) {
 // entrada), y mezclarlas obliga a separarlas a mano al momento de digitar.
 
 const AJU_COL_WIDTHS = ['8%', '25%', '11%', '14%', '8%', '7%', '7%', '8%', '12%'];
-const AJU_LABELS = ['Cód. ERP', 'Producto', 'Presentación', 'Lote', 'Vence', 'Sistema', 'Físico', 'Ajuste', 'Valor'];
+const AJU_LABELS = ['Código', 'Producto', 'Presentación', 'Lote', 'Vence', 'Sistema', 'Físico', 'Ajuste', 'Valor'];
 
 const esAjuste = (i) => i.diferencia != null && i.diferencia !== 0;
 const valorAjuste = (i) => (i.costo_unitario != null ? i.diferencia * Number(i.costo_unitario) : null);
@@ -354,7 +354,7 @@ function buildAjusteSection(titulo, color, fill, items) {
 function ajusteHeaderBlock(conteo, faltantes, sobrantes) {
     const lineas = [
         { text: 'AJUSTE DE INVENTARIO', fontSize: 13, bold: true, color: '#111' },
-        { text: 'Documento para aplicar en el ERP — el portal no modifica existencias', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
+        { text: 'Documento para aplicar en el sistema — el portal no modifica existencias', fontSize: 8, color: '#555', margin: [0, 2, 0, 0] },
     ];
     return {
         margin: [0, 0, 0, 6],
@@ -386,12 +386,12 @@ export async function printAjustesConteo(conteo, items) {
     if (!ajustes.length) {
         content.push({
             margin: [0, 16, 0, 0],
-            text: 'Este conteo no arrojó diferencias: no hay ajuste que aplicar en el ERP.',
+            text: 'Este conteo no arrojó diferencias: no hay ajuste que aplicar.',
             fontSize: 10, bold: true, color: '#059669',
         });
     } else {
-        const secFalt = buildAjusteSection('FALTANTES — ajuste de SALIDA en el ERP', '#dc2626', '#fef2f2', faltantes);
-        const secSobr = buildAjusteSection('SOBRANTES — ajuste de ENTRADA en el ERP', '#2563eb', '#eff6ff', sobrantes);
+        const secFalt = buildAjusteSection('FALTANTES — ajuste de SALIDA', '#dc2626', '#fef2f2', faltantes);
+        const secSobr = buildAjusteSection('SOBRANTES — ajuste de ENTRADA', '#2563eb', '#eff6ff', sobrantes);
         if (secFalt) content.push(...secFalt);
         if (secSobr) content.push(...secSobr);
     }
@@ -404,9 +404,9 @@ export async function printAjustesConteo(conteo, items) {
         info: { title: `Ajuste de Inventario — ${conteo.branches?.name || ''}` },
         defaultStyle: { fontSize: 9 },
         content,
-        footer: footerFirmas('Aplicado en el ERP por', 'Fecha de aplicación'),
+        footer: footerFirmas('Aplicado por', 'Fecha de aplicación'),
     };
-    await downloadPdf(docDefinition, `Ajuste_ERP_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+    await downloadPdf(docDefinition, `Ajuste_${(conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
 }
 
 // Mismo contenido en CSV: para filtrar, ordenar o cargar en lote si el ERP lo
@@ -437,7 +437,7 @@ export function exportAjustesConteo(conteo, items) {
         i.nota ?? '',
     ]);
     const suc = (conteo.branches?.name || 'sucursal').replace(/[^a-zA-Z0-9]/g, '_');
-    exportCsv(headers, rows, `Ajuste_ERP_${suc}_${String(conteo.id).slice(0, 8)}.csv`);
+    exportCsv(headers, rows, `Ajuste_${suc}_${String(conteo.id).slice(0, 8)}.csv`);
 }
 
 // items: filas de get_conteo_items_jsonb. soloDiferencias filtra antes de imprimir.

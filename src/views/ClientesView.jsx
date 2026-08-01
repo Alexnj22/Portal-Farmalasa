@@ -79,9 +79,28 @@ function ClienteCell({ row }) {
                     {row.erp_id && !row.mostrador && (
                         <span className="text-caption text-content-3 truncate">ERP {row.erp_id}</span>
                     )}
-                    {/* El ojo no distingue "MUÃ±OZ" de "MUÑOZ" en una lista
-                        larga, y son 15 fichas con la codificación rota. */}
+                    {/* Dos formas de que el nombre no sirva, y el ojo no
+                        distingue ninguna en una lista larga: la codificación
+                        rota ("MUÃ±OZ" por "MUÑOZ", 15 fichas) y el nombre sin
+                        una sola letra ("....", "1111111111111", 3 fichas —
+                        cajero saltándose el campo). */}
                     {row.nombre_corrupto && <Badge size="sm" variant="danger">Nombre dañado</Badge>}
+                    {/* `dup_con` solo viene cuando el filtro "Duplicado" está
+                        puesto — calcularlo siempre cuesta 327ms sobre las
+                        24,506. Va en el `title` y no en el cuerpo porque esta
+                        columna está acotada a 132px a propósito (ver arriba).
+                        El orden por nombre deja al par en la fila de al lado en
+                        37 de los 43 grupos (comparten el primer token, porque lo
+                        que se invirtió son los apellidos). Los otros 6 invierten
+                        nombre y apellido enteros —"ALVARENGA ALVARENGA FRANCISCO
+                        ANTONIO" contra "FRANCISCO ANTONIO ALVARENGA ALVARENGA"—
+                        y caen en letras distintas: para ESOS el tooltip es la
+                        única forma de saber con quién choca. */}
+                    {row.dup_con && (
+                        <Badge size="sm" variant="warning" title={`Choca con ${row.dup_con}`}>
+                            Duplicado
+                        </Badge>
+                    )}
                 </div>
             </div>
         </div>
@@ -126,7 +145,10 @@ export default function ClientesView({ openModal }) {
     const [municipio, setMunicipio] = useState('');
     const [ficha, setFicha] = useState('');
     const [erp, setErp] = useState('');
-    const [revisar, setRevisar] = useState(false);
+    // Cuatro modos, no un sí/no. Era un booleano que mandaba siempre 'dui', así
+    // que los otros dos modos que el RPC ya soportaba no tenían forma de
+    // pedirse: la tarjeta "A revisar" contaba 17 y el chip mostraba 2.
+    const [revisar, setRevisar] = useState('');
     const [sinMostrador, setSinMostrador] = useState(false);
     // "Con actividad" no es una ranura del filtro: lo enciende la tarjeta
     // "Por completar", que es el modo en que este módulo se usa de verdad.
@@ -166,7 +188,7 @@ export default function ClientesView({ openModal }) {
                 search: searchAplicado,
                 categoria, departamento, municipio, ficha, erp,
                 actividad: soloPorCompletar ? 'con' : null,
-                revisar: revisar ? 'dui' : null,
+                revisar: revisar || null,
                 mostrador: sinMostrador || soloPorCompletar ? 'sin' : null,
                 sort: sortCol, dir: sortDir, page, pageSize,
             });
@@ -228,7 +250,7 @@ export default function ClientesView({ openModal }) {
 
     const limpiar = useCallback(() => {
         setCategoria(''); setDepartamento(''); setMunicipio('');
-        setFicha(''); setErp(''); setRevisar(false); setSinMostrador(false);
+        setFicha(''); setErp(''); setRevisar(''); setSinMostrador(false);
         setSoloPorCompletar(false);
     }, []);
 
@@ -307,20 +329,50 @@ export default function ClientesView({ openModal }) {
                     icon={IdCard}
                     umbral={0}
                     ancho="150px"
+                    /* Se nombra a sí misma en vez del "Todos" del default: al
+                       sumarse la ranura "Revisar" quedaban DOS que decían
+                       "Todos" pegadas, distinguibles solo por el ícono. */
+                    placeholder="Ficha"
                 />
             </FilterBar.Section>
 
-            {/* Los tres van como chip y no como ranura: son estados de sí/no, y
-                una ranura de ~155px por cada uno dejaba el carril de tarjetas en
-                CERO visibles a 1440px (medido). El chip además colapsa solo al
-                control de desborde cuando falta ancho — la ranura no.
+            {/* "A revisar" es una de CUATRO, no un sí/no, así que es ranura y no
+                chip. Con 4 opciones `FilterBar.Opciones` cae solo en LiquidSelect
+                (el umbral del canónico es 3, y subirlo acá sería justo el caso
+                que el doc desaconseja).
+                Las etiquetas van CORTAS y el ancho en 150px —no los 170 del
+                default— por una medición: con "DUI inválido / Teléfono inválido /
+                Nombre dañado / Posible duplicado" la ranura pedía 185px y la
+                píldora mandaba TRES controles al desborde "Más filtros", entre
+                ellos esta misma ranura. El rótulo "Revisar" ya da el contexto,
+                así que repetirlo en cada opción costaba la visibilidad del
+                control entero. */}
+            <FilterBar.Section active={!!revisar} onClear={() => setRevisar('')} label="revisar">
+                <FilterBar.Opciones
+                    options={[
+                        { value: 'dui',       label: 'DUI'       },
+                        { value: 'telefono',  label: 'Teléfono'  },
+                        { value: 'nombre',    label: 'Nombre'    },
+                        { value: 'duplicado', label: 'Duplicado' },
+                    ]}
+                    value={revisar}
+                    onChange={val => setRevisar(val || '')}
+                    label="Revisar"
+                    icon={FileWarning}
+                    ancho="150px"
+                    placeholder="Revisar"
+                />
+            </FilterBar.Section>
+
+            {/* Los dos que quedan van como chip y no como ranura: son estados de
+                sí/no, y una ranura de ~155px por cada uno dejaba el carril de
+                tarjetas en CERO visibles a 1440px (medido). El chip además
+                colapsa solo al control de desborde cuando falta ancho — la
+                ranura no.
                 "Portado del ERP" solo tiene sentido en un sentido: al revés son
                 24,323 de 24,502 fichas, o sea la lista entera. */}
             <FilterBar.Chip active={erp === 'con'} onToggle={() => setErp(v => (v === 'con' ? '' : 'con'))} tone="brand">
                 Portado del ERP
-            </FilterBar.Chip>
-            <FilterBar.Chip active={revisar} onToggle={() => setRevisar(v => !v)} tone="danger">
-                DUI inválido
             </FilterBar.Chip>
             <FilterBar.Chip active={sinMostrador} onToggle={() => setSinMostrador(v => !v)} tone="brand">
                 Sin mostrador

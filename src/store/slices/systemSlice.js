@@ -5,6 +5,7 @@ import { assertHeadcountAvailable } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { fetchAllRows } from '../../utils/supabaseUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
+import { fireBrowserNotif } from '../../utils/browserNotif';
 import {
     fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
     updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
@@ -346,12 +347,30 @@ export const createSystemSlice = (set, get) => ({
                                 if (state.announcements.some(ann => String(ann.id) === String(a.id))) return state;
                                 return { announcements: [mapAnn(a), ...state.announcements] };
                             });
-                            // Toast si el aviso aplica al usuario actual (cualquier target_type)
+                            // Aviso al usuario, si le aplica (cualquier target_type).
+                            //
+                            // Este es el ÚNICO suscriptor que avisa desde el
+                            // 2026-08-01. `useSyncMonitor` escuchaba el mismo INSERT
+                            // y también hacía toast, con otro texto: como el store de
+                            // toasts tiene un solo espacio, el que se veía dependía de
+                            // cuál llegara última. Se quedó éste porque además mantiene
+                            // la lista de avisos, y heredó la notificación del sistema
+                            // operativo que salía de allá.
                             try {
                                 const u = JSON.parse(localStorage.getItem('sb_user') || '{}');
                                 if (announcementAppliesToUser(a, u, get().roles)) {
+                                    const urgente = a.priority === 'URGENT';
+                                    const titulo  = urgente ? 'Aviso urgente' : (a.title || 'Nuevo aviso');
                                     // `humano: true` — el cuerpo lo escribió RRHH, no una máquina.
-                                    useToastStore.getState().showToast(a.title, a.message, 'info', 3500, { humano: true });
+                                    useToastStore.getState().showToast(
+                                        titulo, a.message, urgente ? 'error' : 'info', 3500, { humano: true },
+                                    );
+                                    fireBrowserNotif(
+                                        `Farmalasa · ${titulo}`,
+                                        a.message || a.title || 'Tienes un aviso nuevo',
+                                        `announcement-${a.id}`,
+                                        () => { window.location.href = '/my-announcements'; },
+                                    );
                                 }
                             } catch { /* ignore */ }
                         })

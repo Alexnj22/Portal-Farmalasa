@@ -2,29 +2,36 @@ import { useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
-import { useStaffStore } from '../store/staffStore';
-import { announcementAppliesToUser } from '../utils/announcementAudience';
 import { mensajeAmigable } from '../utils/errorMessages';
+import { fireBrowserNotif } from '../utils/browserNotif';
 import { ERP_NAMES } from '../constants/erp';
 
-function fireBrowserNotif(title, body, tag, onClick) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try {
-    const n = new Notification(title, { body, icon: '/favicon.ico', tag });
-    if (onClick) n.onclick = () => { window.focus(); onClick(); };
-  } catch { /* best-effort: notificación del navegador puede fallar (permiso revocado, etc.) */ }
-}
-
-// Mounted once in AppLayout.
-// Subscribes via Supabase Realtime to:
-//   - inventory_sync_log (INSERT where success=false) → toast + OS notification
-//   - announcements (INSERT)  → toast + OS notification → click opens /my-announcements
+// Se monta UNA vez en AppLayout. Escucha `inventory_sync_log` (INSERT con
+// success=false) y avisa que el ERP no entregó el inventario.
+//
+// Ya NO escucha `announcements` (2026-08-01). Había DOS suscripciones al mismo
+// INSERT —ésta y el canal `announcements-live` que abre `fetchBoot`— y las dos
+// hacían toast, con textos distintos, para el mismo aviso. Como el store de
+// toasts tiene un solo espacio, el que veía el usuario dependía de cuál llegara
+// última. Quedó la de `fetchBoot`, que además mantiene la lista de avisos: es
+// la que tiene que existir sí o sí, y ahora también dispara la notificación del
+// sistema operativo que antes salía de acá.
 export function useSyncMonitor() {
   const showToast = useToastStore(s => s.showToast);
-  const { user } = useAuth();
+  const { hasPermission } = useAuth();
 
-  // ── Inventory sync failures ─────────────────────────────────────────────────
+  // Un sync fallido es una ALERTA TÉCNICA, no una notificación de negocio: el
+  // ERP no entregó datos y quien puede hacer algo es sistemas. Antes le caía a
+  // los 59 empleados —`inventory_sync_log` tiene `SELECT USING (true)` y está
+  // en la publicación de Realtime—, así que un dependiente de Salud 3 recibía,
+  // en pantalla y en el celular, que había fallado el inventario de Salud 1.
+  // El gate es el módulo `sync_health`, que ya existe y ya está asignado al rol
+  // "Sistema — Alertas Técnicas".
+  const puedeVerAlertas = hasPermission('sync_health', 'can_view');
+
   useEffect(() => {
+    if (!puedeVerAlertas) return;
+
     const channel = supabase
       .channel('sync-monitor-global')
       .on(
@@ -41,7 +48,7 @@ export function useSyncMonitor() {
           const title = `Inventario sin actualizar · ${sucursal}`;
           const body  = mensajeAmigable(
             row.error_msg,
-            'No se pudo actualizar el inventario desde el ERP. El equipo de sistemas ya está notificado.',
+            'El ERP no entregó el inventario de esta sucursal.',
           );
           showToast(title, body, 'error');
           fireBrowserNotif(`Farmalasa · ${title}`, body, `sync-fail-${row.id}`);
@@ -49,44 +56,5 @@ export function useSyncMonitor() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [showToast]);
-
-  // ── Announcement notifications ──────────────────────────────────────────────
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('announcements-monitor')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'announcements' },
-        ({ new: a }) => {
-          // Realtime payload is raw snake_case from the DB
-          if (a.is_archived) return;
-          if (a.scheduled_for && new Date(a.scheduled_for) > new Date()) return;
-
-          // Check if this announcement targets the current user
-          const roles = useStaffStore.getState().roles || [];
-          if (!announcementAppliesToUser(a, user, roles)) return;
-
-          const isUrgent = a.priority === 'URGENT';
-          const toastTitle = isUrgent ? 'Aviso urgente' : 'Nuevo aviso';
-          const body       = a.title || 'Tienes un aviso nuevo';
-
-          // `humano: true`: el aviso lo escribió una persona de RRHH. Un aviso
-          // urgente sale como 'error' y sin este flag el guardia del store lo
-          // trataría como texto de máquina (un link adentro alcanzaría).
-          showToast(toastTitle, body, isUrgent ? 'error' : 'info', 3500, { humano: true });
-          fireBrowserNotif(
-            `Farmalasa · ${toastTitle}`,
-            body,
-            `announcement-${a.id}`,
-            () => { window.location.href = '/my-announcements'; }
-          );
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user, showToast]);
+  }, [showToast, puedeVerAlertas]);
 }

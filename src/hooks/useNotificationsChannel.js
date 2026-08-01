@@ -3,14 +3,7 @@ import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
-
-function fireBrowserNotif(title, body, tag, onClick) {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    try {
-        const n = new Notification(title, { body, icon: '/favicon.ico', tag });
-        if (onClick) n.onclick = () => { window.focus(); onClick(); };
-    } catch { /* best-effort: notificación del navegador puede fallar (permiso revocado, etc.) */ }
-}
+import { fireBrowserNotif } from '../utils/browserNotif';
 
 // Montar UNA sola vez (AppLayout). Carga inicial + realtime de la tabla
 // notifications filtrado al empleado actual; RLS respalda el filtro.

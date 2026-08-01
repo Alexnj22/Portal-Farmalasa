@@ -20,6 +20,7 @@ import {
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
     fetchLibroSujetoExcluido,
+    fetchNotasCreditoCompras,
 } from '../../data/librosIva';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,6 +77,10 @@ const TABS = [
     { key: 'percepcion',    label: 'Percepción'     },
     { key: 'retencion',     label: 'Retención'      },
     { key: 'excluido',      label: 'Excluido'       },
+    // Octava, y el rótulo corto no es capricho: "Notas de crédito" completo
+    // suma ~120px a una fila que ya colapsa al desplegable a 1440. El nombre
+    // entero está en el subtítulo de la sección y en el CSV.
+    { key: 'notas',         label: 'N. crédito'     },
 ];
 
 // Hora SV: se corre el instante 6h y se leen las partes en **UTC**. Leerlas en
@@ -243,6 +248,10 @@ const ETIQUETAS = {
     percepcion:    { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA percibido'  },
     retencion:     { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA retenido'   },
     excluido:      { icon: UserX,        monto: 'Compras',      impuesto: 'Crédito fiscal' },
+    // "Ajuste" y no "Crédito fiscal": este número no es el crédito del período,
+    // es lo que hay que MOVERLE — y va neto, porque las de crédito lo bajan y
+    // las de débito lo suben.
+    notas:         { icon: FileText,     monto: 'Ajuste',       impuesto: 'Ajuste al crédito' },
 };
 
 // Con una sucursal elegida, la columna Sucursal repite el filtro en cada fila:
@@ -251,6 +260,21 @@ const ETIQUETAS = {
 // visor con la columna, 1049 sin ella). No es esconder dato — es no repetirlo.
 const sinSucursal = (cols, filtrada) =>
     (filtrada ? cols.filter(c => c.key !== 'sucursal') : cols);
+
+// No lleva Sucursal, y es el único que no la lleva: estos documentos llegan por
+// correo y el origen no la trae. Antes que repartir mal un dato fiscal, no se
+// reparte — el aviso de la pestaña lo dice con todas las letras.
+const COLS_NOTAS = [
+    { key: 'n',         label: 'N.º',        align: 'right' },
+    { key: 'fecha',     label: 'Fecha',      align: 'left'  },
+    { key: 'tipo',      label: 'Tipo',       align: 'center' },
+    { key: 'doc',       label: 'Documento',  align: 'left'  },
+    { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
+    { key: 'nrc',       label: 'NRC',        align: 'left', hideBelow: 'md' },
+    { key: 'corrige',   label: 'Corrige a',  align: 'left', hideBelow: '2xl' },
+    { key: 'monto',     label: 'Monto',      align: 'right' },
+    { key: 'iva',       label: 'IVA',        align: 'right' },
+];
 
 const COLS_EXCLUIDO = [
     { key: 'n',         label: 'N.º',       align: 'right' },
@@ -347,6 +371,17 @@ const ACCESO = {
         doc:       r => r.documento_numero || '',
         total:     r => Number(r.total || 0),
     }),
+    notas: () => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        tipo:      r => (r.tipo_dte === '05' ? 'Crédito' : 'Débito'),
+        doc:       r => r.numero_control || '',
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        corrige:   r => r.documento_corregido || '',
+        monto:     r => Number(r.monto || 0),
+        iva:       r => Number(r.iva || 0),
+    }),
 };
 
 // `sortable` no se escribe columna por columna: sale de tener accesor. Es la
@@ -435,6 +470,7 @@ export default function LibrosIvaView() {
     const [percepcion,    setPercepcion]    = useState([]);
     const [retencion,     setRetencion]     = useState([]);
     const [excluido,      setExcluido]      = useState([]);
+    const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
 
@@ -445,7 +481,7 @@ export default function LibrosIvaView() {
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a, co, pe, re, ex] = await Promise.all([
+        const [c, k, a, co, pe, re, ex, nc] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
@@ -453,12 +489,14 @@ export default function LibrosIvaView() {
             fetchLibroPercepcion(desde, hasta, filterBranch),
             fetchLibroRetencion(desde, hasta, filterBranch),
             fetchLibroSujetoExcluido(desde, hasta, filterBranch),
+            // Sin sucursal: el origen no la trae. Ver `fetchNotasCreditoCompras`.
+            fetchNotasCreditoCompras(desde, hasta),
         ]);
         // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
         // vacío por error de red es indistinguible de un mes sin movimiento, y
         // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
         // Excluido, que salen vacíos aun cuando todo funciona.
-        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || ex.error;
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || ex.error || nc.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
@@ -467,6 +505,7 @@ export default function LibrosIvaView() {
         setPercepcion(pe.data || []);
         setRetencion(re.data || []);
         setExcluido(ex.data || []);
+        setNotas(nc.data || []);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
 
@@ -526,8 +565,17 @@ export default function LibrosIvaView() {
                              total:    suma(retencion, 'monto_sujeto') },
             excluido:      { docs: excluido.length, exentas: 0, gravadas: 0, debito: 0,
                              total: suma(excluido, 'total') },
+            // El IVA va NETO: las notas de crédito bajan el crédito fiscal y las
+            // de débito lo suben, así que sumarlas todas juntas daría un ajuste
+            // mayor al real. Es el número que contabilidad tiene que mover.
+            notas:         { docs: notas.length, exentas: 0,
+                             gravadas: suma(notas.filter(r => r.tipo_dte === '05'), 'monto')
+                                     - suma(notas.filter(r => r.tipo_dte === '06'), 'monto'),
+                             debito:   suma(notas.filter(r => r.tipo_dte === '05'), 'iva')
+                                     - suma(notas.filter(r => r.tipo_dte === '06'), 'iva'),
+                             total:    suma(notas, 'monto') },
         };
-    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido]);
+    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido, notas]);
 
     const t = totales[activeTab];
 
@@ -720,6 +768,35 @@ export default function LibrosIvaView() {
                 `anexo-${esPerc ? 'percepcion' : 'retencion'}_${sufijoArchivo}.csv`);
             return;
         }
+        if (activeTab === 'notas') {
+            // No replica ningún reporte: este archivo no existe del otro lado,
+            // que es justamente el problema que la sección hace visible. Las
+            // columnas son las que trae el documento, y el TOTAL va NETO —
+            // crédito menos débito— porque es el ajuste que hay que aplicar.
+            exportCsv(
+                ['No', 'FECHA', 'TIPO', 'CODIGO', 'NUMERO DE CONTROL',
+                 'CODIGO DE GENERACION', 'PROVEEDOR', 'NRC', 'NIT',
+                 'DOCUMENTO QUE CORRIGE', 'MONTO', 'IVA'],
+                [
+                    ...notas.map((r, i) => [
+                        i + 1, fmtFecha(r.fecha),
+                        r.tipo_dte === '05' ? 'NOTA DE CREDITO' : 'NOTA DE DEBITO',
+                        r.tipo_dte,
+                        r.numero_control || '',
+                        (r.codigo_generacion || '').toUpperCase(),
+                        r.proveedor || '', r.nrc || '', r.nit || '',
+                        r.documento_corregido || '',
+                        num(r.monto), num(r.iva),
+                    ]),
+                    ['TOTALES', '', '', '', '', '', '', '', '', '',
+                     num(t.total), num(notas.reduce((s, r) =>
+                         s + (r.tipo_dte === '05' ? 1 : -1) * Number(r.iva || 0), 0))],
+                    ['AJUSTE NETO AL CREDITO FISCAL', '', '', '', '', '', '', '', '', '',
+                     '', num(t.debito)],
+                ],
+                `notas-credito-compras_${sufijoArchivo}.csv`);
+            return;
+        }
         exportCsv(
             ['No', 'FECHA DE EMISION', 'NOMBRE', 'NIT', 'DUI', 'No DOCUMENTO',
              'ESTABLECIMIENTO', 'TOTAL'],
@@ -738,8 +815,8 @@ export default function LibrosIvaView() {
     // —numerar, filtrar, ordenar, paginar— sobre 467 filas y en cada tecleo del
     // buscador.
     const filas = useMemo(
-        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido }[activeTab] ?? []),
-        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido]);
+        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido, notas }[activeTab] ?? []),
+        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido, notas]);
 
     const acceso = useMemo(
         () => (ACCESO[activeTab] || ACCESO.consumidor)(nombreSucursal),
@@ -959,6 +1036,17 @@ export default function LibrosIvaView() {
                     </Notice>
                 )}
 
+                {activeTab === 'notas' && notas.length > 0 && (
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        Estas <strong>{notas.length}</strong> notas <strong>no están dentro del libro
+                        de compras</strong> — llegaron por correo y nunca se registraron como
+                        documento de compra. El libro de {etiquetaMes(mes)} declara{' '}
+                        <strong>{formatMoney(Math.abs(t.debito))}</strong> de crédito fiscal{' '}
+                        {t.debito >= 0 ? 'de más' : 'de menos'}. Van sin sucursal porque el documento
+                        no la trae.
+                    </Notice>
+                )}
+
                 {sinNumeroControl > 0 && (
                     <Notice variant="danger" icon={AlertTriangle}>
                         <strong>{sinNumeroControl} de {filas.length}</strong> filas van sin número de
@@ -1113,6 +1201,44 @@ export default function LibrosIvaView() {
                                 <DataCell hideBelow="md"><span className="font-mono text-caption whitespace-nowrap">{r.dui || '—'}</span></DataCell>
                                 <DataCell hideBelow="sm"><CeldaDocumento numero={r.documento_numero} /></DataCell>
                                 <DataCell align="right"><CeldaMonto v={r.total} fuerte /></DataCell>
+                            </DataRow>
+                        ))}
+                    </DataTable>
+                )}
+
+                {activeTab === 'notas' && (
+                    <DataTable {...propsTabla(COLS_NOTAS)}
+                        empty={vacioDe(
+                            FileText,
+                            `Sin notas de crédito ni débito en ${etiquetaMes(mes)}`,
+                            'Ningún proveedor envió documentos que corrijan una compra del período.')}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={r.codigo_generacion || `${r.numero_control}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
+                                <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
+                                <DataCell align="center">
+                                    {/* Las de crédito restan y las de débito suman:
+                                        distinguirlas es el dato, no un adorno. */}
+                                    <Badge variant={r.tipo_dte === '05' ? 'warning' : 'neutral'}>
+                                        {r.tipo_dte === '05' ? 'Crédito' : 'Débito'}
+                                    </Badge>
+                                </DataCell>
+                                <DataCell><CeldaDocumento numero={r.numero_control} /></DataCell>
+                                <CeldaProveedor nombre={r.proveedor} />
+                                <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
+                                {/* Guión y no `CeldaDocumento`: esa celda marca el
+                                    vacío con un badge rojo "Sin número", y acá
+                                    falta en 85 de 139 porque el proveedor no
+                                    declaró qué documento corrige. No es un error
+                                    nuestro, y pintarlo en rojo sería alarma falsa
+                                    en la mayoría de las filas. */}
+                                <DataCell hideBelow="2xl">
+                                    {r.documento_corregido
+                                        ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">{r.documento_corregido}</span>
+                                        : <span className="text-content-3">—</span>}
+                                </DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.monto} /></DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.iva} fuerte /></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>

@@ -16,7 +16,35 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.333.1';
+export const APP_VERSION = '2.334.0';
+
+// v2.334.0 — las notas de crédito de compras, que no estaban en ningún libro.
+//
+// Llegan por correo, se guardan, y ahí mueren: nunca se registran como
+// documento de compra. Resultado, 139 notas por **$2,747.40 de IVA** en dos
+// meses y medio que no ajustan nada.
+//
+// El libro NO las resta, y es a propósito. El del ERP tampoco lo hace, y el
+// nuestro cuadra con él al centavo en junio y julio —12 de 12 branch-meses,
+// crédito fiscal incluido—; si el ERP las restara, junio no cuadraría (58
+// notas, $992.14). O sea que el libro que replicamos está incompleto en el
+// origen, y restarlas de este lado dejaría dos verdades distintas del mismo
+// período. Van en sección propia, con su total, para que contabilidad lo
+// ajuste al declarar.
+//
+// La sección no lleva sucursal, y no es un olvido: los documentos del correo no
+// la traen, y solo 54 de 139 apuntan a qué documento corrigen, así que
+// inferirla daría ~30% de cobertura. Un dato fiscal mal repartido es peor que
+// uno sin repartir, y la pantalla lo dice.
+//
+// El IVA del carril va NETO —las de crédito bajan el crédito fiscal y las de
+// débito lo suben—, porque es el número que hay que mover, no la suma de las
+// dos cosas.
+//
+// Detalle que se corrigió al armarla: la columna "Corrige a" usaba la celda que
+// marca el vacío con un badge rojo "Sin número". Ahí falta en 85 de 139 porque
+// el proveedor no lo declaró — no es un error nuestro, y en rojo habría gritado
+// en la mayoría de las filas.
 
 // v2.333.1 — Los gates del pre-commit dejan de bloquear por el árbol ajeno.
 //

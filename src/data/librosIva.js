@@ -60,3 +60,14 @@ export function fetchLibroRetencion(desde, hasta, branchId) {
 export function fetchLibroSujetoExcluido(desde, hasta, branchId) {
     return supabase.rpc('get_libro_sujeto_excluido', params(desde, hasta, branchId));
 }
+
+// Notas de crédito (05) y débito (06) de compras. NO es un libro: es la sección
+// que hace visible lo que el libro no lleva.
+//
+// Sin `branchId` a propósito, y no por descuido: estos documentos llegan por
+// correo y el origen no trae sucursal. Repartirlos por el documento que
+// corrigen daría ~30% de cobertura, y un dato fiscal mal repartido es peor que
+// uno sin repartir. La vista lo dice en pantalla.
+export function fetchNotasCreditoCompras(desde, hasta) {
+    return supabase.rpc('get_notas_credito_compras', { p_desde: desde, p_hasta: hasta });
+}

@@ -12,6 +12,58 @@ retomar; acá está todo.
 
 ---
 
+## v2.334.0 — Las notas de crédito de compras, que no estaban en ningún libro
+
+Llegan por correo, se guardan, y ahí mueren: nunca se registran como documento
+de compra. Resultado: **139 notas por $2,747.40 de IVA** en dos meses y medio
+que no ajustan nada.
+
+| Mes | Notas | IVA |
+|---|---|---|
+| may-2026 | 2 | $9.53 |
+| jun-2026 | 58 | $992.14 |
+| jul-2026 | 75 | $1,745.73 |
+
+### El libro no las resta, y es a propósito
+
+El libro de compras del ERP tampoco las incluye. Se deduce de algo ya
+verificado: junio y julio cuadran al centavo entre el portal y el ERP en las 7
+sucursales, crédito fiscal incluido — 12 de 12 branch-meses. Nuestro libro no
+tiene ni una nota de crédito, así que **si el ERP las restara, junio no
+cuadraría**: habría $992.14 de diferencia.
+
+O sea que el libro que replicamos está incompleto **en el origen**. Restarlas de
+este lado dejaría dos verdades distintas del mismo período, y el archivo
+exportado dejaría de servir para contrastar contra el sistema donde nacen los
+datos. Van en **sección propia, con su total**, para que contabilidad lo ajuste
+al declarar — y para que el hueco se vea, que es lo que no pasaba hasta hoy.
+
+La causa de fondo no es técnica: el ERP **sí tiene** la pantalla para capturar
+estas notas. Nadie las está ingresando.
+
+### Lo que la sección no promete
+
+**No lleva sucursal.** Los documentos del correo no la traen, y sólo 54 de 139
+apuntan a qué documento corrigen, así que inferirla daría ~30% de cobertura. Un
+dato fiscal mal repartido es peor que uno sin repartir; la pantalla lo dice con
+todas las letras en vez de mostrar una columna a medias.
+
+El resto sí está completo: proveedor, NRC, NIT, número de control, monto e IVA
+al **100%** de las 139.
+
+El IVA del carril va **neto** — las de crédito bajan el crédito fiscal y las de
+débito lo suben —, porque es el número que hay que mover, no la suma de las dos
+cosas.
+
+### Un detalle que se corrigió al armarla
+
+La columna *Corrige a* usaba la celda estándar de documento, que marca el vacío
+con un badge rojo **"Sin número"**. Ahí falta en 85 de 139 porque el proveedor
+no declaró el documento relacionado — no es un error nuestro, y en rojo habría
+gritado en la mayoría de las filas.
+
+---
+
 ## v2.333.0 — El número de control fiscal, que no estaba en ninguna parte
 
 Los tres libros de ventas lo necesitan —en el anexo de documentos anulados es la

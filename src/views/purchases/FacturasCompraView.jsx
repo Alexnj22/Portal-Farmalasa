@@ -186,7 +186,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
             <div className="min-w-0">
                 <span className="text-content font-medium text-body-sm block truncate">{row.proveedor_nombre}</span>
                 {row.supplier_id && row.supplier_nombre !== row.proveedor_nombre && (
-                    <span className="text-caption text-content-3 truncate block">ERP: {row.supplier_nombre}</span>
+                    <span className="text-caption text-content-3 truncate block" title={`Registrado como ${row.supplier_nombre}`}>Registrado como: {row.supplier_nombre}</span>
                 )}
                 {/* Fase 4 §5: cuando el match viene del contenido del ítem
                     (ej. "claro" no aparece en proveedor/número pero sí en

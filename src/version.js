@@ -16,7 +16,24 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.332.0';
+export const APP_VERSION = '2.332.1';
+
+// v2.332.1 — Facturas de Compra: sale el "ERP:" de la fila del proveedor.
+//
+// Cada fila mostraba el nombre del maestro arriba y, cuando el nombre con el
+// que está registrado difiere, un segundo renglón `ERP: COFARSAL DE R.L.`. El
+// prefijo existía para explicar por qué aparecen dos nombres, pero lo explicaba
+// nombrando un sistema del que el usuario no sabe nada. Ahora dice **Registrado
+// como:**, que responde la misma pregunta sin nombrar de dónde sale.
+//
+// Verificado barriendo el texto pintado y además los `title`/`aria-label`/
+// `placeholder` de las dos pestañas y del modal del documento: cero ocurrencias
+// de "ERP". El grep sobre el fuente no habría alcanzado — la mitad de estos
+// textos viven en atributos, no en el cuerpo.
+//
+// Queda jerga de otra familia en esta vista, sin tocar porque no es procedencia
+// sino vocabulario: "Sin match", "Encontrado: match" y el tooltip "Sin
+// proveedor emparejado en el maestro". Ver [[feedback_la_pantalla_habla_del_portal]].
 
 // v2.332.0 — Facturas de Compra filtra por mes completo, igual que Libros IVA.
 //

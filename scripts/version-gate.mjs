@@ -28,7 +28,16 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const leerVersion = (texto) => (texto.match(/APP_VERSION\s*=\s*'([^']+)'/) || [])[1];
-const git = (cmd) => execSync(cmd, { encoding: 'utf8' });
+// `maxBuffer` explícito: el default de execSync es 1 MB y CHANGELOG.md ya pesa
+// 1.24 MB, así que `git show :CHANGELOG.md` moría con ENOBUFS. El try/catch de
+// abajo se tragaba ese error, el changelog quedaba vacío y el gate concluía que
+// faltaba la entrada — bloqueando TODO commit que tocara `src/`, con la entrada
+// escrita y preparada.
+//
+// La mordida es fina: este gate se escribió para que no se pierdan entradas, y
+// recuperar las 164 que faltaban es justo lo que empujó el archivo sobre 1 MB.
+// Un límite que se cruza por crecer es el que nadie ve venir.
+const git = (cmd) => execSync(cmd, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 
 // Se lee del ÍNDICE, no del disco: lo que importa es la versión que va en ESTE
 // commit. Con el archivo de trabajo se validaba un bump que podía no estar

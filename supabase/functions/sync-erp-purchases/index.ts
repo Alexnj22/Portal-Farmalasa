@@ -14,6 +14,27 @@ function getPurchaseCreds(): { username: string; password: string } {
 const LOGIN_URL    = "https://clientesdte3.oss.com.sv/farma_salud/login.php";
 const COMPRAS_BASE = "https://clientesdte3.oss.com.sv/farma_salud/descargar_compras_json.php";
 
+// Bodega concentra la mayoría de las compras pero NO todas: en junio 2026 las
+// otras cinco sucursales sumaron 54 documentos y $5,949.85 que este sync no
+// veía, porque el par (30, 6) estaba escrito a mano y era el único que corría.
+// Eso las dejaba fuera del libro de compras.
+//
+// Las seis sucursales que venden salen de ERP_BRANCH_MAP —la misma fuente que
+// usa sync-dte-sales, así que abrir una sucursal se resuelve en un solo lugar—.
+// Bodega no está ahí porque no vende, y por eso es el único par que queda
+// explícito acá.
+const BODEGA_BRANCH_ID = 30;
+const BODEGA_ERP_ID    = 6;
+
+function getPurchaseBranches(): { branchId: number; erpId: number }[] {
+  const ventas = getErpBranchMap().map(b => ({ branchId: b.branchId, erpId: b.erpId }));
+  const todas  = [{ branchId: BODEGA_BRANCH_ID, erpId: BODEGA_ERP_ID }, ...ventas];
+  // Dedup por si algún día Bodega entra al mapa de ventas: repetirla haría dos
+  // pasadas sobre la misma sucursal y duplicaría las filas del log.
+  const vistas = new Set<number>();
+  return todas.filter(b => !vistas.has(b.branchId) && vistas.add(b.branchId));
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 2000): Promise<T> {
@@ -176,6 +197,15 @@ async function syncBranch(
       subtotal:        c.totales?.sumas_gravadas  ?? c.totales?.subtotal ?? c.subtotal ?? 0,
       iva:             c.totales?.iva             ?? c.iva                              ?? 0,
       total:           c.totales?.total_operacion ?? c.totales?.total    ?? c.total     ?? 0,
+      // Los cuatro campos del libro de compras (Art. 86 RCT). El ERP los manda
+      // desde siempre; el mapeo los tiraba, y sin ellos la fila sirve para saber
+      // cuánto se compró pero no para declarar. `?? null` y no `?? 0`: NULL
+      // significa "el ERP no lo informó", 0 significa "informó cero" — en un
+      // libro fiscal no es lo mismo.
+      documento_tipo:   c.documento?.tipo   ?? null,
+      documento_numero: (c.documento?.numero ?? '').trim() || null,
+      percepcion_iva:   c.totales?.percepcion_iva ?? null,
+      retencion_iva:    c.totales?.retencion_iva  ?? null,
       updated_at:      new Date().toISOString(),
     };
 
@@ -283,92 +313,86 @@ async function syncBranch(
 }
 
 // ── retryFailed: detecta brechas y reintenta día a día ───────────────────────
-// Detecta brechas de dos formas:
-//   A) días en purchase_sync_log WHERE success=false
-//   B) días entre `since` y ayer que NO aparecen cubiertos en el log (timeout sin registro)
-// Ambos casos se reintentan uno a uno con el timeout extendido.
+// Una brecha es un par (sucursal, día) sin un registro de éxito que lo cubra —
+// da igual si falló o si nunca se intentó, porque en los dos casos no hay dato.
+// Se reintenta uno a uno con el timeout extendido.
 
 async function retryFailed(
   supabase: any,
   username: string,
   password: string,
   since: string,
+  onlyBranch?: number | null,
 ): Promise<{ retried: number; ok: number; failed: number; details: any[] }> {
-  const BODEGA_ERP_ID    = 6;
-  const BODEGA_BRANCH_ID = 30;
+  // La cobertura se calcula POR SUCURSAL. Con un solo conjunto de días, un día
+  // en que Bodega sincronizó y Salud 3 no quedaba marcado como cubierto: la
+  // brecha de la sucursal chica se escondía detrás del éxito de la grande.
+  const todas    = getPurchaseBranches();
+  const branches = onlyBranch ? todas.filter(b => b.branchId === onlyBranch) : todas;
 
   const yesterday = new Date(Date.now() - 6 * 3600_000);
   yesterday.setUTCDate(yesterday.getUTCDate() - 1);
   const untilDay = yesterday.toISOString().split('T')[0];
 
-  // 1. Leer todo el log exitoso para saber qué días ya están cubiertos
-  const { data: successLogs } = await supabase
+  // 1. Leer el log completo (éxitos y fallos) del rango, con su sucursal
+  const { data: logs, error: logErr } = await supabase
     .from('purchase_sync_log')
-    .select('fini, ffin')
-    .eq('success', true)
+    .select('branch_id, fini, ffin, success')
     .gte('fini', since)
     .order('fini');
+  if (logErr) throw new Error(`purchase_sync_log select: ${logErr.message}`);
 
-  const doneDays = new Set<string>();
-  for (const log of (successLogs ?? [])) {
-    for (const day of dayRange(log.fini, log.ffin)) doneDays.add(day);
+  const doneByBranch = new Map<number, Set<string>>();
+  for (const log of (logs ?? [])) {
+    if (!log.success) continue;
+    let set = doneByBranch.get(log.branch_id);
+    if (!set) doneByBranch.set(log.branch_id, set = new Set<string>());
+    for (const day of dayRange(log.fini, log.ffin)) set.add(day);
   }
 
-  // 2. Todos los días del rango que NO están cubiertos por un sync exitoso
-  const missingDays = new Set<string>();
-  for (const day of dayRange(since, untilDay)) {
-    if (!doneDays.has(day)) missingDays.add(day);
-  }
-
-  // 3. Agregar días explícitamente marcados como fallidos (aunque estén en doneDays,
-  //    un registro success=false posterior podría requerir revisión)
-  const { data: failedLogs } = await supabase
-    .from('purchase_sync_log')
-    .select('fini, ffin, synced_at')
-    .eq('success', false)
-    .gte('fini', since)
-    .order('fini');
-
-  for (const log of (failedLogs ?? [])) {
-    for (const day of dayRange(log.fini, log.ffin)) {
-      if (!doneDays.has(day)) missingDays.add(day);
+  // 2. Los pares (sucursal, día) sin un sync exitoso que los cubra. Un día que
+  //    nunca se intentó cuenta igual que uno que falló: en ambos casos no hay
+  //    dato, y el silencio no es éxito.
+  const pending: { branchId: number; erpId: number; day: string }[] = [];
+  for (const { branchId, erpId } of branches) {
+    const done = doneByBranch.get(branchId) ?? new Set<string>();
+    for (const day of dayRange(since, untilDay)) {
+      if (!done.has(day)) pending.push({ branchId, erpId, day });
     }
   }
 
-  const daysToRetry = [...missingDays].sort();
-
-  if (daysToRetry.length === 0)
+  if (pending.length === 0)
     return { retried: 0, ok: 0, failed: 0, details: [{ note: 'No hay brechas pendientes.' }] };
 
-  // 4. Reintentar cada día individualmente
+  // 3. Reintentar cada par individualmente
   const details: any[] = [];
   let ok = 0, failed = 0;
 
-  for (const day of daysToRetry) {
+  for (const { branchId, erpId, day } of pending) {
     try {
-      const result = await syncBranch(supabase, BODEGA_BRANCH_ID, BODEGA_ERP_ID, username, password, day, day);
+      const result = await syncBranch(supabase, branchId, erpId, username, password, day, day);
       await supabase.from('purchase_sync_log').insert({
-        branch_id: BODEGA_BRANCH_ID, erp_sucursal_id: BODEGA_ERP_ID,
+        branch_id: branchId, erp_sucursal_id: erpId,
         fini: day, ffin: day,
         receipts_total: result.total, receipts_new: result.new,
         items_inserted: result.items, success: true,
       });
-      details.push({ day, ok: true, ...result });
+      details.push({ branchId, day, ok: true, ...result });
       ok++;
     } catch (e: any) {
       await supabase.from('purchase_sync_log').insert({
-        branch_id: BODEGA_BRANCH_ID, erp_sucursal_id: BODEGA_ERP_ID,
+        branch_id: branchId, erp_sucursal_id: erpId,
         fini: day, ffin: day,
         receipts_total: 0, receipts_new: 0, items_inserted: 0,
         success: false, error_msg: e.message,
       });
-      details.push({ day, ok: false, error: e.message });
+      details.push({ branchId, day, ok: false, error: e.message });
       failed++;
     }
     await new Promise(r => setTimeout(r, 2000));
   }
 
-  return { retried: daysToRetry.length, ok, failed, details };
+  return { retried: pending.length, ok, failed, details };
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -416,30 +440,34 @@ Deno.serve(async (req) => {
 
     // ── Modo retryFailed: reintenta días con error del log ────────────────────
     if (doRetry) {
-      const result = await retryFailed(supabase, username, password, since);
+      const result = await retryFailed(supabase, username, password, since, onlyBranch);
       return new Response(JSON.stringify({ retryFailed: true, since, ...result }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // ── Sync normal ───────────────────────────────────────────────────────────
-    const BODEGA_ERP_ID    = 6;
-    const BODEGA_BRANCH_ID = 30;
-
+    // Un `branchId` en el body ahora filtra el mapa en vez de reasignarle el
+    // erpId de Bodega: antes, pedir la sucursal 4 traía las compras de Bodega y
+    // las guardaba como si fueran de la 4.
+    const todas = getPurchaseBranches();
     const purchaseBranches = onlyBranch
-      ? [{ branchId: onlyBranch, erpId: BODEGA_ERP_ID, username, password }]
-      : [{ branchId: BODEGA_BRANCH_ID, erpId: BODEGA_ERP_ID, username, password }];
+      ? todas.filter(b => b.branchId === onlyBranch)
+      : todas;
+
+    if (purchaseBranches.length === 0)
+      throw new Error(`branchId ${onlyBranch} no está en el mapa de sucursales de compras.`);
 
     const results: any[] = [];
     const logRows: any[] = [];
 
-    for (const { branchId, erpId, username: u, password: p } of purchaseBranches) {
+    for (const { branchId, erpId } of purchaseBranches) {
       let lastErr: string | null = null;
       let result: any = null;
 
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          result  = await syncBranch(supabase, branchId, erpId, u, p, startDate, endDate);
+          result  = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate);
           lastErr = null;
           break;
         } catch (e: any) {

@@ -12,6 +12,76 @@ retomar; acá está todo.
 
 ---
 
+## v2.323.0 — Libros IVA: faltaban cuatro de los siete reportes, y las compras de cinco sucursales
+
+El módulo cubría 3 reportes del grupo "Libros Iva" del ERP: consumidor,
+contribuyentes y anulados. El ERP tiene siete. Faltaban **Libro de compras,
+Anexo de Percepción, Anexo de Retención y Reporte de Sujeto Excluido** — y el de
+compras no es un detalle: junio 2026 son 389 documentos, $203,947.07 y
+$23,286.48 de crédito fiscal.
+
+### Tres causas, ninguna evidente desde el código
+
+1. **`sync-erp-purchases` corría UNA sucursal.** El par `(30, 6)` estaba escrito
+   a mano y era el único que se sincronizaba, con el supuesto de que Bodega
+   concentra las compras. Concentra la mayoría, no todas: las otras cinco
+   sumaron 54 documentos y $5,949.85 solo en junio. Ahora las sucursales salen
+   de `ERP_BRANCH_MAP` —la misma fuente que `sync-dte-sales`— más Bodega, que no
+   está ahí porque no vende.
+2. **El mapeo tiraba cuatro campos** que el ERP manda desde siempre en
+   `descargar_compras_json.php`: `documento.tipo`, `documento.numero`,
+   `totales.percepcion_iva` y `totales.retencion_iva`. Sin ellos la fila sirve
+   para saber cuánto se compró, no para declarar. Se agregaron como columnas
+   nullable: `NULL` = no sincronizado, `0` = el ERP informó cero. En un libro
+   fiscal no es lo mismo, y la vista marca en rojo los que están en NULL.
+3. **`retryFailed` calculaba la cobertura con UN conjunto de días** para todas
+   las sucursales. Un día en que Bodega sincronizaba y Salud 3 no quedaba
+   marcado como cubierto: la brecha de la sucursal chica se escondía detrás del
+   éxito de la grande. Ahora la cobertura es por par (sucursal, día).
+
+### Lo que salió de comparar contra el ERP en vez de suponer
+
+- **El libro de compras INCLUYE las anuladas.** Verificado en Bodega el
+  2026-07-20, que tiene una: 28 documentos y $16,321.43 de los dos lados, al
+  centavo. Filtrarlas —que era lo intuitivo— habría dejado el libro corto sin
+  que nada avisara. Van marcadas, no escondidas.
+- **El anexo de percepción no es una fuente aparte**: es exactamente el
+  subconjunto de compras con percepción > 0. 7 + 2 + 6 + 211 = las 226 filas del
+  anexo del ERP en junio.
+- **Retención y Sujeto Excluido salen vacíos, y está bien.** El ERP tampoco
+  tiene una sola fila entre 2025-01 y 2026-07 en las 7 sucursales: la empresa no
+  es agente de retención y todas sus compras son con crédito fiscal. La vista lo
+  explica en el estado vacío en vez de dejar un "sin datos" que parece falla.
+  Para Sujeto Excluido el filtro es la **clase de documento**, no "proveedor sin
+  NRC": son cosas distintas y confundirlas llenaría el reporte de falsos
+  positivos (hoy hay 2 proveedores con NRC vacío y sus 20 documentos son CCF).
+
+### Y una que no se puede reproducir
+
+El **sello de recepción**. El ERP lo imprime en su libro pero no lo entrega en
+el detalle de compras —cero cadenas de 40 caracteres en todo el payload— y
+`purchase_dte_documents.sello_recibido` viene NULL en 633 de 634 documentos de
+junio. Ninguna columna del Art. 86 lo pide, así que el libro sale completo; la
+vista aclara por qué esa columna del ERP acá no existe.
+
+### Los DTE del correo no sirven como fuente del libro
+
+Parecía que sí —son las mismas compras— y medirlo lo desmintió: junio tiene 499
+CCF+FC por correo contra 389 del libro, y las fechas no coinciden (1-jun 83 vs
+22; 22-jun 52 vs 1; los domingos el libro no tiene nada y el correo sí). Son
+documentos que nunca se registraron como compra en el ERP: servicios, telefonía,
+micro-facturas recurrentes. Además no traen sucursal, y el libro se presenta por
+establecimiento. Sirven para el control cruzado —un DTE sin compra registrada es
+crédito fiscal que se pierde— no para declarar.
+
+### Nota operativa
+
+El ERP tarda **167s en devolver un mes de Bodega**, más que el límite de 150s de
+las Edge Functions. El cron pide 2 días y no lo toca, pero cualquier backfill
+tiene que ir en ventanas de ≤10 días o muere en 504.
+
+---
+
 ## v2.320.1 — MIN·MAX: con borrador, la acción a mano es Descartar
 
 En una fila con borrador pendiente los dos botones visibles eran `Poner 0` +

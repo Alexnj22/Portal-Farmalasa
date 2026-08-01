@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban } from 'lucide-react';
+import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, UserX } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -14,20 +14,36 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { exportCsv } from '../../utils/csvExport';
-import { fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados } from '../../data/librosIva';
+import {
+    fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
+    fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
+    fetchLibroSujetoExcluido,
+} from '../../data/librosIva';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Libros de IVA de ventas, generados desde `sales_invoices`.
+// Los siete libros y anexos de IVA del ERP, generados desde el portal:
+// ventas desde `sales_invoices`, compras desde `purchase_receipts`.
 //
-// Verificado el 2026-07-31 contra los libros del ERP —7 sucursales × 3 meses,
-// 84 CSV—: CCF y consumidor 18/18 branch-meses exactos en conteo y monto, y los
-// 204 anulados con el md5 del conjunto de `codigo_generacion` idéntico en ambos
-// lados. Lo que cierra la diferencia es el filtro del sello: sin él sobraban
-// $282.58, que eran exactamente las facturas con `recibido_mh` inválido.
+// VENTAS — verificado el 2026-07-31 contra los libros del ERP —7 sucursales × 3
+// meses, 84 CSV—: CCF y consumidor 18/18 branch-meses exactos en conteo y monto,
+// y los 204 anulados con el md5 del conjunto de `codigo_generacion` idéntico en
+// ambos lados. Lo que cierra la diferencia es el filtro del sello: sin él
+// sobraban $282.58, que eran exactamente las facturas con `recibido_mh` inválido.
+//
+// COMPRAS — verificado el 2026-08-01. `purchase_receipts` ya reproducía el libro
+// del ERP día por día en Bodega (23 de los 24 días de junio idénticos), pero el
+// sync solo corría Bodega y tiraba cuatro campos que el libro necesita. Con las
+// 7 sucursales y esos campos, junio cuadra en las 7. Dos cosas que salieron de
+// comparar contra el ERP y no de suponer: el libro **incluye las anuladas**
+// (Bodega 2026-07-20, 28 docs y $16,321.43 de los dos lados) y el anexo de
+// percepción es exactamente el subconjunto con percepción > 0 (226 filas).
+//
+// Retención y Sujeto Excluido salen vacíos, y eso es correcto: el ERP tampoco
+// tiene una sola fila en todo 2025-01 → 2026-07 en las 7 sucursales.
 //
 // Las columnas y su ORDEN salen del Reglamento del Código Tributario, no del
-// CSV del ERP: Art. 83 para consumidores, Art. 85 para contribuyentes. Es la
-// referencia con autoridad y no depende de que un proveedor no cambie su
+// CSV del ERP: Art. 83 consumidores, Art. 85 contribuyentes, Art. 86 compras.
+// Es la referencia con autoridad y no depende de que un proveedor no cambie su
 // exportador. El separador `;` y la fecha DD/MM/YYYY sí se conservan del ERP,
 // que es lo que la contadora ya sabe abrir.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,10 +56,16 @@ const IVA_TASA = 0.13;
 // trasladará al libro de operaciones con contribuyentes").
 const debitoDeConsumidor = (gravadas) => gravadas * IVA_TASA / (1 + IVA_TASA);
 
+// El orden es el del ERP: primero los libros de ventas, después compras, y al
+// final los anexos. Quien arma la declaración los recorre en ese orden.
 const TABS = [
     { key: 'consumidor',    label: 'Consumidor Final' },
     { key: 'contribuyente', label: 'Contribuyentes'   },
+    { key: 'compras',       label: 'Compras'          },
     { key: 'anulados',      label: 'Anulados'         },
+    { key: 'percepcion',    label: 'Percepción'       },
+    { key: 'retencion',     label: 'Retención'        },
+    { key: 'excluido',      label: 'Sujeto Excluido'  },
 ];
 
 const mesActual = () => {
@@ -123,6 +145,58 @@ const COLS_ANULADOS = [
     { key: 'total',     label: 'Total',      align: 'right' },
 ];
 
+const COLS_COMPRAS = [
+    { key: 'n',        label: 'N.º',       align: 'right' },
+    { key: 'fecha',    label: 'Fecha',     align: 'left'  },
+    { key: 'sucursal', label: 'Sucursal',  align: 'left', hideBelow: 'lg' },
+    { key: 'doc',      label: 'Documento', align: 'left'  },
+    { key: 'proveedor', label: 'Proveedor', align: 'left' },
+    { key: 'nrc',      label: 'NRC',       align: 'left', hideBelow: 'md' },
+    { key: 'exentas',  label: 'Exentas',   align: 'right', hideBelow: 'lg' },
+    { key: 'gravadas', label: 'Gravadas',  align: 'right' },
+    { key: 'credito',  label: 'Crédito fiscal', align: 'right', hideBelow: 'md' },
+    { key: 'total',    label: 'Total',     align: 'right' },
+];
+
+// Percepción y retención comparten anatomía: el mismo documento, el mismo monto
+// sujeto y el impuesto que cambia de nombre.
+const colsAnexo = (etiquetaImpuesto) => [
+    { key: 'n',         label: 'N.º',       align: 'right' },
+    { key: 'fecha',     label: 'Fecha',     align: 'left'  },
+    { key: 'sucursal',  label: 'Sucursal',  align: 'left', hideBelow: 'lg' },
+    { key: 'proveedor', label: 'Proveedor', align: 'left'  },
+    { key: 'nrc',       label: 'NRC',       align: 'left', hideBelow: 'md' },
+    { key: 'doc',       label: 'Documento', align: 'left', hideBelow: 'sm' },
+    { key: 'sujeto',    label: 'Monto sujeto', align: 'right' },
+    { key: 'impuesto',  label: etiquetaImpuesto, align: 'right' },
+];
+
+// Las tres tarjetas del carril son las mismas en los siete libros, pero no
+// significan lo mismo: en ventas el impuesto es débito (se paga) y en compras es
+// crédito (se resta). Reusar la etiqueta sería un error contable, no un detalle.
+const ES_DE_VENTAS = new Set(['consumidor', 'contribuyente', 'anulados']);
+
+const ETIQUETAS = {
+    consumidor:    { icon: Receipt,      monto: 'Ventas',       impuesto: 'Débito fiscal'  },
+    contribuyente: { icon: Receipt,      monto: 'Ventas',       impuesto: 'Débito fiscal'  },
+    anulados:      { icon: Ban,          monto: 'Anulado',      impuesto: 'Débito fiscal'  },
+    compras:       { icon: ShoppingCart, monto: 'Compras',      impuesto: 'Crédito fiscal' },
+    percepcion:    { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA percibido'  },
+    retencion:     { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA retenido'   },
+    excluido:      { icon: UserX,        monto: 'Compras',      impuesto: 'Crédito fiscal' },
+};
+
+const COLS_EXCLUIDO = [
+    { key: 'n',         label: 'N.º',       align: 'right' },
+    { key: 'fecha',     label: 'Fecha',     align: 'left'  },
+    { key: 'sucursal',  label: 'Sucursal',  align: 'left', hideBelow: 'lg' },
+    { key: 'proveedor', label: 'Nombre',    align: 'left'  },
+    { key: 'nit',       label: 'NIT',       align: 'left', hideBelow: 'md' },
+    { key: 'dui',       label: 'DUI',       align: 'left', hideBelow: 'md' },
+    { key: 'doc',       label: 'Documento', align: 'left', hideBelow: 'sm' },
+    { key: 'total',     label: 'Total',     align: 'right' },
+];
+
 export default function LibrosIvaView() {
     const { getScope, user } = useAuth();
     const branches = useStaffStore((s) => s.branches);
@@ -140,29 +214,42 @@ export default function LibrosIvaView() {
     const [consumidor,    setConsumidor]    = useState([]);
     const [contribuyente, setContribuyente] = useState([]);
     const [anulados,      setAnulados]      = useState([]);
+    const [compras,       setCompras]       = useState([]);
+    const [percepcion,    setPercepcion]    = useState([]);
+    const [retencion,     setRetencion]     = useState([]);
+    const [excluido,      setExcluido]      = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
 
     const [desde, hasta] = useMemo(() => rangoDelMes(mes), [mes]);
 
-    // Los tres libros se traen JUNTOS aunque solo se vea uno: son de un mes y
+    // Los siete libros se traen JUNTOS aunque solo se vea uno: son de un mes y
     // caben en cientos de filas, así que cambiar de pestaña no vuelve a la red —
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a] = await Promise.all([
+        const [c, k, a, co, pe, re, ex] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
+            fetchLibroCompras(desde, hasta, filterBranch),
+            fetchLibroPercepcion(desde, hasta, filterBranch),
+            fetchLibroRetencion(desde, hasta, filterBranch),
+            fetchLibroSujetoExcluido(desde, hasta, filterBranch),
         ]);
-        // Un libro que falla NO puede quedar como "no hubo ventas": un mes
-        // vacío por error de red es indistinguible de un mes sin operaciones, y
-        // acá eso se declara a Hacienda.
-        const fallo = c.error || k.error || a.error;
+        // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
+        // vacío por error de red es indistinguible de un mes sin movimiento, y
+        // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
+        // Excluido, que salen vacíos aun cuando todo funciona.
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || ex.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
         setAnulados(a.data || []);
+        setCompras(co.data || []);
+        setPercepcion(pe.data || []);
+        setRetencion(re.data || []);
+        setExcluido(ex.data || []);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
 
@@ -180,10 +267,11 @@ export default function LibrosIvaView() {
             ...consumidor.map(r => r.branch_id),
             ...contribuyente.map(r => r.branch_id),
             ...anulados.map(r => r.branch_id),
+            ...compras.map(r => r.branch_id),
         ]);
         return [...ids].sort((a, b) => a - b)
             .map(id => ({ value: String(id), label: nombreSucursal(id) }));
-    }, [consumidor, contribuyente, anulados, nombreSucursal]);
+    }, [consumidor, contribuyente, anulados, compras, nombreSucursal]);
 
     const totales = useMemo(() => {
         const gravadasCons = consumidor.reduce((s, r) => s + Number(r.ventas_gravadas || 0), 0);
@@ -198,12 +286,31 @@ export default function LibrosIvaView() {
 
         const totalAnul = anulados.reduce((s, r) => s + Number(r.total || 0), 0);
 
+        const suma = (filas, campo) => filas.reduce((s, r) => s + Number(r[campo] || 0), 0);
+
         return {
             consumidor:    { docs: docsCons, exentas: exentasCons, gravadas: gravadasCons, debito: debitoDeConsumidor(gravadasCons), total: totalCons },
             contribuyente: { docs: contribuyente.length, exentas: exentasCcf, gravadas: gravadasCcf, debito: debitoCcf, total: totalCcf },
             anulados:      { docs: anulados.length, exentas: 0, gravadas: 0, debito: 0, total: totalAnul },
+            // En compras la tercera tarjeta es el crédito fiscal, no el débito:
+            // es el impuesto que se resta, no el que se paga.
+            compras:       { docs: compras.length,
+                             exentas:  suma(compras, 'compras_exentas'),
+                             gravadas: suma(compras, 'compras_gravadas'),
+                             debito:   suma(compras, 'credito_fiscal'),
+                             total:    suma(compras, 'total') },
+            percepcion:    { docs: percepcion.length, exentas: 0,
+                             gravadas: suma(percepcion, 'monto_sujeto'),
+                             debito:   suma(percepcion, 'percepcion_iva'),
+                             total:    suma(percepcion, 'monto_sujeto') },
+            retencion:     { docs: retencion.length, exentas: 0,
+                             gravadas: suma(retencion, 'monto_sujeto'),
+                             debito:   suma(retencion, 'retencion_iva'),
+                             total:    suma(retencion, 'monto_sujeto') },
+            excluido:      { docs: excluido.length, exentas: 0, gravadas: 0, debito: 0,
+                             total: suma(excluido, 'total') },
         };
-    }, [consumidor, contribuyente, anulados]);
+    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido]);
 
     const t = totales[activeTab];
 
@@ -212,6 +319,19 @@ export default function LibrosIvaView() {
     const ccfSinNrc = useMemo(
         () => contribuyente.filter(r => !r.nrc).length,
         [contribuyente]);
+
+    // Lo mismo del lado de compras: sin NRC del proveedor el Art. 86 no se
+    // cumple. Hoy son 2 proveedores del ERP a los que les falta el dato.
+    const comprasSinNrc = useMemo(
+        () => compras.filter(r => !r.nrc).length,
+        [compras]);
+
+    // Documentos que el sync trajo antes de que existieran las columnas del
+    // libro. NULL no es cero: si queda alguno, el libro está incompleto y hay
+    // que resincronizar ese período — no presentarlo así.
+    const comprasSinSincronizar = useMemo(
+        () => compras.filter(r => r.documento_numero == null).length,
+        [compras]);
 
     const sufijoArchivo = `${mes}${filterBranch ? `_${nombreSucursal(Number(filterBranch)).replace(/\s+/g, '-')}` : ''}`;
 
@@ -259,20 +379,86 @@ export default function LibrosIvaView() {
                 `libro-contribuyentes_${sufijoArchivo}.csv`);
             return;
         }
+        if (activeTab === 'anulados') {
+            exportCsv(
+                ['No', 'FECHA', 'TIPO', 'CORRELATIVO', 'CODIGO DE GENERACION', 'CLIENTE', 'TOTAL'],
+                [
+                    ...anulados.map((r, i) => [
+                        i + 1, fmtFecha(r.fecha), r.tipo_documento || '', soloNumero(r.correlativo),
+                        r.codigo_generacion || '', r.cliente || '', num(r.total),
+                    ]),
+                    ['TOTALES', '', '', '', '', '', num(t.total)],
+                ],
+                `anexo-anulados_${sufijoArchivo}.csv`);
+            return;
+        }
+        if (activeTab === 'compras') {
+            // Art. 86: correlativo · fecha · clase y número del documento ·
+            // NRC · proveedor · exentas · gravadas internas · importaciones ·
+            // crédito fiscal · total · percibido · retenido.
+            exportCsv(
+                ['No', 'FECHA', 'CLASE DE DOCUMENTO', 'No DOCUMENTO', 'NRC', 'NIT',
+                 'PROVEEDOR', 'ESTABLECIMIENTO', 'COMPRAS EXENTAS',
+                 'COMPRAS GRAVADAS INTERNAS', 'IMPORTACIONES GRAVADAS',
+                 'CREDITO FISCAL', 'TOTAL COMPRAS', 'IVA PERCIBIDO', 'IVA RETENIDO',
+                 'ANULADA'],
+                [
+                    ...compras.map((r, i) => [
+                        i + 1, fmtFecha(r.fecha), r.documento_tipo || '',
+                        r.documento_numero || '', r.nrc || '', r.nit || '',
+                        r.proveedor || '', nombreSucursal(r.branch_id),
+                        num(r.compras_exentas), num(r.compras_gravadas), '0.00',
+                        num(r.credito_fiscal), num(r.total),
+                        // Vacío ≠ 0.00: si el documento se sincronizó antes de
+                        // que existiera la columna no sabemos si hubo percepción,
+                        // y escribir 0.00 sería afirmarlo.
+                        r.percepcion_iva == null ? '' : num(r.percepcion_iva),
+                        r.retencion_iva  == null ? '' : num(r.retencion_iva),
+                        r.anulada ? 'SI' : '',
+                    ]),
+                    ['TOTALES', '', '', '', '', '', '', '', num(t.exentas), num(t.gravadas),
+                     '0.00', num(t.debito), num(t.total), '', '', ''],
+                ],
+                `libro-compras_${sufijoArchivo}.csv`);
+            return;
+        }
+        if (activeTab === 'percepcion' || activeTab === 'retencion') {
+            const esPerc = activeTab === 'percepcion';
+            const filasAnexo = esPerc ? percepcion : retencion;
+            exportCsv(
+                ['No', 'FECHA', 'PROVEEDOR', 'NRC', 'NIT', 'CLASE DE DOCUMENTO',
+                 'No DOCUMENTO', 'ESTABLECIMIENTO', 'MONTO SUJETO',
+                 esPerc ? 'IVA PERCIBIDO' : 'IVA RETENIDO', 'ANULADA'],
+                [
+                    ...filasAnexo.map((r, i) => [
+                        i + 1, fmtFecha(r.fecha), r.proveedor || '', r.nrc || '',
+                        r.nit || '', r.documento_tipo || '', r.documento_numero || '',
+                        nombreSucursal(r.branch_id), num(r.monto_sujeto),
+                        num(esPerc ? r.percepcion_iva : r.retencion_iva),
+                        r.anulada ? 'SI' : '',
+                    ]),
+                    ['TOTALES', '', '', '', '', '', '', '', num(t.gravadas), num(t.debito), ''],
+                ],
+                `anexo-${esPerc ? 'percepcion' : 'retencion'}_${sufijoArchivo}.csv`);
+            return;
+        }
         exportCsv(
-            ['No', 'FECHA', 'TIPO', 'CORRELATIVO', 'CODIGO DE GENERACION', 'CLIENTE', 'TOTAL'],
+            ['No', 'FECHA DE EMISION', 'NOMBRE', 'NIT', 'DUI', 'No DOCUMENTO',
+             'ESTABLECIMIENTO', 'TOTAL'],
             [
-                ...anulados.map((r, i) => [
-                    i + 1, fmtFecha(r.fecha), r.tipo_documento || '', soloNumero(r.correlativo),
-                    r.codigo_generacion || '', r.cliente || '', num(r.total),
+                ...excluido.map((r, i) => [
+                    i + 1, fmtFecha(r.fecha), r.proveedor || '', r.nit || '', r.dui || '',
+                    r.documento_numero || '', nombreSucursal(r.branch_id), num(r.total),
                 ]),
-                ['TOTALES', '', '', '', '', '', num(t.total)],
+                ['TOTALES', '', '', '', '', '', '', num(t.total)],
             ],
-            `anexo-anulados_${sufijoArchivo}.csv`);
+            `reporte-sujeto-excluido_${sufijoArchivo}.csv`);
     };
 
-    const filas = activeTab === 'consumidor' ? consumidor
-        : activeTab === 'contribuyente' ? contribuyente : anulados;
+    const FILAS_POR_TAB = {
+        consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido,
+    };
+    const filas = FILAS_POR_TAB[activeTab] ?? [];
 
     const filtersContent = (
         <ViewTabBar
@@ -328,8 +514,10 @@ export default function LibrosIvaView() {
             <div className="p-5 md:p-6 space-y-5">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     {/* Tres tarjetas FIJAS (§17.0): las mismas tres preguntas en
-                        los tres libros, que es lo que deja compararlos de un
-                        vistazo al cambiar de pestaña. */}
+                        los siete libros, que es lo que deja compararlos de un
+                        vistazo al cambiar de pestaña. Lo que cambia es CÓMO se
+                        llama cada respuesta — en compras el impuesto es crédito,
+                        no débito, y llamarlo igual sería un error contable. */}
                     <CarrilCards className="flex-1" ariaLabel="Resumen del libro">
                         {/* Sin sucursal elegida, una fila del libro de consumidor
                             es un día POR sucursal — decir "180 días" de un mes de
@@ -338,9 +526,10 @@ export default function LibrosIvaView() {
                             sub={activeTab === 'consumidor'
                                 ? `${consumidor.length} ${filterBranch ? 'días' : 'filas'}`
                                 : undefined} />
-                        <StatCard icon={Receipt} label="Ventas" value={formatMoney(t.total)}
-                            sub="Del período" />
-                        <StatCard icon={Percent} label="Débito fiscal" value={formatMoney(t.debito)}
+                        <StatCard icon={ETIQUETAS[activeTab].icon} label={ETIQUETAS[activeTab].monto}
+                            value={formatMoney(t.total)} sub="Del período" />
+                        <StatCard icon={Percent} label={ETIQUETAS[activeTab].impuesto}
+                            value={formatMoney(t.debito)}
                             sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Documentado'} />
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
@@ -354,17 +543,43 @@ export default function LibrosIvaView() {
 
                 {/* La regla del libro, escrita donde se usa. Sin esto el número
                     de la pantalla no se puede defender ante una diferencia. */}
-                <Notice variant="info" icon={BookOpen}>
-                    Solo entran las facturas con sello de Hacienda (40 caracteres) y estado
-                    FINALIZADA; los anulados son los DTE invalidados en MH. Verificado contra
-                    los libros del ERP en 7 sucursales × 3 meses.
-                </Notice>
+                {ES_DE_VENTAS.has(activeTab) ? (
+                    <Notice variant="info" icon={BookOpen}>
+                        Solo entran las facturas con sello de Hacienda (40 caracteres) y estado
+                        FINALIZADA; los anulados son los DTE invalidados en MH. Verificado contra
+                        los libros del ERP en 7 sucursales × 3 meses.
+                    </Notice>
+                ) : (
+                    <Notice variant="info" icon={BookOpen}>
+                        Las compras salen del ERP, las 7 sucursales. Las anuladas van incluidas y
+                        marcadas, igual que en el libro del ERP. Sin columna de sello: el ERP no la
+                        entrega en el detalle de compras y el Art. 86 no la pide.
+                    </Notice>
+                )}
 
                 {activeTab === 'contribuyente' && ccfSinNrc > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         <strong>{ccfSinNrc} de {contribuyente.length}</strong> documentos van sin NRC del
                         cliente, que el Art. 85 exige. El portal todavía no captura el receptor del DTE:
                         el libro se puede revisar, pero no presentar hasta completarlo.
+                    </Notice>
+                )}
+
+                {/* Un documento sin número no es un libro incompleto "cosmético":
+                    es una operación que no se puede identificar. Se avisa antes
+                    que el faltante de NRC porque invalida más. */}
+                {activeTab === 'compras' && comprasSinSincronizar > 0 && (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <strong>{comprasSinSincronizar} de {compras.length}</strong> documentos vienen de
+                        antes de que el sync guardara el número de documento y la percepción. Resincronizá
+                        {' '}{etiquetaMes(mes)} antes de presentar este libro — en blanco no es cero.
+                    </Notice>
+                )}
+
+                {activeTab === 'compras' && comprasSinNrc > 0 && (
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        <strong>{comprasSinNrc} de {compras.length}</strong> documentos van sin NRC del
+                        proveedor, que el Art. 86 exige. Falta el dato en la ficha del proveedor del ERP.
                     </Notice>
                 )}
 
@@ -426,6 +641,99 @@ export default function LibrosIvaView() {
                                 <DataCell hideBelow="lg"><span className="font-mono text-micro text-content-3">{r.codigo_generacion || '—'}</span></DataCell>
                                 <DataCell hideBelow="md">{r.cliente || '—'}</DataCell>
                                 <DataCell align="right">{formatMoney(r.total)}</DataCell>
+                            </DataRow>
+                        ))}
+                    </DataTable>
+                )}
+
+                {activeTab === 'compras' && (
+                    <DataTable columns={COLS_COMPRAS} loading={loading}
+                        empty={{ icon: ShoppingCart, message: `Sin compras en ${etiquetaMes(mes)}` }}>
+                        {compras.map((r, i) => (
+                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
+                                <DataCell align="right">{i + 1}</DataCell>
+                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
+                                <DataCell hideBelow="lg">{nombreSucursal(r.branch_id)}</DataCell>
+                                <DataCell>
+                                    {r.documento_numero
+                                        ? <span className="font-mono text-caption">{r.documento_numero}</span>
+                                        : <Badge variant="danger" size="sm">Sin sincronizar</Badge>}
+                                </DataCell>
+                                <DataCell>
+                                    {r.proveedor || '—'}
+                                    {r.anulada && <> <Badge variant="warning" size="sm">Anulada</Badge></>}
+                                </DataCell>
+                                <DataCell hideBelow="md">
+                                    {r.nrc
+                                        ? <span className="font-mono text-caption">{r.nrc}</span>
+                                        : <Badge variant="warning" size="sm">Falta</Badge>}
+                                </DataCell>
+                                <DataCell align="right" hideBelow="lg">{formatMoney(r.compras_exentas)}</DataCell>
+                                <DataCell align="right">{formatMoney(r.compras_gravadas)}</DataCell>
+                                <DataCell align="right" hideBelow="md">{formatMoney(r.credito_fiscal)}</DataCell>
+                                <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>
+                            </DataRow>
+                        ))}
+                    </DataTable>
+                )}
+
+                {/* Percepción y retención son la misma tabla con otro impuesto.
+                    El vacío se explica en vez de quedar en "no hay datos": en
+                    retención es el estado normal, no una falla. */}
+                {(activeTab === 'percepcion' || activeTab === 'retencion') && (
+                    <DataTable
+                        columns={colsAnexo(activeTab === 'percepcion' ? 'IVA percibido' : 'IVA retenido')}
+                        loading={loading}
+                        empty={{
+                            icon: Percent,
+                            message: activeTab === 'percepcion'
+                                ? `Sin percepción de IVA en ${etiquetaMes(mes)}`
+                                : `Sin retención de IVA en ${etiquetaMes(mes)}`,
+                            subtext: activeTab === 'retencion'
+                                ? 'La empresa no es agente de retención: el ERP tampoco tiene una sola operación en toda su historia.'
+                                : undefined,
+                        }}>
+                        {(activeTab === 'percepcion' ? percepcion : retencion).map((r, i) => (
+                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
+                                <DataCell align="right">{i + 1}</DataCell>
+                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
+                                <DataCell hideBelow="lg">{nombreSucursal(r.branch_id)}</DataCell>
+                                <DataCell>
+                                    {r.proveedor || '—'}
+                                    {r.anulada && <> <Badge variant="warning" size="sm">Anulada</Badge></>}
+                                </DataCell>
+                                <DataCell hideBelow="md">
+                                    {r.nrc
+                                        ? <span className="font-mono text-caption">{r.nrc}</span>
+                                        : <Badge variant="warning" size="sm">Falta</Badge>}
+                                </DataCell>
+                                <DataCell hideBelow="sm"><span className="font-mono text-caption">{r.documento_numero || '—'}</span></DataCell>
+                                <DataCell align="right">{formatMoney(r.monto_sujeto)}</DataCell>
+                                <DataCell align="right"><span className="font-black">
+                                    {formatMoney(activeTab === 'percepcion' ? r.percepcion_iva : r.retencion_iva)}
+                                </span></DataCell>
+                            </DataRow>
+                        ))}
+                    </DataTable>
+                )}
+
+                {activeTab === 'excluido' && (
+                    <DataTable columns={COLS_EXCLUIDO} loading={loading}
+                        empty={{
+                            icon: UserX,
+                            message: `Sin compras a sujetos excluidos en ${etiquetaMes(mes)}`,
+                            subtext: 'Todas las compras del ERP son con crédito fiscal: no hay ni una Factura de Sujeto Excluido registrada.',
+                        }}>
+                        {excluido.map((r, i) => (
+                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
+                                <DataCell align="right">{i + 1}</DataCell>
+                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
+                                <DataCell hideBelow="lg">{nombreSucursal(r.branch_id)}</DataCell>
+                                <DataCell>{r.proveedor || '—'}</DataCell>
+                                <DataCell hideBelow="md"><span className="font-mono text-caption">{r.nit || '—'}</span></DataCell>
+                                <DataCell hideBelow="md"><span className="font-mono text-caption">{r.dui || '—'}</span></DataCell>
+                                <DataCell hideBelow="sm"><span className="font-mono text-caption">{r.documento_numero || '—'}</span></DataCell>
+                                <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>

@@ -3,22 +3,23 @@ import Button from './Button';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, BellRing, CheckCheck, ClipboardList, Package, BarChart2,
+    Bell, BellRing, CheckCheck,
     Megaphone, ChevronRight, Trash2, X, ArrowRight, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
+import { iconoDeTipo } from '../../constants/tipoIconos';
 import Contador from './Contador';
 
 // ── Apariencia por tipo de notificación ──────────────────────────────────────
-const iconForType = (type = '') => {
-    if (type.startsWith('PEDIDO'))  return Package;
-    if (type.startsWith('MINMAX'))  return BarChart2;
-    if (type.startsWith('REQUEST')) return ClipboardList;
-    return Bell;
-};
+// El ícono sale del catálogo compartido (`constants/tipoIconos`). Antes se
+// resolvía acá por prefijo y seis tipos que sí se envían —anulación, cambio de
+// cliente, de forma de pago, de vendedor, de turno, y los mensajes del sistema—
+// caían todos al ícono genérico de campana, aunque cinco de ellos ya tenían
+// ícono propio en RequestsView.
+const iconForType = iconoDeTipo;
 
 const tintForType = (type = '', metadata = {}, isDark = false) => {
     if (isDark) {

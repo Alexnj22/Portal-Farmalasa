@@ -12,7 +12,7 @@ import {
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
     CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
     Search, ArrowLeftRight, CalendarDays, Banknote, FileCheck2,
-    Ban, CreditCard, UserCog, Receipt, Contact, Plus,
+    Ban, CreditCard, Receipt, Plus,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
+import { ICONO_POR_TIPO } from '../constants/tipoIconos';
 import PortalTextarea from '../components/common/PortalTextarea';
 import ModalShell from '../components/common/ModalShell';
 import { formatMoney } from '../utils/formatNumber';
@@ -36,19 +37,10 @@ const CREATABLE_TYPES = [
     { key: 'CERTIFICATE',  icon: FileCheck },
 ];
 
-const TYPE_ICONS = {
-    VACATION:               Palmtree,
-    PERMIT:                 FileText,
-    SHIFT_CHANGE:           RefreshCw,
-    OVERTIME:               Coffee,
-    ADVANCE:                DollarSign,
-    CERTIFICATE:            FileCheck,
-    DISABILITY:             Stethoscope,
-    ANNULMENT_REQUEST:      Ban,
-    PAYMENT_CHANGE_REQUEST: CreditCard,
-    VENDOR_CHANGE_REQUEST:  UserCog,
-    CLIENT_CHANGE_REQUEST:  Contact,
-};
+// El mapa vivía acá y se mudó a `constants/tipoIconos` (2026-08-01): la campana
+// de notificaciones necesita los mismos íconos para los mismos tipos, y tener
+// dos listas era garantía de que se desincronizaran.
+const TYPE_ICONS = ICONO_POR_TIPO;
 
 // circle = card colored avatar; section = section label color.
 // Tokenizado T7 (AUDITORIA-TEMA-2026-07.md, propuesta de estandarización de

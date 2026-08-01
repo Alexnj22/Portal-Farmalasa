@@ -16,7 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.323.0';
+export const APP_VERSION = '2.324.0';
+
+// v2.324.0 — seis tipos de notificación dejan de verse todos iguales.
+//
+// `NotificationBell` resolvía el ícono por PREFIJO: `PEDIDO*` → Package,
+// `MINMAX*` → BarChart2, `REQUEST*` → ClipboardList, y todo lo demás al ícono
+// genérico de campana. Seis tipos que sí se envían caían ahí:
+// `ANNULMENT_REQUEST`, `CLIENT_CHANGE_REQUEST`, `PAYMENT_CHANGE_REQUEST`,
+// `VENDOR_CHANGE_REQUEST`, `SHIFT_CHANGE` y `SYSTEM`.
+//
+// Lo llamativo: CINCO de esos seis YA tenían ícono propio, a dos vistas de
+// distancia — `RequestsView` tenía un `TYPE_ICONS` local con Ban, Contact,
+// CreditCard, UserCog y RefreshCw para exactamente esas claves. No era que
+// faltara decidir el ícono; era que la campana no conocía el catálogo.
+//
+// Así que en vez de escribir un segundo mapa, el de `RequestsView` se movió a
+// `constants/tipoIconos.js` y ahora lo consumen los dos. Un catálogo, dos
+// consumidores. Es el tercer caso del mismo patrón en el día —el traductor de
+// errores por diccionario y el gate `error-crudo` con su lista de setters a
+// mano fueron los otros dos—: una lista escrita a mano se desincroniza el día
+// que alguien agrega una clave sin saber que hay otra copia.
+//
+// `iconoDeTipo()` busca primero el tipo exacto y recién después cae al prefijo,
+// así que un `PEDIDO_*` nuevo sigue teniendo ícono aunque nadie lo agregue.
+//
+// Único ícono realmente nuevo: `SYSTEM` → `Info` (mensaje del portal, no de una
+// persona). Los otros cinco son los que ya usaba Solicitudes, así que la campana
+// y la vista ahora se leen igual.
+//
+// De paso, cinco imports de lucide quedaron muertos (UserCog y Contact en
+// RequestsView; Package, BarChart2 y ClipboardList en la campana). `eslint` no
+// los marca porque su `no-unused-vars` ignora los nombres que empiezan en
+// mayúscula, y los íconos de lucide siempre empiezan así.
+
 
 // v2.323.0 — Libros IVA: faltaban CUATRO de los siete reportes del ERP, y las
 // compras de cinco sucursales no existían en el portal.

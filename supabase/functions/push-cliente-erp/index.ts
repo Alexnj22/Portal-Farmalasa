@@ -1,0 +1,252 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { getCorsHeaders } from "../_shared/security.ts";
+
+// Empuja al ERP, EN EL MOMENTO, la edición que se acaba de guardar en el portal.
+//
+// Antes esto lo hacía `scripts/migracion-clientes/empujar_al_erp.py` a mano: la
+// edición quedaba protegida y en cola, pero el ERP no se enteraba hasta que
+// alguien corriera el script. Para quien usa el portal eso es indistinguible de
+// que no funcione.
+//
+// La cola sigue siendo la misma —`customers_changelog` con `erp_synced_at IS
+// NULL`— así que esta función no reemplaza al script: lo adelanta. Si esta
+// llamada falla, la entrada QUEDA pendiente y el script (o el próximo guardado)
+// la recoge. Nunca se marca como sincronizado algo que no llegó.
+//
+// ── Lo que no se puede olvidar del ERP ─────────────────────────────────────
+//  1. Un POST parcial BORRA lo que no se manda. Se lee la ficha entera, se le
+//     aplican los campos cambiados y se reenvían los 21 (incidente 6317).
+//  2. Los valores viajan CRUDOS, sin recortar espacios: el control de
+//     duplicados del ERP compara el nombre tal cual y hay fichas cuya única
+//     diferencia es un espacio inicial.
+//  3. Hay que LEER la respuesta: contesta 200 con {"typeinfo":"Error"} cuando
+//     rechaza. Un rechazo silencioso se ve igual que un éxito.
+
+const BASE      = "https://clientesdte3.oss.com.sv/farma_salud";
+const LOGIN_URL = `${BASE}/login.php`;
+
+function getCreds(): { username: string; password: string } {
+  // Credenciales propias si existen; si no, las del sync de compras, que entran
+  // al mismo ERP. Se prefiere una llave separada para poder rotarla sin tocar
+  // los otros syncs.
+  const raw = Deno.env.get("ERP_CLIENTES_CREDS") ?? Deno.env.get("ERP_PURCHASES_CREDS");
+  if (!raw) throw new Error("Falta el secreto ERP_CLIENTES_CREDS (o ERP_PURCHASES_CREDS).");
+  return JSON.parse(raw);
+}
+
+async function login(): Promise<string> {
+  const { username, password } = getCreds();
+  const form = new URLSearchParams({ username, password, m: "1" });
+  const res = await fetch(LOGIN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString(),
+    redirect: "manual",                     // la cookie viaja en el 302
+    signal: AbortSignal.timeout(20_000),
+  });
+  const cookie = res.headers.get("set-cookie")?.split(";")[0];
+  if (!cookie) throw new Error("El ERP no devolvió cookie de sesión.");
+  return cookie;
+}
+
+// El ERP se cae solo a veces: en 365 escrituras contestó una vez "Proceso no
+// encontrado" en texto plano y el mismo payload entró al reintentarlo.
+async function conReintento<T>(fn: () => Promise<T>, veces = 3, pausaMs = 1500): Promise<T> {
+  let ultimo: unknown;
+  for (let i = 0; i < veces; i++) {
+    try { return await fn(); } catch (e) {
+      ultimo = e;
+      if (i < veces - 1) await new Promise(r => setTimeout(r, pausaMs * (i + 1)));
+    }
+  }
+  throw ultimo;
+}
+
+async function pedir(cookie: string, url: string, datos?: URLSearchParams): Promise<string> {
+  return await conReintento(async () => {
+    const res = await fetch(url, {
+      method: datos ? "POST" : "GET",
+      headers: {
+        Cookie: cookie,
+        "User-Agent": "Mozilla/5.0",
+        "X-Requested-With": "XMLHttpRequest",
+        Referer: `${BASE}/admin_cliente.php`,
+        ...(datos ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+      },
+      body: datos ? datos.toString() : undefined,
+      signal: AbortSignal.timeout(45_000),
+    });
+    return await res.text();
+  });
+}
+
+// ── Parseo de la ficha ──────────────────────────────────────────────────────
+// Mismo criterio que `parsear_ficha` en bloque.py: los VALORES no se recortan
+// (ver punto 2 arriba); las ETIQUETAS de los <option> sí, porque son para
+// comparar y no viajan.
+type Ficha = { campos: Record<string, string>; opciones: Record<string, [string, string][]> };
+
+const desescapar = (s: string) => s
+  .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&nbsp;/g, " ");
+
+function parsearFicha(html: string): Ficha {
+  const campos: Record<string, string> = {};
+  const opciones: Record<string, [string, string][]> = {};
+
+  for (const m of html.matchAll(/<input([^>]*)>/g)) {
+    const a = m[1];
+    if (/type\s*=\s*["'](submit|button)/i.test(a)) continue;
+    const n = a.match(/name\s*=\s*["']([^"']+)/);
+    if (!n) continue;
+    const v = a.match(/value\s*=\s*["']([^"']*)/);
+    campos[n[1]] = v ? desescapar(v[1]) : "";
+  }
+  for (const m of html.matchAll(/<textarea([^>]*)>([\s\S]*?)<\/textarea>/g)) {
+    const n = m[1].match(/name\s*=\s*["']([^"']+)/);
+    if (n) campos[n[1]] = desescapar(m[2]);
+  }
+  for (const m of html.matchAll(/<select([^>]*)>([\s\S]*?)<\/select>/g)) {
+    const n = m[1].match(/name\s*=\s*["']([^"']+)/);
+    if (!n) continue;
+    const lista: [string, string][] = [];
+    let seleccionado = "";
+    for (const o of m[2].matchAll(/<option([^>]*)>\s*([^<]*)/g)) {
+      const v = o[1].match(/value\s*=\s*["']([^"']*)/);
+      const value = v ? v[1] : "";
+      const texto = desescapar(o[2]).trim();
+      if (/selected/i.test(o[1])) seleccionado = value;
+      if (value !== "" && value !== "-1") lista.push([value, texto]);
+    }
+    opciones[n[1]] = lista;
+    campos[n[1]] = seleccionado;
+  }
+  return { campos, opciones };
+}
+
+// ── Portal → ERP ────────────────────────────────────────────────────────────
+const A_TEXTO: Record<string, string> = {
+  name: "nombre", nit: "nit", dui: "dui", nrc: "nrc", phone: "telefono1",
+  telefono2: "telefono2", email: "correo", direccion: "direccion",
+  pasaporte: "pasaporte",
+};
+const A_SELECT: Record<string, string> = {
+  departamento: "departamento", municipio: "municipio", distrito: "distrito",
+  categoria: "categoria", giro: "sel_giro", retencion_pct: "porcentaje",
+};
+const SOLO_PORTAL = new Set(["notes"]);
+
+const sinTildes = (s: string) => (s ?? "")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+
+// El ERP TRUNCA los nombres de distrito para que entren en su campo, así que
+// ninguna normalización saca "SN MIG MERCEDES" de "San Miguel de Mercedes".
+// Es el reverso de la tabla de `src/data/elSalvadorGeo.js`; está duplicada
+// porque son dos runtimes distintos y no hay bundling entre ellos. Si se agrega
+// una fila allá, agregarla acá.
+const ABREVIATURAS_ERP: Record<string, string> = {
+  "DULCE NOMBRE DE MARIA": "DULCE NOM MARIA",
+  "NUEVA CONCEPCION": "NVA CONCEPCION",
+  "SAN ANTONIO DE LA CRUZ": "SAN ANT LA CRUZ",
+  "SAN ANTONIO LOS RANCHOS": "SAN ANT RANCHOS",
+  "SAN ISIDRO LABRADOR": "SAN I LABRADOR",
+  "SAN JOSE CANCASQUE": "SAN J CANCASQUE",
+  "LAS FLORES": "SAN JOSE FLORES",
+  "SAN LUIS DEL CARMEN": "SAN LUIS CARMEN",
+  "SAN PABLO TACACHICO": "SAN P TACACHICO",
+  "SAN MIGUEL DE MERCEDES": "SN MIG MERCEDES",
+};
+
+/** Etiqueta del portal → value del ERP. `null` = no se pudo resolver, y
+ *  entonces el campo NO viaja: inventar un distrito en una ficha fiscal es
+ *  exactamente lo que este proyecto tiene prohibido. */
+function valorDeSelect(opciones: Ficha["opciones"], campo: string, etiqueta: string): string | null {
+  const lista = opciones[campo] ?? [];
+  const objetivo = sinTildes(etiqueta);
+  if (!objetivo) return "";                              // vaciar es una intención válida
+  for (const [value, texto] of lista) if (sinTildes(texto) === objetivo) return value;
+  const abrev = ABREVIATURAS_ERP[objetivo];
+  if (abrev) for (const [value, texto] of lista) if (sinTildes(texto) === abrev) return value;
+  // `porcentaje` rotula '10%' y el portal guarda 10.
+  for (const [value, texto] of lista) if (texto.replace(/\D/g, "") === objetivo) return value;
+  return null;
+}
+
+Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+
+  try {
+    const { customer_id } = await req.json().catch(() => ({}));
+    if (!customer_id) return json({ error: "Falta customer_id" }, 400);
+
+    // Se usa el JWT de QUIEN LLAMA, no el service_role: así los RPC aplican el
+    // mismo permiso de módulo que el guardado, y esta función no puede ser una
+    // puerta trasera para escribir en el ERP sin permiso sobre clientes.
+    const auth = req.headers.get("Authorization") ?? "";
+    if (!auth) return json({ error: "Sin credenciales" }, 401);
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: auth } } },
+    );
+
+    const { data: cola, error: eCola } = await sb.rpc("cola_espejo_portal_erp", { p_limite: null });
+    if (eCola) throw eCola;
+
+    const ficha = (cola?.cola ?? []).find((f: any) => String(f.customer_id) === String(customer_id));
+    if (!ficha) return json({ empujado: false, motivo: "sin cambios pendientes para este cliente" });
+
+    const cookie = await login();
+    const { campos, opciones } = parsearFicha(
+      await pedir(cookie, `${BASE}/editar_cliente.php?id_cliente=${ficha.erp_id}`));
+    if (!Object.keys(campos).length) throw new Error("El ERP no devolvió la ficha (¿sesión caída?).");
+
+    const nuevos: Record<string, string> = { ...campos };
+    const aplicados: any[] = [];
+    const sinResolver: any[] = [];
+    for (const c of ficha.cambios) {
+      if (SOLO_PORTAL.has(c.campo)) { sinResolver.push({ ...c, motivo: "solo existe en el portal" }); continue; }
+      if (A_TEXTO[c.campo]) {
+        nuevos[A_TEXTO[c.campo]] = c.valor ?? "";
+        aplicados.push({ ...c, campo_erp: A_TEXTO[c.campo], envia: c.valor ?? "" });
+      } else if (A_SELECT[c.campo]) {
+        const v = valorDeSelect(opciones, A_SELECT[c.campo], c.valor ?? "");
+        if (v === null) { sinResolver.push({ ...c, motivo: `'${c.valor}' no coincide con ninguna opción del ERP` }); continue; }
+        nuevos[A_SELECT[c.campo]] = v;
+        aplicados.push({ ...c, campo_erp: A_SELECT[c.campo], envia: v });
+      } else sinResolver.push({ ...c, motivo: "sin equivalente en el ERP" });
+    }
+    if (!aplicados.length) return json({ empujado: false, motivo: "nada que el ERP pueda recibir", sin_resolver: sinResolver });
+
+    const payload = new URLSearchParams({ ...nuevos, process: "edit", id_cliente: String(ficha.erp_id) });
+    const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`, payload);
+    let resp: any;
+    try { resp = JSON.parse(cruda); } catch { resp = { typeinfo: "NO-JSON", msg: cruda.slice(0, 200) }; }
+    if (resp.typeinfo !== "Success") return json({ empujado: false, rechazo: resp.msg ?? resp.typeinfo, sin_resolver: sinResolver }, 200);
+
+    // Verificar releyendo: que se aplicó lo pedido y que no se perdió nada.
+    const despues = parsearFicha(await pedir(cookie, `${BASE}/editar_cliente.php?id_cliente=${ficha.erp_id}`)).campos;
+    const noQuedo = aplicados.filter(a => (despues[a.campo_erp] ?? "") !== (a.envia ?? ""));
+    const perdidos = Object.keys(campos).filter(k =>
+      campos[k] && !despues[k] && nuevos[k] !== "");
+    if (noQuedo.length || perdidos.length) {
+      return json({ empujado: false, motivo: "el ERP no dejó el dato como se envió",
+                    no_quedo: noQuedo.map(a => a.campo_erp), perdidos }, 200);
+    }
+
+    // Recién ahora se salda, y solo lo que viajó.
+    const ids = aplicados.flatMap(a => a.changelog_ids ?? []);
+    const { data: marca, error: eMarca } = await sb.rpc("marcar_empujado_al_erp", { p_ids: ids });
+    if (eMarca) throw eMarca;
+
+    return json({ empujado: true, erp_id: ficha.erp_id,
+                  campos: aplicados.map(a => a.campo), marcadas: marca?.marcadas ?? 0,
+                  sin_resolver: sinResolver });
+  } catch (e) {
+    // La entrada queda PENDIENTE: se reintenta en el próximo guardado o con el
+    // script. Nunca se marca como sincronizado algo que no llegó.
+    return json({ empujado: false, error: String(e?.message ?? e) }, 200);
+  }
+});

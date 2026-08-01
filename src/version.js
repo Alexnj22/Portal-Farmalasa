@@ -16,7 +16,37 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.328.1';
+export const APP_VERSION = '2.329.0';
+
+// v2.329.0 — Clientes: lo que se edita en el portal llega al ERP al instante.
+//
+// Hasta acá la edición quedaba guardada, protegida del espejo y EN COLA, pero
+// el ERP no se enteraba hasta que alguien corriera `empujar_al_erp.py` a mano.
+// Para quien usa el portal eso es indistinguible de que no funcione — reportado
+// así: "lo modifiqué en el portal, le puse Potonico como distrito, pero no hizo
+// el cambio en el ERP".
+//
+// Ahora lo hace la edge function `push-cliente-erp`, que el formulario invoca
+// apenas termina de guardar. Reusa el login al ERP que ya existía en TypeScript
+// (sync-erp-purchases) y repite las tres reglas que no se pueden olvidar: se
+// reenvían los 21 campos porque un POST parcial borra el resto, los valores
+// viajan crudos sin recortar espacios, y se LEE la respuesta porque el ERP
+// contesta 200 con {"typeinfo":"Error"} cuando rechaza. Verifica releyendo
+// antes de saldar la cola.
+//
+// Usa el JWT de quien llama, no el service_role: así los RPC aplican el mismo
+// permiso de módulo que el guardado y la función no es una puerta trasera para
+// escribir en el ERP sin permiso sobre clientes.
+//
+// NO SE ESPERA al ERP para dar por guardada la ficha. Es un servidor de
+// terceros y puede tardar — medido hoy: una lectura suya pasó de 300 s. Hacer
+// esperar a la persona por la lentitud de otro sería castigarla. El guardado
+// termina, y el envío se informa después con su propio toast.
+//
+// Si el envío falla no se pierde nada ni se revierte nada: la entrada queda con
+// `erp_synced_at IS NULL`, o sea protegida contra el espejo y en la cola, y la
+// bitácora de la ficha ya la muestra como "Sin enviar al ERP".
+
 
 // v2.328.1 — Teléfono: se valida el PREFIJO, no solo el largo.
 //

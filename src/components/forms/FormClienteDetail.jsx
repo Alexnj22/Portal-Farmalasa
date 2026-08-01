@@ -15,7 +15,8 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
 import {
-    fetchCustomerDetail, updateCustomerFiscal, codigoDeError, mensajeDeError,
+    fetchCustomerDetail, updateCustomerFiscal, pushClienteAlErp,
+    codigoDeError, mensajeDeError,
 } from '../../data/customers';
 import {
     EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
@@ -258,12 +259,29 @@ const FormClienteDetail = ({ formData }) => {
             useStaff.getState().appendAuditLog('CLIENTES_EDITAR_FICHA', String(id), {
                 nombre: cliente?.name, campos: Object.keys(cambios),
             });
+            const n = Object.keys(cambios).length;
             useToastStore.getState().showToast(
                 'Ficha actualizada',
-                `${Object.keys(cambios).length} campo${Object.keys(cambios).length !== 1 ? 's' : ''} guardado${Object.keys(cambios).length !== 1 ? 's' : ''}.`,
+                `${n} campo${n !== 1 ? 's' : ''} guardado${n !== 1 ? 's' : ''}. Enviando al ERP…`,
                 'success');
             setPideConfirmacion(false);
             formData?.onSaved?.();
+            await cargar();
+
+            // El empuje al ERP va DESPUÉS de dar por guardada la ficha y de
+            // refrescarla: el guardado en el portal ya terminó, y el ERP es un
+            // servidor ajeno que puede tardar. Si falla, la edición queda en la
+            // cola y protegida — no se pierde, solo llega más tarde.
+            const r = await pushClienteAlErp(id);
+            if (r?.empujado) {
+                useToastStore.getState().showToast(
+                    'Enviado al ERP', `Se actualizó la ficha ${r.erp_id} en el ERP.`, 'success');
+            } else {
+                useToastStore.getState().showToast(
+                    'Guardado, pendiente de enviar al ERP',
+                    r?.rechazo || r?.motivo || r?.error || 'Se reintenta en el próximo guardado.',
+                    'warning');
+            }
             await cargar();
         } catch (e) {
             if (codigoDeError(e) === 'REQUIERE_CONFIRMACION_FISCAL') {

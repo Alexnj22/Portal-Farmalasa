@@ -108,3 +108,27 @@ export async function updateCustomerFiscal(id, campos, { confirmarFiscal = false
     if (error) throw error;
     return data;
 }
+
+/**
+ * Manda al ERP lo que se acaba de guardar. **No se espera antes de dar por
+ * guardada la ficha**: el guardado en el portal ya terminó y fue exitoso, y el
+ * ERP es un servidor de terceros que puede tardar (medido: una lectura suya
+ * tardó más de 300 s el 2026-08-01). Hacer esperar a la persona por eso sería
+ * castigarla por la lentitud de otro.
+ *
+ * Si falla, no se pierde nada: la entrada de `customers_changelog` queda con
+ * `erp_synced_at IS NULL`, o sea protegida contra el espejo y en la cola. La
+ * recoge el próximo guardado o `empujar_al_erp.py`. Por eso esta función NUNCA
+ * lanza: el resultado es informativo.
+ */
+export async function pushClienteAlErp(id) {
+    try {
+        const { data, error } = await supabase.functions.invoke('push-cliente-erp', {
+            body: { customer_id: id },
+        });
+        if (error) return { empujado: false, error: error.message };
+        return data || { empujado: false, error: 'sin respuesta' };
+    } catch (e) {
+        return { empujado: false, error: e?.message || String(e) };
+    }
+}

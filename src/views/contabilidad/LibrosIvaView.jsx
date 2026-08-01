@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, UserX } from 'lucide-react';
+import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, UserX, SearchX } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -10,9 +10,11 @@ import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination from '../../components/common/TablePagination';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
+import { normalizeText } from '../../utils/helpers';
 import { exportCsv } from '../../utils/csvExport';
 import {
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
@@ -58,14 +60,22 @@ const debitoDeConsumidor = (gravadas) => gravadas * IVA_TASA / (1 + IVA_TASA);
 
 // El orden es el del ERP: primero los libros de ventas, después compras, y al
 // final los anexos. Quien arma la declaración los recorre en ese orden.
+// Siete pestañas es el récord del portal —el anterior eran cinco— y el ancho de
+// la fila es la suma de sus rótulos, así que acá los rótulos son una medida.
+// Con "Consumidor Final" y "Sujeto Excluido" completos la fila pedía 1001px y
+// solo entraba a partir de 1728: a 1440 (la laptop más común) `ViewTabBar`
+// colapsaba con razón al desplegable. Recortados entra a 1440 con margen, y el
+// nombre legal completo sigue en el CSV, en su nombre de archivo y en el
+// tooltip de Exportar. Por debajo de ~1400 el desplegable toma el relevo, que
+// es la degradación correcta y muestra el rótulo entero.
 const TABS = [
-    { key: 'consumidor',    label: 'Consumidor Final' },
-    { key: 'contribuyente', label: 'Contribuyentes'   },
-    { key: 'compras',       label: 'Compras'          },
-    { key: 'anulados',      label: 'Anulados'         },
-    { key: 'percepcion',    label: 'Percepción'       },
-    { key: 'retencion',     label: 'Retención'        },
-    { key: 'excluido',      label: 'Sujeto Excluido'  },
+    { key: 'consumidor',    label: 'Consumidor'     },
+    { key: 'contribuyente', label: 'Contribuyentes' },
+    { key: 'compras',       label: 'Compras'        },
+    { key: 'anulados',      label: 'Anulados'       },
+    { key: 'percepcion',    label: 'Percepción'     },
+    { key: 'retencion',     label: 'Retención'      },
+    { key: 'excluido',      label: 'Excluido'       },
 ];
 
 const mesActual = () => {
@@ -117,7 +127,10 @@ const COLS_CONSUMIDOR = [
     { key: 'del',       label: 'Del N.º',    align: 'left'  },
     { key: 'al',        label: 'Al N.º',     align: 'left'  },
     { key: 'docs',      label: 'Docs',       align: 'center', hideBelow: 'sm' },
-    { key: 'exentas',   label: 'Exentas',    align: 'right', hideBelow: 'lg' },
+    // `Exentas` sale de la pantalla, igual que en compras: con `lg` estaba
+    // visible a 1440 y empujaba "Total del día" fuera del marco (medido: 1128
+    // contra 1046), y devolverla a `2xl` la traía de vuelta justo en 1536,
+    // donde tampoco entra. Su total sigue en el carril y en el CSV.
     { key: 'gravadas',  label: 'Gravadas',   align: 'right' },
     { key: 'debito',    label: 'Débito fiscal', align: 'right', hideBelow: 'md' },
     { key: 'total',     label: 'Total del día', align: 'right' },
@@ -133,8 +146,12 @@ const COLS_CONTRIBUYENTE = [
     { key: 'ccf',       label: 'N.º CCF',    align: 'left'  },
     { key: 'cliente',   label: 'Cliente',    align: 'left'  },
     { key: 'nrc',       label: 'NRC',        align: 'left'  },
-    { key: 'nit',       label: 'NIT',        align: 'left', hideBelow: 'xl' },
-    { key: 'exentas',   label: 'Exentas',    align: 'right', hideBelow: 'lg' },
+    // `2xl` y no `xl`: 1440 YA es xl, así que el NIT se mostraba ahí y entre él
+    // y `Exentas` "Total" quedaba fuera del marco (medido: 1147 contra 1046, y
+    // 1076 tras acotar el cliente). Cede el NIT y no el NRC porque el NRC es el
+    // que identifica al contribuyente en el libro; los dos van completos al CSV.
+    { key: 'nit',       label: 'NIT',        align: 'left', hideBelow: '2xl' },
+    // `Exentas` fuera de la pantalla, como en consumidor y compras.
     { key: 'gravadas',  label: 'Gravadas',   align: 'right' },
     { key: 'debito',    label: 'Débito',     align: 'right', hideBelow: 'md' },
     { key: 'total',     label: 'Total',      align: 'right' },
@@ -150,23 +167,39 @@ const COLS_ANULADOS = [
     { key: 'total',     label: 'Total',      align: 'right' },
 ];
 
-// Diez columnas no entran: medidas en el navegador a 1600px pedían 1272px
-// contra los 1184 del contenedor, que además recorta con `overflow-x: hidden`.
-// Lo que se perdía era **Total**, la última — o sea la columna que más importa
-// de un libro fiscal, invisible y sin forma de llegar a ella.
+// Diez columnas no entran, y el arreglo de la primera vuelta NO funcionó — se
+// verificó midiendo el 2026-08-01 y `Total`, la columna que este comentario
+// declaraba innegociable, quedaba **fuera del visor a 1280, 1366 y 1440**:
 //
-// Ceden las dos que menos dicen: **Exentas** (una farmacia vende y compra
-// gravado; la columna es $0.00 en todo el histórico, y su total sigue en el
-// carril y en el CSV) y el ancho del **proveedor**. Las cinco que se declaran a
-// Hacienda —documento, gravadas, crédito fiscal, total y el NRC— no ceden.
+//   visor 1280 → contenedor 886 · tabla 1173     visor 1440 → 1046 · 1173
+//
+// La causa es un clásico del proyecto: `Exentas` llevaba `hideBelow: 'xl'`, que
+// oculta **por debajo** de 1280 — o sea que la columna que se suponía que cedía
+// estaba visible en TODOS los anchos donde estorbaba, y solo desaparecía en los
+// angostos, donde el problema es peor. `DataTable` ya documenta esta trampa al
+// pie de `HIDE_BELOW` ("`xl` no alcanzaba porque 1440 YA es xl") y por eso ahí
+// existen los peldaños `2xl` y `1440`; acá no se usaron.
+//
+// Ahora la intención escrita y el código coinciden. Ceden, en este orden:
+//   1. **Exentas** — fuera de la pantalla. Es $0.00 en todo el histórico de una
+//      farmacia, y su total sigue en el carril y en el CSV. Ceder "a 2xl" era
+//      devolverle 105px justo al ancho donde tampoco entra.
+//   2. **Sucursal** — `2xl`: es dato repetido, y ya desaparece sola cuando hay
+//      una sucursal filtrada.
+// Las cinco que se declaran a Hacienda —documento, gravadas, crédito fiscal,
+// total y el NRC— no ceden a ningún ancho.
+//
+// Medido después: a 1440 la tabla pide 954 contra 1046 disponibles y `Total`
+// entra sin scroll. A 1280 quedan ~68px de deslizamiento dentro de la tarjeta,
+// que es la degradación correcta —la tabla se desliza, no se recorta el marco—
+// y el orden de columnas deja lo declarable a la vista primero.
 const COLS_COMPRAS = [
     { key: 'n',        label: 'N.º',       align: 'right' },
     { key: 'fecha',    label: 'Fecha',     align: 'left'  },
-    { key: 'sucursal', label: 'Sucursal',  align: 'left', hideBelow: 'lg' },
+    { key: 'sucursal', label: 'Sucursal',  align: 'left', hideBelow: '2xl' },
     { key: 'doc',      label: 'Documento', align: 'left'  },
     { key: 'proveedor', label: 'Proveedor', align: 'left' },
     { key: 'nrc',      label: 'NRC',       align: 'left', hideBelow: 'md' },
-    { key: 'exentas',  label: 'Exentas',   align: 'right', hideBelow: 'xl' },
     { key: 'gravadas', label: 'Gravadas',  align: 'right' },
     // "Crédito", no "Crédito fiscal": el rótulo largo pedía 151px de columna
     // para un número de 6 dígitos. En un libro de compras no hay otro crédito
@@ -180,7 +213,10 @@ const COLS_COMPRAS = [
 const colsAnexo = (etiquetaImpuesto) => [
     { key: 'n',         label: 'N.º',       align: 'right' },
     { key: 'fecha',     label: 'Fecha',     align: 'left'  },
-    { key: 'sucursal',  label: 'Sucursal',  align: 'left', hideBelow: 'lg' },
+    // `2xl`: a 1440 la tabla pedía 1077 contra 1046 y el impuesto —la columna
+    // por la que existe el anexo— quedaba fuera. La sucursal es el dato que
+    // menos dice acá y ya desaparece sola al filtrar por una.
+    { key: 'sucursal',  label: 'Sucursal',  align: 'left', hideBelow: '2xl' },
     { key: 'proveedor', label: 'Proveedor', align: 'left'  },
     { key: 'nrc',       label: 'NRC',       align: 'left', hideBelow: 'md' },
     { key: 'doc',       label: 'Documento', align: 'left', hideBelow: 'sm' },
@@ -213,13 +249,106 @@ const sinSucursal = (cols, filtrada) =>
 const COLS_EXCLUIDO = [
     { key: 'n',         label: 'N.º',       align: 'right' },
     { key: 'fecha',     label: 'Fecha',     align: 'left'  },
-    { key: 'sucursal',  label: 'Sucursal',  align: 'left', hideBelow: 'lg' },
+    { key: 'sucursal',  label: 'Sucursal',  align: 'left', hideBelow: '2xl' },
     { key: 'proveedor', label: 'Nombre',    align: 'left'  },
     { key: 'nit',       label: 'NIT',       align: 'left', hideBelow: 'md' },
     { key: 'dui',       label: 'DUI',       align: 'left', hideBelow: 'md' },
     { key: 'doc',       label: 'Documento', align: 'left', hideBelow: 'sm' },
     { key: 'total',     label: 'Total',     align: 'right' },
 ];
+
+// ── Cómo se saca el valor de cada columna ──────────────────────────────────
+// UN solo mapa por pestaña, y no dos listas (una para ordenar y otra para
+// buscar). Con dos, el día que se agrega una columna se actualiza una y no la
+// otra, y el síntoma es mudo: la columna existe, se ve, y simplemente no
+// aparece en los resultados de búsqueda. Acá una columna sin entrada no se
+// puede ordenar y no se busca — las dos cosas a la vez, por construcción.
+//
+// El tipo del valor decide el resto: los `number` ordenan por magnitud y no
+// entran al buscador (nadie busca "1129.55"); los `string` ordenan con
+// `localeCompare` en español y sí forman el corpus de búsqueda.
+const ACCESO = {
+    consumidor: (nom) => ({
+        fecha:    r => r.fecha,
+        sucursal: r => nom(r.branch_id),
+        del:      r => soloNumero(r.correlativo_del),
+        al:       r => soloNumero(r.correlativo_al),
+        docs:     r => Number(r.documentos || 0),
+        exentas:  r => Number(r.ventas_exentas || 0),
+        gravadas: r => Number(r.ventas_gravadas || 0),
+        debito:   r => debitoDeConsumidor(Number(r.ventas_gravadas || 0)),
+        total:    r => Number(r.total_diario || 0),
+    }),
+    contribuyente: () => ({
+        n:        r => r._n,
+        fecha:    r => r.fecha,
+        ccf:      r => soloNumero(r.correlativo),
+        cliente:  r => r.cliente || '',
+        nrc:      r => r.nrc || '',
+        nit:      r => r.nit || '',
+        exentas:  r => Number(r.ventas_exentas || 0),
+        gravadas: r => Number(r.ventas_gravadas || 0),
+        debito:   r => Number(r.debito_fiscal || 0),
+        total:    r => Number(r.total || 0),
+    }),
+    anulados: () => ({
+        n:       r => r._n,
+        fecha:   r => r.fecha,
+        tipo:    r => r.tipo_documento || '',
+        corr:    r => soloNumero(r.correlativo),
+        cg:      r => r.codigo_generacion || '',
+        cliente: r => r.cliente || '',
+        total:   r => Number(r.total || 0),
+    }),
+    compras: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        doc:       r => r.documento_numero || '',
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        gravadas:  r => Number(r.compras_gravadas || 0),
+        credito:   r => Number(r.credito_fiscal || 0),
+        total:     r => Number(r.total || 0),
+    }),
+    percepcion: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        doc:       r => r.documento_numero || '',
+        sujeto:    r => Number(r.monto_sujeto || 0),
+        impuesto:  r => Number(r.percepcion_iva || 0),
+    }),
+    retencion: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        proveedor: r => r.proveedor || '',
+        nrc:       r => r.nrc || '',
+        doc:       r => r.documento_numero || '',
+        sujeto:    r => Number(r.monto_sujeto || 0),
+        impuesto:  r => Number(r.retencion_iva || 0),
+    }),
+    excluido: (nom) => ({
+        n:         r => r._n,
+        fecha:     r => r.fecha,
+        sucursal:  r => nom(r.branch_id),
+        proveedor: r => r.proveedor || '',
+        nit:       r => r.nit || '',
+        dui:       r => r.dui || '',
+        doc:       r => r.documento_numero || '',
+        total:     r => Number(r.total || 0),
+    }),
+};
+
+// `sortable` no se escribe columna por columna: sale de tener accesor. Es la
+// misma razón de arriba — una lista a mano se desincroniza de la otra.
+const conOrden = (cols, acceso) =>
+    cols.map(c => (acceso[c.key] ? { ...c, sortable: true } : c));
+
+const TAM_PAGINA = 50;
 
 // ── Celdas del lado de compras ─────────────────────────────────────────────
 // Existen porque las cuatro tablas nuevas repiten las mismas cinco celdas, y
@@ -260,8 +389,8 @@ const CeldaMonto = ({ v, fuerte }) => (
 // automático, así que sin un tope en el `<td>` la columna crece hasta el nombre
 // más largo y el `truncate` no llega a activarse nunca. Es el mismo patrón que
 // `VentasView` (`truncate max-w-[140px]` sobre el `DataCell`).
-const CeldaProveedor = ({ nombre, anulada, hideBelow }) => (
-    <DataCell hideBelow={hideBelow} className="max-w-[11rem]">
+const CeldaProveedor = ({ nombre, anulada }) => (
+    <DataCell className="max-w-[11rem]">
         <div className="flex items-center gap-2 min-w-0">
             <span className="truncate" title={nombre || undefined}>{nombre || '—'}</span>
             {anulada && <Badge variant="warning" size="sm" className="shrink-0">Anulada</Badge>}
@@ -282,6 +411,16 @@ export default function LibrosIvaView() {
     const [filterBranch, setFilterBranch] = useState(
         getScope('libros_iva') === 'BRANCH' ? String(user?.branchId || '') : ''
     );
+
+    // Buscar, ordenar y paginar recortan LO QUE SE VE, nunca lo que se declara:
+    // el carril sigue mostrando el total del período y el CSV sale con el libro
+    // entero en su orden legal. Es la línea que no se puede cruzar — un libro
+    // exportado a medias por un filtro de pantalla se presenta igual de bien
+    // que uno completo, y nadie lo nota hasta que Hacienda lo cruza.
+    const [busqueda, setBusqueda] = useState('');
+    const [orden, setOrden] = useState({ key: null, dir: 'asc' });
+    const [pagina, setPagina] = useState(1);
+    const [tamPagina, setTamPagina] = useState(TAM_PAGINA);
 
     const [consumidor,    setConsumidor]    = useState([]);
     const [contribuyente, setContribuyente] = useState([]);
@@ -560,17 +699,97 @@ export default function LibrosIvaView() {
             `reporte-sujeto-excluido_${sufijoArchivo}.csv`);
     };
 
-    const FILAS_POR_TAB = {
-        consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido,
-    };
-    const filas = FILAS_POR_TAB[activeTab] ?? [];
+    // Memoizado y no un objeto literal suelto: si `filas` cambia de identidad en
+    // cada render, se la lleva puesta toda la cadena de `useMemo` de abajo
+    // —numerar, filtrar, ordenar, paginar— sobre 467 filas y en cada tecleo del
+    // buscador.
+    const filas = useMemo(
+        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido }[activeTab] ?? []),
+        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido]);
 
+    const acceso = useMemo(
+        () => (ACCESO[activeTab] || ACCESO.consumidor)(nombreSucursal),
+        [activeTab, nombreSucursal]);
+
+    // El número de orden se fija ACÁ, sobre el libro tal como lo devolvió el
+    // RPC, y viaja pegado a la fila. Si se recalculara al pintar (`i + 1` como
+    // antes) bastaría ordenar por monto para que el documento 412 pasara a
+    // llamarse "1": en un libro fiscal el correlativo de la operación es parte
+    // del dato, no la posición en la lista de la pantalla.
+    const filasNumeradas = useMemo(
+        () => filas.map((r, i) => (r._n === i + 1 ? r : { ...r, _n: i + 1 })),
+        [filas]);
+
+    const filasVistas = useMemo(() => {
+        const q = normalizeText(busqueda);
+        const textos = Object.values(acceso);
+        let out = q
+            ? filasNumeradas.filter(r => textos.some(fn => {
+                const v = fn(r);
+                return typeof v === 'string' && normalizeText(v).includes(q);
+            }))
+            : filasNumeradas;
+
+        const fn = orden.key && acceso[orden.key];
+        if (fn) {
+            const signo = orden.dir === 'asc' ? 1 : -1;
+            out = [...out].sort((a, b) => {
+                const va = fn(a), vb = fn(b);
+                if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * signo;
+                return String(va ?? '').localeCompare(String(vb ?? ''), 'es') * signo;
+            });
+        }
+        return out;
+    }, [filasNumeradas, acceso, busqueda, orden]);
+
+    const totalPaginas = Math.max(1, Math.ceil(filasVistas.length / tamPagina));
+    const filasPagina = useMemo(
+        () => filasVistas.slice((pagina - 1) * tamPagina, pagina * tamPagina),
+        [filasVistas, pagina, tamPagina]);
+
+    useEffect(() => { setPagina(1); }, [activeTab, mes, filterBranch, busqueda, tamPagina]); // eslint-disable-line react-hooks/set-state-in-effect -- volver a la página 1 al cambiar de recorte
+
+    const alOrdenar = useCallback((key) => {
+        setOrden(o => (o.key === key
+            ? { key, dir: o.dir === 'asc' ? 'desc' : 'asc' }
+            : { key, dir: 'asc' }));
+        setPagina(1);
+    }, []);
+
+    // Los tres estados vacíos son distintos y la salida también. El del error
+    // importa especialmente: sin él, un libro que falló por red se ve idéntico
+    // a un mes sin operaciones —y eso es justo lo que se declara a Hacienda.
+    const vacioDe = (icon, message, subtext) => (
+        error
+            ? { icon: AlertTriangle,
+                message: 'No se pudo generar el libro',
+                subtext: 'Es un fallo de la consulta, no un mes sin movimiento. No presentes nada de esta pantalla.' }
+            : busqueda.trim()
+                ? { icon: SearchX,
+                    message: `Sin coincidencias para «${busqueda.trim()}»`,
+                    subtext: 'La búsqueda recorta lo que ves; el CSV sigue saliendo con el libro completo.' }
+                : { icon, message, subtext });
+
+    const propsTabla = (cols) => ({
+        columns: conOrden(cols, acceso),
+        loading,
+        onSort: alOrdenar,
+        sortKey: orden.key,
+        sortDir: orden.dir,
+    });
+
+    // El buscador es Tipo 1 (§24): vive acá y en ningún otro lado. Busca en las
+    // columnas de texto de la pestaña abierta —proveedor, NRC, documento,
+    // cliente, código de generación—, que son las que uno tiene en la mano
+    // cuando la contadora pregunta por UN documento entre 467.
     const filtersContent = (
         <ViewTabBar
             tabs={TABS}
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            showSearch={false}
+            searchValue={busqueda}
+            onSearchChange={setBusqueda}
+            placeholder="Buscar proveedor, NRC, documento…"
         />
     );
 
@@ -584,7 +803,14 @@ export default function LibrosIvaView() {
                 key: 'exportar',
                 icon: Download,
                 label: 'Exportar',
-                title: `Exportar el libro de ${TABS.find(x => x.key === activeTab)?.label} en CSV`,
+                // `soloIcono` es el caso que §17 nombra literalmente para
+                // Exportar, y acá no era cosmético: con el rótulo la píldora se
+                // llevaba ~94px que le faltaban al carril, y las tarjetas
+                // quedaban en 148-155px truncando el número ($229,74…) en vez
+                // de encogerlo. El ícono `Download` ya es el de exportar en
+                // todo el portal, y el rótulo sigue vivo en el aria y en táctil.
+                soloIcono: true,
+                title: `Exportar el libro de ${TABS.find(x => x.key === activeTab)?.label} en CSV — ${filas.length} filas, completo y en orden legal (no lo recortan la búsqueda ni el orden de pantalla)`,
                 onClick: exportar,
                 disabled: loading || filas.length === 0,
             }]}>
@@ -627,14 +853,20 @@ export default function LibrosIvaView() {
                         {/* Sin sucursal elegida, una fila del libro de consumidor
                             es un día POR sucursal — decir "180 días" de un mes de
                             30 sería mentir sobre lo que se está mirando. */}
-                        <StatCard icon={FileText} label="Documentos" value={t.docs}
+                        {/* `loading` no es opcional acá: sin él, mientras carga
+                            las tres tarjetas dicen 0 · $0.00 · $0.00 con la
+                            misma tipografía que una cifra real, y en un libro
+                            fiscal "cero" es una afirmación, no un placeholder.
+                            La tabla ya mostraba esqueleto — eran las tarjetas
+                            las que se quedaron afirmando. */}
+                        <StatCard icon={FileText} label="Documentos" value={t.docs} loading={loading}
                             sub={activeTab === 'consumidor'
                                 ? `${consumidor.length} ${filterBranch ? 'días' : 'filas'}`
                                 : undefined} />
                         <StatCard icon={ETIQUETAS[activeTab].icon} label={ETIQUETAS[activeTab].monto}
-                            value={formatMoney(t.total)} sub="Del período" />
+                            value={formatMoney(t.total)} sub="Del período" loading={loading} />
                         <StatCard icon={Percent} label={ETIQUETAS[activeTab].impuesto}
-                            value={formatMoney(t.debito)}
+                            value={formatMoney(t.debito)} loading={loading}
                             sub={activeTab === 'consumidor' ? 'Calculado 13%' : 'Documentado'} />
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
@@ -647,15 +879,21 @@ export default function LibrosIvaView() {
                 )}
 
                 {/* La regla del libro, escrita donde se usa. Sin esto el número
-                    de la pantalla no se puede defender ante una diferencia. */}
+                    de la pantalla no se puede defender ante una diferencia.
+                    Va `compact`: es una nota de referencia, siempre en pantalla
+                    y en las 7 pestañas, así que compitiendo en peso con los
+                    avisos accionables de abajo terminaba enseñando lo contrario
+                    de lo que quiere decir. Los que piden hacer algo —NRC
+                    faltante, documentos sin sincronizar— se quedan a tamaño
+                    completo, y ahora se distinguen de un vistazo. */}
                 {ES_DE_VENTAS.has(activeTab) ? (
-                    <Notice variant="info" icon={BookOpen}>
+                    <Notice variant="info" icon={BookOpen} compact>
                         Solo entran las facturas con sello de Hacienda (40 caracteres) y estado
                         FINALIZADA; los anulados son los DTE invalidados en MH. Verificado contra
                         los libros del ERP en 7 sucursales × 3 meses.
                     </Notice>
                 ) : (
-                    <Notice variant="info" icon={BookOpen}>
+                    <Notice variant="info" icon={BookOpen} compact>
                         Las compras salen del ERP, las 7 sucursales. Las anuladas van incluidas y
                         marcadas, igual que en el libro del ERP. Sin columna de sello: el ERP no la
                         entrega en el detalle de compras y el Art. 86 no la pide.
@@ -689,16 +927,15 @@ export default function LibrosIvaView() {
                 )}
 
                 {activeTab === 'consumidor' && (
-                    <DataTable columns={COLS_CONSUMIDOR} loading={loading}
-                        empty={{ icon: BookOpen, message: `Sin ventas a consumidor final en ${etiquetaMes(mes)}` }}>
-                        {consumidor.map((r, i) => (
+                    <DataTable {...propsTabla(COLS_CONSUMIDOR)}
+                        empty={vacioDe(BookOpen, `Sin ventas a consumidor final en ${etiquetaMes(mes)}`)}>
+                        {filasPagina.map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.fecha}`} index={i}>
                                 <DataCell>{fmtFecha(r.fecha)}</DataCell>
                                 <DataCell hideBelow="md">{nombreSucursal(r.branch_id)}</DataCell>
                                 <DataCell><span className="font-mono text-caption">{soloNumero(r.correlativo_del)}</span></DataCell>
                                 <DataCell><span className="font-mono text-caption">{soloNumero(r.correlativo_al)}</span></DataCell>
                                 <DataCell align="center" hideBelow="sm">{r.documentos}</DataCell>
-                                <DataCell align="right" hideBelow="lg">{formatMoney(r.ventas_exentas)}</DataCell>
                                 <DataCell align="right">{formatMoney(r.ventas_gravadas)}</DataCell>
                                 <DataCell align="right" hideBelow="md">{formatMoney(debitoDeConsumidor(Number(r.ventas_gravadas || 0)))}</DataCell>
                                 <DataCell align="right"><span className="font-black">{formatMoney(r.total_diario)}</span></DataCell>
@@ -708,14 +945,20 @@ export default function LibrosIvaView() {
                 )}
 
                 {activeTab === 'contribuyente' && (
-                    <DataTable columns={COLS_CONTRIBUYENTE} loading={loading}
-                        empty={{ icon: BookOpen, message: `Sin ventas a contribuyentes en ${etiquetaMes(mes)}` }}>
-                        {contribuyente.map((r, i) => (
-                            <DataRow key={r.codigo_generacion || `${r.correlativo}-${i}`} index={i}>
-                                <DataCell align="right">{i + 1}</DataCell>
+                    <DataTable {...propsTabla(COLS_CONTRIBUYENTE)}
+                        empty={vacioDe(BookOpen, `Sin ventas a contribuyentes en ${etiquetaMes(mes)}`)}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={r.codigo_generacion || `${r.correlativo}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
                                 <DataCell>{fmtFecha(r.fecha)}</DataCell>
                                 <DataCell><span className="font-mono text-caption">{soloNumero(r.correlativo)}</span></DataCell>
-                                <DataCell>{r.cliente || '—'}</DataCell>
+                                {/* Acotado como el proveedor (§25.7): sin tope
+                                    en la celda la columna crece hasta el nombre
+                                    más largo —son razones sociales completas— y
+                                    el `truncate` no llega a activarse nunca. */}
+                                <DataCell className="truncate max-w-[11rem]" title={r.cliente || undefined}>
+                                    {r.cliente || '—'}
+                                </DataCell>
                                 <DataCell>
                                     {r.nrc
                                         ? <span className="font-mono text-caption">{r.nrc}</span>
@@ -726,7 +969,6 @@ export default function LibrosIvaView() {
                                         ? <span className="font-mono text-caption whitespace-nowrap">{r.nit}</span>
                                         : <Badge variant="warning" size="sm">Falta</Badge>}
                                 </DataCell>
-                                <DataCell align="right" hideBelow="lg">{formatMoney(r.ventas_exentas)}</DataCell>
                                 <DataCell align="right">{formatMoney(r.ventas_gravadas)}</DataCell>
                                 <DataCell align="right" hideBelow="md">{formatMoney(r.debito_fiscal)}</DataCell>
                                 <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>
@@ -736,11 +978,11 @@ export default function LibrosIvaView() {
                 )}
 
                 {activeTab === 'anulados' && (
-                    <DataTable columns={COLS_ANULADOS} loading={loading}
-                        empty={{ icon: Ban, message: `Sin documentos anulados en ${etiquetaMes(mes)}` }}>
-                        {anulados.map((r, i) => (
-                            <DataRow key={r.codigo_generacion || `${r.correlativo}-${i}`} index={i}>
-                                <DataCell align="right">{i + 1}</DataCell>
+                    <DataTable {...propsTabla(COLS_ANULADOS)}
+                        empty={vacioDe(Ban, `Sin documentos anulados en ${etiquetaMes(mes)}`)}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={r.codigo_generacion || `${r.correlativo}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
                                 <DataCell>{fmtFecha(r.fecha)}</DataCell>
                                 <DataCell align="center">
                                     <Badge variant={r.tipo_documento === 'CCF' ? 'danger' : 'neutral'} size="sm">
@@ -757,19 +999,18 @@ export default function LibrosIvaView() {
                 )}
 
                 {activeTab === 'compras' && (
-                    <DataTable columns={sinSucursal(COLS_COMPRAS, !!filterBranch)} loading={loading}
-                        empty={{ icon: ShoppingCart, message: `Sin compras en ${etiquetaMes(mes)}` }}>
-                        {compras.map((r, i) => (
-                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
-                                <DataCell align="right">{i + 1}</DataCell>
+                    <DataTable {...propsTabla(sinSucursal(COLS_COMPRAS, !!filterBranch))}
+                        empty={vacioDe(ShoppingCart, `Sin compras en ${etiquetaMes(mes)}`)}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
                                 <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
                                 {!filterBranch && (
-                                    <DataCell hideBelow="lg" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
+                                    <DataCell hideBelow="2xl" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
                                 )}
                                 <DataCell><CeldaDocumento numero={r.documento_numero} /></DataCell>
                                 <CeldaProveedor nombre={r.proveedor} anulada={r.anulada} />
                                 <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
-                                <DataCell align="right" hideBelow="lg"><CeldaMonto v={r.compras_exentas} /></DataCell>
                                 <DataCell align="right"><CeldaMonto v={r.compras_gravadas} /></DataCell>
                                 <DataCell align="right" hideBelow="md"><CeldaMonto v={r.credito_fiscal} /></DataCell>
                                 <DataCell align="right"><CeldaMonto v={r.total} fuerte /></DataCell>
@@ -783,25 +1024,23 @@ export default function LibrosIvaView() {
                     retención es el estado normal, no una falla. */}
                 {(activeTab === 'percepcion' || activeTab === 'retencion') && (
                     <DataTable
-                        columns={sinSucursal(
+                        {...propsTabla(sinSucursal(
                             colsAnexo(activeTab === 'percepcion' ? 'IVA percibido' : 'IVA retenido'),
-                            !!filterBranch)}
-                        loading={loading}
-                        empty={{
-                            icon: Percent,
-                            message: activeTab === 'percepcion'
+                            !!filterBranch))}
+                        empty={vacioDe(
+                            Percent,
+                            activeTab === 'percepcion'
                                 ? `Sin percepción de IVA en ${etiquetaMes(mes)}`
                                 : `Sin retención de IVA en ${etiquetaMes(mes)}`,
-                            subtext: activeTab === 'retencion'
+                            activeTab === 'retencion'
                                 ? 'La empresa no es agente de retención: el ERP tampoco tiene una sola operación en toda su historia.'
-                                : undefined,
-                        }}>
-                        {(activeTab === 'percepcion' ? percepcion : retencion).map((r, i) => (
-                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
-                                <DataCell align="right">{i + 1}</DataCell>
+                                : undefined)}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
                                 <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
                                 {!filterBranch && (
-                                    <DataCell hideBelow="lg" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
+                                    <DataCell hideBelow="2xl" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
                                 )}
                                 <CeldaProveedor nombre={r.proveedor} anulada={r.anulada} />
                                 <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
@@ -816,18 +1055,17 @@ export default function LibrosIvaView() {
                 )}
 
                 {activeTab === 'excluido' && (
-                    <DataTable columns={sinSucursal(COLS_EXCLUIDO, !!filterBranch)} loading={loading}
-                        empty={{
-                            icon: UserX,
-                            message: `Sin compras a sujetos excluidos en ${etiquetaMes(mes)}`,
-                            subtext: 'Todas las compras del ERP son con crédito fiscal: no hay ni una Factura de Sujeto Excluido registrada.',
-                        }}>
-                        {excluido.map((r, i) => (
-                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
-                                <DataCell align="right">{i + 1}</DataCell>
+                    <DataTable {...propsTabla(sinSucursal(COLS_EXCLUIDO, !!filterBranch))}
+                        empty={vacioDe(
+                            UserX,
+                            `Sin compras a sujetos excluidos en ${etiquetaMes(mes)}`,
+                            'Todas las compras del ERP son con crédito fiscal: no hay ni una Factura de Sujeto Excluido registrada.')}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
                                 <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
                                 {!filterBranch && (
-                                    <DataCell hideBelow="lg" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
+                                    <DataCell hideBelow="2xl" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
                                 )}
                                 <CeldaProveedor nombre={r.proveedor} />
                                 <DataCell hideBelow="md"><span className="font-mono text-caption whitespace-nowrap">{r.nit || '—'}</span></DataCell>
@@ -837,6 +1075,30 @@ export default function LibrosIvaView() {
                             </DataRow>
                         ))}
                     </DataTable>
+                )}
+
+                {/* Hermana de la tabla en el flujo, sin envoltorio (§14). El
+                    libro más cargado medido son 467 compras en un mes: sin
+                    paginar eran 4,670 celdas y 20,588px de tabla —23 pantallas—
+                    y `DataTable` está dimensionada para "~15-50 filas, no 200"
+                    según su propio encabezado.
+
+                    `total` es el libro entero y `filteredTotal` lo que dejó la
+                    búsqueda, así que el rango dice "1–50 de 467" y pasa a
+                    "1–3 de 3" al buscar, mientras el carril sigue mostrando el
+                    total del período. Son dos preguntas distintas y ahora se
+                    ven las dos. */}
+                {!loading && filas.length > 0 && (
+                    <TablePagination
+                        page={pagina}
+                        totalPages={totalPaginas}
+                        onPageChange={setPagina}
+                        pageSize={tamPagina}
+                        onPageSizeChange={setTamPagina}
+                        total={filas.length}
+                        filteredTotal={busqueda.trim() ? filasVistas.length : undefined}
+                        unit={activeTab === 'consumidor' ? 'días-sucursal' : 'documentos'}
+                    />
                 )}
             </div>
         </GlassViewLayout>

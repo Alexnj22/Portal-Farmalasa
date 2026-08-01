@@ -129,7 +129,7 @@ export const MODULE_GROUPS = [
             { key: 'facturas_compra', label: 'Facturas de Compra (Correo)', desc: 'Facturas de compra (DTE) sincronizadas automáticamente desde las bandejas de correo de la empresa: descarga de JSON/PDF, match de proveedor y cola de revisión de adjuntos sin procesar', icon: FileText, hasApprove: false, tabs: [
                 { key: 'facturas_compra_ver_montos', label: 'Cards Contables' },
             ]},
-            { key: 'libros_iva', label: 'Libros IVA', desc: 'Libros de IVA de ventas generados desde las facturas del portal: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de documentos anulados, con exportación a CSV. Solo entran las facturas con sello de Hacienda', icon: BookOpen, hasApprove: false, hasScope: true },
+            { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA del ERP, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido, desde el ERP', icon: BookOpen, hasApprove: false, hasScope: true },
         ],
     },
     {

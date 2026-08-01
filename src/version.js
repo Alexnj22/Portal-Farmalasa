@@ -16,7 +16,66 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.330.0';
+export const APP_VERSION = '2.331.0';
+
+// v2.331.0 — Libros IVA: la pestaña que no se podía clickear, y el libro que
+// no se podía recorrer.
+//
+// El módulo pasaba `gate:design` en verde y usaba todos los canónicos, así que
+// nada avisó de lo que le faltaba: era canónico a nivel de COMPONENTE y no a
+// nivel de VISTA. Se construyó en dos pasadas con foco en que los números
+// cuadraran al centavo, y el contrato de una vista de lista —buscar, ordenar,
+// paginar, decir que está cargando— quedó afuera. Todo lo de abajo salió de
+// medir en el navegador, no de leer el archivo.
+//
+// **Siete pestañas no entran, y dos quedaban INALCANZABLES.** Es el récord del
+// portal (el anterior eran cinco) y `ViewTabBar` cortaba por breakpoint fijo
+// más un techo de `max-w-[900px]`: la fila se clavaba en 910px y el sobrante se
+// dibujaba fuera del marco. Como ningún ancestro genera scroll horizontal,
+// "Sujeto Excluido" no se podía clickear de 1024 a 1366px, y a 1152 se iban
+// dos. Con el teclado seguían existiendo, que es lo que lo hacía invisible.
+// Ahora la barra CEDE POR MEDIDA, como `FilterBar` en §17.0: compara el ancho
+// natural de la fila contra el hueco real y, si no entra, usa el desplegable
+// que ya existía para móvil. Beneficia a las 34 vistas que la usan.
+//
+// Costó dos intentos fallidos, los dos por lo mismo: cachear una medida que
+// solo se puede tomar en uno de los dos estados. Al colapsar con `display:none`
+// la fila mide 0, así que una primera lectura mala —y el primer
+// `useLayoutEffect` corre antes de que el layout se asiente— se queda pegada
+// para siempre. Hoy la fila colapsada sale del flujo (`absolute invisible`) y
+// SIEMPRE se puede medir. El tercer intento oscilaba un estado por resize:
+// `offsetParent` no es nulo para un `position:absolute` —solo con
+// `display:none`— así que se leía el riel colapsado y volvía a expandir.
+//
+// **La columna `Total` estaba fuera del visor** en cuatro de los siete libros a
+// 1280, 1366 y 1440. El archivo tenía un comentario explicando que se había
+// sacrificado `Exentas` para que eso no pasara: el umbral estaba invertido
+// (`hideBelow: 'xl'` oculta POR DEBAJO de 1280, o sea que la columna estaba
+// visible justo donde estorbaba). `DataTable` ya documenta la trampa al pie de
+// `HIDE_BELOW` —"`xl` no alcanzaba porque 1440 YA es xl"— y por eso ahí existen
+// los peldaños `2xl` y `1440`; acá no se usaron. Verificado tabla por tabla:
+// las 7 muestran su última columna sin scroll a 1440.
+//
+// **467 filas en una tabla sin paginar, sin ordenar y sin buscar** — 4,670
+// celdas y 20,588px, o sea 23 pantallas, contra las "~15-50 filas" para las que
+// `DataTable` está dimensionada según su propio encabezado. Ahora `50/página`,
+// las columnas ordenan y hay buscador (§24 Tipo 1).
+//
+// Los tres recortan LO QUE SE VE y nunca lo que se declara: el carril sigue en
+// el total del período y el CSV sale con el libro entero en su orden legal. Y
+// el N.º de la operación viaja pegado a la fila: si se recalculara al pintar,
+// ordenar por monto haría que el documento 412 se llamara "1". Verificado —
+// ordenando por Total el primer N.º pasa a 20 y luego a 345.
+//
+// Lo demás, del mismo pase: las tarjetas no recibían `loading` y durante la
+// carga afirmaban 0 · $0.00 · $0.00 con la tipografía de una cifra real (en un
+// libro fiscal "cero" es una afirmación); el vacío no distinguía "no hubo
+// operaciones" de "falló la consulta", que es justo lo que el comentario del
+// `load()` decía que no podía pasar; `Exportar` no pasaba `soloIcono` y esos
+// ~94px eran los que hacían que las tarjetas truncaran `$229,74…` en vez de
+// encoger; el aviso de método iba a tamaño completo en las 7 pestañas
+// compitiendo con los accionables, y ahora va `compact`; y la descripción del
+// permiso y las palabras del ⌘K describían 3 pestañas de 7.
 
 // v2.330.0 — Clientes: el envío al ERP dejó de depender de que alguien lo pida.
 //

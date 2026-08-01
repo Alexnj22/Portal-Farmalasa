@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useLayoutEffect, useCallback } from 'react';
 import { Search, X, ChevronRight } from 'lucide-react';
 import LiquidSelect from './LiquidSelect';
 import { useSearchToggle } from '../../hooks/useSearchToggle';
@@ -25,6 +25,27 @@ const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
  * Hoy los filtros y las acciones viven juntos en `FilterBar` (§17), que es el
  * único lugar donde el usuario mira para saber qué está recortando y qué puede
  * hacer con lo que quedó. Acá quedan las pestañas y el buscador.
+ *
+ * ── La fila de pestañas cede por MEDIDA, no por breakpoint (2026-08-01) ───
+ * El corte era `lg` a secas: de 1024px para arriba, la fila de botones; para
+ * abajo, el `LiquidSelect`. Eso alcanzó mientras el récord del portal fueron 5
+ * pestañas. Libros IVA trajo **7**, y medido en el navegador la fila natural
+ * mide ~890px contra los ~600 que le deja el título a 1024: los botones se
+ * dibujaban FUERA del marco y —como el desborde no genera scroll en ningún
+ * ancestro— "Sujeto Excluido" quedaba **inalcanzable con el mouse** de 1024 a
+ * 1366px, y a 1152 se iban dos. Con el teclado seguía existiendo, que es lo que
+ * lo hacía invisible para cualquier revisión que no midiera.
+ *
+ * Un breakpoint fijo no puede resolverlo porque la fila mide lo que miden sus
+ * rótulos: "Consumidor Final" no ocupa lo que "Todos". Es el mismo argumento de
+ * §17.0 para `FilterBar` —*el ancho se MIDE, no se estima*— y la conclusión es
+ * la misma: se compara el ancho natural de la fila contra el hueco real y, si
+ * no entra, se usa el `LiquidSelect` que ya existía para móvil. Ninguna vista
+ * tiene que enterarse.
+ *
+ * El ancho natural se cachea porque al colapsar la fila pasa a `display:none` y
+ * mediría 0 — sin la caché la decisión oscilaría entre los dos estados. Es
+ * legítimo cachearlo: solo depende de los rótulos, que no cambian con el ancho.
  *
  * ── En táctil el buscador se va abajo ─────────────────────────────────────
  * Si hay una `FilterBar` flotante en la vista, ella se queda con el buscador y
@@ -53,6 +74,77 @@ export default function ViewTabBar({
 }) {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const inputRef = useRef(null);
+
+  // ── ¿Entra la fila de pestañas? ──────────────────────────────────────────
+  const trackRef  = useRef(null);
+  const filaRef   = useRef(null);
+  const selectorRef = useRef(null);
+  const [cabeLaFila, setCabeLaFila] = useState(true);
+
+  // NADA se cachea acá, y es a propósito. Las dos primeras versiones de esta
+  // medida guardaban el ancho natural de la fila (y después el de los adornos)
+  // porque al colapsar con `display:none` la fila medía 0. Las dos fallaron
+  // igual: una caché que solo puede refrescarse en UNO de los dos estados es
+  // una caché que, si la primera lectura sale mal —y sale mal, porque el primer
+  // `useLayoutEffect` corre antes de que el layout se asiente—, se queda con el
+  // valor equivocado para siempre. Medido: colapsaba hasta a 1512px, donde
+  // sobran 993 para una fila de 910.
+  //
+  // Hoy la fila colapsada sale del flujo (`absolute invisible`) en vez de
+  // desaparecer, así que SIEMPRE se puede medir, y el ancho que hace falta se
+  // arma de piezas vivas:
+  //
+  //   expandida  → el riel YA mide lo que hay que comparar
+  //   colapsada  → el riel menos el selector, más la fila
+  //
+  // Las dos expresiones describen la misma cantidad, así que el umbral de ida
+  // y el de vuelta coinciden y no hay oscilación entre estados.
+  const medirFila = useCallback(() => {
+    const track = trackRef.current;
+    const fila  = filaRef.current;
+    if (!track || !fila || !track.offsetParent) return;
+
+    // El hueco real: el ancho de la FILA del encabezado menos lo que ocupa el
+    // título. No se mide el envoltorio del riel —tiene `shrink-0`, así que se
+    // ajusta al contenido y medirlo es el bucle que §17.0 documenta.
+    const envoltorio = track.parentElement;
+    const titulo     = envoltorio?.previousElementSibling;
+    const marco      = envoltorio?.parentElement;
+    if (!titulo || !marco || !marco.clientWidth) return;  // fuera del layout: CSS
+
+    const GAP = 16;   // `gap-4` de la fila del encabezado
+    const disponible = marco.clientWidth - titulo.getBoundingClientRect().width - GAP;
+    if (disponible <= 0) return;      // rama oculta (la copia de móvil): no opinar
+
+    // Se pregunta por `position`, NO por `offsetParent`: `offsetParent` es nulo
+    // solo con `display:none` — un elemento `position:absolute` lo tiene igual
+    // que cualquier otro. Creerle daba `enFlujo` verdadero con la fila ya
+    // colapsada, o sea que se comparaba el riel colapsado (281px) contra el
+    // hueco, decía "cabe", expandía, volvía a medir 1001, colapsaba: una
+    // oscilación limpia de un estado por resize. Medida en el navegador antes
+    // de encontrarla — alternaba exacto entre 1024/1280/1440 y 1152/1366/1512.
+    const cs = getComputedStyle(fila);
+    if (cs.display === 'none') return;      // viewport < lg con la fila aceptada: manda el CSS
+    const enFlujo = cs.position !== 'absolute';
+    const necesita = enFlujo
+      ? track.offsetWidth
+      : track.offsetWidth - (selectorRef.current?.offsetWidth || 0) + fila.scrollWidth;
+    if (!necesita) return;
+
+    setCabeLaFila(necesita <= disponible);
+  }, []);
+
+  useLayoutEffect(() => {
+    // El `setState` sincrónico acá es el punto del efecto, no un descuido: se
+    // mide el layout y se decide ANTES del pintado, así que el usuario nunca ve
+    // el estado sin degradar. Es el mismo patrón que `FilterBar` (§17.0).
+    medirFila(); // eslint-disable-line react-hooks/set-state-in-effect -- medida de layout pre-pintado
+    const marco = trackRef.current?.parentElement?.parentElement;
+    if (!marco || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(medirFila);
+    ro.observe(marco);
+    return () => ro.disconnect();
+  }, [medirFila, tabs]);
 
   // La barra flotante de `FilterBar` se anuncia por el canal; si está, el
   // buscador es suyo. Sin proveedor (`FilterBar` fuera de `GlassViewLayout`)
@@ -99,7 +191,7 @@ export default function ViewTabBar({
   const clearBtnCls  = 'text-content-3 hover:text-danger';
 
   return (
-    <div {...containerProps} data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
+    <div {...containerProps} ref={trackRef} data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
       hover:-translate-y-[2px] transform-gpu
       h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
       shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]`}>
@@ -154,10 +246,19 @@ export default function ViewTabBar({
         transition-all duration-700 ${spring} origin-right
         ${buscando
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'
-          : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
+          : 'max-w-[1200px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
-        {/* Desktop (lg+): fila de botones, una por tab. */}
-        <div className="hidden lg:flex items-center gap-1 md:gap-1.5">
+        {/* Desktop (lg+): fila de botones, una por tab.
+            El techo de arriba era `max-w-[900px]` y con 7 pestañas la fila se
+            clavaba en 910px pasara lo que pasara — el desborde salía del marco
+            en vez de recortarse. Hoy el que decide es `cabeLaFila`, así que el
+            techo solo tiene que ser mayor que la fila más ancha que se acepte. */}
+        <div ref={filaRef}
+          inert={!cabeLaFila ? true : undefined}
+          aria-hidden={!cabeLaFila ? true : undefined}
+          className={`items-center gap-1 md:gap-1.5 ${cabeLaFila
+            ? 'hidden lg:flex'
+            : 'flex absolute left-0 top-0 invisible pointer-events-none'}`}>
           {tabs.map(tab => {
             const TabIcon = tab.icon || tab.Icon;
             const isActive = tab.key === activeTab;
@@ -180,7 +281,8 @@ export default function ViewTabBar({
             la fila competía por ancho o se truncaba. Reusa LiquidSelect (regla
             del proyecto: nunca un <select> nativo ni un dropdown nuevo). */}
         {tabs.length > 0 && (
-          <div className="flex lg:hidden w-[150px] sm:w-[190px]">
+          <div ref={selectorRef}
+            className={`${cabeLaFila ? 'flex lg:hidden' : 'flex'} w-[150px] sm:w-[190px]`}>
             <LiquidSelect
               value={activeTab}
               onChange={(key) => { onTabChange?.(key); setIsSearchMode(false); }}

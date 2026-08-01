@@ -16,7 +16,53 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.317.1';
+export const APP_VERSION = '2.318.0';
+
+// v2.318.0 — Módulo de Clientes, capa de datos: la ficha se escribe por UN solo
+// camino, y la actividad deja de ser incalculable.
+//
+// Base de datos del módulo (la vista llega en el commit siguiente). Seis
+// migraciones, y tres cosas que sólo se supieron midiendo:
+//
+// 1. **La actividad del cliente no se puede calcular al vuelo.** El GROUP BY de
+//    `sales_invoices` por `customer_id` tarda 3,407ms y spillea a disco (338,764
+//    facturas → 24,487 clientes). Es el dato que decide si una ficha vale la pena
+//    completarse, así que no podía faltar: va a `customer_activity`, una tabla de
+//    rollup con el mismo patrón que `product_sales_rollup` (upsert con
+//    `IS DISTINCT FROM`, cron a las 06:45 UTC fuera de la ventana de los syncs).
+//
+// 2. **Una función SQL con `SET search_path` no se puede inlinear, y eso costaba
+//    824ms de los 828 que tardaba la lista.** El scan con su join era 4ms; el
+//    resto eran los helpers de validación llamados una vez por fila sobre 24,502.
+//    Medido aislando cada causa: `customer_ficha_estado` 372ms → 16ms al quitar
+//    el SET (23×), `es_telefono_sv_valido` 179ms → 13.8ms al quitarle además el
+//    CTE (13×), verificando antes que las dos formas coinciden en las 24,502
+//    filas. La lista quedó en 126ms. La regla 4 de CLAUDE.md sigue rigiendo para
+//    las DEFINER — estas tres son INVOKER e IMMUTABLE y sólo usan `pg_catalog`,
+//    donde no hay nada que escalar. Está escrito en la migración para que una
+//    auditoría futura no lo "arregle" de vuelta.
+//
+// 3. **Hay TRES baldes de mostrador, no dos.** Al prompt le faltaba
+//    `CLIENTE FRECUENTE`: entre los tres se llevan 95,393 de 337,784 facturas
+//    (28%). No son personas, así que `update_customer_fiscal` los rechaza, y
+//    cualquier orden por actividad los pone primero — por eso la lista sabe
+//    excluirlos.
+//
+// La escritura va por `update_customer_fiscal`, DEFINER y único camino
+// (`customers` sigue sin policy de UPDATE, como `aplicar_espejo_erp`). Valida la
+// terna geográfica, el DUI y los teléfonos **sólo si cambiaron** —si no, una
+// ficha con un DUI viejo malo quedaría congelada— y exige confirmación explícita
+// para tocar los datos fiscales de un contribuyente. Cada campo cambiado deja
+// una fila en `customers_changelog`, que es a la vez bitácora y la cola de la
+// Fase 2: lo pendiente de empujar al ERP es `erp_synced_at IS NULL`.
+//
+// Probado con BEGIN…ROLLBACK contra prod: 13 casos, los 11 rechazos esperados y
+// los 2 guardados válidos, con la bitácora escribiendo una fila por campo.
+//
+// Y de paso, dos arreglos de datos: 92 fichas tenían municipio sin departamento
+// —deducible, porque los 44 municipios se llaman "<Departamento> <cardinal>"— y
+// el catálogo de El Salvador ganó su tercer nivel (14 departamentos, 44
+// municipios, 262 distritos, contra la reestructuración de 2023).
 
 // v2.317.1 — El DUI inválido se borra, pero deja rastro.
 //

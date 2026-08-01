@@ -4,7 +4,7 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 (`clientesdte3.oss.com.sv/farma_salud`) y espejar el resultado a
 `customers` en el portal.
 
-**Estado al 2026-08-01, 09:00 UTC.** Escrito para retomar sin contexto previo.
+**Estado al 2026-08-01, 21:00 UTC.** Escrito para retomar sin contexto previo.
 
 ---
 
@@ -12,9 +12,9 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 
 ```
 catálogo del ERP        27,591 fichas   (crece: 27,551 el 31-jul)
-procesadas              1,580 fichas    (checkpoint.json)
-portadas al portal      1,422 de 24,509 (customers.erp_id no nulo)
-pendientes              26,092          (53 bloques de 500)
+procesadas              2,073 fichas    (checkpoint.json)
+portadas al portal      1,837 de 24,530 (customers.erp_id no nulo)
+pendientes              25,518          (51 bloques de 500)
 ```
 
 Bloques cerrados: el primero (por nombre, desde el portal), **erp 283–1000** y
@@ -24,6 +24,11 @@ Bloques cerrados: el primero (por nombre, desde el portal), **erp 283–1000** y
 |---|---|---|---|---|---|
 | erp 283–1000 | 481 | 17 | 2 | 0 | 0 |
 | erp 1001–1500 | 471 | 28 | 1 | 0 | 0 |
+| erp 1501–2000 | 473 | 27 | 0 | 0 | 0 |
+
+**5 fichas están reencoladas a propósito** (161, 176, 380, 1641, 1791): se les
+borró la entrada del checkpoint para que el próximo bloque las rehaga con el
+matcher corregido. Por eso "procesadas" dice 2,073 y no 2,078.
 
 Cero campos perdidos y cero alterados en las 1,580 fichas acumuladas. En el
 bloque 3 se estrenó en vivo la rama del salto con la ficha `erp 1419`
@@ -48,6 +53,34 @@ quedó CHALATENANGO.
 O sea que la tasa de edición concurrente no es cero, y el POST manda los 21
 campos. Por eso `--una-pasada` es el modo de la corrida larga y no una
 optimización opcional.
+
+### "DISTRITO, DEPARTAMENTO" no es un empate
+
+La gente escribe la dirección así —`NUEVA TRINIDAD, CHALATENANGO`,
+`SAN ANTONIO DEL MONTE, SONSONATE`— y varios departamentos tienen un distrito
+homónimo. Hasta el bloque 4 el matcher veía dos candidatos y desempataba por
+sorteo: acertaba la mitad de las veces, **justo en los casos donde la dirección
+sí decía cuál era**. Peor que un sorteo a ciegas, porque la información estaba
+y se descartaba.
+
+De 5 fichas resueltas así, 2 quedaron mal:
+
+| erp | dirección | escribió | correcto |
+|---|---|---|---|
+| 176 | `NUEVA TRINIDAD, CHALATENANGO` | CHALATENANGO | NUEVA TRINIDAD |
+| 380 | `SAN ANTONIO DEL MONTE, SONSONATE` | SONSONATE | SAN ANTONIO DEL MONTE |
+| 161 | `MEJICANOS, SAN SALVADOR` | MEJICANOS ✓ | (acertó de casualidad) |
+
+Corregido: con **más de un** candidato se descartan los que se llaman igual que
+el departamento o el municipio de esa ficha. Con uno solo no se descarta nada —
+ahí sí puede ser que la persona viva en el distrito homónimo, y ese borde está
+en el arnés.
+
+**No se subió `REGLAS`** y el motivo importa: el cambio solo interviene con ≥2
+candidatos, o sea exactamente las fichas anotadas con `ambiguo` en
+`cambios.distrito`, que son enumerables desde el checkpoint. Se reencolaron las
+5 a mano. Subir REGLAS habría releído las 2,078 (una hora contra el servidor del
+proveedor) para corregir esas mismas 5.
 
 ## 2. Puesta en marcha
 
@@ -199,16 +232,41 @@ mandar.
 El RPC además dejó de reescribir filas que no cambiaron — la misma cola pasó de
 826 filas actualizadas a 1.
 
-## 4b. El espejo al revés: del portal AL ERP
+## 4b. El espejo al revés: del portal AL ERP — **automático**
 
-```bash
-python3 empujar_al_erp.py             # SIMULACIÓN: qué mandaría
-python3 empujar_al_erp.py --escribir  # lo manda, verifica y salda la cola
+Editar en el portal manda el cambio al ERP **en el momento**. No hay que correr
+nada.
+
+```
+Guardás en el portal
+    ↓  el guardado NO espera al ERP (es un servidor ajeno; medido: 300 s en una lectura)
+push-cliente-erp (edge function)  →  llega al ERP  →  toast "Enviado al ERP"
+    ↓  si falla
+queda en cola, protegida del espejo, con badge "Sin enviar al ERP" en la bitácora
+    ↓
+cron `drain-cliente-erp-queue` cada 10 min  →  la levanta sola
 ```
 
-La cola sale de `cola_espejo_portal_erp()` (migración `20260801164413`) y al
-terminar se salda con `marcar_empujado_al_erp()`. Con eso el ciclo cierra:
-edito en el portal → llega al ERP → el espejo lo trae de vuelta y coinciden.
+| pieza | qué es |
+|---|---|
+| `push-cliente-erp` | edge function. Con `customer_id` viene del formulario y usa el JWT de la persona; sin él viene del cron y usa service_role |
+| `drain-cliente-erp-queue` | cron cada 10 min, drena de a 5 fichas. Es la GARANTÍA: sin él, un envío fallido se queda pendiente para siempre si nadie vuelve a editar esa ficha |
+| `cola_espejo_portal_erp()` | la cola (migración `20260801164413`) |
+| `marcar_empujado_al_erp()` | la salda. Acepta service_role además del permiso de módulo (`20260801200437`), porque un cron no tiene usuario |
+| `empujar_al_erp.py` | **el mismo trabajo desde la terminal**. Ya no hace falta para la operación normal; sirve para depurar o para drenar a mano |
+
+**OJO AL REDESPLEGAR `push-cliente-erp`**: va con `--no-verify-jwt` porque el
+cron manda el `admin_invoke_secret` de Vault como Bearer, que no es un JWT. Un
+redeploy sin repetir el flag la resetea a `verify_jwt=true` y el cron falla con
+401 **antes de ejecutar una línea** — ya mordió dos veces a este proyecto con
+otras funciones.
+
+**La tabla de abreviaturas está duplicada** entre `src/data/elSalvadorGeo.js` y
+la edge function: son dos runtimes sin bundling entre ellos. Si se agrega una
+fila allá, hay que agregarla acá.
+
+Con eso el ciclo cierra: edito en el portal → llega al ERP → el espejo lo trae
+de vuelta y coinciden.
 
 Tres cosas que NO hace, todas a propósito:
 

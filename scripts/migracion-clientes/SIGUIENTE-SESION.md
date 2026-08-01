@@ -6,61 +6,74 @@ Copiá esto tal cual:
 
 Retomá la migración de fichas de clientes ERP ↔ portal.
 
-**Leé primero `scripts/migracion-clientes/README.md`** — tiene el estado
-completo, las reglas, lo que hay que saber del ERP y las decisiones abiertas.
-Está escrito para retomar sin contexto previo.
+**Leé primero `scripts/migracion-clientes/README.md`** — tiene el estado, las
+reglas, lo que hay que saber del ERP y las decisiones abiertas. Está escrito
+para retomar sin contexto previo.
 
-Resumen de dónde quedó (2026-08-01, 06:00 UTC): 585 fichas procesadas de 27,569,
-582 clientes portados al portal, cero campos perdidos y cero alterados. El
-script se loguea solo con las credenciales del `.env`, así que no hay cookie que
-refrescar. `python3 refrescar_catalogo.py` para actualizar el índice del
-catálogo, y `python3 probar_offline.py` tiene que pasar en verde antes de tocar
-nada.
+Dónde quedó (2026-08-01, 21:00 UTC): **2,073 fichas procesadas de 27,591**,
+1,837 clientes en el portal con datos del ERP, **cero campos perdidos y cero
+alterados** en cuatro bloques. Quedan 25,518 fichas = 51 bloques.
 
-Antes de seguir con los bloques, hay dos mejoras que valen más que avanzar:
+Antes de tocar nada: `python3 probar_offline.py` tiene que pasar en verde (162
+comprobaciones, no toca el ERP ni la base) y `python3 refrescar_catalogo.py`
+para actualizar el índice.
 
-1. **Reintento automático** cuando el ERP responde algo distinto de `Success`.
-   Pasó una vez en 365 escrituras —devolvió `"Proceso no encontrado"` en texto
-   plano— y el mismo payload entró a la primera al reintentarlo. A escala de
-   20,000 escrituras serían ~55 interrupciones que hoy requieren intervención.
+## Correr un bloque
 
-2. **Modo `--una-pasada`**: leer, corregir, verificar y espejar cada ficha antes
-   de pasar a la siguiente, en vez de las dos fases actuales. No cuesta ni una
-   petición más —son las mismas 1,230 por bloque de 500— y elimina el hueco
-   entre la lectura y la escritura, que hoy puede ser de 15 minutos. Como el
-   POST manda los 21 campos, ese hueco es la única forma en que podríamos pisar
-   una edición hecha por otra persona en el ERP. La simulación sigue disponible
-   para revisar un plan antes.
+```bash
+python3 bloque.py --desde-erp 500 --escribir --una-pasada   # ~45 min
+python3 aplicar_espejo.py --aplicar                          # espeja al portal
+```
 
-Después, los bloques: `python3 bloque.py --desde-erp 500` para simular y
-`--escribir` para aplicar, y `python3 aplicar_espejo.py --aplicar` para el
-espejo. Con la latencia real medida (1.37s por petición) cada bloque de 500 es
-~37 minutos.
+**No hace falta simular antes** — decidido el 2026-08-01 y explicado en el
+README §3. Sí conviene simular si cambiaste una regla de `planificar`.
 
-Dos cosas que van a aparecer y conviene reconocer:
+Al terminar, mirar `ambiguos.json`: si aparece algo de tipo `distrito`, leer
+esas fichas del ERP antes de darlas por buenas. Así se encontró el bug del
+matcher en el bloque 4.
 
-- **La rama del salto** (categoría ≠ Consumidor) todavía no corrió en vivo. Se
-  estrena en el bloque 2 o 3, con la ficha `erp 1419` — FRANCISCO NOE LEMUS
-  UMAÑA, Contribuyente, ya verificado. Esa ficha **no** se edita en el ERP pero
-  **sí** se espeja al portal. Es el comportamiento correcto, no un error.
-- **Las 4 fichas duplicadas** (`FELIX ANTONIO RECINOS CARCAMO`,
-  `NURIA ROXANA VILLANUEVA`, `YNES ANTONIO ARDON`) están corregidas en el ERP
-  pero su espejo no se puede aplicar hasta decidir cuál `erp_id` gana. Ver
-  `duplicados_erp.json`: 19 nombres duplicados en total, 11 que difieren solo en
-  espacios.
+## Lo primero que va a pasar
 
-Y antes de la corrida larga: son **~34 horas** de tráfico contra el servidor del
-proveedor. Conviene avisarle a soporte del ERP — no por permiso, sino para que
-nadie vea un cambio masivo y decida restaurar de backup.
+Las **5 fichas reencoladas** (161, 176, 380, 1641, 1791) entran al arranque del
+próximo bloque, antes que las nuevas, porque van ordenadas por id. Se les borró
+la entrada del checkpoint a propósito para que se rehagan con el matcher
+corregido: dos de ellas tenían el distrito MAL. Verificá que queden con
+NUEVA TRINIDAD (176) y SAN ANTONIO DEL MONTE (380).
 
-**Ojo con `src/version.js`**: hay otra sesión construyendo el módulo de Clientes
-(va por v2.319.0). Leé la versión del disco en el momento y no asumas.
+## Lo que ya NO hay que hacer
 
----
+- **No correr `empujar_al_erp.py` a mano.** Editar en el portal manda el cambio
+  al ERP solo, y un cron cada 10 minutos drena lo que haya quedado pendiente.
+  El script sigue existiendo para depurar.
+- **No tocar los contribuyentes.** Decisión del usuario: quedan pendientes. El
+  bloque ya los saltea por regla — se leen, se espejan, no se escriben.
+
+## Decisiones abiertas, del usuario
+
+1. **Avisarle a soporte del ERP** antes de seguir de corrido: los 51 bloques
+   son ~38 horas de tráfico contra el servidor del proveedor, y el riesgo real
+   es que alguien vea el cambio masivo y "restaure de backup". Es lo único que
+   falta para poder encadenar bloques sin parar.
+2. **Las 99 fichas de `faltantes_dte.json`** — no se pueden facturar bajo DTE
+   2.0. 87 necesitan un solo campo (el distrito); 50 de ellas lo tienen escrito
+   en su propia dirección y 49 las tiene que decidir una persona. 83 son
+   fiscales y quedan congeladas por decisión del usuario.
+3. **Dos nombres duplicados sin resolver**: FLOR DE MARIA GUARDADO GUARDADO
+   (3883/8598) y WILLIAM ENRIQUE ALEMAN ALFARO (7280/7284). Tienen DUI distintos
+   en cada ficha, así que pueden ser dos personas — no lo resuelve un script.
+4. **El reproceso completo**, si se quiere prolijidad del mecanismo de `REGLAS`:
+   el matcher se arregló sin subirla, reencolando las 5 afectadas a mano. Está
+   justificado en el README, pero si se prefiere, subir REGLAS a 7 relee las
+   2,073 (≈1 h) y deja el checkpoint coherente por construcción.
 
 ## Contexto adicional si hace falta
 
-- El prompt del módulo de Clientes está en `docs/PROMPT-MODULO-CLIENTES.md`.
-- Los 11 DUI borrados, con su número original, están en `revision_manual.json`.
-- El changelog de las tres versiones de este trabajo (2.317.0, 2.317.1, 2.317.2)
-  cuenta el hallazgo del `.strip()` y por qué los valores viajan crudos.
+- Los 35 DUI borrados, con su número original, están en `revision_manual.json`.
+  **Ese archivo acumula entre bloques** — si alguna vez vuelve a tener menos
+  entradas que antes, algo se rompió.
+- `docs/RETOMAR-CLIENTES-2026-08-01.md` es el estado del MÓDULO de clientes que
+  dejó otra sesión (vista, filtros, permisos), que es trabajo distinto de esta
+  migración.
+- Hay varias sesiones de Claude sobre este mismo árbol. `git status --short`
+  antes de editar un archivo que no tocaste, y `git add` con rutas explícitas
+  siempre — hoy una sesión ajena se llevó 4 archivos míos dentro de su commit.

@@ -415,8 +415,61 @@ salida = correr(no_consumidor, escribir=True)
 check('con las 3 condiciones activas y categoría ≠ Consumidor: CERO POSTs',
       len(erp.posts) == 0, f'{len(erp.posts)} posts')
 check('las fichas quedaron idénticas', erp.reg == antes)
-check('y las reporta como SALTADO en el plan',
-      sum(1 for l in salida.splitlines() if l.startswith('   SALTADO')) == len(no_consumidor))
+check('y las reporta como SIN EVIDENCIA en el plan',
+      sum(1 for l in salida.splitlines()
+          if l.startswith('   SIN EVIDENCIA')) == len(no_consumidor))
+
+# ── DTE 2.0: el salto en seco dejó de ser neutral ────────────────────────────
+# Antes no tocar una ficha fiscal era la opción segura. Con DTE 2.0 el receptor
+# necesita distrito, así que dejarla vacía la deja INVÁLIDA para facturar. Pero
+# sortear un distrito en un CCF sigue siendo inaceptable: se declara a Hacienda.
+# La regla nueva completa SOLO con lo que la dirección prueba.
+print()
+etiqueta_dist, value_dist = OPS['distrito'][0][1], OPS['distrito'][0][0]
+
+fiscal = copy.deepcopy(FICHAS[6])
+fiscal['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Contribuyente')
+fiscal['campos'].update({'municipio': '36', 'distrito': '',
+                         'direccion': f'BARRIO EL CENTRO, {etiqueta_dist}'})
+n, cam = bloque.planificar_fiscal({'id': 1}, fiscal['campos'], OPS)
+check('ficha fiscal cuya dirección NOMBRA el distrito: se completa',
+      n['distrito'] == value_dist and 'distrito' in cam, str(cam))
+check('y no toca absolutamente nada más',
+      {k for k in set(fiscal['campos']) | set(n)
+       if fiscal['campos'].get(k) != n.get(k)} == {'distrito'})
+
+mudo = copy.deepcopy(fiscal)
+mudo['campos'].update({'direccion': 'SIN NINGUNA PISTA AQUI', 'telefono1': '',
+                       'dui': DUI_MALO})
+n, cam = bloque.planificar_fiscal({'id': 1}, mudo['campos'], OPS)
+check('ficha fiscal cuya dirección NO dice: NO se sortea distrito',
+      'distrito' not in cam and not n['distrito'], str(cam))
+check('tampoco se le rellena el teléfono ni se le borra el DUI '
+      '(en una ficha fiscal, relleno es peor que ausencia)',
+      cam == {}, str(cam))
+
+# El contraste es el punto: la MISMA dirección muda, en un consumidor, sí saca
+# distrito por sorteo — que es el 78% de los casos.
+consumidor = dict(mudo['campos'])
+consumidor['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
+_, cam_c = bloque.planificar({'id': 1}, consumidor, OPS)
+check('la MISMA dirección muda, en un consumidor, sí saca distrito determinista',
+      'determinista' in cam_c.get('distrito', ''), str(cam_c))
+
+# Lo que quede incompleto tiene que quedar listado: un NIT que no está no se
+# deduce de ningún lado, hay que pedírselo al cliente.
+falt = {}
+bloque.anotar_faltantes(falt, '999', 'X', 'Contribuyente',
+                        {'nombre': 'X', 'telefono1': '2222-2222', 'departamento': '4',
+                         'municipio': '36', 'distrito': '7', 'nit': '', 'nrc': '',
+                         'sel_giro': '', 'correo': 'a@b.c', 'direccion': 'X'})
+check('lo que le falta a una ficha fiscal para facturar queda listado',
+      falt['999']['faltan'] == ['nit', 'nrc', 'sel_giro'], str(falt))
+bloque.anotar_faltantes(falt, '999', 'X', 'Contribuyente',
+                        {k: 'x' for k in bloque.REQUIERE_DTE_FISCAL})
+check('y si después se completa, sale de la lista', '999' not in falt, str(falt))
+check('a un consumidor se le exige menos que a un contribuyente',
+      set(bloque.REQUIERE_DTE) < set(bloque.REQUIERE_DTE_FISCAL))
 # La regla es "no se toca en el ERP, PERO sí se guarda en el portal".
 esp = [json.loads(l) for l in open(JSONL)] if os.path.exists(JSONL) else []
 check('un contribuyente SÍ se espeja al portal aunque no se edite',

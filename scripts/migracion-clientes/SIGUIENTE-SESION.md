@@ -30,8 +30,16 @@ README §1.
 ```bash
 python3 bloque.py --desde-erp 500 --escribir --una-pasada   # ~45 min
 python3 aplicar_espejo.py --aplicar                          # espeja al portal
+python3 revisar_ambiguos.py --reencolar                      # los desempates
 python3 estado.py --escribir                                 # actualiza el README
 ```
+
+**El paso de los ambiguos tampoco es opcional.** Un desempate no acierta la
+mitad: se equivoca la mitad **justo donde la dirección sí decía cuál era**.
+Medido en dos bloques seguidos: 2 de 5 mal en el bloque 4, **4 de 6 mal en el
+5**. `revisar_ambiguos.py` relee esas fichas, las pasa por las reglas de hoy y
+reencola solo las que cambian — mucho más barato que subir `REGLAS`, que relee
+todo el catálogo procesado para corregir un puñado.
 
 **El tercer comando no es opcional.** El estado del README se generaba a mano y
 por eso envejecía: llegó a decir 1,085 cuando iban 2,073, y este mismo prompt
@@ -43,9 +51,15 @@ NÚMEROS se generan, las DECISIONES se escriben.
 **No hace falta simular antes** — decidido el 2026-08-01 y explicado en el
 README §3. Sí conviene simular si cambiaste una regla de `planificar`.
 
-Al terminar, mirar `ambiguos.json`: si aparece algo de tipo `distrito`, leer
-esas fichas del ERP antes de darlas por buenas. Así se encontró el bug del
-matcher en el bloque 4.
+Si `revisar_ambiguos.py` dice **"sigue ambigua"** en alguna, es que ninguna
+regla la resuelve y ganó el sorteo: leerla a mano. Patrón conocido sin resolver:
+`B LAS FLORES SAN JOSE CANCASQUE` (erp 2423), donde los DOS candidatos están
+nombrados enteros. La dirección salvadoreña va de lo específico a lo general
+(barrio → cantón → distrito → departamento), así que preferir el candidato
+nombrado MÁS TARDE lo resolvería — pero solo después del filtro del
+departamento, porque `NUEVA TRINIDAD, CHALATENANGO` tiene el departamento al
+final. No se implementó: hoy ese caso quedó bien y no hay dato malo que lo
+justifique.
 
 ## Lo primero que va a pasar
 

@@ -1,24 +1,68 @@
 [
  {
   "tipo": "distrito",
-  "portal_id": "erp:1641",
-  "erp_id": "1641",
-  "direccion": "AV. PALECA N 15 FRENTE A SUPER SELECTOS, CIUDAD DELGADO. SAN SALVADOR",
+  "portal_id": "erp:2112",
+  "erp_id": "2112",
+  "direccion": "CONCEPCION CANCASQUE",
   "candidatos": [
-   "SAN SALVADOR",
-   "CIUDAD DELGADO"
+   "CONCEPCIÓN QUEZALTEPEQUE",
+   "SAN J CANCASQUE"
   ],
-  "elegido": "CIUDAD DELGADO (ambiguo (2 candidatos))"
+  "elegido": "CONCEPCIÓN QUEZALTEPEQUE (ambiguo (2 candidatos))"
  },
  {
   "tipo": "distrito",
-  "portal_id": "erp:1791",
-  "erp_id": "1791",
-  "direccion": "POTONICO, CHALATENANGO",
+  "portal_id": "erp:2157",
+  "erp_id": "2157",
+  "direccion": "CONCEPCION SAN JOSE CANCASQUE",
   "candidatos": [
-   "CHALATENANGO",
-   "POTONICO"
+   "CONCEPCIÓN QUEZALTEPEQUE",
+   "SAN J CANCASQUE"
   ],
-  "elegido": "POTONICO (ambiguo (2 candidatos))"
+  "elegido": "SAN J CANCASQUE (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:2222",
+  "erp_id": "2222",
+  "direccion": "CTON CONCEPCION CANCASQUE",
+  "candidatos": [
+   "CONCEPCIÓN QUEZALTEPEQUE",
+   "SAN J CANCASQUE"
+  ],
+  "elegido": "SAN J CANCASQUE (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:2304",
+  "erp_id": "2304",
+  "direccion": "CONCEPCION SAN JOSE CANCASQUE",
+  "candidatos": [
+   "CONCEPCIÓN QUEZALTEPEQUE",
+   "SAN J CANCASQUE"
+  ],
+  "elegido": "CONCEPCIÓN QUEZALTEPEQUE (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:2423",
+  "erp_id": "2423",
+  "direccion": "B LAS FLORES SAN JOSE CANCASQUE",
+  "candidatos": [
+   "SAN J CANCASQUE",
+   "SAN JOSE FLORES"
+  ],
+  "elegido": "SAN JOSE FLORES (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:2457",
+  "erp_id": "2457",
+  "direccion": "CONCEPCION SAN JOSE CANCASQUE",
+  "candidatos": [
+   "CONCEPCIÓN QUEZALTEPEQUE",
+   "SAN J CANCASQUE"
+  ],
+  "elegido": "CONCEPCIÓN QUEZALTEPEQUE (ambiguo (2 candidatos))"
  }
 ]

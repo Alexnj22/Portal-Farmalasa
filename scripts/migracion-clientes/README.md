@@ -146,8 +146,36 @@ portal arma el correo como `usuario@farmalasa.app`, y el script lo completa si
 en el `.env` está el usuario pelado. No hace falta la service-role key.
 
 `sin_match` cuenta las fichas del ERP cuyo nombre no existe en `customers`. Es
-normal: el portal solo tiene clientes que aparecieron en una venta (24,502)
-contra 27,551 fichas del ERP. **No se crean**, solo se reportan.
+normal: el portal solo tiene clientes que aparecieron en una venta (24,509)
+contra 27,575 fichas del ERP. **No se crean**, solo se reportan.
+
+### El espejo NO pisa lo que se editó desde el portal
+
+Hasta el 2026-08-01 sí lo hacía. El RPC reescribía las 15 columnas sin
+condición y, medido en vivo a las 16:01 UTC, de las 2 fichas con edición del
+portal **pisó las 2** — sin dejar rastro, porque `customers` no tiene ningún
+trigger y la bitácora seguía diciendo que la corrección estaba vigente. Además
+escribía NULL cuando el ERP no traía el dato, y el 98% de las fichas vienen sin
+correo: cualquier correo cargado a mano se borraba en la corrida siguiente.
+
+Corregido en la migración `20260801163144`. La regla es **el ERP manda**, y lo
+que se protege no es "el portal gana" sino el tramo en que una edición todavía
+no tuvo chance de llegar al ERP:
+
+| situación | qué hace |
+|---|---|
+| el ERP no manda el dato (campo ausente) | no toca la columna |
+| no hay edición del portal pendiente | manda el ERP |
+| hay edición pendiente y el ERP sigue igual que cuando se editó | respeta la edición |
+| hay edición pendiente **y el ERP también cambió** | manda el ERP, y el descarte se anota en `espejo_conflictos` |
+
+La marca de "pendiente" es `customers_changelog.erp_synced_at IS NULL`. Cuando
+la Fase 2 empuje la edición al ERP y la marque, la protección se levanta sola y
+el ERP vuelve a mandar. **La Fase 2 no debe empujar una entrada que figure en
+`espejo_conflictos`**: el ERP ya se movió más allá de ese valor.
+
+El RPC además dejó de reescribir filas que no cambiaron — la misma cola pasó de
+826 filas actualizadas a 1.
 
 ## 5. Las reglas
 

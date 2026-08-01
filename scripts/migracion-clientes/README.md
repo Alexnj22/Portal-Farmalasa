@@ -12,14 +12,17 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 
 ```
 catálogo del ERP        27,569 fichas   (crece: eran 27,551 el 31-jul)
-procesadas              92 fichas       (checkpoint.json)
-portadas al portal      179 de 24,502   (customers.erp_id no nulo)
-pendientes              ~27,400
+procesadas              585 fichas      (checkpoint.json)
+portadas al portal      582 de 24,502   (customers.erp_id no nulo)
+pendientes              ~27,000
 ```
 
-Lo corregido hasta ahora: 42 distritos, 3 nombres a mayúscula, 2 teléfonos y
-1 DUI borrado (`00000003-0`, relleno evidente). Cero campos perdidos, cero
-alterados, cero rechazos del ERP en las últimas dos corridas.
+Lo corregido: ~404 distritos, 3 nombres a mayúscula, 3 teléfonos y 11 DUI
+borrados (con su número original guardado en `revision_manual.json`). **Cero
+campos perdidos y cero alterados en 585 fichas.** El único fallo fue un
+transitorio del ERP que entró a la primera al reintentarlo.
+
+Medición real: **1.37s por petición**. El catálogo completo son ~34 horas.
 
 ## 2. Puesta en marcha
 
@@ -84,10 +87,20 @@ creó el RPC `aplicar_espejo_erp(p_filas json)`
 y omite los nombres que llegan repetidos. Devuelve
 `{recibidas, duplicadas_omitidas, actualizadas, sin_match}`.
 
-Hoy el espejo se aplica pasando el JSON a mano. **Para automatizarlo el script
-necesita autenticarse** (usuario y contraseña de una cuenta del portal, no la
-service-role key): con eso llamaría al RPC directo y dejaría de hacer falta
-mover el payload a mano. Es la decisión pendiente #4.
+Se aplica con:
+
+```bash
+python3 aplicar_espejo.py            # muestra cuántas hay en cola
+python3 aplicar_espejo.py --aplicar  # las manda
+```
+
+Se autentica con `portal-user` / `portal-password` del `.env` del repo — el
+portal arma el correo como `usuario@farmalasa.app`, y el script lo completa si
+en el `.env` está el usuario pelado. No hace falta la service-role key.
+
+`sin_match` cuenta las fichas del ERP cuyo nombre no existe en `customers`. Es
+normal: el portal solo tiene clientes que aparecieron en una venta (24,502)
+contra 27,551 fichas del ERP. **No se crean**, solo se reportan.
 
 ## 5. Las reglas
 
@@ -158,8 +171,8 @@ fichas con un distrito sorteado. Está aceptado, pero conviene tenerlo presente.
 3. **Dos distritos probablemente mal**, ya escritos, del tramo débil del matcher:
    `BARRIO LAS FLORES → SAN JOSE FLORES` (erp 3461) y
    `COL SAN FRANCISCO → SAN FRANCISCO LEMPA` (erp 1672).
-4. **Credenciales del portal** para que el script llame al RPC del espejo por sí
-   mismo. Sin eso el payload pasa a mano, bloque por bloque.
+4. ~~Credenciales del portal~~ — **RESUELTO**: `aplicar_espejo.py` se autentica
+   solo y llama al RPC. Un bloque de 500 se espeja en dos llamadas.
 5. **Avisarle a soporte del ERP** antes de la corrida larga. No por permiso: el
    catálogo completo son ~12-15 horas de tráfico automatizado contra el servidor
    del proveedor, y el riesgo real es que alguien vea un cambio masivo y

@@ -16,7 +16,38 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.327.0';
+export const APP_VERSION = '2.327.1';
+
+// v2.327.1 — el libro de contribuyentes tenía el dato guardado y no lo sacaba.
+//
+// Lo levantó una comparación fila contra fila con el CSV del ERP (Salud 1,
+// 11-07-2026, $6.99). Mapeadas TODAS las columnas del ERP, no los totales:
+//
+//   [ 3] DTE03S003P001000000000000055  número de control    ← NO existe en la base
+//   [ 4] 202675D33CDC...V76U           sello de recepción   ← sí: `recibido_mh`
+//   [ 5] 1B78D7DBC4A1...BD09           código de generación ← sí (con guiones)
+//   [ 6] 327545                        id del ERP           ← sí: `erp_invoice_id`
+//   [ 7] 3095074                       el NRC sin guion     ← sí: `customers.nrc`
+//   [17] (vacío)                       NIT/DUI              ← nosotros SÍ lo tenemos
+//
+// Cinco de las seis ya estaban guardadas y la función no las devolvía. Ahora
+// salen todas: el NIT entra a la tabla (el Art. 85 lo pide junto al NRC) y el
+// sello, el código de generación y la clase/tipo van al CSV, que es donde se
+// necesitan — en pantalla serían 40 y 36 caracteres ilegibles.
+//
+// **Falta de verdad el número de control**, y no se puede derivar: el ERP llama
+// `...000000000000055` al documento que en su correlativo interno es
+// `0000000155`. Tampoco viene en `descarga_dte_emitidos_json.php`. Se puede
+// traer del CSV del libro cruzando por el sello, pero necesita columna nueva en
+// `sales_invoices` — tabla caliente, o sea DDL en la ventana 06:00–11:59 UTC.
+//
+// **Y un bug del proveedor:** `downloads/dteqr_json.php` —que daría el DTE
+// completo, número de control incluido— está roto: intenta cachear en
+// `../jsondte/`, directorio que no existe. Probado sin cookie, con cookie, con
+// Referer y con cabeceras de navegador: los cuatro fallan igual. El PDF
+// (`dteqr_pdf.php`) sí funciona. Es un mkdir del lado de ellos.
+//
+// Es la TERCERA vez hoy que verificar montos y no columnas deja pasar algo.
 
 // v2.327.0 — Clientes: la ficha deja de aceptar datos con los que no se puede
 // facturar.

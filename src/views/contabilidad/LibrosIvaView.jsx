@@ -123,15 +123,20 @@ const COLS_CONSUMIDOR = [
     { key: 'total',     label: 'Total del día', align: 'right' },
 ];
 
+// El NIT entra a la tabla porque el Art. 85 lo pide junto al NRC y porque el
+// libro del ERP lo lleva. El sello y el código de generación NO: son 40 y 36
+// caracteres que empujarían todo fuera del visor y no se leen de un vistazo —
+// van en el CSV, que es donde se necesitan.
 const COLS_CONTRIBUYENTE = [
     { key: 'n',         label: 'N.º',        align: 'right' },
     { key: 'fecha',     label: 'Fecha',      align: 'left'  },
     { key: 'ccf',       label: 'N.º CCF',    align: 'left'  },
     { key: 'cliente',   label: 'Cliente',    align: 'left'  },
     { key: 'nrc',       label: 'NRC',        align: 'left'  },
+    { key: 'nit',       label: 'NIT',        align: 'left', hideBelow: 'xl' },
     { key: 'exentas',   label: 'Exentas',    align: 'right', hideBelow: 'lg' },
     { key: 'gravadas',  label: 'Gravadas',   align: 'right' },
-    { key: 'debito',    label: 'Débito fiscal', align: 'right', hideBelow: 'md' },
+    { key: 'debito',    label: 'Débito',     align: 'right', hideBelow: 'md' },
     { key: 'total',     label: 'Total',      align: 'right' },
 ];
 
@@ -425,23 +430,34 @@ export default function LibrosIvaView() {
             return;
         }
         if (activeTab === 'contribuyente') {
-            // Art. 85: correlativo de la operación · fecha · N.º del CCF ·
-            // formulario único · cliente · NRC · exentas · gravadas · débito ·
-            // terceros · débito de terceros · percibido · total.
+            // Art. 85 más la identidad del DTE, que es lo que el libro del ERP
+            // lleva y este CSV no llevaba: sello de recepción, código de
+            // generación, NIT y la clase/tipo del documento. Los cuatro estaban
+            // guardados desde siempre; el que falta de verdad es el número de
+            // control, que el ERP no manda en el JSON que sincronizamos.
             exportCsv(
-                ['No', 'FECHA', 'No CCF', 'FORMULARIO UNICO', 'CLIENTE', 'NRC',
+                ['No', 'FECHA', 'CLASE', 'TIPO', 'No CCF', 'CODIGO DE GENERACION',
+                 'SELLO DE RECEPCION', 'ID ERP', 'CLIENTE', 'NRC', 'NIT', 'DUI',
                  'VENTAS EXENTAS', 'VENTAS GRAVADAS', 'DEBITO FISCAL',
                  'VENTAS CUENTA DE TERCEROS', 'DEBITO CUENTA DE TERCEROS',
                  'IMPUESTO PERCIBIDO', 'TOTAL'],
                 [
                     ...contribuyente.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha), soloNumero(r.correlativo), '',
-                        r.cliente || '', r.nrc || '', num(r.ventas_exentas),
-                        num(r.ventas_gravadas), num(r.debito_fiscal), '0.00', '0.00', '0.00',
-                        num(r.total),
+                        i + 1, fmtFecha(r.fecha),
+                        // Clase 4 = documento tributario electrónico; tipo 03 =
+                        // comprobante de crédito fiscal. Son los códigos del
+                        // catálogo de Hacienda, no una numeración nuestra.
+                        '4', '03',
+                        soloNumero(r.correlativo),
+                        (r.codigo_generacion || '').toUpperCase(),
+                        r.sello_recepcion || '', r.erp_invoice_id || '',
+                        r.cliente || '', r.nrc || '', r.nit || '', r.dui || '',
+                        num(r.ventas_exentas), num(r.ventas_gravadas), num(r.debito_fiscal),
+                        '0.00', '0.00', '0.00', num(r.total),
                     ]),
-                    ['TOTALES', '', '', '', '', '', num(t.exentas), num(t.gravadas),
-                     num(t.debito), '0.00', '0.00', '0.00', num(t.total)],
+                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', '',
+                     num(t.exentas), num(t.gravadas), num(t.debito),
+                     '0.00', '0.00', '0.00', num(t.total)],
                 ],
                 `libro-contribuyentes_${sufijoArchivo}.csv`);
             return;
@@ -681,6 +697,11 @@ export default function LibrosIvaView() {
                                 <DataCell>
                                     {r.nrc
                                         ? <span className="font-mono text-caption">{r.nrc}</span>
+                                        : <Badge variant="warning" size="sm">Falta</Badge>}
+                                </DataCell>
+                                <DataCell hideBelow="xl">
+                                    {r.nit
+                                        ? <span className="font-mono text-caption whitespace-nowrap">{r.nit}</span>
                                         : <Badge variant="warning" size="sm">Falta</Badge>}
                                 </DataCell>
                                 <DataCell align="right" hideBelow="lg">{formatMoney(r.ventas_exentas)}</DataCell>

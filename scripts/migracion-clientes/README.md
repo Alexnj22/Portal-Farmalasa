@@ -101,7 +101,7 @@ hace que una regla nueva se aplique a lo ya hecho.
 | 1 | **Distrito**, si está vacío: nombre completo en la dirección → token → determinista `hash(id) % n` |
 | 2 | **Teléfono**: 8 dígitos, o 503 + 8. Si no cumple → `23010013` |
 | 3 | **Nombre** → MAYÚSCULA (el 91% del catálogo ya lo está) |
-| 4 | **DUI inválido → se REPORTA, no se borra.** Ver decisión #1 |
+| 5 | **DUI inválido → se borra**, y el número original queda en `revision_manual.json` antes de vaciarlo. `--dui-invalido reportar` lo deja intacto |
 | — | **Sin municipio** → default Chalatenango / Chalatenango Sur / CHALATENANGO |
 
 ## 6. Lo que hay que saber del ERP
@@ -143,12 +143,13 @@ fichas con un distrito sorteado. Está aceptado, pero conviene tenerlo presente.
 
 ## 8. Decisiones pendientes
 
-1. **Qué se hace con los DUI inválidos.** Al simular 500 aparecieron 10, y a
-   diferencia del relleno de ayer (`00000003-0`) **todos tienen estructura de DUI
-   real** en fichas de personas con nombre y apellido: casi seguro son DUI buenos
-   con un dígito mal tecleado. Por eso el default pasó a **reportar**. Con
-   `--dui-invalido borrar` se recupera el comportamiento viejo. A escala serían
-   ~690 borrados irreversibles.
+1. ~~Qué se hace con los DUI inválidos~~ — **RESUELTO el 2026-08-01: se borran.**
+   Un DUI que no pasa el verificador está mal, y eso es aritmética. Lo que se
+   agregó es la red: el número original se registra en `revision_manual.json`
+   **antes** de vaciarlo, así que borrar dejó de ser irreversible y se puede
+   corregir con el cliente después. Dato que acotó el riesgo: las 10 fichas del
+   muestreo son consumidor final exclusivo (0 CCF), y ahí el DUI del receptor no
+   es campo requerido — el número incorrecto no viajaba a Hacienda.
 2. **Las 4 fichas diferidas** — `FELIX ANTONIO RECINOS CARCAMO` (portal 5242),
    `NURIA ROXANA VILLANUEVA` (18312) e `YNES ANTONIO ARDON` (13810) tienen dos
    fichas cada uno en el ERP. Están **corregidas en el ERP**, pero el espejo no

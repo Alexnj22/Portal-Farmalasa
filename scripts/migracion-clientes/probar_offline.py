@@ -161,18 +161,25 @@ for valor, debe_cambiar, motivo in (
 DUI_MALO = '045678901'          # dígito verificador incorrecto a propósito
 check('el DUI de prueba es realmente inválido', bloque.dui_valido(DUI_MALO) is False)
 
-# Modo por defecto (2026-08-01): NO se borra, se reporta. Los 10 inválidos que
-# aparecieron al simular 500 tenían estructura de DUI real; borrarlos destruía
-# un dato recuperable.
+# Por defecto se BORRA (decisión del 2026-08-01), pero el original queda
+# registrado: eso es lo que hace que borrar no sea irreversible.
 c = dict(base['campos']); c['dui'] = DUI_MALO
 notas = []
-n_rep, cam_rep = bloque.planificar({'id': base['id']}, c, OPS, notas)
-check('por defecto el DUI inválido NO se toca', n_rep['dui'] == DUI_MALO)
-check('no cuenta como cambio (no dispara un POST vacío)', 'dui' not in cam_rep)
-check('pero queda reportado para revisión manual',
-      len(notas) == 1 and notas[0]['campo'] == 'dui', str(notas))
+n_del, cam_del = bloque.planificar({'id': base['id']}, c, OPS, notas)
+check('por defecto el DUI inválido se BORRA', n_del['dui'] == '')
+check('y el número original queda registrado antes de vaciarlo',
+      len(notas) == 1 and notas[0]['valor'] == DUI_MALO
+      and notas[0]['accion'] == 'borrado', str(notas))
 
-bloque.BORRAR_DUI_INVALIDO = True      # modo --dui-invalido borrar
+bloque.BORRAR_DUI_INVALIDO = False     # modo --dui-invalido reportar
+notas_r = []
+n_rep, cam_rep = bloque.planificar({'id': base['id']}, c, OPS, notas_r)
+check('con --dui-invalido reportar NO se toca', n_rep['dui'] == DUI_MALO)
+check('no cuenta como cambio (no dispara un POST vacío)', 'dui' not in cam_rep)
+check('y también queda registrado, marcado como intacto',
+      len(notas_r) == 1 and notas_r[0]['accion'] == 'intacto', str(notas_r))
+
+bloque.BORRAR_DUI_INVALIDO = True
 c = dict(base['campos']); c['dui'] = DUI_MALO
 nuevos, cambios = bloque.planificar({'id': base['id']}, c, OPS)
 dif = {k for k in set(c) | set(nuevos) if c.get(k) != nuevos.get(k)}
@@ -302,7 +309,7 @@ class ErpQueRechaza(ErpFalso):
         return '{"typeinfo":"Error","msg":"Ya se registro un cliente con estos datos!"}'
 
 
-bloque.BORRAR_DUI_INVALIDO = False     # se restaura el default para el resto
+bloque.BORRAR_DUI_INVALIDO = True      # el default vigente
 for _f in (bloque.CHECKPOINT, JSONL):
     os.path.exists(_f) and os.remove(_f)
 recha = copy.deepcopy(fichas[0]); recha['campos']['telefono1'] = ''
@@ -420,14 +427,13 @@ check('y el espejo trae su categoría real, no "Consumidor"',
 # ═════════════════════════════════════════════════════════════════════════════
 print('\n4c. EL ESPEJO AL PORTAL\n')
 
-bloque.BORRAR_DUI_INVALIDO = True      # para ejercitar el DUI borrado -> NULL
 
 for f in (bloque.CHECKPOINT, JSONL):
     os.path.exists(f) and os.remove(f)
 erp = montar(fichas)
 # main() fija el flag desde el argumento, así que el modo va por CLI y no por
 # la global del módulo.
-correr(fichas, escribir=True, extra=('--dui-invalido', 'borrar'))
+correr(fichas, escribir=True)
 esp = [json.loads(l) for l in open(JSONL)]
 check('una fila por ficha procesada', len(esp) == len(fichas), f'{len(esp)}')
 COLS = {'id', 'erp_id', 'nit', 'dui', 'nrc', 'phone', 'telefono2', 'email',
@@ -459,8 +465,6 @@ check('los vacíos van NULL, nunca cadena vacía',
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-bloque.BORRAR_DUI_INVALIDO = False
-
 print('\n4b. LOS PSEUDO-CLIENTES DEL COMBO (baldes del POS)\n')
 
 idx, nombres_erp = bloque.indice_erp()

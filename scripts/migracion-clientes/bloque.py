@@ -11,7 +11,7 @@ Reglas acordadas (2026-07-31):
   · Sin municipio ni distrito: default Chalatenango / Chalatenango Sur /
     CHALATENANGO (caso extremo, ficha sin dirección).
   · Teléfono 1: 8 dígitos, o código de país 503 + 8. Si no cumple -> 23010013.
-  · DUI inválido -> se REPORTA, no se borra (ver planificar; --dui-invalido).
+  · DUI inválido -> se borra, registrando el original en revision_manual.json.
   · Nombre -> MAYÚSCULA (el 91% del catálogo ya lo está).
   · El payload se arma con TODOS los campos que la ficha muestra, no con una
     lista fija: el formulario es condicional por categoría, y un POST parcial
@@ -53,12 +53,15 @@ CHECKPOINT = f'{D}/checkpoint.json'
 #   1 · distrito, teléfono vacío, DUI inválido, default de ubicación
 #   2 · teléfono con 8 dígitos (o 503+8) en vez de solo "vacío"
 #   3 · nombre en MAYÚSCULA
-#   4 · el DUI inválido ya NO se borra por defecto: se reporta
-REGLAS = 4
+#   4 · el DUI inválido dejó de borrarse por defecto (revertida en 5)
+#   5 · vuelve a borrarse, pero el valor original SIEMPRE queda registrado
+REGLAS = 5
 
-# Por defecto NO se borra un DUI inválido (ver planificar). --dui-invalido borrar
-# recupera el comportamiento original.
-BORRAR_DUI_INVALIDO = False
+# El DUI inválido se borra (decisión del 2026-08-01). Es seguro porque
+# `planificar` registra el número original en revision_manual.json antes de
+# vaciarlo: la ficha queda limpia y el dato sigue disponible para corregirlo.
+# `--dui-invalido reportar` lo deja intacto.
+BORRAR_DUI_INVALIDO = True
 
 # Sin guion: el input `.tel` del ERP filtra a dígitos en keydown, así que ese es
 # el formato que produce el propio formulario.
@@ -209,28 +212,35 @@ def planificar(cliente, campos, ops, notas=None):
         cambios['telefono1'] = (f'vacío -> {TELEFONO_DEFECTO}' if not tel else
                                 f'{tel!r} tiene {n_dig} dígitos, no 8 -> {TELEFONO_DEFECTO}')
 
-    # El DUI inválido NO se borra por defecto (cambiado el 2026-08-01).
+    # Un DUI que no pasa el verificador está mal, y eso es aritmética, no
+    # heurística. Se borra.
     #
-    # La regla original decía "borrar", pensando en relleno tipo '00000003-0' o
-    # en una fecha de nacimiento tecleada en el campo. Pero al simular 500 fichas
-    # aparecieron 10 inválidos y TODOS tienen estructura de DUI real, en fichas
-    # de personas con nombre y apellido: son casi seguro DUI buenos con un dígito
-    # mal tecleado. Borrarlos destruye un dato recuperable —se le pregunta al
-    # cliente y se corrige— y a escala del catálogo serían ~690 borrados.
+    # Lo que hizo falta discutir no fue el diagnóstico sino el costo: al simular
+    # 500 fichas aparecieron 10 inválidos y, a diferencia del relleno tipo
+    # '00000003-0' o de la fecha '13071979-0', todos tenían estructura de DUI
+    # real. Son typos, y 8 de sus 9 dígitos probablemente están bien. Por eso el
+    # valor original se registra SIEMPRE antes de vaciarlo — borrar dejó de ser
+    # irreversible. Con `--dui-invalido reportar` no se toca.
     #
-    # Con `--dui-invalido borrar` se recupera el comportamiento viejo. En
-    # cualquiera de los dos modos el caso queda listado en duis_invalidos.json.
+    # Dato que acotó el riesgo: esas 10 fichas son consumidor final exclusivo
+    # (0 CCF), y en un DTE de consumidor final el DUI del receptor no es campo
+    # requerido, así que el número incorrecto no viajaba a Hacienda.
     if dui_valido(campos.get('dui', '')) is False:
+        # El valor se registra SIEMPRE, se borre o no. Eso es lo que hace que
+        # "borrar" deje de ser irreversible: la ficha queda limpia y el número
+        # sigue disponible para corregirlo con el cliente.
+        #
+        # Va por `notas` y no por `cambios` a propósito: si entrara en `cambios`
+        # la ficha contaría como 'listo', se haría un POST sin nada que cambiar,
+        # y la verificación buscaría un campo del formulario con ese nombre.
+        if notas is not None:
+            notas.append({'erp_id': None, 'campo': 'dui',
+                          'valor': campos.get('dui'),
+                          'accion': 'borrado' if BORRAR_DUI_INVALIDO else 'intacto',
+                          'motivo': 'DUI inválido — requiere revisión manual'})
         if BORRAR_DUI_INVALIDO:
             nuevos['dui'] = ''
             cambios['dui'] = f'INVÁLIDO {campos["dui"]!r} -> se borra'
-        elif notas is not None:
-            # Fuera de `cambios` a propósito: si entrara ahí, la ficha contaría
-            # como 'listo' y se haría un POST sin nada que cambiar, y encima la
-            # verificación buscaría un campo con ese nombre.
-            notas.append({'erp_id': None, 'campo': 'dui',
-                          'valor': campos.get('dui'),
-                          'motivo': 'DUI inválido — no se tocó, requiere revisión manual'})
 
     return nuevos, cambios
 
@@ -425,8 +435,8 @@ def main():
                          'en vez de leer una lista del portal')
     ap.add_argument('--escribir', action='store_true')
     ap.add_argument('--limite', type=int, default=0, help='0 = todos')
-    ap.add_argument('--dui-invalido', choices=('reportar', 'borrar'),
-                    default='reportar',
+    ap.add_argument('--dui-invalido', choices=('borrar', 'reportar'),
+                    default='borrar',
                     help='qué hacer con un DUI que no pasa la validación')
     ap.add_argument('--pausa-lectura', type=float, default=0.4)
     ap.add_argument('--pausa-escritura', type=float, default=1.0)

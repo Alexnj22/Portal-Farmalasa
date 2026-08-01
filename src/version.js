@@ -16,7 +16,18 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.317.0';
+export const APP_VERSION = '2.317.1';
+
+// v2.317.1 — El DUI inválido se borra, pero deja rastro.
+//
+// Revierte la decisión de v2.317.0 con el dato que faltaba. Un DUI que no pasa
+// el verificador está mal —es aritmética, no heurística— y lo que hacía dudar
+// era el costo de perderlo. Dos cosas lo resolvieron: las 10 fichas del muestreo
+// son consumidor final exclusivo (0 CCF) y ahí el DUI del receptor no es campo
+// requerido, así que el número incorrecto nunca viajó a Hacienda; y ahora el
+// original se registra en `revision_manual.json` ANTES de vaciarlo, así que la
+// ficha queda limpia sin que el dato se pierda. `--dui-invalido reportar` deja
+// el comportamiento anterior.
 
 // v2.317.0 — Migración de fichas de clientes: la herramienta, y el espacio en
 // blanco que un `.strip()` puede abrir.
@@ -46,11 +57,8 @@ export const APP_VERSION = '2.317.0';
 // Salvador y DULCE NOM MARÍA en Chalatenango — en el portal se guarda el nombre,
 // nunca el id. **El checkpoint tenía versión de reglas ausente**, así que una
 // regla nueva no se habría aplicado nunca a lo ya procesado. Y **el DUI inválido
-// dejó de borrarse**: al simular 500 fichas aparecieron 10 y, a diferencia del
-// relleno tipo `00000003-0`, todos tenían estructura de DUI real en fichas de
-// personas con nombre y apellido. Son DUI buenos con un dígito mal tecleado;
-// borrarlos —~690 en todo el catálogo— destruía un dato recuperable. Ahora se
-// reportan a `revision_manual.json`.
+// dejó de borrarse** temporalmente, hasta que se midió el riesgo real — ver
+// v2.317.1, que revierte esa parte.
 //
 // RPC nuevo `aplicar_espejo_erp` (20260801044543): `customers` no tenía NINGUNA
 // policy de escritura, así que el espejo entra por una función DEFINER que

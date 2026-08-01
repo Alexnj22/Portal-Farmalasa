@@ -411,20 +411,33 @@ export default function LibrosIvaView() {
         if (activeTab === 'consumidor') {
             // Art. 83: fecha · del→al · máquina/establecimiento · exentas ·
             // gravadas locales · exportaciones · total diario · cuenta de terceros.
+            // Además del Art. 83, la identidad del DTE que el libro del ERP
+            // lleva: clase y tipo, el código de generación del primero y del
+            // último del día, el sello del primero y los IDs del ERP. Los cinco
+            // estaban guardados y este CSV no los sacaba.
             exportCsv(
-                ['FECHA', 'DEL No', 'AL No', 'ESTABLECIMIENTO', 'VENTAS EXENTAS',
+                ['FECHA', 'CLASE', 'TIPO', 'DEL No', 'AL No',
+                 'CODIGO DE GENERACION DEL', 'CODIGO DE GENERACION AL',
+                 'SELLO DE RECEPCION DEL', 'ID ERP DEL', 'ID ERP AL',
+                 'ESTABLECIMIENTO', 'DOCUMENTOS', 'VENTAS EXENTAS',
                  'VENTAS GRAVADAS LOCALES', 'EXPORTACIONES', 'TOTAL VENTAS DIARIAS',
                  'VENTAS CUENTA DE TERCEROS'],
                 [
                     ...consumidor.map(r => [
-                        fmtFecha(r.fecha), soloNumero(r.correlativo_del), soloNumero(r.correlativo_al),
-                        nombreSucursal(r.branch_id), num(r.ventas_exentas), num(r.ventas_gravadas),
+                        fmtFecha(r.fecha), '4', '01',
+                        soloNumero(r.correlativo_del), soloNumero(r.correlativo_al),
+                        (r.codigo_gen_del || '').toUpperCase(), (r.codigo_gen_al || '').toUpperCase(),
+                        r.sello_del || '', r.erp_id_del || '', r.erp_id_al || '',
+                        nombreSucursal(r.branch_id), r.documentos,
+                        num(r.ventas_exentas), num(r.ventas_gravadas),
                         num(r.exportaciones), num(r.total_diario), '0.00',
                     ]),
                     // Art. 83 pide totalizar el mes y consignar el resumen del
                     // débito fiscal. Va en el archivo, no solo en la pantalla.
-                    ['TOTALES', '', '', '', num(t.exentas), num(t.gravadas), '0.00', num(t.total), '0.00'],
-                    ['DEBITO FISCAL DEL PERIODO', '', '', '', '', num(t.debito), '', '', ''],
+                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', t.docs,
+                     num(t.exentas), num(t.gravadas), '0.00', num(t.total), '0.00'],
+                    ['DEBITO FISCAL DEL PERIODO', '', '', '', '', '', '', '', '', '', '', '',
+                     '', num(t.debito), '', '', ''],
                 ],
                 `libro-consumidor-final_${sufijoArchivo}.csv`);
             return;
@@ -463,14 +476,23 @@ export default function LibrosIvaView() {
             return;
         }
         if (activeTab === 'anulados') {
+            // El sello y el ID del ERP se agregaron el 2026-08-01: el anexo del
+            // ERP los lleva y acá estaban guardados sin salir. Al revés, el ERP
+            // NO trae fecha, cliente ni total — esas tres quedan porque hacen
+            // el anexo legible sin tener que ir a buscar cada documento.
             exportCsv(
-                ['No', 'FECHA', 'TIPO', 'CORRELATIVO', 'CODIGO DE GENERACION', 'CLIENTE', 'TOTAL'],
+                ['No', 'FECHA', 'CLASE', 'TIPO', 'CORRELATIVO', 'CODIGO DE GENERACION',
+                 'SELLO DE RECEPCION', 'ID ERP', 'CLIENTE', 'TOTAL'],
                 [
                     ...anulados.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha), r.tipo_documento || '', soloNumero(r.correlativo),
-                        r.codigo_generacion || '', r.cliente || '', num(r.total),
+                        i + 1, fmtFecha(r.fecha), '4',
+                        r.tipo_documento === 'CCF' ? '03' : '01',
+                        soloNumero(r.correlativo),
+                        (r.codigo_generacion || '').toUpperCase(),
+                        r.sello_recepcion || '', r.erp_invoice_id || '',
+                        r.cliente || '', num(r.total),
                     ]),
-                    ['TOTALES', '', '', '', '', '', num(t.total)],
+                    ['TOTALES', '', '', '', '', '', '', '', '', num(t.total)],
                 ],
                 `anexo-anulados_${sufijoArchivo}.csv`);
             return;

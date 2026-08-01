@@ -16,7 +16,32 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.327.1';
+export const APP_VERSION = '2.327.2';
+
+// v2.327.2 — el mismo hueco estaba en los otros dos libros de ventas.
+//
+// Auditados columna por columna contra el CSV del ERP, no por totales — que es
+// lo que debí hacer desde el principio. En los dos, el dato estaba guardado y
+// la función no lo devolvía:
+//
+// **Consumidor final.** Faltaban el código de generación del PRIMERO y del
+// ÚLTIMO documento del día (cols 7 y 8 del ERP), el sello del primero (col 4) y
+// los IDs del ERP de ambos extremos (cols 5 y 6). Detalle que importa: el
+// del→al se ordena por CORRELATIVO, no por el UUID — un `min()/max()` sobre
+// `codigo_generacion` daría el menor y mayor hexadecimal, que no tienen nada que
+// ver con el primero y el último del día.
+//
+// **Anulados.** Faltaba el sello de recepción (col 6) y el ID del ERP. Al revés,
+// el anexo del ERP NO trae fecha, cliente ni total: esas tres se dejan porque
+// hacen el anexo legible sin ir a buscar cada documento.
+//
+// **Compras y percepción** también llevan el sello del documento en el ERP, y
+// ese sí no lo tenemos: no viene en `descargar_compras_json.php`. Igual que el
+// número de control de ventas, queda pendiente — los dos salen del CSV del
+// libro, que es raspar el reporte que estamos replicando.
+//
+// Tercer y cuarto hallazgo del mismo error de método en un día. La regla ya
+// está en CLAUDE.md; esto es lo que costó no tenerla antes.
 
 // v2.327.1 — el libro de contribuyentes tenía el dato guardado y no lo sacaba.
 //

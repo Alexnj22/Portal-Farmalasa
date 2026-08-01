@@ -57,6 +57,7 @@ class ErpFalso:
     def __init__(self, registros):
         self.reg = copy.deepcopy(registros)      # erp_id -> campos
         self.posts = []                          # payloads recibidos
+        self.traza = []                          # ORDEN de las peticiones
 
     def render(self, campos):
         """Devuelve HTML equivalente al de la ficha, para que lo parsee el mismo
@@ -100,7 +101,8 @@ def correr(fichas, escribir, extra=()):
     json.dump([{'id': f['id'], 'name': f['name'], 'sucursal': f.get('sucursal', 0)}
                for f in fichas], open(ent, 'w'), ensure_ascii=False)
     sys.argv = ['bloque.py', '--entrada', ent, '--pausa-lectura', '0',
-                '--pausa-escritura', '0', *extra] + (['--escribir'] if escribir else [])
+                '--pausa-escritura', '0', '--pausa-reintento', '0',
+                *extra] + (['--escribir'] if escribir else [])
     import io, contextlib
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
@@ -549,6 +551,199 @@ check('detecta que el cambio pedido NO se aplicó',
 check('no se queja cuando todo salió bien', bloque.verificar(c, n, dict(n))['ok'])
 check('borrar el DUI a propósito no cuenta como pérdida',
       'dui' not in bloque.verificar(c, n, dict(n))['perdidos'])
+
+# ═════════════════════════════════════════════════════════════════════════════
+print('\n7. REINTENTO DEL GLITCH DEL ERP\n')
+
+# El caso real: en 365 escrituras el ERP contestó UNA vez esto —en texto plano,
+# ni siquiera su JSON— y el mismo payload entró a la primera al reintentarlo.
+GLITCH = 'Proceso no encontrado'
+DUPLICADO = '{"typeinfo":"Error","msg":"Ya se registro un cliente con estos datos!"}'
+
+
+def limpiar():
+    for f in (bloque.CHECKPOINT, JSONL, f'{TMP}/ambiguos.json',
+              f'{TMP}/revision_manual.json', f'{TMP}/bloque_resultado.json'):
+        os.path.exists(f) and os.remove(f)
+
+
+for cuerpo, reintentable, motivo in (
+        ('{"typeinfo":"Success","msg":"ok"}', False, 'salió bien'),
+        (GLITCH, True, 'no es su formato: falló su router, no su lógica'),
+        ('', True, 'respuesta vacía'),
+        ('<html>502 Bad Gateway</html>', True, 'se cayó el proxy'),
+        ('[1,2,3]', True, 'JSON válido pero no es su objeto'),
+        (DUPLICADO, False, 'el ERP ya decidió: insistir da lo mismo'),
+        ('{"typeinfo":"Error","msg":"Ya se registró un cliente"}', False,
+         'el mismo rechazo, con acento'),
+        ('{"typeinfo":"Error","msg":"Falla temporal de la base"}', True,
+         'error JSON desconocido: ante la duda, reintentar')):
+    _r, _rein = bloque.clasificar_respuesta(cuerpo)
+    check(f'{cuerpo[:36]!r:<40} {"se reintenta " if reintentable else "NO se reintenta"}'
+          f' — {motivo}', _rein == reintentable,
+          f'quedó reintentable={_rein}, typeinfo={_r.get("typeinfo")}')
+
+
+class ErpConGlitch(ErpFalso):
+    """Falla las primeras `fallas` escrituras de CADA ficha, después aplica."""
+
+    def __init__(self, registros, fallas=1, cuerpo=GLITCH):
+        super().__init__(registros)
+        self.fallas, self.cuerpo, self.vistos = fallas, cuerpo, {}
+
+    def pedir(self, url, datos=None):
+        if datos is None:
+            return super().pedir(url, datos)
+        eid = str(datos['id_cliente'])
+        self.vistos[eid] = self.vistos.get(eid, 0) + 1
+        if self.vistos[eid] <= self.fallas:
+            self.posts.append(dict(datos))   # llegó al ERP, aunque conteste mal
+            return self.cuerpo
+        return super().pedir(url, datos)
+
+
+uno = copy.deepcopy(fichas[0])
+uno['campos']['telefono1'] = ''
+uno['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
+
+limpiar()
+erp = ErpConGlitch({str(uno['erp_id']): dict(uno['campos'])}, fallas=1)
+bloque.pedir = erp.pedir
+salida = correr([uno], escribir=True)
+check('un glitch se reintenta, y la ficha entra al segundo intento',
+      len(erp.posts) == 2, f'{len(erp.posts)} POSTs')
+check('el reintento se ve en pantalla', 'reintento 1 de 2' in salida, salida[-300:])
+check('la corrección quedó aplicada pese al glitch',
+      erp.reg[str(uno['erp_id'])]['telefono1'] == '23010013')
+check('y la ficha se marca como hecha',
+      os.path.exists(bloque.CHECKPOINT) and len(json.load(open(bloque.CHECKPOINT))) == 1)
+res = [f for f in json.load(open(f'{TMP}/bloque_resultado.json')) if f.get('respuesta')]
+check('el resultado deja anotado que costó 2 intentos',
+      res and res[0]['respuesta'].get('intentos') == 2,
+      str(res[0].get('respuesta') if res else 'sin respuesta'))
+
+limpiar()
+erp = ErpConGlitch({str(uno['erp_id']): dict(uno['campos'])}, fallas=99)
+bloque.pedir = erp.pedir
+correr([uno], escribir=True)
+check('un glitch que no cede corta a los 3 intentos, no insiste para siempre',
+      len(erp.posts) == 3, f'{len(erp.posts)} POSTs')
+check('y NO se marca como hecho — hay que poder reintentarlo en otra corrida',
+      not os.path.exists(bloque.CHECKPOINT))
+amb = json.load(open(f'{TMP}/ambiguos.json'))
+check('queda anotado, con los intentos que costó y sin confundirlo con un duplicado',
+      any(x['tipo'] == 'rechazo-erp' and x.get('intentos') == 3 and not x['duplicado']
+          for x in amb), str(amb))
+
+limpiar()
+erp = ErpQueRechaza({str(uno['erp_id']): dict(uno['campos'])})
+bloque.pedir = erp.pedir
+correr([uno], escribir=True)
+check('un rechazo razonado NO se reintenta (serían 3 peticiones para la misma respuesta)',
+      len(erp.posts) == 1, f'{len(erp.posts)} POSTs')
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+print('\n8. MODO --UNA-PASADA\n')
+
+
+class ErpConTraza(ErpFalso):
+    """Anota el ORDEN de las peticiones: es lo único que distingue los dos modos."""
+
+    def pedir(self, url, datos=None):
+        if datos is None:
+            eid = re.search(r'id_cliente=(-?\d+)', url).group(1)
+            self.traza.append(f'lee {eid}')
+        else:
+            self.traza.append(f'escribe {datos["id_cliente"]}')
+        return super().pedir(url, datos)
+
+
+tres = []
+for f in FICHAS[:3]:
+    g = copy.deepcopy(f)
+    g['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
+    g['campos']['telefono1'] = ''
+    tres.append(g)
+registros = {str(f['erp_id']): dict(f['campos']) for f in tres}
+
+limpiar()
+dos_fases = ErpConTraza(registros)
+bloque.pedir = dos_fases.pedir
+correr(tres, escribir=True)
+ck_dos = json.load(open(bloque.CHECKPOINT))
+esp_dos = [json.loads(l) for l in open(JSONL)]
+reg_dos = copy.deepcopy(dos_fases.reg)
+
+limpiar()
+una = ErpConTraza(registros)
+bloque.pedir = una.pedir
+salida = correr(tres, escribir=True, extra=['--una-pasada'])
+check('ni una petición más que en dos fases',
+      len(una.traza) == len(dos_fases.traza),
+      f'{len(una.traza)} vs {len(dos_fases.traza)}')
+check('el ERP queda exactamente igual', una.reg == reg_dos)
+check('el checkpoint también', json.load(open(bloque.CHECKPOINT)).keys() == ck_dos.keys()
+      and all(v['ok'] for v in json.load(open(bloque.CHECKPOINT)).values()))
+check('y el espejo al portal', [json.loads(l) for l in open(JSONL)] == esp_dos)
+check('el encabezado dice en qué modo corre', 'UNA PASADA' in salida)
+
+# El punto de todo el modo: en dos fases la ficha 1 se lee y recién se escribe
+# después de leer las 500 — hasta 15 minutos de hueco en el que otra persona
+# puede editarla en el ERP y el POST (que manda los 21 campos) le pasa por
+# encima. En una pasada ese hueco es una petición.
+check('en dos fases se leen TODAS antes de escribir ninguna',
+      dos_fases.traza[:3] == [f'lee {f["erp_id"]}' for f in tres], str(dos_fases.traza))
+esperado = [p for f in tres for p in
+            (f'lee {f["erp_id"]}', f'escribe {f["erp_id"]}', f'lee {f["erp_id"]}')]
+check('en una pasada cada ficha se cierra antes de abrir la siguiente',
+      una.traza == esperado, str(una.traza))
+
+# En dos fases revision_manual.json se escribe entero al terminar de planear, o
+# sea antes del primer POST. En una pasada ese momento no existe: si el DUI
+# original no está en disco ANTES de borrarlo, un corte lo pierde para siempre.
+limpiar()
+con_dui = []
+for f in FICHAS[:3]:
+    g = copy.deepcopy(f)
+    g['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
+    g['campos']['dui'] = DUI_MALO
+    con_dui.append(g)
+
+erp = ErpConTraza({str(f['erp_id']): dict(f['campos']) for f in con_dui})
+_real, _n = erp.pedir, {'posts': 0}
+
+
+def cae_al_segundo_post(url, datos=None):
+    if datos is not None:
+        _n['posts'] += 1
+        if _n['posts'] > 1:
+            raise urllib_error()
+    return _real(url, datos)
+
+
+bloque.pedir = cae_al_segundo_post
+try:
+    correr(con_dui, escribir=True, extra=['--una-pasada'])
+except Exception:
+    pass
+rev = json.load(open(f'{TMP}/revision_manual.json')) \
+    if os.path.exists(f'{TMP}/revision_manual.json') else []
+check('el DUI original queda en disco ANTES del POST que lo borra',
+      len(rev) >= 2 and all(r['valor'] == DUI_MALO for r in rev), str(rev))
+check('y la ficha que sí entró quedó en el checkpoint',
+      os.path.exists(bloque.CHECKPOINT) and len(json.load(open(bloque.CHECKPOINT))) == 1,
+      str(json.load(open(bloque.CHECKPOINT)) if os.path.exists(bloque.CHECKPOINT) else {}))
+
+limpiar()
+erp = ErpConTraza(registros)
+bloque.pedir = erp.pedir
+salida = correr(tres, escribir=False, extra=['--una-pasada'])
+check('--una-pasada sin --escribir sigue siendo una simulación',
+      len(erp.posts) == 0, f'{len(erp.posts)} POSTs')
+check('no crea el checkpoint', not os.path.exists(bloque.CHECKPOINT))
+check('y lo dice en el encabezado', 'SIMULACIÓN' in salida and 'UNA PASADA' not in salida)
+
 
 intactos = sorted(os.listdir(TMP))
 shutil.rmtree(TMP)

@@ -38,6 +38,18 @@ Cambios acumulados:
          (`k not in f['nuevos'].get('__', [])`, y '__' nunca es una clave).
     Ahora `cambios` va indexado por NOMBRE DE CAMPO, y la verificación exige:
     todo lo enviado quedó igual a lo enviado, nada se vació sin querer.
+  · REINTENTO del glitch del ERP (`escribir_ficha`). En 365 escrituras el ERP
+    contestó una vez "Proceso no encontrado" en texto plano, y el mismo payload
+    entró a la primera al reintentarlo. A 20,000 escrituras eso son ~55 cortes
+    que hoy piden una persona. Se reintenta lo que no es su formato; NO se
+    reintenta un rechazo razonado ("Ya se registro un cliente…"), que no cambia
+    por insistir y encima es un hallazgo, no un fallo.
+  · MODO --una-pasada: leer, corregir, verificar y espejar cada ficha antes de
+    mirar la siguiente. Cuesta exactamente las mismas peticiones (1,230 por
+    bloque de 500) y cierra el hueco entre la lectura y la escritura, que en dos
+    fases llega a 15 minutos. Como el POST manda los 21 campos, ese hueco es la
+    única forma en que la corrida podría pisar una edición hecha por otra
+    persona en el ERP.
 """
 import argparse, hashlib, html, json, os, re, time
 import unicodedata, urllib.parse, urllib.request
@@ -308,6 +320,22 @@ def verificar(campos, nuevos, despues):
 
 
 # ── Checkpoint (atómico: temp + fsync + rename) ──────────────────────────────
+def volcar_json(ruta, datos):
+    """Escritura atómica. Un corte deja el archivo anterior entero, nunca uno a
+    medias — y con fsync, lo que se dio por escrito sobrevive a un cierre duro.
+
+    Importa más de lo que parece para `revision_manual.json`: ahí queda el DUI
+    original ANTES de borrarlo, y es lo único que hace que borrarlo no sea
+    irreversible.
+    """
+    tmp = f'{ruta}.tmp'
+    with open(tmp, 'w') as fh:
+        json.dump(datos, fh, ensure_ascii=False, indent=1, default=str)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, ruta)
+
+
 def cargar_checkpoint():
     if os.path.exists(CHECKPOINT):
         with open(CHECKPOINT) as fh:
@@ -317,12 +345,7 @@ def cargar_checkpoint():
 
 def anotar_checkpoint(ck, erp_id, registro):
     ck[str(erp_id)] = registro
-    tmp = CHECKPOINT + '.tmp'
-    with open(tmp, 'w') as fh:
-        json.dump(ck, fh, ensure_ascii=False, indent=1, default=str)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, CHECKPOINT)
+    volcar_json(CHECKPOINT, ck)
 
 
 # ── Red ──────────────────────────────────────────────────────────────────────
@@ -416,6 +439,74 @@ def pedir(url, datos=None, _reintentar=True):
     return h
 
 
+# ── Escritura con reintento ──────────────────────────────────────────────────
+# El ERP falla de DOS maneras y hay que tratarlas distinto:
+#
+#   GLITCH   contestó algo que no es su formato. Pasó una vez en 365 escrituras
+#            —devolvió "Proceso no encontrado" en texto plano— y el MISMO
+#            payload entró a la primera al reintentarlo. A escala de 20,000
+#            escrituras son del orden de 55 cortes que hoy piden una persona
+#            delante de la terminal. Se reintenta.
+#   DECISIÓN contestó su JSON diciendo que no. "Ya se registro un cliente con
+#            estos datos!" no cambia por insistir: reintentarlo son tres
+#            peticiones para llegar a la misma respuesta, y encima tapa el
+#            hallazgo (ese rechazo ES la detección de un duplicado). No se
+#            reintenta.
+#
+# Reintentar es seguro porque el POST es idempotente: `process=edit` con un
+# id_cliente fijo y los 21 campos deja la ficha igual se aplique una vez o tres.
+# Y si el glitch ocurrió DESPUÉS de aplicar, el segundo intento reescribe lo
+# mismo. Por eso el criterio puede ser generoso: ante la duda, reintentar.
+RECHAZOS_DEFINITIVOS = ('YA SE REGISTRO', 'YA EXISTE', 'DUPLICAD')
+REINTENTOS = 3
+PAUSA_REINTENTO = 2.0
+
+
+def clasificar_respuesta(cruda):
+    """(respuesta, reintentable) a partir del cuerpo crudo que devolvió el POST.
+
+    `norm()` para comparar el mensaje: quita acentos y puntuación, así que
+    "Ya se registró" y "Ya se registro un cliente con estos datos!" caen las dos
+    en el mismo patrón.
+    """
+    try:
+        r = json.loads(cruda)
+    except ValueError:
+        r = None
+    if not isinstance(r, dict):
+        return {'typeinfo': 'NO-JSON', 'msg': (cruda or '')[:200].strip()}, True
+    if r.get('typeinfo') == 'Success':
+        return r, False
+    return r, not any(p in norm(r.get('msg') or '') for p in RECHAZOS_DEFINITIVOS)
+
+
+def escribir_ficha(payload, intentos=REINTENTOS, pausa=PAUSA_REINTENTO):
+    """POST a la ficha, reintentando el glitch. Anota `intentos` en la respuesta.
+
+    Los intentos quedan en `bloque_resultado.json`: un rechazo que sobrevivió
+    tres intentos no se lee igual que uno que el ERP contestó a la primera.
+    """
+    respuesta = None
+    for n in range(1, intentos + 1):
+        cruda = pedir(f'{BASE}/procesos/clientes.php', payload)
+        # `pedir` ya rehace el login una vez. Si aun así vuelve el formulario,
+        # las credenciales no sirven: seguir sería escribir al vacío 500 veces.
+        if _es_login(cruda):
+            raise SystemExit('SESIÓN CAÍDA en plena escritura: el ERP devolvió el '
+                             'login y el re-login automático no alcanzó. Revisá '
+                             'ERP_USUARIO/ERP_PASSWORD en erp.env — el checkpoint '
+                             'retoma donde quedó.')
+        respuesta, reintentable = clasificar_respuesta(cruda)
+        respuesta['intentos'] = n
+        if not reintentable:
+            return respuesta
+        if n < intentos:
+            print(f'          glitch del ERP: {respuesta.get("msg", "")[:56]!r} '
+                  f'— reintento {n} de {intentos - 1}')
+            time.sleep(pausa * n)      # backoff: 2s, 4s
+    return respuesta
+
+
 def parsear_ficha(h):
     """Todos los campos que la ficha realmente muestra: inputs, textareas, selects.
 
@@ -501,6 +592,112 @@ def clasificar_duplicado(crudos):
     return 'difieren en acentos o puntuación'
 
 
+# ── El trabajo de UNA ficha ──────────────────────────────────────────────────
+# Partido en dos mitades —planear (lee) y aplicar (escribe, verifica, espeja)—
+# porque los dos modos las combinan distinto: en dos fases se planean las 500 y
+# después se aplican las 500; en una pasada se planea y se aplica cada una antes
+# de mirar la siguiente. El trabajo por ficha es idéntico en ambos.
+def imprimir_ficha(f):
+    print(f'\n{f["name"][:52]}  (portal {f["id"]}, erp {f.get("erp_id","–")})')
+    print(f'   {f["estado"]}')
+    for k, v in f.get('cambios', {}).items():
+        print(f'      · {k}: {v}')
+
+
+def planear_ficha(c, eid, marca, ambiguos, revisiones):
+    """Lee la ficha del ERP y decide qué se le va a mandar. Una petición."""
+    campos, ops = leer_ficha(eid)
+    cat = dict(ops.get('categoria', [])).get(campos.get('categoria', ''), '?')
+    fila = {**c, **marca, 'erp_id': eid, 'categoria': cat,
+            'campos': dict(campos), 'cambios': {},
+            'portal': fila_portal(c, eid, campos, ops), 'ops': dict(ops)}
+
+    if cat != 'Consumidor':
+        fila['estado'] = f'SALTADO (categoría {cat}) — solo se guarda en el portal'
+        return fila
+
+    # La semilla del distrito determinista es el id del PORTAL, así que dos
+    # fichas duplicadas del mismo cliente sacan el mismo distrito. Es lo que se
+    # quiere: son la misma persona.
+    notas_ficha = []
+    nuevos, cambios = planificar(c, campos, ops, notas_ficha)
+    for n in notas_ficha:
+        n['erp_id'] = eid
+        n['name'] = c['name']
+        revisiones.append(n)
+    if 'ambiguo' in cambios.get('distrito', ''):
+        _, _, hits = elegir_distrito(c['id'], campos.get('direccion', ''),
+                                     ops.get('distrito', []))
+        ambiguos.append({'tipo': 'distrito', 'portal_id': c['id'], 'erp_id': eid,
+                         'direccion': campos.get('direccion', ''),
+                         'candidatos': [t for _, t in hits],
+                         'elegido': cambios['distrito']})
+    fila['nuevos'], fila['cambios'] = nuevos, cambios
+    fila['estado'] = 'listo' if cambios else 'sin cambios'
+    return fila
+
+
+def aplicar_ficha(f, ck, ambiguos, a):
+    """Escribe, verifica, espeja y anota en el checkpoint. Dos peticiones más.
+
+    Tres caminos, y los TRES espejan al portal: se corrige, ya estaba bien, o es
+    contribuyente y no se toca en el ERP — en los tres casos el dato del ERP
+    tiene que quedar en el portal.
+    """
+    estado = f.get('estado', '')
+    if estado == 'listo':
+        payload = {**f['nuevos'], 'process': 'edit', 'id_cliente': f['erp_id']}
+        # `procesos/clientes.php` responde JSON con typeinfo/msg. Ignorarlo
+        # costó una tarde: el ERP venía contestando "Ya se registro un cliente
+        # con estos datos!" y nosotros lo leíamos como "el distrito no se
+        # aplicó", persiguiendo un problema que no existía.
+        f['respuesta'] = escribir_ficha(payload, pausa=a.pausa_reintento)
+        if f['respuesta'].get('typeinfo') != 'Success':
+            msg, n = f['respuesta'].get('msg', ''), f['respuesta'].get('intentos', 1)
+            print(f'RECHAZO   {f["name"][:44]:<46} {msg[:60]}'
+                  f'{"" if n == 1 else f"   ({n} intentos)"}')
+            # Un rechazo por duplicado es un HALLAZGO, no solo un fallo: el ERP
+            # acaba de decirnos que esta ficha choca con otra. Va a la lista de
+            # purga, que así detecta también los duplicados que nuestro índice
+            # por nombre no ve (los que el ERP resuelve por DUI o NIT).
+            ambiguos.append({
+                'tipo': 'rechazo-erp', 'portal_id': f['id'], 'name': f['name'],
+                'erp_id': f['erp_id'], 'motivo': msg, 'intentos': n,
+                'duplicado': 'registro' in msg.lower() or 'duplicad' in msg.lower(),
+                'cambios_intentados': f.get('cambios', {}),
+                'ts': time.strftime('%Y-%m-%d %H:%M:%S')})
+        time.sleep(a.pausa_escritura)
+        despues, _ = leer_ficha(f['erp_id'])
+        v = verificar(f['campos'], f['nuevos'], despues)
+        v['despues'] = despues
+        f['verificacion'] = v
+        # La fuente del espejo es la ficha RELEÍDA, no lo que quisimos escribir.
+        f['portal'] = fila_portal(f, f['erp_id'], despues, f['ops'])
+        print(f'{"OK " if v["ok"] else "REVISAR"}  {f["name"][:44]:<46} '
+              f'perdidos={v["perdidos"] or "ninguno"} alterados={len(v["alterados"])}')
+        for x in v['alterados']:
+            print(f'          ! {x}')
+    elif estado == 'sin cambios' or estado.startswith('SALTADO'):
+        v = {'ok': True, 'perdidos': [], 'alterados': []}
+        print(f'ESPEJO   {f["name"][:44]:<46} {estado[:34]}')
+    else:
+        return
+
+    # El espejo va siempre: aunque el ERP haya rechazado la corrección, lo que
+    # la ficha tiene HOY es dato válido para el portal.
+    anotar_portal(f['portal'])
+    # Pero un rechazo NO se marca como hecho: cuando se purgue el duplicado hay
+    # que poder reintentarlo, y el checkpoint es lo único que decide eso.
+    if f.get('respuesta', {}).get('typeinfo', 'Success') != 'Success':
+        return
+    # El checkpoint se anota DESPUÉS de verificar y espejar, ANTES de la siguiente.
+    anotar_checkpoint(ck, f['erp_id'], {
+        'portal_id': f['id'], 'name': f['name'], 'ok': v['ok'], 'estado': estado,
+        'cambios': f.get('cambios', {}), 'perdidos': v['perdidos'],
+        'alterados': v['alterados'], 'espejado': True, 'reglas': REGLAS,
+        'ts': time.strftime('%Y-%m-%d %H:%M:%S')})
+
+
 # ── Corrida ──────────────────────────────────────────────────────────────────
 def main():
     ap = argparse.ArgumentParser()
@@ -513,8 +710,14 @@ def main():
     ap.add_argument('--dui-invalido', choices=('borrar', 'reportar'),
                     default='borrar',
                     help='qué hacer con un DUI que no pasa la validación')
+    ap.add_argument('--una-pasada', action='store_true',
+                    help='leer, corregir, verificar y espejar cada ficha antes '
+                         'de pasar a la siguiente, en vez de planear el bloque '
+                         'entero y después escribirlo. Mismas peticiones; cierra '
+                         'el hueco entre la lectura y la escritura')
     ap.add_argument('--pausa-lectura', type=float, default=0.4)
     ap.add_argument('--pausa-escritura', type=float, default=1.0)
+    ap.add_argument('--pausa-reintento', type=float, default=PAUSA_REINTENTO)
     a = ap.parse_args()
     global BORRAR_DUI_INVALIDO
     BORRAR_DUI_INVALIDO = (a.dui_invalido == 'borrar')
@@ -536,6 +739,17 @@ def main():
             clientes = clientes[:a.limite]
     if ck:
         print(f'checkpoint: {len(ck)} fichas ya resueltas en corridas anteriores\n')
+
+    # Una pasada solo tiene sentido escribiendo: es justo el hueco entre leer y
+    # escribir lo que cierra. En simulación no hay escritura que acercar, así
+    # que el modo se ignora y la corrida es la de siempre.
+    una_pasada = a.una_pasada and a.escribir
+    titulo = ('UNA PASADA — leer, corregir, verificar y espejar ficha por ficha'
+              if una_pasada else 'PLAN DEL BLOQUE')
+    print('═' * 78)
+    print(f'{titulo} — {len(clientes)} clientes   '
+          f'({"ESCRITURA" if a.escribir else "SIMULACIÓN"})')
+    print('═' * 78)
 
     plan, ambiguos, revisiones = [], [], []
     for c in clientes:
@@ -566,132 +780,50 @@ def main():
                              'checkpoint': hecho})
                 continue
 
-            campos, ops = leer_ficha(eid)
-            cat = dict(ops.get('categoria', [])).get(campos.get('categoria', ''), '?')
-            fila = {**c, **marca, 'erp_id': eid, 'categoria': cat,
-                    'campos': dict(campos), 'cambios': {},
-                    'portal': fila_portal(c, eid, campos, ops), 'ops': dict(ops)}
-
-            if cat != 'Consumidor':
-                fila['estado'] = f'SALTADO (categoría {cat}) — solo se guarda en el portal'
-                plan.append(fila)
-                time.sleep(a.pausa_lectura)
-                continue
-
-            # La semilla del distrito determinista es el id del PORTAL, así que
-            # dos fichas duplicadas del mismo cliente sacan el mismo distrito.
-            # Es lo que se quiere: son la misma persona.
-            notas_ficha = []
-            nuevos, cambios = planificar(c, campos, ops, notas_ficha)
-            for n in notas_ficha:
-                n['erp_id'] = eid
-                n['name'] = c['name']
-                revisiones.append(n)
-            if 'ambiguo' in cambios.get('distrito', ''):
-                _, _, hits = elegir_distrito(c['id'], campos.get('direccion', ''),
-                                             ops.get('distrito', []))
-                ambiguos.append({'tipo': 'distrito', 'portal_id': c['id'], 'erp_id': eid,
-                                 'direccion': campos.get('direccion', ''),
-                                 'candidatos': [t for _, t in hits],
-                                 'elegido': cambios['distrito']})
-            fila['nuevos'], fila['cambios'] = nuevos, cambios
-            fila['estado'] = 'listo' if cambios else 'sin cambios'
-            plan.append(fila)
+            f = planear_ficha(c, eid, marca, ambiguos, revisiones)
+            plan.append(f)
+            if una_pasada:
+                imprimir_ficha(f)
+                # A disco ANTES de tocar el ERP. En dos fases estos dos archivos
+                # se escriben enteros al terminar de planear, o sea antes de la
+                # primera escritura; acá no existe ese momento, así que se
+                # vuelcan por ficha. No es cosmético: `revision_manual.json` es
+                # donde queda el DUI original antes de borrarlo, y un corte
+                # entre el POST y el volcado lo perdería para siempre.
+                volcar_json(f'{D}/revision_manual.json', revisiones)
+                volcar_json(f'{D}/ambiguos.json', ambiguos)
+                aplicar_ficha(f, ck, ambiguos, a)
             time.sleep(a.pausa_lectura)
 
-    # ── Reporte antes de escribir ────────────────────────────────────────────
-    print('═' * 78)
-    print(f'PLAN DEL BLOQUE — {len(clientes)} clientes   '
-          f'({"ESCRITURA" if a.escribir else "SIMULACIÓN"})')
-    print('═' * 78)
-    for f in plan:
-        print(f'\n{f["name"][:52]}  (portal {f["id"]}, erp {f.get("erp_id","–")})')
-        print(f'   {f["estado"]}')
-        for k, v in f.get('cambios', {}).items():
-            print(f'      · {k}: {v}')
+    # ── Reporte ──────────────────────────────────────────────────────────────
+    if not una_pasada:
+        for f in plan:
+            imprimir_ficha(f)
 
-    json.dump(ambiguos, open(f'{D}/ambiguos.json', 'w'), ensure_ascii=False, indent=1)
-    json.dump(revisiones, open(f'{D}/revision_manual.json', 'w'), ensure_ascii=False, indent=1)
+    volcar_json(f'{D}/ambiguos.json', ambiguos)
+    volcar_json(f'{D}/revision_manual.json', revisiones)
     print(f'\ntabla de ambiguos: {len(ambiguos)} casos -> ambiguos.json')
     print(f'para revisión manual: {len(revisiones)} casos -> revision_manual.json')
 
     if not a.escribir:
-        json.dump(plan, open(f'{D}/bloque_plan.json', 'w'),
-                  ensure_ascii=False, indent=1, default=str)
+        volcar_json(f'{D}/bloque_plan.json', plan)
         print('(simulación — no se escribió nada, y el checkpoint quedó intacto)')
         return
 
     # ── Escritura + verificación + checkpoint ────────────────────────────────
-    print('\n' + '═' * 78)
-    print('ESCRITURA Y VERIFICACIÓN')
-    print('═' * 78)
-    for f in plan:
-        estado = f.get('estado', '')
-        # Tres caminos, y los TRES espejan al portal: se corrige, ya estaba bien,
-        # o es contribuyente y no se toca en el ERP — en los tres casos el dato
-        # del ERP tiene que quedar en el portal.
-        if estado == 'listo':
-            payload = {**f['nuevos'], 'process': 'edit', 'id_cliente': f['erp_id']}
-            # `procesos/clientes.php` responde JSON con typeinfo/msg. Ignorarlo
-            # costó una tarde: el ERP venía contestando "Ya se registro un
-            # cliente con estos datos!" y nosotros lo leíamos como "el distrito
-            # no se aplicó", persiguiendo un problema que no existía.
-            cruda = pedir(f'{BASE}/procesos/clientes.php', payload)
-            try:
-                f['respuesta'] = json.loads(cruda)
-            except ValueError:
-                f['respuesta'] = {'typeinfo': 'NO-JSON', 'msg': cruda[:200]}
-            if f['respuesta'].get('typeinfo') != 'Success':
-                msg = f['respuesta'].get('msg', '')
-                print(f'RECHAZO   {f["name"][:44]:<46} {msg}')
-                # Un rechazo por duplicado es un HALLAZGO, no solo un fallo: el
-                # ERP acaba de decirnos que esta ficha choca con otra. Va a la
-                # lista de purga, que así detecta también los duplicados que
-                # nuestro índice por nombre no ve (los que el ERP resuelve por
-                # DUI o NIT, por ejemplo).
-                ambiguos.append({
-                    'tipo': 'rechazo-erp', 'portal_id': f['id'], 'name': f['name'],
-                    'erp_id': f['erp_id'], 'motivo': msg,
-                    'duplicado': 'registro' in msg.lower() or 'duplicad' in msg.lower(),
-                    'cambios_intentados': f.get('cambios', {}),
-                    'ts': time.strftime('%Y-%m-%d %H:%M:%S')})
-            time.sleep(a.pausa_escritura)
-            despues, _ = leer_ficha(f['erp_id'])
-            v = verificar(f['campos'], f['nuevos'], despues)
-            v['despues'] = despues
-            f['verificacion'] = v
-            # La fuente del espejo es la ficha RELEÍDA, no lo que quisimos escribir.
-            f['portal'] = fila_portal(f, f['erp_id'], despues, f['ops'])
-            print(f'{"OK " if v["ok"] else "REVISAR"}  {f["name"][:44]:<46} '
-                  f'perdidos={v["perdidos"] or "ninguno"} alterados={len(v["alterados"])}')
-            for x in v['alterados']:
-                print(f'          ! {x}')
-        elif estado == 'sin cambios' or estado.startswith('SALTADO'):
-            v = {'ok': True, 'perdidos': [], 'alterados': []}
-            print(f'ESPEJO   {f["name"][:44]:<46} {estado[:34]}')
-        else:
-            continue
+    # En una pasada ya está todo aplicado: cada ficha se escribió al leerla.
+    if not una_pasada:
+        print('\n' + '═' * 78)
+        print('ESCRITURA Y VERIFICACIÓN')
+        print('═' * 78)
+        for f in plan:
+            aplicar_ficha(f, ck, ambiguos, a)
 
-        # El espejo va siempre: aunque el ERP haya rechazado la corrección, lo
-        # que la ficha tiene HOY es dato válido para el portal.
-        anotar_portal(f['portal'])
-        # Pero un rechazo NO se marca como hecho: cuando se purgue el duplicado
-        # hay que poder reintentarlo, y el checkpoint es lo único que decide eso.
-        if f.get('respuesta', {}).get('typeinfo', 'Success') != 'Success':
-            continue
-        # El checkpoint se anota DESPUÉS de verificar y espejar, ANTES de la siguiente.
-        anotar_checkpoint(ck, f['erp_id'], {
-            'portal_id': f['id'], 'name': f['name'], 'ok': v['ok'], 'estado': estado,
-            'cambios': f.get('cambios', {}), 'perdidos': v['perdidos'],
-            'alterados': v['alterados'], 'espejado': True, 'reglas': REGLAS,
-            'ts': time.strftime('%Y-%m-%d %H:%M:%S')})
-
-    # Se reescribe: la fase de escritura pudo agregar rechazos del ERP.
-    json.dump(ambiguos, open(f'{D}/ambiguos.json', 'w'), ensure_ascii=False, indent=1)
+    # Se reescribe: la escritura pudo agregar rechazos del ERP.
+    volcar_json(f'{D}/ambiguos.json', ambiguos)
     for f in plan:
         f.pop('ops', None)          # solo hacía falta para armar el espejo
-    json.dump(plan, open(f'{D}/bloque_resultado.json', 'w'),
-              ensure_ascii=False, indent=1, default=str)
+    volcar_json(f'{D}/bloque_resultado.json', plan)
     ok = sum(1 for f in plan if f.get('verificacion', {}).get('ok'))
     mal = sum(1 for f in plan if f.get('verificacion') and not f['verificacion']['ok'])
     esp = sum(1 for f in plan if f.get('portal') and (

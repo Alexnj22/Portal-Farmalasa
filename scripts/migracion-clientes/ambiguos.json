@@ -1,1 +1,24 @@
-[]
+[
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:1641",
+  "erp_id": "1641",
+  "direccion": "AV. PALECA N 15 FRENTE A SUPER SELECTOS, CIUDAD DELGADO. SAN SALVADOR",
+  "candidatos": [
+   "SAN SALVADOR",
+   "CIUDAD DELGADO"
+  ],
+  "elegido": "CIUDAD DELGADO (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:1791",
+  "erp_id": "1791",
+  "direccion": "POTONICO, CHALATENANGO",
+  "candidatos": [
+   "CHALATENANGO",
+   "POTONICO"
+  ],
+  "elegido": "POTONICO (ambiguo (2 candidatos))"
+ }
+]

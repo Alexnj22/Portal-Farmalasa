@@ -194,7 +194,51 @@ def candidatos_distrito(direccion, ops):
                                  if tokens_distintivos(t) & palabras], direccion)
 
 
-def elegir_distrito(portal_id, direccion, ops):
+def ubicacion_de(campos, ops):
+    """Los nombres del departamento y el municipio DE ESTA FICHA, normalizados.
+
+    Se sacan de las opciones de la ficha y no de un catálogo aparte: son las
+    mismas etiquetas contra las que se compara el distrito, así que no hay
+    riesgo de que difieran en grafía.
+    """
+    nombres = set()
+    for campo in ('departamento', 'municipio'):
+        etiqueta = dict(ops.get(campo, [])).get(campos.get(campo, ''), '')
+        if etiqueta:
+            nombres.add(norm(etiqueta))
+            # El municipio es "<Departamento> <cardinal>"; su primera palabra
+            # vuelve a nombrar al departamento y no distingue nada.
+            nombres.add(norm(etiqueta.split()[0]))
+    return nombres
+
+
+def descartar_los_que_son_la_ubicacion(hits, ubicacion):
+    """Saca de los candidatos a los que se llaman igual que el departamento o el
+    municipio DE ESTA FICHA.
+
+    La gente escribe la dirección como "DISTRITO, DEPARTAMENTO" —
+    "NUEVA TRINIDAD, CHALATENANGO", "SAN ANTONIO DEL MONTE, SONSONATE"— y varios
+    departamentos tienen un distrito homónimo. El matcher veía dos candidatos y
+    desempataba por sorteo, o sea que acertaba la mitad de las veces.
+
+    Medido el 2026-08-01 sobre las 2,078 fichas procesadas: 5 se resolvieron por
+    ese desempate y 2 quedaron MAL (erp 176 con CHALATENANGO en vez de NUEVA
+    TRINIDAD, erp 380 con SONSONATE en vez de SAN ANTONIO DEL MONTE). A escala
+    del catálogo son del orden de 55 distritos equivocados — y son justo los
+    casos donde la dirección SÍ decía cuál era, que es lo que los hace peores
+    que un sorteo: la información estaba y se descartó.
+
+    Solo se aplica cuando hay MÁS DE UN candidato. Con uno solo no hay nada que
+    desambiguar, y ahí sí puede ser que la persona viva en el distrito que se
+    llama igual que su departamento.
+    """
+    if len(hits) < 2 or not ubicacion:
+        return hits
+    quedan = [(v, t) for v, t in hits if norm(t) not in ubicacion]
+    return quedan or hits          # si no queda ninguno, no se inventa nada
+
+
+def elegir_distrito(portal_id, direccion, ops, ubicacion=None):
     """(value, motivo, candidatos). Siempre devuelve algo reproducible.
 
     Cascada, medida sobre 85 direcciones reales del departamento:
@@ -207,11 +251,13 @@ def elegir_distrito(portal_id, direccion, ops):
         return None, 'sin opciones', []
     semilla = int(hashlib.sha256(str(portal_id).encode()).hexdigest()[:8], 16)
 
-    fuertes = por_nombre_completo(direccion, ops)
+    fuertes = descartar_los_que_son_la_ubicacion(
+        por_nombre_completo(direccion, ops), ubicacion)
     if len(fuertes) == 1:
         return fuertes[0][0], 'dirección (nombre completo)', fuertes
 
-    debiles = candidatos_distrito(direccion, ops)
+    debiles = descartar_los_que_son_la_ubicacion(
+        candidatos_distrito(direccion, ops), ubicacion)
     if len(debiles) == 1:
         return debiles[0][0], 'dirección (abreviatura)', debiles
 
@@ -246,7 +292,8 @@ def planificar(cliente, campos, ops, notas=None):
             cambios[k] = f'{etiq.get(k, {}).get(v, v)} (default: ficha sin municipio)'
     elif not campos.get('distrito'):
         d, motivo, _ = elegir_distrito(cliente['id'], campos.get('direccion', ''),
-                                       ops.get('distrito', []))
+                                       ops.get('distrito', []),
+                                       ubicacion_de(campos, ops))
         if d:
             nuevos['distrito'] = d
             cambios['distrito'] = f'{etiq.get("distrito", {}).get(d, d)} ({motivo})'
@@ -772,7 +819,8 @@ def planear_ficha(c, eid, marca, ambiguos, revisiones, faltantes=None):
         anotar_revision(revisiones, n)
     if 'ambiguo' in cambios.get('distrito', ''):
         _, _, hits = elegir_distrito(c['id'], campos.get('direccion', ''),
-                                     ops.get('distrito', []))
+                                     ops.get('distrito', []),
+                                     ubicacion_de(campos, ops))
         ambiguos.append({'tipo': 'distrito', 'portal_id': c['id'], 'erp_id': eid,
                          'direccion': campos.get('direccion', ''),
                          'candidatos': [t for _, t in hits],

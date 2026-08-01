@@ -586,6 +586,40 @@ check('la cascada alcanza casos que el v1 solo no veía',
                        for i, d in enumerate(dirs)),
       'el v2 no aportó ni un caso')
 
+# ── "DISTRITO, DEPARTAMENTO" no es un empate ────────────────────────────────
+# La gente escribe la dirección así, y varios departamentos tienen un distrito
+# homónimo. El matcher veía dos candidatos y sorteaba, o sea acertaba la mitad.
+# Encontrado con datos reales: de 5 fichas resueltas por ese desempate, 2
+# quedaron MAL (erp 176 CHALATENANGO en vez de NUEVA TRINIDAD, erp 380
+# SONSONATE en vez de SAN ANTONIO DEL MONTE).
+print()
+SONSO = [('x', 'SONSONATE'), ('y', 'SAN ANTONIO DEL MONTE')]
+SS    = [('a', 'SAN SALVADOR'), ('b', 'MEJICANOS')]
+for direccion, ops, ubic, esperado, quien in (
+        ('NUEVA TRINIDAD,  CHALATENANGO', CHALA,
+         {'CHALATENANGO', 'CHALATENANGO SUR'}, 'NUEVA TRINIDAD', 'erp 176, estaba mal'),
+        ('SAN ANTONIO DEL MONTE,  SONSONATE', SONSO,
+         {'SONSONATE', 'SONSONATE CENTRO'}, 'SAN ANTONIO DEL MONTE', 'erp 380, estaba mal'),
+        ('MEJICANOS, SAN SALVADOR ', SS,
+         {'SAN SALVADOR', 'SAN SALVADOR CENTRO'}, 'MEJICANOS', 'erp 161, acertó de casualidad'),
+        ('POTONICO, CHALATENANGO', [('7', 'CHALATENANGO'), ('19', 'POTONICO')],
+         {'CHALATENANGO', 'CHALATENANGO SUR'}, 'POTONICO', 'erp 1791')):
+    v, mot, _ = bloque.elegir_distrito(999, direccion, ops, ubic)
+    check(f'{direccion.strip()[:34]:<36} -> {esperado}  ({quien})',
+          dict(ops)[v] == esperado and 'ambiguo' not in mot,
+          f'quedó {dict(ops)[v]} ({mot})')
+
+# El borde: si el ÚNICO candidato es el homónimo del departamento, no se
+# descarta — puede que la persona viva justo en ese distrito.
+v, mot, _ = bloque.elegir_distrito(999, 'BARRIO EL CENTRO, CHALATENANGO',
+                                   [('7', 'CHALATENANGO'), ('17', 'NUEVA TRINIDAD')],
+                                   {'CHALATENANGO', 'CHALATENANGO SUR'})
+check('con un solo candidato NO se descarta aunque sea el homónimo', v == '7',
+      f'quedó {v} ({mot})')
+check('sin `ubicacion` el comportamiento es el de antes',
+      bloque.elegir_distrito(999, 'NUEVA TRINIDAD, CHALATENANGO', CHALA)[1].startswith(
+          ('dirección', 'ambiguo')))
+
 a1 = bloque.elegir_distrito(12345, 'sin ninguna pista aqui', CHALA)
 a2 = bloque.elegir_distrito(12345, 'sin ninguna pista aqui', CHALA)
 check('determinista: el mismo cliente saca siempre el mismo distrito', a1 == a2)

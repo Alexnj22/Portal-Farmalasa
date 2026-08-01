@@ -123,6 +123,7 @@ primera al reintentarlo. A escala de 20,000 escrituras son ~55 cortes.
 | `revision_manual.json` | **el número original de cada DUI borrado**. ACUMULA entre bloques — es lo único que hace reversible el borrado, y hasta el 2026-08-01 cada corrida pisaba la anterior |
 | `bloque_plan.json` / `bloque_resultado.json` | plan y resultado del último bloque |
 | `duplicados_erp.json` | los 19 nombres duplicados del catálogo — lista de purga |
+| `faltantes_dte.json` | **fichas que no se pueden facturar todavía**: qué campo le falta a cada una para cumplir DTE 2.0, por categoría. Acumula entre bloques y una ficha que se completa sale sola. Es lista de trabajo de una persona — un NIT ausente no se deduce de nada |
 
 ## 4. El espejo al portal
 
@@ -219,6 +220,30 @@ de la del catálogo, esto va a pasar siempre; es el mismo problema de la tabla d
 equivalencias ERP ↔ catálogo que hace falta para los 894 distritos que el
 formulario no reconoce.
 
+## 4c. DTE 2.0 — qué necesita cada tipo de cliente
+
+DTE 2.0 ya está vigente y exige **distrito y teléfono** en el receptor. Eso da
+vuelta el criterio con el que arrancó esta migración: hasta ahora **no** tocar
+una ficha era la opción neutral, y ya no lo es — una ficha sin distrito no se
+puede facturar.
+
+| campo | Consumidor | Contribuyente / Gran Contribuyente |
+|---|---|---|
+| nombre, teléfono, departamento, municipio, **distrito** | requerido | requerido |
+| NIT, NRC, giro, correo, dirección | — | requerido |
+
+Estado de las 1,015 fichas ya espejadas (de `faltantes_dte.json`):
+
+```
+99 fichas no se pueden facturar todavía · 83 de ellas fiscales
+   distrito 99 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2
+```
+
+Los **consumidores ya cumplen** —16 sin distrito de 910— porque la migración se
+los completa. Los **fiscales están al 100% sin distrito**, y es consecuencia
+directa de que el bloque no los escribe: se completan desde el portal, uno por
+uno, con una persona decidiendo.
+
 ## 5. Las reglas
 
 Versionadas en la constante `REGLAS` de `bloque.py`. El checkpoint guarda con
@@ -227,7 +252,7 @@ hace que una regla nueva se aplique a lo ya hecho.
 
 | # | regla |
 |---|---|
-| — | **Solo se edita la categoría `Consumidor`.** Cualquier otra se lee y se espeja al portal, pero no se toca en el ERP |
+| — | **Solo se ESCRIBE la categoría `Consumidor`.** Cualquier otra se lee y se espeja al portal, pero el bloque **nunca** la escribe en el ERP — ni siquiera cuando la dirección nombra el distrito. Se corrigen **desde el portal**, y de ahí `empujar_al_erp.py` lleva el cambio: así detrás de cada dato fiscal hay una decisión humana |
 | 1 | **Distrito**, si está vacío: nombre completo en la dirección → token → determinista `hash(id) % n` |
 | 2 | **Teléfono**: 8 dígitos, o 503 + 8. Si no cumple → `23010013` |
 | 3 | **Nombre** → MAYÚSCULA (el 91% del catálogo ya lo está) |

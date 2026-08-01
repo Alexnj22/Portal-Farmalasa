@@ -16,7 +16,40 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.325.1';
+export const APP_VERSION = '2.326.0';
+
+// v2.326.0 — cuadre diario del libro de compras contra el ERP.
+//
+// **El hueco que tapa.** `sync-purchases-10min` le pide al ERP **ayer y hoy**,
+// filtrando por FECHA DEL DOCUMENTO. Si alguien captura una compra fechada hace
+// tres días, el cron ya pasó por esa fecha y **no vuelve nunca**: el documento
+// queda fuera del libro para siempre y nada avisa. Una compra ausente no rompe
+// nada — solo achica el crédito fiscal.
+//
+// No es hipotético: pasó con Bodega el 2026-06-01 (16 documentos, $14,311.41,
+// recuperados a mano el 2026-08-01). Medido sobre los 16 meses de historia es el
+// único caso, pero "casi siempre" no alcanza en un libro que se declara.
+//
+// `check-purchases-reconciliation` compara ERP contra portal —conteo Y monto—
+// por sucursal, para el mes en curso y el anterior, que son los dos que todavía
+// se pueden corregir antes de declarar. Diario a las 07:20 UTC, cuando los syncs
+// de alta frecuencia duermen y no hay otro job programado.
+//
+// **Cuesta 0.36s por sucursal-mes**: `admin_compras_fecha_dt.php` con `length=1`
+// devuelve `recordsFiltered` sin traer una fila. Se piden igual los totales
+// (2.4s el peor mes) porque sin ellos una compra editada en el ERP —mismo
+// conteo, otro monto— pasaría de largo.
+//
+// **Avisa, no arregla.** Recuperar el documento exige el sync normal sobre ese
+// día (167s por mes de Bodega); un cron que lo intentara solo competiría con el
+// de cada 10 minutos. Y una diferencia puede ser una anulación legítima:
+// reescribir sin que nadie mire es peor que avisar.
+//
+// **El defecto que encontró su propia primera corrida:** alertó por Bodega/
+// agosto —ERP 11 contra portal 10— y el documento era de ESE MISMO DÍA, o sea
+// de la ventana que el cron todavía estaba cubriendo. Ahora se excluye siempre
+// el día de hoy; si el recorte deja el mes vacío (el día 1), no hay nada que
+// cuadrar. Segunda corrida: 7 sucursales, 0 diferencias.
 
 // v2.325.1 — "IVA cero" NO es "compra exenta", y junio/julio quedan al centavo.
 //

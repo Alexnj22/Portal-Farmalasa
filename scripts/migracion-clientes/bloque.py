@@ -1,14 +1,17 @@
 """Completado de fichas del ERP por bloques.
 
-Reglas acordadas (2026-07-31, revisadas el 2026-08-01 por DTE 2.0):
-  · Consumidor: se completa con las reglas de abajo.
-  · Cualquier OTRA categoría: se completa el distrito SOLO si la dirección lo
-    nombra, nunca por sorteo, y nada más se toca. Hasta DTE 2.0 estas fichas se
-    salteaban enteras porque un distrito inventado en un CCF se declara a
-    Hacienda — eso sigue siendo cierto. Lo que cambió es que ahora el receptor
-    EXIGE distrito, así que dejarla vacía tampoco es neutral: la deja inválida
-    para facturar. Se completa con evidencia, y lo que no, va a una persona
-    (faltantes_dte.json).
+Reglas acordadas (2026-07-31, precisadas el 2026-08-01):
+  · Solo se ESCRIBE la categoría "Consumidor". Cualquier otra se lee y se
+    espeja al portal, pero el bloque NUNCA la escribe en el ERP: los datos de
+    un contribuyente se declaran a Hacienda, y una corrida automática sobre
+    27,000 fichas no es quién para decidirlos.
+  · Esas fichas se corrigen DESDE EL PORTAL: una persona las edita y
+    `empujar_al_erp.py` lleva el cambio al ERP. Detrás de cada dato fiscal
+    queda una decisión humana.
+  · DTE 2.0 exige distrito y teléfono en el receptor, así que lo que le falte a
+    cada ficha para poder facturarle se lista en `faltantes_dte.json` — por
+    categoría, porque a un contribuyente se le exige más. Es una lista de
+    trabajo, no algo que el script vaya a rellenar.
   · Distrito: si la dirección nombra uno del municipio, ese. Si no, pseudo-
     aleatorio DETERMINISTA — hash(id_cliente) % n. Queda repartido por toda la
     lista, pero el mismo cliente saca siempre el mismo, así que el bloque es
@@ -72,8 +75,12 @@ CHECKPOINT = f'{D}/checkpoint.json'
 #   3 · nombre en MAYÚSCULA
 #   4 · el DUI inválido dejó de borrarse por defecto (revertida en 5)
 #   5 · vuelve a borrarse, pero el valor original SIEMPRE queda registrado
-#   6 · DTE 2.0: las fichas que NO son Consumidor dejan de saltearse en seco
-REGLAS = 6
+#   6 · ASIGNADA Y REVERTIDA el 2026-08-01, sin haberse usado nunca: llegó a
+#       completar el distrito de las fichas fiscales con evidencia de la
+#       dirección, y se decidió que el bloque NO escriba una ficha fiscal en
+#       ningún caso. No reutilizar el 6 para otra cosa: el número no se recicla
+#       porque un checkpoint viejo con ese valor significaría otra regla.
+REGLAS = 5
 
 # ── Qué exige el DTE 2.0 en el receptor ──────────────────────────────────────
 # DTE 2.0 (ya vigente) pide distrito y teléfono en el receptor. Eso cambia el
@@ -283,34 +290,6 @@ def planificar(cliente, campos, ops, notas=None):
             nuevos['dui'] = ''
             cambios['dui'] = f'INVÁLIDO {campos["dui"]!r} -> se borra'
 
-    return nuevos, cambios
-
-
-def planificar_fiscal(cliente, campos, ops):
-    """Para las categorías que NO son Consumidor. Núcleo puro, no toca la red.
-
-    Antes estas fichas se salteaban enteras. Con DTE 2.0 eso dejó de ser
-    neutral: el receptor necesita distrito, así que dejarla intacta la deja
-    inválida para facturar. Pero el motivo por el que se salteaban sigue siendo
-    cierto — un distrito SORTEADO en un CCF se declara a Hacienda.
-
-    La salida no es elegir entre las dos: es completar SOLO lo que la dirección
-    prueba. `elegir_distrito` devuelve el motivo, y acá se aceptan únicamente
-    los que empiezan con 'dirección' (nombre completo o abreviatura). El
-    'determinista' —que en consumidores resuelve el 78%— queda expresamente
-    afuera, y esas fichas van a que las mire una persona.
-
-    Nada más se toca: ni el teléfono, ni el DUI, ni el nombre. En una ficha
-    fiscal, un dato de relleno es peor que un dato ausente.
-    """
-    nuevos, cambios = dict(campos), {}
-    if campos.get('municipio') and not campos.get('distrito'):
-        d, motivo, _ = elegir_distrito(cliente['id'], campos.get('direccion', ''),
-                                       ops.get('distrito', []))
-        if d and motivo.startswith('dirección'):
-            etiq = dict(ops.get('distrito', []))
-            nuevos['distrito'] = d
-            cambios['distrito'] = f'{etiq.get(d, d)} ({motivo})'
     return nuevos, cambios
 
 
@@ -738,14 +717,18 @@ def planear_ficha(c, eid, marca, ambiguos, revisiones, faltantes=None):
             'portal': fila_portal(c, eid, campos, ops), 'ops': dict(ops)}
 
     if cat != 'Consumidor':
-        # Ya no se saltea en seco: DTE 2.0 exige distrito y una ficha sin él no
-        # se puede facturar. Pero solo se completa con lo que la dirección
-        # PRUEBA — nunca por sorteo. Ver planificar_fiscal().
-        nuevos, cambios = planificar_fiscal(c, campos, ops)
-        fila['nuevos'], fila['cambios'] = nuevos, cambios
-        fila['estado'] = ('listo' if cambios else
-                          f'SIN EVIDENCIA (categoría {cat}) — no se inventa nada')
-        anotar_faltantes(faltantes, eid, c['name'], cat, nuevos)
+        # El bloque NO escribe una ficha fiscal. Nunca, ni siquiera con
+        # evidencia de la dirección: los datos de un contribuyente se declaran
+        # a Hacienda, y una corrida automática sobre 27,000 fichas no es quién
+        # para decidirlos. Se lee, se espeja al portal, y lo que le falte queda
+        # en faltantes_dte.json.
+        #
+        # El camino para corregirlas es el portal: una persona la edita, y de
+        # ahí `empujar_al_erp.py` la lleva al ERP. Ese trayecto tiene detrás una
+        # decisión humana, que es lo que un dato fiscal necesita.
+        fila['estado'] = (f'SALTADO (categoría {cat}) — se corrige desde el '
+                          f'portal, no acá')
+        anotar_faltantes(faltantes, eid, c['name'], cat, campos)
         return fila
 
     # La semilla del distrito determinista es el id del PORTAL, así que dos
@@ -810,7 +793,7 @@ def aplicar_ficha(f, ck, ambiguos, a):
               f'perdidos={v["perdidos"] or "ninguno"} alterados={len(v["alterados"])}')
         for x in v['alterados']:
             print(f'          ! {x}')
-    elif estado == 'sin cambios' or estado.startswith(('SALTADO', 'SIN EVIDENCIA')):
+    elif estado == 'sin cambios' or estado.startswith('SALTADO'):
         v = {'ok': True, 'perdidos': [], 'alterados': []}
         print(f'ESPEJO   {f["name"][:44]:<46} {estado[:34]}')
     else:
@@ -975,7 +958,7 @@ def main():
         f.get('estado') == 'listo' or f.get('estado') == 'sin cambios'
         or str(f.get('estado')).startswith('SALTADO')))
     print(f'\ncorregidos OK: {ok} · a revisar: {mal}'
-          f' · sin evidencia: {sum(1 for f in plan if "SIN EVIDENCIA" in str(f.get("estado")))}'
+          f' · saltados: {sum(1 for f in plan if "SALTADO" in str(f.get("estado")))}'
           f' · sin cambios: {sum(1 for f in plan if f.get("estado") == "sin cambios")}'
           f' · ya hechos: {sum(1 for f in plan if "YA HECHO" in str(f.get("estado")))}'
           f' · ambiguos: {len(ambiguos)}')

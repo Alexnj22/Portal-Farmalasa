@@ -1,0 +1,816 @@
+{
+ "-1": {
+  "erp_id": "-1",
+  "name": "CLIENTES VARIOS",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "10222": {
+  "erp_id": "10222",
+  "name": "FREDY JOVEL ROSA FABIAN (4)",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "11728": {
+  "erp_id": "11728",
+  "name": "MURCIA FRANCO, NERY GABRIEL",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "correo"
+  ]
+ },
+ "11865": {
+  "erp_id": "11865",
+  "name": "INVERSIONES RODRIGUEZ AYALA, S.A. DE C.V.",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "12829": {
+  "erp_id": "12829",
+  "name": "CENTRO MEDICO INTEGRAL SAN ANTONIO S.A DE C.V",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "13386": {
+  "erp_id": "13386",
+  "name": "MARTA QUELY ORELLANA DE PEREZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "13471": {
+  "erp_id": "13471",
+  "name": "CLARIEL WILFREDO ALFARO MENJIVAR",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "13700": {
+  "erp_id": "13700",
+  "name": "LABORATORIOS VIJOSA, S.A. DE C.V.",
+  "categoria": "Gran Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "13968": {
+  "erp_id": "13968",
+  "name": "FRANKLIN ROSA ABEL, SOLIS MOLINA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "1419": {
+  "erp_id": "1419",
+  "name": "FRANCISCO NOE LEMUS UMAÑA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "sel_giro"
+  ]
+ },
+ "14272": {
+  "erp_id": "14272",
+  "name": "AMILCAR ANTONIO LOPEZ MELARA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "14318": {
+  "erp_id": "14318",
+  "name": "ALVARENGA ALVARENGA FRANCISCO ANTONIO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "nit",
+   "nrc"
+  ]
+ },
+ "15079": {
+  "erp_id": "15079",
+  "name": "FUNERALES LA NUEVA PROTECCION SA DE CV",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "15096": {
+  "erp_id": "15096",
+  "name": "DRA. IRIS INES IGLESIAS",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "15270": {
+  "erp_id": "15270",
+  "name": "JOSE RENE REYES ABREGO",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "15550": {
+  "erp_id": "15550",
+  "name": "JESUS HUMBERTO SANCHEZ PEREZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "15944": {
+  "erp_id": "15944",
+  "name": "DUGLAS ALEXANDER LOPEZ PINEDA [5]",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "15973": {
+  "erp_id": "15973",
+  "name": "NERIS PALMA ORTIZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "16276": {
+  "erp_id": "16276",
+  "name": "GLORIA MARGARITA CORDOVA SERRANO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "16421": {
+  "erp_id": "16421",
+  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "17808": {
+  "erp_id": "17808",
+  "name": "ELMER EVANI ZELAYA CASAMALHUAPA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "18837": {
+  "erp_id": "18837",
+  "name": "OPEN SOLUTIONS SYSTEMS S.A DE C.V",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "19145": {
+  "erp_id": "19145",
+  "name": "SANTOS  CASTANEDA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "19338": {
+  "erp_id": "19338",
+  "name": "NELSY SOFIA GONZALES BARRIENTOS",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "19428": {
+  "erp_id": "19428",
+  "name": "STTEFANY GRISSEL ALVARENGA DE MARAVILLA  (4P)",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "19520": {
+  "erp_id": "19520",
+  "name": "FRANKLIN ROSA ABEL SOLIS MOLINA",
+  "categoria": "(sin categoría)",
+  "faltan": [
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
+ },
+ "19574": {
+  "erp_id": "19574",
+  "name": "JOSE RIGOBERTO MEJIA MENJIVAR",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "19692": {
+  "erp_id": "19692",
+  "name": "NELSON ANIBAL NUÑEZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "direccion"
+  ]
+ },
+ "19713": {
+  "erp_id": "19713",
+  "name": "MAPFRE SEGURO EL SALVADOR, S.A.",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "19954": {
+  "erp_id": "19954",
+  "name": "JOEL ENRIQUE GUARDADO GUARDADO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "20011": {
+  "erp_id": "20011",
+  "name": "NERIS ORTIZ PALMA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "nit",
+   "nrc",
+   "direccion"
+  ]
+ },
+ "20454": {
+  "erp_id": "20454",
+  "name": "CONSTRUCTORA BARUC, S.A. DE C.V.",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "20562": {
+  "erp_id": "20562",
+  "name": "WILFREDO GRANADOS LOPEZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "20935": {
+  "erp_id": "20935",
+  "name": "COFARSAL DE R.L.",
+  "categoria": "Gran Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21081": {
+  "erp_id": "21081",
+  "name": "GERSON ADRIEL ORELLANA AYALA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21083": {
+  "erp_id": "21083",
+  "name": "JOSE LUIS ARGUETA FLORES",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21188": {
+  "erp_id": "21188",
+  "name": "SUSANA MARGARITA GUILLEN DE QUIJADA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21305": {
+  "erp_id": "21305",
+  "name": "REINA GUADALUPE VALLE LEMUS",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21451": {
+  "erp_id": "21451",
+  "name": "DELMY ELIZABETH MANCIA DE VALLE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21688": {
+  "erp_id": "21688",
+  "name": "CAYETANO ANTONIO MELGAR MELGAR",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "21749": {
+  "erp_id": "21749",
+  "name": "JOSE JAIME SALGUERO RECINOS",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "direccion"
+  ]
+ },
+ "21823": {
+  "erp_id": "21823",
+  "name": "JAQUELINE  TEJADA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22119": {
+  "erp_id": "22119",
+  "name": "DELMY ANGELINA VASQUEZ ALFARO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22320": {
+  "erp_id": "22320",
+  "name": "MARIA LUZ LANDAVERDE DE LEMUS",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22438": {
+  "erp_id": "22438",
+  "name": "FUNERARIA AGUILAS DEL NORTE SOCIEDAD ANÓNIMA DE CAPITAL VARIABLE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22659": {
+  "erp_id": "22659",
+  "name": "EVELIN TATIANA AGUILAR VILLEDA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22736": {
+  "erp_id": "22736",
+  "name": "JOSE GERARDO QUIJADA GUTIERREZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22747": {
+  "erp_id": "22747",
+  "name": "JOSE LUIS ORELLANA RUIZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "22776": {
+  "erp_id": "22776",
+  "name": "MARIO ANTONIO RECINOS URIZABAL",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "direccion"
+  ]
+ },
+ "22807": {
+  "erp_id": "22807",
+  "name": "OSCAR HUMBERTO CASTANEDA CAMPOS",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "23198": {
+  "erp_id": "23198",
+  "name": "MANUEL ERNESTO CASTILLO MENJIVAR",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "23437": {
+  "erp_id": "23437",
+  "name": "BLANCA IRIS MARQUEZ DORADEA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "23534": {
+  "erp_id": "23534",
+  "name": "DOUGLAS ALCIDES MONGE HERNANDEZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "23613": {
+  "erp_id": "23613",
+  "name": "VICENTA MENJIVAR MENJIVAR",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "23949": {
+  "erp_id": "23949",
+  "name": "ROBERTO WILLIAM LEMUS GUARDADO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "24052": {
+  "erp_id": "24052",
+  "name": "ELENA MARGOTH PALMA HERNANDEZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "24082": {
+  "erp_id": "24082",
+  "name": "IMPRESSA, S.A. DE C.V.",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "24501": {
+  "erp_id": "24501",
+  "name": "MIGUEL ANGEL  LANDAVERDE SOLORZANO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "sel_giro"
+  ]
+ },
+ "24805": {
+  "erp_id": "24805",
+  "name": "REINA ELIZETH PORTILLO SOLA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "25061": {
+  "erp_id": "25061",
+  "name": "ASOCIACION CLUB DE FUTBOL MARTE SOYAPANGO",
+  "categoria": "Gran Contribuyente",
+  "faltan": [
+   "distrito",
+   "direccion"
+  ]
+ },
+ "25953": {
+  "erp_id": "25953",
+  "name": "FREYSSINET EL SALVADOR SISTEMA DE CONTRUCCION SA .DE C.V",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "26123": {
+  "erp_id": "26123",
+  "name": "GLOBAL CONSTRUCCIONES,SOCIEDAD ANONIMA DE CAPITAL VARIABLE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "26151": {
+  "erp_id": "26151",
+  "name": "MOISES RODOLFO HERNANDEZ ANAYA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "26428": {
+  "erp_id": "26428",
+  "name": "BLANCA CONCEPCION MENDEZ DE CORTEZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "26517": {
+  "erp_id": "26517",
+  "name": "ASOC DE PRODUCTORES AGROPECUARIOS DE NUEVA CONCEPCION DE R.L.",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "26825": {
+  "erp_id": "26825",
+  "name": "MAELSA, S.A DE C.V",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "direccion"
+  ]
+ },
+ "2711": {
+  "erp_id": "2711",
+  "name": "SEBASTIANA SALINAS VDA DE GOMEZ",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "27117": {
+  "erp_id": "27117",
+  "name": "EL ROSARIO SERVICIOS DE SALUD INTEGRAL, SOCIEDAD POR ACCIONES SIMPLIFICADA DE CAPITAL VARIABLE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "27195": {
+  "erp_id": "27195",
+  "name": "LORENA NOHEMY CARRILLO NAVARRETE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "2738": {
+  "erp_id": "2738",
+  "name": "WILLIAM GEOVANY TORRES RAMIREZ (4P)",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "27384": {
+  "erp_id": "27384",
+  "name": "SICON, S.A DE C.V.",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "direccion"
+  ]
+ },
+ "27467": {
+  "erp_id": "27467",
+  "name": "RAMIREZ GIRON SOCIEDAD ANONIMA DE CAPITAL VARIABLE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "2930": {
+  "erp_id": "2930",
+  "name": "ERNESTO ALONSO GARCIA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "3093": {
+  "erp_id": "3093",
+  "name": "BLANCA ELIZABETH AGUILAR ARRUE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "3359": {
+  "erp_id": "3359",
+  "name": "BENEDICTO CASTRO ROMERO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "3533": {
+  "erp_id": "3533",
+  "name": "FLOR MERLYN MEJICANOS AMAYA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "3650": {
+  "erp_id": "3650",
+  "name": "JOSE ANTONIO RAMIREZ PARADA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "3782": {
+  "erp_id": "3782",
+  "name": "CARLOS ANTONIO MENJIVAR",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "3954": {
+  "erp_id": "3954",
+  "name": "OSCAR ALBERTO PEREZ CASTRO(5)",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "4284": {
+  "erp_id": "4284",
+  "name": "FRANCISCO ANTONIO PERAZA ALVARENGA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "4324": {
+  "erp_id": "4324",
+  "name": "FRANCISCO ANTONIO ALVARENGA ALVARENGA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "4373": {
+  "erp_id": "4373",
+  "name": "EDGAR ALFREDO MARTINEZ GONZALEZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "5072": {
+  "erp_id": "5072",
+  "name": "JOSE BAUDILIO MEJIA CARDOZA",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "5187": {
+  "erp_id": "5187",
+  "name": "EDGARD ALEJANDRO HERNANDEZ GUTIERREZ",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "5377": {
+  "erp_id": "5377",
+  "name": "ELVIS STANLEY LEIVA GUARDADO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "6313": {
+  "erp_id": "6313",
+  "name": "ANA IRIS RIVERA DE RIVERA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "6549": {
+  "erp_id": "6549",
+  "name": "LUCIA MARLENE VARELA GUARDADO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "6784": {
+  "erp_id": "6784",
+  "name": "ROSA CANDIDA RUIZ DE PONCE",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "7026": {
+  "erp_id": "7026",
+  "name": "MARIA MAGDALENA GUARDADO DERAS",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "8016": {
+  "erp_id": "8016",
+  "name": "JOSE MANUEL MENJIVAR MENJIVAR",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "8254": {
+  "erp_id": "8254",
+  "name": "CLIENTE FRECUENTE",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "8432": {
+  "erp_id": "8432",
+  "name": "JAQUELINE JANETH MENJIVAR NUÑEZ",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9370": {
+  "erp_id": "9370",
+  "name": "WALTER AMILCAR MANCIA ( 5 )",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9581": {
+  "erp_id": "9581",
+  "name": "ROSA LIDIA RECINOS GUARDADO",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9743": {
+  "erp_id": "9743",
+  "name": "BANCO PROMERICA, S.A.",
+  "categoria": "Gran Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9795": {
+  "erp_id": "9795",
+  "name": "YANIRA ARACELY AGUILAR AYALA (5P)",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9810": {
+  "erp_id": "9810",
+  "name": "....",
+  "categoria": "Consumidor",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9889": {
+  "erp_id": "9889",
+  "name": "DIHARE SA DE CV",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ },
+ "9997": {
+  "erp_id": "9997",
+  "name": "DR. JOSE VALDEMAR FUENTES",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito"
+  ]
+ }
+}

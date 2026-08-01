@@ -28,6 +28,12 @@ JSONL = f'{TMP}/portal_pendiente.jsonl'
 FALLOS = []
 
 
+def limpiar():
+    for f in (bloque.CHECKPOINT, JSONL, f'{TMP}/ambiguos.json',
+              f'{TMP}/revision_manual.json', f'{TMP}/bloque_resultado.json'):
+        os.path.exists(f) and os.remove(f)
+
+
 def check(nombre, cond, detalle=''):
     print(f'  {"✓" if cond else "✗"} {nombre}{"" if cond else "   <-- " + detalle}')
     if not cond:
@@ -415,46 +421,8 @@ salida = correr(no_consumidor, escribir=True)
 check('con las 3 condiciones activas y categoría ≠ Consumidor: CERO POSTs',
       len(erp.posts) == 0, f'{len(erp.posts)} posts')
 check('las fichas quedaron idénticas', erp.reg == antes)
-check('y las reporta como SIN EVIDENCIA en el plan',
-      sum(1 for l in salida.splitlines()
-          if l.startswith('   SIN EVIDENCIA')) == len(no_consumidor))
-
-# ── DTE 2.0: el salto en seco dejó de ser neutral ────────────────────────────
-# Antes no tocar una ficha fiscal era la opción segura. Con DTE 2.0 el receptor
-# necesita distrito, así que dejarla vacía la deja INVÁLIDA para facturar. Pero
-# sortear un distrito en un CCF sigue siendo inaceptable: se declara a Hacienda.
-# La regla nueva completa SOLO con lo que la dirección prueba.
-print()
-etiqueta_dist, value_dist = OPS['distrito'][0][1], OPS['distrito'][0][0]
-
-fiscal = copy.deepcopy(FICHAS[6])
-fiscal['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Contribuyente')
-fiscal['campos'].update({'municipio': '36', 'distrito': '',
-                         'direccion': f'BARRIO EL CENTRO, {etiqueta_dist}'})
-n, cam = bloque.planificar_fiscal({'id': 1}, fiscal['campos'], OPS)
-check('ficha fiscal cuya dirección NOMBRA el distrito: se completa',
-      n['distrito'] == value_dist and 'distrito' in cam, str(cam))
-check('y no toca absolutamente nada más',
-      {k for k in set(fiscal['campos']) | set(n)
-       if fiscal['campos'].get(k) != n.get(k)} == {'distrito'})
-
-mudo = copy.deepcopy(fiscal)
-mudo['campos'].update({'direccion': 'SIN NINGUNA PISTA AQUI', 'telefono1': '',
-                       'dui': DUI_MALO})
-n, cam = bloque.planificar_fiscal({'id': 1}, mudo['campos'], OPS)
-check('ficha fiscal cuya dirección NO dice: NO se sortea distrito',
-      'distrito' not in cam and not n['distrito'], str(cam))
-check('tampoco se le rellena el teléfono ni se le borra el DUI '
-      '(en una ficha fiscal, relleno es peor que ausencia)',
-      cam == {}, str(cam))
-
-# El contraste es el punto: la MISMA dirección muda, en un consumidor, sí saca
-# distrito por sorteo — que es el 78% de los casos.
-consumidor = dict(mudo['campos'])
-consumidor['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Consumidor')
-_, cam_c = bloque.planificar({'id': 1}, consumidor, OPS)
-check('la MISMA dirección muda, en un consumidor, sí saca distrito determinista',
-      'determinista' in cam_c.get('distrito', ''), str(cam_c))
+check('y las reporta como SALTADO en el plan',
+      sum(1 for l in salida.splitlines() if l.startswith('   SALTADO')) == len(no_consumidor))
 
 # Lo que quede incompleto tiene que quedar listado: un NIT que no está no se
 # deduce de ningún lado, hay que pedírselo al cliente.
@@ -477,6 +445,41 @@ check('un contribuyente SÍ se espeja al portal aunque no se edite',
 check('y el espejo trae su categoría real, no "Consumidor"',
       all(e['categoria'] in ('Contribuyente', 'Gran Contribuyente') for e in esp),
       str([e.get('categoria') for e in esp]))
+
+# ── El bloque NUNCA escribe una ficha fiscal ─────────────────────────────────
+# Ni siquiera cuando podría: los datos de un contribuyente se declaran a
+# Hacienda, y una corrida automática sobre 27,000 fichas no es quién para
+# decidirlos. Se corrigen desde el portal, donde detrás de cada cambio hay una
+# persona, y de ahí `empujar_al_erp.py` los lleva al ERP.
+print()
+etiqueta_dist = OPS['distrito'][0][1]
+con_pista = []
+for f in FICHAS[6:8]:
+    g = copy.deepcopy(f)
+    g['campos']['categoria'] = next(v for v, t in OPS['categoria'] if t == 'Contribuyente')
+    # Dirección que SÍ nombra el distrito, y municipio puesto: para un
+    # consumidor esto dispararía la corrección con evidencia fuerte.
+    g['campos'].update({'municipio': '36', 'distrito': '',
+                        'direccion': f'BARRIO EL CENTRO, {etiqueta_dist}'})
+    con_pista.append(g)
+
+limpiar()
+erp = montar(con_pista)
+antes = copy.deepcopy(erp.reg)
+correr(con_pista, escribir=True)
+check('aunque la dirección NOMBRE el distrito, una ficha fiscal no se escribe',
+      len(erp.posts) == 0, f'{len(erp.posts)} POSTs')
+check('y queda byte por byte como estaba', erp.reg == antes)
+
+# El contraste es el punto: la MISMA dirección, en un consumidor, sí se corrige.
+igual_consumidor = copy.deepcopy(con_pista[0])
+igual_consumidor['campos']['categoria'] = next(
+    v for v, t in OPS['categoria'] if t == 'Consumidor')
+limpiar()
+erp2 = montar([igual_consumidor])
+correr([igual_consumidor], escribir=True)
+check('la MISMA dirección, en un consumidor, SÍ se corrige',
+      len(erp2.posts) == 1, f'{len(erp2.posts)} POSTs')
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -612,12 +615,6 @@ print('\n7. REINTENTO DEL GLITCH DEL ERP\n')
 # ni siquiera su JSON— y el mismo payload entró a la primera al reintentarlo.
 GLITCH = 'Proceso no encontrado'
 DUPLICADO = '{"typeinfo":"Error","msg":"Ya se registro un cliente con estos datos!"}'
-
-
-def limpiar():
-    for f in (bloque.CHECKPOINT, JSONL, f'{TMP}/ambiguos.json',
-              f'{TMP}/revision_manual.json', f'{TMP}/bloque_resultado.json'):
-        os.path.exists(f) and os.remove(f)
 
 
 for cuerpo, reintentable, motivo in (

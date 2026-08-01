@@ -10,25 +10,34 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 
 ## 1. Dónde estamos
 
+<!-- ESTADO:INICIO -->
 ```
-catálogo del ERP        27,591 fichas   (crece: 27,551 el 31-jul)
-procesadas              2,073 fichas    (checkpoint.json)
-portadas al portal      1,837 de 24,530 (customers.erp_id no nulo)
-pendientes              25,518          (51 bloques de 500)
+catálogo del ERP        27,593 fichas
+procesadas               2,095 fichas    (checkpoint.json)
+portadas al portal       1,837 de 24,531  (customers.erp_id no nulo)
+  de ellas con distrito  1,738
+pendientes              25,577          (52 bloques de 500)
 ```
 
-Bloques cerrados: el primero (por nombre, desde el portal), **erp 283–1000** y
-**erp 1001–1500**, los dos últimos con `--una-pasada`.
+**Verificadas OK: 2,095 · a revisar: 0.** El frente secuencial va por `erp_id 2,017`; hay 79 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-| bloque | OK | sin cambios | saltados | a revisar | rechazos |
-|---|---|---|---|---|---|
-| erp 283–1000 | 481 | 17 | 2 | 0 | 0 |
-| erp 1001–1500 | 471 | 28 | 1 | 0 | 0 |
-| erp 1501–2000 | 473 | 27 | 0 | 0 | 0 |
+`revision_manual.json`: **49 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
-**5 fichas están reencoladas a propósito** (161, 176, 380, 1641, 1791): se les
-borró la entrada del checkpoint para que el próximo bloque las rehaga con el
-matcher corregido. Por eso "procesadas" dice 2,073 y no 2,078.
+`faltantes_dte.json`: **99 fichas** no se pueden facturar todavía bajo DTE 2.0, 83 de ellas fiscales.
+Les falta: distrito 99 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2 · telefono1 1 · departamento 1 · municipio 1.
+
+<sub>Generado por `python3 estado.py --escribir`. No editar a mano: los números se generan, las decisiones se escriben.</sub>
+<!-- ESTADO:FIN -->
+
+Bloques cerrados: el primero (por nombre, desde el portal) y los
+secuenciales desde `erp 283`, todos con `--una-pasada` salvo el primero.
+Cero campos perdidos y cero alterados en todo lo procesado.
+
+**Hay fichas reencoladas a propósito** cuando se corrige una regla: se les
+borra la entrada del checkpoint para que el próximo bloque las rehaga. Por
+eso "procesadas" puede bajar de un momento a otro — es intencional, y el
+motivo queda en el commit que lo hizo.
+
 
 Cero campos perdidos y cero alterados en las 1,580 fichas acumuladas. En el
 bloque 3 se estrenó en vivo la rama del salto con la ficha `erp 1419`

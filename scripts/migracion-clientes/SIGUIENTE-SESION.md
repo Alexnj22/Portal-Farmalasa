@@ -10,20 +10,35 @@ Retomá la migración de fichas de clientes ERP ↔ portal.
 reglas, lo que hay que saber del ERP y las decisiones abiertas. Está escrito
 para retomar sin contexto previo.
 
-Dónde quedó (2026-08-01, 21:00 UTC): **2,073 fichas procesadas de 27,591**,
-1,837 clientes en el portal con datos del ERP, **cero campos perdidos y cero
-alterados** en cuatro bloques. Quedan 25,518 fichas = 51 bloques.
+**El estado exacto está en el README §1**, en el bloque generado entre los
+marcadores `ESTADO:INICIO/FIN`, o corriendo `python3 estado.py`. No lo repito
+acá a propósito: un número escrito a mano en dos lugares se desincroniza, y este
+mismo archivo llegó a decir "585 fichas procesadas" estando cuatro bloques
+atrás.
+
+Lo que no cambia bloque a bloque: **cero campos perdidos y cero alterados** en
+todo lo procesado, y la verificación relee cada ficha después de escribirla.
 
 Antes de tocar nada: `python3 probar_offline.py` tiene que pasar en verde (162
 comprobaciones, no toca el ERP ni la base) y `python3 refrescar_catalogo.py`
-para actualizar el índice.
+para actualizar el índice. **El estado exacto lo da `python3 estado.py`** — no
+te fíes de los números escritos en prosa, fíjate en el bloque generado del
+README §1.
 
 ## Correr un bloque
 
 ```bash
 python3 bloque.py --desde-erp 500 --escribir --una-pasada   # ~45 min
 python3 aplicar_espejo.py --aplicar                          # espeja al portal
+python3 estado.py --escribir                                 # actualiza el README
 ```
+
+**El tercer comando no es opcional.** El estado del README se generaba a mano y
+por eso envejecía: llegó a decir 1,085 cuando iban 2,073, y este mismo prompt
+decía 585 estando cuatro bloques atrás. Un número viejo se lee igual que uno
+correcto, así que nadie lo nota. Ahora se regenera de los datos vivos —
+checkpoint, catálogo y portal— entre los marcadores `ESTADO:INICIO/FIN`. Los
+NÚMEROS se generan, las DECISIONES se escriben.
 
 **No hace falta simular antes** — decidido el 2026-08-01 y explicado en el
 README §3. Sí conviene simular si cambiaste una regla de `planificar`.

@@ -11,16 +11,24 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 ## 1. Dónde estamos
 
 ```
-catálogo del ERP        27,575 fichas   (crece: 27,551 el 31-jul, 27,569 al alba)
-procesadas              1,085 fichas    (checkpoint.json)
-portadas al portal      993 de 24,509   (customers.erp_id no nulo)
-pendientes              26,576          (54 bloques de 500)
+catálogo del ERP        27,591 fichas   (crece: 27,551 el 31-jul)
+procesadas              1,580 fichas    (checkpoint.json)
+portadas al portal      1,422 de 24,509 (customers.erp_id no nulo)
+pendientes              26,092          (53 bloques de 500)
 ```
 
-Bloques cerrados: el primero (por nombre, desde el portal) y **erp 283–1000**,
-el primero corrido con `--una-pasada`. Ese segundo bloque: 481 corregidos OK,
-17 sin cambios, 2 saltados, **0 a revisar, 0 rechazos, 0 reintentos**. Cero
-campos perdidos y cero alterados en las 1,085 fichas acumuladas.
+Bloques cerrados: el primero (por nombre, desde el portal), **erp 283–1000** y
+**erp 1001–1500**, los dos últimos con `--una-pasada`.
+
+| bloque | OK | sin cambios | saltados | a revisar | rechazos |
+|---|---|---|---|---|---|
+| erp 283–1000 | 481 | 17 | 2 | 0 | 0 |
+| erp 1001–1500 | 471 | 28 | 1 | 0 | 0 |
+
+Cero campos perdidos y cero alterados en las 1,580 fichas acumuladas. En el
+bloque 3 se estrenó en vivo la rama del salto con la ficha `erp 1419`
+(FRANCISCO NOE LEMUS UMAÑA, Contribuyente): no se tocó en el ERP y sí se espejó
+al portal, que es el comportamiento correcto.
 
 Medición real: **1.37s por petición**, ~5.4s por ficha con las pausas. Un bloque
 de 500 son ~45 min y el catálogo completo ~34 horas.

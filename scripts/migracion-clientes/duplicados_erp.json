@@ -1,0 +1,249 @@
+[
+ {
+  "nombre_normalizado": "",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "9810",
+   "19575"
+  ],
+  "nombres_crudos": [
+   " .... ",
+   " ..... "
+  ]
+ },
+ {
+  "nombre_normalizado": "BLANCA CONCEPCION MENDEZ DE CORTEZ",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "26428",
+   "11516"
+  ],
+  "nombres_crudos": [
+   " BLANCA CONCEPCION MENDEZ DE CORTEZ ",
+   " BLANCA CONCEPCION MENDEZ DE CORTEZ "
+  ]
+ },
+ {
+  "nombre_normalizado": "CONSTRUCTORA BARUC  S A  DE C V",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "10136",
+   "20454"
+  ],
+  "nombres_crudos": [
+   " CONSTRUCTORA BARUC, S.A. DE C.V. ",
+   " CONSTRUCTORA BARUC, S.A. DE C.V. "
+  ]
+ },
+ {
+  "nombre_normalizado": "ELSY YANIRA MANCIA SERRANO DE REYES",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "21793",
+   "25412"
+  ],
+  "nombres_crudos": [
+   " ELSY YANIRA\tMANCIA SERRANO DE REYES ",
+   " ELSY YANIRA MANCIA SERRANO DE REYES "
+  ]
+ },
+ {
+  "nombre_normalizado": "EVELIN TATIANA AGUILAR VILLEDA",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "23426",
+   "22659"
+  ],
+  "nombres_crudos": [
+   " EVELIN  TATIANA AGUILAR VILLEDA ",
+   " evelin tatiana aguilar villeda "
+  ]
+ },
+ {
+  "nombre_normalizado": "FELIX ANTONIO RECINOS CARCAMO",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "22965",
+   "22971"
+  ],
+  "nombres_crudos": [
+   "  FELIX ANTONIO RECINOS CARCAMO ",
+   " FELIX ANTONIO RECINOS CARCAMO "
+  ]
+ },
+ {
+  "nombre_normalizado": "FLOR DE MARIA GUARDADO GUARDADO",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "3883",
+   "8598"
+  ],
+  "nombres_crudos": [
+   " FLOR DE MARIA GUARDADO GUARDADO ",
+   " FLOR DE MARIA GUARDADO GUARDADO "
+  ]
+ },
+ {
+  "nombre_normalizado": "JAQUELINE TEJADA",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "21823",
+   "10505"
+  ],
+  "nombres_crudos": [
+   " JAQUELINE  TEJADA ",
+   " JAQUELINE TEJADA "
+  ]
+ },
+ {
+  "nombre_normalizado": "JOSE GERARDO QUIJADA GUTIERREZ",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "15697",
+   "22736"
+  ],
+  "nombres_crudos": [
+   " JOSE GERARDO QUIJADA GUTIERREZ ",
+   " JOSE GERARDO QUIJADA GUTIERREZ "
+  ]
+ },
+ {
+  "nombre_normalizado": "JOSE MANUEL MENJIVAR MENJIVAR",
+  "fichas": 2,
+  "difieren_en": "solo mayúsculas/minúsculas",
+  "erp_ids": [
+   "23830",
+   "8016"
+  ],
+  "nombres_crudos": [
+   " Jose manuel menjivar menjivar  ",
+   " JOSE MANUEL MENJIVAR MENJIVAR "
+  ]
+ },
+ {
+  "nombre_normalizado": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "16421",
+   "10290"
+  ],
+  "nombres_crudos": [
+   " JOSE MARDOQUEO RAMIREZ MEJIA ",
+   " JOSE MARDOQUEO RAMIREZ MEJIA "
+  ]
+ },
+ {
+  "nombre_normalizado": "LORENA NOHEMY CARRILLO NAVARRETE",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "27195",
+   "14268"
+  ],
+  "nombres_crudos": [
+   " LORENA NOHEMY CARRILLO NAVARRETE ",
+   " LORENA NOHEMY CARRILLO NAVARRETE "
+  ]
+ },
+ {
+  "nombre_normalizado": "MANUEL ARTURO AYALA MEJIA",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "20331",
+   "20795"
+  ],
+  "nombres_crudos": [
+   " MANUEL  ARTURO AYALA MEJIA  ",
+   " MANUEL ARTURO AYALA MEJIA "
+  ]
+ },
+ {
+  "nombre_normalizado": "MARIA LUZ LANDAVERDE DE LEMUS",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "21801",
+   "22320"
+  ],
+  "nombres_crudos": [
+   " MARIA LUZ\tLANDAVERDE DE LEMUS ",
+   " maria luz landaverde de lemus "
+  ]
+ },
+ {
+  "nombre_normalizado": "MOISES RODOLFO HERNANDEZ ANAYA",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "26151",
+   "3906"
+  ],
+  "nombres_crudos": [
+   " MOISES RODOLFO HERNANDEZ ANAYA ",
+   " MOISES RODOLFO HERNANDEZ ANAYA "
+  ]
+ },
+ {
+  "nombre_normalizado": "NURIA ROXANA VILLANUEVA",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "21807",
+   "21776"
+  ],
+  "nombres_crudos": [
+   "  NURIA ROXANA VILLANUEVA ",
+   " NURIA ROXANA VILLANUEVA "
+  ]
+ },
+ {
+  "nombre_normalizado": "SANTOS CASTANEDA",
+  "fichas": 2,
+  "difieren_en": "difieren en acentos o puntuación",
+  "erp_ids": [
+   "19145",
+   "11174"
+  ],
+  "nombres_crudos": [
+   " SANTOS  CASTANEDA ",
+   " SANTOS CASTANEDA "
+  ]
+ },
+ {
+  "nombre_normalizado": "WILLIAM ENRIQUE ALEMAN ALFARO",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "7280",
+   "7284"
+  ],
+  "nombres_crudos": [
+   " WILLIAM ENRIQUE ALEMAN ALFARO ",
+   " WILLIAM ENRIQUE ALEMAN ALFARO "
+  ]
+ },
+ {
+  "nombre_normalizado": "YNES ANTONIO ARDON",
+  "fichas": 2,
+  "difieren_en": "solo espacios",
+  "erp_ids": [
+   "22148",
+   "21974"
+  ],
+  "nombres_crudos": [
+   "  YNES ANTONIO ARDON ",
+   " YNES ANTONIO ARDON  "
+  ]
+ }
+]

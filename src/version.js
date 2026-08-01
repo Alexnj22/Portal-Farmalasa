@@ -16,7 +16,47 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.316.0';
+export const APP_VERSION = '2.317.0';
+
+// v2.317.0 — Migración de fichas de clientes: la herramienta, y el espacio en
+// blanco que un `.strip()` puede abrir.
+//
+// La herramienta (`scripts/migracion-clientes/`) completa y corrige las fichas
+// del ERP por bloques y las espeja a `customers`. 92 fichas procesadas, portadas
+// 93 → 179, con cero campos perdidos y cero alterados. El estado vive en
+// `checkpoint.json`, así que retomar es volver a correr.
+//
+// El hallazgo que justifica el resto: **una ficha se negaba a guardar y creímos
+// que era el distrito.** Perseguimos el valor, el departamento, un checkbox y la
+// cascada de AJAX. Ninguna. El ERP nos venía dando el motivo en cada intento y
+// nunca leímos el cuerpo de la respuesta:
+//
+//     {"typeinfo":"Error","msg":"Ya se registro un cliente con estos datos!"}
+//
+// Nuestro parser hacía `.strip()` a cada valor antes de reenviarlo. El nombre de
+// esa ficha era `' NURIA ROXANA VILLANUEVA'` y ese espacio inicial es LO ÚNICO
+// que la distingue de otra ficha con el mismo nombre. Al recortarlo colisionaban
+// y el ERP rechazaba el guardado **entero** — por eso tampoco se podía cambiar
+// `apunte`. Ahora los valores viajan crudos y se lee siempre el JSON de
+// respuesta. Un rechazo se ve en pantalla y va a la lista de purga en vez de
+// perderse.
+//
+// De ahí salieron tres cosas más. **Los ids de distrito del ERP no son
+// globales**: van por (departamento, municipio), y el `8` es MEJICANOS en San
+// Salvador y DULCE NOM MARÍA en Chalatenango — en el portal se guarda el nombre,
+// nunca el id. **El checkpoint tenía versión de reglas ausente**, así que una
+// regla nueva no se habría aplicado nunca a lo ya procesado. Y **el DUI inválido
+// dejó de borrarse**: al simular 500 fichas aparecieron 10 y, a diferencia del
+// relleno tipo `00000003-0`, todos tenían estructura de DUI real en fichas de
+// personas con nombre y apellido. Son DUI buenos con un dígito mal tecleado;
+// borrarlos —~690 en todo el catálogo— destruía un dato recuperable. Ahora se
+// reportan a `revision_manual.json`.
+//
+// RPC nuevo `aplicar_espejo_erp` (20260801044543): `customers` no tenía NINGUNA
+// policy de escritura, así que el espejo entra por una función DEFINER que
+// empareja por `search_name`, nunca inserta y omite los nombres repetidos. Se
+// eligió sobre la service-role key por ser el único camino de escritura en vez
+// de una llave que puede todo.
 
 // v2.316.0 — `customers` deja de ser un catálogo de nombres.
 //

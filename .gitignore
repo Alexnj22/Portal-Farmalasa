@@ -34,3 +34,7 @@ dist-ssr
 /playwright-report
 /test-results
 /coverage
+
+# Migración de clientes: secreto (cookie de sesión del ERP) y volcado regenerable
+scripts/migracion-clientes/erp.env
+scripts/migracion-clientes/rep_cli.html

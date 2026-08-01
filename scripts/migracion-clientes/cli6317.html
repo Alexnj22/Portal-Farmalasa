@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editar Cliente - Sistema</title>
+<link href="css/bootstrap.min.css" rel="stylesheet"><link href="font-awesome/css/font-awesome.css" rel="stylesheet"><link href="css/plugins/iCheck/custom.css" rel="stylesheet"><link href="css/plugins/chosen/chosen.css" rel="stylesheet"><link href="css/plugins/select2/select2.css" rel="stylesheet"><link href="css/plugins/toastr/toastr.min.css" rel="stylesheet"><link href="css/plugins/jQueryUI/jquery-ui-1.10.4.custom.min.css" rel="stylesheet"><link href="css/plugins/jqGrid/ui.jqgrid.css" rel="stylesheet"><link href="css/plugins/dataTables/dataTables.bootstrap.css" rel="stylesheet"><link href="css/plugins/dataTables/dataTables.responsive.css" rel="stylesheet"><link href="css/plugins/dataTables/dataTables.tableTools.min.css" rel="stylesheet"><link href="css/plugins/datapicker/datepicker3.css" rel="stylesheet"><link href="css/animate.css" rel="stylesheet"><link href="css/style.css" rel="stylesheet"><link rel="stylesheet" type="text/css" href="css/spinner.css">
+<link rel="stylesheet" type="text/css" href="css/preloader.css">
+<link href="css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
+</head>
+<style>
+    .spinner {
+        width: 3em;
+        height: 3em;
+        border-radius: 50%;
+        border-top: 0.35em solid #007bff; /* Azul */
+        border-right: 0.4em solid transparent;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .mensaje-requerido{
+        color: red;
+    }
+</style>
+
+<script src="js/constantes.js?v=1753886214"></script>
+<!-- para establer constantes para el JS -->
+ <script>
+const CANTIDAD_DECIMAL = 2;
+ </script>
+
+<!-- Preloader -->
+<div class="preloader flex-column justify-content-center align-items-center">
+    <div class="spinner-border text-success spinner-large" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<input type="hidden" id="id_sucursal_dom" value="4"><nav class="navbar-default navbar-static-side" role="navigation">
+  <div class="sidebar-collapse">
+    <ul class="nav" id="side-menu">
+      <li class="nav-header">
+        <div class="dropdown profile-element"> <span>
+          <img alt="image" class="img-responsive" src="img/logo_salud.png" width="180px" style="margin-left: -3%;">
+        </span>
+      </div>
+      <div class="logo-element">
+        PB
+      </div>
+    </li>
+    <!--li-->
+    <!--a href="index.html"><i class="fa fa-archive"></i> <span class="nav-label">Productos</span> <span class="fa arrow"></span></a-->
+    <li class='active'><a href='dashboard.php'><i class='fa fa-star-o'></i> <span class='nav-label'>Inicio</span></a></li><li><a href='dashboard.php'><i class='fa fa-users'></i></i> <span class='nav-label'>Clientes</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_cliente.php'>Admin Clientes</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-truck'></i></i> <span class='nav-label'>Proveedores</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_proveedor.php'>Admin Proveedores</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-user-md'></i></i> <span class='nav-label'>Médicos</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_medico.php'>Admin médicos</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-database'></i></i> <span class='nav-label'>Ubicaciones</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_ubicacion.php'>Ubicaciones</a></li><li><a href='admin_estante.php'>Estantes</a></li><li><a href='admin_asignacion.php'>Admin Asignación</a></li><li><a href='admin_movimiento_asignacion.php'>Movimientos</a></li><li><a href='admin_transferencia.php'>Admin transferencias</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-archive'></i></i> <span class='nav-label'>Productos</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_producto.php'>Admin Productos</a></li><li><a href='admin_categoria.php'>Admin Categorías</a></li><li><a href='admin_presentacion.php'>Admin Presentaciones</a></li><li><a href='depuracion.php'>Depuracion</a></li><li><a href='admin_laboratorio.php'>Admin Laboratorios</a></li><li><a href='admin_promocion.php'>Admin Promociones</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-book'></i></i> <span class='nav-label'>Libros Iva</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='generar_libro_ventas_consumidor.php'>Ventas a consumidor</a></li><li><a href='generar_libro_ventas_contribuyente.php'>Ventas a contribuyentes</a></li><li><a href='generar_libro_compras.php'>Libro de compras</a></li><li><a href='generar_documentos_anulados.php'>Anexo de documentos anulados</a></li><li><a href='generar_libro_percepcion.php'>Anexo Percepción </a></li><li><a href='generar_libro_retencion.php'>Anexo Retención</a></li><li><a href='comprobante_retencion.php'>Agregar comprobantes retencion</a></li><li><a href='nota_credito_compras.php'>Nota crédito compras</a></li><li><a href='generar_libro_sujeto_excluido.php'>Reporte Sujeto Excuido</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-cart-arrow-down'></i></i> <span class='nav-label'>Compras</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_compras_fecha.php'>Admin Compras</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-table'></i></i> <span class='nav-label'>Inventario</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='ingreso_inventario.php'>Cargas de Inventario</a></li><li><a href='descargo_inventario.php'>Descargos de Inventario</a></li><li><a href='admin_stock.php'>Consultar Stock</a></li><li><a href='ajuste_inventario.php'>Ajuste de Inventario</a></li><li><a href='admin_ajuste.php'>Admin Ajuste</a></li><li><a href='admin_movimiento_pendiente.php'>Reposición de producto</a></li><li><a href='admin_lotes.php'>Administrar lotes</a></li><li><a href='stock_otras_sucursales.php'>Stock otras sucursales</a></li><li><a href='admin_minimo_maximo.php'>Modificar Minimos y Maximos</a></li><li><a href='por_vencer.php'>Productos por vencer</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-money'></i></i> <span class='nav-label'>Facturación</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='venta.php?preventa=1'>Pre Venta</a></li><li><a href='venta.php'>Venta</a></li><li><a href='admin_factura_rangos.php'>Admin Facturas</a></li><li><a href='admin_pendiente_rangos.php'>Facturas Pendientes</a></li><li><a href='admin_autorizacion.php'>Admin Autorización</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-bank'></i></i> <span class='nav-label'>Bancos</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_banco.php'>Admin Bancos</a></li><li><a href='admin_mov_cta_banco.php'>Admin Movimientos</a></li></ul> </li><li><a href='dashboard.php'><i class=' fa fa-credit-card'></i></i> <span class='nav-label'>Cuentas por Cobrar</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_credito.php'>Admin Créditos</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-balance-scale'></i></i> <span class='nav-label'>Cuentas por Pagar</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_cxp_p.php'>Admin cuentas por pagar</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-money'></i></i> <span class='nav-label'>Caja</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_corte.php'>Admin Corte</a></li><li><a href='admin_caja.php'>Admin Caja</a></li><li><a href='admin_movimiento_caja.php'>Admin Movimiento Caja</a></li><li><a href='resumen_vale.php'>Resumen de vales</a></li><li><a href='apertura_caja.php'>Apertura de caja</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-file-pdf-o'></i></i> <span class='nav-label'>Cotizaciones</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_cotizacion.php'>Admin Cotizaciones</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-file'></i></i> <span class='nav-label'>Pedidos</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_pedido.php'>Admin Pedidos</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-exchange'></i></i> <span class='nav-label'>Traslados</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_traslados.php'>Admin Traslado</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-file-pdf-o'></i></i> <span class='nav-label'>Reportes</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='generar_hoja.php'>Hoja de conteo</a></li><li><a href='reporte_kardex.php'>Kardex</a></li><li><a href='ver_reporte_inventario.php'>Inventario</a></li><li><a href='ver_libro_compras.php'>Libro de compras </a></li><li><a href='reporte_kardex_general.php'>Kardex General</a></li><li><a href='ver_libro_ventas_a_contribuyente.php'>Ventas a Contribuyentes</a></li><li><a href='ver_libro_ventas_a_consumidores.php'>Ventas a Consumidores</a></li><li><a href='ver_reporte_fiscal.php'>Reporte Fiscal</a></li><li><a href='ticket_dia.php'>Ticket de auditoria</a></li><li><a href='ver_reporte_utilidad.php'>Reporte de utilidades</a></li><li><a href='ver_reporte_reposicion.php'>Reporte de Reposicion</a></li><li><a href='ver_reporte_utilidades_diarias.php'>Reporte de utilidades Por dia</a></li><li><a href='ventas_vendedor.php'>Reporte ventas por vendedor</a></li><li><a href='ventas_rango.php'>Detalle ventas por rango</a></li><li><a href='reportez.php'>Reporte Z</a></li><li><a href='ver_producto_precios.php'>Reporte Producto precios</a></li><li><a href='ver_creditos_emitidos.php'>Reporte creditos emitidos</a></li><li><a href='ver_ventas_perdidas.php'>Reporte Ventas perdidas</a></li><li><a href='ventas_vendedor_hora.php'>Reporte ventas por fecha y hora</a></li><li><a href='productos_precios.php'>Productos Precios</a></li><li><a href='cuentas_por_pagar.php'>Cuentas por pagar</a></li><li><a href='productos_minimo_maximo.php'>Excel minimos y maximos</a></li><li><a href='reporte_productos_mas_vendidos.php'>Productos mas vendidos</a></li><li><a href='ventas_cliente.php'>Ventas por cliente</a></li><li><a href='reporte_productos_por_vencer.php'>Reporte productos por vencer</a></li><li><a href='reporte_clientes.php'>Reporte Clientes</a></li><li><a href='ventas_tipo.php'>Reporte tipo pago</a></li><li><a href='generar_kardex_lote.php'>Kardex por lote</a></li><li><a href='generar_bitacora_ventas_con_receta.php'>Bitacora de productos de venta con receta</a></li><li><a href='reporte_producto_antibiotico.php'>Reporte de producto antibiotico</a></li><li><a href='reporte_producto_regulado.php'>Reporte de producto regulado</a></li><li><a href='ventas_producto_vendedor.php'>Reporte de ventas por producto y vendedor</a></li><li><a href='reporte_ventas_laboratorio.php'>Reporte ventas por laboratorio</a></li><li><a href='ver_reporteventasconsolidado.php'>Reporte de ventas consolidadas</a></li><li><a href='ver_reportecomprasconsolidado.php'>Reporte de compras consolidadas</a></li><li><a href='reporte_productos_menos_vendidos.php'>Reporte productos menos vendidos</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-gears'></i></i> <span class='nav-label'>Utilidades</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_usuarios.php'>Admin Usuario</a></li><li><a href='admin_empresa.php'>Admin Empresa</a></li><li><a href='admin_correlativos.php'>Actulizar Correlativo</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-paperclip'></i></i> <span class='nav-label'>Activo</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_activo.php'>Activo</a></li></ul> </li><li><a href='dashboard.php'><i class='fa fa-wrench'></i></i> <span class='nav-label'>Config Activos</span> <span class='fa arrow'></span></a> <ul class='nav nav-second-level'><li><a href='admin_tipo_activo.php'>Admin Tipo Activo</a></li><li><a href='admin_propiedades.php'>Admin Propiedades</a></li><li><a href='admin_fuentes.php'>Admin Fuentes</a></li><li><a href='admin_origen.php'>Admin Origen</a></li><li><a href='admin_unidad.php'>Admin Unidades</a></li><li><a href='admin_clasificacion.php'>Admin Clasificacion</a></li></ul> </li></div>
+</nav>
+<div id="page-wrapper" class="gray-bg">
+  <div class="row border-bottom">
+    <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
+      <div class="navbar-header">
+        <a class="navbar-minimalize minimalize-styl-2 btn btn-primary"><i class="fa fa-bars"></i> </a>
+      </div>
+            <ul class="nav navbar-top-links navbar-right">
+        <li>
+        
+        <span class='badge badge-secondary'  id="id_sucursal_descripcion">Bienvenido</span>
+  
+        </li>
+
+        <li>
+            <div class="dropdown">
+                <button class="btn dropdown-toggle" type="button" data-toggle="dropdown"> Opciones
+                <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                                            <li>
+                            <a data-toggle="modal" data-target="#globalModal" href="cambio_sesion.php" data-refresh='true'><i class="fa fa-share-square-o"></i> Cambiar Sala</a>
+                        </li>
+                                        <li><a href="logout.php">
+                        <i class="fa fa-sign-out"></i> Salir
+                    </a></li>
+                </ul>
+            </div>
+        </li>
+      </ul>
+
+    </nav>
+  </div>
+  <script>
+  function actualizarIdSucursal() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'id_sucursal.php', true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          var data = JSON.parse(xhr.responseText);
+          var id_sucursal = data.id_sucursal;
+          var descripcion_sucursal = data.id_sucursal_descripcion;
+
+          // Actualiza el contenido del span
+          document.getElementById('id_sucursal_descripcion').innerText = descripcion_sucursal;
+
+          // Llama a la función de cambiar color según la sucursal
+          cambiarColorSegunSucursal(id_sucursal);
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  setInterval(actualizarIdSucursal, 5000); // Llama a la función actualizarIdSucursal cada 5 segundos (5000 milisegundos)
+
+  // Llama a la función de actualización al cargar la página
+  actualizarIdSucursal();
+
+  // Función para cambiar color según la sucursal
+  function cambiarColorSegunSucursal(id_sucursal) {
+    var spanIdSucursalDescripcion = document.getElementById('id_sucursal_descripcion');
+
+    // Elimina todas las clases de color antes de asignar el color correspondiente
+    spanIdSucursalDescripcion.classList.remove('badge-primary', 'badge-success', 'badge-danger', 'badge-warning', 'badge-info', 'badge-dark', 'badge-secondary');
+
+    // Asigna el color correspondiente a la sucursal
+    switch (id_sucursal) {
+      case '1':
+        spanIdSucursalDescripcion.classList.add('badge-primary'); // Color para la sucursal 1
+        break;
+      case '2':
+        spanIdSucursalDescripcion.classList.add('badge-success'); // Color para la sucursal 2
+        break;
+      case '3':
+        spanIdSucursalDescripcion.classList.add('badge-danger'); // Color para la sucursal 3
+        break;
+      case '4':
+        spanIdSucursalDescripcion.classList.add('badge-warning'); // Color para la sucursal 4
+        break;
+      case '5':
+        spanIdSucursalDescripcion.classList.add('badge-info'); // Color para la sucursal 5
+        break;
+      case '6':
+        spanIdSucursalDescripcion.classList.add('badge-dark'); // Color para la sucursal 6
+        break;
+      default:
+        spanIdSucursalDescripcion.classList.add('badge-secondary'); // Color por defecto
+    }
+  }
+</script>	<div class="row wrapper border-bottom white-bg page-heading">
+		<div class="col-lg-2">
+		</div>
+	</div>
+	<div class="wrapper wrapper-content  animated fadeInRight">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="ibox">
+					                    <div class="ibox-title">
+                      <h5>Editar Cliente</h5>
+                    </div>
+                    <div class="ibox-content">
+                        <script src="js/jquery-2.1.1.js?v=1753886215"></script><script src="js/plugins/select2/select2.js?v=1742499288"></script><script src="js/plugins/validate/jquery.validate.min.js?v=1753886256"></script><style media="screen">
+    .selectm {
+        display: block;
+        font-size: 12px;
+        font-family: 'Arial', sans-serif;
+        font-weight: 400;
+        color: #444;
+        line-height: 1.3;
+        padding: .4em 1.4em .3em .8em;
+        width: 400px;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        border: 1px solid #aaa;
+        box-shadow: 0 1px 0 1px rgba(0, 0, 0, .03);
+        border-radius: .3em;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        appearance: none;
+        background-color: #fff;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'),
+            linear-gradient(to bottom, #ffffff 0%, #f7f7f7 100%);
+        background-repeat: no-repeat, repeat;
+        background-position: right .7em top 50%, 0 0;
+        background-size: .65em auto, 100%;
+    }
+
+    .selectm::-ms-expand {
+        display: none;
+    }
+
+    .selectm:hover {
+        border-color: #888;
+    }
+
+    .selectm:focus {
+        border-color: #aaa;
+        box-shadow: 0 0 1px 3px rgba(59, 153, 252, .7);
+        box-shadow: 0 0 0 3px -moz-mac-focusring;
+        color: #222;
+        outline: none;
+    }
+
+    .selectm option {
+        font-weight: normal;
+    }
+</style>
+
+<form name="6a6d1ed555aea" id="6a6d1ed555aea">
+
+    <input type="hidden" id="id_cliente" name="id_cliente" value="6317">
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-group has-info single-line">
+                <label>Nombre <span style="color:red;">*</span></label>
+                <input type="text" placeholder="Nombre del Cliente" class="form-control" id="nombre" name="nombre" value="EDWIN ALEXANDER NUÑEZ JOYA">
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="form-group has-info single-line">
+                <label>Dirección</label>
+                <textarea placeholder="Dirección" class="form-control" id="direccion" name="direccion" rows="3" cols="80">FINAL 2 CLL OTE, BARRIO SAN ANTONIO</textarea>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="form-group has-info single-line">
+                <label>Apuntes </label>
+                <textarea placeholder="Apuntes" class="form-control" id="apunte" name="apunte" rows="3" cols="80"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="form-group has-info single-line">
+                <label>Departamento <span style="color:red;">*</span></label>
+                <select class='select2 form-control input-sm select2-single selectt' name='departamento' id='departamento' style='width:100%;'><option value='-1'>Seleccione</option><option value='1'>Ahuachapán</option><option value='2'>Santa Ana</option><option value='3'>Sonsonate</option><option value='4' selected>Chalatenango</option><option value='5'>La Libertad</option><option value='6'>San Salvador</option><option value='7'>Cuscatlán</option><option value='8'>La Paz</option><option value='9'>Cabañas</option><option value='10'>San Vicente</option><option value='11'>Usulután</option><option value='12'>San Miguel</option><option value='13'>Morazán</option><option value='14'>La Unión</option></select>            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group has-info single-line">
+                <label>Municipio <span style="color:red;">*</span></label>
+                <select class="select2 form-control input-sm select2-single selectt" id="municipio" name="municipio">
+                    <option value='34' >Chalatenango Norte</option><option value='35' >Chalatenango Centro</option><option value='36' selected>Chalatenango Sur</option>                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group has-info single-line">
+                <label>Distrito <span style="color:red;">*</span></label>
+                <select class="select2 form-control input-sm select2-single selectt" id="distrito" name="distrito">
+                <option value='2' >ARCATAO</option><option value='3' >AZACUALPA</option><option value='5' >COMALAPA</option><option value='6' >CONCEPCIÓN QUEZALTEPEQUE</option><option value='7' >CHALATENANGO</option><option value='9' >EL CARRIZAL</option><option value='11' >LA LAGUNA</option><option value='14' >LAS VUELTAS</option><option value='15' >NOMBRE DE JESUS</option><option value='17' >NUEVA TRINIDAD</option><option value='18' >OJOS DE AGUA</option><option value='19' >POTONICO</option><option value='20' >SAN ANT LA CRUZ</option><option value='21' >SAN ANT RANCHOS</option><option value='23' >SAN FRANCISCO LEMPA</option><option value='26' >SAN I LABRADOR</option><option value='27' >SAN J CANCASQUE</option><option value='28' >SAN JOSE FLORES</option><option value='29' >SAN LUIS CARMEN</option><option value='30' >SN MIG MERCEDES</option>                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group has-info single-line">
+                <label>Categoria del Cliente <span style="color:red;">*</span></label>
+                <select class="select2 form-control input-sm select2-single selectt" id="categoria" name="categoria">
+                    <option value='1'selected>Consumidor</option><option value='2'>Contribuyente</option><option value='3'>Gran Contribuyente</option><option value='4'>Contribuyente Exento</option><option value='5'>Extranjero</option><option value='6'>Menor de edad</option>                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group has-info single-line">
+                <label>Giro <span style="color:red;">*</span></label>
+                <select class="select2 form-control input-sm select2-single selectt" id="sel_giro" name="sel_giro" style="width: 100%;">
+                    <option value=''></option>                </select>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3" id="col-dui">
+            <div class="form-group has-info single-line">
+                <label>DUI</label>
+                <input type="text" placeholder="00000000-0" class="form-control" id="dui" name="dui" value="05400875-9">
+            </div>
+        </div>
+        <div class="col-md-3" id="col-nit">
+            <div class="form-group has-info single-line">
+                <label>NIT <span style="color:red;">*</span></label>
+                <input type="text" placeholder="0000-000000-000-0" class="form-control" id="nit" name="nit" value="">
+            </div>
+        </div>
+        <div class="col-md-3" id="col-nrc">
+            <div class="form-group has-info single-line">
+                <label>NRC <span style="color:red;">*</span></label>
+                <input type="text" placeholder="Registro" class="form-control" id="nrc" name="nrc" value="">
+            </div>
+        </div>
+        <div class="col-md-3 col-telefono">
+            <div class="form-group has-info single-line">
+                <label>Teléfono 1 <span style="color:red;">*</span></label>
+                <input type="text" placeholder="0000-0000" class="form-control tel" id="telefono1" name="telefono1" value="7015-3222">
+            </div>
+        </div>
+        <div class="col-md-3 col-telefono">
+            <div class="form-group has-info single-line">
+                <label>Teléfono 2</label>
+                <input type="text" placeholder="0000-0000" class="form-control tel" id="telefono2" name="telefono2" value=""">
+            </div>
+        </div>
+
+        <div class=" col-md-3" id="col-correo">
+                <div class="form-group has-info single-line">
+                    <label>Correo</label>
+                    <input type="text" placeholder="mail@server.com" class="form-control" id="correo" name="correo" value=""">
+            </div>
+        </div>
+        <div class='col-md-3'>
+            <div class='form-group has-info single-line'>
+                <label>Fecha Nacimiento:</label>
+                <input type='text' class='datepick form-control' value='1996-08-22' id='fecha1' name='fecha1'>
+            </div>
+        </div>
+        <div class="col-md-3" id="col-pasaporte">
+            <div class="form-group has-info single-line">
+                <label>Pasaporte  <span style="color:red;">*</span></label>
+                <input type="text" placeholder="Pasaporte del Cliente" class="form-control" id="pasaporte" name="pasaporte" value="">
+            </div>
+        </div>
+        <div class="col-md-3" id="col-retiene">
+            <div class="form-group has-info single-line">
+                <div class='checkbox'><label><input id='retiene' name='retiene' type='checkbox' > <span class="label-text"><b>Retiene</b></span></label></div>
+                <input type="hidden" name="hi_retiene" id="hi_retiene" value="0">
+            </div>
+        </div>
+        <div class="col-md-3" hidden id="retiene_select">
+            <div class="form-group has-info single-line">
+                <label>Porcentaje de Retención <span style="color:red;">*</span></label>
+                <select class="col-md-12 select" id="porcentaje" name="porcentaje">
+                    <option value="0">Sin Retención</option>
+                    <option value="1" >1%</option>
+                    <option value="10" >10%</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+    <input type="hidden" name="process" id="process" value="edit"><br>
+                    <!--?php getDif() ?-->
+                    <div>
+                        <input type="submit" id="btnSaveClient" name="btnSaveClient" value="Guardar" class="btn btn-primary m-t-n-xs" />
+                    </div>
+        </div>
+    </div>
+</form>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#departamento").change(function() {
+            $("#municipio *").remove();
+            $("#select2 form-control input-sm select2-single selectt").text("");
+            var ajaxdata = {
+                "process": "getMunicipio",
+                "id_departamento": $("#departamento").val()
+            };
+            $.ajax({
+                url: "_helpers.php",
+                type: "POST",
+                data: ajaxdata,
+                success: function(opciones) {
+                    $("#select2 form-control input-sm select2-single selectt").text("Seleccione");
+                    $("#municipio").html(opciones);
+                    $("#municipio").val("");
+                }
+            })
+        });
+
+        $("#municipio").change(function() {
+            $("#distrito *").remove();
+            $("#select2-distrito-container").text("");
+            var ajaxdata = {
+                "process": "getDistrito",
+                "id_departamento": $("#departamento").val(),
+                "id_municipio": $("#municipio").val()
+            };
+            $.ajax({
+                url: "_helpers.php",
+                type: "POST",
+                data: ajaxdata,
+                success: function(opciones) {
+                    $("#select2-distrito-container").text("Seleccione");
+                    $("#distrito").html(opciones);
+                    $("#distrito").val("");
+                }
+            })
+        });
+
+
+        $('.tel').on('keydown', function(event) {
+            if (event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 13 || event.keyCode == 37 || event.keyCode == 39) {
+
+            } else {
+                if ((event.keyCode > 47 && event.keyCode < 60) || (event.keyCode > 95 && event.keyCode < 106)) {
+                    inputval = $(this).val();
+                    var string = inputval.replace(/[^0-9]/g, "");
+                    var bloc1 = string.substring(0, 4);
+                    var bloc2 = string.substring(4, 7);
+                    var string = bloc1 + "-" + bloc2;
+                    $(this).val(string);
+                } else {
+                    event.preventDefault();
+                }
+
+            }
+        });
+        $('#dui').on('keydown', function(event) {
+            if (event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 13 || event.keyCode == 37 || event.keyCode == 39) {
+
+            } else {
+                if ((event.keyCode > 47 && event.keyCode < 60) || (event.keyCode > 95 && event.keyCode < 106)) {
+                    inputval = $(this).val();
+                    var string = inputval.replace(/[^0-9]/g, "");
+                    var bloc1 = string.substring(0, 8);
+                    var bloc2 = string.substring(8, 8);
+                    var string = bloc1 + "-" + bloc2;
+                    $(this).val(string);
+                } else {
+                    event.preventDefault();
+                }
+
+            }
+        });
+        $('#nrc').on('keydown', function(event) {
+            if (event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 13 || event.keyCode == 37 || event.keyCode == 39) {
+
+            } else {
+                if ((event.keyCode > 47 && event.keyCode < 60) || (event.keyCode > 95 && event.keyCode < 106)) {
+                    inputval = $(this).val();
+                    var string = inputval.replace(/[^0-9]/g, "");
+                    var bloc1 = string.substring(0, 8);
+                    var bloc2 = string.substring(8, 8);
+                    var string = bloc1 + "-" + bloc2;
+                    $(this).val(string);
+                } else {
+                    event.preventDefault();
+                }
+            }
+        });
+        $('#nit').on('keydown', function(event) {
+            if (event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 13 || event.keyCode == 37 || event.keyCode == 39) {
+
+            } else {
+                if ((event.keyCode > 47 && event.keyCode < 60) || (event.keyCode > 95 && event.keyCode < 106)) {
+                    inputval = $(this).val();
+                    var string = inputval.replace(/[^0-9]/g, "");
+                    var bloc1 = string.substring(0, 4);
+                    var bloc2 = string.substring(4, 10);
+                    var bloc3 = string.substring(10, 13);
+                    var bloc4 = string.substring(13, 13);
+                    var string = bloc1 + "-" + bloc2 + "-" + bloc3 + "-" + bloc4;
+                    $(this).val(string);
+                } else {
+                    event.preventDefault();
+                }
+            }
+        });
+        //$('.selectm').select2({dropdownParent:$(".containerygg")});
+        $("#retiene").on("change", function() {
+            if ($(this).is(':checked')) {
+                $("#retiene_select").show()
+                //$('.selectm').select2();
+                $("#hi_retiene").val(1);
+            } else {
+                $("#retiene_select").hide();
+                $("#hi_retiene").val(0);
+                $('#porcentaje').val(0);
+            }
+
+        });
+        $("#sel_giro").select2({
+            ajax: {
+                url: "getGiro.php",
+                type: "post",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        searchTerm: params.term // search term
+                    };
+                },
+                processResults: function(response) {
+                    return {
+                        results: response
+                    };
+                },
+                cache: true
+            }
+        });
+
+        $('#categoria').on('change', function () {
+            mostrarPorCategoria();
+        });
+
+        mostrarPorCategoria();
+    });
+
+    function mostrarPorCategoria()
+    {
+        const categoria = $('#categoria').val();
+        const $colNit = $('#col-nit');
+        const $colNrc = $('#col-nrc');
+        const $colRetiene = $('#col-retiene');
+        const $colDui = $('#col-dui');
+        const $colPasaporte = $('#col-pasaporte');
+        const $colTelefono = $('.col-telefono');
+        const $colCorreo = $('#col-correo')
+
+        $colPasaporte.hide();
+        $colDui.hide();
+        $colRetiene.hide();
+        $colNit.hide();
+        $colNrc.hide();
+        $colCorreo.show();
+        $colTelefono.show();
+
+        if (categoria == 1) { // consumidor
+            $colDui.show();
+        } else if (categoria == 2) { // contribuyente
+            $colNit.show();
+            $colNrc.show();
+        } else if (categoria == 3) { // gran contribuyente
+            $colNit.show();
+            $colNrc.show();
+            $colRetiene.show();
+        } else if (categoria == 4) { // contribuyente exento
+            $colNit.show();
+            $colNrc.show();
+        } else if (categoria == 5) { // extranjero
+            $colPasaporte.show();
+        } else if (categoria == 6) { // menor de edad
+            $colTelefono.hide();
+            $colCorreo.hide();
+        } 
+    }
+</script>						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Modal -->
+<div id="globalModal" class="modal fade" tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+
+        </div>
+
+    </div>
+</div>
+
+<div class="footer">
+  <div>
+      <strong>Copyright</strong> <a href="http://opensolutionsystems.com">OpenSolutionSystems</a> &copy; 2026      <span></span>
+      <div class="text-center">
+      <span class='badge badge-danger'  id="id_sucursal_descripcion"></span>
+      </div>
+    </div>
+        </div>
+        
+        </div>
+        </div>
+
+    <!-- Mainly scripts -->
+    	  <script src="js/bootstrap.min.js"></script>
+
+    <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="js/plugins/chosen/chosen.jquery.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="js/inspinia.js"></script>
+    <script src="js/plugins/pace/pace.min.js"></script>
+
+    <script src="js/plugins/jquery-ui/jquery-ui.min.js"></script>
+     <!-- Jvectormap -->
+    <script src="js/plugins/jvectormap/jquery-jvectormap-2.0.2.min.js"></script>
+    <script src="js/plugins/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+
+    <script src="js/plugins/iCheck/icheck.min.js"></script>
+    <!--/var/www/html_public/template/js/plugins/toastr -->
+    <script src="js/plugins/toastr/toastr.min.js"></script>
+     <!-- jqGrid -->
+    <script src="js/plugins/jqGrid/i18n/grid.locale-en.js"></script>
+   <script src="js/plugins/jqGrid/jquery.jqGrid.min.js"></script>
+
+	<!-- jeditable -->
+	 <script src="js/plugins/jeditable/jquery.jeditable.js"></script>
+
+    <!-- Data Tables -->
+   <script src="js/plugins/dataTables/jquery.dataTables.js"></script>
+   <script src="js/plugins/dataTables/dataTables.bootstrap.js"></script>
+   <script src="js/plugins/dataTables/dataTables.responsive.js"></script>
+   <script src="js/plugins/dataTables/dataTables.tableTools.min.js"></script>
+
+
+    <!-- Flot -->
+   <script src="js/plugins/flot/jquery.flot.js"></script>
+    <script src="js/plugins/flot/jquery.flot.tooltip.min.js"></script>
+    <script src="js/plugins/flot/jquery.flot.spline.js"></script>
+    <script src="js/plugins/flot/jquery.flot.resize.js"></script>
+    <script src="js/plugins/flot/jquery.flot.pie.js"></script>
+    <script src="js/plugins/flot/jquery.flot.symbol.js"></script>
+    <script src="js/plugins/flot/curvedLines.js"></script>
+
+    <!-- Peity
+    <script src="js/plugins/peity/jquery.peity.min.js"></script>
+    <script src="js/demo/peity-demo.js"></script>-->
+
+    <!-- GITTER -->
+    <script src="js/plugins/gritter/jquery.gritter.min.js"></script>
+
+    <!-- Sparkline
+    <script src="js/plugins/sparkline/jquery.sparkline.min.js"></script> -->
+
+    <!-- Sparkline demo data
+    <script src="js/demo/sparkline-demo.js"></script>  -->
+
+    <!-- ChartJS-->
+    <script src="js/plugins/chartJs/Chart.js"></script>
+
+    <!-- iCheck -->
+    <script src="js/plugins/iCheck/icheck.min.js"></script>
+    <!-- spinedit -->
+    <script src="js/plugins/spinedit/spinedit.js"></script>
+
+    <!--switchery -->
+    <script src='js/plugins/switchery/switchery.js'></script>
+     <!--summernote -->
+    <script src='js/plugins/summernote/summernote.min.js'></script>
+    <!--sortable -->
+	<script src='js/plugins/sortable/jquery-sortable.js'></script>
+    <script src='js/plugins/upload_file/fileinput.js'></script>
+    <script src='js/plugins/upload_file/fileinput_locale_es.js'></script>
+	<!--numeric -->
+	<script src='js/plugins/numeric/jquery.numeric.js'></script>
+	<!--datepicker -->
+	<script src='js/plugins/datapicker/bootstrap-datepicker.js'></script>
+	<!--autocomplete bootstrap3 -->
+
+  	<script src='js/plugins/typeahead11/typeahead.jquery.min.js'></script>
+    <!-- Functions creted by us for post messages with toastr and clean forms  -->
+    <script src="js/functions_messages_clean.js"></script>
+    <script src="js/funciones/util.js?v=1753887613"></script><script src="js/preloader.js?v=1753886215"></script>    <script type="text/javascript" src="js/plugins/sweetalert/sweetalert.min.js"></script>
+
+    <script>
+  function actualizarIdSucursal() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'id_sucursal.php', true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          var data = JSON.parse(xhr.responseText);
+          var id_sucursal = data.id_sucursal;
+          var descripcion_sucursal = data.id_sucursal_descripcion;
+
+          // Actualiza el contenido del span
+          document.getElementById('id_sucursal_descripcion').innerText = descripcion_sucursal;
+
+          // Llama a la función de cambiar color según la sucursal
+          cambiarColorSegunSucursal(id_sucursal);
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  setInterval(actualizarIdSucursal, 5000); // Llama a la función actualizarIdSucursal cada 5 segundos (5000 milisegundos)
+
+  // Llama a la función de actualización al cargar la página
+  actualizarIdSucursal();
+
+  // Función para cambiar color según la sucursal
+  function cambiarColorSegunSucursal(id_sucursal) {
+    var spanIdSucursalDescripcion = document.getElementById('id_sucursal_descripcion');
+
+    // Elimina todas las clases de color antes de asignar el color correspondiente
+    spanIdSucursalDescripcion.classList.remove('badge-primary', 'badge-success', 'badge-danger', 'badge-warning', 'badge-info', 'badge-dark', 'badge-secondary');
+
+    // Asigna el color correspondiente a la sucursal
+    switch (id_sucursal) {
+      case '1':
+        spanIdSucursalDescripcion.classList.add('badge-primary'); // Color para la sucursal 1
+        break;
+      case '2':
+        spanIdSucursalDescripcion.classList.add('badge-success'); // Color para la sucursal 2
+        break;
+      case '3':
+        spanIdSucursalDescripcion.classList.add('badge-danger'); // Color para la sucursal 3
+        break;
+      case '4':
+        spanIdSucursalDescripcion.classList.add('badge-warning'); // Color para la sucursal 4
+        break;
+      case '5':
+        spanIdSucursalDescripcion.classList.add('badge-info'); // Color para la sucursal 5
+        break;
+      case '6':
+        spanIdSucursalDescripcion.classList.add('badge-dark'); // Color para la sucursal 6
+        break;
+      default:
+        spanIdSucursalDescripcion.classList.add('badge-secondary'); // Color por defecto
+    }
+  }
+
+    $(document).on('hidden.bs.modal', '#globalModal', function(e) {
+        var target = $(e.target);
+        target.removeData('bs.modal').find(".modal-content").html('');
+    });
+
+    $(document).on('shown.bs.modal', '#globalModal', function(e) {
+        $('.numeric-positivo').numeric({
+            negative: false,
+            decimal: false,
+        });
+    });
+
+    $(document).on('click', '#cambiar_sesion', function(e) {
+        const id_sucursal=$("#sucursal_sesion_select").val();
+        $.ajax({
+          type: 'POST',
+          url: 'cambio_sesion.php',
+          data: {
+            process:"set_sucursal",
+            id_sucursal: id_sucursal
+          },
+          dataType: 'json',
+          success: function(response) {
+            let tipo = (response.success ? 'Success' : 'Error');
+            display_notify(tipo, response.msg);
+
+            if (response.success) {
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            }
+          }
+        });
+    });
+
+//     $(document).on('shown.bs.modal', function(e) {
+  
+//   $("#credito").select2({
+// 		 		dropdownParent: $("#globalModal")
+// 	 	});
+// });
+
+// $(document).on('shown.bs.modal', '#viewmodal', function() {
+//   $(this).find('select').each(function() {
+//     var dropdownParent = $(document.body);
+//     if ($(this).parents('.modal.in:first').length !== 0)
+//       dropdownParent = $(this).parents('.modal.in:first');
+//     $(this).select2({
+//       dropdownParent: dropdownParent
+//       // ...
+//     });
+//   });
+// });
+
+    // window.onerror = function (message, source, lineno, colno, error) {
+    //     console.error(`Error: ${message} en ${source} línea ${lineno}, columna ${colno}`);
+    //     console.error('Error objeto:', error);
+    //     // Puedes enviar el error a un servidor de registro de errores aquí
+    //     alert('Error, revisar consola');
+    //     return true; // Previene que el error se propague
+    // };
+
+</script>
+</body>
+
+</html>
+<script src="js/plugins/axios/axios.min.js"></script>            <script type="text/javascript">
+                $(document).ready(function() {
+                    $(function() {
+                        $('#6a6d1ed555aea').validate({
+                            rules: {
+                                nombre: {
+                                    required: true,
+                                },
+                                departamento: {
+                                    required: false,
+                                },
+                                municipio: {
+                                    required: false,
+                                },
+                            },
+                            messages: {
+                                nombre: "Por favor ingrese el Nombre del cliente",
+                                departamento: "Por favor seleccione un Departamento",
+                                municipio: "Por favor seleccione un Municipio",
+                            },
+                            highlight: function(element) {
+                                $(element).closest('.form-group').removeClass('has-success').addClass('has-error');
+                            },
+                            success: function(element) {
+                                $(element).closest('.form-group').removeClass('has-error').addClass('has-success');
+                            },
+                            submitHandler: function(form) {
+                                senddatac();
+                            }
+                        });
+                    });
+                });
+
+                function senddatac() {
+                    const $btn = $('#btnSaveClient');
+
+                    if ($btn.prop('disabled')) {
+                        display_notify(ERROR_NOTIFY, MSG_EN_EJECUCION);
+                        return;
+                    }
+
+                    $btn.prop('disabled', true);
+                    const $textButton = $btn.html();
+                    $btn.html(SPINNER_IN_BUTTON);
+
+                    var dataString = $("#6a6d1ed555aea").serialize();
+                    var urlprocess = 'modal_new_cliente.php';
+                    var nombress = $(".modal-body #nombre").val();
+                    $.ajax({
+                        type: 'POST',
+                        url: 'procesos/clientes.php',
+                        data: dataString,
+                        dataType: 'json',
+                        success: function(datax) {
+                            display_notify(datax.typeinfo, datax.msg);
+                            $btn.prop('disabled', false);
+                            $btn.html($textButton);
+
+                            if (datax.typeinfo == "Success") {
+                                setTimeout(() => {
+                                  location.replace("admin_cliente.php"); //para que se salga del editar cliente despues de guardar
+                                }, 1500);
+                                
+                            }
+                        },
+                        error: function() {
+                            display_notify(ERROR_NOTIFY, MSG_ERROR_AJAX);
+                            $btn.prop('disabled', false);
+                            $btn.html($textButton);
+                        }
+                    });
+                }
+            </script>
+        

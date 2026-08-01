@@ -16,7 +16,49 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.326.0';
+export const APP_VERSION = '2.327.0';
+
+// v2.327.0 — Clientes: la ficha deja de aceptar datos con los que no se puede
+// facturar.
+//
+// El modal validaba nombre, DUI y los dos teléfonos. Todo lo demás entraba como
+// viniera: NIT, NRC, correo y retención sin ninguna comprobación, y los campos
+// que DTE 2.0 exige en el receptor —teléfono y la terna departamento/municipio/
+// distrito— podían quedar vacíos. El costo de eso no se paga al guardar: se
+// paga semanas después, en la caja, cuando la factura no sale.
+//
+// Las reglas viven aparte, en `src/utils/clienteValidacion.js`, puras y sin
+// React. El formulario pinta; no decide. El candado real sigue siendo el RPC.
+//
+// LOS LARGOS SE MIDIERON, NO SE SUPUSIERON. Escribir "NRC de 8 dígitos" de
+// memoria habría bloqueado fichas que hoy facturan: contando 115 NRC dentro de
+// 60 DTE sellados por Hacienda, el rango real es 4 a 7 (4→6 casos, 5→6, 6→33,
+// 7→70). El tope se dejó en 8 por si existe algo que no vimos — el error caro
+// acá es el falso negativo. Mismo método con el NIT: 14 dígitos, o 9 cuando es
+// el DUI, y de las 30 fichas con NIT de 9, las 18 que además tienen DUI
+// coinciden exactamente con él. Por eso el de 9 se compara CONTRA EL DUI de la
+// ficha en vez de contra el dígito verificador: si es el DUI, tiene que ser EL
+// DUI, y así un dígito mal tecleado se detecta aunque por casualidad pase el
+// verificador.
+//
+// EL FORMATO SOLO SE LE EXIGE A LO QUE SE TOCÓ. Es la decisión que ya había
+// tomado el servidor ("DUI y teléfonos se validan SOLO si cambiaron") y por la
+// misma razón: el catálogo heredado del ERP trae 2 DUI que no pasan el
+// verificador, y exigirlos siempre dejaría esas fichas congeladas — nadie
+// podría corregirles el correo sin adivinar antes un DUI que quizá nadie sabe.
+// Verificado contra las 993 fichas reales del portal: con estas reglas, NIT,
+// NRC, teléfonos y correo rechazan CERO fichas existentes.
+//
+// Los REQUERIDOS sí bloquean siempre, y la diferencia no es caprichosa: un
+// campo vacío se llena ahí mismo (el distrito es un desplegable), así que
+// bloquear es accionable. Un DUI heredado y malo no se deduce de nada.
+//
+// Además: los requeridos no se pintan en rojo hasta que se intenta guardar
+// —abrir una ficha vieja y encontrarla en rojo entera es hostil, y no es culpa
+// de quien la abrió—, el botón dice por qué está deshabilitado en vez de ser
+// una pared, y un cliente de mostrador ya no ofrece guardar (el servidor lo
+// rechazaba con ES_MOSTRADOR después del viaje).
+
 
 // v2.326.0 — cuadre diario del libro de compras contra el ERP.
 //

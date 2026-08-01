@@ -326,11 +326,77 @@ def anotar_checkpoint(ck, erp_id, registro):
 
 
 # ── Red ──────────────────────────────────────────────────────────────────────
+_COOKIE = None
+
+
+def _entorno():
+    """Credenciales del ERP. Dos modos, y se prefiere el primero:
+
+        ERP_USUARIO=...  +  ERP_PASSWORD=...   se re-loguea solo, no caduca
+        ERP_COOKIE=PHPSESSID=...               caduca a las pocas horas
+
+    Se leen del `.env` del repo y de `erp.env` de esta carpeta, en ese orden —
+    el segundo pisa al primero. Los dos están en .gitignore.
+    """
+    env = {}
+    for ruta in (os.path.join(D, '..', '..', '.env'), f'{D}/erp.env'):
+        if not os.path.exists(ruta):
+            continue
+        with open(ruta) as fh:
+            for linea in fh:
+                linea = linea.strip()
+                if linea and not linea.startswith('#') and '=' in linea:
+                    k, v = linea.split('=', 1)
+                    env[k.strip()] = v.strip().strip('"').strip("'")
+    return env
+
+
+class _SinRedireccion(urllib.request.HTTPRedirectHandler):
+    """El login responde 302 y la cookie viaja en el Set-Cookie de ESA respuesta.
+    Si se sigue el redirect, se pierde."""
+
+    def redirect_request(self, *a, **k):
+        return None
+
+
+def login():
+    """Cambia usuario+contraseña por una cookie de sesión. None si no hay credenciales."""
+    env = _entorno()
+    usuario, clave = env.get('ERP_USUARIO'), env.get('ERP_PASSWORD')
+    if not (usuario and clave):
+        return None
+    cuerpo = urllib.parse.urlencode(
+        {'username': usuario, 'password': clave, 'm': '1'}).encode()
+    req = urllib.request.Request(
+        f'{BASE}/login.php', data=cuerpo,
+        headers={'Content-Type': 'application/x-www-form-urlencoded',
+                 'User-Agent': 'Mozilla/5.0'})
+    try:
+        r = urllib.request.build_opener(_SinRedireccion).open(req, timeout=45)
+        cabeceras = r.headers
+    except urllib.error.HTTPError as e:
+        cabeceras = e.headers          # el 302 llega como "error" sin seguir el redirect
+    sc = cabeceras.get('Set-Cookie')
+    if not sc:
+        raise SystemExit('LOGIN FALLIDO: el ERP no devolvió cookie. '
+                         '¿usuario o contraseña incorrectos en erp.env?')
+    return sc.split(';')[0]
+
+
 def cookie():
-    return open(f'{D}/erp.env').read().split('=', 1)[1].strip()
+    global _COOKIE
+    if _COOKIE is None:
+        _COOKIE = login() or _entorno().get('ERP_COOKIE')
+        if not _COOKIE:
+            raise SystemExit('erp.env no tiene ERP_USUARIO+ERP_PASSWORD ni ERP_COOKIE.')
+    return _COOKIE
 
 
-def pedir(url, datos=None):
+def _es_login(h):
+    return 'password' in h.lower()[:4000]
+
+
+def pedir(url, datos=None, _reintentar=True):
     cab = {'Cookie': cookie(), 'User-Agent': 'Mozilla/5.0',
            'X-Requested-With': 'XMLHttpRequest', 'Referer': f'{BASE}/admin_cliente.php'}
     cuerpo = urllib.parse.urlencode(datos).encode() if datos else None
@@ -338,7 +404,16 @@ def pedir(url, datos=None):
         cab['Content-Type'] = 'application/x-www-form-urlencoded'
     with urllib.request.urlopen(urllib.request.Request(url, data=cuerpo, headers=cab),
                                 timeout=45) as r:
-        return r.read().decode('utf-8', 'replace')
+        h = r.read().decode('utf-8', 'replace')
+
+    # Sesión caída a mitad de corrida: si hay credenciales, se rehace el login y
+    # se repite. Un POST que devolvió el login NO se aplicó, así que reintentarlo
+    # es correcto y no duplica nada. Sin credenciales, cae al mensaje de siempre.
+    if _reintentar and _es_login(h) and _entorno().get('ERP_USUARIO'):
+        global _COOKIE
+        _COOKIE = None
+        return pedir(url, datos, _reintentar=False)
+    return h
 
 
 def parsear_ficha(h):

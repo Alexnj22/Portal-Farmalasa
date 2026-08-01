@@ -1,0 +1,82 @@
+[
+ {
+  "erp_id": "23",
+  "campo": "dui",
+  "valor": "01875533-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ROSA CORDOVA DE ORELLANA"
+ },
+ {
+  "erp_id": "128",
+  "campo": "dui",
+  "valor": "04800955-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "NORA JEANNETTE ASENCIO MARQUEZ"
+ },
+ {
+  "erp_id": "179",
+  "campo": "dui",
+  "valor": "00769351-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARTA LILIAN CARTAGENA PALMA"
+ },
+ {
+  "erp_id": "197",
+  "campo": "dui",
+  "valor": "00874217-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA MAURA ORELLANA VDA DE SERRANO"
+ },
+ {
+  "erp_id": "320",
+  "campo": "dui",
+  "valor": "01626283-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE EFRAIN SERRANO MEJIA"
+ },
+ {
+  "erp_id": "347",
+  "campo": "dui",
+  "valor": "00388898-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MANUEL DE JESUS GUARDADO"
+ },
+ {
+  "erp_id": "359",
+  "campo": "dui",
+  "valor": "01165773-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARCO ANTONIO DUBON ORTEGA"
+ },
+ {
+  "erp_id": "379",
+  "campo": "dui",
+  "valor": "04000894-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LEIDY ELIZABETH MONGE DE FRANCO"
+ },
+ {
+  "erp_id": "434",
+  "campo": "dui",
+  "valor": "07220677-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA DORA VIDEZ DE RECINOS"
+ },
+ {
+  "erp_id": "466",
+  "campo": "dui",
+  "valor": "03882143-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "BESY GETSABEL GUARDADO ALAS"
+ }
+]

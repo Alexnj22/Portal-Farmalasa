@@ -1,1 +1,47 @@
-[]
+[
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:161",
+  "erp_id": "161",
+  "direccion": "MEJICANOS, SAN SALVADOR ",
+  "candidatos": [
+   "MEJICANOS",
+   "SAN SALVADOR"
+  ],
+  "elegido": "MEJICANOS (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:176",
+  "erp_id": "176",
+  "direccion": "NUEVA TRINIDAD,  CHALATENANGO",
+  "candidatos": [
+   "CHALATENANGO",
+   "NUEVA TRINIDAD"
+  ],
+  "elegido": "CHALATENANGO (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:380",
+  "erp_id": "380",
+  "direccion": "SAN ANTONIO DEL MONTE,  SONSONATE",
+  "candidatos": [
+   "SAN ANTONIO DEL MONTE",
+   "SONSONATE"
+  ],
+  "elegido": "SONSONATE (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:283",
+  "name": "MARIA FLORINDA FRANCO DE DELGADO",
+  "erp_id": "283",
+  "motivo": "Proceso no encontrado",
+  "duplicado": false,
+  "cambios_intentados": {
+   "distrito": "LAS VUELTAS (determinista (dirección no dice))"
+  },
+  "ts": "2026-07-31 23:27:46"
+ }
+]

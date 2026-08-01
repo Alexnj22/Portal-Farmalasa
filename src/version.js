@@ -16,7 +16,39 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.333.0';
+export const APP_VERSION = '2.333.1';
+
+// v2.333.1 — Los gates del pre-commit dejan de bloquear por el árbol ajeno.
+//
+// `data-gate` y `migration-gate` miraban el DISCO (`find`, `readdirSync`), así
+// que también veían los archivos sin trackear — que en este repo son, por
+// definición, el trabajo a medio hacer de otra de las 2-3 sesiones que comparten
+// el árbol. Resultado: una sesión no podía commitear hasta que otra terminara, y
+// el mensaje culpaba a "código nuevo que hay que arreglar" señalando un archivo
+// que quien commitea nunca tocó. Pasó hoy: `sync-numero-control/index.ts` (sin
+// commitear, 3 hallazgos) llevó `error-ignorado` de 28 a 31 y obligó a un
+// `--no-verify` en un commit de dos líneas de texto.
+//
+// Lo llamativo es que el pre-commit YA declaraba lo contrario en un comentario:
+// "acotado al diff preparado […] no bloquear a esta sesión por el árbol a medio
+// editar de otra". Lo único acotado era el `if` que decide si correr el gate; el
+// gate después escaneaba todo igual. Otra intención escrita y no implementada.
+//
+// Ahora los dos aceptan `--hook` y el pre-commit se los pasa: el análisis se
+// limita a lo que el ÍNDICE de git conoce. El índice es la definición correcta
+// de "lo que este commit lleva" — incluye HEAD más lo que esta sesión acaba de
+// preparar (`git commit -o` prepara ANTES de disparar el hook) y excluye lo
+// ajeno sin commitear. Corridos a mano (`npm run gate:data`) siguen viendo todo,
+// que es lo que uno quiere al auditar y antes de regenerar un baseline.
+//
+// Probado con las dos ramas, no solo leído: un `.js` sin trackear con un
+// `const { data } =` sube el manual a 29 y falla, y `--hook` queda en 28 y pasa
+// avisando "(1 archivo sin trackear fuera del análisis)". Igual con un
+// `borrador_de_otra_sesion.sql`: el manual lo marca "Nombre inválido", `--hook`
+// no lo ve.
+//
+// `version-gate` no necesitaba nada: ya se apoyaba en `git show HEAD:` y
+// `git diff --cached`.
 
 // v2.333.0 — el número de control fiscal, que no estaba en ninguna parte.
 //

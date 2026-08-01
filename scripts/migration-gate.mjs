@@ -63,8 +63,27 @@ const timestampValido = (v) => {
   return mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 && hora < 24 && min < 60 && seg < 60;
 };
 
+// `--hook`: solo los .sql que el ÍNDICE de git conoce. Mismo motivo que en
+// data-gate (2026-08-01): con 2-3 sesiones sobre el mismo árbol, un borrador de
+// migración sin commitear de OTRA sesión hacía fallar el commit de ésta —
+// nombre inválido, versión que no es timestamp, duplicada— señalando un archivo
+// que quien commitea nunca tocó. El índice incluye lo que este commit prepara
+// (`git commit -o` prepara antes del hook) y excluye lo ajeno sin commitear.
+// En modo manual se sigue viendo todo, que es lo que se quiere al auditar.
+const soloIndexado = process.argv.includes('--hook');
+const indexados = soloIndexado
+  ? new Set(
+      execFileSync('git', ['ls-files', '--', 'supabase/migrations', 'supabase/migrations-legacy'], { encoding: 'utf8' })
+        .trim().split('\n').filter(Boolean)
+        .map(p => p.slice(p.lastIndexOf('/') + 1)),
+    )
+  : null;
+
 const sqls = (dir) => existsSync(dir)
-  ? readdirSync(dir, { withFileTypes: true }).filter(e => e.isFile() && e.name.endsWith('.sql')).map(e => e.name)
+  ? readdirSync(dir, { withFileTypes: true })
+      .filter(e => e.isFile() && e.name.endsWith('.sql'))
+      .map(e => e.name)
+      .filter(n => !indexados || indexados.has(n))
   : null;
 
 // ── 1. Los dos directorios existen ──────────────────────────────────────────────

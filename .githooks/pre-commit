@@ -65,15 +65,23 @@ fi
 node scripts/version-gate.mjs || exit 1
 
 if git diff --cached --name-only | grep -q '^supabase/migrations'; then
-  node scripts/migration-gate.mjs || exit 1
+  node scripts/migration-gate.mjs --hook || exit 1
 fi
 
 # data-gate: sólo si el commit toca código que habla con la base. Es local y
-# sin red, así que corre en ~1s. Acotado al diff preparado por el mismo motivo
-# que migration-gate: no bloquear a esta sesión por el árbol a medio editar de
-# otra. (Auditoría 2026-07-30 — cap de 1000, tipos booleanos, errores tragados.)
+# sin red, así que corre en ~1s. (Auditoría 2026-07-30 — cap de 1000, tipos
+# booleanos, errores tragados.)
+#
+# `--hook` lo acota a lo que el ÍNDICE conoce. Hasta el 2026-08-01 este
+# comentario decía que estaba "acotado al diff preparado […] para no bloquear a
+# esta sesión por el árbol a medio editar de otra", pero lo único acotado era el
+# `if` de acá abajo: el gate escaneaba el disco entero, archivos sin trackear
+# incluidos. Con 2-3 sesiones sobre el mismo árbol eso significa que una no
+# puede commitear hasta que otra termine, y el mensaje culpa a un archivo que
+# quien commitea nunca tocó. La intención estaba escrita y no implementada; el
+# flag la implementa.
 if git diff --cached --name-only | grep -qE '^(src/|supabase/functions/)'; then
-  node scripts/data-gate.mjs || exit 1
+  node scripts/data-gate.mjs --hook || exit 1
 fi
 
 # bundle-gate NO va acá a propósito: necesita `npm run build` (~6 s) y un dist/

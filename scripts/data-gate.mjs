@@ -66,10 +66,46 @@ assertSinClavesDuplicadas(readFileSync(fileURLToPath(import.meta.url), 'utf8'));
 const exento = (archivo, cat) => Boolean(EXCEPTIONS[archivo]?.[cat]);
 
 // ── recolección ────────────────────────────────────────────────────────────
-const archivos = execSync(
+// `--hook`: solo lo que el ÍNDICE de git conoce. Es lo que corre el pre-commit.
+//
+// Sin esto, este gate mira el disco con `find` y por lo tanto también los
+// archivos sin trackear — que en este repo son, por definición, el trabajo a
+// medio hacer de OTRA sesión (hay 2-3 sobre el mismo árbol, ver CLAUDE.md).
+// El resultado es que una sesión no puede commitear hasta que otra termine, y
+// lo peor: el mensaje culpa a "código nuevo que hay que arreglar" señalando un
+// archivo que quien commitea nunca tocó. Pasó el 2026-08-01 con
+// `sync-numero-control/index.ts` (3 hallazgos, tope 28 → 31) y obligó a un
+// `--no-verify` en un commit de dos líneas de texto.
+//
+// El pre-commit ya declaraba esta intención en un comentario —"acotado al diff
+// preparado […] no bloquear a esta sesión por el árbol a medio editar de otra"—
+// pero lo único acotado era la CONDICIÓN para correr el gate; el gate escaneaba
+// todo igual. La intención estaba escrita y no implementada.
+//
+// El índice es la definición correcta de "lo que este commit lleva": incluye lo
+// que ya está en HEAD y lo que esta sesión acaba de preparar (`git commit -o`
+// prepara antes de disparar el hook), y excluye lo ajeno sin commitear. En modo
+// manual (`npm run gate:data`) se sigue viendo TODO, que es lo que uno quiere
+// al auditar o antes de regenerar el baseline.
+const soloIndexado = process.argv.includes('--hook');
+
+let archivos = execSync(
   "find src supabase/functions -type f \\( -name '*.js' -o -name '*.jsx' -o -name '*.ts' \\) ! -name 'version.js'",
   { cwd: RAIZ, encoding: 'utf8' },
 ).trim().split('\n').filter(Boolean);
+
+if (soloIndexado) {
+  const indexados = new Set(
+    execSync('git ls-files -- src supabase/functions', { cwd: RAIZ, encoding: 'utf8' })
+      .trim().split('\n').filter(Boolean),
+  );
+  const antes = archivos.length;
+  archivos = archivos.filter(f => indexados.has(f));
+  const fuera = antes - archivos.length;
+  if (fuera > 0) {
+    console.log(`\n  (${fuera} archivo${fuera !== 1 ? 's' : ''} sin trackear fuera del análisis: no son de este commit)`);
+  }
+}
 
 const hallazgos = { 'tipo-booleano': [], 'cap-1000': [], 'sin-paginar': [], 'error-ignorado': [] };
 const push = (cat, archivo, linea, detalle) => {

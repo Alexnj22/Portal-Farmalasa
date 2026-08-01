@@ -372,7 +372,7 @@ const CeldaFecha = ({ iso }) => <span className="whitespace-nowrap">{fmtFecha(is
 const CeldaDocumento = ({ numero }) => (
     numero
         ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">{numero}</span>
-        : <Badge variant="danger" size="sm">Sin sincronizar</Badge>
+        : <Badge variant="danger" size="sm">Sin número</Badge>
 );
 
 const CeldaNrc = ({ nrc }) => (
@@ -557,7 +557,7 @@ export default function LibrosIvaView() {
             exportCsv(
                 ['FECHA', 'CLASE', 'TIPO', 'DEL No', 'AL No',
                  'CODIGO DE GENERACION DEL', 'CODIGO DE GENERACION AL',
-                 'SELLO DE RECEPCION DEL', 'ID ERP DEL', 'ID ERP AL',
+                 'SELLO DE RECEPCION DEL', 'ID INTERNO DEL', 'ID INTERNO AL',
                  'ESTABLECIMIENTO', 'DOCUMENTOS', 'VENTAS EXENTAS',
                  'VENTAS GRAVADAS LOCALES', 'EXPORTACIONES', 'TOTAL VENTAS DIARIAS',
                  'VENTAS CUENTA DE TERCEROS'],
@@ -589,7 +589,7 @@ export default function LibrosIvaView() {
             // control, que el ERP no manda en el JSON que sincronizamos.
             exportCsv(
                 ['No', 'FECHA', 'CLASE', 'TIPO', 'No CCF', 'CODIGO DE GENERACION',
-                 'SELLO DE RECEPCION', 'ID ERP', 'CLIENTE', 'NRC', 'NIT', 'DUI',
+                 'SELLO DE RECEPCION', 'ID INTERNO', 'CLIENTE', 'NRC', 'NIT', 'DUI',
                  'VENTAS EXENTAS', 'VENTAS GRAVADAS', 'DEBITO FISCAL',
                  'VENTAS CUENTA DE TERCEROS', 'DEBITO CUENTA DE TERCEROS',
                  'IMPUESTO PERCIBIDO', 'TOTAL'],
@@ -621,7 +621,7 @@ export default function LibrosIvaView() {
             // el anexo legible sin tener que ir a buscar cada documento.
             exportCsv(
                 ['No', 'FECHA', 'CLASE', 'TIPO', 'CORRELATIVO', 'CODIGO DE GENERACION',
-                 'SELLO DE RECEPCION', 'ID ERP', 'CLIENTE', 'TOTAL'],
+                 'SELLO DE RECEPCION', 'ID INTERNO', 'CLIENTE', 'TOTAL'],
                 [
                     ...anulados.map((r, i) => [
                         i + 1, fmtFecha(r.fecha), '4',
@@ -888,15 +888,14 @@ export default function LibrosIvaView() {
                     completo, y ahora se distinguen de un vistazo. */}
                 {ES_DE_VENTAS.has(activeTab) ? (
                     <Notice variant="info" icon={BookOpen} compact>
-                        Solo entran las facturas con sello de Hacienda (40 caracteres) y estado
-                        FINALIZADA; los anulados son los DTE invalidados en MH. Verificado contra
-                        los libros del ERP en 7 sucursales × 3 meses.
+                        Solo entran las facturas con sello de Hacienda y estado FINALIZADA; los
+                        anulados son los documentos invalidados ante Hacienda.
                     </Notice>
                 ) : (
                     <Notice variant="info" icon={BookOpen} compact>
-                        Las compras salen del ERP, las 7 sucursales. Las anuladas van incluidas y
-                        marcadas, igual que en el libro del ERP. Sin columna de sello: el ERP no la
-                        entrega en el detalle de compras y el Art. 86 no la pide.
+                        Incluye las 7 sucursales. Las compras anuladas van incluidas y marcadas,
+                        como pide el libro. Sin columna de sello: el Art. 86 no la exige para
+                        compras.
                     </Notice>
                 )}
 
@@ -913,16 +912,16 @@ export default function LibrosIvaView() {
                     que el faltante de NRC porque invalida más. */}
                 {activeTab === 'compras' && comprasSinSincronizar > 0 && (
                     <Notice variant="danger" icon={AlertTriangle}>
-                        <strong>{comprasSinSincronizar} de {compras.length}</strong> documentos vienen de
-                        antes de que el sync guardara el número de documento y la percepción. Resincronizá
-                        {' '}{etiquetaMes(mes)} antes de presentar este libro — en blanco no es cero.
+                        <strong>{comprasSinSincronizar} de {compras.length}</strong> documentos no tienen
+                        registrado su número ni la percepción. Hay que completar {etiquetaMes(mes)} antes
+                        de presentar este libro — en blanco no es cero.
                     </Notice>
                 )}
 
                 {activeTab === 'compras' && comprasSinNrc > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
                         <strong>{comprasSinNrc} de {compras.length}</strong> documentos van sin NRC del
-                        proveedor, que el Art. 86 exige. Falta el dato en la ficha del proveedor del ERP.
+                        proveedor, que el Art. 86 exige. Falta completarlo en la ficha del proveedor.
                     </Notice>
                 )}
 
@@ -1033,7 +1032,7 @@ export default function LibrosIvaView() {
                                 ? `Sin percepción de IVA en ${etiquetaMes(mes)}`
                                 : `Sin retención de IVA en ${etiquetaMes(mes)}`,
                             activeTab === 'retencion'
-                                ? 'La empresa no es agente de retención: el ERP tampoco tiene una sola operación en toda su historia.'
+                                ? 'La empresa no es agente de retención: no hay ninguna operación registrada en todo el histórico.'
                                 : undefined)}>
                         {filasPagina.map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
@@ -1059,7 +1058,7 @@ export default function LibrosIvaView() {
                         empty={vacioDe(
                             UserX,
                             `Sin compras a sujetos excluidos en ${etiquetaMes(mes)}`,
-                            'Todas las compras del ERP son con crédito fiscal: no hay ni una Factura de Sujeto Excluido registrada.')}>
+                            'Todas las compras registradas son con crédito fiscal: no hay ninguna Factura de Sujeto Excluido.')}>
                         {filasPagina.map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
                                 <DataCell align="right">{r._n}</DataCell>

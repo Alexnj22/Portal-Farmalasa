@@ -16,7 +16,26 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.331.0';
+export const APP_VERSION = '2.331.1';
+
+// v2.331.1 — Libros IVA: la pantalla habla del portal, no de dónde salió el dato.
+//
+// Los avisos contaban la procedencia ("Verificado contra los libros del ERP en 7
+// sucursales × 3 meses") y nombraban al ERP siete veces. Dos problemas, dichos
+// por el usuario: **"ERP" no le dice nada a quien usa el portal**, y la
+// procedencia no es información que alguien necesite para armar la declaración —
+// es una nota del que lo construyó, puesta donde la lee todo el mundo.
+//
+// La regla que queda: en pantalla, que todo parezca que sale del portal. Los
+// avisos ahora dicen QUÉ mira el libro (el sello de Hacienda, las 7 sucursales,
+// las anuladas incluidas, lo que exige el Art. 86), no de dónde viene. Y sale
+// también la jerga interna: el badge "Sin sincronizar" es "Sin número",
+// "Resincronizá el mes" es "hay que completar el mes", y las columnas "ID ERP"
+// del CSV son "ID INTERNO".
+//
+// Los comentarios del código SÍ conservan la trazabilidad —el md5 de los 204
+// anulados, los $282.58 del sello, junio cuadrando en las 7— porque ahí sirve y
+// nadie que use el portal la ve.
 
 // v2.331.0 — Libros IVA: la pestaña que no se podía clickear, y el libro que
 // no se podía recorrer.

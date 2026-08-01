@@ -794,19 +794,35 @@ export default function LibrosIvaView() {
         if (activeTab === 'percepcion' || activeTab === 'retencion') {
             const esPerc = activeTab === 'percepcion';
             const filasAnexo = esPerc ? percepcion : retencion;
-            exportCsv(
-                ['No', 'FECHA', 'PROVEEDOR', 'NRC', 'NIT', 'CLASE DE DOCUMENTO',
-                 'No DOCUMENTO', 'ESTABLECIMIENTO', 'MONTO SUJETO',
-                 esPerc ? 'IVA PERCIBIDO' : 'IVA RETENIDO', 'ANULADA'],
+            // Réplica del anexo real (9 columnas, sin encabezado), verificada
+            // contra Bodega en junio 2026. Los montos van con CUATRO decimales.
+            //
+            // Dos diferencias conocidas, y las dos son de origen:
+            //
+            //   · El SELLO (columna 7) sale vacío: el anexo del ERP lo trae, pero
+            //     no viene en la fuente que alimenta Compras. Vacío y no cero —
+            //     no sabemos el valor.
+            //   · El monto sujeto va a diferir en la tercera y cuarta decimal:
+            //     el ERP guarda 577.7115 y el sync redondea a 577.71 al
+            //     guardarlo, así que acá sale 571.9900 donde el anexo dice
+            //     571.9915. Son ~0.0015 por fila. Recuperarlo exige cambiar la
+            //     precisión del sync, no el exportador.
+            //
+            // El de retención usa el mismo formato porque es su hermano, pero eso
+            // NO está verificado con datos: el archivo del ERP salió vacío en
+            // toda su historia (2025-01 → 2026-07, 7 sucursales).
+            exportCsv(null,
                 [
                     ...filasAnexo.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha), r.proveedor || '', r.nrc || '',
-                        r.nit || '', r.documento_tipo || '', r.documento_numero || '',
-                        nombreSucursal(r.branch_id), num(r.monto_sujeto),
-                        num(esPerc ? r.percepcion_iva : r.retencion_iva),
-                        r.anulada ? 'SI' : '',
+                        i + 1, fmtFecha(r.fecha),
+                        r.proveedor || '',
+                        docId(r.nit),
+                        r.documento_tipo === 'CCF' ? '03' : '01',
+                        r.documento_numero || '',
+                        '',
+                        (Number(r.monto_sujeto) || 0).toFixed(4),
+                        (Number(esPerc ? r.percepcion_iva : r.retencion_iva) || 0).toFixed(4),
                     ]),
-                    ['TOTALES', '', '', '', '', '', '', '', num(t.gravadas), num(t.debito), ''],
                 ],
                 `anexo-${esPerc ? 'percepcion' : 'retencion'}_${sufijoArchivo}.csv`);
             return;

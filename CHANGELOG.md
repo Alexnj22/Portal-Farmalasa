@@ -21,6 +21,38 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.335.1 — El anexo de percepción también sale en el formato del origen
+
+En la primera pasada este anexo se dio por vacío, y no lo estaba: **pide las
+credenciales de compras, no las de ventas**. Con las de ventas devuelve un
+archivo vacío, que es indistinguible de "no hubo percepción en el período" — el
+mismo modo de fallo que ya mordió antes en este módulo, donde una respuesta
+vacía se lee como un dato en vez de como un error.
+
+Con las credenciales correctas trae 9 columnas, y los montos van con **cuatro
+decimales**:
+
+```
+1;01/06/2026;LETERAGO S.A. DE C.V.;06142505071078;03;52805657-6F79-4956-A;2026…KDDT;571.9915;5.7200
+```
+
+### Dos diferencias que quedan, y las dos son de origen
+
+**El sello.** El anexo del ERP lo trae (columna 7); no viene en la fuente que
+alimenta Compras, así que sale **vacío y no en cero** — no sabemos el valor.
+
+**La precisión.** El ERP guarda `577.7115` y el sync lo redondea a `577.71` al
+guardarlo, así que el anexo del portal dice `571.9900` donde el del ERP dice
+`571.9915`. Son ~0.0015 por fila. Se corrige en el sync, no en el exportador, y
+queda anotado sin arreglar porque cambiar la precisión de una columna que ya
+cuadra al centavo en 12 de 12 branch-meses merece su propia verificación.
+
+El de **retención** usa el mismo formato por ser su hermano, pero eso **no está
+verificado con datos**: el archivo del ERP salió vacío en toda su historia
+(2025-01 → 2026-07, las 7 sucursales).
+
+_(pendiente de redactar)_
+
 ## v2.335.0 — Los CSV salen con el formato exacto de los reportes que replican
 
 Hasta ahora el portal exportaba archivos **con rótulos propios**: encabezado con

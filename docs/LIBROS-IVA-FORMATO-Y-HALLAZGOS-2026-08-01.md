@@ -1,6 +1,6 @@
 # Libros de IVA — formato de los archivos y hallazgos
 
-Fecha: 2026-08-01 · Versiones v2.333.0 → v2.335.0
+Fecha: 2026-08-01 · Versiones v2.333.0 → v2.335.1
 
 Este documento fija **el formato exacto de los archivos que el portal replica** y
 deja anotados los **errores encontrados en el origen**, para no volver a
@@ -33,7 +33,7 @@ lógica detrás**. Hay que copiar cada una como es.
 | Documentos anulados | `documentos_anulados_csv.php` | ✅ |
 | Libro de compras | `libro_compras_iva_csv.php` | ✅ |
 | Anexo de retención | `libro_retencion_iva_csv.php` | ✅ (vacío en toda la historia) |
-| Anexo de percepción | `libro_percepcion_iva_csv.php` | ✅ existe, vacío en la muestra |
+| Anexo de percepción | `libro_percepcion_iva_csv.php` | ✅ **con datos** — pide las credenciales de COMPRAS, no las de ventas |
 | Sujeto excluido | — | ❌ **no se encontró** (9 nombres probados) |
 
 Parámetros: `?fechaInicio=YYYY-MM-DD&fechaFin=YYYY-MM-DD`. **La sucursal es
@@ -73,6 +73,17 @@ Herramienta para volver a mirarlos: Edge Function `erp-csv-probe`.
 ```
 Las seis constantes se verificaron iguales en las 80 filas de junio. El anexo
 **no lleva** fecha, cliente ni total.
+
+### Percepción — 9 columnas
+```
+0 correlativo   3 NIT            6 sello (40)
+1 fecha         4 tipo doc (03)  7 monto sujeto (4 decimales)
+2 proveedor     5 nº documento   8 percepción (4 decimales)
+```
+**Pide las credenciales de COMPRAS.** Con las de ventas devuelve vacío, que es
+indistinguible de "no hay percepción" — así se dio por vacío en la primera
+pasada. El sello sale vacío del lado del portal: el anexo del ERP lo trae, pero
+no viene en la fuente que alimenta Compras.
 
 ### Compras — 23 columnas
 ```
@@ -153,7 +164,7 @@ el módulo de Compras del portal. En el archivo del portal esa columna sale
 
 ## 5. Estado y pendientes
 
-**Cerrado:** los cuatro archivos principales salen con el formato del origen,
+**Cerrado:** los cinco archivos con datos salen con el formato del origen,
 verificados columna por columna. El número de control de ventas está completo
 (7,017 documentos) y se mantiene solo.
 
@@ -168,5 +179,10 @@ verificados columna por columna. El número de control de ventas está completo
   tres reglas en cascada. 6 casos ambiguos se dejarían fuera a propósito.
 - **Sujeto excluido**: no se encontró su archivo en el origen. Sale vacío en toda
   la historia de todas formas.
-- **Anexo de percepción**: su archivo existe pero salió vacío en la muestra, así
-  que su formato no está verificado. El del portal conserva encabezado propio.
+- **Anexo de retención**: usa el mismo formato que percepción por ser su
+  hermano, pero **no está verificado con datos** — el archivo del ERP salió
+  vacío en toda su historia (2025-01 → 2026-07, 7 sucursales).
+- **Precisión de los montos de percepción**: el ERP guarda `577.7115` y el sync
+  redondea a `577.71`, así que el anexo del portal sale con `571.9900` donde el
+  del ERP dice `571.9915`. ~0.0015 por fila. Se corrige en el sync, no en el
+  exportador.

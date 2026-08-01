@@ -550,6 +550,21 @@ export default function LibrosIvaView() {
         () => compras.filter(r => r.documento_numero == null).length,
         [compras]);
 
+    // El número de control se trae documento por documento y puede quedar a
+    // medias: si el origen se cae, lo que falte queda en NULL. Cuenta la
+    // pestaña que se está mirando, porque cada libro lo lleva en su propia
+    // columna —consumidor en dos, el del primero y el del último del día— y un
+    // faltante en uno no dice nada del otro.
+    const sinNumeroControl = useMemo(() => {
+        if (activeTab === 'consumidor')
+            return consumidor.filter(r => !r.numero_control_del || !r.numero_control_al).length;
+        if (activeTab === 'contribuyente')
+            return contribuyente.filter(r => !r.numero_control).length;
+        if (activeTab === 'anulados')
+            return anulados.filter(r => !r.numero_control).length;
+        return 0;
+    }, [activeTab, consumidor, contribuyente, anulados]);
+
     const sufijoArchivo = `${mes}${filterBranch ? `_${nombreSucursal(Number(filterBranch)).replace(/\s+/g, '-')}` : ''}`;
 
     const exportar = () => {
@@ -562,6 +577,7 @@ export default function LibrosIvaView() {
             // estaban guardados y este CSV no los sacaba.
             exportCsv(
                 ['FECHA', 'CLASE', 'TIPO', 'DEL No', 'AL No',
+                 'NUMERO DE CONTROL DEL', 'NUMERO DE CONTROL AL',
                  'CODIGO DE GENERACION DEL', 'CODIGO DE GENERACION AL',
                  'SELLO DE RECEPCION DEL', 'ID INTERNO DEL', 'ID INTERNO AL',
                  'ESTABLECIMIENTO', 'DOCUMENTOS', 'VENTAS EXENTAS',
@@ -571,6 +587,7 @@ export default function LibrosIvaView() {
                     ...consumidor.map(r => [
                         fmtFecha(r.fecha), '4', '01',
                         soloNumero(r.correlativo_del), soloNumero(r.correlativo_al),
+                        r.numero_control_del || '', r.numero_control_al || '',
                         (r.codigo_gen_del || '').toUpperCase(), (r.codigo_gen_al || '').toUpperCase(),
                         r.sello_del || '', r.erp_id_del || '', r.erp_id_al || '',
                         nombreSucursal(r.branch_id), r.documentos,
@@ -579,22 +596,27 @@ export default function LibrosIvaView() {
                     ]),
                     // Art. 83 pide totalizar el mes y consignar el resumen del
                     // débito fiscal. Va en el archivo, no solo en la pantalla.
-                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', t.docs,
+                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', '', '', t.docs,
                      num(t.exentas), num(t.gravadas), '0.00', num(t.total), '0.00'],
                     ['DEBITO FISCAL DEL PERIODO', '', '', '', '', '', '', '', '', '', '', '',
-                     '', num(t.debito), '', '', ''],
+                     '', '', '', num(t.debito), '', '', ''],
                 ],
                 `libro-consumidor-final_${sufijoArchivo}.csv`);
             return;
         }
         if (activeTab === 'contribuyente') {
-            // Art. 85 más la identidad del DTE, que es lo que el libro del ERP
-            // lleva y este CSV no llevaba: sello de recepción, código de
-            // generación, NIT y la clase/tipo del documento. Los cuatro estaban
-            // guardados desde siempre; el que falta de verdad es el número de
-            // control, que el ERP no manda en el JSON que sincronizamos.
+            // Art. 85 más la identidad del DTE: sello de recepción, código de
+            // generación, NIT, la clase/tipo del documento y —desde el
+            // 2026-08-01— el número de control, que es el que faltaba de verdad.
+            //
+            // Va en columna propia y NO reemplazando a "No CCF", que sigue
+            // llevando el correlativo: son dos numeraciones distintas y todavía
+            // no está verificado cuál de las dos consigna el reporte en esa
+            // columna. Mientras la duda exista, el archivo lleva las dos —
+            // sobra un dato, no falta.
             exportCsv(
-                ['No', 'FECHA', 'CLASE', 'TIPO', 'No CCF', 'CODIGO DE GENERACION',
+                ['No', 'FECHA', 'CLASE', 'TIPO', 'No CCF', 'NUMERO DE CONTROL',
+                 'CODIGO DE GENERACION',
                  'SELLO DE RECEPCION', 'ID INTERNO', 'CLIENTE', 'NRC', 'NIT', 'DUI',
                  'VENTAS EXENTAS', 'VENTAS GRAVADAS', 'DEBITO FISCAL',
                  'VENTAS CUENTA DE TERCEROS', 'DEBITO CUENTA DE TERCEROS',
@@ -607,13 +629,14 @@ export default function LibrosIvaView() {
                         // catálogo de Hacienda, no una numeración nuestra.
                         '4', '03',
                         soloNumero(r.correlativo),
+                        r.numero_control || '',
                         (r.codigo_generacion || '').toUpperCase(),
                         r.sello_recepcion || '', r.erp_invoice_id || '',
                         r.cliente || '', r.nrc || '', r.nit || '', r.dui || '',
                         num(r.ventas_exentas), num(r.ventas_gravadas), num(r.debito_fiscal),
                         '0.00', '0.00', '0.00', num(r.total),
                     ]),
-                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', '',
+                    ['TOTALES', '', '', '', '', '', '', '', '', '', '', '', '',
                      num(t.exentas), num(t.gravadas), num(t.debito),
                      '0.00', '0.00', '0.00', num(t.total)],
                 ],
@@ -625,19 +648,24 @@ export default function LibrosIvaView() {
             // ERP los lleva y acá estaban guardados sin salir. Al revés, el ERP
             // NO trae fecha, cliente ni total — esas tres quedan porque hacen
             // el anexo legible sin tener que ir a buscar cada documento.
+            // El número de control va PRIMERO porque es la columna 1 del anexo,
+            // la única de las diez que no se podía llenar hasta hoy. Las seis
+            // del medio son constantes verificadas sobre las 80 filas de junio.
             exportCsv(
-                ['No', 'FECHA', 'CLASE', 'TIPO', 'CORRELATIVO', 'CODIGO DE GENERACION',
+                ['No', 'NUMERO DE CONTROL', 'FECHA', 'CLASE', 'TIPO', 'CORRELATIVO',
+                 'CODIGO DE GENERACION',
                  'SELLO DE RECEPCION', 'ID INTERNO', 'CLIENTE', 'TOTAL'],
                 [
                     ...anulados.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha), '4',
+                        i + 1, r.numero_control || '',
+                        fmtFecha(r.fecha), '4',
                         r.tipo_documento === 'CCF' ? '03' : '01',
                         soloNumero(r.correlativo),
                         (r.codigo_generacion || '').toUpperCase(),
                         r.sello_recepcion || '', r.erp_invoice_id || '',
                         r.cliente || '', num(r.total),
                     ]),
-                    ['TOTALES', '', '', '', '', '', '', '', '', num(t.total)],
+                    ['TOTALES', '', '', '', '', '', '', '', '', '', num(t.total)],
                 ],
                 `anexo-anulados_${sufijoArchivo}.csv`);
             return;
@@ -928,6 +956,14 @@ export default function LibrosIvaView() {
                     <Notice variant="warning" icon={AlertTriangle}>
                         <strong>{comprasSinNrc} de {compras.length}</strong> documentos van sin NRC del
                         proveedor, que el Art. 86 exige. Falta completarlo en la ficha del proveedor.
+                    </Notice>
+                )}
+
+                {sinNumeroControl > 0 && (
+                    <Notice variant="danger" icon={AlertTriangle}>
+                        <strong>{sinNumeroControl} de {filas.length}</strong> filas van sin número de
+                        control. Es columna obligatoria del libro, así que {etiquetaMes(mes)} todavía no
+                        se puede presentar — se completa solo, y si no baja en unas horas hay que revisarlo.
                     </Notice>
                 )}
 

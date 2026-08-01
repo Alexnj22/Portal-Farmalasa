@@ -16,7 +16,39 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.332.1';
+export const APP_VERSION = '2.333.0';
+
+// v2.333.0 — el número de control fiscal, que no estaba en ninguna parte.
+//
+// Los tres libros de ventas lo necesitan —en el anexo de anulados es la columna
+// 1— y la columna no existía en la base. No se puede calcular a partir del
+// correlativo que ya guardábamos: son dos contadores independientes y cada
+// punto de venta corre su propia serie. Medido sobre dos documentos, la
+// diferencia entre uno y otro fue 39 y 103.
+//
+// El único origen responde de a UN documento por llamada, así que hay que
+// traerlos: ~7,000 históricos y ~16 por día en adelante (contra 726 ventas
+// diarias — al libro solo le hacen falta los CCF, los anulados y la primera y
+// última venta de cada sucursal-día). Backfill medido en 12/12 de éxito por
+// tipo, estado y antigüedad.
+//
+// El mismo motor hace las dos cosas, y QUÉ documentos hacen falta lo decide la
+// base: si mañana cambia un libro, el backfill y el trabajo diario quedan
+// alineados solos en vez de desincronizarse.
+//
+// Dos trampas que costaron encontrar:
+//
+// 1. Los extremos del día se calculaban entre los que AÚN no tenían número, así
+//    que al llenar la primera venta del día la segunda pasaba a ser "la primera
+//    que falta" y la cola se regeneraba sola — se habría comido las 548K
+//    facturas. Se llenaron 100 y el pendiente bajó 3.
+// 2. Contar los pendientes con un RPC que devuelve filas daba 1000 SIEMPRE:
+//    PostgREST trunca ahí sin avisar.
+//
+// El dato completo va al CSV y no a la tabla, por el mismo criterio que ya
+// regía para el sello y el código de generación: son cadenas de 31 a 40
+// caracteres que empujan las columnas fuera del visor. En pantalla queda el
+// aviso de cuántas filas van sin él, porque un libro incompleto no se presenta.
 
 // v2.332.1 — Facturas de Compra: sale el "ERP:" de la fila del proveedor.
 //

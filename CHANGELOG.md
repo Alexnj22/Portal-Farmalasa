@@ -12,6 +12,62 @@ retomar; acá está todo.
 
 ---
 
+## v2.333.0 — El número de control fiscal, que no estaba en ninguna parte
+
+Los tres libros de ventas lo necesitan —en el anexo de documentos anulados es la
+**columna 1**— y la columna no existía en la base de datos. La primera idea fue
+calcularlo a partir del correlativo que ya guardábamos, para ahorrarse el
+trabajo. No se puede: son dos contadores independientes, y cada punto de venta
+corre su propia serie. Medido sobre dos documentos:
+
+```
+DTE-03-S006P007-000000000000035  ← correlativo interno:  74   diferencia:  39
+DTE-03-M001P003-000000000000093  ← correlativo interno: 196   diferencia: 103
+```
+
+El único origen que lo devuelve responde de a **un documento por llamada**, así
+que hay que traerlos uno por uno: ~7,000 históricos desde mayo 2025 y ~16 por
+día en adelante. Ese 16 es contra **726 ventas diarias**: al libro solo le hacen
+falta los CCF, los anulados y la primera y última venta de cada sucursal-día.
+Verificado antes de construir nada, sobre una muestra por tipo, estado y
+antigüedad: **12 de 12**, incluidos anulados y documentos de mayo 2025.
+
+**El mismo motor sirve para el backfill y para el día a día**, y qué documentos
+hacen falta lo decide la base de datos, no el código del sync. Si mañana cambia
+un libro, los dos modos quedan alineados solos en vez de desincronizarse — que
+es exactamente cómo se acumula la deuda que este módulo ya pagó una vez.
+
+### Dos trampas que costaron encontrar
+
+**La cola se regeneraba sola.** Los extremos del día se calculaban entre los
+documentos que *aún no tenían número*, así que al llenar la primera venta del
+día la segunda pasaba a ser "la primera que falta", y volvía a entrar. Se habría
+comido las 548,000 facturas de a 400 por corrida. Se detectó porque se llenaron
+100 documentos y el pendiente bajó **3**. Ahora la ventana corre sobre el día
+entero y el descarte de los ya llenos va al final.
+
+**El conteo de pendientes mentía.** Pedirle los faltantes a un RPC que devuelve
+filas daba 1000 **siempre**: es el `max-rows` de PostgREST, que trunca sin
+error. Con 7,000 pendientes reportaba 1,000 y el backfill no podía saber nunca
+si había terminado. El conteo salió a una función que devuelve un escalar, que
+es lo único que ese tope no toca.
+
+### Dónde queda el dato
+
+En el **CSV**, no en la tabla — mismo criterio que ya regía para el sello y el
+código de generación: son cadenas de 31 a 40 caracteres que empujan las columnas
+fuera del visor y no se leen de un vistazo. En el libro de contribuyentes va en
+columna propia y **no** reemplazando a `No CCF`, que sigue llevando el
+correlativo: son dos numeraciones distintas y todavía no está verificado cuál
+consigna el reporte en esa columna. Mientras la duda exista, el archivo lleva
+las dos.
+
+En pantalla queda el aviso de cuántas filas van sin número de control, porque un
+libro incompleto no se presenta. Y si el origen se cae a mitad de camino, avisa
+al rol de alertas técnicas en vez de devolver un archivo con huecos en silencio.
+
+---
+
 ## v2.323.0 — Libros IVA: faltaban cuatro de los siete reportes, y las compras de cinco sucursales
 
 El módulo cubría 3 reportes del grupo "Libros Iva" del ERP: consumidor,

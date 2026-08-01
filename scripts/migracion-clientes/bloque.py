@@ -194,6 +194,33 @@ def candidatos_distrito(direccion, ops):
                                  if tokens_distintivos(t) & palabras], direccion)
 
 
+def preferir_los_nombrados_entero(hits, direccion):
+    """Entre varios candidatos, los que la dirección nombra COMPLETOS.
+
+    Caso real (erp 2112, bloque 5): dirección `CONCEPCION CANCASQUE`, candidatos
+    `CONCEPCIÓN QUEZALTEPEQUE` y `SAN J CANCASQUE`. El matcher sorteaba, pero no
+    son igual de buenos:
+
+        SAN J CANCASQUE          distintivo: {CANCASQUE}                  ← está entero
+        CONCEPCIÓN QUEZALTEPEQUE distintivo: {CONCEPCION, QUEZALTEPEQUE}  ← falta la mitad
+
+    O sea que la dirección nombra a uno completo y del otro solo comparte una
+    palabra. `CONCEPCIÓN` además es un elemento común de la toponimia
+    salvadoreña (Nueva Concepción, Concepción de Ataco, Concepción Batres…),
+    mientras que `CANCASQUE` no aparece en ningún otro distrito.
+
+    Es complementaria a `descartar_los_que_son_la_ubicacion`: aquella resuelve
+    "DISTRITO, DEPARTAMENTO" y esta resuelve "los dos comparten una palabra".
+    Ninguna inventa nada — si no dejan un único ganador, se sigue al desempate.
+    """
+    if len(hits) < 2:
+        return hits
+    palabras = set(norm(direccion).split())
+    enteros = [(v, t) for v, t in hits
+               if tokens_distintivos(t) and tokens_distintivos(t) <= palabras]
+    return enteros or hits
+
+
 def ubicacion_de(campos, ops):
     """Los nombres del departamento y el municipio DE ESTA FICHA, normalizados.
 
@@ -256,8 +283,9 @@ def elegir_distrito(portal_id, direccion, ops, ubicacion=None):
     if len(fuertes) == 1:
         return fuertes[0][0], 'dirección (nombre completo)', fuertes
 
-    debiles = descartar_los_que_son_la_ubicacion(
-        candidatos_distrito(direccion, ops), ubicacion)
+    debiles = preferir_los_nombrados_entero(
+        descartar_los_que_son_la_ubicacion(
+            candidatos_distrito(direccion, ops), ubicacion), direccion)
     if len(debiles) == 1:
         return debiles[0][0], 'dirección (abreviatura)', debiles
 

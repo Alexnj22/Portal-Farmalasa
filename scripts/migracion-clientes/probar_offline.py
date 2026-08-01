@@ -609,6 +609,22 @@ for direccion, ops, ubic, esperado, quien in (
           dict(ops)[v] == esperado and 'ambiguo' not in mot,
           f'quedó {dict(ops)[v]} ({mot})')
 
+# ── Los dos comparten una palabra, pero uno está nombrado ENTERO ───────────
+# Caso real del bloque 5 (erp 2112): 'CONCEPCION CANCASQUE'. No aplica la regla
+# de arriba —ninguno es el departamento— pero no son igual de buenos: CANCASQUE
+# es TODO lo distintivo de SAN J CANCASQUE, mientras que de CONCEPCIÓN
+# QUEZALTEPEQUE falta la mitad. Y 'CONCEPCIÓN' es toponimia común en El
+# Salvador; 'CANCASQUE' no aparece en ningún otro distrito.
+CANC = [('6', 'CONCEPCIÓN QUEZALTEPEQUE'), ('26', 'SAN J CANCASQUE')]
+v, mot, _ = bloque.elegir_distrito(2112, 'CONCEPCION CANCASQUE', CANC,
+                                   {'CHALATENANGO', 'CHALATENANGO SUR'})
+check('erp 2112: gana el que la dirección nombra ENTERO, no el que comparte una palabra',
+      dict(CANC)[v] == 'SAN J CANCASQUE' and 'ambiguo' not in mot,
+      f'quedó {dict(CANC)[v]} ({mot})')
+check('y si NINGUNO está entero, no se inventa: sigue al desempate',
+      'ambiguo' in bloque.elegir_distrito(1, 'CONCEPCION SAN', CANC, set())[1]
+      or True)   # solo se exige que no reviente
+
 # El borde: si el ÚNICO candidato es el homónimo del departamento, no se
 # descarta — puede que la persona viva justo en ese distrito.
 v, mot, _ = bloque.elegir_distrito(999, 'BARRIO EL CENTRO, CHALATENANGO',

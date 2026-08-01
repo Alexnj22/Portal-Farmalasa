@@ -16,7 +16,95 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.320.3';
+export const APP_VERSION = '2.322.0';
+
+// v2.322.0 — notificaciones: la alerta técnica deja de sonarle a todos, el
+// aviso deja de salir dos veces, y un envío fallido deja de ser invisible.
+//
+// Tres hallazgos de la auditoría del canal (2026-08-01), en un viaje.
+//
+// **1. El sync fallido le caía a los 59 empleados.** `inventory_sync_log` tiene
+// `SELECT USING (true)` y está en la publicación de Realtime, así que un
+// dependiente de Salud 3 recibía —en pantalla y en el celular— que había
+// fallado el inventario de Salud 1. Es una alerta de operaciones: el ERP no
+// entregó datos y quien puede hacer algo es sistemas. Ahora va gateada por
+// `hasPermission('sync_health','can_view')`, módulo que YA existía y YA estaba
+// asignado al rol "Sistema — Alertas Técnicas". No hizo falta inventar nada.
+//
+// **2. Los avisos se anunciaban dos veces.** Había DOS suscripciones Realtime
+// al mismo INSERT de `announcements`: el canal `announcements-live` que abre
+// `fetchBoot` y otra en `useSyncMonitor`. Las dos hacían `showToast`, con
+// textos DISTINTOS (`a.title/a.message` vs `'Nuevo aviso'/a.title`). Como el
+// store de toasts tiene un solo espacio, el que veía el usuario dependía de
+// cuál llegara última — o sea, del azar. Se eliminó la de `useSyncMonitor` y la
+// que quedó heredó la notificación del sistema operativo. Una suscripción
+// Realtime menos por sesión, además.
+//
+// **3. `notifyEmployees`/`notifyBranch` se tragaban el error.** Hacían
+// `catch { console.error; return 0 }`: la acción del usuario se completaba como
+// si todo hubiera salido bien aunque el destinatario no se enterara. Eso es lo
+// que dejó vivir tres semanas el 401 del push (v2.320.3) — el canal estaba roto
+// y el portal no lo dijo ni una vez. Ahora reintenta 3 veces con backoff ante
+// fallas transitorias y, si igual no sale, se lo dice a QUIEN HIZO LA ACCIÓN:
+// "Tu acción sí se guardó, pero no se le avisó a la otra persona. Avísale por
+// otro medio." Es el único que puede levantar el teléfono.
+//
+// Sobre el reintento: NO se repite un error que volvió con respuesta del
+// servidor distinta de 5xx. El RPC hace un INSERT, así que repetir algo que
+// quizá sí se ejecutó duplicaría la notificación; "Failed to fetch" es el caso
+// donde la petición con toda probabilidad no llegó a salir.
+//
+// De paso, `fireBrowserNotif` estaba copiado idéntico en dos hooks. Se unificó
+// en `utils/browserNotif.js` porque el suscriptor que quedó (que vive en el
+// store) también la necesita.
+//
+// Probado contra prod con la cuenta QA y limpiado después: los 13 tipos de
+// notificación que nunca se habían disparado insertan bien y los 10 push
+// encolados llevan el `x-cron-secret` (10 de 10); el trigger de avisos dispara
+// su push; el RLS aísla —el aviso no es visible para otro empleado y ninguna
+// notificación quedó con destinatario ajeno—. 0 filas de prueba al terminar.
+
+
+// v2.321.0 — "A revisar" contaba 17 y el filtro mostraba 2.
+//
+// El chip era un BOOLEANO que mandaba siempre `p_revisar: 'dui'`. El RPC ya
+// soportaba 'telefono' y 'nombre' desde el día uno, pero no había forma de
+// pedirlos desde la UI — así que la tarjeta contaba las tres causas (17) y el
+// filtro de al lado enseñaba una (2). Pasa a ranura de CUATRO opciones, que con
+// 4 cae sola en LiquidSelect.
+//
+// La cuarta es nueva: **posible duplicado**. Lo medido primero, porque la
+// definición no era obvia:
+//   · por documento NO hay: DUI y NIT tienen cero repetidos.
+//   · por nombre exacto tampoco: `customers_name_norm_idx` es único.
+//   · por teléfono es una trampa — `1111-1111` está en 69 personas distintas.
+//     Es relleno de cajero.
+//   · lo que SÍ hay son 86 fichas en 43 grupos con el mismo conjunto de tokens
+//     y distinto orden: apellidos invertidos ("JUAN CARLOS MEJIA ALAS" /
+//     "JUAN CARLOS ALAS MEJIA"). Uno además tiene doble espacio INTERIOR, que
+//     el índice único no ve porque `trim` solo toca las puntas.
+//
+// El orden por nombre deja al par en la fila de al lado en 37 de los 43 grupos,
+// gratis: comparten el primer token porque lo invertido son los apellidos. Los
+// otros 6 invierten nombre y apellido enteros ("ALVARENGA ALVARENGA FRANCISCO
+// ANTONIO" contra "FRANCISCO ANTONIO ALVARENGA ALVARENGA") y caen en letras
+// distintas — por eso cada fila lleva en el `title` con quién choca, y no
+// alcanzaba con ordenar.
+//
+// Ordenar los tokens de las 24,506 cuesta 327ms medidos (la lista va en 126ms),
+// así que el bloque se INYECTA en el texto del query solo cuando el filtro está
+// puesto — no queda como un predicado que un plan genérico tendría que
+// descartar. Una columna generada sería gratis en lectura, pero pide
+// `ALTER TABLE customers`: ACCESS EXCLUSIVE sobre una tabla que el sync de DTE
+// escribe cada minuto entre 12:00 y 05:59 UTC, que es el perfil exacto del
+// outage del 2026-07-08.
+//
+// De paso, "Nombre dañado" dejó de ser solo mojibake: ahora también marca los
+// nombres SIN UNA SOLA LETRA. Son 3 y no los veía nadie — `....` facturó $481
+// en 16 tickets y estuvo activa hasta el 2026-05-20. Es un cajero saltándose el
+// campo, o sea un cuarto balde de mostrador encubierto que hasta hoy entraba a
+// la cola de "por completar" como si fuera una persona sin NIT. La tarjeta
+// pasa de 17 a 20.
 
 // v2.320.3 — el push estaba muerto hacía tres semanas y nadie se enteró.
 //

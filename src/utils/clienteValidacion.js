@@ -38,9 +38,29 @@ const vacio = (v) => !String(v ?? '').trim();
 // Todas devuelven `true` con el campo vacío: "vacío" es asunto de los
 // requeridos, no del formato. Un campo opcional y vacío no está mal escrito.
 
+// Prefijos del plan de numeración de El Salvador (SIGET): 2 para telefonía
+// fija, y 5/6/7 para móvil. **El 5 es nuevo** — se habilitó el 29-oct-2025
+// junto a los 6 y 7 que ya existían, así que una lista escrita de memoria hace
+// un par de años lo dejaría afuera y rechazaría números legítimos.
+const PREFIJOS_SV = /^[2567]/;
+
+/**
+ * Ocho dígitos con prefijo válido, o el código de país 503 delante.
+ *
+ * Se cuentan DÍGITOS, no caracteres: '7538-5899', '75385899' y '(503) 7538-5899'
+ * son el mismo número y los tres valen.
+ *
+ * El prefijo es lo que separa un teléfono de un relleno: en las fichas ya
+ * portadas hay 148 con '1111-1111' —que tiene 8 dígitos y pasaba la regla
+ * vieja— y una con '9000-0144'. Como el formato solo se le exige a lo que se
+ * toca, ninguna de esas queda congelada: se marcan cuando alguien las edita,
+ * que es justo cuando hay una persona mirando para corregirlas.
+ */
 export const telefonoValido = (tel) => {
-    const d = digitos(tel);
-    return d.length === 0 || d.length === 8 || /^503\d{8}$/.test(d);
+    let d = digitos(tel);
+    if (d.length === 0) return true;
+    if (d.startsWith('503') && d.length === 11) d = d.slice(3);
+    return d.length === 8 && PREFIJOS_SV.test(d);
 };
 
 export const duiValido = (dui) => vacio(dui) || isValidDUIAlgorithm(dui);
@@ -122,8 +142,8 @@ const FORMATO = [
     ['dui',           ['dui'],         (f) => duiValido(f.dui),             'No pasa el dígito verificador'],
     ['nit',           ['nit', 'dui'],  (f) => nitValido(f.nit, f.dui),      '14 dígitos, o el DUI de esta ficha'],
     ['nrc',           ['nrc'],         (f) => nrcValido(f.nrc),             'Entre 4 y 8 dígitos'],
-    ['phone',         ['phone'],       (f) => telefonoValido(f.phone),      '8 dígitos, o 503 + 8'],
-    ['telefono2',     ['telefono2'],   (f) => telefonoValido(f.telefono2),  '8 dígitos, o 503 + 8'],
+    ['phone',         ['phone'],       (f) => telefonoValido(f.phone),      '8 dígitos, empezando en 2, 5, 6 o 7'],
+    ['telefono2',     ['telefono2'],   (f) => telefonoValido(f.telefono2),  '8 dígitos, empezando en 2, 5, 6 o 7'],
     ['email',         ['email'],       (f) => correoValido(f.email),        'No parece un correo válido'],
     ['retencion_pct', ['retencion_pct'], (f) => retencionValida(f.retencion_pct), 'Un entero de 0 a 100'],
 ];

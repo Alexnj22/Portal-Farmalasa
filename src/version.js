@@ -16,7 +16,20 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.328.0';
+export const APP_VERSION = '2.328.1';
+
+// v2.328.1 — Teléfono: se valida el PREFIJO, no solo el largo.
+//
+// '1111-1111' tiene ocho dígitos y pasaba. El plan de numeración de El Salvador
+// (SIGET) usa 2 para fija y 5, 6 y 7 para móvil — y el 5 es NUEVO, habilitado el
+// 29-oct-2025, así que una lista escrita de memoria lo dejaría afuera y
+// rechazaría números legítimos. Se confirmó antes de escribirla.
+//
+// En las fichas ya portadas: 843 con prefijo válido, 148 con '1111-xxxx' y una
+// con '9000-0144'. Ninguna queda congelada — el formato solo se le exige a lo
+// que se toca — pero se marcan apenas alguien las edita, que es cuando hay una
+// persona mirando para corregirlas.
+
 
 // v2.328.0 — Clientes: máscaras, selects sin "Ninguno", el botón que se tapaba,
 // y el distrito que el formulario mostraba vacío teniéndolo.

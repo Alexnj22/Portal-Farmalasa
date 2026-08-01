@@ -59,8 +59,8 @@ Cambios acumulados:
     única forma en que la corrida podría pisar una edición hecha por otra
     persona en el ERP.
 """
-import argparse, hashlib, html, json, os, re, time
-import unicodedata, urllib.parse, urllib.request
+import argparse, hashlib, html, http.client, json, os, re, socket, time
+import unicodedata, urllib.error, urllib.parse, urllib.request
 
 D = os.path.dirname(os.path.abspath(__file__))
 BASE = 'https://clientesdte3.oss.com.sv/farma_salud'
@@ -523,15 +523,45 @@ def _es_login(h):
     return 'password' in h.lower()[:4000]
 
 
+# Reintentos de RED, distintos de los de `escribir_ficha` (que juzgan la
+# RESPUESTA del ERP). Acá el ERP ni contestó: se cortó el socket.
+#
+# Existe por un caso real del 2026-08-01: un empuje al ERP aplicó el POST y
+# después se cayó por timeout en la LECTURA de verificación. El cambio había
+# entrado —confirmado leyendo la ficha— pero el script murió, así que la cola no
+# se saldó y el trabajo quedó a medias por una lectura, no por la escritura.
+# Sin esto, un parpadeo de red en una corrida de 34 horas la mata.
+REINTENTOS_RED = 3
+PAUSA_RED = 3.0
+
+
 def pedir(url, datos=None, _reintentar=True):
     cab = {'Cookie': cookie(), 'User-Agent': 'Mozilla/5.0',
            'X-Requested-With': 'XMLHttpRequest', 'Referer': f'{BASE}/admin_cliente.php'}
     cuerpo = urllib.parse.urlencode(datos).encode() if datos else None
     if cuerpo:
         cab['Content-Type'] = 'application/x-www-form-urlencoded'
-    with urllib.request.urlopen(urllib.request.Request(url, data=cuerpo, headers=cab),
-                                timeout=45) as r:
-        h = r.read().decode('utf-8', 'replace')
+
+    ultimo = None
+    for intento in range(1, REINTENTOS_RED + 1):
+        try:
+            with urllib.request.urlopen(
+                    urllib.request.Request(url, data=cuerpo, headers=cab),
+                    timeout=45) as r:
+                h = r.read().decode('utf-8', 'replace')
+            break
+        except (socket.timeout, urllib.error.URLError, http.client.HTTPException) as e:
+            # Un 4xx es una respuesta del ERP, no un corte: no se reintenta.
+            if isinstance(e, urllib.error.HTTPError) and e.code < 500:
+                raise
+            ultimo = e
+            if intento == REINTENTOS_RED:
+                raise
+            print(f'          red: {type(e).__name__} — reintento {intento} '
+                  f'de {REINTENTOS_RED - 1}')
+            time.sleep(PAUSA_RED * intento)
+    else:                                       # pragma: no cover
+        raise ultimo
 
     # Sesión caída a mitad de corrida: si hay credenciales, se rehace el login y
     # se repite. Un POST que devolvió el login NO se aplicó, así que reintentarlo

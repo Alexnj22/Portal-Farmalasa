@@ -88,8 +88,22 @@ python3 bloque.py --desde-erp 500 --escribir --una-pasada   # escribe y verifica
 las reglas actuales. También existe `--entrada archivo.json` con una lista
 `[{id, name}]` del portal, que es como se hicieron los primeros bloques.
 
-**Siempre simular primero y mirar los DUI y los rechazos.** El resto se verifica
-solo.
+### ¿Hay que simular antes?
+
+**Con `--una-pasada`, no.** La regla vieja decía "siempre simular primero y
+mirar los DUI", y tenía sentido cuando el único modo era el de dos fases: ahí el
+plan completo solo se podía ver por adelantado, porque después se escribían las
+500 de corrido.
+
+En una pasada cada ficha imprime su plan **justo antes** de aplicarlo, y el
+número original de un DUI inválido se escribe a disco ANTES del POST que lo
+borra. O sea que lo que la simulación protegía ya está cubierto por la corrida
+misma, y simular cuesta 15 minutos y 500 peticiones de más contra el servidor
+del proveedor. Decidido así el 2026-08-01, después de tres bloques sin un solo
+rechazo.
+
+**Sí conviene simular** cuando cambiaste una regla de `planificar`: ahí querés
+ver el efecto sobre las 500 antes de escribir ninguna.
 
 ### `--una-pasada` es el modo de la corrida larga
 

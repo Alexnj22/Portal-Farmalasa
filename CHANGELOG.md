@@ -12,6 +12,75 @@ retomar; acá está todo.
 
 ---
 
+## v2.319.1 — el recálculo mensual de MIN·MAX moría en la PRIMERA sucursal de la lista
+
+El 1-ago el cron mensual (`auto-calculate-minmax`, jobid 170) calculó 5 de 6:
+La Popular murió con `canceling statement due to statement timeout`
+(`minmax_sync_log` id=8, 09:00:22.66 UTC) y hubo que recalcularla a mano.
+
+**No fue por ser grande.** Es 3ª por volumen (101,788 líneas) y Salud 1 —la más
+grande, 140,780— pasó **un segundo después**. Las cinco que pasaron tardaron
+~1s cada una. Lo que tenía de distinto La Popular es ir primera en
+`ERP_ORDER = [5,1,2,3,4,7]`.
+
+La CTE `primera_venta` escaneaba las 578,606 filas de `sales_invoice_items` en
+CADA una de las 6 llamadas, sin filtro de fecha **a propósito** (F2.3: es lo
+único que separa un producto nuevo de uno viejo con venta esporádica). Con
+`shared_buffers` en 256MB y las tablas de venta en ~600MB, la primera sucursal
+lee todo de disco y las otras cinco lo encuentran en RAM. Medido con
+`EXPLAIN (ANALYZE, BUFFERS)`:
+
+| | tiempo | leído de disco | de caché |
+|---|---|---|---|
+| La Popular (fría) | 1,292 ms | 4,967 bloques | 27,406 |
+| Salud 1 (caliente) | 266 ms | **24** bloques | 302,445 |
+
+Salud 1 tocó 6× más buffers y fue 5× más rápida: la variable es el disco, no el
+volumen. Y entre 06:00 y 11:59 UTC los crons de sync no corren (`12-23,0-5`),
+así que a las 09:00 el caché ya lo barrieron los diarios de 06:10–06:45 — el
+cron mensual **siempre** arranca en frío.
+
+### 1. `mv_primera_venta_producto`
+
+La primera venta histórica por (sucursal, producto) pasa a ser una MV de ~16,700
+filas con refresh diario (cron `refresh-primera-venta-daily`, 06:55 UTC). El
+scan de 578K filas sale de las 6 llamadas.
+
+El `LEAST(pv.primera, MIN(d.fecha))` que la acompaña **no es una aproximación**:
+es lo que mantiene el resultado exacto aunque la MV esté vieja. Un producto
+vendido por primera vez después del último refresh no está en la MV (`LEAST`
+ignora NULLs en Postgres) y su primera venta real es justamente la primera
+dentro de la ventana. Verificado contra la fórmula vieja: **13,526 productos,
+0 diferencias**, con 1,677 detectados como nuevos (o sea que la lógica se
+ejercita, no da igual por casualidad).
+
+**Lo que NO se puede hacer**, aunque parezca lo obvio: recortar el scan con
+`fecha >= v_from`. Un producto con primera venta real anterior a la ventana
+pasaría a reportar su primera venta *dentro* de la ventana y `data_days`
+saldría mal — que es justo el bug que F2.3 vino a arreglar.
+
+### 2. `service_role` pasa a 120s de `statement_timeout`
+
+No tenía valor propio, así que regía el de `authenticator` (**8s**), contra los
+**120s** de `authenticated`. Un trabajo de fondo tenía menos margen que una
+pantalla — y por eso el recálculo manual de La Popular sí pasó: ese camino no
+puede chocar contra la misma pared.
+
+**Ojo para la próxima:** colgarle `SET statement_timeout` a la FUNCIÓN no sirve,
+y se probó. El temporizador se arma al inicio de la sentencia con el valor del
+que llama y la función no lo re-arma: una función con `SET '60s'` llamada bajo
+un timeout de 2s igual muere a los 2s. El único lugar que funciona es el rol
+(+ `NOTIFY pgrst, 'reload config'`, que PostgREST cachea los settings por rol).
+
+Sin cambios de frontend ni de edge function. La función nueva se ejecutó entera
+en staging (`ewcmerxqjvludtgskuin`) antes de darla por buena, y el archivo local
+se verificó por md5 contra el `prosrc` de prod.
+
+El aviso del cron sí funcionó como se diseñó: anuncio HIGH *"Recálculo con
+errores (5/6 sucursales calculadas). Errores en: La Popular"*.
+
+---
+
 ## v2.316.0 — `customers` deja de ser un catálogo de nombres
 
 La tabla tenía **24,482 filas y cero datos** en `nit`, `dui`, `email`, `phone` y

@@ -16,7 +16,52 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.319.0';
+export const APP_VERSION = '2.319.1';
+
+// v2.319.1 — MIN·MAX: el recálculo mensual dejaba de correr en la PRIMERA
+// sucursal de la lista, y el camino del cron tenía 15× menos techo que el manual.
+//
+// El 1-ago el cron mensual (`auto-calculate-minmax`, jobid 170) calculó 5 de 6:
+// La Popular murió con `canceling statement due to statement timeout` y hubo que
+// recalcularla a mano. No fue por ser grande — es 3ª por volumen, y Salud 1
+// (140,780 líneas contra 101,788) pasó **un segundo después**. Fue por ir
+// primera en `ERP_ORDER = [5,1,2,3,4,7]`.
+//
+// La CTE `primera_venta` escaneaba las 578,606 filas de `sales_invoice_items`
+// en CADA una de las 6 llamadas — sin filtro de fecha a propósito (F2.3: es lo
+// único que separa un producto nuevo de uno viejo con venta esporádica). Con
+// `shared_buffers` en 256MB y las tablas de venta en ~600MB, la primera
+// sucursal lee todo de disco y las otras cinco lo encuentran en RAM. Medido con
+// `EXPLAIN (ANALYZE, BUFFERS)`: La Popular en frío 1,292ms leyendo 4,967
+// bloques; Salud 1 en caliente 266ms leyendo **24**, tocando 6× más buffers.
+//
+// Dos correcciones:
+//
+// 1. **`mv_primera_venta_producto`** — la primera venta histórica por
+//    (sucursal, producto) pasa a ser una MV de ~16,700 filas, con refresh diario
+//    (cron `refresh-primera-venta-daily`, 06:55 UTC). El scan de 578K filas sale
+//    de las 6 llamadas.
+//
+//    El `LEAST(pv.primera, MIN(d.fecha))` que la acompaña no es una
+//    aproximación: es lo que mantiene el resultado EXACTO aunque la MV esté
+//    vieja. Un producto vendido por primera vez después del último refresh no
+//    está en la MV (`LEAST` ignora NULLs) y su primera venta real es justamente
+//    la primera dentro de la ventana. Verificado contra la fórmula vieja:
+//    **13,526 productos, 0 diferencias**, con 1,677 detectados como nuevos.
+//
+// 2. **`service_role` pasa a 120s de `statement_timeout`.** No tenía valor
+//    propio, así que regía el de `authenticator` (8s) — contra los 120s de
+//    `authenticated`. O sea que un trabajo de fondo tenía menos margen que una
+//    pantalla, y por eso el recálculo manual de La Popular sí pasó.
+//
+//    Ojo para la próxima: colgarle `SET statement_timeout` a la FUNCIÓN **no
+//    sirve**, y se probó. El temporizador se arma al inicio de la sentencia con
+//    el valor del que llama y la función no lo re-arma: una función con
+//    `SET '60s'` llamada bajo un timeout de 2s igual muere a los 2s. El único
+//    lugar que funciona es el rol.
+//
+// Sin cambios de frontend ni de edge function. La función nueva se ejecutó
+// entera en staging (`ewcmerxqjvludtgskuin`) antes de darla por buena.
 
 // v2.319.0 — Clientes: la vista. Y el catálogo deja de ser una lista de nombres
 // para volverse una cola de trabajo ordenada por plata.

@@ -13,7 +13,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import PeriodPicker from '../../components/common/PeriodPicker';
+import PeriodStepper from '../../components/common/PeriodStepper';
 import FilterBar from '../../components/common/FilterBar';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
@@ -104,17 +104,52 @@ function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disa
     );
 }
 
-// Formato "start|end" — mismo contrato que PeriodPicker/monthRange en VentasView.
-// Mes actual por defecto (mismo criterio que el preset "Este mes" de
-// PeriodPicker: día 1 al último día del mes, no acotado a "hoy").
+// ── El período es un MES COMPLETO ─────────────────────────────────────────
+// Acá se miran meses cerrados, siempre: el documento de compra se archiva por
+// período fiscal, igual que en Libros IVA. El rango libre de `PeriodPicker`
+// ofrecía "últimos 7 días" y cortes a mitad de mes que nadie usaba, y encima
+// dejaba entrar un rango a caballo entre dos meses — que en un archivo fiscal
+// no significa nada. Con el mismo `PeriodStepper` de Libros IVA no hay forma
+// de construir un rango inválido: solo se puede correr de mes en mes.
+//
+// El estado sigue siendo "start|end": es el contrato de los fetch y del
+// enlace `?desde=&hasta=` que llega desde Proveedores, y no había motivo para
+// romperlo por cambiar el control.
+const pad = (n) => String(n).padStart(2, '0');
+
+// La hora de El Salvador se obtiene corriendo el instante 6h y leyendo las
+// partes en UTC. Leerlas en local sobre el instante ya corrido las desplaza
+// DOS veces en una máquina que ya está en SV (UTC−6): el 1 de mes antes de las
+// 06:00 devolvía el mes anterior, o sea el libro equivocado.
+function mesActual() {
+    const sv = new Date(Date.now() - 6 * 3600_000);
+    return `${sv.getUTCFullYear()}-${pad(sv.getUTCMonth() + 1)}`;
+}
+
+// 'YYYY-MM' → "primer día|último día". `new Date(y, m, 0)` es el último día del
+// mes anterior a `m`, o sea el último del mes que se pide.
+function rangoDelMes(mes) {
+    const [y, m] = mes.split('-').map(Number);
+    return `${mes}-01|${mes}-${pad(new Date(y, m, 0).getDate())}`;
+}
+
+const mesDeRango = (rango) => String(rango || '').slice(0, 7);
+
+function correrMes(mes, delta) {
+    const [y, m] = mes.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+function etiquetaMes(mes) {
+    const [y, m] = mes.split('-').map(Number);
+    return `${MESES[m - 1]} ${y}`;
+}
+
 function defaultDateRange() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth();
-    const pad = (n) => String(n).padStart(2, '0');
-    const start = `${y}-${pad(m + 1)}-01`;
-    const end = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
-    return `${start}|${end}`;
+    return rangoDelMes(mesActual());
 }
 
 // Fase 4 §5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): si el término buscado
@@ -835,7 +870,16 @@ function TabDocumentos({
                     ]}
                 >
                     <FilterBar.Section active={dateDirty} onClear={() => setDateRange(defaultDateRange())} label="período">
-                        <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
+                        <PeriodStepper
+                            unit="mes"
+                            label={etiquetaMes(mesDeRango(dateRange))}
+                            onPrev={() => setDateRange(r => rangoDelMes(correrMes(mesDeRango(r), -1)))}
+                            onNext={() => setDateRange(r => rangoDelMes(correrMes(mesDeRango(r), 1)))}
+                            nextDisabled={mesDeRango(dateRange) >= mesActual()}
+                            onReset={() => setDateRange(defaultDateRange())}
+                            isCurrent={mesDeRango(dateRange) === mesActual()}
+                            resetLabel="Ir al mes actual"
+                        />
                     </FilterBar.Section>
                 </FilterBar>
             </div>
@@ -1166,10 +1210,16 @@ export default function FacturasCompraView({ openModal }) {
     // que cualquier proveedor cuya última compra no fuera de este mes caía en
     // "Sin facturas en el período" — justo después de mostrarle al usuario la
     // fecha de esa última compra. Ahora el origen puede fijar el rango.
+    // El rango que llega por el enlace se NORMALIZA al mes de `desde`. Desde que
+    // el control es un stepper de mes completo, un rango a caballo entre dos
+    // meses no se puede volver a construir desde la UI y el rótulo mentiría:
+    // diría "Mayo 2026" mientras el filtro trae del 20 de mayo al 5 de junio.
+    // El origen del enlace quiere abrir el mes de la última compra, y eso es
+    // exactamente lo que queda.
     const [dateRange, setDateRange] = useState(() => {
         const desde = searchParams.get('desde');
         const hasta = searchParams.get('hasta');
-        return desde && hasta ? `${desde}|${hasta}` : defaultDateRange();
+        return desde && hasta ? rangoDelMes(mesDeRango(desde)) : defaultDateRange();
     });
     const [dateStart, dateEnd] = dateRange.split('|');
     const [proveedores, setProveedores] = useState([]);

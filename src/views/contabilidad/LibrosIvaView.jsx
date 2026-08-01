@@ -78,9 +78,15 @@ const TABS = [
     { key: 'excluido',      label: 'Excluido'       },
 ];
 
+// Hora SV: se corre el instante 6h y se leen las partes en **UTC**. Leerlas en
+// local sobre el instante ya corrido las desplaza DOS veces en una máquina que
+// ya está en SV (UTC−6) — así, el 1 de mes antes de las 06:00 esto devolvía el
+// mes ANTERIOR, o sea que el libro abría en el período equivocado justo el día
+// en que se cierra el anterior. Detectado al replicar este filtro en Facturas
+// de Compra (2026-08-01).
 const mesActual = () => {
-    const n = new Date(Date.now() - 6 * 3600_000);   // hora SV
-    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+    const sv = new Date(Date.now() - 6 * 3600_000);
+    return `${sv.getUTCFullYear()}-${String(sv.getUTCMonth() + 1).padStart(2, '0')}`;
 };
 
 // Del 'YYYY-MM' al par de fechas que piden los RPC. `new Date(y, m, 0)` es el

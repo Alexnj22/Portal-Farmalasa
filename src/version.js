@@ -16,7 +16,34 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.331.1';
+export const APP_VERSION = '2.332.0';
+
+// v2.332.0 — Facturas de Compra filtra por mes completo, igual que Libros IVA.
+//
+// Los dos son el mismo trabajo —archivo fiscal por período— y tenían controles
+// distintos: acá un `PeriodPicker` de rango libre con presets ("últimos 7
+// días", cortes a mitad de mes) que además dejaba armar un rango a caballo
+// entre dos meses, que en un archivo fiscal no significa nada. Ahora es el
+// mismo `PeriodStepper` (‹ Julio 2026 ›): no hay forma de construir un rango
+// inválido, solo correr de mes en mes.
+//
+// El estado sigue siendo "start|end" — es el contrato de los fetch y del enlace
+// `?desde=&hasta=` que llega desde Proveedores. Ese enlace ahora se NORMALIZA
+// al mes de `desde`: si no, el rótulo diría "Mayo 2026" mientras el filtro
+// traía del 20 de mayo al 5 de junio, y el usuario no podría reconstruir ese
+// rango desde la UI.
+//
+// De paso, un bug de fecha que estaba en los dos: `mesActual()` corría el
+// instante 6h para la hora de El Salvador y después leía las partes en LOCAL,
+// que en una máquina ya en SV (UTC−6) las desplaza dos veces. El 1 de mes antes
+// de las 06:00 devolvía el mes ANTERIOR — o sea que la vista abría en el
+// período equivocado justo el día en que se cierra el anterior. Se leen en UTC,
+// como ya hacía `PeriodPicker`.
+//
+// Verificado en vivo contra la BD: agosto (actual, siguiente deshabilitado),
+// julio 855 documentos, junio 634, y el enlace `?desde=2026-05-20&hasta=
+// 2026-06-05` abre en Mayo 2026 con sus 22 — los tres coinciden exacto con
+// `purchase_dte_documents`.
 
 // v2.331.1 — Libros IVA: la pantalla habla del portal, no de dónde salió el dato.
 //

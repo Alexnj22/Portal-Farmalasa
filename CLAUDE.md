@@ -213,6 +213,36 @@ detectar stale rows (obliga a escribir todo); borrar por diferencia de keys.
 Tampoco poner `updated_at: now()` en el payload del sync — hace que toda fila
 "cambie" siempre; el RPC lo asigna solo cuando el dato real cambió.
 
+**El ERP es más lento que el límite de una Edge Function.** Medido el
+2026-08-01: `descargar_compras_json.php` tarda **167s en un mes de Bodega** y 68s
+en 10 días, contra los **150s** que vive la respuesta de una Edge Function. Un
+backfill por mes da 504 aunque el trabajo esté bien. Dos consecuencias:
+`sync-erp-purchases` acepta `background: true` (responde 202 y sigue con
+`EdgeRuntime.waitUntil`), y **todo backfill va en ventanas de ≤10 días**. El cron
+no usa el modo background a propósito: pide 2 días, termina en segundos y quiere
+el resultado en la respuesta para que un fallo se vea.
+
+## REGLA: replicar un reporte = comparar TODAS sus columnas
+
+Al reproducir el libro de compras del ERP (2026-08-01) verifiqué mayo 2025 en las
+7 sucursales y cuadraba al centavo en documentos, total, crédito fiscal y
+percepción. Escribí "verificado" en la migración, el commit y el changelog. La
+quinta columna —**gravadas**— estaba mal en todas las filas con percepción, y lo
+delató una captura de pantalla, no la verificación.
+
+La causa era sistemática: el ERP manda `totales.sumas_gravadas` **con la
+percepción adentro** (cumple `sumas_gravadas + iva = total_operacion`) y su libro
+la resta para llegar a la base gravada. Los otros cuatro números no lo mostraban
+porque el total la incluye, el crédito fiscal no la toca y la percepción cuadraba
+con ella misma.
+
+**La lista de columnas a comparar sale del encabezado del reporte destino, no de
+lo que a uno se le ocurre chequear.** Recorrerlo columna por columna; si una no
+se puede verificar, decirlo — no omitirla en silencio. Es la otra cara de la
+regla del sello (`docs/` y memoria `feedback_el_sello_es_el_filtro_del_libro`):
+allá era no redondear una diferencia, acá es no declarar "sin diferencia" cuando
+ni se miró.
+
 ## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
 
 Hardening completo aplicado 2026-07-02 (`supabase/migrations/20260702_db_hardening_*`).

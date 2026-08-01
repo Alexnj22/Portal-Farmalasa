@@ -16,7 +16,17 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.324.2';
+export const APP_VERSION = '2.324.3';
+
+// v2.324.3 — dos reglas a CLAUDE.md, escritas donde se leen.
+//
+// 1. **El ERP es más lento que el límite de una Edge Function**: 167s un mes de
+//    Bodega contra los 150s que vive la respuesta. Todo backfill va en ventanas
+//    de ≤10 días, y para eso existe `background: true`.
+// 2. **Replicar un reporte = comparar TODAS sus columnas.** La lista sale del
+//    encabezado del reporte destino, no de lo que a uno se le ocurre chequear.
+//    Verificar cuatro de cinco y declarar "cuadra al centavo" es exactamente
+//    como se coló el error de gravadas de v2.324.2.
 
 // v2.324.2 — libro de compras: la columna de gravadas venía inflada por la
 // percepción.

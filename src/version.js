@@ -16,7 +16,30 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.324.1';
+export const APP_VERSION = '2.324.2';
+
+// v2.324.2 — libro de compras: la columna de gravadas venía inflada por la
+// percepción.
+//
+// `descargar_compras_json.php` manda `totales.sumas_gravadas` **con la
+// percepción adentro** —cumple `sumas_gravadas + iva = total_operacion`— y el
+// libro del ERP la resta para llegar a la base gravada. Verificado al cuarto
+// decimal en Bodega el 2026-08-01:
+//
+//   LETERAGO  JSON 160.1740  perc 1.59  ->  libro 158.58
+//   COFARSAL  JSON 613.6194  perc 6.08  ->  libro 607.54
+//
+// Y la base del anexo de percepción del ERP es exactamente esa resta: 607.5394
+// y 158.584. Fiscalmente cierra: la percepción (Art. 163 CT) es un anticipo que
+// cobra el proveedor, no parte de la base imponible.
+//
+// **Por qué no lo agarró la verificación de ayer**: comparé documentos, total,
+// crédito fiscal y percepción —los cuatro cuadraban al centavo— pero no la
+// columna de gravadas. Cuadrar en casi todo no es cuadrar. Lo delató una
+// captura de pantalla donde $613.62 con $6.08 de percepción no daba el 1%.
+//
+// Ahora mayo 2025 cuadra también en gravadas: 1350.53 / 1318.22 / 964.54 / 7.08
+// / 280.17 / 78,149.03 en las seis sucursales con movimiento.
 
 // v2.324.1 — sync de compras: modo background, porque el ERP es más lento que
 // el límite de una Edge Function.

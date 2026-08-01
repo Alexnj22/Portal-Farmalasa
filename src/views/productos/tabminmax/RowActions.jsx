@@ -36,21 +36,31 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
 
     const hasPoner0   = !dead && !noHistory && canManage && !isBodegaRow;
     const hasRestaura = canManage && (row.calc_min != null || hasDraft || row.has_manual);
+    const hasDescarta = hasDraft && canManage && !isBodegaRow;
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
     const sp = {
         whileTap: { scale: 0.87, transition: { type: 'spring', stiffness: 1200, damping: 40 } },
     };
 
+    // Ambas viven en el mismo slot: con borrador pendiente la acción de primera
+    // mano es tirar el cambio que no se quiere aplicar (Descartar → vuelve al
+    // publicado), no reescribirlo con el calculado (Restaurar), que baja a "Más".
+    const btnDescartar = { key: 'desc', icon: <Trash2 size={13}/>, label: 'Descartar',
+        cls: `${B} text-danger-text hover:text-danger-text hover:bg-danger/10`,
+        dropCls: 'text-danger-text hover:text-danger-text hover:bg-danger/10',
+        onClick: () => onDiscardDraft() };
+    const btnRestaurar = { key: 'restaurar', icon: <RotateCcw size={13}/>, label: 'Restaurar',
+        cls: `${B} text-success hover:text-success-text hover:bg-success/10`,
+        dropCls: 'text-success hover:text-success-text hover:bg-success/10',
+        onClick: () => onResetToCalc() };
+
     const pool = [
         hasPoner0   && { key: 'poner0',   icon: <XCircle size={13}/>,   label: 'Poner 0',
             cls: `${B} text-danger-text hover:text-danger-text hover:bg-danger/10`,
             dropCls: 'text-danger-text hover:text-danger-text hover:bg-danger/10',
             onClick: () => onZeroOut() },
-        hasRestaura && { key: 'restaurar', icon: <RotateCcw size={13}/>, label: 'Restaurar',
-            cls: `${B} text-success hover:text-success-text hover:bg-success/10`,
-            dropCls: 'text-success hover:text-success-text hover:bg-success/10',
-            onClick: () => onResetToCalc() },
+        hasDescarta ? btnDescartar : (hasRestaura && btnRestaurar),
         { key: 'hist', icon: <History size={13}/>, label: 'Historial',
             cls: `${B} text-chart-1-text hover:text-brand-text hover:bg-chart-1/10`,
             dropCls: 'text-chart-1-text hover:text-brand-text hover:bg-chart-1/10',
@@ -72,8 +82,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
     ].filter(Boolean);
 
     const extraBtns = [
-        hasDraft && canManage && !isBodegaRow && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
-            cls: 'text-danger-text hover:text-danger-text hover:bg-danger/10', onClick: () => onDiscardDraft() },
+        hasDescarta && hasRestaura && btnRestaurar,
         hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
             cls: 'text-brand-text hover:text-brand-hover hover:bg-chart-1/10',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },

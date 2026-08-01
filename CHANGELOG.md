@@ -12,6 +12,30 @@ retomar; acá está todo.
 
 ---
 
+## v2.320.1 — MIN·MAX: con borrador, la acción a mano es Descartar
+
+En una fila con borrador pendiente los dos botones visibles eran `Poner 0` +
+`Restaurar`, y `Descartar` quedaba adentro del menú "Más". Está al revés:
+cuando hay un cambio sin publicar, lo que uno quiere hacer de primera mano es
+tirarlo.
+
+Y no son la misma acción, aunque de lejos lo parezcan:
+
+- **`Restaurar`** (`resetToCalc`) pisa el borrador con `calc_min`/`calc_max` —
+  o sea deja **otro** borrador, el que calculó el sistema.
+- **`Descartar`** (`discardDraft`) lo devuelve al MIN·MAX **publicado**. Ese es
+  el "no quiero este cambio".
+
+Ahora las dos comparten el mismo slot y se turnan: con borrador se ve
+`Descartar` y `Restaurar` baja a "Más"; sin borrador queda todo como estaba.
+Bodega no cambia — ahí `Descartar` nunca existió (`!isBodegaRow`) y su
+`Restaurar` significa otra cosa: limpiar el override manual para volver a
+Σ sucursales.
+
+`src/views/productos/tabminmax/RowActions.jsx`.
+
+---
+
 ## v2.320.0 — el usuario dejó de ver el texto que escribe Postgres
 
 Reporte del 1-ago: *"me salió un toast con un error con `texto_texto_` o algo

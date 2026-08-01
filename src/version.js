@@ -16,7 +16,23 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.320.0';
+export const APP_VERSION = '2.320.1';
+
+// v2.320.1 — MIN·MAX: con borrador, la acción a mano es DESCARTAR.
+//
+// En una fila con borrador pendiente los dos botones visibles eran
+// `Poner 0` + `Restaurar`, y `Descartar` quedaba adentro del menú "Más".
+// Está al revés: cuando hay un cambio sin publicar, lo que uno quiere hacer
+// de primera mano es tirarlo, no reescribirlo con el calculado. Y no son lo
+// mismo — `Restaurar` (`resetToCalc`) pisa el borrador con calc_min/calc_max,
+// o sea deja OTRO borrador; `Descartar` (`discardDraft`) lo devuelve al
+// MIN·MAX publicado, que es el "no quiero este cambio".
+//
+// Ahora los dos comparten el mismo slot y se turnan: con borrador se ve
+// `Descartar` y `Restaurar` baja a "Más"; sin borrador todo queda como estaba.
+// Bodega no cambia: ahí `Descartar` nunca existió (`!isBodegaRow`) y su
+// `Restaurar` significa otra cosa — limpiar el override manual para volver a
+// Σ sucursales.
 
 // v2.320.0 — UX: el usuario dejó de ver el texto que escribe Postgres.
 //

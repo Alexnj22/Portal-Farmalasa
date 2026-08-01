@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders } from "../_shared/security.ts";
+import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 
 // Empuja al ERP, EN EL MOMENTO, la edición que se acaba de guardar en el portal.
 //
@@ -21,6 +21,19 @@ import { getCorsHeaders } from "../_shared/security.ts";
 //     diferencia es un espacio inicial.
 //  3. Hay que LEER la respuesta: contesta 200 con {"typeinfo":"Error"} cuando
 //     rechaza. Un rechazo silencioso se ve igual que un éxito.
+//
+// ── Dos maneras de entrar ──────────────────────────────────────────────────
+//   { customer_id: N }  el formulario, apenas guarda. Usa el JWT de la persona,
+//                       así los RPC aplican su permiso de módulo.
+//   {}  + admin secret  el cron, que DRENA la cola. Es la garantía: sin él, un
+//                       envío fallido se queda pendiente para siempre si nadie
+//                       vuelve a editar esa ficha. El empuje inmediato es la
+//                       optimización; esto es la red.
+//
+// OJO AL REDESPLEGAR: esta función va con `--no-verify-jwt` porque el cron manda
+// el `admin_invoke_secret` como Bearer, que no es un JWT. Un redeploy sin el
+// flag la resetea a verify_jwt=true y el cron empieza a fallar con 401 ANTES de
+// ejecutar una línea — ya pasó dos veces en este proyecto con otras funciones.
 
 const BASE      = "https://clientesdte3.oss.com.sv/farma_salud";
 const LOGIN_URL = `${BASE}/login.php`;
@@ -180,24 +193,58 @@ Deno.serve(async (req) => {
 
   try {
     const { customer_id } = await req.json().catch(() => ({}));
-    if (!customer_id) return json({ error: "Falta customer_id" }, 400);
+    const esCron = requireInvokeSecret(req);
 
-    // Se usa el JWT de QUIEN LLAMA, no el service_role: así los RPC aplican el
-    // mismo permiso de módulo que el guardado, y esta función no puede ser una
-    // puerta trasera para escribir en el ERP sin permiso sobre clientes.
+    // El formulario usa el JWT de la persona: así los RPC aplican su permiso de
+    // módulo y esta función no es una puerta trasera para escribir en el ERP.
+    // El cron no tiene usuario, así que va con service_role — y por eso
+    // `marcar_empujado_al_erp` lo acepta explícitamente.
     const auth = req.headers.get("Authorization") ?? "";
-    if (!auth) return json({ error: "Sin credenciales" }, 401);
-    const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: auth } } },
-    );
+    if (!esCron && !auth) return json({ error: "Sin credenciales" }, 401);
+    const sb = esCron
+      ? createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!)
+      : createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!,
+                     { global: { headers: { Authorization: auth } } });
 
     const { data: cola, error: eCola } = await sb.rpc("cola_espejo_portal_erp", { p_limite: null });
     if (eCola) throw eCola;
+    const pendientes: any[] = cola?.cola ?? [];
 
-    const ficha = (cola?.cola ?? []).find((f: any) => String(f.customer_id) === String(customer_id));
-    if (!ficha) return json({ empujado: false, motivo: "sin cambios pendientes para este cliente" });
+    // Sin customer_id se drena la cola entera, de a poco: el ERP tarda ~3
+    // peticiones por ficha y una edge function tiene techo de tiempo. Lo que no
+    // entre en esta pasada lo levanta la siguiente — la cola normalmente está
+    // vacía, así que el tope no es una limitación real.
+    const objetivo = customer_id
+      ? pendientes.filter(f => String(f.customer_id) === String(customer_id))
+      : pendientes.slice(0, 5);
 
+    if (!objetivo.length) {
+      return json({ empujado: false, motivo: customer_id
+        ? "sin cambios pendientes para este cliente" : "la cola está vacía",
+        en_cola: pendientes.length });
+    }
+    if (!customer_id) {
+      // Modo drenaje: se procesa cada una y se informa el conjunto.
+      const resultados = [];
+      for (const f of objetivo) resultados.push(await empujarFicha(sb, f));
+      return json({ drenaje: true, procesadas: resultados.length,
+                    quedan: Math.max(0, pendientes.length - resultados.length),
+                    resultados });
+    }
+    const ficha = objetivo[0];
+
+    return json(await empujarFicha(sb, ficha));
+  } catch (e) {
+    // La entrada queda PENDIENTE: se reintenta en el próximo guardado o en la
+    // próxima pasada del cron. Nunca se marca como sincronizado algo que no
+    // llegó.
+    return json({ empujado: false, error: String((e as any)?.message ?? e) }, 200);
+  }
+});
+
+// ── El empuje de UNA ficha ──────────────────────────────────────────────────
+async function empujarFicha(sb: any, ficha: any): Promise<any> {
+  try {
     const cookie = await login();
     const { campos, opciones } = parsearFicha(
       await pedir(cookie, `${BASE}/editar_cliente.php?id_cliente=${ficha.erp_id}`));
@@ -218,13 +265,13 @@ Deno.serve(async (req) => {
         aplicados.push({ ...c, campo_erp: A_SELECT[c.campo], envia: v });
       } else sinResolver.push({ ...c, motivo: "sin equivalente en el ERP" });
     }
-    if (!aplicados.length) return json({ empujado: false, motivo: "nada que el ERP pueda recibir", sin_resolver: sinResolver });
+    if (!aplicados.length) return { empujado: false, erp_id: ficha.erp_id, motivo: "nada que el ERP pueda recibir", sin_resolver: sinResolver };
 
     const payload = new URLSearchParams({ ...nuevos, process: "edit", id_cliente: String(ficha.erp_id) });
     const cruda = await pedir(cookie, `${BASE}/procesos/clientes.php`, payload);
     let resp: any;
     try { resp = JSON.parse(cruda); } catch { resp = { typeinfo: "NO-JSON", msg: cruda.slice(0, 200) }; }
-    if (resp.typeinfo !== "Success") return json({ empujado: false, rechazo: resp.msg ?? resp.typeinfo, sin_resolver: sinResolver }, 200);
+    if (resp.typeinfo !== "Success") return { empujado: false, erp_id: ficha.erp_id, rechazo: resp.msg ?? resp.typeinfo, sin_resolver: sinResolver };
 
     // Verificar releyendo: que se aplicó lo pedido y que no se perdió nada.
     const despues = parsearFicha(await pedir(cookie, `${BASE}/editar_cliente.php?id_cliente=${ficha.erp_id}`)).campos;
@@ -232,8 +279,8 @@ Deno.serve(async (req) => {
     const perdidos = Object.keys(campos).filter(k =>
       campos[k] && !despues[k] && nuevos[k] !== "");
     if (noQuedo.length || perdidos.length) {
-      return json({ empujado: false, motivo: "el ERP no dejó el dato como se envió",
-                    no_quedo: noQuedo.map(a => a.campo_erp), perdidos }, 200);
+      return { empujado: false, erp_id: ficha.erp_id, motivo: "el ERP no dejó el dato como se envió",
+               no_quedo: noQuedo.map((a: any) => a.campo_erp), perdidos };
     }
 
     // Recién ahora se salda, y solo lo que viajó.
@@ -241,12 +288,10 @@ Deno.serve(async (req) => {
     const { data: marca, error: eMarca } = await sb.rpc("marcar_empujado_al_erp", { p_ids: ids });
     if (eMarca) throw eMarca;
 
-    return json({ empujado: true, erp_id: ficha.erp_id,
-                  campos: aplicados.map(a => a.campo), marcadas: marca?.marcadas ?? 0,
-                  sin_resolver: sinResolver });
+    return { empujado: true, erp_id: ficha.erp_id,
+             campos: aplicados.map((a: any) => a.campo), marcadas: marca?.marcadas ?? 0,
+             sin_resolver: sinResolver };
   } catch (e) {
-    // La entrada queda PENDIENTE: se reintenta en el próximo guardado o con el
-    // script. Nunca se marca como sincronizado algo que no llegó.
-    return json({ empujado: false, error: String(e?.message ?? e) }, 200);
+    return { empujado: false, erp_id: ficha.erp_id, error: String((e as any)?.message ?? e) };
   }
-});
+}

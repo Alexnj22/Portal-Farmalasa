@@ -16,7 +16,33 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.329.0';
+export const APP_VERSION = '2.330.0';
+
+// v2.330.0 — Clientes: el envío al ERP dejó de depender de que alguien lo pida.
+//
+// v2.329.0 puso el empuje inmediato al guardar, pero eso es una OPTIMIZACIÓN,
+// no una garantía: si el ERP está caído en ese momento la edición queda
+// pendiente, y se quedaba así PARA SIEMPRE si nadie volvía a editar esa ficha.
+//
+// El cron `drain-cliente-erp-queue` drena la cola cada 10 minutos. Con eso un
+// fallo no necesita que el usuario se entere ni haga nada: se envía solo en la
+// siguiente pasada.
+//
+// Por qué NO se revierte el cambio cuando falla el envío, que era la otra
+// opción sobre la mesa: el dato lo escribió una persona y es correcto — el que
+// falló es un servidor ajeno. Tirar una edición buena porque el ERP tuvo un
+// hipo es castigar al usuario por un problema de otro, y encima el revert sería
+// otra escritura y otra entrada en la bitácora. Tampoco se reintenta en el
+// momento: hoy una lectura del ERP pasó de 300 s y eso dejaría la pantalla
+// colgada sin mejorar nada. La cola ya protege el dato del espejo; lo único que
+// faltaba era algo que la vaciara sin intervención.
+//
+// El cron entra con el `admin_invoke_secret` de Vault como Bearer, así que la
+// función va con `--no-verify-jwt` y valida el secreto adentro. OJO al
+// redesplegar: sin repetir el flag, Supabase la resetea a verify_jwt=true y el
+// cron empieza a fallar con 401 antes de ejecutar una línea — ya pasó dos veces
+// en este proyecto con otras funciones.
+
 
 // v2.329.0 — Clientes: lo que se edita en el portal llega al ERP al instante.
 //

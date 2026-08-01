@@ -865,6 +865,79 @@ v, g, _ = dup.comparar(par({'telefono2': '22112233'}, {'telefono2': '33445566'})
 check('a igual completitud gana la de id más bajo', g == '100', f'{v} -> {g}')
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+print('\n10. EL EMPUJE PORTAL -> ERP (Fase 2)\n')
+
+import empujar_al_erp as emp  # noqa: E402
+
+# El portal guarda la ETIQUETA del select ('CHALATENANGO') y el ERP quiere el
+# VALUE ('7'). Volver exige buscar la etiqueta en las opciones de ESA ficha.
+etiqueta_real = OPS['distrito'][0][1]
+value_real = OPS['distrito'][0][0]
+
+check('etiqueta exacta -> value',
+      emp.valor_de_select(OPS, 'distrito', etiqueta_real) == value_real,
+      f'{etiqueta_real!r} -> {emp.valor_de_select(OPS, "distrito", etiqueta_real)}')
+check('la comparación ignora mayúsculas (el portal usa el catálogo oficial)',
+      emp.valor_de_select(OPS, 'distrito', etiqueta_real.title()) == value_real,
+      etiqueta_real.title())
+check('y también los acentos',
+      emp.valor_de_select(OPS, 'distrito', 'Chalatenángo'.upper()) is not None
+      or bloque.norm('CHALATENANGO') not in [bloque.norm(t) for _, t in OPS['distrito']],
+      'la normalización no empareja')
+check('una etiqueta vacía significa vaciar el campo, no "no encontrado"',
+      emp.valor_de_select(OPS, 'distrito', '') == '')
+# Lo importante: NO adivina. Una abreviatura del ERP que no coincida se reporta.
+check('lo que no coincide NO se adivina (inventar un distrito está prohibido)',
+      emp.valor_de_select(OPS, 'distrito', 'PUEBLO QUE NO EXISTE') is None)
+
+BASE_ERP = {'nombre': 'JOSE RUTILIO', 'telefono1': '7749-3799', 'telefono2': '',
+            'dui': '03044708-8', 'nit': '', 'correo': '', 'direccion': 'X',
+            'distrito': value_real, 'municipio': '36', 'departamento': '4'}
+
+n, ap, sr = emp.preparar(BASE_ERP, OPS,
+                         [{'campo': 'phone', 'valor': '7777-7777', 'changelog_ids': [1]}])
+check('un campo de texto se mapea a su nombre del ERP (phone -> telefono1)',
+      n['telefono1'] == '7777-7777' and ap[0]['campo_erp'] == 'telefono1', str(ap))
+check('y NO se toca ningún otro campo',
+      {k for k in set(BASE_ERP) | set(n) if BASE_ERP.get(k) != n.get(k)} == {'telefono1'})
+check('el payload conserva los 21 campos (el POST parcial borra lo que falta)',
+      set(n) >= set(BASE_ERP), f'faltan {set(BASE_ERP) - set(n)}')
+
+n, ap, sr = emp.preparar(BASE_ERP, OPS,
+                         [{'campo': 'distrito', 'valor': etiqueta_real.title(),
+                           'changelog_ids': [2]}])
+check('un select se resuelve a su value', n['distrito'] == value_real, str(ap))
+
+n, ap, sr = emp.preparar(BASE_ERP, OPS,
+                         [{'campo': 'distrito', 'valor': 'NO EXISTE', 'changelog_ids': [3]}])
+check('un select que no resuelve NO viaja y se reporta',
+      not ap and len(sr) == 1 and 'no coincide' in sr[0]['motivo'], str(sr))
+check('y la ficha queda sin tocar', n == BASE_ERP)
+
+n, ap, sr = emp.preparar(BASE_ERP, OPS,
+                         [{'campo': 'notes', 'valor': 'una nota', 'changelog_ids': [4]}])
+check('`notes` es solo del portal: no es un fallo que no viaje',
+      not ap and 'solo existe en el portal' in sr[0]['motivo'], str(sr))
+
+n, ap, sr = emp.preparar(BASE_ERP, OPS, [
+    {'campo': 'phone', 'valor': '7777-7777', 'changelog_ids': [5]},
+    {'campo': 'distrito', 'valor': 'NO EXISTE', 'changelog_ids': [6]}])
+check('con un campo bueno y uno malo, viaja solo el bueno',
+      len(ap) == 1 and len(sr) == 1 and ap[0]['campo'] == 'phone', str((ap, sr)))
+# Y este es el punto: los ids del que NO resolvió no se saldan, así que sigue
+# pendiente y se reintenta. Saldarlos sería declararlo sincronizado sin estarlo.
+check('los changelog_ids que se saldan son SOLO los del campo que viajó',
+      [i for x in ap for i in x['changelog_ids']] == [5], str(ap))
+
+check('la verificación detecta que el ERP no aplicó el cambio',
+      emp.verificar([{'campo_erp': 'telefono1', 'envia': '7777-7777'}],
+                    {'telefono1': '7749-3799'}) != [])
+check('y no se queja cuando sí lo aplicó',
+      emp.verificar([{'campo_erp': 'telefono1', 'envia': '7777-7777'}],
+                    {'telefono1': '7777-7777'}) == [])
+
+
 intactos = sorted(os.listdir(TMP))
 shutil.rmtree(TMP)
 print(f'\n   (el arnés escribió solo en {os.path.basename(TMP)}: {intactos})')

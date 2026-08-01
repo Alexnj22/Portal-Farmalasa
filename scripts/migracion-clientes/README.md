@@ -170,12 +170,54 @@ no tuvo chance de llegar al ERP:
 | hay edición pendiente **y el ERP también cambió** | manda el ERP, y el descarte se anota en `espejo_conflictos` |
 
 La marca de "pendiente" es `customers_changelog.erp_synced_at IS NULL`. Cuando
-la Fase 2 empuje la edición al ERP y la marque, la protección se levanta sola y
-el ERP vuelve a mandar. **La Fase 2 no debe empujar una entrada que figure en
-`espejo_conflictos`**: el ERP ya se movió más allá de ese valor.
+el empuje al ERP la marca, la protección se levanta sola y el ERP vuelve a
+mandar.
 
 El RPC además dejó de reescribir filas que no cambiaron — la misma cola pasó de
 826 filas actualizadas a 1.
+
+## 4b. El espejo al revés: del portal AL ERP
+
+```bash
+python3 empujar_al_erp.py             # SIMULACIÓN: qué mandaría
+python3 empujar_al_erp.py --escribir  # lo manda, verifica y salda la cola
+```
+
+La cola sale de `cola_espejo_portal_erp()` (migración `20260801164413`) y al
+terminar se salda con `marcar_empujado_al_erp()`. Con eso el ciclo cierra:
+edito en el portal → llega al ERP → el espejo lo trae de vuelta y coinciden.
+
+Tres cosas que NO hace, todas a propósito:
+
+1. **No adivina un select.** El portal guarda la etiqueta (`Chalatenango`) y el
+   ERP quiere el value (`7`). Se empareja por `norm()` —sin acentos ni
+   mayúsculas— contra las opciones de esa misma ficha. Si no hay coincidencia
+   exacta tras normalizar (`SN MIG MERCEDES` contra `San Miguel de Mercedes`),
+   **el campo no viaja y se reporta**. Inventar un distrito en una ficha fiscal
+   es justo lo que este proyecto tiene prohibido.
+2. **No salda lo que no viajó.** Si de dos campos uno resuelve y el otro no, se
+   marcan solo los `changelog_ids` del que llegó. El otro sigue pendiente y se
+   reintenta.
+3. **No empuja un campo que perdió una carrera.** Si CUALQUIER entrada de ese
+   campo está en `espejo_conflictos`, el campo entero queda fuera: el ERP ya se
+   movió más allá y las entradas sin marcar son eslabones de una cadena
+   superada. Sin esta regla, el cliente 16164 habría recibido `'7538-5899'` —un
+   valor que la persona ya había reemplazado— porque esa entrada quedó limpia
+   mientras la siguiente perdía la carrera.
+
+### Lo que el viaje de ida y vuelta NO conserva
+
+Probado end-to-end con la ficha `erp 2` (JOSE RUTILIO ALEMAN VASQUEZ): se editó
+`telefono2` desde el portal, se empujó, se verificó en el ERP, y la ficha quedó
+**idéntica a la foto inicial en los 21 campos**.
+
+Pero el distrito mostró el límite: la persona había puesto `Chalatenango`
+(catálogo oficial), el empuje lo mandó bien —resolvió al value `7`— y al volver
+el espejo trajo `CHALATENANGO`, que es como rotula el ERP. **El dato es el
+mismo, la rotulación no.** Mientras el portal guarde la etiqueta del ERP en vez
+de la del catálogo, esto va a pasar siempre; es el mismo problema de la tabla de
+equivalencias ERP ↔ catálogo que hace falta para los 894 distritos que el
+formulario no reconoce.
 
 ## 5. Las reglas
 

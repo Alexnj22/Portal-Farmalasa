@@ -61,71 +61,79 @@ def token(url, key, usuario, clave):
     return r['access_token']
 
 
-# ── Payload ──────────────────────────────────────────────────────────────────
-filas = [json.loads(l) for l in open(f'{D}/portal_pendiente.jsonl')]
-# Solo las que traen la llave de emparejamiento; las viejas ya se aplicaron por id.
-# Y de cada ficha del ERP, su última versión: el archivo es append-only.
-por_erp = {}
-for f in filas:
-    if 'match_name' in f:
-        por_erp[f['erp_id']] = f
+# El cuerpo va dentro de main() para que otro script pueda importar
+# `credenciales`/`token`/`pedir_json` sin disparar la corrida entera
+# (empujar_al_erp.py los reusa).
+def main():
+    # ── Payload ──────────────────────────────────────────────────────────────────
+    filas = [json.loads(l) for l in open(f'{D}/portal_pendiente.jsonl')]
+    # Solo las que traen la llave de emparejamiento; las viejas ya se aplicaron por id.
+    # Y de cada ficha del ERP, su última versión: el archivo es append-only.
+    por_erp = {}
+    for f in filas:
+        if 'match_name' in f:
+            por_erp[f['erp_id']] = f
 
-# Dos fichas del ERP pueden normalizar al MISMO nombre, y `customers` tiene una
-# fila por cliente: no hay a dónde mandar las dos. El RPC las omite, pero lo
-# hace en silencio del lado del servidor — así que el corte se hace acá, donde
-# se puede decir cuáles y por qué.
-#
-# `duplicados_resueltos.json` (lo produce revisar_duplicados.py) dice qué
-# `erp_id` gana para cada nombre. Sin resolución, el par no se manda: mandar
-# cualquiera de los dos sería elegir a dedo qué datos ve el portal.
-RESUELTOS = f'{D}/duplicados_resueltos.json'
-resueltos = json.load(open(RESUELTOS)) if os.path.exists(RESUELTOS) else {}
+    # Dos fichas del ERP pueden normalizar al MISMO nombre, y `customers` tiene una
+    # fila por cliente: no hay a dónde mandar las dos. El RPC las omite, pero lo
+    # hace en silencio del lado del servidor — así que el corte se hace acá, donde
+    # se puede decir cuáles y por qué.
+    #
+    # `duplicados_resueltos.json` (lo produce revisar_duplicados.py) dice qué
+    # `erp_id` gana para cada nombre. Sin resolución, el par no se manda: mandar
+    # cualquiera de los dos sería elegir a dedo qué datos ve el portal.
+    RESUELTOS = f'{D}/duplicados_resueltos.json'
+    resueltos = json.load(open(RESUELTOS)) if os.path.exists(RESUELTOS) else {}
 
-por_nombre = {}
-for f in por_erp.values():
-    por_nombre.setdefault(f['match_name'], []).append(f)
+    por_nombre = {}
+    for f in por_erp.values():
+        por_nombre.setdefault(f['match_name'], []).append(f)
 
-elegidas, sin_resolver = [], []
-for nombre, grupo in por_nombre.items():
-    if len(grupo) == 1:
-        elegidas.append(grupo[0])
-        continue
-    gana = resueltos.get(nombre)
-    ganadora = next((f for f in grupo if str(f['erp_id']) == str(gana)), None)
-    if ganadora:
-        elegidas.append(ganadora)
-    else:
-        sin_resolver.append((nombre, [f['erp_id'] for f in grupo]))
+    elegidas, sin_resolver = [], []
+    for nombre, grupo in por_nombre.items():
+        if len(grupo) == 1:
+            elegidas.append(grupo[0])
+            continue
+        gana = resueltos.get(nombre)
+        ganadora = next((f for f in grupo if str(f['erp_id']) == str(gana)), None)
+        if ganadora:
+            elegidas.append(ganadora)
+        else:
+            sin_resolver.append((nombre, [f['erp_id'] for f in grupo]))
 
-pendientes = [{k: v for k, v in f.items() if v is not None and k != 'id'}
-              for f in elegidas]
+    pendientes = [{k: v for k, v in f.items() if v is not None and k != 'id'}
+                  for f in elegidas]
 
-print(f'{len(filas)} líneas en la cola · {len(pendientes)} fichas a espejar')
-if sin_resolver:
-    print(f'\n{len(sin_resolver)} nombre(s) con más de una ficha en el ERP y sin '
-          f'resolver — no se mandan:')
-    for nombre, ids in sin_resolver:
-        print(f'   {nombre[:52]:<54} {ids}')
-    print('   corré `python3 revisar_duplicados.py` para decidir cuál gana.')
-if not APLICAR:
-    print('\n(simulación — nada se aplicó; agregá --aplicar)')
-    raise SystemExit
+    print(f'{len(filas)} líneas en la cola · {len(pendientes)} fichas a espejar')
+    if sin_resolver:
+        print(f'\n{len(sin_resolver)} nombre(s) con más de una ficha en el ERP y sin '
+              f'resolver — no se mandan:')
+        for nombre, ids in sin_resolver:
+            print(f'   {nombre[:52]:<54} {ids}')
+        print('   corré `python3 revisar_duplicados.py` para decidir cuál gana.')
+    if not APLICAR:
+        print('\n(simulación — nada se aplicó; agregá --aplicar)')
+        return
 
-url, key, usuario, clave = credenciales()
-jwt = token(url, key, usuario, clave)
-print(f'autenticado como {usuario}\n')
+    url, key, usuario, clave = credenciales()
+    jwt = token(url, key, usuario, clave)
+    print(f'autenticado como {usuario}\n')
 
-cab = {'apikey': key, 'Authorization': f'Bearer {jwt}',
-       'Content-Type': 'application/json'}
-total = {'recibidas': 0, 'actualizadas': 0, 'sin_match': 0, 'duplicadas_omitidas': 0}
-for i in range(0, len(pendientes), LOTE):
-    lote = pendientes[i:i + LOTE]
-    r = pedir_json(f'{url}/rest/v1/rpc/aplicar_espejo_erp', {'p_filas': lote}, cab)
-    print(f'  lote {i // LOTE + 1}: {r}')
-    for k in total:
-        total[k] += r.get(k, 0)
+    cab = {'apikey': key, 'Authorization': f'Bearer {jwt}',
+           'Content-Type': 'application/json'}
+    total = {'recibidas': 0, 'actualizadas': 0, 'sin_match': 0, 'duplicadas_omitidas': 0}
+    for i in range(0, len(pendientes), LOTE):
+        lote = pendientes[i:i + LOTE]
+        r = pedir_json(f'{url}/rest/v1/rpc/aplicar_espejo_erp', {'p_filas': lote}, cab)
+        print(f'  lote {i // LOTE + 1}: {r}')
+        for k in total:
+            total[k] += r.get(k, 0)
 
-print(f'\nTOTAL: {total}')
-if total['sin_match']:
-    print(f"  ojo: {total['sin_match']} fichas del ERP no existen en el portal "
-          f"(no se crean, solo se reportan)")
+    print(f'\nTOTAL: {total}')
+    if total['sin_match']:
+        print(f"  ojo: {total['sin_match']} fichas del ERP no existen en el portal "
+              f"(no se crean, solo se reportan)")
+
+
+if __name__ == '__main__':
+    main()

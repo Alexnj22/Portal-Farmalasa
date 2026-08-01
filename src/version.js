@@ -16,7 +16,29 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.325.0';
+export const APP_VERSION = '2.325.1';
+
+// v2.325.1 — "IVA cero" NO es "compra exenta", y junio/julio quedan al centavo.
+//
+// Al comparar junio contra el ERP, 11 de 12 branch-meses cuadraban en las cinco
+// columnas y uno no: Salud 4, **un solo documento de $2.55**. Toda la diferencia
+// era en qué columna lo ponía cada lado.
+//
+// El JSON autoritativo dice `{"sumas_gravadas": 2.55, "iva": 0}` y el libro del
+// ERP lo imprime en GRAVADAS, con las tres columnas de exentas en 0.00. O sea:
+// **la fuente no tiene un monto exento que informar** — no hay campo de exentas
+// en el JSON de compras. Un documento con IVA cero es una compra gravada a la
+// que el ERP le calculó cero impuesto, no una exención. La regla venía del libro
+// de VENTAS, donde sí distingue.
+//
+// Cerrado además el agujero del 1-jun en Bodega: 16 documentos y $14,311.41 que
+// nunca se habían sincronizado.
+//
+// **Verificación final, junio y julio, las 7 sucursales, seis medidas cada una**
+// (documentos, gravadas, crédito fiscal, total, percepción y filas del anexo):
+// 12 de 12 branch-meses idénticos al ERP. Bodega junio 335 docs / $197,997.22 /
+// $22,605.53 / $1,502.90 / 211 filas de anexo; julio 414 / $224,242.77 /
+// $25,609.55 / $1,637.60 / 238.
 
 // v2.325.0 — el backfill de compras pasa de 167s a 6s por mes, y la tabla del
 // libro deja de romper el alto de fila.

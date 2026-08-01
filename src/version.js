@@ -16,7 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.324.3';
+export const APP_VERSION = '2.325.0';
+
+// v2.325.0 — el backfill de compras pasa de 167s a 6s por mes, y la tabla del
+// libro deja de romper el alto de fila.
+//
+// **`fastBackfill: true`.** `descargar_compras_json.php` manda cada compra con
+// TODAS sus líneas —0.9 MB y 167s por mes de Bodega— para rescatar cuatro datos
+// de cabecera. El ERP tiene una puerta mucho más barata, la que alimenta la
+// pantalla "Admin Compras": `admin_compras_fecha_dt.php` devuelve id_compra,
+// tipo y número sin una sola línea de detalle. **Medido: el mismo mes en 6.1s.
+// Los dos meses completos (749 documentos) en 19.6s.** La percepción sale del
+// CSV del libro, que también baja en segundos.
+//
+// Tres cosas que salieron de medirlo:
+//
+// 1. En esos endpoints la **sucursal es estado de sesión**, no parámetro — al
+//    revés que `descargar_compras_json.php`. Sin `cambio_sesion.php` primero se
+//    traería otra sucursal y se guardaría como si fuera esta.
+// 2. El **número viene con espacios distintos en cada fuente**: la tabla da
+//    `'72B6EEA1-727E-ACD2- '` y el CSV `'72B6EEA1-727E-ACD2-'`. Sin normalizar,
+//    40 de 749 no cruzaban.
+// 3. El número truncado a 20 **no siempre es único** (dos casos en junio-julio
+//    con percepciones distintas). Para esos, y solo para esos, cae al JSON
+//    pesado del día. Un cruce ambiguo en un libro fiscal no se resuelve
+//    eligiendo uno.
+//
+// **Y el bug que costó dos intentos:** PostgREST arma un `INSERT ... ON CONFLICT
+// DO UPDATE`, y Postgres valida los NOT NULL de la tupla **antes** de resolver
+// el conflicto. El lote entero moría con "null value in column fecha" aunque
+// las 200 filas ya existieran. Va `fecha` en el payload — la misma que informa
+// el endpoint, así que no puede pisar nada.
+//
+// **La tabla del libro**, medida en el navegador y no estimada: las filas eran
+// de 44, 88 y 132px porque el nombre del proveedor envolvía a tres líneas y el
+// código de 20 caracteres se partía a la mitad. Ahora son 44px parejos —el
+// `--row-h` canónico— con `flex min-w-0` + `truncate` + `shrink-0` en el badge,
+// el `max-w` sobre el `DataCell` y `text-micro` para el código. Y **Total ya no
+// queda recortado**: pedía 1272px contra 1184 de visor; con el rótulo corto de
+// crédito y el código en micro baja a 1182. Con una sucursal filtrada se quita
+// la columna Sucursal, que repetía el filtro en cada fila.
 
 // v2.324.3 — dos reglas a CLAUDE.md, escritas donde se leen.
 //

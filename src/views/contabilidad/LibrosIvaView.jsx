@@ -145,6 +145,15 @@ const COLS_ANULADOS = [
     { key: 'total',     label: 'Total',      align: 'right' },
 ];
 
+// Diez columnas no entran: medidas en el navegador a 1600px pedían 1272px
+// contra los 1184 del contenedor, que además recorta con `overflow-x: hidden`.
+// Lo que se perdía era **Total**, la última — o sea la columna que más importa
+// de un libro fiscal, invisible y sin forma de llegar a ella.
+//
+// Ceden las dos que menos dicen: **Exentas** (una farmacia vende y compra
+// gravado; la columna es $0.00 en todo el histórico, y su total sigue en el
+// carril y en el CSV) y el ancho del **proveedor**. Las cinco que se declaran a
+// Hacienda —documento, gravadas, crédito fiscal, total y el NRC— no ceden.
 const COLS_COMPRAS = [
     { key: 'n',        label: 'N.º',       align: 'right' },
     { key: 'fecha',    label: 'Fecha',     align: 'left'  },
@@ -152,9 +161,12 @@ const COLS_COMPRAS = [
     { key: 'doc',      label: 'Documento', align: 'left'  },
     { key: 'proveedor', label: 'Proveedor', align: 'left' },
     { key: 'nrc',      label: 'NRC',       align: 'left', hideBelow: 'md' },
-    { key: 'exentas',  label: 'Exentas',   align: 'right', hideBelow: 'lg' },
+    { key: 'exentas',  label: 'Exentas',   align: 'right', hideBelow: 'xl' },
     { key: 'gravadas', label: 'Gravadas',  align: 'right' },
-    { key: 'credito',  label: 'Crédito fiscal', align: 'right', hideBelow: 'md' },
+    // "Crédito", no "Crédito fiscal": el rótulo largo pedía 151px de columna
+    // para un número de 6 dígitos. En un libro de compras no hay otro crédito
+    // con el que confundirlo, y el CSV sí lleva el nombre legal completo.
+    { key: 'credito',  label: 'Crédito',   align: 'right', hideBelow: 'md' },
     { key: 'total',    label: 'Total',     align: 'right' },
 ];
 
@@ -186,6 +198,13 @@ const ETIQUETAS = {
     excluido:      { icon: UserX,        monto: 'Compras',      impuesto: 'Crédito fiscal' },
 };
 
+// Con una sucursal elegida, la columna Sucursal repite el filtro en cada fila:
+// 115px de ancho para un dato que ya está dicho arriba, y son justo los que a
+// 1440px empujaban Total fuera del visor (medido: tabla 1164 contra 1046 de
+// visor con la columna, 1049 sin ella). No es esconder dato — es no repetirlo.
+const sinSucursal = (cols, filtrada) =>
+    (filtrada ? cols.filter(c => c.key !== 'sucursal') : cols);
+
 const COLS_EXCLUIDO = [
     { key: 'n',         label: 'N.º',       align: 'right' },
     { key: 'fecha',     label: 'Fecha',     align: 'left'  },
@@ -196,6 +215,54 @@ const COLS_EXCLUIDO = [
     { key: 'doc',       label: 'Documento', align: 'left', hideBelow: 'sm' },
     { key: 'total',     label: 'Total',     align: 'right' },
 ];
+
+// ── Celdas del lado de compras ─────────────────────────────────────────────
+// Existen porque las cuatro tablas nuevas repiten las mismas cinco celdas, y
+// porque cada una tiene una regla de corte que no es opcional:
+//
+// - El **código de documento** son 20 caracteres sin espacios. Envolverlo lo
+//   parte a la mitad ("16C60F47–17CF–" / "4697–B") y deja de ser copiable de un
+//   vistazo: va `nowrap`.
+// - El **nombre del proveedor** llega a "FARMACIAS EUROPEAS S.A. DE C.V. (FARMA
+//   VALUE)" y envolvía a tres líneas, rompiendo el alto de fila que fija
+//   `--row-h`. Se trunca con el nombre completo en `title` (§25.7).
+// - El **badge** no puede truncarse junto al texto: va en un `flex min-w-0` con
+//   `shrink-0`, que es el patrón del proyecto para texto + estado.
+// - Los **montos** nunca envuelven: un número partido no comunica nada (§25.7).
+
+const CeldaFecha = ({ iso }) => <span className="whitespace-nowrap">{fmtFecha(iso)}</span>;
+
+// `text-micro` y no `text-caption`: son 20 caracteres monoespaciados y a caption
+// la columna pedía 168px, que es lo que empujaba Total fuera del visor. Es la
+// misma medida que el código de generación en la pestaña de Anulados.
+const CeldaDocumento = ({ numero }) => (
+    numero
+        ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">{numero}</span>
+        : <Badge variant="danger" size="sm">Sin sincronizar</Badge>
+);
+
+const CeldaNrc = ({ nrc }) => (
+    nrc
+        ? <span className="font-mono text-caption whitespace-nowrap">{nrc}</span>
+        : <Badge variant="warning" size="sm">Falta</Badge>
+);
+
+const CeldaMonto = ({ v, fuerte }) => (
+    <span className={`whitespace-nowrap${fuerte ? ' font-black' : ''}`}>{formatMoney(v)}</span>
+);
+
+// El `max-w` va en la celda y no en el `<span>`: la tabla es de ancho
+// automático, así que sin un tope en el `<td>` la columna crece hasta el nombre
+// más largo y el `truncate` no llega a activarse nunca. Es el mismo patrón que
+// `VentasView` (`truncate max-w-[140px]` sobre el `DataCell`).
+const CeldaProveedor = ({ nombre, anulada, hideBelow }) => (
+    <DataCell hideBelow={hideBelow} className="max-w-[11rem]">
+        <div className="flex items-center gap-2 min-w-0">
+            <span className="truncate" title={nombre || undefined}>{nombre || '—'}</span>
+            {anulada && <Badge variant="warning" size="sm" className="shrink-0">Anulada</Badge>}
+        </div>
+    </DataCell>
+);
 
 export default function LibrosIvaView() {
     const { getScope, user } = useAuth();
@@ -647,31 +714,22 @@ export default function LibrosIvaView() {
                 )}
 
                 {activeTab === 'compras' && (
-                    <DataTable columns={COLS_COMPRAS} loading={loading}
+                    <DataTable columns={sinSucursal(COLS_COMPRAS, !!filterBranch)} loading={loading}
                         empty={{ icon: ShoppingCart, message: `Sin compras en ${etiquetaMes(mes)}` }}>
                         {compras.map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
                                 <DataCell align="right">{i + 1}</DataCell>
-                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
-                                <DataCell hideBelow="lg">{nombreSucursal(r.branch_id)}</DataCell>
-                                <DataCell>
-                                    {r.documento_numero
-                                        ? <span className="font-mono text-caption">{r.documento_numero}</span>
-                                        : <Badge variant="danger" size="sm">Sin sincronizar</Badge>}
-                                </DataCell>
-                                <DataCell>
-                                    {r.proveedor || '—'}
-                                    {r.anulada && <> <Badge variant="warning" size="sm">Anulada</Badge></>}
-                                </DataCell>
-                                <DataCell hideBelow="md">
-                                    {r.nrc
-                                        ? <span className="font-mono text-caption">{r.nrc}</span>
-                                        : <Badge variant="warning" size="sm">Falta</Badge>}
-                                </DataCell>
-                                <DataCell align="right" hideBelow="lg">{formatMoney(r.compras_exentas)}</DataCell>
-                                <DataCell align="right">{formatMoney(r.compras_gravadas)}</DataCell>
-                                <DataCell align="right" hideBelow="md">{formatMoney(r.credito_fiscal)}</DataCell>
-                                <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>
+                                <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
+                                {!filterBranch && (
+                                    <DataCell hideBelow="lg" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
+                                )}
+                                <DataCell><CeldaDocumento numero={r.documento_numero} /></DataCell>
+                                <CeldaProveedor nombre={r.proveedor} anulada={r.anulada} />
+                                <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
+                                <DataCell align="right" hideBelow="lg"><CeldaMonto v={r.compras_exentas} /></DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.compras_gravadas} /></DataCell>
+                                <DataCell align="right" hideBelow="md"><CeldaMonto v={r.credito_fiscal} /></DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.total} fuerte /></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>
@@ -682,7 +740,9 @@ export default function LibrosIvaView() {
                     retención es el estado normal, no una falla. */}
                 {(activeTab === 'percepcion' || activeTab === 'retencion') && (
                     <DataTable
-                        columns={colsAnexo(activeTab === 'percepcion' ? 'IVA percibido' : 'IVA retenido')}
+                        columns={sinSucursal(
+                            colsAnexo(activeTab === 'percepcion' ? 'IVA percibido' : 'IVA retenido'),
+                            !!filterBranch)}
                         loading={loading}
                         empty={{
                             icon: Percent,
@@ -696,29 +756,24 @@ export default function LibrosIvaView() {
                         {(activeTab === 'percepcion' ? percepcion : retencion).map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
                                 <DataCell align="right">{i + 1}</DataCell>
-                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
-                                <DataCell hideBelow="lg">{nombreSucursal(r.branch_id)}</DataCell>
-                                <DataCell>
-                                    {r.proveedor || '—'}
-                                    {r.anulada && <> <Badge variant="warning" size="sm">Anulada</Badge></>}
+                                <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
+                                {!filterBranch && (
+                                    <DataCell hideBelow="lg" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
+                                )}
+                                <CeldaProveedor nombre={r.proveedor} anulada={r.anulada} />
+                                <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
+                                <DataCell hideBelow="sm"><CeldaDocumento numero={r.documento_numero} /></DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.monto_sujeto} /></DataCell>
+                                <DataCell align="right">
+                                    <CeldaMonto fuerte v={activeTab === 'percepcion' ? r.percepcion_iva : r.retencion_iva} />
                                 </DataCell>
-                                <DataCell hideBelow="md">
-                                    {r.nrc
-                                        ? <span className="font-mono text-caption">{r.nrc}</span>
-                                        : <Badge variant="warning" size="sm">Falta</Badge>}
-                                </DataCell>
-                                <DataCell hideBelow="sm"><span className="font-mono text-caption">{r.documento_numero || '—'}</span></DataCell>
-                                <DataCell align="right">{formatMoney(r.monto_sujeto)}</DataCell>
-                                <DataCell align="right"><span className="font-black">
-                                    {formatMoney(activeTab === 'percepcion' ? r.percepcion_iva : r.retencion_iva)}
-                                </span></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>
                 )}
 
                 {activeTab === 'excluido' && (
-                    <DataTable columns={COLS_EXCLUIDO} loading={loading}
+                    <DataTable columns={sinSucursal(COLS_EXCLUIDO, !!filterBranch)} loading={loading}
                         empty={{
                             icon: UserX,
                             message: `Sin compras a sujetos excluidos en ${etiquetaMes(mes)}`,
@@ -727,13 +782,15 @@ export default function LibrosIvaView() {
                         {excluido.map((r, i) => (
                             <DataRow key={`${r.branch_id}-${r.documento_numero}-${i}`} index={i}>
                                 <DataCell align="right">{i + 1}</DataCell>
-                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
-                                <DataCell hideBelow="lg">{nombreSucursal(r.branch_id)}</DataCell>
-                                <DataCell>{r.proveedor || '—'}</DataCell>
-                                <DataCell hideBelow="md"><span className="font-mono text-caption">{r.nit || '—'}</span></DataCell>
-                                <DataCell hideBelow="md"><span className="font-mono text-caption">{r.dui || '—'}</span></DataCell>
-                                <DataCell hideBelow="sm"><span className="font-mono text-caption">{r.documento_numero || '—'}</span></DataCell>
-                                <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>
+                                <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
+                                {!filterBranch && (
+                                    <DataCell hideBelow="lg" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
+                                )}
+                                <CeldaProveedor nombre={r.proveedor} />
+                                <DataCell hideBelow="md"><span className="font-mono text-caption whitespace-nowrap">{r.nit || '—'}</span></DataCell>
+                                <DataCell hideBelow="md"><span className="font-mono text-caption whitespace-nowrap">{r.dui || '—'}</span></DataCell>
+                                <DataCell hideBelow="sm"><CeldaDocumento numero={r.documento_numero} /></DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.total} fuerte /></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>

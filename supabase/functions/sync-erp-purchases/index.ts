@@ -312,6 +312,150 @@ async function syncBranch(
   return { total: compras.length, new: newErpIds.size, items: totalItems };
 }
 
+// ── Backfill rápido de los campos del libro ──────────────────────────────────
+// `descargar_compras_json.php` tarda **167s en un mes de Bodega** porque manda
+// cada compra con TODAS sus líneas: 0.9 MB para rescatar cuatro datos de
+// cabecera. Para un backfill —donde las líneas ya están sincronizadas— es pagar
+// el detalle entero por nada.
+//
+// El ERP tiene una puerta mucho más barata, la que alimenta la tabla de "Admin
+// Compras": `admin_compras_fecha_dt.php` devuelve id_compra, tipo y número sin
+// una sola línea de detalle. **Medido: el mismo mes en 6.1s contra 167s — 27×.**
+// La percepción no está ahí, pero sí en el CSV del libro, que también baja en
+// segundos. Los dos meses completos (749 documentos): 19.6s.
+//
+// Tres cosas que salieron de medirlo y no de suponerlo:
+//
+// 1. **La sucursal es estado de sesión** en estos dos endpoints, no parámetro
+//    (al revés que `descargar_compras_json.php`, que sí acepta `id_sucursal`).
+// 2. **El número viene con espacios distintos en cada fuente**: la tabla da
+//    `'72B6EEA1-727E-ACD2- '` y el CSV `'72B6EEA1-727E-ACD2-'`. Sin normalizar,
+//    40 de 749 no cruzaban.
+// 3. **El número truncado a 20 no siempre es único**: dos casos en junio-julio
+//    con percepciones distintas. Para esos —y solo para esos— se cae al JSON
+//    pesado del día, que es la fuente autoritativa. Un cruce ambiguo en un libro
+//    fiscal no se resuelve eligiendo uno.
+
+const ADMIN_DT_URL = "https://clientesdte3.oss.com.sv/farma_salud/admin_compras_fecha_dt.php";
+const LIBRO_CSV    = "https://clientesdte3.oss.com.sv/farma_salud/libro_compras_iva_csv.php";
+const RETEN_CSV    = "https://clientesdte3.oss.com.sv/farma_salud/libro_retencion_iva_csv.php";
+const SESION_URL   = "https://clientesdte3.oss.com.sv/farma_salud/cambio_sesion.php";
+
+const normNum = (s: string) => (s ?? '').replace(/\s+/g, '').toUpperCase();
+
+async function traer(url: string, cookie: string, ms = 60_000): Promise<string> {
+  const res = await withRetry(() => fetch(url, {
+    headers: { Cookie: cookie, 'X-Requested-With': 'XMLHttpRequest' },
+    signal: AbortSignal.timeout(ms),
+  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status} en ${url}`); return r; }));
+  return await res.text();
+}
+
+// Devuelve numeroNormalizado → conjunto de valores distintos de la columna. El
+// conjunto y no el valor: si trae más de uno, ese número es ambiguo.
+function columnaPorNumero(csv: string, colNumero: number, colValor: number): Map<string, Set<string>> {
+  const m = new Map<string, Set<string>>();
+  for (const linea of csv.split('\n')) {
+    if (!linea.trim()) continue;
+    const c = linea.split(';');
+    if (c.length <= Math.max(colNumero, colValor)) continue;
+    const k = normNum(c[colNumero]);
+    if (!m.has(k)) m.set(k, new Set());
+    m.get(k)!.add((c[colValor] ?? '0').trim() || '0');
+  }
+  return m;
+}
+
+async function fastBackfill(
+  supabase: any, branchId: number, erpId: number,
+  username: string, password: string, startDate: string, endDate: string,
+): Promise<{ documentos: number; actualizados: number; ambiguos: number }> {
+
+  const cookie = await withRetry(() => getSessionCookie(username, password));
+
+  // La sucursal es estado de sesión en estos endpoints — sin esto se traería la
+  // sucursal por defecto del usuario y se guardaría como si fuera esta.
+  await withRetry(() => fetch(SESION_URL, {
+    method: 'POST',
+    headers: { Cookie: cookie, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ process: 'set_sucursal', id_sucursal: String(erpId) }).toString(),
+    signal: AbortSignal.timeout(20_000),
+  }).then(r => { if (!r.ok) throw new Error(`cambio_sesion HTTP ${r.status}`); return r; }));
+
+  const qs   = `fechai=${startDate}&fechaf=${endDate}&draw=1&start=0&length=5000`;
+  const dt   = JSON.parse(await traer(`${ADMIN_DT_URL}?${qs}`, cookie));
+  const filas: any[][] = dt?.data ?? [];
+  if (filas.length === 0) return { documentos: 0, actualizados: 0, ambiguos: 0 };
+
+  const rango   = `fechaInicio=${startDate}&fechaFin=${endDate}`;
+  const percMap = columnaPorNumero(await traer(`${LIBRO_CSV}?${rango}`, cookie), 3, 21);
+  // La retención NO tiene columna en el libro: sale de su propio anexo. Se pide
+  // igual aunque hoy salga vacío en toda la historia — asumir cero por
+  // costumbre es exactamente cómo un dato real pasa desapercibido el día que
+  // aparece.
+  const retenCsv = await traer(`${RETEN_CSV}?${rango}`, cookie);
+  const retenMap = columnaPorNumero(retenCsv, 5, 8);
+
+  // Solo los días con un número ambiguo pagan el JSON pesado.
+  const ambiguo = (n: string) => (percMap.get(n)?.size ?? 0) > 1 || (retenMap.get(n)?.size ?? 0) > 1;
+  const diasTurbios = [...new Set(filas.filter(f => ambiguo(normNum(f[2]))).map(f => String(f[6])))];
+  const oro = new Map<string, { p: number; r: number }>();
+  for (const dia of diasTurbios) {
+    const url = `${COMPRAS_BASE}?fini=${dia}&ffin=${dia}&id_sucursal=${erpId}`;
+    const j   = JSON.parse(await traer(url, cookie, 120_000));
+    for (const c of (j?.compras ?? [])) {
+      oro.set(String(c.compra_id), {
+        p: Number(c.totales?.percepcion_iva ?? 0),
+        r: Number(c.totales?.retencion_iva  ?? 0),
+      });
+    }
+  }
+
+  const ids = filas.map(f => Number(f[0])).filter(Boolean);
+  // Solo se tocan filas que YA existen: este modo completa columnas, no crea
+  // compras. Un id sin fila acá significa que falta correr el sync normal.
+  const existentes = await selectAllByIn<any>(
+    supabase, 'purchase_receipts', 'erp_purchase_id, branch_id',
+    'erp_purchase_id', ids, (q) => q.eq('erp_sucursal_id', erpId),
+  );
+  const vivos = new Map<number, number>((existentes ?? []).map((r: any) => [r.erp_purchase_id, r.branch_id]));
+
+  const rows: any[] = [];
+  for (const f of filas) {
+    const cid = Number(f[0]);
+    if (!vivos.has(cid)) continue;
+    const numero = String(f[2] ?? '').trim();
+    const n      = normNum(numero);
+    const fino   = oro.get(String(f[0]));
+    rows.push({
+      erp_purchase_id:  cid,
+      erp_sucursal_id:  erpId,
+      branch_id:        vivos.get(cid),
+      // `fecha` va aunque no se quiera cambiar: PostgREST arma un
+      // `INSERT ... ON CONFLICT DO UPDATE`, y Postgres valida los NOT NULL de la
+      // tupla ANTES de resolver el conflicto. Sin esto el lote entero falla con
+      // "null value in column fecha", aunque las 200 filas ya existan. Es la
+      // misma fecha del documento que informa este endpoint, así que no puede
+      // pisar nada con otro valor.
+      fecha:            String(f[6] ?? '').trim() || null,
+      documento_tipo:   String(f[1] ?? '').trim() || null,
+      documento_numero: numero || null,
+      percepcion_iva:   fino ? fino.p : Number([...(percMap.get(n)  ?? ['0'])][0] || 0),
+      retencion_iva:    fino ? fino.r : Number([...(retenMap.get(n) ?? ['0'])][0] || 0),
+      updated_at:       new Date().toISOString(),
+    });
+  }
+
+  const CHUNK = 200;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const { error } = await supabase.from('purchase_receipts')
+      .upsert(rows.slice(i, i + CHUNK), { onConflict: 'erp_purchase_id,erp_sucursal_id' });
+    if (error) throw new Error(`fastBackfill upsert ${i}: ${error.message}`);
+  }
+
+  return { documentos: filas.length, actualizados: rows.length, ambiguos: diasTurbios.length };
+}
+
 // ── retryFailed: detecta brechas y reintenta día a día ───────────────────────
 // Una brecha es un par (sucursal, día) sin un registro de éxito que lo cubra —
 // da igual si falló o si nunca se intentó, porque en los dos casos no hay dato.
@@ -417,6 +561,7 @@ Deno.serve(async (req) => {
       retryFailed: doRetry = false,
       since        = '2025-05-01',  // fecha mínima para retry
       background   = false,         // ver "Modo background" más abajo
+      fastBackfill: doFast = false, // ver "Backfill rápido" más arriba
     } = body;
 
     const hoy       = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
@@ -445,6 +590,28 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ retryFailed: true, since, ...result }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // ── Modo fastBackfill ─────────────────────────────────────────────────────
+    // Completa los cuatro campos del libro en filas que YA existen, sin bajar el
+    // detalle de líneas. 27× más rápido que el sync normal para ese fin.
+    if (doFast) {
+      const objetivo = getPurchaseBranches().filter(b => !onlyBranch || b.branchId === onlyBranch);
+      if (objetivo.length === 0)
+        throw new Error(`branchId ${onlyBranch} no está en el mapa de sucursales de compras.`);
+
+      const salida: any[] = [];
+      for (const { branchId, erpId } of objetivo) {
+        try {
+          salida.push({ branchId, ...await fastBackfill(supabase, branchId, erpId, username, password, startDate, endDate) });
+        } catch (e: any) {
+          salida.push({ branchId, error: e.message });
+        }
+      }
+      return new Response(
+        JSON.stringify({ fastBackfill: true, range: { startDate, endDate }, results: salida }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // ── Sync normal ───────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pi
 import Badge from '../common/Badge';
 import SearchInput from '../common/SearchInput';
 import { clickable } from '../../utils/clickable';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 // Direct fetch wrapper using supabase session token
 async function srsFetch(q, page = 1) {
@@ -48,7 +49,7 @@ export default function SrsBuscadorWidget({
             setLastPage(json.last_page || 1);
             setPage(json.current_page || pg);
         } catch (e) {
-            setError(e.message);
+            setError(mensajeAmigable(e));
             setResults(null);
         } finally {
             setLoading(false);

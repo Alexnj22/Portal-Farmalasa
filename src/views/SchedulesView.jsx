@@ -35,6 +35,7 @@ import {
 import { fetchRostersForWeekByEmployees } from '../data/requests';
 import { upsertWeeklyRoster, upsertBulkWeeklyRosters } from '../data/system';
 import PortalInput from '../components/common/PortalInput';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -809,7 +810,7 @@ const SchedulesView = ({ openModal, setView }) => {
                                 showToast('Feriado agregado', `${hName} guardado correctamente.`, 'success');
                                 setHName(''); setHDate(''); setHType('NATIONAL'); setHMuni(''); setHRecurring(false);
                                 setShowHolidayForm(false);
-                            } catch(e) { showToast('Error', e.message, 'error'); }
+                            } catch(e) { showToast('Error', mensajeAmigable(e), 'error'); }
                             finally { setHSaving(false); }
                         }}
                         onDelete={async (id) => {
@@ -817,7 +818,7 @@ const SchedulesView = ({ openModal, setView }) => {
                             try {
                                 await deleteHoliday(id);
                                 showToast('Feriado eliminado', '', 'success');
-                            } catch(e) { showToast('Error', e.message, 'error'); }
+                            } catch(e) { showToast('Error', mensajeAmigable(e), 'error'); }
                             finally { setHDeleting(null); }
                         }}
                     />

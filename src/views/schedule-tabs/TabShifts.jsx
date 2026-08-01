@@ -14,6 +14,7 @@ import { useToastStore } from '../../store/toastStore';
 import { formatHourAMPM, timeToMins } from '../../utils/scheduleHelpers';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const minsToTimeStr = (mins) => {
     const h = Math.floor(mins / 60);
@@ -371,7 +372,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             }
             cancelEditing();
         } catch (err) {
-            showToast('Error al guardar', err.message || 'Verifica tu conexión', 'error');
+            showToast('Error al guardar', mensajeAmigable(err, 'Verifica tu conexión'), 'error');
         } finally { setIsLoading(false); }
     };
 

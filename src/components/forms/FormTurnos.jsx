@@ -13,6 +13,7 @@ import { useToastStore } from '../../store/toastStore';
 import { upsertShift, updateShiftFlags } from '../../data/system';
 import PortalInput from '../../components/common/PortalInput';
 import { EmptyState } from '../common/StateViews';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const FormTurnos = ({ branches }) => {
     // 1. Conexión directa con Supabase para acciones de persistencia
@@ -80,7 +81,7 @@ const FormTurnos = ({ branches }) => {
 
         } catch (err) {
             console.error("Error guardando turno:", err);
-            showToast("No se pudo guardar", err.message || "Error interno al intentar guardar.", "error");
+            showToast("No se pudo guardar", mensajeAmigable(err, "Error interno al intentar guardar."), "error");
         } finally {
             setIsLoading(false);
         }

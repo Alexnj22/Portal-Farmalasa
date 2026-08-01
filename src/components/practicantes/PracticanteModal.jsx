@@ -17,6 +17,7 @@ import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import FileField from '../common/FileField';
 import PortalTextarea from '../common/PortalTextarea';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const ESTADO_OPTIONS = [
     { value: 'ACTIVO', label: 'Activo' },
@@ -178,7 +179,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
             onSaved?.();
             handleClose();
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
         }

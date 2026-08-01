@@ -4,6 +4,7 @@ import { KeyRound, Lock, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
 import PortalInput from '../common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const FormSetPassword = ({ formData, onClose }) => {
     const [password, setPassword] = useState('');
@@ -40,7 +41,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                 setTimeout(onClose, 1200);
             }
         } catch (err) {
-            setError(err?.message || 'Error de conexión.');
+            setError(mensajeAmigable(err, 'Error de conexión.'));
         } finally {
             setLoading(false);
         }

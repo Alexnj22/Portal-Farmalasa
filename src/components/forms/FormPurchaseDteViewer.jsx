@@ -8,6 +8,7 @@ import SegmentedControl from '../common/SegmentedControl';
 import { useToastStore } from '../../store/toastStore';
 import { LoadingState } from '../common/StateViews';
 import { formatMoney } from '../../utils/formatNumber';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const fmt$ = (n) => formatMoney(n || 0);
 
@@ -188,7 +189,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 const json = await res.json();
                 if (alive) setDte(json);
             } catch (e) {
-                if (alive) setError(e.message);
+                if (alive) setError(mensajeAmigable(e));
             } finally {
                 if (alive) setLoading(false);
             }

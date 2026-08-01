@@ -32,6 +32,7 @@ import { updateAttendancePunch, updateEmployee } from '../data/employees';
 import { updateApprovalRequest } from '../data/requests';
 import NocturnalLegalInfo from '../components/common/NocturnalLegalInfo';
 import PortalTextarea from '../components/common/PortalTextarea';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -1163,7 +1164,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       appendAuditLog?.(`SHIFT_EXCEPTION_${newStatus}`, user?.id, { requestId: req.id, empId: req.employee_id, date: meta.date, confirmedStart, confirmedEnd, actorName: user?.name });
       showToast(action === 'APPROVE' ? 'Confirmado' : 'Rechazado', action === 'APPROVE' ? 'Turno extra aplicado al empleado.' : 'Solicitud rechazada.', action === 'APPROVE' ? 'success' : 'info');
     } catch (err) {
-      showToast('Error', err.message, 'error');
+      showToast('Error', mensajeAmigable(err), 'error');
     } finally {
       setProcessingExId(null);
     }

@@ -350,7 +350,8 @@ export const createSystemSlice = (set, get) => ({
                             try {
                                 const u = JSON.parse(localStorage.getItem('sb_user') || '{}');
                                 if (announcementAppliesToUser(a, u, get().roles)) {
-                                    useToastStore.getState().showToast(a.title, a.message, 'info');
+                                    // `humano: true` — el cuerpo lo escribió RRHH, no una máquina.
+                                    useToastStore.getState().showToast(a.title, a.message, 'info', 3500, { humano: true });
                                 }
                             } catch { /* ignore */ }
                         })

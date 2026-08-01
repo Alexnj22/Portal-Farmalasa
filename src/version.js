@@ -16,8 +16,56 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.319.1';
+export const APP_VERSION = '2.320.0';
 
+// v2.320.0 — UX: el usuario dejó de ver el texto que escribe Postgres.
+//
+// Reporte: "me salió un toast con un error con texto_texto_ o algo así, los
+// textos eran el nombre de la función". El toast que se pudo reconstruir de
+// `inventory_sync_log` era, literal:
+//
+//     Sync fallido · Suc. 1
+//     sync_inventory_batch: <!DOCTYPE html>
+//     <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> …
+//
+// O sea el nombre de una función de Postgres más la página de error del ERP,
+// empujados por Realtime a TODOS los usuarios autenticados y además a una
+// notificación del sistema operativo (`useSyncMonitor` mostraba `error_msg`
+// crudo, y titulaba con el ID numérico de la sucursal en vez del nombre).
+// Pasó el 31-jul 18:26 UTC en 5 sucursales a la vez.
+//
+// Pero ese era UN sitio de 74: 58 `showToast(…, err.message)` en 24 archivos
+// más 16 `setError(e.message)`. Cada uno la misma fuga esperando su turno —
+// incluido el que vio el usuario, que fue uno de sesión (un error de auth con
+// la sesión ya muerta), no el del sync.
+//
+// Los dos traductores que ya existían no ayudaban: `translateDbError` (7
+// reglas) y `translateLockError` (4) **terminaban en `return msg`**. O sea,
+// cubrían el error esperado y dejaban pasar crudo el inesperado — que es justo
+// el que trae nombres de función y volcados HTML. Un traductor cuyo último
+// renglón es "y si no, mostralo tal cual" no traduce: pospone la fuga. Los dos
+// se eliminaron y sus 11 reglas se mudaron al traductor único.
+//
+// Quedó en tres capas, porque una sola se olvida:
+//
+//   1. `utils/errorMessages.js` — `mensajeAmigable(err, fallback)`. Detecta
+//      texto técnico por FORMA, no por diccionario (un diccionario siempre
+//      llega tarde al mensaje nuevo): snake_case, payloads HTML/JSON, códigos
+//      PGRST/SQLSTATE, prosa de Postgres en inglés, stacks, URLs, >240 chars.
+//      Traduce 22 causas conocidas —sesión expirada, RLS, timeouts, unique,
+//      not-null, sin red— y lo que no reconoce cae al genérico. La copy propia
+//      del portal ('Mínimo 8 caracteres.') pasa intacta. El error crudo SIEMPRE
+//      va a `console.error`: lo que el usuario no debe ver, quien depura sí.
+//   2. El guardia dentro de `showToast` — sanea todo toast de tipo 'error' aunque
+//      el sitio no haya llamado al traductor. Los avisos de RRHH pasan `humano:
+//      true` (llevan links y texto largo legítimos). El default es sanear y el
+//      escape es explícito a propósito: olvidar el flag arruina un aviso,
+//      olvidar el saneo expone la base de datos.
+//   3. Categoría `error-crudo` de `npm run gate:design`, bloqueante en cero
+//      absoluto. Es la que hace falta para los `setError` de formulario, que
+//      pintan un banner sin pasar por el store. Encontró 4 fugas que la
+//      migración automática no vio (la forma `err?.message`).
+//
 // v2.319.1 — MIN·MAX: el recálculo mensual dejaba de correr en la PRIMERA
 // sucursal de la lista, y el camino del cron tenía 15× menos techo que el manual.
 //

@@ -40,6 +40,7 @@ import Contador from '../../components/common/Contador';
 import useLayoutCompacto from '../../hooks/useLayoutCompacto';
 import { formatMoney, formatQty, formatPct } from '../../utils/formatNumber';
 import { inputHoverClass } from '../../utils/inputStyles';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const PAGE_SIZE = 25;
 
@@ -292,7 +293,7 @@ function ItemRow({
             setRevelado(true);
         } catch (err) {
             setFisico('');
-            showToast('No se guardó el recuento', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
+            showToast('No se guardó el recuento', `${item.product_nombre || 'Esta línea'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -339,7 +340,7 @@ function ItemRow({
             if (nextFisico !== null) onUnlock(item.id, false);
         } catch (err) {
             revertToLastSaved();
-            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
+            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -365,7 +366,7 @@ function ItemRow({
             }
             onUnlock(item.id, false);
         } catch (err) {
-            showToast('No se marcó el renglón', err.message, 'error');
+            showToast('No se marcó el renglón', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
         }
@@ -645,7 +646,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             if (valor !== null) onUnlock(item.id, false);
         } catch (err) {
             setFisico(guardado.current ?? '');
-            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${err.message}`, 'error');
+            showToast('No se guardó el conteo', `${item.product_nombre || 'Esta línea'}: ${mensajeAmigable(err)}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -972,7 +973,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
             await onSave(item.id, { lote: lote.trim() || null, fechaVencimiento: fecha || null });
             onClose();
         } catch (err) {
-            showToast('No se corrigió el lote', err.message, 'error');
+            showToast('No se corrigió el lote', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
         }
@@ -1198,7 +1199,7 @@ export default function ConteoDetailView() {
             for (const it of lines) (porProducto[it.erp_product_id] ||= []).push(it);
             setItemsByProduct(porProducto);
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setLoading(false);
         }
@@ -1334,7 +1335,7 @@ export default function ConteoDetailView() {
             );
             await load();
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
             setConfirmFinalizarOpen(false);
@@ -1350,7 +1351,7 @@ export default function ConteoDetailView() {
             showToast('Conteo aprobado', 'Queda cerrado y con firma auditable', 'success');
             await load();
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
             setPromptAprobarOpen(false);
@@ -1371,7 +1372,7 @@ export default function ConteoDetailView() {
             else if (kind === 'ajuste-csv') exportAjustesConteo(conteo, allItems);
             else printResultadosConteo(conteo, allItems, { soloDiferencias: false });
         } catch (err) {
-            showToast('Error al generar el documento', err.message, 'error');
+            showToast('Error al generar el documento', mensajeAmigable(err), 'error');
         } finally {
             setPrinting(false);
         }
@@ -1384,7 +1385,7 @@ export default function ConteoDetailView() {
             showToast('Ajuste registrado', 'Queda constancia de que se aplicó en el ERP', 'success');
             await load();
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
             setPromptAjusteOpen(false);
@@ -1918,7 +1919,7 @@ function AddManualItemForm({ branchId, onAdd, onCancel }) {
             });
             showToast('Producto agregado', selected.nombre, 'success');
         } catch (err) {
-            showToast('No se agregó el producto', err.message, 'error');
+            showToast('No se agregó el producto', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
         }

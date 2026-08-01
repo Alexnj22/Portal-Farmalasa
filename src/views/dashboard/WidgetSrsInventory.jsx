@@ -5,6 +5,7 @@ import { Loader2, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'l
 import { supabase } from '../../supabaseClient';
 import { fetchInventoryStockFlags } from '../../data/inventory';
 import SearchInput from '../../components/common/SearchInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 async function srsFetch(q, page = 1) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -56,7 +57,7 @@ export default function WidgetSrsInventory() {
       const ids = items.map(p => p.erp_product_id ?? p.id_producto ?? p.id).filter(Boolean).map(Number);
       if (ids.length) checkInventory(ids);
     } catch (e) {
-      setError(e.message); setResults(null);
+      setError(mensajeAmigable(e)); setResults(null);
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { isMobileOrApp } from '../utils/helpers';
 import { supabase } from '../supabaseClient';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
@@ -353,7 +354,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         setChangePassLoading(true);
         try {
             const { error } = await supabase.auth.updateUser({ password: newPassword, data: { must_change_password: false } });
-            if (error) { setChangePassError(error.message); setChangePassLoading(false); return; }
+            if (error) { setChangePassError(mensajeAmigable(error)); setChangePassLoading(false); return; }
             completePasswordChange(pendingUserLocal); setMustChangePwd(false); setPendingUserLocal(null); setNewPassword(''); setConfirmPassword('');
         } catch { setChangePassError('Error de conexión. Intenta de nuevo.'); }
         setChangePassLoading(false);

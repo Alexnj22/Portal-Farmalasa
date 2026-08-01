@@ -8,7 +8,8 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { LoadingState } from './common/StateViews';
-import { supabase } from '../supabaseClient'; 
+import { supabase } from '../supabaseClient';
+import { mensajeAmigable, mensajeConPrefijo } from '../utils/errorMessages'; 
 
 // -------------------------
 // CARGA DIFERIDA
@@ -311,9 +312,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 console.error("Error guardando empleado:", err);
                 if (err?.message?.startsWith('HEADCOUNT_LIMIT:')) {
                     const { showToast } = useToastStore.getState();
-                    showToast('Límite de Organigrama', err.message.replace('HEADCOUNT_LIMIT: ', ''), 'error');
+                    showToast('Límite de Organigrama', mensajeConPrefijo(err, 'HEADCOUNT_LIMIT:'), 'error');
                 } else {
-                    setValidationError(err?.message || "Error interno al procesar y guardar la ficha del empleado. Verifica que no falten datos.");
+                    // `err.message` pelado acá mostraba el error de Postgres dentro
+                    // del formulario, donde el guardia del toast no llega.
+                    setValidationError(mensajeAmigable(err, "No se pudo guardar la ficha. Verifica que no falten datos."));
                 }
             } finally {
                 setIsSaving(false);
@@ -639,7 +642,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 if (showToast) showToast("Recontratación Registrada", `${formData.name} ha sido recontratado/a exitosamente.`, "success");
                 onClose();
             } catch (err) {
-                setValidationError(err?.message || "Error al procesar la recontratación.");
+                setValidationError(mensajeAmigable(err, "Error al procesar la recontratación."));
             } finally {
                 setIsSaving(false);
             }
@@ -669,7 +672,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 );
                 onClose();
             } catch (err) {
-                setValidationError(err?.message || "Error al registrar el ingreso.");
+                setValidationError(mensajeAmigable(err, "Error al registrar el ingreso."));
             } finally {
                 setIsSaving(false);
             }

@@ -9,6 +9,7 @@ import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -163,7 +164,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             formData?.onSaved?.();
             onClose();
         } catch (e) {
-            setError(e.message || 'No se pudo guardar');
+            setError(mensajeAmigable(e, 'No se pudo guardar'));
         } finally {
             setLoading(false);
         }

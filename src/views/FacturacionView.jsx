@@ -43,6 +43,7 @@ import { useToastStore } from '../store/toastStore';
 // avisaba (dos de los cuatro handlers ni desestructuraban `error`, y auditaban
 // igual — `audit_logs` quedó con acciones que nunca ocurrieron). La policy ya
 // existe; esto es la otra mitad: que un fallo se VEA.
+import { mensajeAmigable } from '../utils/errorMessages';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -2168,7 +2169,7 @@ function TabObservaciones({ branches, filterBranch, searchTerm, currentUser, can
         ]);
         // Un RPC que falla NO puede quedar como "no hay observaciones": ese
         // silencio es exactamente el defecto que esta pestaña vino a cerrar.
-        if (err) { setError(err.message); setRows([]); }
+        if (err) { setError(mensajeAmigable(err)); setRows([]); }
         else     { setError(null);        setRows(data || []); }
         // Si las resoluciones fallan se muestra TODO como pendiente y se avisa.
         // Falla hacia mostrar de más: una fila ya solventada que reaparece se

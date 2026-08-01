@@ -1557,6 +1557,45 @@ function scanFile(path) {
     });
   }
 
+  // ── Categoría: error crudo en la UI (2026-08-01) ──────────────────────
+  // Un usuario vio este toast en producción:
+  //
+  //     Sync fallido · Suc. 1
+  //     sync_inventory_batch: <!DOCTYPE html> <!--[if lt IE 7]> …
+  //
+  // El nombre de una función de Postgres más la página de error del ERP, por
+  // toast y por notificación del sistema operativo. Había 58 `showToast(…,
+  // err.message)` en 24 archivos y 16 `setError(e.message)` más: cada uno la
+  // misma fuga esperando su turno.
+  //
+  // La regla es que el usuario NUNCA ve texto que escribió una máquina. Existe
+  // `mensajeAmigable()` (utils/errorMessages) y el guardia del toastStore
+  // atrapa lo que se le escape, pero el guardia solo cubre toasts — un
+  // `setError` pinta el banner del formulario sin pasar por ahí. Por eso
+  // también se chequea acá, estáticamente, sobre TODOS los canales.
+  //
+  // Nace bloqueante en cero: la deuda se cerró completa en el mismo commit, así
+  // que no hay nada que tolerar en el baseline.
+  if (!hasException(path, 'error-crudo')) {
+    // Canales que terminan a la vista de una persona.
+    const SINK = /\b(showToast|setError|setErrorMsg|setValidationError|setChangePassError|setMensaje|fireBrowserNotif)\s*\(/;
+    // `.message` / `.details` / `.hint` de un error, pelado.
+    const CRUDO = /\b(err|error|e|ex|fnErr|authErr|profErr|updErr|empError|countError)\??\.(message|details|hint)\b/g;
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      if (!SINK.test(line)) return;
+      // Ya envuelto por el traductor canónico: `mensajeAmigable(err)` no
+      // contiene `.message`, así que lo que quede es una fuga de verdad.
+      CRUDO.lastIndex = 0;
+      let m;
+      while ((m = CRUDO.exec(line))) {
+        findings.push({ line: i + 1,
+          label: `\`${m[0]}\` crudo a la UI — envolver en \`mensajeAmigable(${m[1]})\` (utils/errorMessages)`,
+          category: 'error-crudo', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
   return findings;
 }
 

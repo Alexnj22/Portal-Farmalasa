@@ -1,0 +1,174 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Traductor canónico de errores → mensaje para una persona.
+//
+// Por qué existe: el 2026-08-01 un usuario vio este toast, tal cual, en
+// producción:
+//
+//     Sync fallido · Suc. 1
+//     sync_inventory_batch: <!DOCTYPE html>
+//     <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> ...
+//
+// O sea: el nombre de una función de Postgres, seguido de la página HTML de
+// error que devolvió el ERP, empujado por Realtime a TODOS los usuarios
+// autenticados y además a una notificación del sistema operativo
+// (`useSyncMonitor`). No era un caso raro: había 58 toasts repartidos en 24
+// archivos mostrando el `.message` crudo del error, cada uno una puerta abierta
+// a lo mismo.
+//
+// La regla del portal es que el usuario NUNCA ve texto técnico. Este archivo es
+// el único lugar donde se decide qué es "texto técnico" y con qué se reemplaza.
+//
+// El diseño tiene tres capas, a propósito:
+//   1. `mensajeAmigable()` — se llama en cada sitio que muestra un error.
+//   2. El guardia dentro de `showToast` (store/toastStore.js) — atrapa lo que
+//      se escriba mañana sin pasar por acá.
+//   3. La categoría `error-crudo` de `npm run gate:design` — falla el build.
+// Una regla que solo vive en prosa se rompe; ésta vive en las tres.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const MENSAJE_GENERICO = 'No se pudo completar la operación. Intenta de nuevo.';
+
+// ── Qué cuenta como "texto técnico" ─────────────────────────────────────────
+// La detección es por FORMA, no por diccionario: un diccionario de mensajes
+// conocidos siempre llega tarde al mensaje nuevo. Si el texto tiene la forma de
+// algo que escribió una máquina para otra máquina, no se muestra.
+const MARCAS_TECNICAS = [
+    // Identificadores snake_case: `sync_inventory_batch`, `product_stock_params`,
+    // `psp_draft_pair_valid`. Es la marca que delató el incidente. Se exige que
+    // el tramo previo al `_` no sea una palabra española suelta con guion bajo
+    // (no existen en la copy del portal), así que cualquier match es un símbolo.
+    /\b[a-z][a-z0-9]*_[a-z0-9_]+\b/,
+    // Payloads: HTML del ERP/Cloudflare, JSON crudo, XML de Hacienda.
+    /<!DOCTYPE|<html|<\/?[a-z]+>|^\s*[[{]"/i,
+    // Códigos de error de la plataforma.
+    /\bPGRST\d+\b|\b[0-9A-Z]{5}\b:\s|\bSQLSTATE\b|\berror code\b/i,
+    // Prosa de Postgres / PostgREST / supabase-js. Toda en inglés: el portal no
+    // muestra inglés a nadie, así que estas frases no pueden ser copy legítima.
+    /\b(constraint|relation|column|schema cache|violates|duplicate key|syntax error|permission denied|null value in|does not exist|invalid input syntax|out of range|deadlock detected|could not find|unexpected token|failed to fetch|network ?error|internal server error)\b/i,
+    // Rastros de stack y rutas de archivo.
+    /\bat [A-Za-z$_][\w$.]*\s*\(|\.(js|jsx|ts|tsx|mjs):\d+|\bstack\b|\bTypeError\b|\bReferenceError\b/,
+    // URLs y hosts: nunca van en un mensaje al usuario.
+    /https?:\/\/|\b[a-z0-9-]+\.(supabase\.co|com|net|org)\b/i,
+];
+
+/**
+ * ¿Este texto se puede mostrar tal cual? Un mensaje que escribió el portal
+ * (`'Selecciona una sucursal para continuar.'`) pasa; uno que escribió Postgres,
+ * el ERP o el navegador, no.
+ */
+export function esTextoTecnico(texto) {
+    if (!texto || typeof texto !== 'string') return true;
+    const t = texto.trim();
+    if (!t) return true;
+    // Un mensaje larguísimo es un volcado, no una frase. El toast igual lo
+    // cortaría a la mitad de una etiqueta HTML.
+    if (t.length > 240) return true;
+    return MARCAS_TECNICAS.some(re => re.test(t));
+}
+
+// ── Traducciones conocidas ──────────────────────────────────────────────────
+// Solo para las causas que un usuario puede entender o accionar. El resto cae
+// al genérico: es mejor un mensaje vago que uno que expone la base de datos.
+//
+// El orden importa: lo específico primero. Los `CHECK` del par MIN/MAX y los
+// errores de bloqueo de módulo van arriba porque son los que una persona
+// provoca escribiendo, y son los únicos donde el detalle ayuda a corregir.
+const REGLAS = [
+    // — Sesión —
+    [/JWT expired|token (is )?expired|refresh_token_not_found|invalid refresh token|session_not_found|session from session_id claim/i,
+        'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'],
+    [/\b(401|403)\b|not authenticated|no authorization|jwt|bad_jwt/i,
+        'Tu sesión ya no es válida. Vuelve a iniciar sesión.'],
+
+    // — Permisos —
+    [/row-level security|permission denied|insufficient_privilege|must be owner/i,
+        'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+
+    // — Mantenimiento y bloqueos de módulo —
+    [/MODULE_LOCKED/i, 'El módulo está en mantenimiento: por ahora es solo lectura.'],
+    [/ALREADY_LOCKED/i, 'Ese módulo ya está bloqueado por otra persona.'],
+    [/UNKNOWN_MODULE/i, 'Ese módulo no existe.'],
+    [/NO_EMPLOYEE/i, 'No se pudo identificar tu usuario. Cierra sesión y vuelve a entrar.'],
+    [/PERMISSION_DENIED/i, 'No tienes permiso para bloquear o liberar este módulo.'],
+
+    // — Reglas de negocio MIN/MAX (F1.2/F1.3) —
+    [/psp_draft_pair_valid|chk_min_lt_max|psp_calc_max_gte_min|mmcr_pair_valid/i,
+        'MIN y MAX no forman un par válido: con MIN ≥ 1, el MAX debe ser mayor; con MIN 0, el MAX solo puede ser 0 o 1.'],
+
+    // — Conexión y tiempo —
+    [/statement timeout|canceling statement|query timeout|57014/i,
+        'La consulta tardó demasiado. Intenta de nuevo en un momento.'],
+    [/signal timed out|timeout|timed out|aborted|ETIMEDOUT/i,
+        'La operación tardó demasiado. Revisa tu conexión e intenta de nuevo.'],
+    [/failed to fetch|network|networkerror|ERR_INTERNET|offline|ECONNREFUSED|load failed/i,
+        'Sin conexión con el servidor. Revisa tu internet e intenta de nuevo.'],
+    [/\b(502|503|504)\b|bad gateway|service unavailable|gateway timeout/i,
+        'El servidor no está respondiendo. Intenta de nuevo en unos minutos.'],
+
+    // — Integridad de datos —
+    [/duplicate key|unique constraint|23505/i, 'Ya existe un registro con esos datos.'],
+    [/foreign key constraint|23503/i, 'No se puede completar: hay otros registros que dependen de este.'],
+    [/not-null constraint|null value in column|23502/i, 'Falta llenar un campo obligatorio.'],
+    [/check constraint|23514/i, 'Uno de los valores está fuera del rango permitido.'],
+    [/invalid input syntax|22P02|out of range|22003/i, 'Uno de los valores tiene un formato incorrecto.'],
+
+    // — Esquema roto: nunca es culpa del usuario, así que nunca se le nombra —
+    [/does not exist|schema cache|PGRST202|undefined_function|undefined_table|undefined_column/i,
+        'Esta función no está disponible en este momento. Avisa al equipo de sistemas.'],
+
+    // — Archivos —
+    [/payload too large|file too large|413|exceeded the maximum/i,
+        'El archivo es demasiado grande.'],
+    [/mime type|not allowed|invalid_mime/i, 'Ese tipo de archivo no está permitido.'],
+];
+
+/**
+ * Convierte cualquier error en un mensaje que se le puede mostrar a una persona.
+ *
+ * Acepta lo que sea: un Error, el `error` de supabase-js, un string, null.
+ * Si el texto ya es copy del portal (español, sin marcas técnicas), lo devuelve
+ * intacto — muchos `throw new Error('Selecciona una sucursal…')` del proyecto
+ * dependen de eso y son buenos mensajes.
+ *
+ * El error crudo SIEMPRE se manda a la consola: lo que el usuario no debe ver,
+ * quien depura sí lo necesita.
+ *
+ * @param {unknown} err        Error, objeto de supabase-js, o string.
+ * @param {string} [fallback]  Mensaje si no hay traducción conocida.
+ */
+export function mensajeAmigable(err, fallback = MENSAJE_GENERICO) {
+    if (err == null) return fallback;
+
+    const crudo = typeof err === 'string'
+        ? err
+        : [err.message, err.details, err.hint, err.error_description, err.code]
+            .filter(Boolean).join(' · ');
+
+    if (!crudo) return fallback;
+
+    // Se registra siempre, traduzca o no: es el único rastro que queda del texto
+    // real una vez que la UI lo reemplaza.
+    if (typeof console !== 'undefined') console.error('[error crudo]', err);
+
+    for (const [re, amigable] of REGLAS) {
+        if (re.test(crudo)) return amigable;
+    }
+
+    // Sin traducción conocida: si el texto es presentable, se muestra; si tiene
+    // forma de volcado técnico, se cambia por el genérico.
+    return esTextoTecnico(crudo) ? fallback : crudo.trim();
+}
+
+/**
+ * Igual que `mensajeAmigable`, pero para errores que el portal lanza con un
+ * prefijo de protocolo (`HEADCOUNT_LIMIT: …`, `OVERLAP_ERROR: …`). El texto
+ * después del prefijo ya es copy escrita a mano y se respeta.
+ */
+export function mensajeConPrefijo(err, prefijo, fallback = MENSAJE_GENERICO) {
+    const crudo = typeof err === 'string' ? err : (err?.message || '');
+    if (crudo.startsWith(prefijo)) {
+        const resto = crudo.slice(prefijo.length).replace(/^[:\s]+/, '').trim();
+        if (resto && !esTextoTecnico(resto)) return resto;
+    }
+    return mensajeAmigable(err, fallback);
+}

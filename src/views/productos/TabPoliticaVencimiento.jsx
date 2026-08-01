@@ -19,6 +19,7 @@ import {
     updateProveedor, deleteProveedor, fetchProductCountByLabDevolutivo, updateProductsMarkND,
 } from '../../data/laboratorios';
 import PortalInput from '../../components/common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 let rowIdSeq = 0;
 const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;
@@ -103,7 +104,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             vineta:           draft.vineta !== '' ? parseFloat(draft.vineta) : null,
         };
         const { data, error } = await insertProveedor(payload);
-        if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
+        if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return false; }
         setProveedores(prev => ({ ...prev, [labId]: [...(prev[labId] || []), data].sort((a, b) => a.nombre.localeCompare(b.nombre)) }));
         const lab = labs.find(l => l.id === labId);
         useStaff.getState().appendAuditLog('CREAR_PROVEEDOR', String(data.id), { proveedor: data.nombre, laboratorio: lab?.nombre });
@@ -121,7 +122,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             updated_at:       new Date().toISOString(),
         };
         const { error } = await updateProveedor(proveedor.id, payload);
-        if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
+        if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return false; }
         setProveedores(prev => ({
             ...prev,
             [proveedor.laboratorio_id]: (prev[proveedor.laboratorio_id] || [])
@@ -142,7 +143,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         const { error } = await deleteProveedor(proveedor.id);
         setDeleting(false);
         setDeleteTarget(null);
-        if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return; }
+        if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return; }
         setProveedores(prev => ({
             ...prev,
             [proveedor.laboratorio_id]: (prev[proveedor.laboratorio_id] || []).filter(p => p.id !== proveedor.id),
@@ -169,7 +170,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         setMarkingNDFor(lab.id);
         const { count, error: countError } = await fetchProductCountByLabDevolutivo(lab.id);
         setMarkingNDFor(null);
-        if (countError) { useToastStore.getState().showToast('Error', countError.message, 'error'); return; }
+        if (countError) { useToastStore.getState().showToast('Error', mensajeAmigable(countError), 'error'); return; }
         if (!count) {
             useToastStore.getState().showToast('Sin cambios', `Todos los productos de "${lab.nombre}" ya están marcados ND.`, 'info');
             return;
@@ -184,7 +185,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         const { data, error } = await updateProductsMarkND(lab.id);
         setNdProcessing(false);
         setNdConfirm(null);
-        if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return; }
+        if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return; }
         useStaff.getState().appendAuditLog('LABORATORIO_MARCAR_ND', String(lab.id), { laboratorio: lab.nombre, productos_afectados: data?.length ?? count });
         useToastStore.getState().showToast('Marcado', `${data?.length ?? count} producto${(data?.length ?? count) === 1 ? '' : 's'} de "${lab.nombre}" marcados como ND.`, 'success');
     };

@@ -17,6 +17,7 @@ import {
 } from '../../data/proveedores';
 import FilterBar from '../../components/common/FilterBar';
 import { useToastStore } from '../../store/toastStore';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const SIN_CATEGORIA = '__sin_categoria__';
 
@@ -318,7 +319,7 @@ export default function ProveedoresView({ openModal }) {
             await load();
         } catch (e) {
             console.error('ProveedoresView.jsx: bulk categoría', e);
-            useToastStore.getState().showToast('No se pudo guardar', e.message || 'Intenta de nuevo.', 'error');
+            useToastStore.getState().showToast('No se pudo guardar', mensajeAmigable(e, 'Intenta de nuevo.'), 'error');
         } finally {
             setBulkBusy(false);
         }

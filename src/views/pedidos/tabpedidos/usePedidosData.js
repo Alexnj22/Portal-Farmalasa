@@ -23,6 +23,7 @@ import {
 } from '../../../data/pedidos';
 import { registerPlugin } from '@capacitor/core';
 
+import { mensajeAmigable } from '../../../utils/errorMessages';
 const ERP_ORDER = [5, 1, 2, 3, 4, 7];
 
 // @capacitor-community/background-geolocation es un plugin 100% nativo sin
@@ -518,7 +519,7 @@ export function usePedidosData({ searchTerm = '' }) {
             setAnularModal(null);
             await loadActive();
         } catch (e) {
-            useToastStore.getState().showToast('Error al anular', e.message ?? 'Ocurrió un error.', 'error');
+            useToastStore.getState().showToast('Error al anular', mensajeAmigable(e, 'Ocurrió un error.'), 'error');
         } finally {
             setBusyAnular(false);
         }

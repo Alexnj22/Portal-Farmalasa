@@ -7,6 +7,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import LiquidSelect from '../common/LiquidSelect';
 import AlertModal from '../common/AlertModal';
 import Badge from '../common/Badge';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const AI_LOADING_PHRASES = [
     "Analizando horarios de apertura y cierre...",
@@ -121,7 +122,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 setAiResult(data.aiSchedule);
                 setEditableSchedule(data.aiSchedule?.schedule || {});
             } catch (err) {
-                setError(err.message || "Gemini no pudo procesar el horario.");
+                setError(mensajeAmigable(err, "Gemini no pudo procesar el horario."));
             } finally {
                 setIsLoading(false);
             }

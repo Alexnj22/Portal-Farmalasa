@@ -29,6 +29,7 @@ import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
 import { insertApprovalRequestSilent } from '../data/requests';
 
+import { mensajeAmigable } from '../utils/errorMessages';
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
 const EMPTY_ARRAY = [];
 // Pausa entre teclas que corta el buffer de escaneo — un lector físico
@@ -566,7 +567,7 @@ export function useTimeClockEngine(props = {}) {
                 showToast('Error', 'No se recibieron credenciales del servidor.', 'error');
             }
         } catch (error) {
-            showToast('Error de Conexión', error.message || 'Ocurrió un error de conexión.', 'error');
+            showToast('Error de Conexión', mensajeAmigable(error, 'Ocurrió un error de conexión.'), 'error');
         } finally {
             setIsProcessing(false);
         }

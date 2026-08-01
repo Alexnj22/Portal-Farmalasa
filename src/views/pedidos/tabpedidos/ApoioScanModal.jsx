@@ -9,6 +9,7 @@ import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import PedidoModal from '../PedidoModal';
 import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '../../../data/pedidos';
+import { mensajeAmigable } from '../../../utils/errorMessages';
 
 export default function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
     const [displayDots, setDisplayDots] = useState(0);
@@ -109,7 +110,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
             useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });
             onSuccess(employee);
             onClose();
-        } catch (err) { setError(err?.message || 'Error al registrar apoyo.'); }
+        } catch (err) { setError(mensajeAmigable(err, 'Error al registrar apoyo.')); }
         finally  { setLoading(false); }
     }, [employee, existingApoyo, pedidoId, sucId, currentUserId, tipo, onSuccess, onClose]);
 

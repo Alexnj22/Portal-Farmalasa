@@ -22,6 +22,7 @@ import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 import FileField from '../common/FileField';
 import { formatMoney } from '../../utils/formatNumber';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -750,7 +751,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             }
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
         } catch (err) {
-            useToastStore.getState().showToast('Error al subir documento', err.message || 'Intenta de nuevo.', 'error');
+            useToastStore.getState().showToast('Error al subir documento', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
             updateDoc(category, { url: null, file_name: '' });
         } finally {
             setAnalyzingDocs(prev => ({ ...prev, [category]: false }));

@@ -12,10 +12,10 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
-import { translateDbError } from './tabminmax/helpers';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { Skeleton } from '../../components/common/StateViews';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const STATUS_CFG = {
   pending:  { label: 'Pendiente', variante: 'warning' },
@@ -152,7 +152,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await fetchAllMinMaxChangeRequests();
-    if (error) setError(error.message);
+    if (error) setError(mensajeAmigable(error));
     setRows(data || []);
     setLoading(false);
   }, []);
@@ -204,9 +204,12 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     setBusyId(r.id); setError(null);
     try { await runDecision(r, approve, note); await load(); }
     catch (e) {
-      setError(e.message?.includes('NO_PERMISSION') || e.message?.includes('row-level')
-        ? 'No tenés permiso para aprobar (can_approve en Min/Max).'
-        : (e.message || 'Error al procesar'));
+      // El caso de permiso tiene copy propia porque nombra el permiso exacto
+      // que falta; el resto baja al traductor canónico.
+      const permiso = /NO_PERMISSION|row-level/.test(String(e?.message ?? ''));
+      setError(permiso
+        ? 'No tienes permiso para aprobar (can_approve en Min/Max).'
+        : mensajeAmigable(e, 'No se pudo procesar la solicitud.'));
     } finally { setBusyId(null); }
   }, [runDecision, load]);
 
@@ -308,7 +311,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       const skipMsgs = [];
       if (skippedBodega.length)   skipMsgs.push(`${skippedBodega.length} de Bodega (no admite solicitudes directas)`);
       if (skippedHidden.length)   skipMsgs.push(`${skippedHidden.length} de producto(s) oculto(s) en Min/Max`);
-      if (skippedInvalid.length)  skipMsgs.push(`${skippedInvalid.length} que la base rechaza — ${translateDbError(skippedInvalid[0]?.error)}`);
+      if (skippedInvalid.length)  skipMsgs.push(`${skippedInvalid.length} que la base rechaza — ${mensajeAmigable(skippedInvalid[0]?.error)}`);
       if (skippedNotFound.length) skipMsgs.push(`${skippedNotFound.length} ya decidida(s) por otra persona`);
       if (skipMsgs.length) {
         setError(`Se omitieron ${skipMsgs.join(', ')}.`);
@@ -316,7 +319,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
       await load();
     } catch (e) {
-      setError(e.message || 'Error al aprobar en lote');
+      setError(mensajeAmigable(e, 'Error al aprobar en lote'));
     } finally { setBulkBusy(false); setConfirmBulkOpen(false); }
   }, [filtered, appendAuditLog, load]);
 

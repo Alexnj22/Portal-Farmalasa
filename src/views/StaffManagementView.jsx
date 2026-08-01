@@ -55,6 +55,7 @@ import FilterBar from '../components/common/FilterBar';
 import StatCard from '../components/common/StatCard';
 import CarrilCards from '../components/common/CarrilCards';
 
+import { mensajeAmigable } from '../utils/errorMessages';
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
 // Las mismas cinco vistas que ofrecen las tarjetas de arriba. Existen también acá
@@ -733,7 +734,7 @@ const StaffManagementView = ({
       useToastStore.getState().showToast('Eliminado', `${practicanteToDelete.first_names} ${practicanteToDelete.last_names}`, 'success');
       setPracticanteToDelete(null);
     } catch (err) {
-      useToastStore.getState().showToast('Error', err.message, 'error');
+      useToastStore.getState().showToast('Error', mensajeAmigable(err), 'error');
     } finally {
       setIsDeletingPracticante(false);
     }

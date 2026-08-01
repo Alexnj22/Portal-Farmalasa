@@ -32,6 +32,7 @@ import {
 } from '../../data/productos';
 import PortalInput from '../../components/common/PortalInput';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 
 const PRICE_FIELDS = [
@@ -294,7 +295,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
             if (onSaved) onSaved(saved, text || null);
         } catch (e) {
-            useToastStore.getState().showToast('Error', e.message, 'error');
+            useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error');
             throw e;
         } finally {
             setSavingPA(false);
@@ -385,7 +386,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
             onCategoryUpdated?.(productId, selected || null);
         } catch (e) {
-            useToastStore.getState().showToast('Error', e.message, 'error');
+            useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error');
             throw e;
         } finally {
             setSavingCat(false);
@@ -404,7 +405,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
             setSelected(nombre);
             if (onCategoryCreated) onCategoryCreated(nombre);
         } catch (e) {
-            useToastStore.getState().showToast('Error', e.message, 'error');
+            useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error');
         }
     };
 
@@ -483,7 +484,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_LOCATIONS', String(productId), { branches: toUpsert.length });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
-            useToastStore.getState().showToast('Error', e.message, 'error');
+            useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error');
             throw e;
         }
     };
@@ -905,7 +906,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         const newVal = !devolutivo;
         const { error } = await updateProductDevolutivo(product.id, newVal);
         if (error) {
-            useToastStore.getState().showToast('Error', error.message, 'error');
+            useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error');
         } else {
             setDevolutivo(newVal);
             useStaff.getState().appendAuditLog('PRODUCTO_DEVOLUTIVO', String(product.id), { producto: product.nombre, devolutivo: newVal });
@@ -952,7 +953,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
             onPhotoUpdated(product.id, cacheBust);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
         } catch (err) {
-            useToastStore.getState().showToast('Error', err.message, 'error');
+            useToastStore.getState().showToast('Error', mensajeAmigable(err), 'error');
         } finally { setPhotoLoading(false); }
     };
 

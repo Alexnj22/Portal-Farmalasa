@@ -20,6 +20,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
 import { smartFilter } from '../utils/searchUtils';
 import PortalInput from '../components/common/PortalInput';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 const SCOPE_OPTIONS = [
     { value: 'BRANCH', label: 'Por Sucursal' },
@@ -250,7 +251,7 @@ const RolesView = ({ openModal }) => {
             if (editingRoleId === confirmDialog.role.id) handleCancelEdit();
             useToastStore.getState().showToast('Cargo Eliminado', `El cargo ha sido removido del sistema.`, 'success');
         } catch (err) {
-            useToastStore.getState().showToast('Error', `Error al eliminar: ${err.message || 'Desconocido'}`, 'error');
+            useToastStore.getState().showToast('Error', `Error al eliminar: ${mensajeAmigable(err, 'Desconocido')}`, 'error');
         } finally {
             setConfirmDialog({ isOpen: false, role: null });
         }
@@ -291,7 +292,7 @@ const RolesView = ({ openModal }) => {
 
             handleCancelEdit();
         } catch (err) {
-            setError(err.message || 'Oops, algo hizo cortocircuito. Intenta guardarlo de nuevo.');
+            setError(mensajeAmigable(err, 'Oops, algo hizo cortocircuito. Intenta guardarlo de nuevo.'));
         }
     };
 

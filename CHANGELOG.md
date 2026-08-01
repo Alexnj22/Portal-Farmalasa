@@ -12,6 +12,65 @@ retomar; acá está todo.
 
 ---
 
+## v2.320.0 — el usuario dejó de ver el texto que escribe Postgres
+
+Reporte del 1-ago: *"me salió un toast con un error con `texto_texto_` o algo
+así, los textos eran el nombre de la función"*. El toast que se pudo
+reconstruir de `inventory_sync_log` era, literal:
+
+```
+Sync fallido · Suc. 1
+sync_inventory_batch: <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> …
+```
+
+El nombre de una función de Postgres más la página de error del ERP,
+empujados por Realtime a **todos** los usuarios autenticados y además a una
+notificación del sistema operativo. `useSyncMonitor` mostraba `error_msg`
+crudo y titulaba con el ID numérico de la sucursal en vez del nombre. Pasó el
+31-jul 18:26 UTC en 5 sucursales a la vez.
+
+Ese era **un sitio de 74**: 58 `showToast(…, err.message)` en 24 archivos, más
+16 `setError(e.message)`. Cada uno la misma fuga esperando su turno — incluido
+el que vio el usuario, que fue uno de sesión (un error de auth con la sesión ya
+muerta), no el del sync.
+
+**Los dos traductores que ya existían no ayudaban.** `translateDbError` (7
+reglas) y `translateLockError` (4) terminaban en `return msg`: cubrían el
+error esperado y dejaban pasar crudo el inesperado — que es justo el que trae
+nombres de función y volcados HTML. Un traductor cuyo último renglón es "y si
+no, mostralo tal cual" no traduce, pospone la fuga. Los dos se eliminaron y sus
+11 reglas se mudaron al traductor único.
+
+### Tres capas, porque una sola se olvida
+
+1. **`utils/errorMessages.js` — `mensajeAmigable(err, fallback)`.** Detecta
+   texto técnico por **forma**, no por diccionario (un diccionario siempre
+   llega tarde al mensaje nuevo): identificadores snake_case, payloads
+   HTML/JSON, códigos PGRST/SQLSTATE, prosa de Postgres en inglés, stacks,
+   URLs, más de 240 caracteres. Traduce 22 causas conocidas (sesión expirada,
+   RLS, timeouts, unique, not-null, sin red) y lo que no reconoce cae al
+   genérico. La copy propia del portal — `'Mínimo 8 caracteres.'` — pasa
+   intacta. El error crudo **siempre** va a `console.error`: lo que el usuario
+   no debe ver, quien depura sí lo necesita.
+2. **El guardia dentro de `showToast`.** Sanea todo toast de tipo `'error'`
+   aunque el sitio no haya llamado al traductor. Los avisos de RRHH pasan
+   `humano: true` porque llevan links y texto largo legítimos. Que el default
+   sea sanear y el escape sea explícito es a propósito: olvidar el flag arruina
+   un aviso, olvidar el saneo expone la base de datos — el olvido tiene que
+   caer del lado barato.
+3. **Categoría `error-crudo` de `npm run gate:design`**, bloqueante en cero
+   absoluto. Hace falta para los `setError` de formulario, que pintan un banner
+   sin pasar por el store. Encontró 4 fugas que la migración automática no vio
+   (la forma `err?.message`).
+
+Verificado con 20 errores reales de producción (el HTML del ERP, cuatro
+variantes de sesión expirada, RLS, unique, not-null, PGRST202, el CHECK del par
+MIN/MAX, `Failed to fetch`) más 6 mensajes de copy propia: ninguna salida
+contiene texto técnico y los 6 mensajes del portal salen sin tocar.
+
+---
+
 ## v2.319.1 — el recálculo mensual de MIN·MAX moría en la PRIMERA sucursal de la lista
 
 El 1-ago el cron mensual (`auto-calculate-minmax`, jobid 170) calculó 5 de 6:

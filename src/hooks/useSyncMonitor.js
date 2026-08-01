@@ -4,6 +4,8 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore } from '../store/staffStore';
 import { announcementAppliesToUser } from '../utils/announcementAudience';
+import { mensajeAmigable } from '../utils/errorMessages';
+import { ERP_NAMES } from '../constants/erp';
 
 function fireBrowserNotif(title, body, tag, onClick) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -29,8 +31,18 @@ export function useSyncMonitor() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'inventory_sync_log', filter: 'success=eq.false' },
         ({ new: row }) => {
-          const title = `Sync fallido · Suc. ${row.erp_sucursal_id}`;
-          const body  = row.error_msg || 'Error en sincronización de inventario';
+          // `error_msg` es el error CRUDO del cron: nombre de la función de
+          // Postgres más lo que haya devuelto el ERP. El 2026-08-01 esto llegó
+          // a un usuario como `sync_inventory_batch: <!DOCTYPE html>…`, por
+          // toast y por notificación del sistema operativo a la vez. El texto
+          // real queda en `inventory_sync_log` para quien depura; acá se
+          // muestra qué pasó, no cómo se llama la función que falló.
+          const sucursal = ERP_NAMES[row.erp_sucursal_id] ?? `Sucursal ${row.erp_sucursal_id}`;
+          const title = `Inventario sin actualizar · ${sucursal}`;
+          const body  = mensajeAmigable(
+            row.error_msg,
+            'No se pudo actualizar el inventario desde el ERP. El equipo de sistemas ya está notificado.',
+          );
           showToast(title, body, 'error');
           fireBrowserNotif(`Farmalasa · ${title}`, body, `sync-fail-${row.id}`);
         }
@@ -61,7 +73,10 @@ export function useSyncMonitor() {
           const toastTitle = isUrgent ? 'Aviso urgente' : 'Nuevo aviso';
           const body       = a.title || 'Tienes un aviso nuevo';
 
-          showToast(toastTitle, body, isUrgent ? 'error' : 'info');
+          // `humano: true`: el aviso lo escribió una persona de RRHH. Un aviso
+          // urgente sale como 'error' y sin este flag el guardia del store lo
+          // trataría como texto de máquina (un link adentro alcanzaría).
+          showToast(toastTitle, body, isUrgent ? 'error' : 'info', 3500, { humano: true });
           fireBrowserNotif(
             `Farmalasa · ${toastTitle}`,
             body,

@@ -40,13 +40,8 @@ export function fetchLockableModules() {
     return supabase.rpc('get_lockable_modules');
 }
 
-// Mensajes de las excepciones del servidor. Sin esto el usuario ve
-// 'ALREADY_LOCKED: minmax ya está bloqueado...' con el prefijo técnico.
-export function translateLockError(msg) {
-    if (!msg) return 'No se pudo completar la operación.';
-    if (/ALREADY_LOCKED/.test(msg))    return 'Ese módulo ya está bloqueado por otra persona.';
-    if (/PERMISSION_DENIED/.test(msg)) return 'No tenés permiso para bloquear o liberar este módulo.';
-    if (/UNKNOWN_MODULE/.test(msg))    return 'Ese módulo no existe.';
-    if (/NO_EMPLOYEE/.test(msg))       return 'No se pudo identificar tu empleado. Cierra sesión y vuelve a entrar.';
-    return msg;
-}
+// `translateLockError` vivía acá y se eliminó el 2026-08-01. Traducía las
+// cuatro excepciones del servidor (ALREADY_LOCKED, PERMISSION_DENIED,
+// UNKNOWN_MODULE, NO_EMPLOYEE) y terminaba en `return msg`: los cuatro casos
+// esperados salían bien y cualquier otro salía crudo. Las cuatro reglas están
+// ahora en `utils/errorMessages`, que no tiene esa salida de escape.

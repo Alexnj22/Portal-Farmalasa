@@ -21,6 +21,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import ListRow from '../components/common/ListRow';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt    = (n) => formatMoney(n || 0);
@@ -442,7 +443,7 @@ const PayrollView = ({ openModal }) => {
             } else {
                 showToast('Generado', 'Planilla generada correctamente.', 'success');
             }
-        } catch(e) { showToast('Error', e.message || 'No se pudo generar la planilla.', 'error'); }
+        } catch(e) { showToast('Error', mensajeAmigable(e, 'No se pudo generar la planilla.'), 'error'); }
         setGenerating(false);
     };
 

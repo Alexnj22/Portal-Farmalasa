@@ -35,6 +35,7 @@ import {
 } from '../data/ventas';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -1572,7 +1573,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 // Keep spinner running so the user sees continuous loading, not a flash of error
                 setTimeout(() => fetchProductos(true), 1500);
             } else {
-                setError(err.message || 'Error al cargar productos');
+                setError(mensajeAmigable(err, 'Error al cargar productos'));
                 setLoading(false);
             }
         }
@@ -1592,7 +1593,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             p_erp_product_id: row.erp_product_id,
             p_oculto: nextVal,
         });
-        if (e) { useToastStore.getState().showToast('Error', e.message, 'error'); return; }
+        if (e) { useToastStore.getState().showToast('Error', mensajeAmigable(e), 'error'); return; }
         // Optimista: el nombre exacto (first_names/last_names) se confirma en el
         // próximo fetch; mientras tanto se parte user.name igual que lo hace
         // shortEmployeeName, así el tooltip no queda vacío hasta el reload.

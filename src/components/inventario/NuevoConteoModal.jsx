@@ -12,6 +12,7 @@ import { searchActiveProductsForConteo, fetchBranchIdsConInventario } from '../.
 import SegmentedControl from '../common/SegmentedControl';
 import PortalInput from '../common/PortalInput';
 import Notice from '../common/Notice';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 // Etiquetas de UNA línea: en `layout="block"` la píldora es de alto fijo (h-11),
 // así que un label que envuelve no crece — se desborda. Van en text-caption
@@ -154,7 +155,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
             onCreated?.(conteoId);
             onClose();
         } catch (err) {
-            showToast('Error', err.message, 'error');
+            showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
         }

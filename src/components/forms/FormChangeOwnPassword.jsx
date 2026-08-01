@@ -4,6 +4,7 @@ import { Eye, EyeOff, KeyRound, Loader2, Lock, CheckCircle } from 'lucide-react'
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
 import PortalInput from '../common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const FormChangeOwnPassword = ({ onClose }) => {
     const [newPass, setNewPass] = useState('');
@@ -20,7 +21,7 @@ const FormChangeOwnPassword = ({ onClose }) => {
         setLoading(true);
         const { error } = await supabase.auth.updateUser({ password: newPass });
         setLoading(false);
-        if (error) useToastStore.getState().showToast('Error', error.message, 'error');
+        if (error) useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error');
         else { setDone(true); useToastStore.getState().showToast('Listo', 'Contraseña actualizada.', 'success'); setTimeout(onClose, 1200); }
     };
 

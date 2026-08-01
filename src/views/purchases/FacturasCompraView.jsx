@@ -33,6 +33,7 @@ import {
 import { clickable } from '../../utils/clickable';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { formatMoney } from '../../utils/formatNumber';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -208,7 +209,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                             onMatched();
                             setEditing(false);
                         } catch (e) {
-                            setError(e.message || 'No se pudo guardar');
+                            setError(mensajeAmigable(e, 'No se pudo guardar'));
                             setEditing(false);
                         } finally {
                             setSaving(false);
@@ -394,7 +395,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                             });
                             onMatched();
                         } catch (e) {
-                            setError(e.message || 'No se pudo emparejar');
+                            setError(mensajeAmigable(e, 'No se pudo emparejar'));
                             onClose();
                         } finally {
                             setSaving(false);
@@ -453,7 +454,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
             });
             onClassified();
         } catch (e) {
-            setError(e.message || 'No se pudo clasificar');
+            setError(mensajeAmigable(e, 'No se pudo clasificar'));
         } finally {
             setSaving(false);
         }
@@ -543,7 +544,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                             onMerged();
                             setOpen(false);
                         } catch (e) {
-                            setError(e.message || 'No se pudo fusionar');
+                            setError(mensajeAmigable(e, 'No se pudo fusionar'));
                             setOpen(false);
                         } finally {
                             setSaving(false);
@@ -1211,7 +1212,7 @@ export default function FacturasCompraView({ openModal }) {
             );
             bumpRefresh();
         } catch (e) {
-            useToastStore.getState().showToast('Error al sincronizar', e.message, 'error');
+            useToastStore.getState().showToast('Error al sincronizar', mensajeAmigable(e), 'error');
         } finally {
             setSyncing(false);
             setSyncProgress(null);

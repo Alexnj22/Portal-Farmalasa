@@ -7,8 +7,9 @@ import ConfirmModal from './ConfirmModal';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { useStaffStore } from '../../store/staffStore';
-import { unlockModule, translateLockError } from '../../data/moduleLocks';
+import { unlockModule } from '../../data/moduleLocks';
 import { MODULE_MAP, moduleKeyForPath } from '../../constants/moduleMap';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 /**
  * El aviso de "este módulo está en mantenimiento", en el ENCABEZADO.
@@ -74,7 +75,7 @@ const ModuleLockNotice = memo(({ moduleKey: moduleKeyProp }) => {
         const { error } = await unlockModule(moduleKey);
         setBusy(false);
         setAskUnlock(false);
-        if (error) { useToastStore.getState().showToast(nombre, translateLockError(error.message), 'error'); return; }
+        if (error) { useToastStore.getState().showToast(nombre, mensajeAmigable(error), 'error'); return; }
         useStaffStore.getState().appendAuditLog('MODULE_LOCK_OFF', moduleKey, { module: moduleKey });
         useToastStore.getState().showToast(nombre, 'Mantenimiento terminado. Ya se puede editar.', 'success');
         refreshModuleLocks();

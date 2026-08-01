@@ -9,7 +9,7 @@ import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import { smartFilter } from '../../../utils/searchUtils';
-import { normXyz, hasDispatchRisk, translateDbError } from './helpers';
+import { normXyz, hasDispatchRisk } from './helpers';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS } from './constants';
 import {
     upsertStockParams, upsertStockParamsReturning, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
@@ -18,6 +18,7 @@ import {
 } from '../../../data/stockParams';
 
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
+import { mensajeAmigable } from '../../../utils/errorMessages';
 const warnIfOutrageous = (field, numVal, row) => {
     if (!numVal || numVal <= 0 || !row) return;
     const calcRef = field === 'min' ? (row.calc_min ?? 0) : (row.calc_max ?? 0);
@@ -177,7 +178,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             setDraftCost(draftRes.data   || null);
             if (cfgRes.data) setAnalysisConfig(cfgRes.data);
         } catch (e) {
-            if (rid === loadRef.current) useToastStore.getState().showToast(ERP_NAMES[erpId] ?? 'MinMax', translateDbError(e.message), 'error');
+            if (rid === loadRef.current) useToastStore.getState().showToast(ERP_NAMES[erpId] ?? 'MinMax', mensajeAmigable(e), 'error');
         } finally {
             if (rid === loadRef.current) setLoading(false);
         }
@@ -242,11 +243,14 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         return () => { cancelled = true; clearInterval(timer); };
     }, [selectedErp]);
 
-    const fmtCalcError = msg => {
-        if (!msg) return 'Error al calcular.';
-        if (/timeout|canceling statement/i.test(msg))
+    // El timeout tiene consejo propio (recalcular de a una sucursal), así que se
+    // resuelve acá; todo lo demás baja al traductor canónico, que nunca deja
+    // pasar el texto crudo de Postgres.
+    const fmtCalcError = err => {
+        const crudo = typeof err === 'string' ? err : (err?.message || '');
+        if (/timeout|canceling statement/i.test(crudo))
             return 'El cálculo tardó demasiado. Intenta recalcular por sucursal en vez de todas a la vez.';
-        return `Error al calcular: ${msg}`;
+        return mensajeAmigable(err, 'No se pudo calcular. Intenta de nuevo.');
     };
 
     const handleRecalcular = async () => {
@@ -258,7 +262,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
             await loadData(selectedErp);
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
-        } catch (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], fmtCalcError(e.message), 'error'); }
+        } catch (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], fmtCalcError(e), 'error'); }
         finally { setCalculating(false); }
     };
 
@@ -388,7 +392,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             p_erp_product_id: row.erp_product_id,
         });
         if (error) {
-            useToastStore.getState().showToast(row.product_name, translateDbError(error.message), 'error');
+            useToastStore.getState().showToast(row.product_name, mensajeAmigable(error), 'error');
             return;
         }
         setData(prev => prev.map(r =>
@@ -452,7 +456,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: deltaToStore, updated_at: new Date().toISOString() },
                 'manual_min, manual_max, min_units, max_units'
             );
-            if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error'); return; }
+            if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', mensajeAmigable(e), 'error'); return; }
             const newMinEff = edit.field === 'min' ? (numVal ?? 0) : (targetRow?.effective_min ?? 0);
             const newMaxEff = edit.field === 'max' ? (numVal ?? 0) : (targetRow?.effective_max ?? 0);
             setData(prev => prev.map(r => {
@@ -487,7 +491,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             );
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error');
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', mensajeAmigable(e), 'error');
                 return;
             }
             refreshCosts(edit.sucursalId);
@@ -510,7 +514,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             );
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', translateDbError(e.message), 'error');
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', mensajeAmigable(e), 'error');
                 return;
             }
             refreshCosts(edit.sucursalId);
@@ -562,7 +566,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const deltaMinStore = deltaMin > 0 ? deltaMin : null;
             const deltaMaxStore = deltaMax > 0 ? deltaMax : null;
             const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: deltaMinStore, manual_max: deltaMaxStore, updated_at: new Date().toISOString() });
-            if (e) { useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return; }
+            if (e) { useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return; }
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== 6) return r;
                 return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: deltaMinStore !== null || deltaMaxStore !== null, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
@@ -593,7 +597,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() });
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return;
+                useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return;
             }
         } else {
             setData(prev => prev.map(r => {
@@ -603,7 +607,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() });
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
-                useToastStore.getState().showToast(productName || 'Producto', translateDbError(e.message), 'error'); return;
+                useToastStore.getState().showToast(productName || 'Producto', mensajeAmigable(e), 'error'); return;
             }
         }
         refreshCosts(sucursalId);
@@ -639,7 +643,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         if (row._erp_sucursal_id === 6) {
             if (!row.has_manual) return;
             const { error: e } = await updateStockParams(row.erp_product_id, 6, { manual_min: null, manual_max: null, updated_at: new Date().toISOString() });
-            if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
+            if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${mensajeAmigable(e)}`, 'error'); return; }
             // Re-leer desde DB: pub_min local puede ser stale si sucursales publicaron después del último fetch
             const { data: fresh } = await fetchStockParams(row.erp_product_id, 6, 'min_units, max_units, draft_min, draft_max, draft_status');
             const newEff    = fresh?.min_units ?? fresh?.draft_min ?? 0;
@@ -668,7 +672,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             // Sin valores calculados: limpia borrador y manual dejando -- (null)
             const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
                 { draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, updated_at: new Date().toISOString() });
-            if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
+            if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${mensajeAmigable(e)}`, 'error'); return; }
             setData(prev => prev.map(r =>
                 r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
                     ? { ...r, draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, has_manual: false, effective_min: null, effective_max: null, alert_status: calcAlertStatus(r.current_stock, null, null) } : r
@@ -688,7 +692,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             ? { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: cMin, max_units: cMax, manual_min: null, manual_max: null, updated_at: new Date().toISOString() }
             : { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: new Date().toISOString() };
         const { error: e } = await upsertStockParams(upsertData);
-        if (e) { useToastStore.getState().showToast(row.product_name, `Error al restaurar: ${e.message}`, 'error'); return; }
+        if (e) { useToastStore.getState().showToast(row.product_name, `Error al restaurar: ${mensajeAmigable(e)}`, 'error'); return; }
         setData(prev => prev.map(r => {
             if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;
             const newAlert = calcAlertStatus(r.current_stock, cMin, cMax);
@@ -712,7 +716,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         const revertMax = row.effective_max ?? 0;
         const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
             { draft_min: revertMin, draft_max: revertMax, draft_status: 'none', updated_at: new Date().toISOString() });
-        if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
+        if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${mensajeAmigable(e)}`, 'error'); return; }
         setData(prev => prev.map(r =>
             r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
                 ? { ...r, draft_min: revertMin, draft_max: revertMax, draft_status: 'none' } : r
@@ -730,7 +734,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         const { data: count, error: e } = await supabase.rpc('discard_stock_drafts', { p_erp_sucursal_id: selectedErp });
         setDiscardingAll(false);
         setDiscardConfirm(false);
-        if (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Error al descartar: ${e.message}`, 'error'); return; }
+        if (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Error al descartar: ${mensajeAmigable(e)}`, 'error'); return; }
         useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${count ?? 0} borradores descartados`, 'success');
         useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), { sucursal: ERP_NAMES[selectedErp], count });
         await loadData(selectedErp);
@@ -788,7 +792,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const n = res?.published ?? 0;
             const label = productIds ? `${n} producto${n !== 1 ? 's' : ''}` : `${n.toLocaleString()} borradores`;
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Publicó ${label} exitosamente`, 'success');
-        } catch (e) { useToastStore.getState().showToast('Error al publicar', e.message, 'error'); }
+        } catch (e) { useToastStore.getState().showToast('Error al publicar', mensajeAmigable(e), 'error'); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);
 
@@ -889,7 +893,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             useStaff.getState().appendAuditLog('MINMAX_HIDE_FILTERED', 'batch', { count: ids.length, sucursal_id: selectedErp });
             useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Ocultó ${ids.length} producto${ids.length !== 1 ? 's' : ''}`, 'success');
         } catch (e) {
-            useToastStore.getState().showToast('Error al ocultar', e.message, 'error');
+            useToastStore.getState().showToast('Error al ocultar', mensajeAmigable(e), 'error');
         } finally {
             setHidingFiltered(false);
             setHideFilteredConfirm(false);

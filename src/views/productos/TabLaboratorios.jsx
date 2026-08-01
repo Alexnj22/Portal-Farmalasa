@@ -14,6 +14,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import PortalInput from '../../components/common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
@@ -83,7 +84,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
             updated_at:     new Date().toISOString(),
         };
         const { error } = await upsertLabLocation(payload);
-        if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
+        if (error) { useToastStore.getState().showToast('Error', mensajeAmigable(error), 'error'); return false; }
         setLocations(prev => ({
             ...prev,
             [labId]: {

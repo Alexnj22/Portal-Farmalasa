@@ -15,7 +15,8 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { MODULE_INFO } from '../constants/permissionModules';
 import { smartFilter } from '../utils/searchUtils';
-import { fetchLockableModules, lockModule, unlockModule, translateLockError } from '../data/moduleLocks';
+import { fetchLockableModules, lockModule, unlockModule } from '../data/moduleLocks';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 /**
  * Sistema › Mantenimiento — poner un módulo en solo lectura para el resto.
@@ -76,7 +77,7 @@ export default function MaintenanceView() {
         let vivo = true;
         fetchLockableModules().then(({ data, error }) => {
             if (!vivo) return;
-            if (error) useToastStore.getState().showToast('Mantenimiento', translateLockError(error.message), 'error');
+            if (error) useToastStore.getState().showToast('Mantenimiento', mensajeAmigable(error), 'error');
             setBloqueables((data || []).map(m => m.module_key));
             setCargando(false);
         });
@@ -116,7 +117,7 @@ export default function MaintenanceView() {
         setBusy(key);
         const { error } = await lockModule(key, reason ?? null, hours ?? 4);
         setBusy(null);
-        if (error) { useToastStore.getState().showToast(info(key).label, translateLockError(error.message), 'error'); return false; }
+        if (error) { useToastStore.getState().showToast(info(key).label, mensajeAmigable(error), 'error'); return false; }
         refreshModuleLocks();
         return true;
     }, [refreshModuleLocks]);
@@ -137,7 +138,7 @@ export default function MaintenanceView() {
         setBusy(key);
         const { error } = await unlockModule(key);
         setBusy(null);
-        if (error) { useToastStore.getState().showToast(info(key).label, translateLockError(error.message), 'error'); return; }
+        if (error) { useToastStore.getState().showToast(info(key).label, mensajeAmigable(error), 'error'); return; }
         useStaff.getState().appendAuditLog('MODULE_LOCK_OFF', key, { module: key });
         useToastStore.getState().showToast(info(key).label, 'Mantenimiento terminado. Ya se puede editar.', 'success');
         setMotivoDraft(d => ({ ...d, [key]: undefined }));

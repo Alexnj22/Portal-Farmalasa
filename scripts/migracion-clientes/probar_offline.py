@@ -745,6 +745,68 @@ check('no crea el checkpoint', not os.path.exists(bloque.CHECKPOINT))
 check('y lo dice en el encabezado', 'SIMULACIÓN' in salida and 'UNA PASADA' not in salida)
 
 
+# ═════════════════════════════════════════════════════════════════════════════
+print('\n9. QUÉ FICHA GANA CUANDO UN NOMBRE ESTÁ DUPLICADO\n')
+
+import revisar_duplicados as dup  # noqa: E402
+
+BASE_DUP = {'dui': '04958064-7', 'nit': '', 'nrc': '', 'pasaporte': '',
+            'telefono1': '75385899', 'telefono2': '', 'correo': '',
+            'direccion': 'BARRIO EL CENTRO', 'departamento': '4',
+            'municipio': '36', 'distrito': '7', 'categoria': '1'}
+
+
+def par(a, b):
+    return {'100': {**BASE_DUP, **a}, '200': {**BASE_DUP, **b}}
+
+
+v, g, _ = dup.comparar(par({}, {}))
+check('datos idénticos: no hay nada que decidir, gana la original (id más bajo)',
+      (v, g) == ('IDÉNTICAS', '100'), f'{v} -> {g}')
+
+v, g, _ = dup.comparar(par({'nombre': ' JOSE '}, {'nombre': 'jose'}))
+check('el nombre crudo NO decide: es justo lo que difiere en todos estos casos',
+      (v, g) == ('IDÉNTICAS', '100'), f'{v} -> {g}')
+
+v, g, _ = dup.comparar(par({'telefono2': '', 'correo': ''},
+                           {'telefono2': '22334455', 'correo': 'a@b.c'}))
+check('una tiene todo lo de la otra y algo más: gana la más completa',
+      (v, g) == ('SUPERSET', '200'), f'{v} -> {g}')
+
+v, g, d = dup.comparar(par({'dui': '04958064-7'}, {'dui': '01094815-7'}))
+check('dos DUI distintos: CONFLICTO, y no lo resuelve el script',
+      (v, g) == ('CONFLICTO', None), f'{v} -> {g}')
+check('y dice en qué campo chocan', 'dui' in d, str(d))
+
+v, g, _ = dup.comparar(par({'nit': '1234-567890-123-4'},
+                           {'nit': '9999-999999-999-9'}))
+check('dos NIT distintos también son CONFLICTO', (v, g) == ('CONFLICTO', None),
+      f'{v} -> {g}')
+
+# Que una lo tenga y la otra no NO es un choque: es la mitad del punto de
+# fusionarlas. Choque es que las dos tengan valor y sean distintos.
+v, g, _ = dup.comparar(par({'dui': ''}, {'dui': '01094815-7'}))
+check('una con DUI y la otra vacía no es conflicto: es la más completa',
+      (v, g) == ('SUPERSET', '200'), f'{v} -> {g}')
+
+v, g, _ = dup.comparar(par({'dui': '  04958064-7  '}, {'dui': '04958064-7'}))
+check('el mismo DUI con espacios alrededor no es conflicto',
+      v != 'CONFLICTO', f'{v} -> {g}')
+
+# Ninguna contiene a la otra y no chocan en los identificadores: difieren en un
+# dato blando. Es el caso real de YNES ANTONIO ARDON (dos distritos distintos).
+v, g, d = dup.comparar(par({'distrito': '16', 'telefono2': '22112233'},
+                           {'distrito': '1', 'correo': 'x@y.z'}))
+check('difieren solo en datos blandos: se elige, pero queda el detalle',
+      v == 'MÁS COMPLETA' and g in ('100', '200') and 'distrito' in d,
+      f'{v} -> {g}, detalle={list(d)}')
+
+# El desempate importa: a igual completitud gana la original, que es la que
+# viene arrastrando el historial de ventas.
+v, g, _ = dup.comparar(par({'telefono2': '22112233'}, {'telefono2': '33445566'}))
+check('a igual completitud gana la de id más bajo', g == '100', f'{v} -> {g}')
+
+
 intactos = sorted(os.listdir(TMP))
 shutil.rmtree(TMP)
 print(f'\n   (el arnés escribió solo en {os.path.basename(TMP)}: {intactos})')

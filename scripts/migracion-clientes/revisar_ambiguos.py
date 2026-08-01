@@ -10,13 +10,18 @@ mirándola:
 
 Este script cierra ese ciclo sin trabajo manual:
 
-    python3 revisar_ambiguos.py             # solo informa
-    python3 revisar_ambiguos.py --reencolar # borra del checkpoint las que cambian
+    python3 revisar_ambiguos.py            # solo informa
+    python3 revisar_ambiguos.py --corregir  # escribe la corrección en el ERP
 
-Reencolar = borrar su entrada del checkpoint. El próximo bloque las vuelve a
-tomar (van primeras, porque el orden es por erp_id) y las rehace con las reglas
-de hoy. Es más barato que subir `REGLAS`, que relee TODO el catálogo procesado
-para corregir un puñado.
+**No alcanza con reencolarlas** (borrar su entrada del checkpoint para que el
+próximo bloque las rehaga). Se intentó así primero y no corrigió nada: la regla
+del distrito solo actúa si el campo está VACÍO —`elif not campos.get('distrito')`
+en `planificar`— y estas fichas ya tienen uno, el equivocado. Salen "sin
+cambios" y el error queda.
+
+Por eso este script ESCRIBE. Usa el mismo camino verificado que un bloque
+(`bloque.aplicar_ficha`): reenvía los 21 campos, relee para verificar, espeja al
+portal y anota el checkpoint. Nada de eso se reimplementa acá.
 
 Cómo sabe cuáles mirar: el checkpoint guarda el MOTIVO de cada distrito, así que
 las resueltas por desempate quedan marcadas con 'ambiguo' en `cambios.distrito`.
@@ -41,12 +46,22 @@ def candidatas(ck):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--reencolar', action='store_true')
+    ap.add_argument('--corregir', action='store_true',
+                    help='escribe la corrección en el ERP (por defecto solo informa)')
+    ap.add_argument('--fichas', default='',
+                    help='erp_id separados por coma, para revisar fichas que ya '
+                         'no traen la marca de ambiguo en el checkpoint')
     ap.add_argument('--pausa', type=float, default=0.4)
     a = ap.parse_args()
 
     ck = bloque.cargar_checkpoint()
-    fichas = candidatas(ck)
+    # Con `--fichas` se revisan las que se pidan. Hace falta porque la marca de
+    # 'ambiguo' vive en el checkpoint y se pierde si la ficha se reprocesa: pasó
+    # el 2026-08-01 al reencolar cuatro, que volvieron a salir "sin cambios" —el
+    # distrito ya no estaba vacío— y quedaron sin rastro. La detección
+    # automática es de una sola oportunidad; esta puerta es la de atrás.
+    fichas = ([e.strip() for e in a.fichas.split(',') if e.strip()]
+              if a.fichas else candidatas(ck))
     print(f'{len(fichas)} fichas se resolvieron por desempate. Releyéndolas del ERP…\n')
 
     cambian, iguales = [], 0
@@ -61,26 +76,41 @@ def main():
         if nuevo == actual:
             iguales += 1
         else:
-            cambian.append(eid)
+            cambian.append({'eid': eid, 'campos': campos, 'ops': ops,
+                            'nuevo': nuevo, 'antes': etiq.get(actual, '(vacío)'),
+                            'despues': etiq.get(nuevo, '?')})
         print(f'  {marca:<6} erp {eid:<6} {(campos.get("direccion") or "")[:38]:<40} '
               f'{etiq.get(actual, "(vacío)"):<26} -> {etiq.get(nuevo, "?")}')
         if 'ambiguo' in motivo:
-            print(f'         (sigue ambigua: {motivo})')
+            print(f'         (sigue ambigua: {motivo} — leerla a mano)')
         time.sleep(a.pausa)
 
     print(f'\n{iguales} quedaron bien · {len(cambian)} cambian con las reglas de hoy')
     if not cambian:
         return
-    print(f'   {cambian}')
-    if not a.reencolar:
-        print('\n(no se tocó el checkpoint — agregá --reencolar)')
+    if not a.corregir:
+        print('\n(no se escribió nada — agregá --corregir)')
         return
 
-    for eid in cambian:
-        ck.pop(eid, None)
-    bloque.volcar_json(bloque.CHECKPOINT, ck)
-    print(f'\nreencoladas: el checkpoint queda con {len(ck)} fichas.')
-    print('Las toma el próximo bloque, y van primeras porque el orden es por erp_id.')
+    print('\n' + '═' * 70)
+    print('CORRIGIENDO EN EL ERP')
+    print('═' * 70)
+    class Opciones:                      # lo que `aplicar_ficha` espera
+        pausa_escritura = 1.0
+        pausa_reintento = bloque.PAUSA_REINTENTO
+    ambiguos = []
+    for c in cambian:
+        nuevos = dict(c['campos'])
+        nuevos['distrito'] = c['nuevo']
+        fila = {'id': f"erp:{c['eid']}", 'name': (c['campos'].get('nombre') or '').strip(),
+                'erp_id': c['eid'], 'campos': dict(c['campos']), 'ops': dict(c['ops']),
+                'nuevos': nuevos, 'estado': 'listo',
+                'cambios': {'distrito': f"{c['antes']} -> {c['despues']} "
+                                        f"(corregido por revisar_ambiguos)"},
+                'portal': None}
+        bloque.aplicar_ficha(fila, ck, ambiguos, Opciones())
+    print('\nListo. El espejo al portal queda en portal_pendiente.jsonl: '
+          'corré `python3 aplicar_espejo.py --aplicar`.')
 
 
 if __name__ == '__main__':

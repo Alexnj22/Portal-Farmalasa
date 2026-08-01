@@ -30,16 +30,21 @@ README §1.
 ```bash
 python3 bloque.py --desde-erp 500 --escribir --una-pasada   # ~45 min
 python3 aplicar_espejo.py --aplicar                          # espeja al portal
-python3 revisar_ambiguos.py --reencolar                      # los desempates
+python3 revisar_ambiguos.py --corregir                       # los desempates
 python3 estado.py --escribir                                 # actualiza el README
 ```
 
 **El paso de los ambiguos tampoco es opcional.** Un desempate no acierta la
 mitad: se equivoca la mitad **justo donde la dirección sí decía cuál era**.
 Medido en dos bloques seguidos: 2 de 5 mal en el bloque 4, **4 de 6 mal en el
-5**. `revisar_ambiguos.py` relee esas fichas, las pasa por las reglas de hoy y
-reencola solo las que cambian — mucho más barato que subir `REGLAS`, que relee
-todo el catálogo procesado para corregir un puñado.
+5**. `revisar_ambiguos.py --corregir` relee esas fichas, las pasa por las reglas de
+hoy y **escribe** la corrección en el ERP.
+
+**No sirve reencolarlas** (borrar su entrada del checkpoint para que el próximo
+bloque las rehaga). Se probó y no corrigió nada: la regla del distrito solo
+actúa si el campo está VACÍO, y estas ya tienen uno — el equivocado. Salen "sin
+cambios" y, peor, pierden la marca de `ambiguo`, así que la detección
+automática ya no las ve. Si te pasa, `--fichas 2112,2304` las nombra a mano.
 
 **El tercer comando no es opcional.** El estado del README se generaba a mano y
 por eso envejecía: llegó a decir 1,085 cuando iban 2,073, y este mismo prompt

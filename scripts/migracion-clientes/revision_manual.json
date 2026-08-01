@@ -526,5 +526,53 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "WILLIAN ARNULFO CASTRO DELGADO"
+ },
+ {
+  "erp_id": "2526",
+  "campo": "dui",
+  "valor": "04337981-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ERICK WILFREDO MEJIA ORELLANA"
+ },
+ {
+  "erp_id": "2786",
+  "campo": "dui",
+  "valor": "05927239-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "DIEGO OTHMARO NUÑEZ PEÑATE"
+ },
+ {
+  "erp_id": "2835",
+  "campo": "dui",
+  "valor": "01067379-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "EDWIN ADALBERTO DIAZ"
+ },
+ {
+  "erp_id": "2856",
+  "campo": "dui",
+  "valor": "01111920-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA LUZ QUIJADA HERNANDEZ"
+ },
+ {
+  "erp_id": "2931",
+  "campo": "dui",
+  "valor": "05894861-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JONATHAN RIGOBERTO GALDAMEZ HERCULES"
+ },
+ {
+  "erp_id": "2969",
+  "campo": "dui",
+  "valor": "04452353-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE ANGEL CASTILLO LOPEZ"
  }
 ]

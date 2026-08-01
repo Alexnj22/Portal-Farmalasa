@@ -1,0 +1,1094 @@
+[
+ {
+  "id": "erp:1001",
+  "name": "KEVIN JOSUE MENJIVAR GUARDADO",
+  "_erp": "1001",
+  "erp_id": "1001",
+  "categoria": "Consumidor",
+  "campos": {
+   "id_cliente": "1001",
+   "nombre": "KEVIN JOSUE MENJIVAR GUARDADO",
+   "dui": "04699685-9",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "7754-6515",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "1992-10-19",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "EL MOJON",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "cambios": {
+   "distrito": "SAN J CANCASQUE (determinista (dirección no dice))"
+  },
+  "portal": {
+   "id": "erp:1001",
+   "erp_id": "1001",
+   "match_name": "kevin josue menjivar guardado",
+   "nit": null,
+   "dui": "04699685-9",
+   "nrc": null,
+   "phone": "7754-6515",
+   "telefono2": null,
+   "email": null,
+   "direccion": "EL MOJON",
+   "pasaporte": null,
+   "departamento": "Chalatenango",
+   "municipio": "Chalatenango Sur",
+   "distrito": null,
+   "categoria": "Consumidor",
+   "giro": null,
+   "retencion_pct": null
+  },
+  "ops": {
+   "departamento": [
+    [
+     "1",
+     "Ahuachapán"
+    ],
+    [
+     "2",
+     "Santa Ana"
+    ],
+    [
+     "3",
+     "Sonsonate"
+    ],
+    [
+     "4",
+     "Chalatenango"
+    ],
+    [
+     "5",
+     "La Libertad"
+    ],
+    [
+     "6",
+     "San Salvador"
+    ],
+    [
+     "7",
+     "Cuscatlán"
+    ],
+    [
+     "8",
+     "La Paz"
+    ],
+    [
+     "9",
+     "Cabañas"
+    ],
+    [
+     "10",
+     "San Vicente"
+    ],
+    [
+     "11",
+     "Usulután"
+    ],
+    [
+     "12",
+     "San Miguel"
+    ],
+    [
+     "13",
+     "Morazán"
+    ],
+    [
+     "14",
+     "La Unión"
+    ]
+   ],
+   "municipio": [
+    [
+     "34",
+     "Chalatenango Norte"
+    ],
+    [
+     "35",
+     "Chalatenango Centro"
+    ],
+    [
+     "36",
+     "Chalatenango Sur"
+    ]
+   ],
+   "distrito": [
+    [
+     "2",
+     "ARCATAO"
+    ],
+    [
+     "3",
+     "AZACUALPA"
+    ],
+    [
+     "5",
+     "COMALAPA"
+    ],
+    [
+     "6",
+     "CONCEPCIÓN QUEZALTEPEQUE"
+    ],
+    [
+     "7",
+     "CHALATENANGO"
+    ],
+    [
+     "9",
+     "EL CARRIZAL"
+    ],
+    [
+     "11",
+     "LA LAGUNA"
+    ],
+    [
+     "14",
+     "LAS VUELTAS"
+    ],
+    [
+     "15",
+     "NOMBRE DE JESUS"
+    ],
+    [
+     "17",
+     "NUEVA TRINIDAD"
+    ],
+    [
+     "18",
+     "OJOS DE AGUA"
+    ],
+    [
+     "19",
+     "POTONICO"
+    ],
+    [
+     "20",
+     "SAN ANT LA CRUZ"
+    ],
+    [
+     "21",
+     "SAN ANT RANCHOS"
+    ],
+    [
+     "23",
+     "SAN FRANCISCO LEMPA"
+    ],
+    [
+     "26",
+     "SAN I LABRADOR"
+    ],
+    [
+     "27",
+     "SAN J CANCASQUE"
+    ],
+    [
+     "28",
+     "SAN JOSE FLORES"
+    ],
+    [
+     "29",
+     "SAN LUIS CARMEN"
+    ],
+    [
+     "30",
+     "SN MIG MERCEDES"
+    ]
+   ],
+   "categoria": [
+    [
+     "1",
+     "Consumidor"
+    ],
+    [
+     "2",
+     "Contribuyente"
+    ],
+    [
+     "3",
+     "Gran Contribuyente"
+    ],
+    [
+     "4",
+     "Contribuyente Exento"
+    ],
+    [
+     "5",
+     "Extranjero"
+    ],
+    [
+     "6",
+     "Menor de edad"
+    ]
+   ],
+   "sel_giro": [],
+   "porcentaje": [
+    [
+     "0",
+     "Sin Retención"
+    ],
+    [
+     "1",
+     "1%"
+    ],
+    [
+     "10",
+     "10%"
+    ]
+   ]
+  },
+  "nuevos": {
+   "id_cliente": "1001",
+   "nombre": "KEVIN JOSUE MENJIVAR GUARDADO",
+   "dui": "04699685-9",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "7754-6515",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "1992-10-19",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "EL MOJON",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "27",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "estado": "listo"
+ },
+ {
+  "id": "erp:1002",
+  "name": "EDITH PATRICIA ESCOBAR MARTINEZ",
+  "_erp": "1002",
+  "erp_id": "1002",
+  "categoria": "Consumidor",
+  "campos": {
+   "id_cliente": "1002",
+   "nombre": "EDITH PATRICIA ESCOBAR MARTINEZ",
+   "dui": "02225079-4",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "7938-1045",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "1988-06-02",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "CHALATENANGO, CHALATENANGO",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "cambios": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "portal": {
+   "id": "erp:1002",
+   "erp_id": "1002",
+   "match_name": "edith patricia escobar martinez",
+   "nit": null,
+   "dui": "02225079-4",
+   "nrc": null,
+   "phone": "7938-1045",
+   "telefono2": null,
+   "email": null,
+   "direccion": "CHALATENANGO, CHALATENANGO",
+   "pasaporte": null,
+   "departamento": "Chalatenango",
+   "municipio": "Chalatenango Sur",
+   "distrito": null,
+   "categoria": "Consumidor",
+   "giro": null,
+   "retencion_pct": null
+  },
+  "ops": {
+   "departamento": [
+    [
+     "1",
+     "Ahuachapán"
+    ],
+    [
+     "2",
+     "Santa Ana"
+    ],
+    [
+     "3",
+     "Sonsonate"
+    ],
+    [
+     "4",
+     "Chalatenango"
+    ],
+    [
+     "5",
+     "La Libertad"
+    ],
+    [
+     "6",
+     "San Salvador"
+    ],
+    [
+     "7",
+     "Cuscatlán"
+    ],
+    [
+     "8",
+     "La Paz"
+    ],
+    [
+     "9",
+     "Cabañas"
+    ],
+    [
+     "10",
+     "San Vicente"
+    ],
+    [
+     "11",
+     "Usulután"
+    ],
+    [
+     "12",
+     "San Miguel"
+    ],
+    [
+     "13",
+     "Morazán"
+    ],
+    [
+     "14",
+     "La Unión"
+    ]
+   ],
+   "municipio": [
+    [
+     "34",
+     "Chalatenango Norte"
+    ],
+    [
+     "35",
+     "Chalatenango Centro"
+    ],
+    [
+     "36",
+     "Chalatenango Sur"
+    ]
+   ],
+   "distrito": [
+    [
+     "2",
+     "ARCATAO"
+    ],
+    [
+     "3",
+     "AZACUALPA"
+    ],
+    [
+     "5",
+     "COMALAPA"
+    ],
+    [
+     "6",
+     "CONCEPCIÓN QUEZALTEPEQUE"
+    ],
+    [
+     "7",
+     "CHALATENANGO"
+    ],
+    [
+     "9",
+     "EL CARRIZAL"
+    ],
+    [
+     "11",
+     "LA LAGUNA"
+    ],
+    [
+     "14",
+     "LAS VUELTAS"
+    ],
+    [
+     "15",
+     "NOMBRE DE JESUS"
+    ],
+    [
+     "17",
+     "NUEVA TRINIDAD"
+    ],
+    [
+     "18",
+     "OJOS DE AGUA"
+    ],
+    [
+     "19",
+     "POTONICO"
+    ],
+    [
+     "20",
+     "SAN ANT LA CRUZ"
+    ],
+    [
+     "21",
+     "SAN ANT RANCHOS"
+    ],
+    [
+     "23",
+     "SAN FRANCISCO LEMPA"
+    ],
+    [
+     "26",
+     "SAN I LABRADOR"
+    ],
+    [
+     "27",
+     "SAN J CANCASQUE"
+    ],
+    [
+     "28",
+     "SAN JOSE FLORES"
+    ],
+    [
+     "29",
+     "SAN LUIS CARMEN"
+    ],
+    [
+     "30",
+     "SN MIG MERCEDES"
+    ]
+   ],
+   "categoria": [
+    [
+     "1",
+     "Consumidor"
+    ],
+    [
+     "2",
+     "Contribuyente"
+    ],
+    [
+     "3",
+     "Gran Contribuyente"
+    ],
+    [
+     "4",
+     "Contribuyente Exento"
+    ],
+    [
+     "5",
+     "Extranjero"
+    ],
+    [
+     "6",
+     "Menor de edad"
+    ]
+   ],
+   "sel_giro": [],
+   "porcentaje": [
+    [
+     "0",
+     "Sin Retención"
+    ],
+    [
+     "1",
+     "1%"
+    ],
+    [
+     "10",
+     "10%"
+    ]
+   ]
+  },
+  "nuevos": {
+   "id_cliente": "1002",
+   "nombre": "EDITH PATRICIA ESCOBAR MARTINEZ",
+   "dui": "02225079-4",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "7938-1045",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "1988-06-02",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "CHALATENANGO, CHALATENANGO",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "7",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "estado": "listo"
+ },
+ {
+  "id": "erp:1003",
+  "name": "MARIA FRANCISCA FRANCO DE CALLEJAS",
+  "_erp": "1003",
+  "erp_id": "1003",
+  "categoria": "Consumidor",
+  "campos": {
+   "id_cliente": "1003",
+   "nombre": "MARIA FRANCISCA FRANCO DE CALLEJAS",
+   "dui": "02276630-5",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "6060-8524",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "1959-10-10",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "LAS MINAS, CAS EL JICARO",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "cambios": {
+   "distrito": "SAN I LABRADOR (determinista (dirección no dice))"
+  },
+  "portal": {
+   "id": "erp:1003",
+   "erp_id": "1003",
+   "match_name": "maria francisca franco de callejas",
+   "nit": null,
+   "dui": "02276630-5",
+   "nrc": null,
+   "phone": "6060-8524",
+   "telefono2": null,
+   "email": null,
+   "direccion": "LAS MINAS, CAS EL JICARO",
+   "pasaporte": null,
+   "departamento": "Chalatenango",
+   "municipio": "Chalatenango Sur",
+   "distrito": null,
+   "categoria": "Consumidor",
+   "giro": null,
+   "retencion_pct": null
+  },
+  "ops": {
+   "departamento": [
+    [
+     "1",
+     "Ahuachapán"
+    ],
+    [
+     "2",
+     "Santa Ana"
+    ],
+    [
+     "3",
+     "Sonsonate"
+    ],
+    [
+     "4",
+     "Chalatenango"
+    ],
+    [
+     "5",
+     "La Libertad"
+    ],
+    [
+     "6",
+     "San Salvador"
+    ],
+    [
+     "7",
+     "Cuscatlán"
+    ],
+    [
+     "8",
+     "La Paz"
+    ],
+    [
+     "9",
+     "Cabañas"
+    ],
+    [
+     "10",
+     "San Vicente"
+    ],
+    [
+     "11",
+     "Usulután"
+    ],
+    [
+     "12",
+     "San Miguel"
+    ],
+    [
+     "13",
+     "Morazán"
+    ],
+    [
+     "14",
+     "La Unión"
+    ]
+   ],
+   "municipio": [
+    [
+     "34",
+     "Chalatenango Norte"
+    ],
+    [
+     "35",
+     "Chalatenango Centro"
+    ],
+    [
+     "36",
+     "Chalatenango Sur"
+    ]
+   ],
+   "distrito": [
+    [
+     "2",
+     "ARCATAO"
+    ],
+    [
+     "3",
+     "AZACUALPA"
+    ],
+    [
+     "5",
+     "COMALAPA"
+    ],
+    [
+     "6",
+     "CONCEPCIÓN QUEZALTEPEQUE"
+    ],
+    [
+     "7",
+     "CHALATENANGO"
+    ],
+    [
+     "9",
+     "EL CARRIZAL"
+    ],
+    [
+     "11",
+     "LA LAGUNA"
+    ],
+    [
+     "14",
+     "LAS VUELTAS"
+    ],
+    [
+     "15",
+     "NOMBRE DE JESUS"
+    ],
+    [
+     "17",
+     "NUEVA TRINIDAD"
+    ],
+    [
+     "18",
+     "OJOS DE AGUA"
+    ],
+    [
+     "19",
+     "POTONICO"
+    ],
+    [
+     "20",
+     "SAN ANT LA CRUZ"
+    ],
+    [
+     "21",
+     "SAN ANT RANCHOS"
+    ],
+    [
+     "23",
+     "SAN FRANCISCO LEMPA"
+    ],
+    [
+     "26",
+     "SAN I LABRADOR"
+    ],
+    [
+     "27",
+     "SAN J CANCASQUE"
+    ],
+    [
+     "28",
+     "SAN JOSE FLORES"
+    ],
+    [
+     "29",
+     "SAN LUIS CARMEN"
+    ],
+    [
+     "30",
+     "SN MIG MERCEDES"
+    ]
+   ],
+   "categoria": [
+    [
+     "1",
+     "Consumidor"
+    ],
+    [
+     "2",
+     "Contribuyente"
+    ],
+    [
+     "3",
+     "Gran Contribuyente"
+    ],
+    [
+     "4",
+     "Contribuyente Exento"
+    ],
+    [
+     "5",
+     "Extranjero"
+    ],
+    [
+     "6",
+     "Menor de edad"
+    ]
+   ],
+   "sel_giro": [],
+   "porcentaje": [
+    [
+     "0",
+     "Sin Retención"
+    ],
+    [
+     "1",
+     "1%"
+    ],
+    [
+     "10",
+     "10%"
+    ]
+   ]
+  },
+  "nuevos": {
+   "id_cliente": "1003",
+   "nombre": "MARIA FRANCISCA FRANCO DE CALLEJAS",
+   "dui": "02276630-5",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "6060-8524",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "1959-10-10",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "LAS MINAS, CAS EL JICARO",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "26",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "estado": "listo"
+ },
+ {
+  "id": "erp:1004",
+  "name": "ROSA EDITH LOPEZ DE NAVARRETE",
+  "_erp": "1004",
+  "erp_id": "1004",
+  "categoria": "Consumidor",
+  "campos": {
+   "id_cliente": "1004",
+   "nombre": "ROSA EDITH LOPEZ DE NAVARRETE",
+   "dui": "01169872-7",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "7223-9401",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "0000-00-00",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "EL ZAPOTAL",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "cambios": {
+   "distrito": "ARCATAO (determinista (dirección no dice))"
+  },
+  "portal": {
+   "id": "erp:1004",
+   "erp_id": "1004",
+   "match_name": "rosa edith lopez de navarrete",
+   "nit": null,
+   "dui": "01169872-7",
+   "nrc": null,
+   "phone": "7223-9401",
+   "telefono2": null,
+   "email": null,
+   "direccion": "EL ZAPOTAL",
+   "pasaporte": null,
+   "departamento": "Chalatenango",
+   "municipio": "Chalatenango Sur",
+   "distrito": null,
+   "categoria": "Consumidor",
+   "giro": null,
+   "retencion_pct": null
+  },
+  "ops": {
+   "departamento": [
+    [
+     "1",
+     "Ahuachapán"
+    ],
+    [
+     "2",
+     "Santa Ana"
+    ],
+    [
+     "3",
+     "Sonsonate"
+    ],
+    [
+     "4",
+     "Chalatenango"
+    ],
+    [
+     "5",
+     "La Libertad"
+    ],
+    [
+     "6",
+     "San Salvador"
+    ],
+    [
+     "7",
+     "Cuscatlán"
+    ],
+    [
+     "8",
+     "La Paz"
+    ],
+    [
+     "9",
+     "Cabañas"
+    ],
+    [
+     "10",
+     "San Vicente"
+    ],
+    [
+     "11",
+     "Usulután"
+    ],
+    [
+     "12",
+     "San Miguel"
+    ],
+    [
+     "13",
+     "Morazán"
+    ],
+    [
+     "14",
+     "La Unión"
+    ]
+   ],
+   "municipio": [
+    [
+     "34",
+     "Chalatenango Norte"
+    ],
+    [
+     "35",
+     "Chalatenango Centro"
+    ],
+    [
+     "36",
+     "Chalatenango Sur"
+    ]
+   ],
+   "distrito": [
+    [
+     "2",
+     "ARCATAO"
+    ],
+    [
+     "3",
+     "AZACUALPA"
+    ],
+    [
+     "5",
+     "COMALAPA"
+    ],
+    [
+     "6",
+     "CONCEPCIÓN QUEZALTEPEQUE"
+    ],
+    [
+     "7",
+     "CHALATENANGO"
+    ],
+    [
+     "9",
+     "EL CARRIZAL"
+    ],
+    [
+     "11",
+     "LA LAGUNA"
+    ],
+    [
+     "14",
+     "LAS VUELTAS"
+    ],
+    [
+     "15",
+     "NOMBRE DE JESUS"
+    ],
+    [
+     "17",
+     "NUEVA TRINIDAD"
+    ],
+    [
+     "18",
+     "OJOS DE AGUA"
+    ],
+    [
+     "19",
+     "POTONICO"
+    ],
+    [
+     "20",
+     "SAN ANT LA CRUZ"
+    ],
+    [
+     "21",
+     "SAN ANT RANCHOS"
+    ],
+    [
+     "23",
+     "SAN FRANCISCO LEMPA"
+    ],
+    [
+     "26",
+     "SAN I LABRADOR"
+    ],
+    [
+     "27",
+     "SAN J CANCASQUE"
+    ],
+    [
+     "28",
+     "SAN JOSE FLORES"
+    ],
+    [
+     "29",
+     "SAN LUIS CARMEN"
+    ],
+    [
+     "30",
+     "SN MIG MERCEDES"
+    ]
+   ],
+   "categoria": [
+    [
+     "1",
+     "Consumidor"
+    ],
+    [
+     "2",
+     "Contribuyente"
+    ],
+    [
+     "3",
+     "Gran Contribuyente"
+    ],
+    [
+     "4",
+     "Contribuyente Exento"
+    ],
+    [
+     "5",
+     "Extranjero"
+    ],
+    [
+     "6",
+     "Menor de edad"
+    ]
+   ],
+   "sel_giro": [],
+   "porcentaje": [
+    [
+     "0",
+     "Sin Retención"
+    ],
+    [
+     "1",
+     "1%"
+    ],
+    [
+     "10",
+     "10%"
+    ]
+   ]
+  },
+  "nuevos": {
+   "id_cliente": "1004",
+   "nombre": "ROSA EDITH LOPEZ DE NAVARRETE",
+   "dui": "01169872-7",
+   "nit": "",
+   "nrc": "",
+   "telefono1": "7223-9401",
+   "telefono2": "",
+   "correo": "",
+   "fecha1": "0000-00-00",
+   "pasaporte": "",
+   "retiene": "",
+   "hi_retiene": "0",
+   "process": "edit",
+   "direccion": "EL ZAPOTAL",
+   "apunte": "",
+   "departamento": "4",
+   "municipio": "36",
+   "distrito": "2",
+   "categoria": "1",
+   "sel_giro": "",
+   "porcentaje": ""
+  },
+  "estado": "listo"
+ }
+]

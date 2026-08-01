@@ -69,10 +69,44 @@ por_erp = {}
 for f in filas:
     if 'match_name' in f:
         por_erp[f['erp_id']] = f
+
+# Dos fichas del ERP pueden normalizar al MISMO nombre, y `customers` tiene una
+# fila por cliente: no hay a dónde mandar las dos. El RPC las omite, pero lo
+# hace en silencio del lado del servidor — así que el corte se hace acá, donde
+# se puede decir cuáles y por qué.
+#
+# `duplicados_resueltos.json` (lo produce revisar_duplicados.py) dice qué
+# `erp_id` gana para cada nombre. Sin resolución, el par no se manda: mandar
+# cualquiera de los dos sería elegir a dedo qué datos ve el portal.
+RESUELTOS = f'{D}/duplicados_resueltos.json'
+resueltos = json.load(open(RESUELTOS)) if os.path.exists(RESUELTOS) else {}
+
+por_nombre = {}
+for f in por_erp.values():
+    por_nombre.setdefault(f['match_name'], []).append(f)
+
+elegidas, sin_resolver = [], []
+for nombre, grupo in por_nombre.items():
+    if len(grupo) == 1:
+        elegidas.append(grupo[0])
+        continue
+    gana = resueltos.get(nombre)
+    ganadora = next((f for f in grupo if str(f['erp_id']) == str(gana)), None)
+    if ganadora:
+        elegidas.append(ganadora)
+    else:
+        sin_resolver.append((nombre, [f['erp_id'] for f in grupo]))
+
 pendientes = [{k: v for k, v in f.items() if v is not None and k != 'id'}
-              for f in por_erp.values()]
+              for f in elegidas]
 
 print(f'{len(filas)} líneas en la cola · {len(pendientes)} fichas a espejar')
+if sin_resolver:
+    print(f'\n{len(sin_resolver)} nombre(s) con más de una ficha en el ERP y sin '
+          f'resolver — no se mandan:')
+    for nombre, ids in sin_resolver:
+        print(f'   {nombre[:52]:<54} {ids}')
+    print('   corré `python3 revisar_duplicados.py` para decidir cuál gana.')
 if not APLICAR:
     print('\n(simulación — nada se aplicó; agregá --aplicar)')
     raise SystemExit

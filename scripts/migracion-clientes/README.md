@@ -55,8 +55,8 @@ python3 probar_offline.py     # ~50 comprobaciones, no toca el ERP ni la base
 ## 3. Cómo se corre un bloque
 
 ```bash
-python3 bloque.py --desde-erp 500              # SIMULACIÓN: no escribe nada
-python3 bloque.py --desde-erp 500 --escribir   # escribe y verifica
+python3 bloque.py --desde-erp 500                          # SIMULACIÓN: no escribe nada
+python3 bloque.py --desde-erp 500 --escribir --una-pasada   # escribe y verifica
 ```
 
 `--desde-erp N` toma las N fichas del catálogo que el checkpoint no tenga con
@@ -65,6 +65,36 @@ las reglas actuales. También existe `--entrada archivo.json` con una lista
 
 **Siempre simular primero y mirar los DUI y los rechazos.** El resto se verifica
 solo.
+
+### `--una-pasada` es el modo de la corrida larga
+
+Lee, corrige, verifica y espeja **cada ficha antes de mirar la siguiente**, en
+vez de planear las 500 y después escribir las 500. Cuesta exactamente las mismas
+peticiones —1,230 por bloque de 500— y cierra el hueco entre la lectura y la
+escritura, que en dos fases llega a **15 minutos**. Como el POST manda los 21
+campos, ese hueco es la única forma en que la corrida podría pisar una edición
+que otra persona hizo en el ERP mientras tanto.
+
+Sin el flag el comportamiento es el de siempre (dos fases), que es lo que
+conviene cuando querés ver el plan entero antes de que se escriba nada. En
+simulación el flag se ignora: no hay escritura que acercar.
+
+### Reintento del glitch del ERP
+
+El ERP falla de dos maneras y el script las trata distinto:
+
+| respuesta | qué hace |
+|---|---|
+| no es su JSON (`Proceso no encontrado` en texto plano, un 502, vacío) | **reintenta**, hasta 3, con backoff 2s/4s |
+| su JSON diciendo que no (`Ya se registro un cliente con estos datos!`) | **no reintenta** — no cambia por insistir, y ese rechazo es un hallazgo |
+
+Reintentar es seguro porque el POST es idempotente: `process=edit` con id fijo y
+los 21 campos deja la ficha igual se aplique una vez o tres. Los intentos quedan
+anotados en `bloque_resultado.json` y en `ambiguos.json`, así que un rechazo que
+sobrevivió tres intentos no se lee igual que uno contestado a la primera.
+
+Existe porque pasó: **una vez en 365 escrituras**, y el mismo payload entró a la
+primera al reintentarlo. A escala de 20,000 escrituras son ~55 cortes.
 
 ### Qué produce
 

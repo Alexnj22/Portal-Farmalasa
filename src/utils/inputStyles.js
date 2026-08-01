@@ -8,9 +8,19 @@ import { maskDui } from './duiUtils';
 // por cascade layers — outline es una propiedad CSS distinta, no compite.
 export const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:outline focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-brand/30";
 
-// Máscaras de campos numéricos comunes (DUI/teléfono/ISSS/AFP/cuenta bancaria)
-// — DUI delega en maskDui (utils/duiUtils.js); el resto vive aquí porque no es
-// específico de ningún formulario en particular.
+// Máscaras de campos numéricos comunes (DUI/teléfono/ISSS/AFP/cuenta bancaria,
+// NIT/NRC/porcentaje) — DUI delega en maskDui (utils/duiUtils.js); el resto vive
+// aquí porque no es específico de ningún formulario en particular.
+//
+// La convención de los identificadores es RECORTAR, no agrupar: ISSS corta en
+// 9, AFP en 12, y los tres que se agregaron el 2026-08-01 hacen lo mismo. Un
+// separador que se acomoda solo mientras se teclea salta de lugar en cada
+// pulsación, y el valor limpio es además el formato que espera el DTE.
+//
+// Los topes de NIT y NRC salen de datos reales, no de la teoría — ver
+// `utils/clienteValidacion.js`, donde están las cuentas: NIT de 14 (o 9 cuando
+// es el DUI) y NRC observado entre 4 y 7 dígitos en 60 DTE sellados por
+// Hacienda, con el tope en 8 por prudencia.
 export const applyInputMask = (value, type) => {
     if (!value) return '';
     if (type === 'ACCOUNT') return value.replace(/[^0-9-]/g, '').substring(0, 25);
@@ -22,5 +32,8 @@ export const applyInputMask = (value, type) => {
     }
     if (type === 'ISSS' && v.length > 9) return v.substring(0, 9);
     if (type === 'AFP' && v.length > 12) return v.substring(0, 12);
+    if (type === 'NIT' && v.length > 14) return v.substring(0, 14);
+    if (type === 'NRC' && v.length > 8) return v.substring(0, 8);
+    if (type === 'PERCENT') return v.substring(0, 3);
     return v;
 };

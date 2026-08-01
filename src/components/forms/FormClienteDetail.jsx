@@ -14,12 +14,11 @@ import { LoadingState } from '../common/StateViews';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
-import { maskDui } from '../../utils/duiUtils';
 import {
     fetchCustomerDetail, updateCustomerFiscal, codigoDeError, mensajeDeError,
 } from '../../data/customers';
 import {
-    EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo,
+    EL_SALVADOR_GEO, municipiosDe, distritosDe, normalizarGeo, conciliarGeo,
 } from '../../data/elSalvadorGeo';
 import {
     validarCliente, camposRequeridos, esContribuyente as esFiscal,
@@ -170,11 +169,18 @@ const FormClienteDetail = ({ formData }) => {
         setCargando(true);
         try {
             const d = await fetchCustomerDetail(id);
-            setCliente(d.cliente || null);
+            // El ERP rotula en MAYÚSCULA y sin tildes, y los selects comparan
+            // por igualdad: sin conciliar, 687 de las 894 fichas con distrito se
+            // ven VACÍAS teniéndolo. Se concilia la ficha ENTERA —no solo el
+            // formulario— para que el diff de `cambios` no marque una
+            // modificación que nadie hizo.
+            const conciliado = d.cliente
+                ? { ...d.cliente, ...conciliarGeo(d.cliente) } : null;
+            setCliente(conciliado);
             setActividad(d.actividad || null);
             setFacturas(d.facturas || []);
             setBitacora(d.bitacora || []);
-            setForm(Object.fromEntries(CAMPOS.map(c => [c, d.cliente?.[c] ?? ''])));
+            setForm(Object.fromEntries(CAMPOS.map(c => [c, conciliado?.[c] ?? ''])));
         } catch (e) {
             console.error('FormClienteDetail.jsx: ', e);
             setError(mensajeDeError(e));
@@ -211,9 +217,6 @@ const FormClienteDetail = ({ formData }) => {
     // además no es un error suyo. Lo mal escrito sí se marca al instante,
     // porque eso sí lo acaba de teclear.
     const [intentoGuardar, setIntentoGuardar] = useState(false);
-    const marcarFalta = (campo) => intentoGuardar && v.faltan.includes(campo);
-    const errorDe = (campo) =>
-        v.errores[campo] || (marcarFalta(campo) ? 'Requerido para facturar' : undefined);
 
     // Solo viaja lo que cambió. Es lo contrario del POST del ERP —que borra lo
     // que no se le manda— y hace que la bitácora registre ediciones reales en
@@ -230,6 +233,17 @@ const FormClienteDetail = ({ formData }) => {
     }, [form, cliente]);
 
     const hayCambios = Object.keys(cambios).length > 0;
+
+    // Cuándo se señala un requerido vacío. NO al abrir: encontrar en rojo una
+    // ficha vieja e incompleta es hostil, y además no es culpa de quien la
+    // abrió. Sí en cuanto hay algo pendiente de guardar — para entonces ya está
+    // editando, y si no se le dice se topa con un botón apagado y sin motivo.
+    // (Ese era el callejón: el aviso colgaba de `intentoGuardar`, que no puede
+    //  ocurrir porque el botón deshabilitado no dispara el clic.)
+    const señalarFaltantes = intentoGuardar || hayCambios;
+    const marcarFalta = (campo) => señalarFaltantes && v.faltan.includes(campo);
+    const errorDe = (campo) =>
+        v.errores[campo] || (marcarFalta(campo) ? 'Requerido para facturar' : undefined);
 
     const guardar = useCallback(async (confirmando = false) => {
         setIntentoGuardar(true);
@@ -275,7 +289,15 @@ const FormClienteDetail = ({ formData }) => {
     }
 
     const municipioOpts = municipiosDe(form.departamento).map(m => ({ value: m, label: m }));
-    const distritoOpts = distritosDe(form.municipio).map(d => ({ value: d, label: d }));
+    const catalogoDistritos = distritosDe(form.municipio);
+    const distritoOpts = catalogoDistritos.map(d => ({ value: d, label: d }));
+    // Las 207 abreviaturas del ERP ("SN MIG MERCEDES") que ninguna
+    // normalización resuelve: se agregan como opción para que el campo muestre
+    // lo que la ficha realmente tiene, en vez de aparecer vacío y empujar a
+    // reemplazarlo por otro distrito.
+    if (form.distrito && !catalogoDistritos.includes(form.distrito)) {
+        distritoOpts.unshift({ value: form.distrito, label: `${form.distrito} (del ERP)` });
+    }
 
     return (
         <div className="space-y-5">
@@ -330,25 +352,30 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={v => setForm(p => ({ ...p, categoria: v || '' }))}
                                     options={CATEGORIAS.map(c => ({ value: c, label: c }))}
                                     placeholder="Sin categoría"
-                                    clearLabel="Ninguna"
+                                    clearable={false}
                                     disabled={!editable}
                                     ariaLabel="Categoría fiscal del cliente"
                                 />
                             </div>
                             <PortalInput
-                                name="dui" label="DUI"
+                                name="dui" label="DUI" maskType="DUI"
+                                placeholder="00000000-0"
                                 value={form.dui} readOnly={!editable}
                                 hasError={!!errorDe('dui')} errorMessage={errorDe('dui')}
-                                onChange={e => setForm(p => ({ ...p, dui: maskDui(e.target.value) }))}
+                                onChange={e => setForm(p => ({ ...p, dui: e.target.value }))}
                             />
                             <PortalInput
-                                name="nit" label="NIT" required={requeridos.has('nit')}
+                                name="nit" label="NIT" maskType="NIT"
+                                placeholder="14 dígitos"
+                                required={requeridos.has('nit')}
                                 value={form.nit} readOnly={!editable}
                                 hasError={!!errorDe('nit')} errorMessage={errorDe('nit')}
                                 onChange={e => setForm(p => ({ ...p, nit: e.target.value }))}
                             />
                             <PortalInput
-                                name="nrc" label="NRC" required={requeridos.has('nrc')}
+                                name="nrc" label="NRC" maskType="NRC"
+                                placeholder="4 a 8 dígitos"
+                                required={requeridos.has('nrc')}
                                 value={form.nrc} readOnly={!editable}
                                 hasError={!!errorDe('nrc')} errorMessage={errorDe('nrc')}
                                 helperText={esContribuyente ? 'Requerido para facturarle con CCF' : undefined}
@@ -375,6 +402,7 @@ const FormClienteDetail = ({ formData }) => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <PortalInput
                                 name="phone" label="Teléfono" type="tel" required
+                                maskType="PHONE" placeholder="0000-0000"
                                 value={form.phone} readOnly={!editable}
                                 hasError={!!errorDe('phone')} errorMessage={errorDe('phone')}
                                 helperText="El DTE lo pide en el receptor"
@@ -382,6 +410,7 @@ const FormClienteDetail = ({ formData }) => {
                             />
                             <PortalInput
                                 name="telefono2" label="Teléfono 2" type="tel"
+                                maskType="PHONE" placeholder="0000-0000"
                                 value={form.telefono2} readOnly={!editable}
                                 hasError={!!errorDe('telefono2')} errorMessage={errorDe('telefono2')}
                                 onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
@@ -420,7 +449,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={v => setGeo({ departamento: v || null, municipio: null, distrito: null })}
                                     options={Object.keys(EL_SALVADOR_GEO).map(d => ({ value: d, label: d }))}
                                     placeholder="Sin departamento"
-                                    clearLabel="Ninguno"
+                                    clearable={false}
                                     disabled={!editable}
                                     ariaLabel="Departamento"
                                 />
@@ -434,7 +463,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={v => setGeo({ municipio: v || null, distrito: null })}
                                     options={municipioOpts}
                                     placeholder={form.departamento ? 'Sin municipio' : 'Selecciona el departamento'}
-                                    clearLabel="Ninguno"
+                                    clearable={false}
                                     disabled={!editable || !form.departamento}
                                     ariaLabel="Municipio"
                                 />
@@ -448,7 +477,7 @@ const FormClienteDetail = ({ formData }) => {
                                     onChange={v => setGeo({ distrito: v || null })}
                                     options={distritoOpts}
                                     placeholder={form.municipio ? 'Sin distrito' : 'Selecciona el municipio'}
-                                    clearLabel="Ninguno"
+                                    clearable={false}
                                     disabled={!editable || !form.municipio}
                                     ariaLabel="Distrito"
                                 />
@@ -469,7 +498,8 @@ const FormClienteDetail = ({ formData }) => {
                         <SectionHeader icon={ShieldCheck}>Retención y notas</SectionHeader>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <PortalInput
-                                name="retencion_pct" label="Retención %" type="number"
+                                name="retencion_pct" label="Retención %"
+                                maskType="PERCENT" inputMode="numeric"
                                 value={form.retencion_pct} readOnly={!editable}
                                 hasError={!!errorDe('retencion_pct')}
                                 errorMessage={errorDe('retencion_pct')}
@@ -506,14 +536,14 @@ const FormClienteDetail = ({ formData }) => {
             {/* Barra de guardar fija al fondo — este modal vive en HIDES_FOOTER de
                 UnifiedModal, igual que el detalle de proveedor. */}
             {editable && panel === 'ficha' && (
-                <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider space-y-2">
+                <div className="sticky bottom-0 z-content -mx-1 px-1 pt-4 pb-1 mt-2 bg-surface-card backdrop-blur-sm border-t border-divider space-y-2">
                     {error && (
                         <Notice variant="danger" icon={AlertTriangle} compact>{error}</Notice>
                     )}
                     {/* Un botón deshabilitado sin explicación es una pared. Se
                         dice qué falta y cómo se llama en el formulario, para
                         que la persona lo encuentre sin adivinar. */}
-                    {intentoGuardar && v.faltan.length > 0 && (
+                    {señalarFaltantes && v.faltan.length > 0 && (
                         <Notice variant="warning" icon={AlertTriangle} compact>
                             Falta {v.faltan.length === 1 ? 'un dato' : `${v.faltan.length} datos`} que
                             el DTE exige{esContribuyente ? ' para un contribuyente' : ''}:{' '}

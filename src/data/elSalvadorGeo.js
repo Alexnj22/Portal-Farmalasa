@@ -137,6 +137,80 @@ export const distritosDe = (municipio) => EL_SALVADOR_DISTRITOS[municipio] || []
 /** El departamento al que pertenece un municipio, o null si no es de los 44. */
 export const departamentoDeMunicipio = (municipio) => DEPTO_POR_MUNICIPIO[municipio] || null;
 
+// ── Conciliación con la grafía del ERP ───────────────────────────────────────
+// El ERP rotula en MAYÚSCULA y sin tildes ("CONCEPCIÓN QUEZALTEPEQUE",
+// "CHALATENANGO"), y el catálogo oficial usa la grafía normal. Como la
+// comparación de abajo es por igualdad exacta, un distrito perfectamente válido
+// que viene del ERP no se encuentra y el formulario lo muestra VACÍO — la ficha
+// parece incompleta cuando no lo está.
+//
+// Medido el 2026-08-01 sobre las 894 fichas con distrito: CERO coinciden exacto,
+// 687 (77%) difieren solo en mayúsculas o tildes —esas las arregla esta
+// conciliación— y 207 son abreviaturas del ERP ("SN MIG MERCEDES",
+// "SAN J CANCASQUE") que ninguna normalización puede resolver: necesitan una
+// tabla de equivalencias ERP ↔ catálogo.
+const sinTildes = (s) => String(s ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+
+// Las que la normalización NO puede deducir: el ERP TRUNCA el nombre para que
+// entre en su campo. Ninguna regla saca "San Miguel de Mercedes" de
+// "SN MIG MERCEDES" — hace falta decirlo.
+//
+// Son 11, y esa cifra es corta precisamente porque la normalización de arriba
+// se encarga de las otras 32 (de 43 valores distintos que escribe el ERP). Sin
+// esa capa, esta tabla necesitaría las 43 filas —cero coinciden exacto con el
+// catálogo— y habría que tocarla cada vez que el ERP cambie una tilde.
+//
+// La llave está normalizada, así que da igual cómo venga acentuada o capitalizada.
+const ABREVIATURAS_ERP = new Map(Object.entries({
+    'DULCE NOM MARIA':  'Dulce Nombre de María',
+    'NVA CONCEPCION':   'Nueva Concepción',
+    'SAN ANT LA CRUZ':  'San Antonio de la Cruz',
+    'SAN ANT RANCHOS':  'San Antonio Los Ranchos',
+    'SAN I LABRADOR':   'San Isidro Labrador',
+    'SAN J CANCASQUE':  'San José Cancasque',
+    // El distrito se llamaba "San José Las Flores" y quedó como "Las Flores".
+    'SAN JOSE FLORES':  'Las Flores',
+    'SAN LUIS CARMEN':  'San Luis del Carmen',
+    'SAN P TACACHICO':  'San Pablo Tacachico',
+    'SN MIG MERCEDES':  'San Miguel de Mercedes',
+    'MONTE SAN JUAN':   'Monte San Juan',
+}).map(([k, v]) => [sinTildes(k), v]));
+
+const CANON_DEP = new Map(Object.keys(EL_SALVADOR_GEO).map(d => [sinTildes(d), d]));
+const CANON_MUN = new Map();
+const CANON_DIS = new Map();
+for (const [mun, distritos] of Object.entries(EL_SALVADOR_DISTRITOS)) {
+    CANON_MUN.set(sinTildes(mun), mun);
+    for (const d of distritos) CANON_DIS.set(`${mun}|${sinTildes(d)}`, d);
+}
+
+/** La grafía del catálogo para un valor que puede venir del ERP. Si no lo
+ *  reconoce devuelve el valor tal cual: no inventa ni descarta. */
+export const canonDepartamento = (v) => CANON_DEP.get(sinTildes(v)) || v || null;
+export const canonMunicipio = (v) => CANON_MUN.get(sinTildes(v)) || v || null;
+export const canonDistrito = (municipio, v) => {
+    if (!v) return null;
+    // Primero la tabla de abreviaturas, después el índice normalizado. El orden
+    // importa: "NVA CONCEPCIÓN" no existe en el catálogo con ninguna grafía, así
+    // que sin la tabla el índice no lo encontraría nunca.
+    const porTabla = ABREVIATURAS_ERP.get(sinTildes(v));
+    const mun = canonMunicipio(municipio);
+    if (porTabla && (EL_SALVADOR_DISTRITOS[mun] || []).includes(porTabla)) return porTabla;
+    return CANON_DIS.get(`${mun}|${sinTildes(v)}`) || v;
+};
+
+/** Concilia la terna completa. Se usa al CARGAR una ficha, para que la pantalla
+ *  muestre lo que la ficha realmente tiene. */
+export function conciliarGeo({ departamento, municipio, distrito } = {}) {
+    const mun = canonMunicipio(municipio);
+    return {
+        departamento: canonDepartamento(departamento),
+        municipio: mun,
+        distrito: canonDistrito(mun, distrito),
+    };
+}
+
 /**
  * Normaliza la terna (departamento, municipio, distrito) a un estado coherente.
  *
@@ -152,6 +226,11 @@ export function normalizarGeo({ departamento, municipio, distrito } = {}) {
     let dep = departamento || null;
     let mun = municipio || null;
     let dis = distrito || null;
+
+    // Primero se concilia con la grafía del catálogo: sin esto, un distrito
+    // que viene del ERP en mayúsculas se considera inexistente y se descarta.
+    ({ departamento: dep, municipio: mun, distrito: dis } =
+        conciliarGeo({ departamento: dep, municipio: mun, distrito: dis }));
 
     if (mun && !EL_SALVADOR_DISTRITOS[mun]) mun = null;             // municipio que no existe
     if (mun) dep = departamentoDeMunicipio(mun);                     // el municipio manda sobre el departamento

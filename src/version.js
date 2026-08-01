@@ -16,7 +16,53 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.327.2';
+export const APP_VERSION = '2.328.0';
+
+// v2.328.0 — Clientes: máscaras, selects sin "Ninguno", el botón que se tapaba,
+// y el distrito que el formulario mostraba vacío teniéndolo.
+//
+// Cuatro cosas que aparecieron mirando el modal de verdad, no leyéndolo:
+//
+// 1. NO HABÍA MÁSCARAS. El canónico `applyInputMask` existía pero la ficha no
+//    pasaba `maskType` en ningún campo: el NIT aceptaba 23 dígitos y el NRC 24.
+//    Se agregaron NIT (14), NRC (8) y PERCENT (3) al canónico —faltaban— y se
+//    conectaron los seis campos. La convención del archivo es RECORTAR y no
+//    agrupar (ISSS corta en 9, AFP en 12): un separador que se acomoda solo
+//    salta de lugar en cada pulsación, y el valor limpio es el que espera el DTE.
+//
+// 2. LOS SELECTS OFRECÍAN "NINGUNO" en campos que ahora son obligatorios.
+//    `clearable={false}` en departamento, municipio, distrito y categoría. La
+//    categoría entra en la lista porque decide QUÉ le exige el DTE a la ficha:
+//    vaciarla relajaba los requisitos en silencio.
+//
+// 3. EL BOTÓN DE GUARDAR QUEDABA DEBAJO DEL TEXTAREA. `PortalTextarea` envuelve
+//    su caja en `relative z-base` (z-index 10) y la barra sticky no tenía
+//    z-index, así que perdía. Se le puso `z-content`.
+//
+// 4. EL DISTRITO SE VEÍA VACÍO TENIÉNDOLO — y esto era lo grave, porque hacía
+//    mentir a la validación nueva. El ERP rotula en MAYÚSCULA y sin tildes, y
+//    `normalizarGeo` comparaba por igualdad exacta. De las 894 fichas con
+//    distrito, CERO coincidían: 687 diferían solo en mayúsculas o tildes y 207
+//    eran abreviaturas del ERP. El encabezado de `elSalvadorGeo.js` ya advertía
+//    que el emparejamiento "tiene que ser normalizado, nunca por igualdad de
+//    cadena" — estaba escrito y el código hacía lo contrario.
+//
+//    Se resolvió en dos capas, y el reparto explica por qué hacen falta las dos:
+//    la normalización (sin tildes, sin mayúsculas) cubre 32 de los 43 valores
+//    distintos que escribe el ERP, sin mantenimiento; la tabla de abreviaturas
+//    carga las 11 que ninguna regla puede deducir ("SN MIG MERCEDES" ->
+//    "San Miguel de Mercedes"). Con tabla sola harían falta las 43 filas y se
+//    rompería con cada cambio de tilde. Resultado: 893 de 894 fichas se muestran
+//    bien. La que queda no es un problema de nombres — dice "MONTE SAN JUAN" con
+//    municipio "Cuscatlán Norte" y ese distrito es de Cuscatlán Sur — y se
+//    muestra marcada "(del ERP)" en vez de desaparecer.
+//
+// Y un callejón sin salida que abrí yo en v2.327.0: el aviso que nombra los
+// campos faltantes colgaba de `intentoGuardar`, que no puede ocurrir nunca
+// porque el botón deshabilitado no dispara el clic. Ahora se muestra en cuanto
+// hay algo pendiente de guardar; al abrir sigue sin pintar nada, que era el
+// punto original.
+
 
 // v2.327.2 — el mismo hueco estaba en los otros dos libros de ventas.
 //

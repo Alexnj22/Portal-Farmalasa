@@ -16,8 +16,46 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.320.2';
+export const APP_VERSION = '2.320.3';
 
+// v2.320.3 — el push estaba muerto hacía tres semanas y nadie se enteró.
+//
+// El 2026-07-10 (`59a9611a`, endurecimiento de 11 edge functions)
+// `send-push-notification` pasó a exigir el header `x-cron-secret`. Las CUATRO
+// edge functions que la llaman se actualizaron. Las TRES funciones de base de
+// datos que también la llaman, no: `notify_employees`, `notify_branch` y el
+// trigger `notify_push_on_announcement` seguían mandando
+// `'{"Content-Type":"application/json"}'` y nada más.
+//
+// O sea que desde el 10-jul, TODO `push: true` del canal de pedidos y
+// solicitudes, y TODO aviso nuevo, devolvió 401. Tres semanas. En silencio,
+// por dos motivos que se suman:
+//   · `net.http_post` es fire-and-forget — nadie mira `net._http_response`,
+//     y esa tabla además solo guarda ~6 horas.
+//   · `notifyEmployees`/`notifyBranch` en el frontend hacen
+//     `catch { console.error; return 0 }`, así que la acción del usuario se
+//     completa como si todo hubiera salido bien.
+//
+// Arreglo: helper `push_function_headers()` que arma el header leyendo
+// `cron_invoke_secret` de Vault — el mismo patrón que ya usaban los cron.job
+// sanos (`heal-dte-sync`). Vive en un solo lugar, como `push_function_url()`,
+// para que rotar el secreto o sumar un cuarto llamador se toque una vez.
+// Es SECURITY DEFINER porque lee Vault, y justamente por eso NO tiene EXECUTE
+// para `authenticated`: devuelve el secreto en claro. ACL verificada:
+// `postgres=X/postgres | service_role=X/postgres`.
+//
+// Verificado lado a lado contra prod, mismo body y destinatario inexistente
+// (0 suscripciones → no se entregó ningún push a nadie):
+//     sin secreto → 401 {"error":"UNAUTHORIZED"}
+//     con secreto → 200 {"sent":0}
+//
+// Migración `20260801153139_push_notifications_send_cron_secret`.
+//
+// Queda dicho lo que el arreglo NO resuelve: hay 13 suscripciones de push de
+// solo 4 empleados sobre 59, y los 4 son de Administración. Cero en Salud 1-5,
+// La Popular y Bodega — que es a donde apunta `notifyBranch(..., push: true)`
+// de pedidos. El canal ya funciona; el alcance es el siguiente problema.
+//
 // v2.320.2 — el gate `error-crudo` tenía una LISTA A MANO y se le escapaban 25.
 //
 // La regla que cerró v2.320.0 enumeraba cinco setters de error a mano

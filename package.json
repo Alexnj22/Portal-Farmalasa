@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --outDir ${OUT_DIR:-dist}",
     "lint": "eslint .",
-    "preview": "vite preview",
+    "preview": "vite preview --outDir ${OUT_DIR:-dist} --strictPort --port ${QA_PORT:-4173}",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -17,7 +17,9 @@
     "gate:doc": "node scripts/design-doc-gate.mjs",
     "gate:version": "node scripts/version-gate.mjs",
     "gate:migrations": "node scripts/migration-gate.mjs",
-    "hooks:install": "git config core.hooksPath .githooks"
+    "hooks:install": "git config core.hooksPath .githooks",
+    "version:bump": "node scripts/version-bump.mjs",
+    "worktree": "bash scripts/worktree.sh"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

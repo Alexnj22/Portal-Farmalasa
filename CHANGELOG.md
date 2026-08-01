@@ -1,16 +1,106 @@
 # Changelog — Portal Farmalasa
 
 Histórico completo, de la entrada más reciente a la más vieja.
-Las últimas 6 también viven en `src/version.js`, que es lo que se mira al
-retomar; acá está todo.
+**Este es el único lugar donde vive el changelog.** `src/version.js` tiene
+solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 > **Por qué está acá.** Hasta el 2026-07-28 este changelog vivía dentro de
 > `src/version.js`, que llegó a pesar **805 KB**. Los comentarios nunca
 > llegaron al bundle —verificado: cero coincidencias en `dist/`— así que no era
 > peso para el usuario, pero babel se deoptimizaba en cada build
 > (*"exceeds the max of 500KB"*) y eslint lo recorría entero en cada pasada.
+>
+> **Por qué se rehízo el 2026-08-01.** Aquella mudanza dejó "las últimas 6
+> entradas en `version.js`, que es lo que uno mira al retomar", y nada
+> verificaba esa regla: **164 de las 268 entradas escritas después nunca
+> llegaron acá** y el archivo volvió a 7,330 líneas en tres semanas. Esas 164
+> están recuperadas en este archivo. Y el motivo de fondo resultó ser peor que
+> el peso: con 2-3 sesiones trabajando sobre el mismo árbol, todas escribían el
+> mismo bloque al tope del mismo archivo, así que colisionaban siempre. Acá dos
+> sesiones tocan bloques distintos.
 
 ---
+
+## v2.334.2 — Trabajar en varias sesiones sin pisarse
+
+Este repo se trabaja con 2-3 sesiones a la vez sobre el mismo directorio, y eso
+comparte cuatro cosas que no deberían compartirse. Lo de abajo salió de chocar
+con las cuatro en una sola jornada, no de imaginarlas.
+
+**El changelog sale de `src/version.js`.** Era la colisión más frecuente: todas
+las sesiones escribían el mismo bloque de 30 líneas al tope del mismo archivo.
+Hoy pasó tres veces —2.330.0 y 2.331.0 se las llevó otra sesión mientras yo
+redactaba— y una cuarta tuve que **dejar el archivo fuera de mi commit**,
+esperando a que la otra commiteara, porque prepararlo se llevaba su entrada.
+Con una sola línea ahí, la colisión es de una línea y se resuelve sola.
+
+Al mudarlo apareció que la regla anterior ya estaba rota. El 2026-07-28 se había
+sacado el histórico dejando *"las últimas 6 entradas en `version.js`, que es lo
+que uno mira al retomar"*, y **nada verificaba esa regla**: de las 268 entradas
+escritas desde entonces, **164 nunca llegaron a `CHANGELOG.md`** y el archivo
+había vuelto a 7,330 líneas. Las 164 están recuperadas; `version.js` quedó en 28.
+
+**`version-gate` ahora exige las tres cosas**: que `version.js` no tenga
+entradas de changelog, que la versión suba cuando cambia `src/`, y que
+`## v<versión>` exista en `CHANGELOG.md` **y esté preparado en el mismo commit**.
+Además lee la versión del **índice** y no del disco: lo que importa es la que va
+en este commit, no la que otra sesión dejó en el archivo de trabajo. Una regla
+que nada revisa es una regla que ya se rompió.
+
+**`npm run version:bump -- patch|minor|major "Título"`** hace el bump y deja la
+entrada empezada de una pasada, y relee la versión justo antes de escribir: si
+otra sesión se llevó el número en el medio, recalcula sobre el valor nuevo en
+vez de pisarlo.
+
+**`dist/` y el preview.** `npm run build` acepta `OUT_DIR=dist-<nombre>` para
+compilar sin pisar el `dist/` de otra sesión — importante porque una compilación
+ajena a mitad de una verificación en el navegador hace medir el código
+equivocado y reportar "verificado" sobre algo que no es. El preview sigue en
+4173 porque las edge functions solo aceptan CORS de ese origen (o sea: una
+sesión a la vez), pero ahora lleva `--strictPort`, así que un puerto ocupado
+falla claro en vez de moverse solo y producir un "error de CORS" engañoso.
+
+**`npm run worktree -- <nombre>`** para el trabajo largo: crea un árbol aparte en
+`../Portal-Farmalasa-<nombre>` sobre `sesion/<nombre>`, con `node_modules`
+enlazado (son 558 MB, no se duplican) y `.env` copiado. Deja de compartir
+archivos, índice y `dist/`. Es **opt-in a propósito**: git no permite la misma
+rama en dos worktrees, así que hay que mergear a `main` en vez de pushear
+directo, y para un arreglo de dos líneas ese paso no se paga solo.
+
+Lo que esto **no** arregla, dicho de frente: dos sesiones editando el mismo
+módulo a la vez. Un worktree convierte el pisón silencioso en un conflicto de
+merge —que al menos avisa— pero la única solución real es repartir el trabajo
+por área. Los tres baselines de gates (`design`, `data`, `bundle`) quedan
+compartidos: colisionan poco y el número lo delata.
+
+## v2.334.1 — Fuera el "ERP" y la jerga interna de TODA la interfaz
+
+Barrido completo aplicando la regla del usuario: quien usa el portal no sabe
+qué es un ERP, y todo tiene que parecer que sale del portal. Empezó por un
+aviso de Libros IVA y terminó en 9 archivos, porque el vocabulario interno se
+había filtrado a superficies que nadie revisa juntas.
+
+Lo que se cambió, por vista: Proveedores (columna "Match ERP" → "Registrado
+como", "Sin match ERP" → "Sin vincular", el filtro y su placeholder),
+Facturas de Compra ("emparejado en el maestro", el badge "Sin match" → "Sin
+hallar", el fallback literal "match" → "el documento"), Conteo ("Falta ajuste
+ERP" ×2, "el ERP sigue sin corregir", "inventario del ERP"), Clientes ("ERP
+{id}" → "Código {id}" y el chip "Portado del ERP" → "Con código", que ahora
+hace pareja con la columna), Compras ("sin proveedor linkeado — verificar en
+ERP"), Ventas, Catálogo y las tres descripciones de módulo en Permisos.
+
+**El PDF de ajuste de conteo también**: es papel que se firma y se archiva —
+"Cód. ERP" → "Código", "aplicar en el ERP" → "en el sistema", "Aplicado en el
+ERP por" → "Aplicado por", y el archivo `Ajuste_ERP_*.pdf` → `Ajuste_*.pdf`.
+Es la superficie más fácil de olvidar en un barrido de UI porque no está en
+ninguna pantalla.
+
+**Grepear el fuente NO alcanza para verificar esto.** La mitad de estos
+textos viven en `title`/`aria-label`/`placeholder`, y un `grep` sobre JSX los
+pierde o los confunde con identificadores (`ERP_ORDER`, `erp_id`,
+`matchErpFilter`, que sí deben quedarse). La verificación real fue recorrer
+las 6 vistas en el navegador y barrer el DOM pintado MÁS esos tres atributos:
+cero ocurrencias de "ERP", "match" o "linkeado".
 
 ## v2.334.0 — Las notas de crédito de compras, que no estaban en ningún libro
 
@@ -63,6 +153,38 @@ no declaró el documento relacionado — no es un error nuestro, y en rojo habr�
 gritado en la mayoría de las filas.
 
 ---
+
+## v2.333.1 — Los gates del pre-commit dejan de bloquear por el árbol ajeno
+
+`data-gate` y `migration-gate` miraban el DISCO (`find`, `readdirSync`), así
+que también veían los archivos sin trackear — que en este repo son, por
+definición, el trabajo a medio hacer de otra de las 2-3 sesiones que comparten
+el árbol. Resultado: una sesión no podía commitear hasta que otra terminara, y
+el mensaje culpaba a "código nuevo que hay que arreglar" señalando un archivo
+que quien commitea nunca tocó. Pasó hoy: `sync-numero-control/index.ts` (sin
+commitear, 3 hallazgos) llevó `error-ignorado` de 28 a 31 y obligó a un
+`--no-verify` en un commit de dos líneas de texto.
+
+Lo llamativo es que el pre-commit YA declaraba lo contrario en un comentario:
+"acotado al diff preparado […] no bloquear a esta sesión por el árbol a medio
+editar de otra". Lo único acotado era el `if` que decide si correr el gate; el
+gate después escaneaba todo igual. Otra intención escrita y no implementada.
+
+Ahora los dos aceptan `--hook` y el pre-commit se los pasa: el análisis se
+limita a lo que el ÍNDICE de git conoce. El índice es la definición correcta
+de "lo que este commit lleva" — incluye HEAD más lo que esta sesión acaba de
+preparar (`git commit -o` prepara ANTES de disparar el hook) y excluye lo
+ajeno sin commitear. Corridos a mano (`npm run gate:data`) siguen viendo todo,
+que es lo que uno quiere al auditar y antes de regenerar un baseline.
+
+Probado con las dos ramas, no solo leído: un `.js` sin trackear con un
+`const { data } =` sube el manual a 29 y falla, y `--hook` queda en 28 y pasa
+avisando "(1 archivo sin trackear fuera del análisis)". Igual con un
+`borrador_de_otra_sesion.sql`: el manual lo marca "Nombre inválido", `--hook`
+no lo ve.
+
+`version-gate` no necesitaba nada: ya se apoyaba en `git show HEAD:` y
+`git diff --cached`.
 
 ## v2.333.0 — El número de control fiscal, que no estaba en ninguna parte
 
@@ -119,6 +241,512 @@ libro incompleto no se presenta. Y si el origen se cae a mitad de camino, avisa
 al rol de alertas técnicas en vez de devolver un archivo con huecos en silencio.
 
 ---
+
+## v2.332.1 — Facturas de Compra: sale el "ERP:" de la fila del proveedor
+
+Cada fila mostraba el nombre del maestro arriba y, cuando el nombre con el
+que está registrado difiere, un segundo renglón `ERP: COFARSAL DE R.L.`. El
+prefijo existía para explicar por qué aparecen dos nombres, pero lo explicaba
+nombrando un sistema del que el usuario no sabe nada. Ahora dice **Registrado
+como:**, que responde la misma pregunta sin nombrar de dónde sale.
+
+Verificado barriendo el texto pintado y además los `title`/`aria-label`/
+`placeholder` de las dos pestañas y del modal del documento: cero ocurrencias
+de "ERP". El grep sobre el fuente no habría alcanzado — la mitad de estos
+textos viven en atributos, no en el cuerpo.
+
+Queda jerga de otra familia en esta vista, sin tocar porque no es procedencia
+sino vocabulario: "Sin match", "Encontrado: match" y el tooltip "Sin
+proveedor emparejado en el maestro". Ver [[feedback_la_pantalla_habla_del_portal]].
+
+## v2.332.0 — Facturas de Compra filtra por mes completo, igual que Libros IVA
+
+Los dos son el mismo trabajo —archivo fiscal por período— y tenían controles
+distintos: acá un `PeriodPicker` de rango libre con presets ("últimos 7
+días", cortes a mitad de mes) que además dejaba armar un rango a caballo
+entre dos meses, que en un archivo fiscal no significa nada. Ahora es el
+mismo `PeriodStepper` (‹ Julio 2026 ›): no hay forma de construir un rango
+inválido, solo correr de mes en mes.
+
+El estado sigue siendo "start|end" — es el contrato de los fetch y del enlace
+`?desde=&hasta=` que llega desde Proveedores. Ese enlace ahora se NORMALIZA
+al mes de `desde`: si no, el rótulo diría "Mayo 2026" mientras el filtro
+traía del 20 de mayo al 5 de junio, y el usuario no podría reconstruir ese
+rango desde la UI.
+
+De paso, un bug de fecha que estaba en los dos: `mesActual()` corría el
+instante 6h para la hora de El Salvador y después leía las partes en LOCAL,
+que en una máquina ya en SV (UTC−6) las desplaza dos veces. El 1 de mes antes
+de las 06:00 devolvía el mes ANTERIOR — o sea que la vista abría en el
+período equivocado justo el día en que se cierra el anterior. Se leen en UTC,
+como ya hacía `PeriodPicker`.
+
+Verificado en vivo contra la BD: agosto (actual, siguiente deshabilitado),
+julio 855 documentos, junio 634, y el enlace `?desde=2026-05-20&hasta=
+2026-06-05` abre en Mayo 2026 con sus 22 — los tres coinciden exacto con
+`purchase_dte_documents`.
+
+## v2.331.1 — Libros IVA: la pantalla habla del portal, no de dónde salió el dato
+
+Los avisos contaban la procedencia ("Verificado contra los libros del ERP en 7
+sucursales × 3 meses") y nombraban al ERP siete veces. Dos problemas, dichos
+por el usuario: **"ERP" no le dice nada a quien usa el portal**, y la
+procedencia no es información que alguien necesite para armar la declaración —
+es una nota del que lo construyó, puesta donde la lee todo el mundo.
+
+La regla que queda: en pantalla, que todo parezca que sale del portal. Los
+avisos ahora dicen QUÉ mira el libro (el sello de Hacienda, las 7 sucursales,
+las anuladas incluidas, lo que exige el Art. 86), no de dónde viene. Y sale
+también la jerga interna: el badge "Sin sincronizar" es "Sin número",
+"Resincronizá el mes" es "hay que completar el mes", y las columnas "ID ERP"
+del CSV son "ID INTERNO".
+
+Los comentarios del código SÍ conservan la trazabilidad —el md5 de los 204
+anulados, los $282.58 del sello, junio cuadrando en las 7— porque ahí sirve y
+nadie que use el portal la ve.
+
+## v2.331.0 — Libros IVA: la pestaña que no se podía clickear, y el libro que
+no se podía recorrer.
+
+El módulo pasaba `gate:design` en verde y usaba todos los canónicos, así que
+nada avisó de lo que le faltaba: era canónico a nivel de COMPONENTE y no a
+nivel de VISTA. Se construyó en dos pasadas con foco en que los números
+cuadraran al centavo, y el contrato de una vista de lista —buscar, ordenar,
+paginar, decir que está cargando— quedó afuera. Todo lo de abajo salió de
+medir en el navegador, no de leer el archivo.
+
+**Siete pestañas no entran, y dos quedaban INALCANZABLES.** Es el récord del
+portal (el anterior eran cinco) y `ViewTabBar` cortaba por breakpoint fijo
+más un techo de `max-w-[900px]`: la fila se clavaba en 910px y el sobrante se
+dibujaba fuera del marco. Como ningún ancestro genera scroll horizontal,
+"Sujeto Excluido" no se podía clickear de 1024 a 1366px, y a 1152 se iban
+dos. Con el teclado seguían existiendo, que es lo que lo hacía invisible.
+Ahora la barra CEDE POR MEDIDA, como `FilterBar` en §17.0: compara el ancho
+natural de la fila contra el hueco real y, si no entra, usa el desplegable
+que ya existía para móvil. Beneficia a las 34 vistas que la usan.
+
+Costó dos intentos fallidos, los dos por lo mismo: cachear una medida que
+solo se puede tomar en uno de los dos estados. Al colapsar con `display:none`
+la fila mide 0, así que una primera lectura mala —y el primer
+`useLayoutEffect` corre antes de que el layout se asiente— se queda pegada
+para siempre. Hoy la fila colapsada sale del flujo (`absolute invisible`) y
+SIEMPRE se puede medir. El tercer intento oscilaba un estado por resize:
+`offsetParent` no es nulo para un `position:absolute` —solo con
+`display:none`— así que se leía el riel colapsado y volvía a expandir.
+
+**La columna `Total` estaba fuera del visor** en cuatro de los siete libros a
+1280, 1366 y 1440. El archivo tenía un comentario explicando que se había
+sacrificado `Exentas` para que eso no pasara: el umbral estaba invertido
+(`hideBelow: 'xl'` oculta POR DEBAJO de 1280, o sea que la columna estaba
+visible justo donde estorbaba). `DataTable` ya documenta la trampa al pie de
+`HIDE_BELOW` —"`xl` no alcanzaba porque 1440 YA es xl"— y por eso ahí existen
+los peldaños `2xl` y `1440`; acá no se usaron. Verificado tabla por tabla:
+las 7 muestran su última columna sin scroll a 1440.
+
+**467 filas en una tabla sin paginar, sin ordenar y sin buscar** — 4,670
+celdas y 20,588px, o sea 23 pantallas, contra las "~15-50 filas" para las que
+`DataTable` está dimensionada según su propio encabezado. Ahora `50/página`,
+las columnas ordenan y hay buscador (§24 Tipo 1).
+
+Los tres recortan LO QUE SE VE y nunca lo que se declara: el carril sigue en
+el total del período y el CSV sale con el libro entero en su orden legal. Y
+el N.º de la operación viaja pegado a la fila: si se recalculara al pintar,
+ordenar por monto haría que el documento 412 se llamara "1". Verificado —
+ordenando por Total el primer N.º pasa a 20 y luego a 345.
+
+Lo demás, del mismo pase: las tarjetas no recibían `loading` y durante la
+carga afirmaban 0 · $0.00 · $0.00 con la tipografía de una cifra real (en un
+libro fiscal "cero" es una afirmación); el vacío no distinguía "no hubo
+operaciones" de "falló la consulta", que es justo lo que el comentario del
+`load()` decía que no podía pasar; `Exportar` no pasaba `soloIcono` y esos
+~94px eran los que hacían que las tarjetas truncaran `$229,74…` en vez de
+encoger; el aviso de método iba a tamaño completo en las 7 pestañas
+compitiendo con los accionables, y ahora va `compact`; y la descripción del
+permiso y las palabras del ⌘K describían 3 pestañas de 7.
+
+## v2.330.0 — Clientes: el envío al ERP dejó de depender de que alguien lo pida
+
+## v2.329.0 — Sin título
+no una garantía: si el ERP está caído en ese momento la edición queda
+pendiente, y se quedaba así PARA SIEMPRE si nadie volvía a editar esa ficha.
+
+El cron `drain-cliente-erp-queue` drena la cola cada 10 minutos. Con eso un
+fallo no necesita que el usuario se entere ni haga nada: se envía solo en la
+siguiente pasada.
+
+Por qué NO se revierte el cambio cuando falla el envío, que era la otra
+opción sobre la mesa: el dato lo escribió una persona y es correcto — el que
+falló es un servidor ajeno. Tirar una edición buena porque el ERP tuvo un
+hipo es castigar al usuario por un problema de otro, y encima el revert sería
+otra escritura y otra entrada en la bitácora. Tampoco se reintenta en el
+momento: hoy una lectura del ERP pasó de 300 s y eso dejaría la pantalla
+colgada sin mejorar nada. La cola ya protege el dato del espejo; lo único que
+faltaba era algo que la vaciara sin intervención.
+
+El cron entra con el `admin_invoke_secret` de Vault como Bearer, así que la
+función va con `--no-verify-jwt` y valida el secreto adentro. OJO al
+redesplegar: sin repetir el flag, Supabase la resetea a verify_jwt=true y el
+cron empieza a fallar con 401 antes de ejecutar una línea — ya pasó dos veces
+en este proyecto con otras funciones.
+
+## v2.329.0 — Clientes: lo que se edita en el portal llega al ERP al instante
+
+Hasta acá la edición quedaba guardada, protegida del espejo y EN COLA, pero
+el ERP no se enteraba hasta que alguien corriera `empujar_al_erp.py` a mano.
+Para quien usa el portal eso es indistinguible de que no funcione — reportado
+así: "lo modifiqué en el portal, le puse Potonico como distrito, pero no hizo
+el cambio en el ERP".
+
+Ahora lo hace la edge function `push-cliente-erp`, que el formulario invoca
+apenas termina de guardar. Reusa el login al ERP que ya existía en TypeScript
+(sync-erp-purchases) y repite las tres reglas que no se pueden olvidar: se
+reenvían los 21 campos porque un POST parcial borra el resto, los valores
+viajan crudos sin recortar espacios, y se LEE la respuesta porque el ERP
+contesta 200 con {"typeinfo":"Error"} cuando rechaza. Verifica releyendo
+antes de saldar la cola.
+
+Usa el JWT de quien llama, no el service_role: así los RPC aplican el mismo
+permiso de módulo que el guardado y la función no es una puerta trasera para
+escribir en el ERP sin permiso sobre clientes.
+
+NO SE ESPERA al ERP para dar por guardada la ficha. Es un servidor de
+terceros y puede tardar — medido hoy: una lectura suya pasó de 300 s. Hacer
+esperar a la persona por la lentitud de otro sería castigarla. El guardado
+termina, y el envío se informa después con su propio toast.
+
+Si el envío falla no se pierde nada ni se revierte nada: la entrada queda con
+`erp_synced_at IS NULL`, o sea protegida contra el espejo y en la cola, y la
+bitácora de la ficha ya la muestra como "Sin enviar al ERP".
+
+## v2.328.1 — Teléfono: se valida el PREFIJO, no solo el largo
+
+'1111-1111' tiene ocho dígitos y pasaba. El plan de numeración de El Salvador
+(SIGET) usa 2 para fija y 5, 6 y 7 para móvil — y el 5 es NUEVO, habilitado el
+29-oct-2025, así que una lista escrita de memoria lo dejaría afuera y
+rechazaría números legítimos. Se confirmó antes de escribirla.
+
+En las fichas ya portadas: 843 con prefijo válido, 148 con '1111-xxxx' y una
+con '9000-0144'. Ninguna queda congelada — el formato solo se le exige a lo
+que se toca — pero se marcan apenas alguien las edita, que es cuando hay una
+persona mirando para corregirlas.
+
+## v2.328.0 — Clientes: máscaras, selects sin "Ninguno", el botón que se tapaba,
+y el distrito que el formulario mostraba vacío teniéndolo.
+
+Cuatro cosas que aparecieron mirando el modal de verdad, no leyéndolo:
+
+1. NO HABÍA MÁSCARAS. El canónico `applyInputMask` existía pero la ficha no
+   pasaba `maskType` en ningún campo: el NIT aceptaba 23 dígitos y el NRC 24.
+   Se agregaron NIT (14), NRC (8) y PERCENT (3) al canónico —faltaban— y se
+   conectaron los seis campos. La convención del archivo es RECORTAR y no
+   agrupar (ISSS corta en 9, AFP en 12): un separador que se acomoda solo
+   salta de lugar en cada pulsación, y el valor limpio es el que espera el DTE.
+
+2. LOS SELECTS OFRECÍAN "NINGUNO" en campos que ahora son obligatorios.
+   `clearable={false}` en departamento, municipio, distrito y categoría. La
+   categoría entra en la lista porque decide QUÉ le exige el DTE a la ficha:
+   vaciarla relajaba los requisitos en silencio.
+
+3. EL BOTÓN DE GUARDAR QUEDABA DEBAJO DEL TEXTAREA. `PortalTextarea` envuelve
+   su caja en `relative z-base` (z-index 10) y la barra sticky no tenía
+   z-index, así que perdía. Se le puso `z-content`.
+
+4. EL DISTRITO SE VEÍA VACÍO TENIÉNDOLO — y esto era lo grave, porque hacía
+   mentir a la validación nueva. El ERP rotula en MAYÚSCULA y sin tildes, y
+   `normalizarGeo` comparaba por igualdad exacta. De las 894 fichas con
+   distrito, CERO coincidían: 687 diferían solo en mayúsculas o tildes y 207
+   eran abreviaturas del ERP. El encabezado de `elSalvadorGeo.js` ya advertía
+   que el emparejamiento "tiene que ser normalizado, nunca por igualdad de
+   cadena" — estaba escrito y el código hacía lo contrario.
+
+   Se resolvió en dos capas, y el reparto explica por qué hacen falta las dos:
+   la normalización (sin tildes, sin mayúsculas) cubre 32 de los 43 valores
+   distintos que escribe el ERP, sin mantenimiento; la tabla de abreviaturas
+   carga las 11 que ninguna regla puede deducir ("SN MIG MERCEDES" ->
+   "San Miguel de Mercedes"). Con tabla sola harían falta las 43 filas y se
+   rompería con cada cambio de tilde. Resultado: 893 de 894 fichas se muestran
+   bien. La que queda no es un problema de nombres — dice "MONTE SAN JUAN" con
+   municipio "Cuscatlán Norte" y ese distrito es de Cuscatlán Sur — y se
+   muestra marcada "(del ERP)" en vez de desaparecer.
+
+Y un callejón sin salida que abrí yo en v2.327.0: el aviso que nombra los
+campos faltantes colgaba de `intentoGuardar`, que no puede ocurrir nunca
+porque el botón deshabilitado no dispara el clic. Ahora se muestra en cuanto
+hay algo pendiente de guardar; al abrir sigue sin pintar nada, que era el
+punto original.
+
+## v2.327.2 — El mismo hueco estaba en los otros dos libros de ventas
+
+Auditados columna por columna contra el CSV del ERP, no por totales — que es
+lo que debí hacer desde el principio. En los dos, el dato estaba guardado y
+la función no lo devolvía:
+
+**Consumidor final.** Faltaban el código de generación del PRIMERO y del
+ÚLTIMO documento del día (cols 7 y 8 del ERP), el sello del primero (col 4) y
+los IDs del ERP de ambos extremos (cols 5 y 6). Detalle que importa: el
+del→al se ordena por CORRELATIVO, no por el UUID — un `min()/max()` sobre
+`codigo_generacion` daría el menor y mayor hexadecimal, que no tienen nada que
+ver con el primero y el último del día.
+
+**Anulados.** Faltaba el sello de recepción (col 6) y el ID del ERP. Al revés,
+el anexo del ERP NO trae fecha, cliente ni total: esas tres se dejan porque
+hacen el anexo legible sin ir a buscar cada documento.
+
+**Compras y percepción** también llevan el sello del documento en el ERP, y
+ese sí no lo tenemos: no viene en `descargar_compras_json.php`. Igual que el
+número de control de ventas, queda pendiente — los dos salen del CSV del
+libro, que es raspar el reporte que estamos replicando.
+
+Tercer y cuarto hallazgo del mismo error de método en un día. La regla ya
+está en CLAUDE.md; esto es lo que costó no tenerla antes.
+
+## v2.327.1 — El libro de contribuyentes tenía el dato guardado y no lo sacaba
+
+Lo levantó una comparación fila contra fila con el CSV del ERP (Salud 1,
+11-07-2026, $6.99). Mapeadas TODAS las columnas del ERP, no los totales:
+
+  [ 3] DTE03S003P001000000000000055  número de control    ← NO existe en la base
+  [ 4] 202675D33CDC...V76U           sello de recepción   ← sí: `recibido_mh`
+  [ 5] 1B78D7DBC4A1...BD09           código de generación ← sí (con guiones)
+  [ 6] 327545                        id del ERP           ← sí: `erp_invoice_id`
+  [ 7] 3095074                       el NRC sin guion     ← sí: `customers.nrc`
+  [17] (vacío)                       NIT/DUI              ← nosotros SÍ lo tenemos
+
+Cinco de las seis ya estaban guardadas y la función no las devolvía. Ahora
+salen todas: el NIT entra a la tabla (el Art. 85 lo pide junto al NRC) y el
+sello, el código de generación y la clase/tipo van al CSV, que es donde se
+necesitan — en pantalla serían 40 y 36 caracteres ilegibles.
+
+**Falta de verdad el número de control**, y no se puede derivar: el ERP llama
+`...000000000000055` al documento que en su correlativo interno es
+`0000000155`. Tampoco viene en `descarga_dte_emitidos_json.php`. Se puede
+traer del CSV del libro cruzando por el sello, pero necesita columna nueva en
+`sales_invoices` — tabla caliente, o sea DDL en la ventana 06:00–11:59 UTC.
+
+**Y un bug del proveedor:** `downloads/dteqr_json.php` —que daría el DTE
+completo, número de control incluido— está roto: intenta cachear en
+`../jsondte/`, directorio que no existe. Probado sin cookie, con cookie, con
+Referer y con cabeceras de navegador: los cuatro fallan igual. El PDF
+(`dteqr_pdf.php`) sí funciona. Es un mkdir del lado de ellos.
+
+Es la TERCERA vez hoy que verificar montos y no columnas deja pasar algo.
+
+## v2.327.0 — Clientes: la ficha deja de aceptar datos con los que no se puede
+facturar.
+
+El modal validaba nombre, DUI y los dos teléfonos. Todo lo demás entraba como
+viniera: NIT, NRC, correo y retención sin ninguna comprobación, y los campos
+que DTE 2.0 exige en el receptor —teléfono y la terna departamento/municipio/
+distrito— podían quedar vacíos. El costo de eso no se paga al guardar: se
+paga semanas después, en la caja, cuando la factura no sale.
+
+Las reglas viven aparte, en `src/utils/clienteValidacion.js`, puras y sin
+React. El formulario pinta; no decide. El candado real sigue siendo el RPC.
+
+LOS LARGOS SE MIDIERON, NO SE SUPUSIERON. Escribir "NRC de 8 dígitos" de
+memoria habría bloqueado fichas que hoy facturan: contando 115 NRC dentro de
+60 DTE sellados por Hacienda, el rango real es 4 a 7 (4→6 casos, 5→6, 6→33,
+7→70). El tope se dejó en 8 por si existe algo que no vimos — el error caro
+acá es el falso negativo. Mismo método con el NIT: 14 dígitos, o 9 cuando es
+el DUI, y de las 30 fichas con NIT de 9, las 18 que además tienen DUI
+coinciden exactamente con él. Por eso el de 9 se compara CONTRA EL DUI de la
+ficha en vez de contra el dígito verificador: si es el DUI, tiene que ser EL
+DUI, y así un dígito mal tecleado se detecta aunque por casualidad pase el
+verificador.
+
+EL FORMATO SOLO SE LE EXIGE A LO QUE SE TOCÓ. Es la decisión que ya había
+tomado el servidor ("DUI y teléfonos se validan SOLO si cambiaron") y por la
+misma razón: el catálogo heredado del ERP trae 2 DUI que no pasan el
+verificador, y exigirlos siempre dejaría esas fichas congeladas — nadie
+podría corregirles el correo sin adivinar antes un DUI que quizá nadie sabe.
+Verificado contra las 993 fichas reales del portal: con estas reglas, NIT,
+NRC, teléfonos y correo rechazan CERO fichas existentes.
+
+Los REQUERIDOS sí bloquean siempre, y la diferencia no es caprichosa: un
+campo vacío se llena ahí mismo (el distrito es un desplegable), así que
+bloquear es accionable. Un DUI heredado y malo no se deduce de nada.
+
+Además: los requeridos no se pintan en rojo hasta que se intenta guardar
+—abrir una ficha vieja y encontrarla en rojo entera es hostil, y no es culpa
+de quien la abrió—, el botón dice por qué está deshabilitado en vez de ser
+una pared, y un cliente de mostrador ya no ofrece guardar (el servidor lo
+rechazaba con ES_MOSTRADOR después del viaje).
+
+## v2.326.0 — Cuadre diario del libro de compras contra el ERP
+
+**El hueco que tapa.** `sync-purchases-10min` le pide al ERP **ayer y hoy**,
+filtrando por FECHA DEL DOCUMENTO. Si alguien captura una compra fechada hace
+tres días, el cron ya pasó por esa fecha y **no vuelve nunca**: el documento
+queda fuera del libro para siempre y nada avisa. Una compra ausente no rompe
+nada — solo achica el crédito fiscal.
+
+No es hipotético: pasó con Bodega el 2026-06-01 (16 documentos, $14,311.41,
+recuperados a mano el 2026-08-01). Medido sobre los 16 meses de historia es el
+único caso, pero "casi siempre" no alcanza en un libro que se declara.
+
+`check-purchases-reconciliation` compara ERP contra portal —conteo Y monto—
+por sucursal, para el mes en curso y el anterior, que son los dos que todavía
+se pueden corregir antes de declarar. Diario a las 07:20 UTC, cuando los syncs
+de alta frecuencia duermen y no hay otro job programado.
+
+**Cuesta 0.36s por sucursal-mes**: `admin_compras_fecha_dt.php` con `length=1`
+devuelve `recordsFiltered` sin traer una fila. Se piden igual los totales
+(2.4s el peor mes) porque sin ellos una compra editada en el ERP —mismo
+conteo, otro monto— pasaría de largo.
+
+**Avisa, no arregla.** Recuperar el documento exige el sync normal sobre ese
+día (167s por mes de Bodega); un cron que lo intentara solo competiría con el
+de cada 10 minutos. Y una diferencia puede ser una anulación legítima:
+reescribir sin que nadie mire es peor que avisar.
+
+**El defecto que encontró su propia primera corrida:** alertó por Bodega/
+agosto —ERP 11 contra portal 10— y el documento era de ESE MISMO DÍA, o sea
+de la ventana que el cron todavía estaba cubriendo. Ahora se excluye siempre
+el día de hoy; si el recorte deja el mes vacío (el día 1), no hay nada que
+cuadrar. Segunda corrida: 7 sucursales, 0 diferencias.
+
+## v2.325.1 — "IVA cero" NO es "compra exenta", y junio/julio quedan al centavo
+
+Al comparar junio contra el ERP, 11 de 12 branch-meses cuadraban en las cinco
+columnas y uno no: Salud 4, **un solo documento de $2.55**. Toda la diferencia
+era en qué columna lo ponía cada lado.
+
+El JSON autoritativo dice `{"sumas_gravadas": 2.55, "iva": 0}` y el libro del
+ERP lo imprime en GRAVADAS, con las tres columnas de exentas en 0.00. O sea:
+**la fuente no tiene un monto exento que informar** — no hay campo de exentas
+en el JSON de compras. Un documento con IVA cero es una compra gravada a la
+que el ERP le calculó cero impuesto, no una exención. La regla venía del libro
+de VENTAS, donde sí distingue.
+
+Cerrado además el agujero del 1-jun en Bodega: 16 documentos y $14,311.41 que
+nunca se habían sincronizado.
+
+**Verificación final, junio y julio, las 7 sucursales, seis medidas cada una**
+(documentos, gravadas, crédito fiscal, total, percepción y filas del anexo):
+12 de 12 branch-meses idénticos al ERP. Bodega junio 335 docs / $197,997.22 /
+$22,605.53 / $1,502.90 / 211 filas de anexo; julio 414 / $224,242.77 /
+$25,609.55 / $1,637.60 / 238.
+
+## v2.325.0 — El backfill de compras pasa de 167s a 6s por mes, y la tabla del
+libro deja de romper el alto de fila.
+
+**`fastBackfill: true`.** `descargar_compras_json.php` manda cada compra con
+TODAS sus líneas —0.9 MB y 167s por mes de Bodega— para rescatar cuatro datos
+de cabecera. El ERP tiene una puerta mucho más barata, la que alimenta la
+pantalla "Admin Compras": `admin_compras_fecha_dt.php` devuelve id_compra,
+tipo y número sin una sola línea de detalle. **Medido: el mismo mes en 6.1s.
+Los dos meses completos (749 documentos) en 19.6s.** La percepción sale del
+CSV del libro, que también baja en segundos.
+
+Tres cosas que salieron de medirlo:
+
+1. En esos endpoints la **sucursal es estado de sesión**, no parámetro — al
+   revés que `descargar_compras_json.php`. Sin `cambio_sesion.php` primero se
+   traería otra sucursal y se guardaría como si fuera esta.
+2. El **número viene con espacios distintos en cada fuente**: la tabla da
+   `'72B6EEA1-727E-ACD2- '` y el CSV `'72B6EEA1-727E-ACD2-'`. Sin normalizar,
+   40 de 749 no cruzaban.
+3. El número truncado a 20 **no siempre es único** (dos casos en junio-julio
+   con percepciones distintas). Para esos, y solo para esos, cae al JSON
+   pesado del día. Un cruce ambiguo en un libro fiscal no se resuelve
+   eligiendo uno.
+
+**Y el bug que costó dos intentos:** PostgREST arma un `INSERT ... ON CONFLICT
+DO UPDATE`, y Postgres valida los NOT NULL de la tupla **antes** de resolver
+el conflicto. El lote entero moría con "null value in column fecha" aunque
+las 200 filas ya existieran. Va `fecha` en el payload — la misma que informa
+el endpoint, así que no puede pisar nada.
+
+**La tabla del libro**, medida en el navegador y no estimada: las filas eran
+de 44, 88 y 132px porque el nombre del proveedor envolvía a tres líneas y el
+código de 20 caracteres se partía a la mitad. Ahora son 44px parejos —el
+`--row-h` canónico— con `flex min-w-0` + `truncate` + `shrink-0` en el badge,
+el `max-w` sobre el `DataCell` y `text-micro` para el código. Y **Total ya no
+queda recortado**: pedía 1272px contra 1184 de visor; con el rótulo corto de
+crédito y el código en micro baja a 1182. Con una sucursal filtrada se quita
+la columna Sucursal, que repetía el filtro en cada fila.
+
+## v2.324.3 — Dos reglas a CLAUDE.md, escritas donde se leen
+
+1. **El ERP es más lento que el límite de una Edge Function**: 167s un mes de
+   Bodega contra los 150s que vive la respuesta. Todo backfill va en ventanas
+   de ≤10 días, y para eso existe `background: true`.
+2. **Replicar un reporte = comparar TODAS sus columnas.** La lista sale del
+   encabezado del reporte destino, no de lo que a uno se le ocurre chequear.
+   Verificar cuatro de cinco y declarar "cuadra al centavo" es exactamente
+   como se coló el error de gravadas de v2.324.2.
+
+## v2.324.2 — Libro de compras: la columna de gravadas venía inflada por la
+percepción.
+
+`descargar_compras_json.php` manda `totales.sumas_gravadas` **con la
+percepción adentro** —cumple `sumas_gravadas + iva = total_operacion`— y el
+libro del ERP la resta para llegar a la base gravada. Verificado al cuarto
+decimal en Bodega el 2026-08-01:
+
+  LETERAGO  JSON 160.1740  perc 1.59  ->  libro 158.58
+  COFARSAL  JSON 613.6194  perc 6.08  ->  libro 607.54
+
+Y la base del anexo de percepción del ERP es exactamente esa resta: 607.5394
+y 158.584. Fiscalmente cierra: la percepción (Art. 163 CT) es un anticipo que
+cobra el proveedor, no parte de la base imponible.
+
+**Por qué no lo agarró la verificación de ayer**: comparé documentos, total,
+crédito fiscal y percepción —los cuatro cuadraban al centavo— pero no la
+columna de gravadas. Cuadrar en casi todo no es cuadrar. Lo delató una
+captura de pantalla donde $613.62 con $6.08 de percepción no daba el 1%.
+
+Ahora mayo 2025 cuadra también en gravadas: 1350.53 / 1318.22 / 964.54 / 7.08
+/ 280.17 / 78,149.03 en las seis sucursales con movimiento.
+
+## v2.324.1 — Sync de compras: modo background, porque el ERP es más lento que
+el límite de una Edge Function.
+
+Medido: `descargar_compras_json.php` tarda **167s en un mes de Bodega** y 68s
+en 10 días. La respuesta de una Edge Function muere a los 150s, así que un
+backfill por mes daba 504 aunque el trabajo estuviera bien hecho — y encima
+dejaba escrituras a medias sin registro.
+
+`background: true` en el body responde 202 al instante y sigue el sync con
+`EdgeRuntime.waitUntil`. Es opt-in y el cron NO lo usa a propósito: pide 2
+días, termina en segundos y quiere el resultado en la respuesta para que un
+fallo se vea. En background el único rastro es `purchase_sync_log` —
+suficiente para un backfill que uno mira después, insuficiente para el camino
+de todos los días. El catch escribe ahí también: si el error se pierde, el
+backfill falla en silencio, que es el modo de falla que este proyecto ya pagó
+caro en las alertas.
+
+## v2.324.0 — Seis tipos de notificación dejan de verse todos iguales
+
+`NotificationBell` resolvía el ícono por PREFIJO: `PEDIDO*` → Package,
+`MINMAX*` → BarChart2, `REQUEST*` → ClipboardList, y todo lo demás al ícono
+genérico de campana. Seis tipos que sí se envían caían ahí:
+`ANNULMENT_REQUEST`, `CLIENT_CHANGE_REQUEST`, `PAYMENT_CHANGE_REQUEST`,
+`VENDOR_CHANGE_REQUEST`, `SHIFT_CHANGE` y `SYSTEM`.
+
+Lo llamativo: CINCO de esos seis YA tenían ícono propio, a dos vistas de
+distancia — `RequestsView` tenía un `TYPE_ICONS` local con Ban, Contact,
+CreditCard, UserCog y RefreshCw para exactamente esas claves. No era que
+faltara decidir el ícono; era que la campana no conocía el catálogo.
+
+Así que en vez de escribir un segundo mapa, el de `RequestsView` se movió a
+`constants/tipoIconos.js` y ahora lo consumen los dos. Un catálogo, dos
+consumidores. Es el tercer caso del mismo patrón en el día —el traductor de
+errores por diccionario y el gate `error-crudo` con su lista de setters a
+mano fueron los otros dos—: una lista escrita a mano se desincroniza el día
+que alguien agrega una clave sin saber que hay otra copia.
+
+`iconoDeTipo()` busca primero el tipo exacto y recién después cae al prefijo,
+así que un `PEDIDO_*` nuevo sigue teniendo ícono aunque nadie lo agregue.
+
+Único ícono realmente nuevo: `SYSTEM` → `Info` (mensaje del portal, no de una
+persona). Los otros cinco son los que ya usaba Solicitudes, así que la campana
+y la vista ahora se leen igual.
+
+De paso, cinco imports de lucide quedaron muertos (UserCog y Contact en
+RequestsView; Package, BarChart2 y ClipboardList en la campana). `eslint` no
+los marca porque su `no-unused-vars` ignora los nombres que empiezan en
+mayúscula, y los íconos de lucide siempre empiezan así.
 
 ## v2.323.0 — Libros IVA: faltaban cuatro de los siete reportes, y las compras de cinco sucursales
 
@@ -189,6 +817,151 @@ las Edge Functions. El cron pide 2 días y no lo toca, pero cualquier backfill
 tiene que ir en ventanas de ≤10 días o muere en 504.
 
 ---
+
+## v2.322.0 — Notificaciones: la alerta técnica deja de sonarle a todos, el
+aviso deja de salir dos veces, y un envío fallido deja de ser invisible.
+
+Tres hallazgos de la auditoría del canal (2026-08-01), en un viaje.
+
+**1. El sync fallido le caía a los 59 empleados.** `inventory_sync_log` tiene
+`SELECT USING (true)` y está en la publicación de Realtime, así que un
+dependiente de Salud 3 recibía —en pantalla y en el celular— que había
+fallado el inventario de Salud 1. Es una alerta de operaciones: el ERP no
+entregó datos y quien puede hacer algo es sistemas. Ahora va gateada por
+`hasPermission('sync_health','can_view')`, módulo que YA existía y YA estaba
+asignado al rol "Sistema — Alertas Técnicas". No hizo falta inventar nada.
+
+**2. Los avisos se anunciaban dos veces.** Había DOS suscripciones Realtime
+al mismo INSERT de `announcements`: el canal `announcements-live` que abre
+`fetchBoot` y otra en `useSyncMonitor`. Las dos hacían `showToast`, con
+textos DISTINTOS (`a.title/a.message` vs `'Nuevo aviso'/a.title`). Como el
+store de toasts tiene un solo espacio, el que veía el usuario dependía de
+cuál llegara última — o sea, del azar. Se eliminó la de `useSyncMonitor` y la
+que quedó heredó la notificación del sistema operativo. Una suscripción
+Realtime menos por sesión, además.
+
+**3. `notifyEmployees`/`notifyBranch` se tragaban el error.** Hacían
+`catch { console.error; return 0 }`: la acción del usuario se completaba como
+si todo hubiera salido bien aunque el destinatario no se enterara. Eso es lo
+que dejó vivir tres semanas el 401 del push (v2.320.3) — el canal estaba roto
+y el portal no lo dijo ni una vez. Ahora reintenta 3 veces con backoff ante
+fallas transitorias y, si igual no sale, se lo dice a QUIEN HIZO LA ACCIÓN:
+"Tu acción sí se guardó, pero no se le avisó a la otra persona. Avísale por
+otro medio." Es el único que puede levantar el teléfono.
+
+Sobre el reintento: NO se repite un error que volvió con respuesta del
+servidor distinta de 5xx. El RPC hace un INSERT, así que repetir algo que
+quizá sí se ejecutó duplicaría la notificación; "Failed to fetch" es el caso
+donde la petición con toda probabilidad no llegó a salir.
+
+De paso, `fireBrowserNotif` estaba copiado idéntico en dos hooks. Se unificó
+en `utils/browserNotif.js` porque el suscriptor que quedó (que vive en el
+store) también la necesita.
+
+Probado contra prod con la cuenta QA y limpiado después: los 13 tipos de
+notificación que nunca se habían disparado insertan bien y los 10 push
+encolados llevan el `x-cron-secret` (10 de 10); el trigger de avisos dispara
+su push; el RLS aísla —el aviso no es visible para otro empleado y ninguna
+notificación quedó con destinatario ajeno—. 0 filas de prueba al terminar.
+
+## v2.321.0 — "A revisar" contaba 17 y el filtro mostraba 2
+
+El chip era un BOOLEANO que mandaba siempre `p_revisar: 'dui'`. El RPC ya
+soportaba 'telefono' y 'nombre' desde el día uno, pero no había forma de
+pedirlos desde la UI — así que la tarjeta contaba las tres causas (17) y el
+filtro de al lado enseñaba una (2). Pasa a ranura de CUATRO opciones, que con
+4 cae sola en LiquidSelect.
+
+La cuarta es nueva: **posible duplicado**. Lo medido primero, porque la
+definición no era obvia:
+  · por documento NO hay: DUI y NIT tienen cero repetidos.
+  · por nombre exacto tampoco: `customers_name_norm_idx` es único.
+  · por teléfono es una trampa — `1111-1111` está en 69 personas distintas.
+    Es relleno de cajero.
+  · lo que SÍ hay son 86 fichas en 43 grupos con el mismo conjunto de tokens
+    y distinto orden: apellidos invertidos ("JUAN CARLOS MEJIA ALAS" /
+    "JUAN CARLOS ALAS MEJIA"). Uno además tiene doble espacio INTERIOR, que
+    el índice único no ve porque `trim` solo toca las puntas.
+
+El orden por nombre deja al par en la fila de al lado en 37 de los 43 grupos,
+gratis: comparten el primer token porque lo invertido son los apellidos. Los
+otros 6 invierten nombre y apellido enteros ("ALVARENGA ALVARENGA FRANCISCO
+ANTONIO" contra "FRANCISCO ANTONIO ALVARENGA ALVARENGA") y caen en letras
+distintas — por eso cada fila lleva en el `title` con quién choca, y no
+alcanzaba con ordenar.
+
+Ordenar los tokens de las 24,506 cuesta 327ms medidos (la lista va en 126ms),
+así que el bloque se INYECTA en el texto del query solo cuando el filtro está
+puesto — no queda como un predicado que un plan genérico tendría que
+descartar. Una columna generada sería gratis en lectura, pero pide
+`ALTER TABLE customers`: ACCESS EXCLUSIVE sobre una tabla que el sync de DTE
+escribe cada minuto entre 12:00 y 05:59 UTC, que es el perfil exacto del
+outage del 2026-07-08.
+
+De paso, "Nombre dañado" dejó de ser solo mojibake: ahora también marca los
+nombres SIN UNA SOLA LETRA. Son 3 y no los veía nadie — `....` facturó $481
+en 16 tickets y estuvo activa hasta el 2026-05-20. Es un cajero saltándose el
+campo, o sea un cuarto balde de mostrador encubierto que hasta hoy entraba a
+la cola de "por completar" como si fuera una persona sin NIT. La tarjeta
+pasa de 17 a 20.
+
+## v2.320.3 — El push estaba muerto hacía tres semanas y nadie se enteró
+
+El 2026-07-10 (`59a9611a`, endurecimiento de 11 edge functions)
+`send-push-notification` pasó a exigir el header `x-cron-secret`. Las CUATRO
+edge functions que la llaman se actualizaron. Las TRES funciones de base de
+datos que también la llaman, no: `notify_employees`, `notify_branch` y el
+trigger `notify_push_on_announcement` seguían mandando
+`'{"Content-Type":"application/json"}'` y nada más.
+
+O sea que desde el 10-jul, TODO `push: true` del canal de pedidos y
+solicitudes, y TODO aviso nuevo, devolvió 401. Tres semanas. En silencio,
+por dos motivos que se suman:
+  · `net.http_post` es fire-and-forget — nadie mira `net._http_response`,
+    y esa tabla además solo guarda ~6 horas.
+  · `notifyEmployees`/`notifyBranch` en el frontend hacen
+    `catch { console.error; return 0 }`, así que la acción del usuario se
+    completa como si todo hubiera salido bien.
+
+Arreglo: helper `push_function_headers()` que arma el header leyendo
+`cron_invoke_secret` de Vault — el mismo patrón que ya usaban los cron.job
+sanos (`heal-dte-sync`). Vive en un solo lugar, como `push_function_url()`,
+para que rotar el secreto o sumar un cuarto llamador se toque una vez.
+Es SECURITY DEFINER porque lee Vault, y justamente por eso NO tiene EXECUTE
+para `authenticated`: devuelve el secreto en claro. ACL verificada:
+`postgres=X/postgres | service_role=X/postgres`.
+
+Verificado lado a lado contra prod, mismo body y destinatario inexistente
+(0 suscripciones → no se entregó ningún push a nadie):
+    sin secreto → 401 {"error":"UNAUTHORIZED"}
+    con secreto → 200 {"sent":0}
+
+Migración `20260801153139_push_notifications_send_cron_secret`.
+
+Queda dicho lo que el arreglo NO resuelve: hay 13 suscripciones de push de
+solo 4 empleados sobre 59, y los 4 son de Administración. Cero en Salud 1-5,
+La Popular y Bodega — que es a donde apunta `notifyBranch(..., push: true)`
+de pedidos. El canal ya funciona; el alcance es el siguiente problema.
+
+## v2.320.2 — El gate `error-crudo` tenía una LISTA A MANO y se le escapaban 25
+
+La regla que cerró v2.320.0 enumeraba cinco setters de error a mano
+(`setError`, `setErrorMsg`, `setValidationError`, `setChangePassError`,
+`setMensaje`). Auditando el alcance de las notificaciones apareció
+`setSubmitError(e.message || …)` en `WidgetAnnulmentRequest` — un nombre que
+no estaba en la lista. Barriendo por forma salieron **14 setters más** y
+**25 fugas** en 12 archivos: `setSaveError`, `setBulkError`, `setRowError`,
+`setLoadError`, `setClasifError`, `setLastError`, `setDownloadAllError`…
+
+Es el mismo error que la regla vino a corregir, un nivel más arriba: el
+traductor se hizo por FORMA justamente porque un diccionario llega tarde al
+mensaje nuevo, y después el gate que lo vigila se escribió por diccionario.
+Ahora matchea `set[A-Z]\w*(Error|Err|Msg)`, así que un estado con nombre
+nuevo entra solo.
+
+Las 25 migradas a `mensajeAmigable`. Una de ellas —`FormAiSchedulerPreview`—
+concatenaba `"Error al guardar: " + err.message`, que es la forma en que el
+texto de Postgres se cuela sin que el grep de `.message ||` la vea.
 
 ## v2.320.1 — MIN·MAX: con borrador, la acción a mano es Descartar
 
@@ -341,6 +1114,139 @@ El aviso del cron sí funcionó como se diseñó: anuncio HIGH *"Recálculo con
 errores (5/6 sucursales calculadas). Errores en: La Popular"*.
 
 ---
+
+## v2.319.0 — Clientes: la vista. Y el catálogo deja de ser una lista de nombres
+para volverse una cola de trabajo ordenada por plata.
+
+La vista del módulo, sobre la capa de datos de v2.318.0. Lista con buscador
+global, píldora de filtros, tabla ordenable y paginada — todo **server-side**,
+porque 24,502 fichas no entran en el cap de 1000 de PostgREST ni en el
+navegador. La ficha se abre en modal (`editCliente`), con la cascada
+departamento → municipio → distrito y las validaciones espejadas del servidor.
+
+Lo que la vuelve útil no es la lista, es el orden: la tarjeta **"Por
+completar"** cruza ficha vacía con facturación real y da **24,300 fichas que
+compran y no tienen un solo dato**. Ordenadas por monto, la primera es un
+cliente de $30,070 en 54 facturas del que sólo sabemos el nombre.
+
+Tres cosas se midieron en el navegador en vez de estimarse (§17.0 dice que el
+ancho se mide, no se estima — y tenía razón las tres veces):
+
+1. **El carril y la píldora no entran en la misma fila.** A 1440 el área de
+   contenido son 1110px, la píldora mide 975 y cinco tarjetas necesitan 772.
+   Compartiendo fila el carril quedaba en **0 tarjetas visibles**. En filas
+   separadas entran las dos enteras: 5 de 5.
+2. **`hideBelow: 'xl'` no alcanzaba para la última columna.** A 1440 de
+   viewport ya estamos EN xl, así que la columna se prendía y la tabla se
+   salía de su marco. Con `2xl` la tabla mide exactamente su marco (1046 =
+   1046). Es el mismo tropiezo que la columna "Contó" del conteo.
+3. **En un iPhone 13 la columna "Ficha" salía cortada a la mitad del badge**,
+   que es peor que no mostrarla. Con el escalonado nuevo quedan las dos que
+   contestan algo en un teléfono —quién es y qué le falta— y la tabla mide
+   332 contra un marco de 332.
+
+Verificado con Playwright en Chromium 1440 y en WebKit/iPhone 13 (que es
+donde aparecen los bugs de Safari): cero errores de consola en los dos, cero
+desborde horizontal, el modal abre y la pestaña Actividad carga.
+
+El módulo entra por los seis puntos del checklist: vista, ruta, importador,
+`MODULE_MAP`, grupo Comercial del menú, `MODULE_GROUPS` de permisos y las
+palabras del ⌘K. Los permisos ya se sembraron en v2.318.0.
+
+## v2.318.0 — Módulo de Clientes, capa de datos: la ficha se escribe por UN solo
+camino, y la actividad deja de ser incalculable.
+
+Base de datos del módulo (la vista llega en el commit siguiente). Seis
+migraciones, y tres cosas que sólo se supieron midiendo:
+
+1. **La actividad del cliente no se puede calcular al vuelo.** El GROUP BY de
+   `sales_invoices` por `customer_id` tarda 3,407ms y spillea a disco (338,764
+   facturas → 24,487 clientes). Es el dato que decide si una ficha vale la pena
+   completarse, así que no podía faltar: va a `customer_activity`, una tabla de
+   rollup con el mismo patrón que `product_sales_rollup` (upsert con
+   `IS DISTINCT FROM`, cron a las 06:45 UTC fuera de la ventana de los syncs).
+
+2. **Una función SQL con `SET search_path` no se puede inlinear, y eso costaba
+   824ms de los 828 que tardaba la lista.** El scan con su join era 4ms; el
+   resto eran los helpers de validación llamados una vez por fila sobre 24,502.
+   Medido aislando cada causa: `customer_ficha_estado` 372ms → 16ms al quitar
+   el SET (23×), `es_telefono_sv_valido` 179ms → 13.8ms al quitarle además el
+   CTE (13×), verificando antes que las dos formas coinciden en las 24,502
+   filas. La lista quedó en 126ms. La regla 4 de CLAUDE.md sigue rigiendo para
+   las DEFINER — estas tres son INVOKER e IMMUTABLE y sólo usan `pg_catalog`,
+   donde no hay nada que escalar. Está escrito en la migración para que una
+   auditoría futura no lo "arregle" de vuelta.
+
+3. **Hay TRES baldes de mostrador, no dos.** Al prompt le faltaba
+   `CLIENTE FRECUENTE`: entre los tres se llevan 95,393 de 337,784 facturas
+   (28%). No son personas, así que `update_customer_fiscal` los rechaza, y
+   cualquier orden por actividad los pone primero — por eso la lista sabe
+   excluirlos.
+
+La escritura va por `update_customer_fiscal`, DEFINER y único camino
+(`customers` sigue sin policy de UPDATE, como `aplicar_espejo_erp`). Valida la
+terna geográfica, el DUI y los teléfonos **sólo si cambiaron** —si no, una
+ficha con un DUI viejo malo quedaría congelada— y exige confirmación explícita
+para tocar los datos fiscales de un contribuyente. Cada campo cambiado deja
+una fila en `customers_changelog`, que es a la vez bitácora y la cola de la
+Fase 2: lo pendiente de empujar al ERP es `erp_synced_at IS NULL`.
+
+Probado con BEGIN…ROLLBACK contra prod: 13 casos, los 11 rechazos esperados y
+los 2 guardados válidos, con la bitácora escribiendo una fila por campo.
+
+Y de paso, dos arreglos de datos: 92 fichas tenían municipio sin departamento
+—deducible, porque los 44 municipios se llaman "<Departamento> <cardinal>"— y
+el catálogo de El Salvador ganó su tercer nivel (14 departamentos, 44
+municipios, 262 distritos, contra la reestructuración de 2023).
+
+## v2.317.1 — El DUI inválido se borra, pero deja rastro
+
+Revierte la decisión de v2.317.0 con el dato que faltaba. Un DUI que no pasa
+el verificador está mal —es aritmética, no heurística— y lo que hacía dudar
+era el costo de perderlo. Dos cosas lo resolvieron: las 10 fichas del muestreo
+son consumidor final exclusivo (0 CCF) y ahí el DUI del receptor no es campo
+requerido, así que el número incorrecto nunca viajó a Hacienda; y ahora el
+original se registra en `revision_manual.json` ANTES de vaciarlo, así que la
+ficha queda limpia sin que el dato se pierda. `--dui-invalido reportar` deja
+el comportamiento anterior.
+
+## v2.317.1 — Sin título
+
+RPC nuevo `aplicar_espejo_erp` (20260801044543): `customers` no tenía NINGUNA
+policy de escritura, así que el espejo entra por una función DEFINER que
+empareja por `search_name`, nunca inserta y omite los nombres repetidos. Se
+eligió sobre la service-role key por ser el único camino de escritura en vez
+de una llave que puede todo.
+
+## v2.317.0 — Migración de fichas de clientes: la herramienta, y el espacio en
+blanco que un `.strip()` puede abrir.
+
+La herramienta (`scripts/migracion-clientes/`) completa y corrige las fichas
+del ERP por bloques y las espeja a `customers`. 92 fichas procesadas, portadas
+93 → 179, con cero campos perdidos y cero alterados. El estado vive en
+`checkpoint.json`, así que retomar es volver a correr.
+
+El hallazgo que justifica el resto: **una ficha se negaba a guardar y creímos
+que era el distrito.** Perseguimos el valor, el departamento, un checkbox y la
+cascada de AJAX. Ninguna. El ERP nos venía dando el motivo en cada intento y
+nunca leímos el cuerpo de la respuesta:
+
+    {"typeinfo":"Error","msg":"Ya se registro un cliente con estos datos!"}
+
+Nuestro parser hacía `.strip()` a cada valor antes de reenviarlo. El nombre de
+esa ficha era `' NURIA ROXANA VILLANUEVA'` y ese espacio inicial es LO ÚNICO
+que la distingue de otra ficha con el mismo nombre. Al recortarlo colisionaban
+y el ERP rechazaba el guardado **entero** — por eso tampoco se podía cambiar
+`apunte`. Ahora los valores viajan crudos y se lee siempre el JSON de
+respuesta. Un rechazo se ve en pantalla y va a la lista de purga en vez de
+perderse.
+
+De ahí salieron tres cosas más. **Los ids de distrito del ERP no son
+globales**: van por (departamento, municipio), y el `8` es MEJICANOS en San
+Salvador y DULCE NOM MARÍA en Chalatenango — en el portal se guarda el nombre,
+nunca el id. **El checkpoint tenía versión de reglas ausente**, así que una
+regla nueva no se habría aplicado nunca a lo ya procesado. Y **el DUI inválido
+dejó de borrarse** temporalmente, hasta que se midió el riesgo real — ver
 
 ## v2.316.0 — `customers` deja de ser un catálogo de nombres
 
@@ -1365,6 +2271,45 @@ el mismo objeto hacen que el cierre se lea como de otra pieza.
 
 ---
 
+## v2.283.0 — Auditoria completa: Pedidos pesaba 939 kB por unas fuentes que nadie
+pidio, y dos columnas se estaban leyendo con el tipo equivocado.
+
+**809 kB de fuentes PDF que se bajaban al ENTRAR.** `pedidoPrint.js` importaba
+`pdfmake` + `vfs_fonts` de forma ESTATICA, asi que abrir Pedidos costaba 939 kB
+gzip —4x el tablero entero— imprimiera el usuario o no. Igual ConteoDetalle
+(865 kB). Peor: ese archivo tambien exporta matematica pura (`getPageGroups`,
+`buildPedidoCodigo`, `fefoProject`) y **3 de sus 4 importadores solo usan eso**
+— pagaban las fuentes sin tocar un PDF. Ahora se cargan con `await import()` al
+apretar imprimir. **PedidosView 939 → 131 kB. ConteoDetailView 865 → ~56 kB.**
+
+Esto explica un numero que la auditoria de arranque dejo sin explicar: decia que
+el prefetch bajo Pedidos de 1,947 a 1,241 ms y lo atribuia al throttle de
+Suspense (291 ms). Pero 706 ms con 70 ms de latencia es el tiempo de bajar
+~800 kB. El prefetch no arreglo Suspense: adelantaba las fuentes.
+
+**El tipo de la columna manda, no el nombre.** `sales_invoices.recibido_mh` es
+`text` —guarda el sello de Hacienda, 40 caracteres, 337,815 filas lo tienen—
+pero el frontend lo trata como booleano: `.eq('recibido_mh', true)` compara
+`text = 'true'` y devuelve CERO filas **desde siempre** (la lista "confirmadas
+por MH" nunca mostro nada), y `.update({recibido_mh: true})` escribiria la
+cadena 'true' ENCIMA del sello fiscal. Y `employees.is_admin` **ya no existe**:
+tres funciones de `requests.js` la siguen consultando, y son los fallbacks del
+enrutador de aprobadores — cuando la jerarquia no encuentra a nadie, fallan las
+dos y la solicitud queda SIN APROBADOR. Los dos quedan documentados con su
+decision pendiente: cambiarlos altera semantica fiscal y ruteo de aprobaciones.
+
+**Dos gates nuevos, versionados.** `gate:data` (local, ~1s, corre en pre-commit
+cuando el commit toca `src/` o `supabase/functions/`) cruza cada `.eq(col,true)`
+contra un snapshot real del catalogo — es el que encontro los dos bugs de
+arriba. `gate:bundle` (necesita build) mide el cierre ESTATICO de cada ruta
+lazy, que es el peso real de entrar a una vista y justo lo que una medicion con
+cache caliente no puede ver. Ambos con ratchet y baseline, como `gate:design`.
+
+Tambien: la regla 3 de CLAUDE.md decia `USING(true)` solo para UPDATE/DELETE —
+por el hueco del INSERT se colaron `attendance` y `audit_logs` con
+`WITH CHECK (true)`, o sea que hoy cualquier autenticado puede fabricar una
+marcacion y falsificar la bitacora. Regla corregida; la migracion queda abierta.
+
 ## v2.282.0 — Cerrados los 7 pendientes y el editor de foto
 
 "Agregar producto al conteo" tenía su propio envoltorio de hoja —todo lo que
@@ -1890,6 +2835,417 @@ por chip, con la misma regla de un nivel más arriba: los aplicados se quedan en
 línea, el resto se guarda tras un `+N`.
 
 ---
+
+## v2.259.0 — Min/Max: la matriz y los filtros pasan a ser RANURAS de la pildora
+
+**La matriz ABC × XYZ era un bloque de 124px** entre la pildora y la tabla, y
+la tira de filtros de estado otros 44: **168px de cromo** antes del primer
+producto. Una matriz 3×3 es la forma correcta cuando se comparan celdas entre
+si, y aca casi nunca — se mira "cuantos A tengo" y "cuantos son erraticos".
+Peor: se mira para DECIDIR un filtro, no para vigilarla. Elegida la clase, lo
+que importa es la lista, y la matriz seguia ocupando alto sin que nadie la
+releyera.
+
+Ahora es una ranura que resume lo aplicado ("ABC · A") y se abre en un popover
+con **barras apiladas por clase**, interactivas: contestan las dos preguntas de
+un vistazo y conservan las nueve zonas de clic. Aprobado sobre mockup.
+
+**Los seis filtros de estado** pasan a la ranura "estado". Estaban en una tira
+aparte, asi que para saber que recortaba la lista habia que mirar en DOS
+sitios. Su `onClear` usa `clearAllFilters` del hook y no una lista propia: el
+hook ya sabe cuales son todos los filtros, incluidos los que no tienen ranura
+visible (borrador, solo-cambios).
+
+**"Restaurar ocultos" era un boton DENTRO de un chip de filtro** — dos cosas en
+el mismo control. Pasa a ser una accion, y solo existe cuando hay algo que
+restaurar.
+
+**La tabla pedia `minWidth: 860px`** y en un telefono habia que arrastrarla de
+lado: se veia el nombre del producto y para leer su MIN/MAX habia que
+desplazar. Sus seis columnas no declaraban **ninguna** `hideBelow`, que es la
+estrategia que §32 fija para pantallas angostas. Con laboratorio/clase/
+presentacion marcadas, en un telefono quedan Producto · MIN·MAX · Acciones.
+Medido a 390px: `scrollWidth` 390, cero desborde horizontal.
+
+En el telefono el ABC no abre popover: esa ranura ya vive dentro de la hoja de
+filtros, y una capa encima de otra seria una hoja dentro de una hoja.
+
+## v2.258.0 — Min/Max: las acciones a la pildora, y sus dos paneles a `ModalShell`
+
+**Cinco controles sueltos al lado de la pildora**, cada uno con su forma: "CSV"
+con rotulo, dos iconos pelados y DOS botones de calcular. Ahora son `acciones`
+del canonico: la pildora paso de 553 a **425px** y quedan CERO sueltos.
+
+**"Calcular" era dos botones gemelos** —"Todas las sucursales" y "Calcular"—
+que son la MISMA accion con distinto alcance. Dos botones asi obligan a leerlos
+enteros para ver en que se diferencian, y el mas destructivo quedaba a un clic
+sin confirmar cual se apreto. Ahora el alcance se elige DENTRO del modal, que
+es donde ya se explica que va a pasar. El progreso ("Bayer 3/7") vive en el
+rotulo de la accion: es la unica senal de que sigue trabajando.
+
+**`ConfigPanel` y `LabsPanel` no eran modales**, eran `fixed inset-0` con
+`pointer-events-none`: sin scrim, sin `role="dialog"`, sin Escape y sin atrapar
+el foco — o sea que para un lector de pantalla no eran un dialogo, y con el
+teclado se seguia tabulando por la tabla de atras. Y su `rounded-2xl` era un
+radio fijo contra el token del tema. Los dos pasan a `ModalShell`.
+
+El gate atrapo lo que el build no puede ver: `ConfigPanel` usaba `<ModalShell>`
+**sin importarlo**. Un componente indefinido en JSX no rompe el build, revienta
+en runtime al abrirlo.
+
+## v2.257.0 — Las tarjetas, todas iguales; y el tooltip dejo de correrse
+
+**La regla de color, escrita en el canonico.** Por defecto una tarjeta NO
+lleva color: todas comparten `data-surface="card"`. Lo que si lleva color es
+el NUMERO y el ICONO —ahi el color ES el dato—; el fondo y el borde no. El
+estado seleccionado va por `tono` (`data-tono`, paleta cerrada), que es un
+anillo sobre el MISMO material y no otro material.
+
+Se retiraron `activeBg` e `inactiveBg`: **19 call sites**, cada uno con su
+tinte propio. Y cuando una vista pasaba `inactiveBg` la tarjeta **perdia
+`data-surface`** — por eso en la misma fila habia tarjetas con vidrio y
+tarjetas casi transparentes, que es lo que el usuario reporto ("hay uno que no
+tiene fondo", "lo veo mas transparente"). Medido despues: **un solo fondo por
+fila** en Productos, Facturas de Compra, Personal y Ventas.
+
+**El numero encoge antes que cortarse.** `$249,456.38` salia `$249,4…`. El
+cuerpo baja a `text-body-lg` sobre 6 caracteres y a `text-body` sobre 9: se lee
+entero sin que la tarjeta cambie de ancho. Cero truncados medidos.
+
+**Rotulos de dos palabras.** "Modificados este mes" en 148px salia
+"Modificados e…", que no nombra nada. El matiz baja al `sub`.
+
+**El tooltip se recortaba contra un ancho SUPUESTO.** 140px de medio-ancho para
+el de texto, sin importar cuanto midiera de verdad. Uno corto cerca del borde
+derecho se corria **mas de 100px** y quedaba con la flecha apuntando al aire.
+Ahora se mide ya montado: desfase medido **0px**, 9px debajo del boton.
+
+## v2.256.0 — Nada a mano: los ultimos bloques y el ultimo pill legacy, al canonico
+
+**El radio salia de un numero, no del token.** `StatCard` usaba `rounded-2xl`
+(1rem fijo) mientras cualquier bloque con `data-surface="card"` toma
+`--card-radius` (1.75rem en vidrio, 0.75 en solido). En la MISMA fila convivian
+dos formas y se veia — el usuario lo señalo. Ahora `rounded-card`, que es lo que
+§8 manda: el radio lo decide el TEMA.
+
+**Nada se sale de la tarjeta.** Los tres textos truncan. Iban con
+`whitespace-nowrap` a secas, o sea que EMPUJABAN el ancho, y con la tarjeta
+topada en 200px lo que hacian era desbordar y montarse sobre la de al lado. El
+`aria-label` lleva el texto entero, asi que a un lector no le falta nada.
+
+**Cinco bloques "a mano" que eran `StatCard` reescrito** —Catalogo, Inventario,
+Reglas, Pedidos y los tres de Gestion de Stock— reemplazados por el canonico,
+cada uno con su propio `rounded-2xl`, su propio `min-w` y su propia estructura.
+Y fuera los dos divisores que quedaban dentro de los carriles: el carril ya
+separa por espacio, y un divisor adentro se lee como una tarjeta mas.
+
+**`FilterPill` de Pedidos era el ULTIMO resto del pill legacy** —el que §17 dice
+haber reemplazado— y seguia armando el contenedor a mano: su `h-14 rounded-2xl
+border bg-surface-card`, sus divisores y un boton de limpiar por ranura. Ahora
+es un `FilterBar`, con lo que gana el orden de ranuras, el colapso a barra
+flotante en el telefono, el cupo por ancho y el control de desborde.
+
+**Facturas de Compra tenia "Descargar" y "Sincronizar" FUERA de la pildora**,
+que era la regla anterior de §17. Al moverlas a `acciones` se arreglo de paso lo
+que el usuario pidio: la pildora no quedaba justificada a la derecha porque
+habia otro bloque disputandole el borde.
+
+Verificado en las 12 vistas con tarjetas a 1512px: **pildora a ras del borde en
+todas, cero desbordes de texto y un solo radio por vista**.
+
+## v2.255.0 — El canonico de medidas, aplicado a TODAS las vistas con tarjetas
+
+Migradas al carril: Facturas de Compra, Productos·Inventario, Ventas (sus tres
+pestanas), Pedidos·Metricas y Pedidos·Reglas. Ya lo estaban Personal, Conteo y
+Productos·Catalogo.
+
+**Dos `StatCard` duplicados menos.** `TabReglas` tenia una copia con las MISMAS
+props que el canonico (solo cambiaban `Icon`→`icon` y `countCls`→`valueCls`) y
+`TabMetricas` otra con un eje `color` propio; las dos se reemplazaron por el
+canonico. Queda una sola copia viva, la de Ventas, y no por descuido: tiene el
+delta contra el periodo anterior, el desenfoque del modo privacidad y el
+tooltip de IVA, que el canonico no tiene. Adopta las MEDIDAS (148/200 y el
+detalle que cede) sin fusionarse — fusionarlas es un trabajo aparte.
+
+**Bug propio del carril:** `cloneElement` le inyectaba `compacta` a CUALQUIER
+hijo, incluidos los que son elementos del DOM —el divisor de Catalogo—, y React
+avisa de prop desconocida. Ahora solo se le pasa a componentes.
+
+Pendiente: `TabSinVenta`, cuya fila mezcla tarjetas, un divisor y fragmentos
+condicionales; envolverla necesita mano y no un reemplazo mecanico.
+
+## v2.254.0 — El canonico de medidas, aprobado sobre mockup e implementado
+
+## v2.253.0 — Sin título
+esto lo reemplaza con lo que el usuario aprobo mirando el mockup interactivo.
+
+**`StatCard`**: minimo 148, maximo 200, el detalle cede bajo 176.
+**`CarrilCards`** (nuevo): las tarjetas van en UNA fila y lo que no entra se
+desliza. El sobrante queda como asomo de la siguiente, y las flechas FLOTAN:
+en el flujo se comian 64px de los 438 disponibles a 1512, media tarjeta.
+**`FilterBar`**: el cupo de ranuras es el que entre en el ancho REAL, no 3
+fijo — con 3 fijo se escondian filtros en un 27" teniendo 1.400px libres. El
+control de desborde toma la forma de una ranura, no de un cuadrito aparte.
+
+**El ancho se MIDE, no se estima.** Modelar cada accion en 150px erraba por 62
+en una sola pildora: las reales son 166, 186 y 36 segun su rotulo. Se miden las
+piezas en un `useLayoutEffect` —corre antes del pintado, sin parpadeo— y se
+observa la FILA, no el envoltorio de la pildora: el padre ajusta al contenido,
+o sea a la pildora, asi que medirlo es un bucle. Medido con el padre, quedaba
+clavada en 748px y 2 ranuras de 1280 a 2240.
+
+Prioridad: detalle de tarjeta → texto de acciones → el carril desliza →
+ranuras vacias. NUNCA una ranura aplicada. Y el texto de las acciones solo se
+reclama de vuelta si el carril ya muestra las cinco; sin esa regla el carril
+RETROCEDIA al agrandar la ventana.
+
+Medido en Personal: 1280→2 tarjetas · 1440→3 · 1512→4 · 1728→5 · 1920→5 con
+detalle. Monotono.
+
+## v2.253.0 — Medidas FIJAS: la tarjeta y el cupo de ranuras
+
+**`StatCard` mide 200px siempre.** Era `flex-1 basis-0 min-w-[150px]`: se
+repartia el espacio, asi que la MISMA tarjeta media distinto en cada vista y
+en cada monitor. Medido antes: Ventas daba 1/2/3/4/4 tarjetas por fila a
+1280/1440/1512/1728/1920px, y Personal 2/2/2/3/4. Y la tarjeta HUERFANA de la
+ultima fila crecia hasta llenarla sola — en Personal a 1920px habia cuatro de
+172px y **una de 726px**.
+
+**La pildora tiene cupo de 3 ranuras**; el resto va tras un `···` que las
+despliega en un panel anclado. Antes crecia con lo que cada vista le metiera:
+de 189 a 782px a 1512, robandole a las tarjetas un ancho distinto en cada
+pantalla. Proveedores paso de 718 a 618.
+
+**Las ranuras APLICADAS nunca se esconden** — esconder un filtro activo
+dejaria la vista recortada sin nada visible que lo explicara, que es
+exactamente lo que §17 existe para evitar. Se esconden las vacias y el boton
+lleva `Contador`. Y se ELIGEN por prioridad pero se DIBUJAN en su orden
+original: reordenarlas al aplicar un filtro haria que la pildora cambiara de
+forma con cada clic.
+
+El gate atrapo un `size={17}` fuera de la rampa de iconos de §12; va en 18.
+
+## v2.252.2 — La pildora de Ventas no estaba justificada a la derecha
+
+Medidas las 14 vistas con pildora a 1512px comparando su borde derecho con el
+del contenido: 10 estaban a ras y **Ventas se quedaba a 534px del borde** —
+su fila era un `flex-wrap` a secas, asi que la pildora caia donde terminaran
+las tarjetas. Sus tres pestanas (Ventas, Vendedores, Productos) comparten el
+mismo contenedor, asi que las tres tenian el mismo defecto.
+
+Pasa al patron de dos columnas que ya usa el Listado: `flex-1` en la columna
+de tarjetas empuja la pildora al fondo.
+
+## v2.252.1 — La pildora de Ventas, de 852 a 609px. Y el ojo se ve
+
+**El icono aplastado era un bug, no un tamano mal elegido.** `soloIcono` se
+habia implementado como un `className` con `px-0 w-9` desde `FilterBar`, y ese
+`px-0` **perdia contra el `px-3.5` del tamano**: entre dos utilidades de
+Tailwind el ganador lo decide el orden de la HOJA DE ESTILOS, no el del
+atributo `class`. Medido: boton de 36px con 28 de relleno y el SVG en **6×18**
+en vez de 18×18. Ahora `soloIcono` es una prop que REEMPLAZA el tamano
+(`w-9 h-9 px-0`) — la misma leccion que `Button` ya tenia escrita para su
+`iconOnly` — y el icono sube de 14 a 18px, que es la proporcion de un boton
+sin rotulo. El `<svg>` lleva `shrink-0`: es un elemento flex mas.
+
+**El rango de fechas, compacto.** `01/07/2026 → 30/07/2026` eran 23
+caracteres y ~250px para decir dos dias del mismo mes. El ano se escribe UNA
+vez y solo si hace falta: dentro del ano en curso no se escribe, en otro ano
+va corto al final, y en los dos extremos solo si el rango cruza de ano.
+
+**Menos aire entre ranuras**: `px-2`→`px-1` en la ranura, `gap-1.5`→`gap-1`
+y `px-1`→`px-0.5` adentro.
+
+Medido en Ventas (la vista con mas ranuras): **852 → 609px**. Personal
+778 → 748, Auditoria 812 → 782.
+
+## v2.252.0 — `TONO_POR_ICONO` aplicado a TODO el proyecto
+
+En v2.251.0 el mapa existia pero lo consumia solo `TabBarAction`. Ahora
+tambien `Button`, que es donde viven los 193 `iconOnly` auditados.
+
+**Se tine el ICONO, no el relleno.** `TONE_CLASSES` de `Button` es relleno
+solido con texto blanco: aplicar el tono como fondo habria convertido cada
+fila de acciones discretas en una hilera de bloques de color. En superficie
+neutra el color identifica la categoria sin gritar — la misma regla que
+`TabBarAction quiet` ya seguia.
+
+Tres desactivadores, los tres a proposito: `tone` explicito (el llamador
+manda), variante RELLENA (`primary`/`destructive`: el fondo ya es del color y
+el icono va en blanco — es lo que preserva el `Check` rojo de un "confirmar
+borrado"), y boton CON texto (ahi el color sale del papel del boton, no de su
+icono).
+
+Medido: **20 botones pasaron a llevar color, 172 quedaron igual** — 41 de
+ellos por decision explicita. Verificado en el navegador: los `Copy` de
+Sucursales pasaron de neutro a rgb(29,78,216), el mismo azul que el ojo de la
+pildora de Ventas.
+
+El tono explicito suele codificar la ACCION y no el icono, y eso es correcto:
+`Eye`+`success` es "restaurar sugerencia", `RefreshCw`+`success` es
+"recontratar", `RotateCcw`+`chart-3` es "regenerar con IA".
+
+De paso, `TabBarAction` deja de duplicar su tabla de clases de texto:
+`CLASE_TEXTO_POR_TONO` vive en `iconNames.js` y la comparten los dos.
+
+## v2.251.0 — El mismo icono, el mismo color. Y el ojo, solo el ojo
+
+Auditados los **193 botones `iconOnly`** del proyecto: **18 iconos se dibujan
+con 2 a 4 colores distintos**. El ojo aparece sin tono, `chart-1`, `success` y
+`secondary`; `Download` es `success` en Personal y `chart-1` en Facturas de
+Compra. El mismo icono significa lo mismo y se ve distinto segun la pantalla.
+
+`TONO_POR_ICONO` en `iconNames.js`, al lado de `NOMBRE_POR_ICONO` y por el
+mismo principio: si el llamador no dice de que color es, lo dice el icono.
+Es el PISO, no el techo — quien pase `tone` gana el suyo, y hace falta: un
+`Check` dentro de un "confirmar borrado" va en `destructive` a proposito, y
+los clusteres de accion por fila (Facturas de Compra pinta
+Eye/Download/FileJson/Archive de `chart-1` a la vez) tienen coherencia local.
+Por eso hoy lo consume SOLO `TabBarAction` — el boton de accion de una vista.
+Extenderlo a `Button` tocaria los 193 de una vez; queda como decision aparte.
+
+**El ojo de Ventas pasa a `soloIcono`.** Con rotulo en mayusculas se comia
+media pildora en la vista con MAS ranuras del portal (sucursal, laboratorio,
+fecha y cuatro chips): la pildora bajo de 852 a 722px.
+
+**Y `soloIcono` lleva `LiquidTooltip`, no `title`.** Un boton sin texto
+necesita que su rotulo sea descubrible, y el `title` del navegador es cromo
+nativo: no se estiliza, tarda un segundo largo y en tactil no existe — justo
+lo que la regla cero-nativo evita. Va con `side="bottom"` para no tapar la
+fila de arriba.
+
+## v2.250.0 — La pildora, corregida sobre la revision del usuario
+
+**`FilterBar.Opciones`** — hasta 3 opciones es `SegmentedControl`; de 4 en
+adelante, `LiquidSelect`. Los dos son uno-de-N y la diferencia es de ancho: un
+segmentado de 5 se come la pildora entera. El umbral es del canonico, no del
+llamador. Se lleva por delante los apanos de movil: Conteo y ConteoDetail
+forzaban `layout="block" columns={2}` porque el riel de cuatro no entraba en la
+hoja del telefono. Aplicado tambien a "Mis Avisos", cuyos subfiltros son
+dinamicos (de 2 a 6) y ahora eligen control solos.
+
+**`FilterBar.Sucursal`** — estaba a mano en 9 vistas con 4 textos distintos
+("Todas las Sucursales", "Todas las sucursales", "Todas", ninguno) y anchos de
+150 a 220px. El texto canonico es "Sucursales": nombra el filtro en vez de
+describir su estado vacio. Normaliza ademas la opcion "todas" que viene DENTRO
+de `options` —que es la mitad del arreglo—: el select mostraba ese label y no
+el placeholder, y en 150px se cortaba a "Todas las Suc…".
+
+**`soloIcono`** en un descriptor de accion. Exportar en el Listado; `Download`
+ya era el icono canonico de exportar en el portal.
+
+**Listado en dos columnas**: tarjetas a la izquierda, pildora a la derecha.
+Medido a 1512px: la columna de tarjetas quedaba en 310px y las 5 caian en
+vertical, una por fila, porque dos necesitan 312 (2×150 + gap). Con
+`min-w-[312px]` entran de a dos y la pildora envuelve sus dos bloques
+—filtros arriba, acciones abajo— en vez de desbordar.
+
+**El z-index de la barra flotante NO se arreglaba con z-index.** Con el menu
+abierto el cluster quedaba encima del sidebar. El sidebar es `z-sidebar` (50) y
+la barra `z-tabs` (30), y aun asi ganaba la barra: el z del sidebar vive dentro
+del contexto de apilamiento del layout, y la barra —colgada del `body` por
+portal— compite en el contexto raiz. Comparar los dos numeros no significa
+nada. Asi que no se apila: se apaga con `--barra-flotante-display`. Por la
+misma via se aparta de la nav inferior de autogestion
+(`--alto-nav-inferior`), que ocupa el mismo sitio en "Mis Documentos".
+
+**Mis Documentos**: el rango de fechas pasa a `PeriodPicker` (trae "este mes",
+"mes anterior", "ultimos 3 y 6 meses") en vez de dos `LiquidDatePicker`
+coordinados a mano.
+
+## v2.249.3 — Dos vistas crasheaban al ABRIRLAS, y las dos por el mismo motivo
+
+`Gestion de Solicitudes` (reportada por el usuario) y `EmployeeDetailView`:
+"TypeError: null is not an object (evaluating 'c.mode')" y la vista entera al
+ErrorBoundary. **Los hijos de un elemento JSX se evaluan al CREARLO, no cuando
+el padre decide pintarlos**, asi que `actionModal.mode` / `resetResult.password`
+corrian en cada render, incluido el primero, con la variable en `null`.
+
+`<ModalShell open={!!actionModal}>` LEE como si condicionara sus hijos y no los
+condiciona. Los modales escritos a mano que habia antes SI traian el
+`{actionModal && (...)}`; la guarda se perdio al pasarlos a `ModalShell` en
+
+## v2.249.2 — DESIGN.md al dia con el canonico nuevo
+
+§16.9 (las dos pildoras), §17 (los descriptores de `acciones`), §17.3 (el canal
+de `CanalDeVista.js`, el bug del `transform` ancestro y la medicion de las tres
+superficies), §15.5 (`TabBarAction` ya no se instancia a mano, y el tamano `sm`)
+y la ficha de `ViewTabBar` en §14, que seguia documentando `trailingActions`
+como prop viva.
+
+No es tramite: en este proyecto un doc desactualizado ENSENA la deuda — el
+snippet viejo de §16.2 se copio 9 veces antes de que alguien lo notara.
+
+## v2.249.1 — La superficie de la barra flotante se MIDIO, y el rotulo dejo de
+cortarse.
+
+## v2.249.0 — Sin título
+ya arreglado, el 16% seria el vidrio "del header y de cualquier card" que se
+pidio. Medido en WebKit a 390px sobre la lista de empleados, con las filas
+pasando por detras: **falso**. Comparadas las tres superficies existentes,
+
+    card (16%)      "SALUD 2" se lee ENTERO y cae encima de "ACCIONES"
+    dropdown (72%)  lo de atras queda fantasma, los rotulos limpios
+    modal (85%)     ya no deja ver nada, es un panel
+
+asi que `dropdown` era la eleccion correcta por la razon equivocada: se habia
+subido a 72% para tapar un blur que no existia. Con el blur vivo, el 72% ES
+vidrio esmerilado —se ve el color y el movimiento de la lista a traves— y
+ademas cumple el criterio que index.css ya fija para lo que flota sobre
+contenido: que lo de atras sea LUZ, no texto. Vuelve a `dropdown`.
+
+**`index.css` queda byte a byte igual que antes de la sesion.** v2.249.0 le
+habia agregado `translate` a la transicion de `[data-surface="card"]`; con el
+cluster en `dropdown` —que no declara `transition` propia— alcanza la utilidad
+`transition-transform` de Tailwind v4, que en v4 ya cubre `translate` ademas de
+`transform`. Cero tokens nuevos: la paleta es CERRADA.
+
+Y el rotulo del boton del cluster pasa de `truncate` a dos lineas: en los 60px
+de la columna "NUEVO EMPLEADO" salia "NUEVO E…", que no dice que hace el boton.
+
+## v2.249.0 — FilterBar es filtros Y acciones, y el vidrio de la barra flotante
+estaba roto por un `transform` ancestro.
+
+**La auditoria.** 22 vistas usan `FilterBar`. Pasandole el buscador y la accion
+principal para la barra flotante tactil: **1**. No fue descuido — el mismo dato
+habia que escribirlo dos veces (una en `ViewTabBar`, otra en `FilterBar`) y la
+copia que falta no se ve rota hasta abrir la vista en un telefono. En las 5
+pestanas de Productos era ademas imposible: el estado del buscador vive en
+`ProductosView` y las pestanas solo reciben el termino ya rebotado.
+
+**`trailingActions` se retiro.** Era un cajon de sastre: acciones de verdad
+("Nuevo Empleado", "Publicar", "Exportar"), pero tambien FILTROS — el rango de
+fechas y el tipo de `TabHistory`, el `SegmentedControl` de
+`EmployeeAnnouncementsView`—. O sea que la pildora del HEADER estaba filtrando,
+justo lo que §17 dice que no hace. Y en tactil eran dos botones
+`SlidersHorizontal`: uno arriba abria "Filtros y acciones", otro abajo abria
+"Filtros". Dos puertas, el mismo icono, contenidos distintos.
+
+Ahora: header = navegacion + buscador. `FilterBar` = filtros + acciones, como
+DESCRIPTORES y no JSX (el mismo boton se dibuja `TabBarAction` en escritorio y
+boton de clusteren el telefono; con JSX suelto la barra flotante solo podia
+re-renderizarlo tal cual).
+
+**El canal.** Las dos pildoras son HERMANAS —`ViewTabBar` llega por
+`filtersContent`, `FilterBar` por `children`—, asi que un contexto declarado en
+una no llega a la otra. `CanalDeVista.js` publica en los dos sentidos desde
+`GlassViewLayout`, que es el unico ancestro comun: `ViewTabBar` publica su
+buscador y `FilterBar` anuncia que existe la barra flotante para que el header
+suelte su lupa. Cero cableado por vista.
+
+**El vidrio.** El contenedor `fixed` animaba con `translate-y-*`, y un ancestro
+con `translate` establece un *backdrop root*: el `backdrop-filter` del cluster
+muestreaba un fondo VACIO. Tercera vez que este proyecto se tropieza con la
+misma regla. Explica el rodeo anterior: `card` (16%) dejaba leer el nombre del
+producto a traves —claro, sin blur el 16% es ver el texto— y se subio a
+`dropdown` (72%), que es un panel opaco. La animacion se movio al elemento que
+lleva el vidrio (un `transform` PROPIO no rompe nada) y la superficie volvio a
+`card`. De paso: `transition: transform` NO anima la propiedad `translate` —son
+independientes—, asi que index.css la nombra aparte.
+
+**Dos `activeCount` que mentian.** FacturasCompra contaba `sinProveedor` e
+`invalidados`, StaffManagement contaba `activeStatFilter`: controles que no
+estaban en la pildora. En el telefono la hoja decia "3 filtros" y ofrecia uno.
 
 ## v2.248.0 — si es el canónico del filtro, las 22 vistas deberían tenerlo sin cablear nada.
 
@@ -2809,6 +4165,47 @@ Dos decisiones del gate que vale la pena registrar:
 
 `npm run gate:design` en verde, build y lint limpios.
 
+## v2.236.0 — Prefetch del menú: la vista se carga al pasar el mouse, no al hacer clic
+
+Segunda entrega de la tarea de rendimiento, y la parte mas util fue MEDIR bien
+antes de creerme el resultado:
+
+ 1. La primera medicion decia 820 ms por navegacion. Falso: ~470 ms de eso era
+    el propio `click()` de Playwright esperando que el item del menu dejara de
+    animarse. Con un cronometro DENTRO de la pagina (listener de click real →
+    MutationObserver del <h2>) la navegacion real es ~350 ms.
+ 2. En localhost el prefetch no mejoraba NADA (351 → 349 ms). Tampoco era
+    falso: bajar 8 archivos desde el disco local no cuesta. Con 70 ms de
+    latencia emulada, que es lo que hay contra el CDN de Vercel:
+        Nomina  (9 chunks)   356 → 337 ms
+        Personal (22 chunks) 366 → 363 ms
+        Pedidos (16 chunks) 1947 → 1241 ms   ← -706 ms
+        media                 890 → 647 ms   (-27%)
+    O sea: sirve en las vistas pesadas, que son las que se sienten lentas.
+ 3. Verificado que el prefetch corre de verdad: al pasar el mouse por Nomina se
+    piden 8 archivos JS (incluido PayrollView) y el clic posterior pide CERO.
+
+Como esta hecho: los `import()` de las 44 vistas dejan de estar sueltos en cada
+`lazy()` y viven en constants/routeImporters.js, asi el prefetch reusa
+exactamente la misma funcion (import() cachea la promesa: pasar el mouse veinte
+veces no descarga dos). El mapa ruta → vista se genero leyendo las <Route> de
+App.jsx, no a mano; si una vista se renombra y el mapa queda viejo, el prefetch
+no encuentra la clave y no hace nada — nunca rompe la navegacion.
+Va en onMouseEnter, onFocus (teclado) y onTouchStart (en tactil no hay hover).
+
+Lo que NO arregla, y queda medido: hay un piso de ~350 ms de React montando la
+vista que el prefetch no toca — el modulo ya esta resuelto y evaluado. Volver a
+un modulo ya visitado son 60 ms.
+
+## v2.235.1 — El borrador de una migracion va al scratchpad, no a migrations/
+
+Aclaracion de la regla, salida de un caso real: otra sesion dejo
+`supabase/migrations/20260729_conteo_v5_filtro_lab_y_orden.sql` (nombre viejo de
+8 digitos) y el gate lo marco — correctamente, pero la migracion todavia no esta
+aplicada en prod, asi que el nombre valido no existe aun: la version la asigna el
+servidor al aplicar. Entonces el borrador no va dentro de `supabase/migrations/`.
+Primero `apply_migration`, despues el archivo con la version que devolvio.
+
 ## v2.235.0 — hook de pre-commit, y la regla de que este árbol es compartido.
 
 **El hook** vive en `.githooks/pre-commit` — versionado a propósito, porque
@@ -2844,6 +4241,44 @@ resuelto con re-`add`, migración con nombre viejo, y `src/` preparado sin bump.
 cuatro dan el mensaje correcto y salida 1 donde toca.
 
 ---
+
+## v2.234.0 — Personal › Listado bajaba 4.1 MB en fotos. Ahora baja 534 kB
+
+Primera entrega de la tarea de rendimiento. Medido con el navegador: al abrir
+Personal › Listado se descargaban **25 fotos de perfil de 168 a 199 kB cada
+una — 4,143 kB de 4,163 kB del total de la vista** para pintarlas en circulos
+de 36 px. Era, de lejos, la carga mas pesada del portal.
+
+Correccion de un diagnostico previo mio: habia reportado esas 25 peticiones
+como "N+1 de firmas de storage". NO lo eran. Una URL firmada VIVE en la ruta
+/object/sign/..., asi que al clasificar por ruta confundi las descargas de las
+imagenes (GET) con llamadas de firma (POST). El firmado ya era en lote y
+estaba bien; el problema eran los bytes.
+
+La solucion no cuesta ni una peticion extra: se sigue firmando en lote (UNA
+llamada) y se reescribe la URL al endpoint de render, que convierte a WEBP
+segun el Accept del navegador. 168 kB PNG → 20 kB WEBP.
+
+Lo que NO funciona, probado contra prod antes de elegir:
+  · `transform` en el cuerpo del firmado EN LOTE: el servidor lo ignora,
+    responde 200 y devuelve la URL sin transformar (168 kB).
+  · `width` / `height` / `resize` / `quality` en la URL firmada: TAMBIEN se
+    ignoran. Las cuatro combinaciones devuelven exactamente 20 kB a 400×400,
+    igual que sin parametros. Redimensionar de verdad exige firmar de a una
+    (`createSignedUrl(..., { transform })`) y eso son otra vez 25 peticiones
+    para ahorrar unos pocos kB — no vale la pena, las fotos ya se suben a
+    400×400.
+
+Va en LiquidAvatar (canonico, 11 vistas) y en las 4 fotos de usuario del
+sidebar, que se cargan en TODAS las pantallas. Si el render fallara, el avatar
+reintenta con la URL original antes de caer a iniciales.
+
+Verificado: 27 de 27 fotos cargan, las 27 por el endpoint de render, cero
+fallos; /dashboard, /minmax y /payroll siguen abriendo.
+
+Pendiente de la misma tarea: los 9-22 archivos JS por primera entrada a cada
+modulo (prefetch al pasar el mouse), y `roles` + `role_permissions` pedidas 4
+veces cada una al recargar la pagina.
 
 ## v2.233.0 — la convención de migraciones deja de ser prosa: `gate:migrations`.
 
@@ -2886,6 +4321,35 @@ con el nombre del archivo. Un agente que leyera eso hoy escribiría
 `20260730_mi_cambio.sql` y estaría cumpliendo la regla escrita.
 
 ---
+
+## v2.232.0 — Mantenimiento en tarjetas, y el aviso del candado se muda al
+encabezado (opcion B, elegida por Alex).
+
+TARJETAS. La lista pasa a rejilla (3 columnas en escritorio, 1 en telefono),
+agrupada como en Permisos. La tarjeta activa tiene cuerpo propio: COMENTARIO y
+DURACION con etiqueta y ancho de verdad, mas la linea de titular/vencimiento —
+en fila iban apretados contra el switch. `items-start` y sin `h-full` a
+proposito: si no, las tarjetas libres se estiran al alto de la activa y la
+rejilla queda con huecos enormes (se vio en la primera captura).
+
+EL AVISO SE VA AL ENCABEZADO. Antes era un bloque en el cuerpo. El encabezado
+es sticky, asi que el estado ya no se va de pantalla al bajar por una tabla
+larga — que era el caso feo: botones de guardar apagados y ninguna explicacion
+a la vista. Ahora son dos piezas: la ficha "Solo lectura" al lado del titulo y
+una linea con quien, por que y hasta cuando (con Terminar si el candado es
+tuyo). Las dos las monta GlassViewLayout, cubren las 37 vistas y devuelven null
+si no hay candado. Montadas tambien en el encabezado movil.
+
+Lo que NO se hizo de la opcion B: el candadito en cada boton apagado. Eso
+exige que `Button` sepa de la ruta y del candado, o sea un useAuth() +
+useLocation() en CADA boton de la app — justo despues de un reporte de
+lentitud, no. Queda como pendiente por vista si hace falta.
+
+Verificado en navegador con lock_module/unlock_module interceptadas (sin
+escribir candados en prod): 27 tarjetas, la ficha y la linea salen en el
+encabezado de /payroll y NO en el cuerpo, el switch llama a la RPC, el
+comentario vuelve a llamarla con el motivo, y apagar libera. El buscador
+filtra: "nomina" deja 1 tarjeta, "sucursal" deja 6. Cero errores de consola.
 
 ## v2.231.0 — el conteo ciego era un interruptor, y un click de más inventaba faltantes.
 
@@ -3168,6 +4632,416 @@ la secuencia fosilizada, y 18 comentarios que "difieren" solo porque prod tiene
 columnas borradas y los `attnum` quedan con huecos — el verificador comparaba por
 número de columna en vez de por nombre.
 
+## v2.227.0 — Se cierran los pendientes, y DOS de los tres "fallos" que
+quedaban eran de mi medidor, no del portal.
+
+Contraste: 23 -> **0**. Lo que se corrigio de verdad fue uno solo:
+`--danger-text` #f87171 media 4.43:1 sobre el TINTE del badge danger
+(#462e3a = tarjeta + danger/12), justo bajo AA. Sobre la tarjeta plana daba
+5.29 y por eso habia pasado siempre. Ahora #fb9a9a: 5.95 sobre el tinte, 7.1
+sobre la tarjeta, 8.66 sobre la pagina. Mas 17 `text-danger|success|warning`
+de AttendanceAuditView que seguian usando el token de RELLENO como color de
+texto.
+
+Los otros dos NO eran defectos:
+  · Los 6 nodos de "General" a 2.51:1 eran la etiqueta de un tab inactivo de
+    `ViewTabBar` medida **a mitad de su transicion de 700ms**. El alfa de
+    0.97 y un color que no correspondia a ningun token lo delataron. Con la
+    espera correcta: 0.
+  · Los 2 targets de 36px del kiosco eran mi contexto de Playwright sin
+    `hasTouch`. El kiosco REAL es una pantalla tactil: con `pointer: coarse`
+    los mismos botones miden 44 y quedan en 0.
+
+Pendientes que se cierran:
+  · KIOSCO — fuerza `data-theme="dark"` como esta documentado, 0 nodos bajo
+    AA, 0 targets bajo 44 (tactil), 0 errores de pagina.
+  · LOGIN — 0 targets bajo 44 y **0 controles sin indicador de foco**.
+  · ESTADOS DE ERROR de formulario — validacion disparada con el formulario
+    vacio (la escritura la aborta un guardia de red): 4 marcas de error
+    renderizadas, 210 nodos medidos, 0 bajo AA.
+  · FIREFOX — **no se pudo verificar**: no arranca en este entorno (el
+    sandbox de macOS le bloquea `plugin-container`). Lo que si se verifico es
+    el riesgo concreto que este proyecto ya sufrio ahi: que Lightning CSS
+    descarte la propiedad estandar y deje solo `-webkit-backdrop-filter`.
+    En el bundle: 37 estandar / 37 con prefijo, **0 reglas con solo el
+    prefijo**. El vidrio le llega a Firefox.
+
+Con los modales abiertos: 31 modales, 1,507 nodos de texto, 0 bajo AA.
+Foco: 8 dialogos, entra / atrapa / devuelve, 0 fallos.
+Targets: 1,003 controles, 7 bajo 44 y son las barras del grafico.
+gate:design 0/25 · gate:doc y eslint limpios.
+
+## v2.226.0 — Mantenimiento: lista completa con switch, y el aviso que no se leia
+
+1. BUG DEL CANONICO `Notice`, reportado por Alex sobre un aviso ilegible.
+   `warning` y `success` pintaban el texto con el color de acento CRUDO
+   mientras `info` y `danger` si usaban su token `-text`. Medido sobre el fondo
+   efectivo del propio aviso (bg-warning/10 sobre tarjeta clara = #fef4e6):
+       text-warning      #F79009 → 2.16:1   ✗ (WCAG AA pide 4.5:1)
+       text-warning-text #9a4507 → 5.98:1   ✓
+   Los dos tokens ya existian (y con override por tema), asi que el arreglo va
+   en el canonico: cubre los 22 avisos warning de la app, no solo el que se vio.
+   Verificado en el navegador: el texto sale rgb(154, 69, 7).
+
+2. Fuera el boton "Poner en mantenimiento" y fuera el modal. Ahora se listan
+   LOS 27 modulos bloqueables con un switch cada uno; al encenderlo el candado
+   queda puesto y la fila revela sus DOS CUADROS (motivo y duracion), que son el
+   estado del candado y se editan en vivo sobre el candado ya tomado — el motivo
+   guarda al salir del campo o con Enter, la duracion al cambiarla. El switch ES
+   la accion.
+
+3. Lupa canonica: el buscador va en el ViewTabBar del encabezado, como en el
+   resto de las vistas. Filtra por nombre, descripcion y key (smartFilter).
+   Verificado: "nomina" deja 1 modulo, "sucursal" deja 6.
+
+4. Los nombres salen del registro de PERMISOS, no del menu. Se extrajo
+   MODULE_GROUPS de PermissionsView a constants/permissionModules.js con un mapa
+   plano MODULE_INFO (label + desc + grupo + icono, incluidas las pestañas). El
+   menu dice "Listado"; Permisos dice "Listado de Personal", y ahora esta vista
+   tambien. Los 27 bloqueables tienen etiqueta y descripcion — verificado.
+
+Se muestran TODOS los modulos, tambien los que uno no puede editar (switch
+deshabilitado): saber que existen y quien los tiene tomados es parte de
+responder "¿que hay bloqueado?".
+
+Verificado en navegador con lock_module/unlock_module INTERCEPTADAS — no se
+escribio ningun candado en prod: encender llama lock_module(payroll, null, 4),
+aparecen los dos cuadros, escribir el motivo vuelve a llamar con
+reason="cierre de quincena", el banner sale en /payroll, y apagar llama
+unlock_module. Cero errores de consola.
+
+## v2.225.0 — El candado de mantenimiento sale de MIN·MAX: panel en Sistema y
+banner en las 37 vistas.
+
+Cuatro problemas del estado anterior:
+ 1. El banner estaba montado A MANO y solo en MinMaxView, asi que un candado
+    sobre cualquier otro modulo era INVISIBLE: la gente veia los botones de
+    guardar apagados y ningun cartel que lo explicara.
+ 2. Solo se podia soltar desde el modulo bloqueado. La RPC ya permitia que otro
+    admin liberara, pero no habia pantalla donde hacerlo.
+ 3. No habia forma de responder "¿que hay bloqueado ahora?".
+ 4. Se podia tomar un candado INUTIL. El candado vive dentro de
+    auth_can_edit_any(ARRAY[...]), asi que bloquear un modulo que ninguna policy
+    consulta no frena nada — y lock_module aceptaba cualquiera de los 93 de
+    role_permissions. Se podia bloquear conteo_inventario, ver el banner puesto
+    y seguir guardando. Un candado que miente es peor que no tenerlo.
+
+Ahora:
+- get_lockable_modules() DERIVA la lista de pg_policies + los cuerpos de las
+  funciones: hoy 27 de 93. No es un diccionario a mano — cuando alguien agregue
+  una policy con auth_can_edit_any(ARRAY['x']), x aparece sola. lock_module
+  valida contra esa lista.
+- Vista nueva Sistema › Mantenimiento (module_key `maintenance`, permiso copiado
+  de orphan_objects: mismo publico que las otras vistas de infra). Lista los
+  candados activos con titular, motivo, desde/vence y cuanto falta; cualquiera
+  con permiso puede terminar uno ajeno. El limite de los crons se dice ahi, que
+  es donde se toma la decision.
+- El banner se monta UNA vez en GlassViewLayout y resuelve su modulo desde la
+  ruta, asi que cubre las 37 vistas que usan ese layout sin que ninguna tenga
+  que acordarse. Devuelve null si no hay candado.
+- TOMAR el candado ya no esta en el banner: 37 vistas con un boton de bloquear
+  es superficie de bloqueo accidental. Terminar SI sigue ahi — el titular tiene
+  que poder soltarlo donde esta trabajando.
+- MODULE_MAP se extrajo de AppLayout a constants/moduleMap.js con el helper
+  moduleKeyForPath(): un componente de common/ no puede importar el layout.
+
+Verificado en el navegador (candado sintetico via page.route, sin escribir en
+prod): la vista carga con su estado vacio y el aviso, el modal abre, el banner
+aparece en /payroll con el titular y el motivo, /minmax sin candado no muestra
+nada, y cero errores de consola.
+
+## v2.224.0 — El foco de los modales, y 421 fallos de contraste que ningun
+escaner anterior podia ver.
+
+FOCO. `ModalShell` no manejaba foco: no lo movia al abrir, no lo atrapaba, y
+**no lo devolvia al cerrar**. Medido antes del cambio: activeElement quedaba
+en BODY, o sea que la siguiente tabulacion arrancaba desde el principio de la
+pagina, pasando otra vez por todo el menu. Afectaba a TODOS los modales.
+Ahora: entra al primer enfocable, Tab no puede salir (Escape es la salida), y
+al cerrar vuelve al disparador — con respaldo al <main> si ese disparador no
+sobrevivio al re-render, para no dejar nunca el foco en el body.
+Verificado en 8 dialogos: 0 fallos en los tres criterios.
+El fondo pasa a `aria-hidden` + `tabIndex={-1}`: duplica lo que Escape ya
+hace, y como parada de foco era una invisible antes del contenido.
+
+CONTRASTE — 421 nodos bajo AA, y el motivo por el que nunca se habian visto.
+El escaner de D1 leia los colores con un regex `rgba?(...)`. Chrome devuelve
+`oklab(...)` para cualquier color con alfa de Tailwind, asi que los saltaba:
+en los temas de vidrio media 63 de 3,698 nodos y reportaba "0 bajo AA".
+Reescrito para que el color lo convierta el navegador (canvas de 1px) y para
+COMPONER el alfa sobre el fondo. Con eso, en los temas Solid —donde los
+fondos son opacos y todo es medible— aparecieron 421 nodos en 28
+combinaciones. **421 -> 23.**
+
+La causa dominante era una sola idea, y es la otra mitad de §25.5: una
+superficie SIEMPRE-OSCURA (sidebar, tooltip) hereda los tokens de TEXTO del
+tema activo. En liquid/dark no se nota porque ya son claros; en Solid, que es
+un tema CLARO, resolvian a valores oscuros sobre fondo oscuro:
+  · badge "Proximamente" del menu: 2.39:1
+  · tooltip "Clic para ver horas": 2.07:1
+Se fijan ahi los tokens del tema oscuro.
+
+Lo demas:
+  · `--text-secondary`/`--text-tertiary` de solid-dark median 4.92:1 sobre la
+    TARJETA (por eso pasaron T2) pero 3.58:1 sobre superficies ELEVADAS
+    —chips, filas resaltadas—. 191 nodos, el grupo mas grande. Suben a
+    valores que pasan sobre las tres superficies, y sin alfa: la
+    transparencia era justo lo que hacia depender el resultado del fondo.
+  · 133 usos de `text-success|warning|danger` como color de TEXTO -> variante
+    `-text`. Son tokens de RELLENO: en blanco dan 2.35-3.76:1, sus `-text`
+    dan 5.4-7.1. Es la regla de N2, que nadie verificaba.
+  · etiqueta de version del sidebar: `text-white/20` = 1.83:1 -> /55 = 6.24.
+
+Zoom 200% y reflow a 320px (WCAG 1.4.4 y 1.4.10, nunca probados): 0 rutas con
+desborde horizontal. Impresion: 0 nodos bajo AA.
+
+QUEDAN 23 nodos en 4 combinaciones, todos en los temas Solid y documentados
+en el plan: 16 de un `text-danger` en un tooltip del Inicio, 6 del valor de un
+`LiquidSelect` en modo `bare` que hereda color (un intento de arreglo lo
+empeoro a 1.8:1 y se revirtio), y 1 a 4.45:1 (0.05 del minimo).
+
+## v2.223.0 — MIN·MAX F4: el candado por sucursal existia SOLO en el cliente
+
+F4.1 — psp_insert/psp_update usaban auth_can_edit_any(['minmax','pedidos'])
+sin mirar erp_sucursal_id: con can_edit en CUALQUIERA de los dos modulos se
+podia escribir el MIN/MAX de CUALQUIER sucursal por PostgREST. Lo unico que lo
+impedia era `lockedErpId` en el frontend.
+
+El plan hablaba del rol 12 (1 empleado). Medido en prod son 27: rol 12 (minmax
+BRANCH), rol 19 Jefe/a de Sala (pedidos BRANCH, 6) y rol 30 Dependiente de
+Farmacia (pedidos BRANCH, 20). Los dos ultimos no tienen can_edit en minmax,
+pero auth_can_edit_any es un OR sobre el array: les alcanzaba con pedidos.
+
+El scope se expresa con un helper nuevo, auth_can_edit_scope_all, y NO con
+`auth_module_scope(...) = 'ALL'`: auth_module_scope devuelve 'ALL' por defecto
+cuando el rol no tiene fila para ese modulo, asi que habria dado acceso total a
+quien solo tiene minmax BRANCH. El helper exige can_edit Y scope='ALL' en la
+MISMA fila. Todas las llamadas auth_* envueltas en (SELECT ...) — sin el
+initplan se evaluan por fila, que es el outage del 2026-07-08.
+
+Y el trigger de Bodega pasa a SECURITY DEFINER. Sin eso el scope rompia el
+guardado de esas 27 personas: escribir su propia sucursal dispara el trigger,
+el trigger escribe la fila de la sucursal 6 — que no es la de nadie — y la
+policy lo rechazaba con "new row violates row-level security policy". La fila
+de Bodega no es un dato del usuario: es una suma que mantiene el sistema.
+Probado con el empleado real de cada caso: su sucursal 1 fila, otra sucursal 0,
+Bodega a mano 0.
+
+Un detalle que aparecio probando: scope_all(['minmax']) es FALSE para el rol 12
+(su minmax es BRANCH) y su branch mapea a Bodega, asi que el guard con el array
+corto lo dejaba descartando borradores unicamente de Bodega — que ni se calcula
+ahi. El array correcto es el de las policies, ['minmax','pedidos'].
+Con ese array el guard de las RPCs es INERTE hoy (los 6 roles con can_edit en
+minmax resuelven todos a ALL); se agrega igual porque son SECURITY DEFINER y
+saltean las policies por completo.
+
+F4.2 — decided_by venia del navegador mientras published_by, en la misma tabla,
+ya se resolvia con auth.email(). Ahora las dos salen del token. El parametro
+p_decided_by se recibe e IGNORA: cambiar la firma antes de que el frontend deje
+de mandarlo rompe la aprobacion entre el deploy de BD y el de Vercel — el
+cliente deja de mandarlo en este commit y la firma se limpia despues.
+zero_out_product_all_branches deja de hardcodear VALUES (1)…(7) y lee
+erp_sucursal_map (con el hardcode, sumar una sucursal dejaba el producto
+retirado "en todas las salas" menos en la nueva, en silencio).
+
+F4.3 — la decision de ABC/XYZ documentada en CLAUDE.md: son SOLO clasificacion
+(reorder plano en 25 dias, buffers en 0, lead_time NULL en las 18,364 filas),
+no mueven ningun numero, y no hay que "arreglarlo".
+
+F4.4 — el recalculo mensual disparaba a las 15:00 UTC, en plena ventana de los
+syncs por minuto (12-23,0-5). Movido a 09:00 UTC: dentro de 06:00-11:59 y
+despues del refresh del rollup de ventas (06:30), asi arranca con las unidades
+reconciliadas.
+
+## v2.222.0 — MIN·MAX F3: la carga baja de 932 ms a 287 ms en Bodega
+
+F3.1 — el CTE `live_sales` de get_stock_analysis escaneaba 574,848 lineas de
+sales_invoice_items + 133,260 facturas EN CADA CARGA (983 ms de 1,085 ms
+medidos) y todo para pisar dos columnas. Ahora sale de product_sales_rollup:
+~16 K filas, sumadas en vivo por el mismo trigger que ya mantiene
+product_last_sale y reconciliadas por un job diario a las 06:30 UTC (la cola
+de la ventana movil no la puede recortar un trigger de INSERT, y ahi tambien
+se corrigen las anulaciones y los resyncs mensuales).
+
+Medido: Salud 1 472 → 186 ms, Bodega 932 → 287 ms. Verificado fila por fila
+ANTES de tocar la funcion, como pedia el plan: 2,416 filas en Salud 1 y 3,548
+en Bodega, 0 diferencias en unidades y en velocidad de 30 dias — ni en el
+texto.
+
+Ojo con la verificacion: comparar un hash de la salida antes/despues NO sirve
+en esta tabla. inventory se sincroniza cada minuto (crecio 70 filas y entraron
+2 facturas mientras yo media), asi que el baseline se mueve solo. Hay que
+comparar las piezas dentro de un MISMO snapshot.
+
+F3.2:
+- inventory se escaneaba dos veces por llamada (inv_base + inv_all_pres). Una
+  sola pasada. Al compararlas aparecio un no-determinismo PREEXISTENTE: el
+  `jsonb_agg(... ORDER BY factor DESC)` de `presentations` no desempata, asi
+  que cuando dos presentaciones comparten factor ("CAJA " y "CAJA X 3", ambas
+  factor 3) el orden depende del orden de lectura. 8 productos de Bodega. Las
+  unidades son identicas; es cosmetico y queda anotado.
+- El indice (erp_sucursal_id, updated_at, erp_product_id) que el comentario de
+  fetchStockParamsUpdates ya daba por hecho y no existia. El polling de Bodega
+  corre cada 5 s por pestaña: leia las 2,501 filas de la sucursal y las
+  descartaba todas por filtro. Buffers 245 → 10.
+- El bloque de Bodega de publish_stock_params reescribia ~3,385 filas por
+  publicacion cambiaran o no (prohibido por CLAUDE.md). Con el guard
+  IS DISTINCT FROM: una publicacion sin cambios reales escribe 0. Y quedo a la
+  vista que ese bloque es casi siempre redundante — el trigger de Bodega ya
+  habia escrito los mismos valores durante el UPDATE de la sucursal
+  (verificado: Bodega 101/150 → 104/153 con bodega_updated = 0).
+- Los dos RPC de costo se disparaban en CADA celda guardada (~200 ms de BD por
+  edicion, y con Enter se edita en rafaga). Debounced a 900 ms: los dos
+  calculan un total de la sucursal, solo importa el ultimo.
+
+Lo que NO se hizo de F3.2, con motivo:
+- `activo = true` en el CTE pres_factors: seria un BUG. pres_factors no es un
+  catalogo de opciones (ese es catalog_pres, y ahi el filtro si va): es la
+  tabla de CONVERSION de unidades. Filtrarla haria que una presentacion
+  desactivada con existencia caiga en COALESCE(factor,1) y una caja de 100 se
+  cuente como 1 unidad — stock subcontado en silencio. Medido: de 23,675 filas
+  de inventario, 0 perderian factor hoy, o sea que no arregla nada y deja la
+  trampa armada.
+- No devolver las filas is_catalog_only: el cliente NO las descarta siempre
+  (useMinMaxData:825 las muestra con el filtro "no_data" y al buscar), asi que
+  excluirlas obliga a re-consultar al filtrar o al teclear una busqueda. No
+  vale cambiar una busqueda instantanea por 1.5 MB menos en la primera carga.
+
+## v2.221.0 — MIN·MAX: el par invalido ya no llega al publish (F1 del
+PLAN-MINMAX-Y-CANDADO), y el candado tapa su ultimo agujero (cierre de F0).
+
+F0 (cierre): calculate_stock_params era la unica de las 23 RPCs que exime a
+service_role, porque la llama el cron auto-calculate-minmax el dia 1. Con el
+modulo en mantenimiento, ese recalculo reescribia el catalogo entero por
+debajo de quien estaba trabajando. Ahora chequea el candado ANTES de todo y
+aplica tambien a service_role: para el cron devuelve
+{ skipped:true, reason:'module_locked' } — el contrato que la edge function ya
+sabe registrar como sucursal SALTADA — y para una persona lanza MODULE_LOCKED
+con el nombre del titular, en vez del PERMISSION_DENIED generico que mentia
+("se requiere permiso de edicion" cuando el permiso existe).
+
+F1.1: ArrowLeft desde MAX era el UNICO de los 5 caminos de guardado sin
+validacion, y como hay preventDefault() nunca mueve el cursor dentro del
+numero: siempre salta de celda y guarda. Ahora valida como sus hermanos.
+
+F1.2: la defensa en los 3 lugares donde se escribe el par.
+- psp_draft_pair_valid reemplaza a psp_draft_max_gte_min (que dejaba pasar
+  max = min). El plan decia "hoy 0 filas lo violarian": eran 4 (residuo de
+  borrador descartado en Salud 1), anuladas aca.
+- El trigger de Bodega clampeaba el MIN hacia arriba pero no el MAX: si la Σ
+  de MAX quedaba <= la Σ de MIN, el UPSERT violaba el CHECK y abortaba la
+  escritura DE LA SUCURSAL que lo disparo.
+- publish_stock_params derivaba MIN y MAX con dos reglas incompatibles (una
+  bajaba el MIN, la otra subia el MAX). Con (12,12) daba (12,12) y ABORTABA EL
+  LOTE ENTERO. Ahora un solo CTE ordena el par y lo separa. Verificado sobre
+  los 81 pares posibles: identico en los 61 que hoy dan resultado valido,
+  distinto solo en los 20 que hoy se caen.
+
+F1.3: mmcr_pair_valid alinea las solicitudes con el invariante real (antes
+(0,5) pasaba la constraint de la solicitud y explotaba al aprobarla), y
+approve_minmax_requests_bulk deja de meter las violaciones de constraint en
+skipped_not_found — la UI las traducia como "ya decidida por otra persona",
+o sea una carrera entre aprobadores, cuando era una solicitud inaplicable.
+
+F1.4: translateDbError pasa a helpers.js (lo usan dos vistas) y cubre los 7
+toasts de guardado que mostraban el texto crudo de Postgres.
+
+Y las 3 filas de La Popular con MAX sin MIN (ACIDO BORICO, LEVUSOL, TEGADERM):
+nunca publicadas, 0 ventas en 6 meses, MAX tecleado a mano el 18-jun con el
+MIN vacio porque la UI guarda celda por celda. Su par efectivo se lee (0,3) y
+habria hecho fallar "descartar borrador". MIN=1 por decision de Alex, que es
+el mismo min-lift que ya aplican el publish y el trigger.
+
+## v2.218.0 — Candado de mantenimiento por modulo (ver commit cb497d40)
+
+## v2.217.0 — Rotado ADMIN_INVOKE_SECRET, la credencial que quedo en claro
+
+Contexto (PLAN-SUPABASE-CIERRE.md, hallazgo lateral de C2): el secreto de
+invocacion de crons vive en texto plano dentro de 7 migraciones viejas en
+supabase_migrations.schema_migrations. La migracion 0B.2 lo movio a Vault,
+pero MOVER UN SECRETO A VAULT NO LO ROTA — el valor seguia siendo el mismo.
+Es la credencial que 13 edge functions validan como Authorization: Bearer y
+que ~25 cron.job.command leen de Vault.
+
+Rotado a 96 caracteres (openssl rand -hex 48), aplicado a los dos lados con
+el mismo valor: `supabase secrets set` (lo que validan las funciones) y
+`vault.update_secret` (lo que mandan los crons).
+
+El valor nuevo NUNCA paso por el contexto del agente ni quedo en el
+transcript: vivio solo en una variable de shell, y los comandos llevan la
+referencia a la variable, no el valor. Rotar un secreto imprimiendolo en un
+log seria cambiar una exposicion por otra.
+
+update_secret se llamo con 2 argumentos a proposito: su cuerpo usa
+coalesce(new_name, s.name) y coalesce(new_description, s.description), asi
+que nombre y descripcion se preservan — verificado leyendo la definicion
+antes de tocar produccion, no asumido.
+
+Verificacion medida: las 14 respuestas HTTP posteriores a la rotacion fueron
+200, CERO 401 — no hubo ni ventana de fallo, las funciones tomaron el valor
+nuevo de inmediato. Y no solo respondieron: 6 corridas de dte y 8 de
+inventory posteriores escribieron datos con success=true.
+
+Rollback: el valor viejo quedo respaldado dentro de Vault como
+`admin_invoke_secret_prev_20260729`, copiado de decrypted_secrets sin salir
+nunca de la BD. BORRARLO tras un dia sin incidentes.
+
+Lo que sigue en claro en schema_migrations es el valor VIEJO, que ya no
+autoriza nada. CRON_INVOKE_SECRET no se roto y no hace falta: se creo
+justamente para no heredar esta exposicion.
+
+## v2.216.0 — Los 6 crons horarios de DTE, consolidados en uno
+
+Continuacion de v2.209.0, que consolido los 13 de cada minuto. Quedaban 6
+compartiendo el horario EXACTO '0 12-23,0-5 * * *' — y encima caen en el
+minuto :00, el mismo en que dispara el consolidado de cada minuto, asi que el
+pico real al tope de cada hora era ~10 conexiones simultaneas.
+
+Los 6 llaman a la MISMA edge function (sync-dte-sales) con el MISMO rango
+—del 1 del mes hasta ayer, que es el resync de arrastre— y solo cambia
+branchId (2, 4, 25, 27, 28, 29). Se consolidan igual: net.http_post es
+asincrono, asi que los 6 encolados salen en una sesion con UNA conexion.
+Payloads verificados identicos a los originales antes de aplicar.
+
+Colisiones restantes: solo las 6 mensuales (1 vez al mes, dia 1) y 2 cada
+10 min. El pico al tope de hora bajo de ~10 a ~4.
+
+## v2.215.0 — (ver entrada anterior)
+
+## v2.213.0 — El backup semanal llevaba 17 dias sin correr, en silencio
+
+Lo encontro la alerta que se acababa de arreglar en v2.211.0: backup_sync_log
+tenia 0 filas. No era ruido, era cierto.
+
+Causa: `backup-critical-tables` quedo con verify_jwt=true. Su cron le manda
+el secreto de Vault como Bearer, que NO es un JWT, asi que la plataforma lo
+rechazaba con 401 ANTES de ejecutar una linea de la funcion — y la funcion ya
+tiene su propio control de acceso adentro (compara contra ADMIN_INVOKE_SECRET),
+que nunca llegaba a correr. Es exactamente la trampa documentada en la memoria
+reference_edge_function_deploy_workaround: un redeploy sin repetir
+--no-verify-jwt resetea el flag al default de Supabase.
+
+Timeline reconstruido:
+  2026-07-12  ultimo backup exitoso (carpeta en el bucket, 28 archivos)
+  2026-07-16 17:09 UTC  redeploy de la funcion sin el flag → verify_jwt=true
+  2026-07-19 y 07-26    domingos sin backup, sin aviso
+  2026-07-29  redeploy con --no-verify-jwt + corrida manual de verificacion
+
+Verificado de punta a punta, no solo desplegado: se disparo con el mismo
+mecanismo del cron (net.http_post leyendo el secreto de Vault dentro de la BD)
+y devolvio HTTP 200 con success=true, tables_ok=23, tables_failed=0,
+total_kb=1317, y 23 archivos nuevos en el bucket privado `backups`.
+
+Se reviso si habia mas victimas del mismo dia cruzando los 29 crons que
+invocan edge functions contra su verify_jwt. `auto-copy-weekly-roster` salio
+como candidato (verify_jwt=true + cron con secreto), pero NO esta roto: ese
+cron manda la anon key como Authorization —un JWT valido— y valida el secreto
+aparte en el header x-cron-secret. Los horarios se siguen copiando cada
+sabado, confirmado en employee_rosters. backup-critical-tables era el unico.
+
+Sin cambio de codigo: la funcion estaba bien, lo que estaba mal era el flag
+del deploy. Por eso el arreglo no aparece en el diff.
+
 ## v2.212.0 — auditoría con los modales ABIERTOS: seis capas que no eran diálogos.
 
 Al confirmar el cierre de v2.204.0 quedó claro que todo lo medido hasta ahí era
@@ -3203,6 +5077,153 @@ Verificado: `gate:design` 0/25 · contraste 29/29 rutas en 0 · 892 controles
 táctiles medidos con 7 bajo 44 (las barras del gráfico) · **dentro de los
 modales: 1.427 nodos de texto y 234 controles, 0 y 0**.
 
+## v2.211.0 — Dte e inventario entran a las alertas de sync, y se apaga una
+falsa alarma diaria que llevaba dos semanas.
+
+Contexto: al revisar si algo avisaba cuando un sync se caia, la respuesta era
+NO para los 13 syncs por minuto. check-sync-health-alerts los excluia a
+proposito "porque ya tenian lo suyo", pero eso no se sostiene:
+  - dte tenia check-sales-alerts, que alerta de NEGOCIO (ventas sin confirmar
+    por Hacienda). Si el sync deja de correr no entran ventas, no hay nada
+    pendiente que detectar, y la alerta se queda MUDA.
+  - inventory tenia useSyncMonitor, un toast del navegador: solo salta si
+    alguien tiene el portal abierto, no queda registrado, y necesita una fila
+    con success=false.
+El modo de falla real — el cron no consigue conexion y la funcion NUNCA se
+ejecuta — no escribe ninguna fila, asi que no disparaba nada. Paso 375 veces
+en dos semanas sin que nadie se enterara.
+
+Lo aplicado en check-sync-health-alerts:
+- dte e inventory con umbral de 15 min, medido en minutos ACTIVOS. Sus crons
+  duermen 06:00-11:59 UTC (verificado: esas horas tienen CERO filas en
+  v_sync_health, el resto ~480/hora), asi que con reloj de pared habrian
+  marcado 6h de antiguedad a las 12:00 y gritado en falso cada mañana.
+  activeMinutesBetween() descuenta ese hueco: probado con 6 casos, la
+  reanudacion de las 12:00 da 1 minuto activo (no alerta) y un caido real de
+  20 min da 20 (alerta).
+- Los fallos de dte/inventory vienen en RAFAGAS (en 24h: los 47 de dte en 1
+  sola hora, los 72 de inventory en 2; 0.7% y 0.85% de las corridas), y un
+  blip suelto se cura al minuto siguiente. Se exigen 2 fallos seguidos.
+
+BUG PREEXISTENTE ARREGLADO de paso: la funcion pedia las ultimas 1000 filas
+de TODOS los dominios juntos, y los ruidosos ahogaban a los tranquilos. Las 7
+filas de minmax (ultima: 17-jul) caian fuera del corte y el bloque de "ningun
+registro" concluia "minmax nunca ha corrido" — una falsa alarma DIARIA desde
+el 16-jul (12 de minmax y 14 de backup en sync_alert_log). Ahora es una
+consulta por dominio. Verificado en la corrida de las 16:40: alerts=1, no 2.
+
+Queda una alerta legitima: backup_sync_log tiene 0 filas desde siempre. El
+cron backup-critical-tables-weekly corre los domingos y reporta "succeeded"
+(solo encola el HTTP), pero la funcion tiene verify_jwt=true y el cron manda
+el secreto como Bearer, no un JWT — el mismo 401 que ya mordio a
+auto-calculate-minmax. Sin tocar: arreglarlo hace que empiecen a correr
+backups reales, y eso es decision del usuario.
+
+## v2.209.0 — Los dos hallazgos laterales de C4, corregidos y medidos
+
+1. SLOTS DE CONEXION. Los 13 crons de sync por minuto compartian el horario
+EXACTO '* 12-23,0-5 * * *', sin desfase, y cron.max_running_jobs=32, asi que
+pg_cron los lanzaba a los 13 a la vez — cada job es un background worker con
+su propia conexion. Con max_connections=60 y 52 ya en uso (42 IDLE: Storage
+API retiene 15, PostgREST 13), los ~8 libres se agotaban y el que llegaba
+tarde recibia "FATAL: remaining connection slots are reserved...". Esa era la
+causa medida de los 375 fallos de cron.
+Los 13 llamaban a la MISMA edge function, solo cambiaba el body, asi que se
+consolidaron en un job que hace los 13 net.http_post en una sesion. Funciona
+porque net.http_post es asincrono: encola en net.http_request_queue y retorna,
+y el worker de pg_net hace el HTTP. Medido: succeeded, 13 rows en 53 ms, UNA
+conexion. La frecuencia no cambio.
+Conexiones libres 8 → 18; crons fallando en una ventana de 15 min: 0.
+
+2. COLLATION VERSION MISMATCH. datcollversion 153.120 contra glibc real
+153.121 — Supabase actualizo la imagen base y con ella glibc. Emitia un
+WARNING en CADA conexion nueva (log inservible) y dejaba en duda el orden de
+los indices de texto: si el salto cambio el orden de alguna cadena, un indice
+puede devolver resultados INCOMPLETOS en comparaciones de rango, sin error.
+Corregido en tres pasos, en este orden — invertirlo apaga el aviso sin
+arreglar nada: REINDEX CONCURRENTLY de los 71 indices colacionables (151 MB
+en 37 tablas) → verificar que ninguno quedo invalido (un CONCURRENTLY
+interrumpido deja un indice que Postgres deja de usar EN SILENCIO) → ALTER
+DATABASE REFRESH COLLATION VERSION. Los tres trigram _norm de sales_invoices
+se dejaron para el final.
+Medido: 153.121 = 153.121, 0 indices invalidos de 71, y la busqueda de
+facturas sigue sobre el trigram reconstruido (84 ms en caliente).
+
+Sigue pendiente y NO es de codigo: los pools idle de Storage/PostgREST son
+internos de Supabase; se atacan con Supavisor en modo transaccion (dashboard).
+
+## v2.207.0 — Se recuperaron los JSON originales que se creian perdidos
+
+Hasta Fase 3.1 (2026-07-22) el sync guardaba solo el JSON normalizado
+(unwrapDteEnvelope + repairMojibakeDeep), descartando los bytes crudos del
+adjunto — y con ellos el sobre de Hacienda (selloRecibido + firmaElectronica)
+cuando el proveedor lo mandaba. La auditoria lo dio por NO backfilleable
+("los bytes originales solo viven en Gmail"). Era falso: viven en Gmail, si,
+pero cada documento conserva su `source_message_id`, asi que se pueden
+volver a pedir.
+
+Nuevo modo `backfill_orig_json`. Resultado sobre los 1,169 pendientes:
+**1,336 de 1,343 documentos con original = 99.5% de cobertura**, cero
+errores. Los 7 que faltan son todos de Movistar, que manda el DTE como LINK
+y no como adjunto — no hay adjunto que recuperar, y el modo los cuenta
+aparte (`sinAdjunto`) en vez de tratarlos como falla.
+
+Verificado antes de correr los 1,169: muestra de 8, y los originales pesan
+consistentemente MAS que el normalizado (de 3 a 1,066 bytes) — o sea que son
+archivos genuinamente distintos y no una copia; los de +800 bytes son los que
+traen el sobre. Se compara `codigoGeneracion` del adjunto contra el del
+documento antes de guardar, asi que un correo con varios DTE no cruza
+archivos.
+
+Cursor `after_id` obligatorio (no filtrar por "sigue en NULL"): los 7 de
+Movistar fallan SIEMPRE, y sin cursor se quedan en la cabeza de la cola y el
+backfill no converge nunca. Es el mismo bug de E6 y H7, que ya mordio dos
+veces en este archivo.
+
+Costo: +17 MB de storage (339 -> 356 MB). El bucket sigue en 0.36% de los
+100 GB que incluye el plan Pro — verificado contra la documentacion, no de
+memoria. El limite real del proyecto no es el storage sino la BASE (8 GB
+incluidos por proyecto, hoy ~1 GB).
+
+Ademas: se quito la columna "Tipo" (regimen fiscal) de la tabla de
+Proveedores. Mostraba el MISMO badge "Contribuyente IVA" en los 99 —
+verificado, 99 de 99 tienen NRC—, o sea informacion cero por 175px en una
+tabla que ya desbordaba. Segunda columna que sale por lo mismo, despues de
+Giro en v2.27.4; el dato sigue en el detalle, donde ademas explica la
+consecuencia fiscal. La tabla paso de 1,288px a 1,113px contra 1,044
+disponibles: practicamente entra, y son 163px MENOS que al empezar la
+sesion, habiendo sumado una columna de seleccion y el ordenamiento.
+
+## v2.205.0 — C3 y C4 del plan de cierre Supabase: 11 funciones SECURITY DEFINER
+dejaron de saltarse el RLS, y el 18% de rollbacks resulto ser historico.
+
+C3 — De las 69 funciones SECURITY DEFINER que `authenticated` podia llamar,
+24 no tenian ningun gate `auth_*`. Clasificadas una por una:
+  * 8 RPCs de pedidos → pasadas a SECURITY INVOKER. La policy de `pedidos`
+    exige modulo `pedidos.can_view` + scope de sucursal, y estas la saltaban
+    entera. Probado en prod dentro de BEGIN..ROLLBACK con un empleado real
+    (Regente de Enfermeria, SIN permiso de pedidos): get_pedidos_en_curso()
+    devolvia 46 filas y get_pausa_razones_stats() 7 — ahora 0 y 0. Con
+    permiso: Bodega (ALL) 46 y sucursal (BRANCH) 8, que es el scoping
+    funcionando. Afecta a 26 empleados con scope=BRANCH, que pasan a ver
+    solo su sucursal; los 12 con ALL no cambian.
+  * 3 revocadas de authenticated (solo cron/edge las llaman):
+    notify_missing_roster, upsert_proveedor_from_dte, validate_role_headcount.
+  * BUG encontrado de paso: notify_missing_roster filtraba empleados por
+    status='ACTIVE', valor que no existe en la tabla (los 50 son 'ACTIVO'),
+    asi que el aviso de horario sin configurar iba a target_type='ALL' — a
+    toda la empresa — en vez de solo a Talento Humano.
+  * Las 13 que quedan sin gate estan justificadas: 5 del kiosco (validan
+    device_token), 3 triggers (Postgres no deja invocarlos directo) y 5 que
+    solo leen tablas con policy USING(true), asi que no saltan nada.
+  Resultado medido: definer-para-authenticated 69 → 58; sin gate 24 → 13.
+
+C4 — El "18% de rollbacks" no es un problema activo. La tasa actual es
+3 rollbacks / 1,941 commits = 0.15%. El 17.4% es acumulado de toda la vida
+del cluster (stats_reset nunca se corrio) y esta dominado por incidentes ya
+cerrados, como el outage del 2026-07-08. Los crons tampoco son la causa:
+375 fallos sobre 108,895 corridas = 0.34%.
+
 ## v2.204.0 — cierre del sistema de diseño: los 4 residuos, y uno que nadie había visto.
 
 Cierra `PLAN-CIERRE-DISENO-2026-07-29.md` (F0–F6), que a su vez cierra lo que
@@ -3232,6 +5253,268 @@ el canónico, no en las vistas.
 Verificado: `gate:design` 0 en 25 categorías · `gate:doc` limpio · eslint limpio
 · escáner de contraste de D1 sobre las 29 rutas: **0 superficies blancas, 0
 nodos bajo AA** · movimiento con `prefers-reduced-motion`: **0** en los dos ejes.
+
+## v2.202.0 — Cierre de los pendientes chicos de la auditoria DTE
+
+H15 — "(sin match ERP)" vivia como una opcion DENTRO del select de Categoria,
+y para que funcionara hacia falta un segundo filtrado aparte. No es una
+categoria, y metida ahi no se podia combinar con una categoria real. Ahora
+es su propia seccion del FilterBar (Con / Sin match) y el doble filtrado
+desaparece. Medido: "sin match" da 46, que es el numero exacto de la BD, y
+combinarlo con "Mercaderia para reventa" da 3 — antes era imposible.
+
+H16 — la tabla no ordenaba por ninguna columna: orden alfabetico fijo, contra
+el estandar del proyecto, y justo en las dos columnas donde mas importa
+(cuantos documentos trae cada proveedor y hace cuanto que no le compramos).
+Ordenable por Proveedor / Categoria / Docs / Ultima compra, con desempate
+estable por nombre — sin eso, dos proveedores con el mismo docs_count
+bailaban de lugar entre renders.
+
+H13 — `get_purchase_dte_documents` YA devuelve `invalidacion_source` en cada
+fila, pero el visor lo volvia a pedir al servidor cada vez que se abria el
+modal. El RPC queda de respaldo para cuando el modal se abre sin pasar por
+la lista.
+
+Ancho de la tabla: seguia el hallazgo de que YA desbordaba antes de todo esto
+(1,276px de contenido en 1,044 disponibles — por eso v2.27.4 le quito la
+columna Giro). Primer intento fue ocultar Match ERP con `xl`, y medido
+resulto que la escondia hasta en 1440px: o sea, quitaba una columna en la
+pantalla donde se trabaja, y AUN ASI desbordaba. Mal negocio. Quedo en `lg`
+(desaparece solo donde ya no cabia) mas recorte de los max-w. Resultado:
+1,288px con las 8 columnas visibles, contra los 1,276 originales — se sumo
+una columna entera de seleccion y el ordenamiento por +12px netos.
+
+El desborde de fondo NO se arreglo y no se puede sin sacar una columna, que
+es decision del usuario (como lo fue Giro). Queda anotado en el plan.
+
+## v2.200.0 — 17 cuentas auth duplicadas borradas, FK sin indice, bucket sin limites
+
+La auditoria decia "42 cuentas huerfanas". Eran 10: tanto el informe como la
+primera consulta ignoraron que auth_employee_id resuelve tambien por `code`
+del user_metadata. Actuar sobre el numero del informe habria revocado 32
+cuentas de empleados ACTIVOS, una de ellas con login del dia anterior.
+
+Lo que si habia es duplicacion sistemica: casi todo empleado tenia 2-3 cuentas,
+en tres oleadas — nombre.apellido@farmalasa.app (marzo), <codigo>@staff.local
+(1-2 de julio) y <random>@staff.local (las del escaneo de carne, que son las
+que se usan). Se borraron 17, todas de la oleada de julio y todas sin ningun
+login, con dos guardas: nunca borrar la ultima cuenta de una clave, y nunca
+borrar una cuyo id sea el de un empleado. La segunda guarda importo: filtro
+varias nombre.apellido@ que nunca entraron pero cuyo id ES employees.id.
+92 -> 76 cuentas.
+
+Ademas: indice para sales_invoices.customer_id (unica FK sin indice que no es
+columna de auditoria, 336K filas) creado CONCURRENTLY para no bloquear los
+inserts del sync; y el bucket `backups` gano file_size_limit y
+allowed_mime_types, que le faltaban contra la regla #10.
+
+HIBP (proteccion de contraseñas filtradas) queda DESACTIVADO por decision
+explicita del usuario, no por olvido.
+
+## v2.199.0 — Se cerro a anon toda la superficie de funciones de negocio
+
+La regla #4 de CLAUDE.md (REVOKE ... FROM PUBLIC, anon) nunca se aplico
+retroactivamente: ~28 funciones de negocio tenian EXECUTE para PUBLIC, entre
+ellas close_ventas_month, upsert_customers, generate_wfm_snapshot,
+get_ventas_stats y get_vendedores_resumen. Ninguna filtraba —son INVOKER, RLS
+sigue aplicando— pero cualquiera en internet podia invocarlas en bucle sin
+autenticarse, y cada llamada consume una de las 60 conexiones.
+
+CORRECCION a la auditoria: decia "5 funciones SECURITY DEFINER con anon, solo
+dos justificadas". Las cinco son el set pre-login del kiosco y las cinco son
+deliberadas — las tres que CLAUDE.md no lista (verify_kiosk_device,
+verify_kiosk_pin, verify_kiosk_authorization) son justamente las que
+construimos para reemplazar la comparacion client-side. Lo desactualizado es
+el doc, no los permisos.
+
+Quedan 31 funciones de pg_trgm/pg_net accesibles por anon: son internas de
+extension (revocarlas rompe los indices de trigram) y salen del namespace
+publico moviendo la extension, que es otro trabajo.
+
+## v2.198.1 — Se borra el conteo abandonado de Bodega (migracion, sin cambios de UI)
+
+Conteo TOTAL abierto el 10-jul: 4,782 lineas y CERO contadas en 19 dias. No es
+un registro de trabajo, es ruido — y con la regla de un solo conteo abierto
+por sucursal (C4) bloqueaba crear el ciclico en Bodega. Borrado autorizado por
+el usuario; va como migracion porque el modulo no tiene ruta de borrado
+(append-only a proposito), con guarda que aborta si alguien alcanzo a contar.
+
+## v2.198.0 — H5, segunda mitad: la UI para clasificar 99 proveedores sin
+hacerlo de a uno. Aprobada por mockup antes de construirla.
+
+Es el PRIMER patron de seleccion multiple en tabla del proyecto — no habia
+canonico que copiar, por eso paso por mockup. Si otra vista lo necesita,
+copiar de ProveedoresView: Checkbox canonico (nunca el input nativo), el
+"seleccionar todo" opera sobre la PAGINA visible y no sobre los 99 (marcar
+una casilla no deberia alcanzar filas que nadie esta viendo), y la barra de
+acciones existe solo mientras haya seleccion.
+
+Dos acciones separadas porque hacen cosas distintas: "Aceptar sugerencia" le
+da a cada proveedor LA SUYA (calculada desde su propio giro); el select le da
+a todos LA MISMA. El contador del boton cuenta solo los seleccionados que
+TIENEN sugerencia: con los 25 de la primera pagina marcados dice
+"Aceptar sugerencia (13)", asi que se ve solo que los otros 12 no la tienen.
+
+El aviso reporta lo que devuelve el RPC (filas que cambiaron de verdad), no
+cuantas se seleccionaron — si ya tenian esa categoria, dice que no cambio
+ninguna en vez de mentir.
+
+El gate:design cazo la barra: la habia escrito a mano en vez de usar
+`data-surface="card"`. Existe `data-tono="brand"` justo para esto.
+
+Medido al ejercitarla: la tabla YA desbordaba antes de este cambio (1276px
+de contenido en un contenedor de 1044 — de ahi que v2.27.4 le quitara la
+columna Giro). Se acoto el subtexto de la sugerencia con truncate + title
+para no empeorarlo: quedo en 1302, o sea +26px netos sobre lo que ya habia.
+El desborde de fondo sigue abierto, es anterior y aparte.
+
+## v2.197.0 — Se cerraron 24 de las 26 policies de escritura abierta
+
+El hardening del 2026-07-02 cubrio las LECTURAS pero dejo INSERT/UPDATE en
+`true`: cualquier empleado con el rol mas bajo podia escribir 18 tablas.
+Ahora quedan 2, las dos a proposito.
+
+Dos trampas que esto evito:
+
+ 1. product_locations y schedule_coverage tenian UNA sola policy, ALL con
+    `true` — y ALL cubre tambien SELECT. Reemplazarla por una gateada con
+    can_edit habria dejado SIN LECTURA a todo el que solo puede ver. Se
+    partieron: SELECT permisivo + escritura gateada.
+ 2. user_dashboard_prefs se llamaba "owner_*" pero era TO public con `true`:
+    cualquiera leia y escribia las preferencias de cualquiera. Ahi el gate
+    correcto es dueño real (user_id = auth.uid()), no modulo.
+
+attendance.INSERT queda abierta a proposito: el kiosco marca por esa via y
+marca por OTROS empleados (tablet compartida), asi que ni gate por modulo ni
+por dueño sirven — cualquiera de los dos rompe el marcaje. Necesita una RPC
+que valide el device token, igual que audit_logs necesita logging server-side.
+Es arquitectura, no una linea de policy.
+
+## v2.196.1 — H5, primera mitad: la regla que sabe clasificar proveedores
+
+99 de 99 proveedores estan sin categoria, asi que las 16 categorias, el
+filtro Categoria, el filtro Clase y la derivacion costo/gasto del detalle
+estan construidos y sin usar: filtrar por cualquier categoria devuelve 0
+filas, siempre. Clasificar 99 de a uno desde un modal es por que nadie lo
+hizo.
+
+Solo BD en este commit — la UI de asignacion masiva va con mockup aprobado
+antes (no hay patron canonico de seleccion multiple en el proyecto, asi que
+construirla de una seria inventar uno sin que nadie lo vea primero).
+
+`suggest_proveedor_categoria_id(desc_actividad)`: 14 patrones sobre el giro
+fiscal que ya viene en los 99 registros desde el propio DTE. Cubre 68 de 99
+proveedores = 1,958 de 2,192 documentos (89%), medido contra prod antes de
+escribirla. Case/acento-insensible porque el mismo giro convive hoy como
+"VENTA DE PRODUCTOS FARMACEUTICOS" y "Venta de productos farmacéuticos".
+
+Los ~11 ambiguos (supermercados, alimentos, lacteos, bebidas, abarrotes) NO
+reciben sugerencia A PROPOSITO. En una farmacia pueden ser mercaderia para
+reventa o insumo interno, y PriceSmart es literalmente las dos segun la
+factura — lo trajo el usuario. Sugerir ahi seria adivinar. La solucion de
+fondo es H5b: categoria a nivel de DOCUMENTO con el proveedor como default.
+
+La sugerencia viaja en get_proveedores_maestro (informativa, no se aplica
+sola) y hay dos RPC de escritura: set_proveedores_categoria_bulk (todos la
+MISMA) y apply_proveedores_categoria_sugerida (cada uno la SUYA). Las dos
+devuelven cuantas filas cambiaron de verdad, para que la UI no reporte el
+numero de seleccionados como si fuera el de aplicados.
+
+## v2.196.0 — Fase B de la auditoria DTE: dos cosas del sync que se rehacian
+solas. Cambio de edge function, sin efecto visual.
+
+H10 — `TIME_BUDGET_MS` (100s) era el presupuesto de UNA CUENTA, y las
+cuentas se recorren en serie. El wall-clock real de una invocacion era
+N x 100s: con 2 correos ya daban ~200s, y conectar el tercero (pendiente
+conocido) lo llevaba a ~300s contra el limite de la plataforma. Si la
+invocacion se cortaba ahi, la ultima cuenta perdia su trabajo y se
+re-escaneaba entera. No habia perdida de datos — markMessagesProcessed
+corre dentro de processAccount y solo con mensajes ya completados — pero si
+trabajo tirado y un hasMore que nunca llegaba al cliente. Ahora el deadline
+es absoluto y se reparte entre las cuentas: la que no alcanza devuelve
+hasMore y el boton reintenta solo (E5 ya hacia eso). Esto DESBLOQUEA
+conectar el tercer correo.
+
+H7 — el insert guardaba `items_text: extractItemsText(json)`, que es null
+cuando el DTE no trae cuerpoDocumento (tipo 09, FSE tipo 14). El backfill ya
+usaba '' a proposito, con un comentario explicando que dejarlo en NULL hace
+que la fila se re-procese; el insert no seguia ese criterio. Cada corrida
+futura del backfill re-descargaba de Storage todos los tipo 09 acumulados
+desde la anterior (~2/dia) para volver a concluir lo mismo. Convergia, pero
+la deuda se rehacia sola todos los dias. Ahora los dos caminos usan el mismo
+criterio; las 21 filas en NULL pasaron a ''.
+
+Verificado en prod: edge function v47 desplegada con --no-verify-jwt (esa
+funcion tenia verify_jwt=false y un redeploy sin el flag lo resetea a true,
+trampa ya documentada), y dry_run real contra las 2 cuentas en UNA sola
+invocacion: 5.6s, sin errores, hasMore=false.
+
+## v2.195.0 — Tres suscripciones de Realtime estaban muertas en silencio
+
+La auditoria (P6) proponia SACAR tablas de la publicacion. Medido, eso era
+incorrecto en dos puntos: role_permissions SI se usa (AuthContext refresca
+permisos en vivo), y el costo no es decodificar sino el POLL — 651,041
+llamadas de la funcion de sondeo a 8.9 ms, corra o no un cambio; las 10
+tablas publicadas suman 241 escrituras en total.
+
+Lo que si estaba mal es lo contrario: el frontend se suscribia a tres tablas
+que no estaban en la publicacion, asi que esos eventos nunca llegaban.
+  inventory_sync_log  toast + notificacion ante sync fallido (AppLayout)
+  pedido_items        refresco de items del pedido activo
+  ventas_perdidas     badge de pendientes
+No era lento: no funcionaba. Ahora 12 de 12 tablas alineadas.
+
+Ademas, primer lote de policies de escritura abierta (F2.1): products,
+kiosk_devices, timesheets y employee_events pasaron de `true` a
+auth_can_edit_any con el wrapper (SELECT ...) obligatorio. 26 -> 20.
+
+## v2.192.0 — Fase A de la auditoria DTE+Proveedores: seis cosas que la vista
+prometia y no cumplia.
+
+La mas cara de las seis no se ve en pantalla. `update_proveedor_manual`
+escribia `percibe_1_override = p_percibe_1` en CADA guardado, tocara o no el
+usuario ese campo. La columna existia justo para el tri-estado (NULL =
+automatico), y `upsert_proveedor_from_dte` SI la respeta — o sea que
+entrarle a un proveedor a corregirle el telefono congelaba su percibe_1
+contra sus propios DTE, para siempre, sin forma de volver a automatico desde
+la UI. Dos filas ya habian caido (CAESS y CTE, ambas editadas cuando se
+agrego el campo Alias). Ahora el cliente manda solo el override tri-estado y
+`percibe_1` lo deriva el RPC; las 2 filas volvieron a NULL.
+
+Casi se colo un bug nuevo al arreglarlo: `get_proveedores_maestro` NO
+devolvia `percibe_1_override`, asi que el form flamante habria mostrado
+"Automatico" siempre y el primer guardado habria borrado un override real
+sin avisar. Se agrego la columna al RPC en la misma migracion.
+
+Las otras cinco:
+- Tres tooltips mostraban el codigo fuente en pantalla: `title="row.json_path
+  ? 'Descargar JSON' : 'Sin JSON'"` — la expresion quedo DENTRO de la cadena.
+  Build, lint y gate:design pasan en verde porque la forma es valida. Son los
+  unicos 3 del repo (barrido global).
+- La card "Sin Proveedor" contaba 143 documentos como "pendiente de
+  emparejar". Los 143 eran tipo 09, que el sync excluye A PROPOSITO
+  (_shared/proveedorFromDte.ts: el emisor es un banco, no un proveedor). Una
+  lista de tareas imposibles que crecia ~2/dia, con boton de "Emparejar" que
+  no podia resolver nada. Ahora dicen "No aplica".
+- "Ver documentos" desde un proveedor navegaba sin rango de fechas, asi que
+  caia en el mes actual: el usuario acababa de leer "Ultima compra:
+  12/06/2026" y aterrizaba en "Sin facturas en el periodo". Ahora el link
+  lleva el mes de esa ultima compra.
+- El detalle de proveedor ignoraba el `canEdit` que la vista ya le pasaba:
+  un usuario de solo lectura veia todo editable, escribia, y recibia el
+  FORBIDDEN crudo del RPC (que si valida). La UI prometia lo que el servidor
+  rechaza.
+- Los filtros de las cards no contaban como filtros: con "Invalidados"
+  activo, la barra decia que no habia ninguno y "Limpiar" no lo apagaba.
+
+Ademas: el selector de Emparejar/Clasificar en Revision marcaba
+documentsLoaded ANTES de que resolviera el fetch y sin catch — si fallaba,
+quedaba vacio el resto de la sesion, sin aviso ni reintento. Y se borraron
+dos funciones muertas de la BD: el overload de 7 args de
+update_proveedor_manual (el CREATE OR REPLACE del alias habia creado una
+funcion NUEVA en vez de reemplazar) y set_purchase_dte_supplier, sin
+llamadores desde que la Fase 2.1 movio el match al maestro. Ambas eran
+SECURITY DEFINER de escritura con GRANT vivo.
 
 ## v2.191.0 — buscar una factura tardaba 7.5 segundos.
 
@@ -3325,6 +5608,79 @@ días, fallos 90.
 `net._http_response` resultó ser 2,203 filas vivas dentro de **205 MB** — páginas
 liberadas que nunca volvieron al SO. Con `VACUUM FULL` de ambas, la base pasó de
 **1,463 MB a 1,134 MB**.
+
+## v2.187.0 — Auditoria de puntos ciegos, P3 + dos reglas nuevas en el gate
+
+  11. prefers-reduced-motion apagaba `animation` clase por clase y NO tocaba
+      una sola `transition`: ~150 elementos seguian moviendose de verdad (el
+      barrido de 0.7s de los botones, el -translate-y del hover de cada
+      tarjeta, el scale de las fotos). Ahora 0. NO se apaga `transition` a
+      secas: una transicion de COLOR no es movimiento y quitarla empeora la
+      interfaz - el estado cambiaria de golpe, justo el salto que la
+      preferencia quiere evitar. Se neutraliza la geometria.
+  12. 15 iconos en tamanos arbitrarios al escalon de la rampa. Otros 3 se
+      REVIRTIERON: son marcas de agua decorativas (opacidad <=15%, detras del
+      contenido) y encogerlas cambiaba un peso visual deliberado.
+  13/14. 4 `title` que repetian el aria-label. Y la regla que faltaba en
+      15.10: title NOMBRA un control de solo icono, LiquidTooltip EXPLICA.
+      Los 208 title del portal no eran deuda - 204 son el unico nombre
+      accesible del control.
+
+DOS CATEGORIAS NUEVAS EN EL GATE, ambas bloqueantes en cero:
+`try-finally-mudo` y `title-redundante`. Encontraron 3 casos que se me
+habian pasado (NotificationBell, FacturasCompraView, TabInventario).
+
+Queda abierto y medido: 224 targets tactiles bajo 44px en 11 de 33 rutas. No
+se tocan a ciegas - el grueso son barras de grafico clickeables y celdas de
+grilla densa, donde 44px es incorrecto y WCAG 2.5.5 tiene excepcion. Es una
+pasada aparte, caso por caso.
+
+## v2.186.0 — Auditoria de los PUNTOS CIEGOS del gate: P1 y P2
+
+Reglas que DESIGN.md manda y design-gate.mjs no mide. 308 archivos + 33
+rutas reales en Chromium + 14 en WebKit iPhone. De 503 hallazgos en bruto
+quedaron ~40 reales; el resto eran detectores mintiendo (ver abajo).
+
+P1 - lo que rompe o engana al usuario
+  1. try/finally sin catch, 7 de 19. Si la RPC tira, el spinner se apaga y
+     la lista queda vacia: el usuario lee "no hay datos" cuando en realidad
+     fallo. Ahora los 7 avisan con toast.
+  2. Cuatro modales a mano -> ModalShell (EmployeeDetailView x2,
+     RequestsView x2): sin foco atrapado, sin Escape, sin role="dialog".
+  3. TRES visores de foto distintos y DOS sin Escape -> common/PhotoLightbox
+     (promovido del de TabCatalogo, que era el completo). `alt` obligatorio:
+     los tres traian alt="" para una imagen que el usuario abrio a proposito.
+  4. SearchInput: el boton de limpiar medía 20x20 en tactil (piso 25.6 = 44).
+     Vive en el canonico, o sea que era asi en TODA vista con buscador.
+  5. COEP del dev server bloqueaba 58 fotos de empleados por sesion. Solo
+     dev - vercel.json nunca mando COEP - pero significa que meses de
+     verificacion visual local corrieron con las fotos rotas.
+  6. LiquidDatePicker: los 3 segmentos DD/MM/AAAA eran outline-none y ningun
+     ancestro pintaba el foco. Unico hallazgo real de la pasada de foco.
+
+P2 - no sigue el canonico
+  7. Seis estados vacios a mano -> EmptyState. El de TabExpediente ya
+     distinguia "tu filtro no encontro" de "no hay nada que atender", que es
+     justo lo que 18.1 pide; le faltaba el canonico y la salida.
+  8. Tres spinners de seccion -> LoadingState / Skeleton / AiThinkingState.
+  9. Paginacion a mano de AnnouncementsView -> TablePagination.
+ 10. Las 7 tablas dentro de tarjeta NO pueden ser DataTable (el propio doc
+     prohibe doble-tarjeta). El defecto real era que el doc no decia que
+     hacer con ellas, asi que cada una invento su encabezado: seis <th>
+     distintos para lo mismo. Unificados + regla nueva en DESIGN.md 14.
+
+Descartado tras verificar - los detectores mienten:
+  foco visible 1006 -> 0 (el .focus() programatico no dispara :focus-visible;
+  con Tab de verdad y contando :focus-within del contenedor, solo el
+  datepicker), apilamiento 36 rutas -> 0 (los z vivos son exactamente la
+  escala 9), button-sin-type 5 -> 0 (el type estaba en la linea siguiente),
+  title= 278 -> 4 (70 son prop de componente; de los 208 que llegan al DOM,
+  204 son el UNICO nombre accesible y Button documenta title como fuente
+  valida), iconos 613 -> 26 (12 documenta 5 tamanos y el codigo usa 33: el
+  doc esta mal, no el codigo), scroll horizontal movil 0, img sin alt 0.
+
+Mi lista de rutas estaba en espanol y App.jsx las tiene en ingles: 17 de 36
+caian al fallback, asi que las primeras pasadas midieron media app. Rehecho.
 
 ## v2.185.1 — `roles` se podía escribir desde cualquier cuenta.
 
@@ -3921,6 +6277,1992 @@ Fuera de alcance, documentado: el conteo aprobado sigue sin ajustar stock ni
 exportar al ERP, y no hay corte de movimientos ni recuento de variaciones.
 
 ---
+
+## v2.182.0 — El mismo regex se habia comido cuatro props mas
+
+Tras la regresion de min/max, barri TODAS las migraciones de la auditoria
+comparando el conjunto de props de comportamiento antes/despues, commit por
+commit. Aparecieron cuatro perdidas mas, todas silenciosas:
+
+  · RecepcionModal — la navegacion ^/v entre filas de cantidad. Perdio el
+    `onKeyDown` Y los `data-qty-row`/`data-qty-col` que el selector busca,
+    asi que quedo solo el comentario describiendo un mecanismo inexistente.
+  · TabMinMax — el `onBlur` de la celda MAX (guardar el par al salir).
+  · DifSection — `onKeyDown` (Enter rechaza / Esc cierra) + `autoFocus` del
+    campo "Razon del rechazo".
+  · SrsBuscadorWidget — `autoComplete="off"`. Resuelto en el CANONICO: es el
+    default correcto de todo buscador de app, no algo que cada llamador pase.
+
+De paso, `SearchInput` tenia `aria-label` DUPLICADO (dos veces la misma
+linea, mal indentada) de una insercion automatica anterior.
+
+Verificado que no queda nada mas: arbol actual vs. 7055b4c4 (anterior a D0)
+por conteo de props de comportamiento. Los 3 hallazgos restantes son falsos
+positivos — `autoFocus` que hoy provee el canonico al expandirse
+(SearchInput expandable, ViewTabBar) y texto del changelog.
+
+## v2.181.0 — Auditoria, pasada B: teclado en controles que no son <button>
+
+`clickable()` (src/utils/clickable.js) en 29 sitios: filas, celdas y tarjetas
+con `onClick` sobre un <div>, sin tabIndex ni onKeyDown y sin nada enfocable
+adentro. Con mouse andaban; con teclado no existian.
+
+**Y tres regresiones que introdujo esta misma auditoria, ya corregidas.** Las
+tres del mismo molde: una migracion automatica de JSX que quedo verde en
+build + lint + gate y aun asi cambio lo que el control hacia.
+
+  1. `clickable()` devolvia el contrato de teclado pero NO `onClick`, y el
+     migrador reemplazo el `onClick` original por el spread: los 34 sitios
+     quedaron accesibles con teclado y MUERTOS con mouse.
+  2. 5 de esos sitios eran `onClick={e => e.stopPropagation()}` — barreras de
+     evento, no controles. Revertidos: un `role="button"` que no hace nada es
+     una parada de tabulacion falsa.
+  3. El migrador de PortalInput descarto en silencio los dos `onKeyDown` de
+     la grilla min/max (su regex de props soporta 2 niveles de llaves; esos
+     handlers anidan mas). Ahi vivia la navegacion tipo hoja de calculo:
+     `->` de MIN a MAX, `Enter`/`v` guarda el par y salta al siguiente
+     producto, `<-` vuelve, `Esc` cancela. Recuperados de `aca2ef0f^`.
+
+Lo reporto el usuario, no el gate. Documentado en DESIGN.md §25.8.
+
+## v2.180.0 — Auditoria, pasada A: codigo muerto
+
+34 exports que no importaba nadie, en 13 archivos. Verificado uno por uno:
+cada nombre aparecia UNA sola vez en todo `src/` — su propia definicion.
+
+**Borrar codigo muerto destapa mas codigo muerto.** Al sacar
+`buildKioskAttendanceDetails` quedaron huerfanos `compactIfTooLarge` y
+`pickEnum`; al sacar esos, `isPlainObject` y `jsonSizeBytes`. Hizo falta
+iterar hasta punto fijo (3 vueltas).
+
+**Dos guardias que hicieron falta y valen para la proxima:**
+  1. Que el archivo siga pasando el lint NO alcanza. Al quitar
+     `ERP_BODEGA_ID` mi extractor se llevo tambien `SUCURSALES` — el archivo
+     quedaba valido y el BUILD reventaba. Hay que comparar el set de exports
+     antes/despues y exigir que solo desaparezca el buscado.
+  2. `export const X = ({...}) => ({...});` termina en `});`, no en `};`.
+     Buscar el cierre por texto falla; hay que balancear por lineas.
+
+Keyframes CSS huerfanos: 0 de 32. Dependencias sin usar: solo
+`@capacitor/android` e `@capacitor/ios`, que son plataformas nativas y no se
+importan desde JS — NO son muertas.
+
+## v2.179.0 — Auditoria visual: contraste del texto terciario + 8 archivos
+muertos.
+
+**La etiqueta de tab inactiva fallaba AA en dos temas**, y esta en TODA
+vista con tabs. La causa: `--text-tertiary` se habia calibrado en T2 contra
+`surface-card` (blanco puro) y daba 4.76:1 — pero el riel de `ViewTabBar` es
+TRANSPARENTE, asi que el texto compone contra la PAGINA, que es mas oscura.
+
+    solid       4.40 → 4.97   #64748b → #5b6b80
+    dark        4.21 → 5.16   white/50 → white/58
+    liquid      5.53 ✅ · solid-dark 5.86 ✅ (ya pasaban)
+
+**Y una leccion de metodo que costo tres intentos:** medir contraste con
+`getComputedStyle().color` MIENTE. Tailwind v4 envuelve los colores en
+`color-mix(in oklab, …)`, asi que el navegador reporta un RGB que no es el
+declarado — subir el alfa de white/50 a white/58 "empeoraba" el numero
+calculado mientras mejoraba de verdad. La unica medicion confiable es
+**muestrear el pixel renderizado** de una captura.
+
+De paso, el barrido de contraste tampoco vale si no descarta los ancestros
+con `background-image`: un boton con degradado da 1:1 y son todos falsos
+positivos (ya estaba anotado en memoria y volvi a tropezar).
+
+**8 archivos que no importa nadie, 1,830 lineas:** LiquidWeekPicker,
+BranchChips, SyncHealthBanner, _StatCardPreview, EmployeeScheduleView,
+TabEnCurso, RutaEnCursoCard, SalyCopilot. Verificado uno por uno: sus unicas
+menciones estaban en COMENTARIOS, ninguno esta ruteado ni se carga con lazy.
+
+## v2.178.0 — Auditoria: los selectores de fecha tampoco tenian teclado
+
+Buscando la familia del bug de `LiquidSelect` (v2.157.0) aparecieron **39
+controles reales sin acceso por teclado**: un `<div onClick>` sin `tabIndex`
+ni `onKeyDown`, y sin ningun control enfocable adentro por el que llegar.
+(De los 70 candidatos crudos, 23 eran envoltorios con un boton adentro y 8
+overlays de "clic afuera para cerrar" — esos no cuentan.)
+
+Los CUATRO primeros son canonicos, o sea que multiplican:
+
+  LiquidDatePicker   32 archivos   el boton de BORRAR la fecha era un
+                                   `<div role="button">` — el rol prometia
+                                   el contrato y no habia nada detras
+  PeriodPicker        5 archivos   el disparador, sin teclado
+  RangeDatePicker     6 archivos   idem
+  LiquidWeekPicker    0 archivos   ← nadie lo usa (ver abajo)
+
+El de `LiquidDatePicker` pasa a ser un `<button type="button">` de verdad,
+que da el contrato gratis. Los otros dos llevan el mismo patron que
+`LiquidSelect`: `tabIndex`, Enter/Espacio/Flecha-abajo, la guardia
+`e.target !== e.currentTarget` y el aro con `outline-solid`.
+
+Verificado en vivo: los disparadores de /ventas y /facturas-compra ahora son
+alcanzables, y todo boton de borrar fecha es un `<button>`.
+
+Quedan 35 controles de vista (celdas de calendario, tarjetas KPI clicables,
+filas expandibles). Van en la proxima tanda.
+
+## v2.177.0 — DESIGN.md cierra la estandarizacion
+
+§15.11 gana la tabla de RANURAS con lo que rescato cada una. Es la lectura
+util del trabajo: cada ranura existe porque su ausencia mando campos a
+escribirse a mano.
+
+    label OPCIONAL   43 campos   ← era lo UNICO que los dejaba fuera
+    tono             33
+    labelAction      37
+    onDark            1 (kiosco)
+    className         celdas de ancho fijo
+
+§15.12 pasa de "61 celdas de grilla" a **4 excepciones reales**, nombradas
+con su motivo. La version vieja afirmaba un criterio —"el contenedor ya
+dibuja la caja"— que al verificarlo ancestro por ancestro no aguantaba en 4
+de 7 casos.
+
+§5 gana la tabla de superficies al dia (`sidebar-popover` nuevo) y §5.1
+`data-tono`, con la medicion de por que la tarjeta era indecorable y la
+regla de no anidar tarjetas.
+
+Verificado antes de escribirlo: el baseline real dice `input-a-mano: 4` y
+los 4 son exactamente los que el doc nombra — LoginView x2, AuthPromptPanel
+y MenuSearchModal.
+
+## v2.176.0 — Input-a-mano 15 → 4, y mi criterio de "excepcion" no aguanto
+
+Preguntado por el usuario: *"por que esos 9 son excepcion? que criterio
+tomaste?"*. El criterio que yo habia dado era "el contenedor ya dibuja la
+caja". Al ir a verificarlo ancestro por ancestro, **4 de 7 no lo cumplian**:
+
+  FormRehireEmployee x2  el contenedor SI dibuja la caja… pero es
+                         `PortalInput` reconstruido a mano: etiqueta, caja,
+                         icono e input suelto. No es excepcion, es el
+                         canonico copiado.
+  EmployeeDetailView     buscador expandible a mano (contenedor con toggle
+                         propio, boton lupa/X, input suelto) → ya existe
+                         `SearchInput expandable`.
+  TabExpediente          lo mismo, mas un envoltorio que OCULTABA los demas
+                         botones al abrir. Con el canonico no hace falta:
+                         crece hacia el espacio vacio (DESIGN.md §24).
+
+Los tres traian ademas su propio `useSearchToggle` cableado a mano — el
+contrato de Escape/clic-afuera que el canonico ya trae adentro.
+
+**Las 4 que SI son excepcion**, con su motivo:
+  LoginView x2       superficie bespoke (fuerza claro, sin sesion)
+  AuthPromptPanel    el PIN del kiosco: su borde lleva el caret virtual
+                     animado y el canonico dibuja la caja en el contenedor,
+                     asi que la animacion quedaria invisible
+  MenuSearchModal    la barra de busqueda del encabezado de ⌘K: no es un
+                     campo en una caja, es una fila con divisor abajo
+
+Verificado en vivo: el buscador del expediente colapsa (ancho 0, tabIndex
+-1), abre a 190px con foco, y los botones se quedan visibles.
+
+## v2.175.0 — 13 inputs mas al canonico. input-a-mano 28 → 15
+
+Las celdas de RecepcionModal (4) y TabCatalogo (4) tenian el tinte por
+estado escrito en un ternario dentro del className; ahora sale de `tono`.
+Las de ancho fijo (ConfigPanel `w-16`, WidgetInventorySearch `w-10`,
+LlegadaModal `w-32`) usan `className` en el contenedor, que es para lo que
+se agrego.
+
+Dos variables quedaron muertas al migrar y las agarro el lint: `inp` de
+TabCatalogo —era la paleta de la celda escrita a mano, que el canonico ya
+trae— y el `rowIdx` de RecepcionModal.
+
+## v2.174.0 — `tarjeta-a-mano` en CERO, y el porque de las ultimas 10
+
+**La tarjeta canonica era INDECORABLE.** Las 10 que quedaban compartian
+forma: la superficie es siempre la tarjeta y solo cambia el BORDE por
+estado (en edicion, con error, urgente). Al intentar migrarlas quedo a la
+vista por que habian quedado a mano — medido en el navegador:
+
+    data-surface="card"                        → borde blanco 0.72
+    + border-warning/40                        → borde blanco 0.72  ❌
+    + border-2 border-warning/40               → borde blanco 0.72  ❌
+    + ring-2 ring-warning/40                   → sin cambio        ❌
+
+`index.css` va sin @layer, asi que `[data-surface="card"]` le gana a toda
+utilidad de Tailwind. Y el ring tampoco entra porque es un `box-shadow` y
+ahi ya se declara uno. O sea: para marcar una tarjeta en edicion no quedaba
+mas que renunciar al canonico y pintarla entera a mano. No era descuido.
+
+**`data-tono` nuevo.** Con un atributo la especificidad sube sola
+([data-surface][data-tono] es (0,2,0) contra (0,1,0)) y el estado se lee en
+el marcado en vez de en una ristra de clases condicionales:
+
+    <div data-surface="card" data-tono={editando ? 'warning' : undefined}>
+
+Valores: warning · danger · success · brand · dashed. El ultimo es la
+tarjeta VACIA que invita a llenarla (documento faltante) — no es severidad,
+es ausencia, por eso no lleva color.
+
+**Un anidado que el cambio dejo ver:** el pie de la tarjeta de rol tambien
+era "tarjeta", y al darle tono quedaban dos anillos naranjas concentricos.
+No es una tarjeta: es una franja DENTRO de una. Vuelve a superficie de
+realce con relleno suave.
+
+**Y un bug en mi propia regla del gate:** `bg-surface-card\b` tambien
+matchea `bg-surface-card-hover`, que es OTRO token. Corregido a
+`bg-surface-card(?!-)`.
+
+Verificado en vivo: 12 vistas sin errores, y el tono naranja renderizado de
+verdad al entrar en edicion de un rol.
+
+## v2.173.0 — 38 tarjetas mas y 20 inputs al canonico
+
+**Tarjetas 31 → 10.** Las de plantilla se migraron limpiando solo los trozos
+ESTATICOS del template literal. Las que tienen la superficie DENTRO de un
+condicional usan ahora el mismo idioma que `PortalInput` con `tono`: cuando
+hay tinte no se emite `data-surface`, porque la regla de index.css va sin
+@layer y le ganaria a la clase tintada.
+
+    data-surface={d.isToday ? undefined : 'card'}
+    className={`… ${d.isToday ? 'bg-brand/5 border-brand/30' : ''}`}
+
+**Inputs 48 → 28.** El migrador parte el className en tres: lo que el
+canonico ya dibuja (caja, borde, radio, foco, transicion) se descarta; lo
+que afecta al TEXTO (alineacion, peso, mono) va a `inputClassName`; lo que
+define ANCHO (flex-1, w-24) va a `className`, que ahora es del contenedor.
+El `tono` sale del borde tintado y `compact` del alto.
+
+Los `data-qty-*` NO se tocan: son las celdas con navegacion por flechas.
+
+Verificado en vivo sobre 14 vistas: cero rotas, cero tarjetas sin fondo,
+cero campos anonimos, cero errores.
+
+## v2.172.0 — 150 tarjetas dibujadas a mano pasan al canonico
+
+Lo que se recupera no es solo dejar de repetir seis clases: **la forma
+vuelve a ser del TEMA**. Medido en /my-requests, /cotizaciones y /monitor,
+el radio de la tarjeta ahora da 28px en Liquid Glass y 12px en Solido —
+antes eran 24px fijos (`rounded-3xl`) en los cuatro temas. Lo mismo con el
+`backdrop-filter`, que quedaba escrito aunque Solido prometa cero blur.
+
+El migrador quita solo lo que `data-surface="card"` ya provee: superficie,
+borde, radio, sombra y material. El padding y el layout se quedan. Tambien
+se va el hover duplicado (`hover:shadow-*` y `hover:-translate-y-*`): el
+canonico ya trae sombra y lift de -2px, y tenerlo dos veces era como se
+habian ido separando unas tarjetas de otras.
+
+Verificado en vivo sobre 18 vistas: cero rotas, cero errores, y ninguna
+tarjeta quedo sin fondo (que es como se veria una superficie que no
+resolvio).
+
+tarjeta-a-mano: 184 → 31. Las 31 que quedan usan plantilla en el className
+—el migrador solo toca literales a proposito— y van una por una.
+
+## v2.171.0 — El kiosco entra al canonico, y aparece `tarjeta-a-mano`
+
+**`PortalInput` gana `onDark`**, la misma prop que ya tienen `ListRow` y
+`Badge` por el mismo motivo: la ANATOMIA es la del canonico (alto, radio,
+aro de foco, area tocable) y lo unico bespoke es la paleta. Con eso el campo
+del kiosco deja de reconstruir `bg-black/30 border-white/10` a mano.
+
+El PIN de `AuthPromptPanel` NO migra y es deliberado: su borde lleva el
+caret virtual animado —el indicador anti-fraude— y el canonico dibuja la
+caja en el contenedor, no en el `<input>`, asi que la animacion quedaria
+invisible. Ahi la excepcion es real, no comodidad.
+
+**Los 6 "sin caja" resultaron ser 5 con caja.** Solo usaban `flex-1` en vez
+de `w-full`, que es lo que los separaba en mi agrupacion. Migrados con
+`className="flex-1"`. El sexto —`EmployeeFormModal`— era el UNICO campo
+subrayado del portal: el subrayado evitaba anidar caja dentro de caja, pero
+una tarjeta que contiene campos es lo normal en todas las demas vistas, y un
+patron que existe una sola vez no es un patron.
+
+**`GlassInput` de TabLaboratorios pierde `accent`.** Solo tenia ambar/teal en
+el borde AL ENFOCAR; el canonico enfoca con el azul de marca en todo el
+portal. Que dos campos se enfoquen de distinto color segun la columna es la
+divergencia por vista que esta auditoria vino a quitar.
+
+**El hallazgo grande vino de una pregunta del usuario:** *"eso de dibujar la
+tarjeta no es canonico"*. Tenia razon — canonizar un campo y dejar su
+contenedor a mano es arreglar la mitad. Medido: **184 tarjetas dibujadas a
+mano en 64 archivos**, todas reconstruyendo `data-surface="card"`. Lo que se
+pierde no es solo repeticion: el radio queda FIJO (`rounded-3xl` = 24px)
+cuando `--card-radius` cambia por tema, y el `backdrop-filter` queda escrito
+aunque Solid prometa cero blur. Categoria `tarjeta-a-mano` nueva en el gate
+con ratchet, para que no crezcan mientras se migran.
+
+input-a-mano: 60 → 48.
+
+## v2.170.0 — `PortalInput` acepta no tener etiqueta
+
+Preguntado por el usuario: 43 de los 56 inputs a mano son el MISMO campo del
+canonico; solo 2 son celdas tipo hoja de calculo. Lo unico que los dejaba
+fuera era que `label` se dibujaba siempre. No hacia falta otro canonico:
+hacia falta la ranura. Sin `label` el nombre va en `aria-label` y el error
+pasa a `sr-only` (la senal visible es el borde rojo, que ya estaba).
+Prop `className` nueva para el CONTENEDOR (celdas de ancho fijo).
+Migrados: banco de horas de nomina (4) y feriados (2). input-a-mano 60 → 54.
+
+## v2.169.0 — `chart-retirado` y `chip-a-mano` a CERO, y el lint tambien
+
+**chart-retirado 430 → 0.** Migrados los tres categoricos retirados
+(chart-2/5/7 → success/chart-9/warning): 424 referencias en 51 archivos.
+Verificado POR TOKEN en los cuatro temas: los seis alias resuelven identico
+a su destino, asi que es pixel-igual.
+
+**`chart-8` no estaba retirado.** Al ir a migrar sus 107 referencias quedo a
+la vista que es el NEUTRO de la paleta y esta vivo: `--chart-8-solid` tiene
+valor propio (#64748b, no alias), el `neutral` de `Badge` se apoya en el, y
+tiene familia completa de glows. Marcarlo retirado obligaba a mapearlo a
+`content-3`, que es un color de TEXTO — usarlo de fondo habria sido cambiar
+el significado para callar al gate. Sale de la lista.
+
+**El renombrado colapso claves en 7 archivos y eslint lo atrapo.** Los
+canonicos listaban `chart-N` y el semantico por separado; al renombrar
+quedaron duplicados, y la entrada ex-chart GANABA por venir ultima. Tres
+valores no eran equivalentes:
+  · Badge      warning  /[0.14] → /[0.12]
+  · SegmentedControl  success y warning perdian su variante `-solid`
+  · Switch            idem
+Al quitar las redundantes mandan otra vez los semanticos. El resto eran
+byte-identicas.
+
+**chip-a-mano 7 → 0.** `getExpiryBadge` devuelve la VARIANTE en vez de
+clases sueltas —dos call sites la pegaban dentro de un `<span>` propio, dos
+chips a mano del mismo estado—; RangeDatePicker, VacationPlan, TabMinMax x3
+y BranchesView al canonico. En BranchesView el ternario tenia dos ramas de
+TEXTO y una de chip: separadas, cada una es lo que es.
+
+**Lint en CERO** (estaba en 2, preexistentes):
+  · `useThemeSync` — `ready` se DERIVA de para que usuario se cargo el tema,
+    en vez de un setState sincrono en el effect. Cierra ademas una carrera
+    real: con un fetch en vuelo y cambio de usuario, la respuesta vieja
+    aplicaba el tema del anterior.
+  · `MenuSearchModal` — la expresion del array de dependencias extraida a
+    `claveSeleccion`.
+
+Verificado en vivo: 16 vistas sin errores ni fondos sin resolver, el tema
+persiste tras recargar (probado por la UI, no por atributo), y ⌘K filtra.
+
+## v2.168.0 — El modulo Promociones se retira tambien de la BD y del servidor
+
+Aplicado tras confirmar que lo unico almacenado era 1 promocion de PRUEBA:
+"OMEGA 3 1000MG", creada el 8 de junio con un rango del 1 al 15 de enero
+—ya vencido al crearla— y sin `stock_inicial`, mas su producto y las 6
+sucursales. `promotion_sales_cache` nunca tuvo una fila: sin promos activas
+la funcion salia antes de consultar ventas. 8 filas en total.
+
+Migracion `20260728_drop_promotions_module`:
+  1. `cron.unschedule('sync-promo-sales-daily')` — ANTES de tocar tablas
+  2. `backup_dump_table` sin las 5 tablas de su lista blanca (si no, el
+     backup nocturno reportaria 5 fallos por noche — los captura por tabla
+     y sigue, asi que no se rompia, pero era ruido permanente)
+  3. DROP de las 6 tablas, hijas primero
+
+Verificado ANTES de aplicar: cero FKs entrantes desde fuera del modulo y
+cero tipos enum propios. Y verificado DESPUES: 0 tablas, 0 crons, la funcion
+de backup responde (23 roles).
+
+**`employee_timeline` menciona 'promotion' y NO se toco**: ahi es un
+`event_type` de RRHH — "Ascenso / Cambio de cargo"—, otra cosa por completo.
+Comprobado despues del drop: la vista devuelve 74 filas, una de ellas de
+tipo PROMOTION. Son dos conceptos con el mismo nombre.
+
+Edge function `sync-promo-sales` eliminada del servidor (estaba ACTIVE v6)
+y su carpeta local borrada.
+
+Bonificaciones se construira despues con su propio esquema. Ojo que
+`promotion_bonifications` y `promotion_payments` existian vacias: parte de
+ese modelo ya estaba pensado y se fue con el drop.
+
+## v2.167.0 — Se retira la vista de Promociones; queda el slot de
+Bonificaciones para construirla despues.
+
+Frontend borrado (1,563 lineas, autocontenido — nadie fuera lo importaba):
+  src/views/PromocionesView.jsx        67
+  src/views/promociones/PromoModal.jsx        578
+  src/views/promociones/TabPromos.jsx         376
+  src/views/promociones/TabBonificaciones.jsx 248
+  src/views/promociones/TabHistorial.jsx      187
+  src/data/promotions.js                      107
+Mas la ruta, el import perezoso, el breadcrumb, el modulo del menu y su
+entrada en la pantalla de permisos (con sus 3 tabs).
+
+**El backend NO se toco y es deliberado:** la edge function
+`sync-promo-sales` (cron 4:30am) y las 6 tablas del modulo siguen ahi con
+sus datos. Borrar tablas de produccion no estaba en el pedido y no es
+reversible como un archivo; queda como decision aparte.
+
+El grupo del menu pasa a llamarse Bonificaciones con ese unico modulo. Ojo:
+`bonificaciones` esta marcado `comingSoon`, y la regla anti-grupos-muertos
+del menu (un grupo que solo contiene "Proximamente" no se muestra) hace que
+el grupo quede OCULTO hasta que exista la vista real. Es el comportamiento
+que ya tenia el sistema, no algo nuevo.
+
+## v2.166.0 — El sidebar en CUATRO perillas, y el movimiento como eje del tema
+
+**1 · El badge ⌘K no se leía, y no lo habia validado.** Medido: liquid
+**1.58:1**, solid-dark 3.57:1. Causa: un `Badge` con tokens de tema sobre la
+superficie bespoke oscura — el mismo bug del panel WFM, invertido. En liquid
+el `neutral` resolvia a un celeste palido al 26% sobre navy (= gris medio)
+con texto slate oscuro: el chip se veia, el texto no. `Badge` gana `onDark`,
+la misma prop que `ListRow` ya tenia por el mismo motivo. Ahora 5.24:1.
+
+**2 · Movimiento por tema.** D2.4 separaba lo decorativo de lo funcional
+pero las DURACIONES y la CURVA eran las mismas en los cuatro: Solid Modern
+—el tema de los equipos viejos— heredaba 200ms y una curva de RESORTE, que
+se demora al final a proposito. Ahora solid usa 90/120/180ms y una curva sin
+rebote. Ademas el barrido especular (700ms de transform por hover) no se
+ejecuta en solid: no comunica estado, es brillo de vidrio.
+  · el sidebar codificaba sus duraciones a mano — 30 `duration-N` a token
+  · 25 `transition-all` → `transition` (vigilar TODA propiedad animable es
+    caro justo en la maquina que menos puede)
+  · el indicador del item activo SALTABA entre items; ahora desliza
+
+**3 · Sidebar compacto:** los iconos estaban 5px a la izquierda del centro
+—el item conservaba padding y gap horizontales aunque la etiqueta no se
+renderice—. 14 elementos, ahora 0 descentrados.
+
+**4 · El hover estaba pensado para el material contrario:**
+`--shadow-glass-2` es linea blanca al 90% arriba + sombra negra al 6% abajo,
+o sea una sombra para superficie CLARA. Sobre navy: filo duro y sombra
+invisible. Sombra propia del sidebar.
+
+**5 · El flyout del menu compacto** estaba pintado con hexes crudos
+(#0D2040, #1A3560, #4D94FF) y su propio blur, que corria tambien en solid.
+Ahora usa la superficie `sidebar-popover`, igual que el menu de Ajustes.
+
+**6 · Nada hardcodeado (pedido del usuario).** El navy estaba como literal
+en cinco lugares por tema, y en solido las dos superficies ya se habian
+desincronizado: #0B1020 el panel y #111A2E el popover, dos azules que nadie
+decidio que fueran distintos. Todo el sidebar sale ahora de cuatro perillas:
+
+    --sidebar-tint      el color, en canales sueltos
+    --sidebar-fill      cuanto rellena el panel      · 1 = opaco
+    --sidebar-pop-fill  cuanto rellena el popover    · 1 = opaco
+    --sidebar-rim       cuanta luz tiene el canto    · 0 = sin borde
+
+Cambiar el color del sidebar, o como se ve en movil, es UNA linea. Movil
+pasa de repetir declaraciones a `--sidebar-fill: 1`.
+
+**7 · Menu de Ajustes:** `bg-[#0A1628]/92 backdrop-blur-2xl` a mano (blur
+que corria en solid) → superficie por token. Tres textos bajo AA medidos y
+subidos: encabezados 3.63:1, etiqueta del codigo 4.21:1, chevron 3.13:1.
+Su entrada usa `useMotionConfig` en vez de una curva de resorte escrita a
+mano en los cuatro temas.
+
+## v2.165.0 — El sidebar usa el vidrio de la tarjeta, y el dedo tiene piso
+
+Pedido del usuario: los tres bespoke (sidebar, kiosco, login) se quedan y se
+documentan, pero el sidebar tiene que SENTIRSE integrado en liquid glass.
+
+**Bespoke en COLOR no es bespoke en MATERIAL.** El sidebar tenía las dos
+cosas: relleno 80% con blur de 28px y borde 0.10, al lado de tarjetas de 16%
+con blur de 44px y borde 0.72. Ahora hereda `--backdrop-card` — el vidrio del
+sidebar ES el de la tarjeta— y toma su sombra.
+
+El relleno baja a 0.72 y ese numero es un LIMITE MEDIDO: con el punto mas
+claro del degradado detras, el `white/60` que es el 90% del texto del menu
+queda en 4.61:1 (AA); a 0.66 cae a 3.94:1 y ya no pasa. Bajar mas obliga a
+subir el texto casi a blanco y se aplana la jerarquia activo/inactivo.
+Borde a 0.42, elegido comparando 0.10/0.28/0.42/0.60 a 3x contra la tarjeta
+vecina: en 0.10 el canto derecho no existe, en 0.42 responde a la luz igual.
+En movil sigue opaco — el transform del drawer mata el backdrop-filter.
+
+**Movil, medido en iPhone 13 (WebKit): 20 de 87 controles bajo 44px → 0.**
+La causa de fondo: `--control-h` sube a 44 en tactil, pero `sm` y `xs` se
+derivan RESTANDOLE 6 y 12 — daban 38px y 32px, aunque el comentario del
+componente afirmara lo contrario. Token `--tap-min` nuevo (0 en escritorio,
+44 en tactil) DENTRO del max(). Va por puntero, no por viewport: una laptop
+tactil tambien tiene dedos.
+
+Tres hallazgos al arreglarlo:
+  · `iconOnly` NO TENIA ALTURA. ICON_ONLY_SIZE reemplaza a SIZE_CLASSES y
+    solo traia `w-`; donde el padre no estiraba quedaba 44x15. Afectaba a
+    los 194 iconOnly del portal.
+  · el boton de ordenar de DataTable media el alto del texto (15px).
+  · el chevron de LiquidSelect no puede crecer sin comerse el campo: se le
+    agranda solo el area tocable con un pseudo-elemento.
+
+**Texto cortado en movil:** `StatCard` forzaba `whitespace-nowrap` con el
+razonamiento de que la tarjeta crece en vez de truncar. Vale mientras la FILA
+tenga de donde; en un telefono no la tiene y pasaba a cortar a mitad de
+palabra. Bajo 560px envuelve. El valor mantiene nowrap: un numero partido no
+comunica nada.
+
+DESIGN.md §25.4-25.7 nuevas. Y §25 decia que el minimo de 44px "sigue WCAG
+2.5.8 (AA)" — no: 2.5.8 es 24x24 y es AA; 44x44 es 2.5.5, AAA. El proyecto
+sostiene 44 a proposito, que es mas alto que lo exigido.
+
+## v2.164.0 — Todo elemento del CUERPO sigue el tema. Cero excepciones
+
+Decidido por el usuario sobre el panel WFM (opcion B) y extendido a regla
+general: "todos los modals y elementos deben seguir al tema".
+
+**Los modales ya cumplian.** Auditados los 40+ que pasan por ModalShell /
+LiquidModal / UnifiedModal: el unico con superficie de color fijo es
+`KioskConfigModal`, que es chrome del kiosco.
+
+Lo que si estaba mal, y era el mismo bug en todos: superficie pintada con un
+color FIJO, con texto adentro usando tokens que si siguen el tema. En tema
+claro eso deja texto gris oscuro sobre casi negro.
+
+  TabStaff        panel "Motor de Sincronizacion WFM"  2.88:1 / 3.75:1
+  TabShifts       SuggestionCard + el panel de la IA   bg-slate-900/80
+  SalyCopilot     el panel sin alertas                 bg-slate-900/80
+  ScheduleChart   la tarjeta del grafico               bg-white/[0.14]
+  FormWfmAnalytics  el divisor                         border-slate-700
+  AttendanceMonitor los 3 chips de estado              bg-black/[0.06]
+  TabStaff        la pildora "Asignar"                 bg-white
+
+El panel WFM ademas gana un `Notice` de tono warning: la senal de "esto
+reescribe el historico" pasa a color CON significado, que el tema sabe
+adaptar, en vez de un rectangulo negro que encima no se leia. Y la barra de
+progreso gana `role="progressbar"` con sus valores.
+
+La consola del log se queda oscura a proposito: ahi lo oscuro no es
+decoracion, es lo que la hace leerse como salida de terminal.
+
+Verificado en vivo: 18 vistas en tema claro, **cero superficies oscuras en
+el cuerpo**. (El unico hallazgo del barrido fue un falso positivo mio:
+`oklab(0.9999 …)` es blanco, y mi calculo de luminancia lo leyo como RGB.)
+
+Pendiente de decision: el chrome siempre-oscuro — sidebar, kiosco y login —
+que son decisiones de diseno previas y explicitas, no descuidos.
+
+## v2.163.0 — El "pendiente" de §25 no era un pendiente, y al ir a verificarlo
+apareció uno de verdad al lado.
+
+§25 llevaba meses diciendo que los campos glass tienen un hueco: su anillo
+de foco usa `focus-within` y no `focus-visible`, o sea "se dispara también
+con clic de mouse". Medido: **no cambiaría un solo píxel**. Un
+`<input type="text">` matchea `:focus-visible` aunque lo enfoques con el
+mouse — está en la especificación, no es del portal: hiciste clic ahí, lo
+siguiente que va a pasar es que escribas. Un `<button>` y un checkbox sí
+distinguen; un campo de texto no. Comprobado en pagina aislada y sobre el
+campo real: las capturas con clic y con Tab son el mismo archivo byte por
+byte (6.212 bytes).
+
+Lo que `focus-within` sí haría distinto es si hubiera OTRO control enfocable
+dentro del contenedor del campo. Hoy no lo hay, y §15.11 fija que la accion
+va afuera. Queda anotado por si algún día se rompe esa regla.
+
+Y el mismo párrafo decía que `.virtual-caret-blue/orange` "suprimen el
+anillo por completo". Tampoco: ese `outline: none` era letra muerta, la
+regla global `input:not(.outline-none):focus-visible` le out-especifica.
+
+**El bug real que apareció al verificar:** el pulso del borde del campo de
+PIN del kiosco es un bucle infinito de 1.5s y estaba FUERA de la lista de
+`prefers-reduced-motion` — seguía corriendo con la preferencia puesta,
+aunque §11 dice que los bucles infinitos se apagan. No se puede apagar a
+secas: ahí la animación ES el indicador de foco (el cursor nativo está
+oculto con `caret-transparent`). Se congela en el estado encendido: borde
+marcado, sin movimiento. Verificado con `reducedMotion: 'reduce'` —
+`animationName` pasa de `border-pulse-orange` a `none`.
+
+De paso: `.virtual-caret-blue` y su `@keyframes border-pulse-blue` no los
+usaba nadie. Eliminados.
+
+## v2.162.0 — D4: DESIGN.md se pone al dia con lo que la auditoria encontro
+
+Un documento de diseno desactualizado no es neutral: ENSENA la deuda. Dos
+secciones estaban diciendo activamente que se escribiera a mano lo que ya
+tiene canonico, y una tercera afirmaba algo que no era cierto.
+
+  §16.2  decia "el unico caso que se escribe inline" y mostraba el <span>
+         del contador para copiar. Se copio nueve veces — cuatro de ellas
+         DENTRO de componentes canonicos. Ahora documenta `Contador`.
+  §25    afirmaba que `LiquidSelect` tenia el patron combobox completo.
+         Tenia los roles; el teclado no. Corregido, con la leccion: poner
+         el `role` es la mitad facil — promete un contrato de teclado que
+         el navegador solo cumple gratis con el elemento nativo.
+  §30    la tabla extend-vs-create no listaba campo, buscador, boton,
+         badge ni fecha. Justo las cinco familias que mas se reescribieron.
+
+Secciones nuevas: §15.11 `PortalInput` (con `tono` y la regla de que la
+accion va AFUERA del campo), §15.12 cuando un `<input>` a mano es correcto,
+§25.1 nombre accesible, §25.2 que atributo de estado y cuando, §25.3 teclado
+en tablas.
+
+Verificado: las 9 reglas del gate que el doc menciona disparan de verdad
+(probadas con un archivo sonda), y las cifras que el doc afirma se
+re-midieron — dos estaban mal y se corrigieron (botones 276→60, no →178;
+LiquidSelect en 70 archivos, no 74).
+
+CLAUDE.md tambien: describia el gate como "cinco categorias arrancan con
+deuda". Las cinco llegaron a 0 en D1/D2. Hoy son 20 de 23 en cero absoluto
+y tres con ratchet, las tres deliberadas.
+
+## v2.161.0 — El gate blinda el resultado: `input-sin-nombre`, cero absoluto
+
+Arreglar los 45 campos anonimos de v2.160.0 no sirve de nada si el 46o
+entra la semana que viene. Categoria nueva, hermana de `button-name`: un
+`<input>` sin `aria-label` y sin un `<label htmlFor>` que lo apunte.
+
+El `placeholder` NO cuenta y la regla no lo mira. Desaparece apenas el
+campo tiene contenido — justo cuando alguien vuelve a revisar lo que
+escribio — y varios lectores de pantalla no lo exponen como nombre.
+
+Nota sobre el ratchet: una categoria que no figura en el JSON arranca
+bloqueante sola (`baseline[c] ?? 0`). Agregarla al baseline es una decision
+explicita, no el default — que es como tiene que ser.
+
+La regla encontro uno mas que mi barrido manual no vio: `LazyInput` de
+BranchHelpers, un helper compartido. Ese es exactamente el caso que un
+grep a ojo se pierde y un gate no.
+
+## v2.160.0 — D3.4 cierra: los 45 campos que no tenian nombre accesible
+
+De los 61 `<input>` que quedaban a mano, **45 no tenian NI `aria-label` NI
+un `<label for>` asociado**: para un lector de pantalla eran "cuadro de
+edicion, en blanco". Las horas a pagar de nomina, la cantidad fisica de un
+conteo, el numero de caja de una llegada, las notas de un renglon, la
+ubicacion de un producto en sala y en bodega, el multiplo de despacho.
+
+La mayoria NO debe migrar a `PortalInput` y por eso seguian a mano: son
+celdas de una grilla densa, no campos de formulario. No tienen etiqueta
+visible porque el encabezado de su columna ya dice que son, y `PortalInput`
+siempre dibuja un `<label>` arriba. Lo que les faltaba no era el canonico:
+era el nombre. Ahora lo llevan en `aria-label`.
+
+Otros dos canonicos tampoco daban nombre a su campo interno: el buscador de
+`LiquidSelect` (el que se superpone al abrirse) y `CatalogOtherInput`.
+
+Verificado en vivo sobre 12 vistas + el login: **0 campos anonimos**.
+
+D3.4 CERRADO. Quedan 61 inputs a mano, todos deliberados y con nombre.
+
+## v2.159.0 — Cuatro buscadores a mano, y tres canonicos que dejaban campos
+sin nombre.
+
+FormLeadership, EncuestaAdminView, LabsPanel y SrsBuscadorWidget eran
+`SearchInput` reescrito: lupa en absoluto + input + un boton de limpiar
+propio. Los cuatro al canonico; el boton de limpiar ya lo trae.
+
+Al medir despues quedo a la vista lo que faltaba mas arriba. Contando los
+`<input>` sin `aria-label` NI `<label for>` asociado:
+
+  /encuesta-admin  6 anonimos  → los tres segmentos DD/MM/AAAA de
+                                 `LiquidDatePicker`, x2 fechas
+  /productos       2 anonimos  → el buscador del header de vista
+                                 (`ViewTabBar`), en TODA vista con buscador
+
+Los tres canonicos se apoyaban solo en el `placeholder`. Un placeholder no
+es un nombre accesible: desaparece apenas el campo tiene contenido, y varios
+lectores de pantalla no lo exponen. `SearchInput` gana prop `ariaLabel`
+(default: el placeholder), `ViewTabBar` lo pone siempre, y los segmentos de
+fecha se anuncian "Dia" / "Mes" / "Ano".
+
+Verificado en vivo: /encuesta-admin y /productos, cero campos anonimos.
+
+Inputs a mano: 65 → 61.
+
+## v2.158.0 — D3.4: los ocho campos de formulario que quedaban con etiqueta
+
+SRS, turnos, avisos, cotizaciones, documento personalizado, monto y dias de
+solicitud, y el codigo de empleado. Todos eran `PortalInput` reescrito a
+mano; ninguno asociaba su `<label>` con el campo (`<label>` suelto, sin
+`htmlFor`), asi que hacer clic en la etiqueta no enfocaba nada y el lector
+de pantalla anunciaba el campo sin nombre.
+
+Dos cosas dejan de estar encimadas sobre el campo y pasan a ser hermanas
+suyas, como el ojo de contraseña en v2.156.0: el `$` del monto (ahora
+`prefix` del canonico) y el boton de regenerar codigo, que ademas gana
+nombre accesible ("Generar un codigo nuevo").
+
+`EmployeeRequestsView` tenia DOS `<PortalInput>` sin importar — el build no
+lo detecta (solo revienta en runtime dentro del ErrorBoundary). Es el mismo
+tropiezo del `<Badge>` de v2.14x; la unica red que lo agarra es el lint.
+
+Inputs a mano: 72 → 65.
+
+## v2.157.0 — El canonico aprende a tintarse, y NINGUN desplegable se podia
+abrir con el teclado.
+
+D3.4 seguia encontrando inputs a mano que no eran descuido: **33 en 16
+archivos** estaban tintados con un color semantico o de categoria (el
+salario nuevo en verde, el MIN propuesto en naranja y el MAX en azul, las
+cantidades recibidas en el color de su fila) y `PortalInput` solo sabia
+pintarse neutro. Prop `tono` nueva, con los nueve colores de la paleta
+CERRADA — no agrega ninguno, solo los hace alcanzables desde el canonico.
+Detalle: la regla `[data-surface="input"]` de index.css va SIN @layer, asi
+que le gana a cualquier utilidad de Tailwind; con `tono` el atributo no se
+emite y el contenedor se pinta entero en el componente.
+
+Y buscando por que Playwright no lograba abrir un combo, el hallazgo real:
+el disparador de `LiquidSelect` es un `<div role="combobox">` con `onClick`
+y **sin `tabIndex` ni `onKeyDown`**. Medido en /staff: 2 combobox en la
+vista, **0 alcanzables con Tab**. Como LiquidSelect reemplaza a TODO
+`<select>` nativo del portal (74 archivos), eso significaba que ningun
+desplegable — filtros, formularios, modales — se podia usar sin mouse.
+Ahora: Tab llega, Enter/Espacio/Flecha-abajo abren, las flechas y Enter
+eligen (eso ya lo hacia el buscador interno), y al cerrarse el foco VUELVE
+al disparador en vez de caer al <body>. Anillo de foco con
+`outline-solid` — sin el, en Tailwind v4 no pinta nada.
+
+Verificado en vivo el ciclo completo de teclado y el campo verde renderizado
+en Accion RRHH > Ajuste Salarial.
+
+Inputs a mano: 85 → 72.
+
+## v2.156.0 — D3.4: los formularios de contrasena y contacto
+
+`FormSetPassword` (2), `FormChangeOwnPassword` (2), `FormEditContact` (3) y
+dos de encuestas. Los tres traian el mismo patron: un icono posicionado en
+absoluto sobre un `<input>` con `pl-10` a mano. `PortalInput` tiene ranura
+`icon` — es literalmente para eso.
+
+El ojo de ver/ocultar pasa a ser HERMANO del canonico en vez de un hijo
+encimado, y gana nombre accesible ("Mostrar la contrasena" / "Ocultar…") —
+antes era un boton de icono mudo.
+
+Verificado en vivo: los dos campos con `<label for>` asociado y el ojo con
+su nombre.
+
+Inputs a mano: 83 → 76.
+
+## v2.155.0 — D3.4 sigue, y un error mio de 80 archivos
+
+`FormServicePayment` migra sus dos campos con etiqueta. Y los siete de
+`RecepcionModal` quedan documentados como NO migrables: son celdas de una
+grilla densa, no campos de formulario — sin etiqueta visible (usan
+`aria-label`), con `data-qty-row`/`data-qty-col` y un `onKeyDown` propio
+para moverse con las flechas como en una hoja de calculo, y con el borde
+cambiando de color segun la diferencia contra lo facturado. Mismo criterio
+que el banco de horas de nomina (v2.116.0).
+
+── El error, y las dos lecciones ────────────────────────────────────────
+Al agregar imports automaticos fui calculando la ruta relativa a mano, con
+una cuenta de `../` por profundidad. Estaba mal, y un intento de
+"arreglarla" en lote la rompio en **80 archivos** — quedaron imports como
+`from 'common/Button'`, sin ningun `../`.
+
+  1. Para una ruta relativa se usa `os.path.relpath`, no una cuenta a ojo.
+     El arreglo final calcula la ruta Y **verifica que el archivo destino
+     exista** antes de dejarla; asi aparecieron 100 imports que no
+     resolvian, incluidos varios anteriores a este lote.
+
+  2. Mi chequeo de build era `grep -E "ERROR|✓ built"`, y rollup dice
+     "Could not resolve" en minuscula. El build llevaba varios comandos
+     fallando sin que yo lo viera. Ahora: `grep -iE "could not resolve|
+     error during|✓ built"`.
+
+Verificado en vivo tras el arreglo: 780 botones en 14 vistas, 0 errores.
+
+Inputs a mano: 85 → 83.
+
+## v2.154.0 — D3.5 CERRADA. 101 → 1
+
+El unico que queda es de BranchesView y NO debe migrar: es TEXTO que solo
+toma forma de chip en una de sus tres ramas (cuando la sucursal esta cerrada
+hoy). Pasarlo a `Badge` lo volveria chip siempre, y las otras dos ramas —el
+horario y el "Definir" en rojo— son texto suelto dentro de la fila. Anotado
+en sitio.
+
+── Lo que se encontro en el camino ──────────────────────────────────────
+El patron era SIEMPRE el mismo: una tabla que guardaba dos o tres clases de
+Tailwind por fila. `SUC_COLORS`, `TIPO_PAGO_COLORS`, `STATUS_META`,
+`EVENT_THEMES`, `getRoleTheme`, `getStatusInfo`, `getSeverityInfo`,
+`scoreBg`, `marginLabel`, `getThemeForAction`… veinte tablas distintas
+reescribiendo la misma paleta SOFT del canonico.
+
+Con `variante` en la tabla, agregar un estado es una linea en vez de tres
+clases. Y el color deja de poder derivar: hoy `chart-2` es `success` en
+todos lados porque la tabla lo NOMBRA, no porque alguien copio el hex bien.
+
+Casos que NO son `Badge` y quedaron documentados:
+  · los contadores (ancho minimo fijo + numero) → `Contador`
+  · el `dot` de un estado y el `bg` de un cuadro de icono → son SUPERFICIE
+  · texto que solo a veces parece chip → texto
+
+El baseline de `chip-a-mano` baja de 45 a 8 (el gate cuenta tambien los de
+`components/common/`, que son los canonicos mismos).
+
+## v2.153.0 — D3.5: cinco chips mas, incluida la severidad de la auditoria
+
+`getSeverityInfo` devolvia color/bg/border/icon por severidad. El icono se
+queda —es un nodo JSX, no una clase— y se le agrega la variante.
+
+Chips a mano: 14 → 9.
+
+## v2.152.0 — D3.5: seis chips mas
+
+`EVENT_BADGE` y `VACATION_STATUS` (mi horario), el estado del conteo, el
+puntaje del SRS y los dos deltas de la recepcion.
+
+Los deltas son un caso bonito: un chip flotante en la esquina de un input,
+verde o rojo segun el signo. `Badge` con `tone=solid` y el
+posicionamiento por `className` hace exactamente eso — no hizo falta nada
+nuevo.
+
+Chips a mano: 20 → 14.
+
+## v2.151.0 — D3.5: siete chips mas, y dos que eran contadores
+
+El del submenu de AppLayout y el ranking de urgencia de TabGenerar tienen
+ancho minimo fijo y numero adentro: eso es `Contador`, no `Badge`. El % de
+urgencia de al lado si es un chip y va a `Badge`. Dos componentes distintos
+pegados, cada uno con el suyo.
+
+Y `TabShifts` usaba `chart-5` para el chip de Saly — retirado; pasa a
+`chart-9`, que es a donde apunta su alias.
+
+Chips a mano: 27 → 20.
+
+## v2.150.0 — D3.5: ocho chips sueltos, y una funcion que devolvia clases
+
+`scoreBg()` (Encuestas) devolvia dos clases de Tailwind segun el puntaje.
+Ahora es `scoreVariante()` y devuelve el nombre de la severidad — que es lo
+que la funcion de verdad sabe: 85+ bien, 70+ aceptable, 55+ atencion, menos
+mal.
+
+Uno tenia el MISMO color en las dos ramas del ternario
+(`e.isPast ? bg-surface-card-hover : bg-surface-card-hover`): un condicional
+que no condicionaba nada, escrito y nunca releido.
+
+El gate atrapo dos `<Badge>` sin importar. Van tres veces que me salva.
+
+Chips a mano: 36 → 27.
+
+## v2.149.0 — D3.5: las cuatro tablas de Producto
+
+`ERP_COLORS` (inventario), `meta.badge` (min/max), `st.cls` (solicitudes) y
+el resto. Todas guardaban dos o tres clases de Tailwind por fila; ahora el
+nombre de la variante. Dos de ellas usaban `chart-7` y `chart-5", retirados,
+asi que al pasar por el mapa quedan en `warning` y `chart-9`.
+
+Chips a mano: 39 → 36.
+
+## v2.148.0 — D3.5: `SucPill`, y una tabla que estaba duplicada
+
+`SUC_COLORS` (color por sucursal) vivia DOS VECES con el mismo contenido:
+en `tabpedidos/constants.js` y otra copia dentro de `TabPedidos.jsx` que ya
+no usaba nadie. Se queda la de constants —la usa `SucPill`, que es quien
+pinta el chip— y guarda el nombre de la variante en vez de tres clases.
+
+`STATUS_BADGE` de rutas estaba en dos archivos (TabRutas y RutaEnCursoCard)
+con el mismo contenido salvo que a uno le falta `con_alerta`. Los dos pasan
+a la misma forma. `en_ruta` deja `chart-5` —retirado— y usa `chart-9`.
+
+Chips a mano: 42 → 38.
+
+## v2.147.0 — D3.4: los ocho campos del modal de promocion
+
+Se fueron con ellos `inp` y `numInp`: el campo de `PortalInput` reescrito
+clase por clase, y su variante centrada para las celdas numericas.
+
+Todos conservan `type="number"`, `min` y `step` — que es exactamente lo que
+el `...rest` de v2.115.0 vino a permitir. Sin ese arreglo, migrar los bonos
+les habria quitado el `min="0"` y se habrian podido escribir negativos.
+
+Una perdida deliberada: las tres etiquetas de bonificacion tenian color
+propio (verde vendedor, azul admin, ambar bodega). `PortalInput` no tiene
+eje de color en la etiqueta, y el color no aportaba dato: los tres son el
+mismo tipo de campo dentro de un bloque que ya es verde. Anotado en sitio.
+
+Verificado en vivo el primer paso del asistente; los otros siete viven en
+pasos que exigen elegir un producto y quedan verificados por codigo.
+
+Inputs a mano: 93 → 85.
+
+## v2.146.0 — D3.4 arranca: los cuatro campos del proveedor
+
+El patron clasico: `<div><label sin htmlFor><input className=…></div>`, o
+sea `PortalInput` reconstruido a mano. Las cuatro etiquetas no estaban
+asociadas al campo; ahora lo estan por `<label for>`.
+
+El `title` del Alias —"Nombre alterno para buscarlo (ej. como le dicen de
+palabra en Bodega)"— sobrevive gracias al `...rest` de v2.115.0. Antes de
+ese arreglo, migrarlo lo habria borrado.
+
+Inputs a mano: 97 → 93.
+
+## v2.145.0 — El gate cubre las dos deudas que faltaban: chips e inputs
+
+Hasta hoy D3.4 y D3.5 se median con scripts sueltos en el scratchpad —
+exactamente lo que la memoria del proyecto dice que NO hay que hacer
+(feedback_structural_grep_over_manual_dictionary). Ahora son categorias del
+gate, versionadas y con el resto.
+
+  chip-a-mano   45  un `<span>` con relleno + radio + texto chico en negrita
+  input-a-mano  97  un `<input>` de texto fuera de `PortalInput`
+
+Van con RATCHET, no en cero: las dos colas son largas y planas (1-2 por
+archivo). Un gate permanentemente rojo no lo mira nadie; lo que importa es
+que **no suban**. Probado con un archivo desechable: 45→46 y 97→98 lo
+marcan como deuda nueva.
+
+Dos exclusiones deliberadas: el chip no marca los que tienen `min-w-[…]`
+(esos son `Contador`, no `Badge`), y el input no mira dentro de
+`components/common/` (ahi viven los canonicos mismos).
+
+## v2.144.0 — D3.5: el tipo de documento, por cuarta vez
+
+`CCF ? danger : neutral` estaba escrito en cuatro archivos distintos —
+Ventas, Facturacion, WidgetAnnulmentRequest y RequestsView— cada uno con su
+propio ternario y su propio padding. Es el mismo dato del negocio en los
+cuatro. Ahora los cuatro salen de `Badge`.
+
+Y `getThemeForAction` (historial de sucursal): siete ramas devolviendo
+bg/text/border/dot/shadow. El `dot` y el resto se quedan —pintan el punto de
+la linea de tiempo y su halo, que son superficies— y se les agrega la
+variante para el chip.
+
+Chips a mano: 45 → 42.
+
+## v2.143.0 — D3.5: el chip ACTIVO/INACTIVO, tres veces, y cuatro tablas mas
+
+El mismo chip —mismo texto, misma condicion, mismo color— estaba en
+`SrsBuscadorWidget`, `WidgetInventorySearch` y `WidgetSrsInventory`, con
+tres paddings distintos (`px-2`, `px-1.5`, `px-2`). Nadie lo decidio: se
+copio tres veces y cada copia se fue moviendo.
+
+Y `STATUS_CFG` (Mis Documentos), el `cfg` de una solicitud min/max,
+`ESTADO_CFG` (conteo de inventario).
+
+Chips a mano: 52 → 45.
+
+## v2.142.0 — D3.5: los tres "Urgente" de Mis Avisos, nomina y cotizaciones
+
+El chip "Urgente" estaba escrito TRES veces en el mismo archivo, y las tres
+distinto: una con `bg-danger-solid` y radio md, otra con radio full y una
+sombra, la tercera con un GRADIENTE `from-danger to-danger/80`. Mismo texto,
+mismo icono, mismo significado, tres formas.
+
+Tambien `STATUS_META` de nomina y los dos de cotizaciones.
+
+Chips a mano: 59 → 52.
+
+## v2.141.0 — D3.5: Facturacion y Catalogo cerrados
+
+Facturacion: los dos chips de dia (mismo ternario escrito dos veces) y el
+tipo de documento. Catalogo: `CLASIF_STYLE`, `marginLabel().cls`,
+`xk.changesBadge` y el estado activo/inactivo — cuatro paletas mas.
+
+`marginLabel` es un buen ejemplo de por que esto vale: devolvia un `cls` con
+tres clases de Tailwind para decir "Perdida" o "Margen bajo". Ahora devuelve
+el nombre de la severidad, que es lo que la funcion realmente sabe.
+
+Un error mio que atrapo el lint: use `VARIANTE_DOC` en Facturacion, pero esa
+constante vive en VentasView. Son dos archivos sin nada compartido. Cada uno
+tiene el suyo ahora. Lo detecto `eslint | grep problems` — con el `tail -1`
+que usaba antes se me habria pasado, igual que la vez anterior.
+
+Chips a mano: 66 → 59.
+
+## v2.140.0 — D3.5: tres tablas mas, y la consolidacion bajando sola
+
+  · `BRANCH_TYPE_META` (Sucursales) — cuatro tipos con su trio
+    bg/text/border.
+  · `STATUS_CONFIG` (Inicio, actividad en tiempo real) — seis estados. El
+    `dot` se queda: se usa aparte para el punto.
+  · `ABSENCE_COLORS` (Inicio, ausencias) — el `bg`/`border` se queda porque
+    pinta tambien el cuadro del icono, que es una SUPERFICIE y no un chip.
+
+Dos de ellas usaban `chart-2` para "en labores" y "permiso". Como chart-2 ya
+es `success` desde v2.139.0, pasan a nombrarlo por lo que es. El baseline de
+`chart-retirado` baja **452 → 445 sin tocar un solo color**: es la
+consolidacion resolviendose sola a medida que los sitios se migran.
+
+El gate atrapo un `<Badge>` sin importar en BranchesView — el mismo fallo
+que me tumbo dos vistas ayer. Esta vez lo corri ANTES de la captura.
+
+Chips a mano: 70 → 63.
+
+## v2.139.0 — La paleta: de trece a nueve, y los colores de marca con un rol
+
+Se midio la distancia perceptual (ΔE, CIELAB) entre los 78 pares posibles y
+CUATRO no eran categorias: eran el mismo color con otro nombre.
+
+  chart-2 → success   ΔE 11.6, y su `-solid` era EL MISMO HEX (#047857)
+  chart-8 → neutral   `Badge` ya usaba chart-8-solid como su neutro
+  chart-5 → chart-9   cian y verde azulado, nunca aparecen juntos
+  chart-7 → warning   dorado y ambar, los dos leen "atencion"
+
+── Como se hizo, y por que asi ──────────────────────────────────────────
+Mi conteo anterior decia "19 usos". Estaba mal: contaba solo variantes de
+componente. El recuento real es **343 referencias en 88 archivos**, porque
+los tokens tambien se usan en clases crudas (`bg-chart-2/10`, `var(--chart-2)`).
+
+Reescribir 343 sitios habria sido un cambio riesgoso para un resultado
+visual identico. En vez de eso los cuatro se redefinen como ALIAS del
+destino. Los `@theme` de Tailwind ya iban indirectos
+(`--color-chart-2: var(--chart-2)`), asi que el color queda unificado YA,
+ninguna referencia se rompe, y el gate (`chart-retirado`) bloquea usos
+nuevos. Los sitios migran cuando toque tocarlos.
+
+── Los colores de marca dejan de ser decoracion suelta ──────────────────
+Vivian solo en AppLayout. Ahora tienen un ROL declarado: aparecen donde la
+app habla DE SI MISMA — navegacion activa, brillo del logo, el aro del
+estado vacio y los dos anillos de la espera de la IA, que son literalmente
+los dos arcos del logo (verde arriba, magenta abajo; antes eran chart-3 y
+chart-5, dos categoricos prestados para decorar).
+
+NUNCA en un dato ni en un estado: eso es severidad o categoria. Confundirlos
+es lo que hace que un color deje de significar.
+
+Y un dato que hacia falta: el verde del logo es LIMA — con texto blanco da
+2.11:1 y no pasa AA. Se agrega `--logo-green-solid` #5c7f0a (4.67:1) para
+cuando haga falta relleno. El magenta si sirve tal cual (7.10:1).
+
+── Un bug de contraste, encontrado midiendo ────────────────────────────
+De las 32 combinaciones color×tema, 31 pasaban AA y UNA no: `chart-4`
+(naranja) en liquid, 4.32:1. Su `-text` baja de #c2410c a #9a3412.
+
+── Y la respuesta a "no deberian tener variante por tema" ───────────────
+Solo una de las tres capas la necesita, y ya la tenia:
+  base (tinte 12%) — NO: se compone sobre la superficie, que si cambia
+  `-text`          — SI, y ya tiene su par claro/oscuro
+  `-solid`         — NO: es autocontenido (fondo propio + blanco)
+
+Verificado en vivo en los CUATRO temas: los alias resuelven al mismo valor
+que su destino, el `-text` conserva su par, cero errores.
+
+## v2.138.0 — D3.5: tres chips mas, ya con la paleta cerrada como regla
+
+Los dos contadores con/sin bodega de TabGenerar y el tipo de sucursal del
+catalogo. Ninguno estrena color: `success`, `danger`, `warning` y `chart-1`
+son los que esos mismos chips ya usaban escritos a mano.
+
+Chips a mano: 73 → 70.
+
+## v2.137.0 — La paleta es CERRADA, y ahora el gate lo verifica
+
+Regla del usuario: **no se agregan colores ni variantes de color; se usan
+los definidos**. Cuando algo necesita un color que "todavia no existe", la
+respuesta es elegir uno de los que ya estan, no crear el numero siguiente.
+
+Verificado primero que no agregue ninguno en toda la sesion: cero tokens
+nuevos en index.css y cero variantes nuevas en los canonicos. Lo que hice
+fue mapear colores escritos a mano a variantes que YA existian — eso no es
+agregar, es dejar de repetir.
+
+Pero el conteo muestra por que la regla hace falta:
+
+    chart-3 76 · chart-1 43 · chart-4 21 · chart-9 18 · chart-6 12
+    chart-2 7 · chart-5 7 · chart-7 6 · chart-8 4   ← un color por caso
+
+Los cuatro de abajo no son categorias del negocio: son "hacia falta otro
+color" resuelto agregando uno. No se borran —cambiaria el aspecto de varias
+vistas y es decision aparte— pero no se usan para nada nuevo.
+
+La regla queda en DESIGN.md §6 y, sobre todo, en el gate: `paleta-cerrada`
+falla ante cualquier `chart-N` con N fuera de 1..9. Nace en 0 y bloqueante.
+Probado con una copia desechable: reporta `chart-10` y `chart-12`.
+
+## v2.136.0 — D3.5 en VentasView, y dos fallos de verificacion mios
+
+El tipo de documento se pintaba en DOS tablas de la vista, cada una con su
+propia cascada de ternarios — y una usaba `text-danger` donde la otra usa
+`text-danger-text`. Los siete niveles de precio (`DRILL_TIERS`) igual: un
+`color` con dos clases por fila. Todo pasa a nombre de variante.
+
+── Fallo 1: inserte una constante con un ancla que ya no existia ────────
+El `s.replace()` buscaba un comentario que YO MISMO habia reescrito en
+
+## v2.135.0 — D3.5: cuatro paletas mas, dos de ellas compartidas
+
+  · `getRoleTheme` (utils/scheduleHelpers) — la usan TRES vistas. Devolvia
+    `bg`/`text`/`border` por rol; ahora tambien el nombre de la variante.
+  · `getStatusInfo` (Personal) — nueve ramas devolviendo un `className` con
+    las tres clases juntas.
+  · `PRACTICANTE_ESTADO_CFG`, `EVENT_THEMES`, `VAC_STATUS` — lo mismo, una
+    fila por estado.
+
+El `bg`/`text`/`border` NO se borra de ninguna: hay sitios que pintan una
+SUPERFICIE con esos mismos colores (la tarjeta del evento, el punto de la
+linea de tiempo), y eso no es un chip. Lo que se agrega es el nombre para
+los que si lo son.
+
+Verificado en vivo: /dashboard muestra 54 badges y 6 colores — los roles
+(JEFE, SUBJEFE, REG. DE ENF., DEPENDIENTE) y el estado (Activo) con su
+color de categoria.
+
+Chips a mano: 83 → 77.
+
+## v2.134.0 — D3.5: dos paletas mas, y una leccion sobre mi propio proceso
+
+  · `PCT_COLORS.badge` (EncuestaView) — un `badge:` por color, la paleta
+    SOFT otra vez. Y la nota contextual sacaba su borde con
+    `ctx.badge.replace('text-', 'border-')`: manipular la clase de Tailwind
+    como STRING para inventarle un borde. Ahora usa el `border` que la tabla
+    ya tenia.
+  · `STATUS_META` y `HEADER_STATUS_META` (VacationPlanView) — ocho y tres
+    filas de `bg`/`text`/`border`. El `bar` se queda: ese si se usa aparte,
+    para la barra del Gantt.
+
+── Y lo que me paso, que vale mas que el refactor ───────────────────────
+Deje `<Badge>` sin importar en VacationPlanView. **El build paso, el lint
+paso, y la vista entera cayo en el ErrorBoundary** — "ALGO SALIO MAL", sin
+contenido. Solo lo vi en la captura.
+
+Lo importante: el gate SI lo detecta, y su mensaje literalmente dice "el
+build NO lo detecta". Existe desde v2.76 justo para esto. Mi fallo fue
+saltarme `gate:design` entre la edicion y la verificacion visual.
+
+Confirmado con una copia de prueba: el gate reporta
+`[import] <Badge> usado sin importar`. Y un barrido sobre los 14 canonicos
+en todo `src/` da 0 usos sin importar.
+
+Chips a mano: 90 → 83.
+
+## v2.133.0 — `Contador`: la tercera familia de badge, que se habia quedado sin
+canonico.
+
+Al medir los 316 "badges" del proyecto (D3.5) salieron TRES familias:
+
+    249  chip inline corto     → `Badge`
+     58  aviso con icono       → `Notice`
+      9  **contador flotante** → sin canonico, hasta hoy
+
+`Badge` no sirve para esto y por eso se dejo fuera en su momento: un chip
+crece con su texto, un contador tiene que ser CIRCULAR con un digito y
+OVALADO con dos — o sea ancho minimo fijo y alto fijo. Meterlo en `Badge`
+habria dado burbujas de anchos distintos segun el numero.
+
+Pero dejarlo sin canonico tampoco era la respuesta: estaba escrito nueve
+veces, y **cuatro de ellas DENTRO de componentes canonicos**
+(`NotificationBell` ×2, `FilterBar`, y el del menu lateral). Ahi es donde
+mas duele: un canonico que reconstruye a mano algo que deberia ser otro
+canonico es como se multiplica la deuda.
+
+Tres cosas que el componente arregla de una vez:
+  · el corte ("9+") lo decide el llamador con `max`, porque el umbral
+    depende de donde vive — en el menu cabe "9+", en la campana "99+".
+  · devuelve `null` cuando el valor es 0, en vez de que cada sitio repita
+    su propio `{n > 0 && …}`.
+  · **nombre accesible obligatorio**: un "3" suelto no le dice nada a un
+    lector de pantalla. Ahora dice "3 notificaciones sin leer".
+
+Verificado en vivo en movil: el contador de `FilterBar` sale 18×18,
+circular, azul de marca, con `aria-label="1 filtro aplicado"`.
+
+## v2.132.0 — D3.5: tres paletas mas que eran la del canonico
+
+  · `TIPO_PAGO_COLORS` (Facturacion) — una fila por forma de pago,
+    `bg-chart-N/10 text-chart-N-text border-chart-N/30`. Ahora guarda el
+    nombre de la variante.
+  · `xk.statusActive/statusInactive` (Catalogo) — dos entradas de un objeto
+    de tema local que solo existian para pintar un chip.
+  · Estado y tipo de encuesta — DOS cascadas de ternarios dentro del JSX,
+    una rama por valor. Ahora dos tablas al lado de sus etiquetas.
+
+Es el mismo hallazgo por cuarta vez: cuando el color no tiene NOMBRE, se
+vuelve a escribir en cada sitio. Con `variante` en la tabla, agregar un
+estado es una linea.
+
+Verificado en vivo: /facturacion 40 badges y 6 colores (credito, tarjeta,
+transferencia…), /encuesta-admin los de estado y tipo, /productos 39.
+
+Chips a mano: 96 → 90.
+
+## v2.131.0 — D3.5 arranca: la paleta del canonico escrita QUINCE veces
+
+`EmployeeDetailView` tenia una cascada de quince ramas para el color del
+chip de cada evento del historial, y cada rama escribia
+`bg-X/10 text-X-text border-X/30` a mano. Es la paleta SOFT de `Badge`
+copiada quince veces. Ahora es una tabla que devuelve el NOMBRE de la
+variante y el color lo pone el canonico — mismo cambio que `SUC_COLORS`
+en TabSinVenta.
+
+El criterio de T7 no cambia: los hitos claramente buenos o malos usan
+success/warning/danger; el resto —transferencias, categorias de puesto— es
+categorico puro sin severidad.
+
+── Y el dato que faltaba, en la fuente ──────────────────────────────────
+`REQUEST_TYPES` y `REQUEST_STATUS` (requestsSlice) ahora llevan `variante`.
+Sin eso, cada vista sacaba el `chart-N` con un REGEX sobre la clase de
+Tailwind — que es adivinar el dato en vez de tenerlo. Yo mismo escribi ese
+regex ayer en EmployeeRequestsView; se va con esto.
+
+Chips a mano: 101 → 96.
+
+## v2.130.0 — D3.3 CERRADA. Los ultimos nueve, y por que seis no se tocan
+
+Seis interruptores que aun no decian su estado: la celda de la matriz
+ABC×XYZ, los widgets del Inicio, la camara del login, la escala 1-10 de una
+respuesta, el empleado en el alcance de una encuesta y el candidato del SRS.
+Todos con `aria-pressed`; los que ademas eran mudos (la celda de la matriz,
+la escala) con nombre: "AX: 42 productos", "Calificacion 7 de 10".
+
+Dos ganan `disabled` en vez de un onClick condicional que no hacia nada: la
+celda con cero productos y el widget sin permiso. Un control que no responde
+tiene que DECIR que no responde, no simular que si.
+
+── Y seis que NO llevan estado, anotado en el codigo ────────────────────
+Porque no son interruptores, y confundirlos habria sido peor que no tocarlos:
+  · las cajas y los items de RecepcionModal ABREN otra pantalla
+  · el resultado de busqueda de ScheduleCalendar agrega y cierra la lista
+  · el chevron de AttendanceAuditView es `aria-hidden` a proposito (hay un
+    abridor real arriba)
+  · el de ocultar producto en Ventas: su texto ya depende del modo de la
+    tabla (v2.120.0)
+
+── Un tropiezo que se repitio tres veces hoy ────────────────────────────
+Un comentario `{/* … */}` NO puede ser lo primero dentro de un `=> (` ni de
+un `&& (`: queda como SEGUNDO hijo y el build falla con "Expected )". Va
+como `//` encima del `return`. Me paso en EncuestaAdminView, ScheduleCalendar
+y RecepcionModal.
+
+## v2.129.0 — La tarjeta de sucursal: cinco bloques que eran dos
+
+`TarjetaTelefono` estaba escrita DOS veces (fijo y celular) y
+`PanelCompletitud` TRES (legal, local, servicios), identicas salvo el icono,
+la etiqueta y el campo. Extraidas a un componente local cada una.
+
+No pasan por `Button`: son tarjetas con icono, dos lineas de texto y una
+barra de progreso — el canonico no tiene eso y forzarlas las romperia. Lo
+que hacia falta era que existiera UNA definicion.
+
+── El hallazgo: el WhatsApp era un `<div onClick>` DENTRO del `<button>` ──
+O sea que no lo alcanzaba el teclado (un `div` no recibe foco) y su clic
+disparaba tambien el del padre. Se hizo asi porque un `<button>` dentro de
+otro es HTML invalido — pero la solucion no era degradarlo a `div`, era
+sacarlo. Ahora los dos son hermanos dentro de un contenedor, que es lo que
+siempre fueron. Son 7 botones de WhatsApp, uno por sucursal con celular.
+
+Y de paso ganan nombre: los paneles decian solo "Legal"; ahora dicen
+"Completar datos legales — 0% completo", que es el dato que importa.
+
+── Un error de mi parte, y como se detecto ──────────────────────────────
+El primer intento uso `s.index('</button>', …)` para encontrar el cierre y
+se paso de largo: se comio 35 lineas de la tarjeta. El build fallo, asi que
+no llego a ningun lado — pero la leccion es la de siempre: para cortar JSX
+no sirve buscar el primer cierre, hay que anclar el bloque COMPLETO.
+
+Verificado en vivo: 8 tarjetas, los telefonos con su nombre
+("Fijo: 2301-0013"), 7 WhatsApp, los paneles con su porcentaje, 0 botones
+sin nombre y la tarjeta identica a como estaba.
+
+## v2.128.0 — D3.3, familia B: lo que les faltaba no era el componente
+
+Las 38 "fila o tarjeta" NO son botones en el sentido del canonico: son
+superficies compuestas —avatar, contador, descripcion, barra de progreso—
+que ni `Button` ni `SegmentedControl` cubren. Forzarlas seria romperlas.
+
+Lo que SI les faltaba, a casi todas, es lo mismo: **no decian su estado**.
+Vivia entero en el color del borde y en un chevron girado.
+
+── Encabezado de seccion plegable (7) ───────────────────────────────────
+FormAnnouncements ×2, RequestsView ×2, TabLaboratorios, SalyCopilot y
+EncuestaView. Todos ganan `aria-expanded`. Antes, si la seccion estaba
+abierta o cerrada solo lo sabia quien veia girar el chevron.
+
+── Fila/tarjeta seleccionable (8) ───────────────────────────────────────
+El rol elegido en Permisos, la razon de pausa, la tarjeta de estado del
+monitor, la presentacion en Reglas, la sucursal en Generar, el laboratorio
+en LabsPanel y el vendedor en la anulacion. Todos ganan `aria-pressed`.
+
+Dos que NO llevan `aria-pressed`, y la distincion importa:
+  · Los pasos de PromoModal llevan `aria-current="step"` — no son un
+    interruptor, son "donde estas". Y los pasos futuros dejan de ser
+    controles: `disabled`, en vez de un `onClick` que no hacia nada.
+  · El laboratorio de LabsPanel ademas necesitaba nombre: la fila muestra el
+    nombre y un contador, pero el boton no decia que iba a HACER. Ahora dice
+    "Bayer: visible, ocultar".
+
+Verificado en vivo: /monitor 6 tarjetas con `aria-pressed` y "Total" activa,
+/pedidos 7, y 13-17 `aria-expanded` por vista. /permissions no la puede ver
+la cuenta de prueba — queda verificada por codigo.
+
+## v2.127.0 — D3.3: los dos paneles del SRS, la matriz y el selector de mes
+
+  · SrsEnriquecerModal: "Buscar en SRS" e "Ingresar manualmente" son dos
+    interruptores INDEPENDIENTES (volver a pulsar el activo lo cierra), no
+    un `SegmentedControl`. Llevan `aria-expanded`: antes cual estaba abierto
+    lo decia solo el color del texto. Y el toggle de rechazo de la fila pasa
+    a `Button size="xs" iconOnly`.
+  · AbcXyzMatrix: el "limpiar" → `Button variant="ghost" size="xs"`.
+  · FormAiSchedulerPreview: el toggle de lactancia NO pasa por `Button` —es
+    un segmento pegado a su hermano dentro de un borde comun, separados por
+    un `w-px`— pero le faltaba `aria-pressed`.
+  · El selector de mes del Inicio: el disparador pasa a `Button` con
+    `aria-haspopup="dialog"` y `aria-expanded`.
+
+── La rejilla de meses NO pasa al canonico, y la razon importa ──────────
+Tiene TRES estados, no dos: el mes elegido, "el mes de hoy" (el aro) y el
+resto. `SegmentedControl` solo distingue activo/inactivo, asi que migrarla
+habria borrado el aro — que es justo la referencia para saber donde estas
+parado cuando navegas hacia atras en el año.
+
+Lo que si le faltaba: cada celda decia solo "Ene", sin el año, y nada
+indicaba cual es hoy. Ahora `aria-label` dice "Enero de 2026" y el mes
+actual lleva `aria-current`.
+
+Verificado en vivo: el disparador dice "julio de 2026" con
+`aria-expanded=false`, la rejilla tiene sus 12 celdas con nombre completo y
+Jul marcado con `aria-current="date"`.
+
+Botones a mano: 67 → 62.
+
+## v2.126.0 — D3.3: cuatro acciones mas
+
+  · "Imprimir Nuevo Carne" (FormNovedad) — tenia su `bg-chart-8-solid` a
+    mano; ahora es `tone`.
+  · Confirmar archivar/reactivar un turno — el color decia cual de las dos
+    acciones era; sigue diciendolo con `tone` danger/success.
+  · Las cajas de FinalizarCajasModal → `FilterBar.Chip`. Son seleccion
+    MULTIPLE (un pedido puede ir en varias cajas), asi que no es
+    `SegmentedControl`.
+  · El tipo de solicitud ya elegido, en su forma compacta. Llevaba el color
+    del tipo por `${conf.color} ${conf.border}` y un `Badge` adentro; ahora
+    el color sale de `tone` + `soft` y el badge se queda como hijo.
+
+Botones a mano: 71 → 67.
+
+## v2.125.0 — D3.3: siete interruptores y tres grupos de eleccion
+
+── Interruptores (7) ────────────────────────────────────────────────────
+Pausar/Reanudar de Facturacion (×2), modo global de pedidos, devolutivo y
+SRS del catalogo, ND de la politica de vencimiento, "ver anteriores" de mis
+solicitudes y el modo edicion de una sucursal. Todos ganan `aria-pressed`:
+antes el estado vivia solo en el color.
+
+En TabGenerar el comentario del codigo documentaba un bug de contraste
+(pastilla blanca con texto invisible en dark, v2.62.4). Ese bug deja de ser
+posible: el color lo pone el tema via `tone`, no un `bg-surface-card` opaco
+escrito a mano.
+
+── Grupos de eleccion (3) ───────────────────────────────────────────────
+  · presets del catalogo → `SegmentedControl`
+  · sucursales del alcance de una encuesta → `FilterBar.Chip`, porque es
+    seleccion MULTIPLE: un `radiogroup` diria "1 de 6" para algo donde
+    pueden estar las seis.
+  · el selector de tipo de solicitud → `SegmentedControl layout="block"`,
+    que existia justo para estas tarjetas. Falto agregarle `stacked` (icono
+    arriba del texto) para no cambiarles la forma, y el radio de tarjeta:
+    una tarjeta alta con `rounded-btn` sale con forma de pastilla.
+    El color POR TIPO se conserva — `tone` acepta valor por opcion.
+
+── Un error que solo se vio mirando ─────────────────────────────────────
+Deje el `<div className="grid grid-cols-3">` original envolviendo al
+`SegmentedControl`, que en bloque YA ES una grilla. Resultado: las seis
+tarjetas metidas en una sola celda, a un tercio del ancho y con las
+etiquetas encimadas. Build verde, lint verde, gate verde. Solo aparecio en
+la captura.
+
+Botones a mano: 82 → 71.
+
+## v2.124.0 — Los otros tres destinos que eran botones
+
+Despues del menu (v2.123.0), un barrido por todo `src/` buscando
+`<button onClick={() => navigate(…)}>` dejo tres mas:
+
+  · **el buscador ⌘K** — cada resultado es un destino. Como `<button>` no se
+    podia abrir en otra pestaña. El teclado (↑↓ + Enter) no cambia: siempre
+    lo manejo el contenedor, no cada fila.
+  · **la tarjeta de sucursal** — su encabezado abre la ficha. El `onClick` se
+    queda solo para dejar la sucursal activa en el store, y para eso hizo
+    falta bajarle el callback a la tarjeta en vez de duplicar el navigate.
+  · **la alerta de sucursal del Inicio** — esta tenia un problema aparte: sin
+    permiso era un `<button>` con `onClick` INDEFINIDO, o sea una parada de
+    tabulacion que no hacia nada. Ahora con permiso es un enlace y sin
+    permiso es un `<div>`, que es lo que de verdad es.
+
+Verificado en vivo: ⌘K da `<a href="/payroll">` y Enter sigue navegando; las
+8 tarjetas de /branches son enlaces a su ficha y el clic funciona; 0 botones
+sin nombre, 0 errores.
+
+Botones a mano: 85 → 82.
+
+## v2.123.0 — El menu entero eran botones. Navegar no es una accion
+
+Los 9 `<button>` a mano de `AppLayout` resultaron ser TODOS lo mismo:
+`<button onClick={() => navigate(path)}>`. Y ese es el elemento equivocado
+—un enlace no es un boton— con tres consecuencias que la gente encuentra
+todos los dias:
+
+  · ⌘/Ctrl+clic y el boton del medio NO abrian en otra pestaña
+  · el navegador no mostraba a donde lleva antes de pulsar
+  · un lector de pantalla anunciaba "boton" para los 36 enlaces del menu
+
+Convertidos a `<Link>` de react-router: el item del menu, el submenu, los
+tres accesos al perfil, la barra inferior de movil, los tres flyouts y el
+logo. El aspecto no cambia una linea; el `onClick` se queda solo para lo que
+SI es un efecto secundario (cerrar el panel en movil y el flyout).
+
+Verificado en vivo, escritorio y WebKit movil:
+  · 36 enlaces con `href` real apuntando a su ruta
+  · `aria-current="page"` en el activo
+  · el clic normal sigue siendo SPA — no recarga la pagina
+  · **⌘+clic abre una pestaña nueva**, que es exactamente lo que antes era
+    imposible
+  · en movil el panel se cierra al tocar un item (x pasa de 8 a -288)
+
+Botones a mano: 94 → 85.
+
+## v2.122.0 — D3.3: el caso mas claro de por que existe esta fase
+
+`EncuestaAdminView` tenia un `SegmentControl` propio —el canonico reescrito
+clase por clase— **en un archivo que YA importaba `SegmentedControl` y lo
+usaba cinco veces**. No es que faltara el componente: es que nadie lo busco
+antes de escribir otro. Sus tres usos migrados, el duplicado borrado.
+
+Tambien:
+  · TabPromos: cuatro filtros excluyentes con su propio activo y su propio
+    contador → `SegmentedControl`, con el contador en el label.
+  · FilterPill (pedidos): `statusBtn` era `FilterBar.Chip` EXACTO — se apaga
+    al volver a pulsarlo, y hasta dibujaba la × cuando esta activo, que es
+    lo ultimo que hacia a mano. El `activeClass` de tres clases pasa a ser
+    un `tone`.
+
+Verificado en vivo: /encuesta-admin muestra los 5 grupos como `radiogroup`
+con su etiqueta y su marcado ("Estado de la encuesta: Borrador | Activa✓ |
+Cerrada | Archivada"), /promociones el suyo, 0 botones sin nombre, 0
+errores.
+
+Botones a mano: 97 → 94.
+
+## v2.121.0 — D3.3: acciones sueltas y la familia "chip que enciende un panel"
+
+Ocho botones mas al canonico, en dos familias:
+
+── Acciones planas ─────────────────────────────────────────────────────
+  · copiar la contrasena generada (EmployeeDetailView) — era un cuadrado de
+    40px con su propio verde de "copiado"; ahora `tone` lo dice.
+  · "Volver" del modal de cancelar evento. Traia un `hidden` DENTRO del
+    className para desaparecer mientras cancela; ahora lo decide el propio
+    condicional, que es donde va.
+  · "Ver Detalle" de un aviso. Su color codificaba el ESTADO de lectura
+    (urgente sin leer / completo / programado) reescribiendo borde y relleno
+    de cada caso; con `tone` + `soft` eso lo dice el canonico.
+
+── "Chip que enciende un panel" ────────────────────────────────────────
+Cinco toggles con la misma idea y cinco anatomias distintas: agregar
+feriado, recurrente, personalizar el Inicio, filtrar la linea de tiempo,
+ver todos en la red min/max.
+
+Lo que ganan no es el borde: es que ahora DICEN su estado. Un panel que se
+abre lleva `aria-expanded`, un modo que se prende lleva `aria-pressed`.
+Antes el estado vivia solo en el color de fondo, o sea que no existia para
+quien no lo ve.
+
+Verificado en vivo: Personalizar y Filtrar alternan `aria-expanded`
+false→true con su cambio de color; "Ver todos" arranca en
+`aria-pressed=false` y cambia su texto a "Solo alertas"; "Agregar feriado"
+pasa a "Cancelar".
+
+Botones a mano: 105 → 97.
+
+## v2.120.0 — Sin título
+`VARIANTE_DOC` —el comentario mas los dos usos— y lo lei como exito.
+La vista entera cayo en el ErrorBoundary.
+
+Regla: al insertar por ancla, **afirmar que la insercion ocurrio**
+(`assert 'const X = {' in s`), no contar menciones.
+
+── Fallo 2: `eslint | tail -1` me ocultaba el resumen ───────────────────
+ESLint SI reportaba `'VARIANTE_DOC' is not defined  no-undef`. Pero su
+salida termina en linea vacia, asi que `tail -1` mostraba el vacio en vez
+del "✖ 2 problems". Llevaba varios lotes leyendo mal ese comando.
+Correcto: `npx eslint src/ | grep -E "problems|✖"`.
+
+Chips a mano: 77 → 73.
+
+## v2.120.0 — VentasView: sus tres tablas y sus chips de filtro
+
+`DataTable` quedo arreglado en v2.119.0, pero esta vista tiene TRES tablas y
+dos son propias:
+  · `SortTh`  ya usaba `<button>` (por eso se descubrio el defecto del
+    canonico), pero le faltaban `aria-sort` y un nombre.
+  · `DH`, el encabezado del drill-down, era un `<th onClick>` pelado —
+    exactamente el defecto que el canonico acababa de perder.
+
+Y los chips de filtro del drill pasan a `FilterBar.Chip`, que YA EXISTIA y
+tenia 4 usos en todo el proyecto. Es el canonico correcto y no
+`SegmentedControl`: varios pueden estar prendidos a la vez, asi que un
+`radiogroup` mentiria diciendo "1 de 3".
+
+── Y una correccion de algo que hice mal en v2.117.0 ────────────────────
+Al boton de ocultar producto le puse `aria-pressed={!showHidden}` y estaba
+MAL: `showHidden` filtra la tabla entera, o sea que todas las filas dirian
+lo mismo. No es un interruptor de dos estados, es una accion cuyo texto ya
+depende del modo. Se quita; el `aria-label` ya dice que va a pasar.
+
+Verificado en vivo en /ventas: 16 encabezados ordenables entre las dos
+pestañas, los 16 con `<button>` y `aria-sort`, 0 botones sin nombre, 0
+errores. Los chips del drill quedan verificados POR CODIGO: son un cambio
+1:1 a `FilterBar.Chip`, que renderiza en vivo en esa misma vista (los chips
+"Anuladas" y "Receta Medica"), pero abrir el drill exige un producto con
+lineas en el rango y no se logro en el arnes.
+
+## v2.119.0 — Ordenar una tabla era solo de raton. En las 12 vistas
+
+Tercera vez esta semana que el defecto esta en el canonico y no en la vista,
+y esta se descubrio de la forma mas ironica posible: migrando los botones a
+mano de VentasView, que tiene su PROPIO encabezado ordenable escrito a
+mano... y ese si usa `<button>`. El canonico era MENOS accesible que lo que
+venia a reemplazar.
+
+`DataTable` ponia el `onClick` en el `<th>` mismo: sin `<button>`, sin
+`tabIndex`, sin manejador de teclas y sin `aria-sort`. O sea:
+
+  · con teclado NO se podia ordenar ninguna tabla del portal
+  · el estado de orden solo existia en la flecha dibujada — un lector de
+    pantalla no tenia forma de saber por que columna esta ordenado
+
+Son **62 columnas ordenables en 12 vistas**, arregladas de una sola vez.
+
+Dos decisiones del arreglo:
+  · `aria-sort` va en el `<th>` (es lo que la norma espera) y el nombre del
+    boton dice que PASARA al pulsar ("Ordenar por Usuario, ascendente"), no
+    el estado actual. Ponerlo en los dos lados lo haria sonar dos veces.
+  · `flex-row-reverse` cuando la columna es de alineado derecho, para que la
+    flecha no se despegue del texto.
+
+Verificado en vivo en /auditview: 3 columnas con `aria-sort`, el foco cae en
+el boton con su aro, Enter alterna descending→ascending, la etiqueta se
+actualiza y la tabla se reordena de verdad.
+
+## v2.118.0 — D3.3: el control unido de Facturacion y cinco grupos uno-de-N
+
+── ChipDoc: el mismo control escrito CUATRO veces ────────────────────────
+FacturacionView tenia 9 `<button>` a mano y siete eran el mismo control
+repetido: facturas pendientes, pendientes-MH, saltos de correlativo y
+anuladas con campos nulos. Los cuatro con la misma anatomia —copiar el id │
+etiqueta del medio │ resolver— y la misma cascada de ternarios de color,
+cada copia con un estado de mas o de menos.
+
+NO pasa por `Button` a proposito: son tres segmentos PEGADOS dentro de un
+borde comun (`items-stretch` + `border-r`), y el canonico le daria a cada uno
+su radio y su sombra, rompiendo la union. Lo que se arregla es que exista una
+sola definicion, y que el color deje de ser una cascada de ternarios y pase a
+ser una TABLA. Mismo cambio que `SUC_COLORS` en TabSinVenta: si el estado
+tiene nombre, el color se busca; si no, se reescribe en cada copia.
+
+Un hallazgo al unificar: el chip de los saltos NO tiene boton de copiar —su
+primer segmento es un rango de solo lectura— y estaba igual escrito como
+`<div>`. Ahora `ChipDoc` lo contempla: sin `onCopiar` ese segmento no es un
+boton, asi que un dato de solo lectura no recibe foco ni voz de control.
+
+── Cinco grupos uno-de-N al canonico ────────────────────────────────────
+  · TabShifts            Activos / Archivo
+  · ScheduleChart        Horas / Dias
+  · FormPurchaseDteViewer Detalle / PDF
+  · EmployeeRequestsView  las 4 pestanas de estado
+  · ConteoDetailView      Todos / Pendientes / Con diferencia
+
+Lo que ganan no es solo la forma: `SegmentedControl` es un `radiogroup` con
+`aria-checked`, asi que un lector de pantalla dice "Estado de las
+solicitudes, Pendientes, seleccionado, 1 de 4". Antes decia "boton" cuatro
+veces y el estado solo existia en el color de fondo.
+
+Verificado en vivo los cinco riel por riel, y las cuatro pestanas de
+Facturacion con sus chips: 0 botones sin nombre, 0 errores.
+
+Botones a mano: 119 → 106.
+
+## v2.117.1 — El mapa de nombres se muda a `common/iconNames.js`. Exportar una
+constante desde un archivo de componente rompe el Fast Refresh de React
+(`react-refresh/only-export-components`): al editar el mapa, Vite recargaba
+la pagina entera en vez de sustituir el componente. Sin cambio de conducta —
+reverificado en vivo, 265 botones, 0 sin nombre.
+
+## v2.117.0 — D3.3, capa de accesibilidad: 109 botones que no decian nada
+
+Empezo buscando `<button>` de solo icono sin `aria-label`. Contarlos costo
+TRES intentos, y los tres errores son la misma familia de trampa de siempre:
+
+  1º  borrar `{…}` a ciegas → un boton cuyo texto sale de una variable
+      (`{tab.label}`) parecia vacio: 44 falsos positivos.
+  2º  conservar identificadores → la CONDICION de un ternario
+      (`{isSolving ? <X/> : <Check/>}`) parecia contenido: daba 1.
+  3º  quitar condiciones y guardas antes de mirar el residuo → 8, de los
+      cuales 7 son defecto real y 1 es un chevron `aria-hidden` deliberado.
+
+Los 7 eran INTERRUPTORES (resolver una factura, ocultar un producto, el modo
+privacidad). Ademas del nombre les faltaba `aria-pressed`: sin el, el estado
+solo existe en el color del icono.
+
+── Y entonces el gate encontro lo grande ────────────────────────────────
+Al volverlo categoria del gate aparecieron 7 mas en `components/common/`,
+que mi clasificador excluia. Son los CANONICOS — ViewTabBar (buscar, cerrar
+el buscador, borrar, cerrar filtros), SearchInput (borrar ×2), LiquidSelect.
+Un nombre que falta ahi se multiplica por cada vista del portal.
+
+Y midiendo eso salio lo de verdad grande: **102 de los 194 `iconOnly` del
+proyecto no tenian nombre**. La distribucion decidio el arreglo:
+
+    56 × X   ·   12 × ChevronLeft   ·   9 × ChevronRight   ·   5 × Trash2
+
+77 de 102 son cuatro iconos cuyo significado no admite duda. Con eso, el
+arreglo correcto es UNO —que `Button` derive el nombre del icono cuando no
+se lo dieron— y no 102 ediciones. No es pereza: un boton cuyo unico
+contenido es una `X` significa "cerrar" en todas partes, y que cada llamador
+tenga que repetirlo es justamente por lo que 102 se lo saltaron. Quien tenga
+algo mas especifico que decir pasa su `aria-label` y gana: es el piso.
+
+Dos casos que el mapa no cubria y se arreglaron a mano:
+  · El boton de contraer el menu pasaba el icono como CHILDREN, no por
+    `icon`, asi que el canonico no lo veia. Ahora dice "Contraer el menu" /
+    "Expandir el menu" / "Cerrar el menu", que es mejor que el automatico.
+  · `StatCard` ponia `aria-label={loading ? undefined : …}` — mientras carga
+    el contenido es un spinner, o sea que se anunciaba como "boton" y nada.
+    Ahora dice "<etiqueta>: cargando" y lleva `aria-busy`.
+
+`button-name` nace en **0 y bloqueante**, igual que `input-label`.
+
+Verificado en vivo: **1,340 botones en 14 vistas, 0 sin nombre accesible.**
+
+## v2.116.0 — D3.4 en el formulario de nomina, que es el de mas riesgo
+
+`FormEditPayrollEntry` ya sacaba 11 campos de `PortalInput` via `numField`,
+pero tres seguian escritos a mano con `<InputLabel>` + `<input
+className={glassInput}>`. Eso es el canonico reconstruido clase por clase:
+la etiqueta, el alto, el borde, el glow. En el mismo formulario, once campos
+pasaban por el componente y tres no, y se notaba.
+
+Migrados los tres. `InputLabel` y `glassInput` se fueron con ellos.
+
+── La prueba de por que el arreglo de v2.115.0 tenia que ir primero ──────
+"Dias Trabajados" lleva `min="0" max="16" step="0.5"`. Verificado en vivo en
+el editor: los tres atributos SIGUEN en el DOM despues de migrar. Antes del
+`...rest` el campo habria perdido su tope de 16 dias sin que fallara nada, y
+una quincena mal capturada en nomina no es un detalle visual.
+
+De paso, el asterisco rojo a mano de "Motivo de edicion" era una convencion
+inventada en este archivo; ahora usa el badge "Requerido" del canonico, que
+es lo que muestra el resto del portal.
+
+── Los cuatro que NO se migran, y por que ───────────────────────────────
+Los del banco de horas. El color del borde no es decoracion: dice de que
+bolsa sale la hora (diurna ambar, nocturna chart-3) y que se hace con ella
+(compensar, chart-1). `PortalInput` no tiene eje de color, asi que migrarlos
+borraria el dato. Queda anotado en el bloque.
+
+Verificado en vivo con un periodo y una entrada SINTETICOS interceptados en
+red — no se escribio nada en la base. Los 14 campos del editor tienen ahora
+etiqueta asociada por `<label for>`; cero errores.
+
+Inputs fuera del canonico: 102 → 99.
+
+## v2.115.0 — D3.4 era una migracion con trampa. Ya no
+
+`PortalInput` aceptaba una lista FIJA de props y tiraba en silencio todo lo
+demas. Medido sobre los 104 `<input>` que faltan migrar:
+
+    54 de 104 (51%) usan al menos un atributo que el canonico NO acepta
+    min 38 · aria-label 22 · step 18 · max 13 · ref 6 · inputMode 2
+
+Traducido: migrar un campo de cantidad de nomina le habria quitado su rango
+(`min`/`max`/`step`) y alguien habria podido escribir -5 o 3.7 donde no va.
+Y los 22 con `aria-label` habrian PERDIDO su nombre accesible — justo los
+que D3.4 acababa de arreglar. Sin que fallara el build, ni el lint, ni el
+gate. El plan avisaba que "migrar estos a velocidad de script es la forma
+mas rapida de romper la captura de datos de la empresa"; esta es la razon
+concreta, y estaba en el canonico, no en las vistas.
+
+Ahora `PortalInput` y `PortalTextarea` reenvian `...rest`. Va PRIMERO en el
+elemento a proposito: lo que el componente gestiona (id, type, value,
+onChange, className, el estado de error) gana siempre, y lo del llamador
+llena los huecos. Unica excepcion, `aria-describedby`: se fusiona, porque si
+el campo no esta en error el valor del llamador tiene que sobrevivir.
+
+Primera migracion real con esto, en CotizacionesView: Cantidad y P. Unitario
+llevaban un `<label>` suelto SIN `htmlFor` —no estaba asociado al campo, por
+eso el `aria-label` de parche— mas `min`/`step`. Verificado en vivo: los dos
+atributos llegan al DOM y la etiqueta ahora la asocia `<label for>` de
+verdad.
+
+Barrido aparte: de los 38 canonicos de common/, `Badge` era el unico donde
+no reenviar props causaba una perdida real hoy. El resto toma props
+explicitas por diseno (un modal no necesita atributos arbitrarios).
+
+## v2.114.0 — D3.5 `Badge` re-medido, y un componente que tragaba props
+
+El plan tenia D3.5 como "abierta — el conteo no se re-midio". Medido hoy:
+**110 chips a mano en 51 archivos** (eran 249 en la medicion original), y
+otra vez CUATRO radios para una sola idea: full 62 · md 30 · lg 14 · xl 4.
+
+── El hallazgo que importa: `Badge` tragaba props ────────────────────────
+No tenia `...rest`. Los chips de TabSinVenta llevaban `title={detalle}` con
+la explicacion de POR QUE el producto cae en esa categoria ("Tiene Min/Max
+asignado pero sin stock fisico — reabastecer"). Al pasarlos al canonico ese
+tooltip habria desaparecido y NADA habria fallado: ni el build, ni el lint,
+ni el gate. Es el mismo tipo de bug que el `presentaciones.descripcion` del
+sync — una perdida silenciosa que vive semanas.
+
+── TabSinVenta: dos paletas que eran el canonico copiado a mano ──────────
+`SUC_COLORS` y el campo `cls` de `getSuggestion()` mapeaban cada estado a
+TRES clases de Tailwind. Comparadas contra `SOFT` de Badge, eran 1:1 — la
+misma paleta, escrita otra vez. Ahora guardan el NOMBRE de la variante y el
+color lo pone el canonico: agregar una sucursal es una linea, no tres clases.
+(Una de las siete tenia `border-danger/40` donde el resto usa /30. Nadie lo
+habria visto nunca; es exactamente la deriva que el canonico existe para
+eliminar.)
+
+── Y el conteo de botones estaba inflado ─────────────────────────────────
+El clasificador no blanqueaba comentarios `//`, asi que contaba la palabra
+`<button>` escrita en PROSA. Mismo agujero que ya costo dos conteos en el
+gate de `input-label` (80 → 29 → 22). Corregido: **126 → 120**.
+
+Verificado en vivo en /productos?tab=sinventa: 157 chips, 93 conservan su
+tooltip, 8 colores distintos, cero errores.
+
+## v2.113.0 — La fila clickeable no existia para el teclado
+
+Salio de migrar los botones de ComprasView: habia un `<button>` SIN onClick.
+Recibia el foco, se anunciaba como boton y al pulsar Enter no pasaba nada.
+Mirando por que, aparecio lo de fondo: `DataRow` es un `<tr onClick>` sin
+`tabIndex` ni manejador de teclas, o sea que la fila clickeable NUNCA fue
+alcanzable por teclado — en ninguna tabla del portal.
+
+Medido antes de tocar nada: 11 filas clickeables en 8 vistas, y **9 no tienen
+un solo elemento interactivo adentro**. No es que fuera incomodo: la accion
+entera (abrir el detalle de una compra, de un conteo, de una promocion) no
+existia sin mouse. WCAG 2.1.1.
+
+El arreglo va en `DataRow` y no vista por vista porque el defecto es del
+componente: `tabIndex={0}` cuando hay onClick, mas Enter/Espacio. El aro de
+foco no hay que declararlo — `[tabindex]:focus-visible` ya lo pinta desde el
+canonico de index.css.
+
+Dos detalles que importan:
+  · La guarda `e.target !== e.currentTarget` — sin ella, el Espacio sobre un
+    boton de adentro dispararia tambien el click de la fila.
+  · NO se le pone `role="button"` al `<tr>`: eso lo sacaria de la estructura
+    de la tabla para un lector de pantalla. Se queda como fila, activable.
+
+El costo honesto es una parada de tabulacion por fila. Es asumible porque
+estas tablas paginan (TablePagination es canonico): son ~15-50 filas, no 200.
+Y la alternativa era que la funcion no existiera.
+
+El chevron de ComprasView vuelve a ser lo que siempre fue: un `<span
+aria-hidden>` que indica el estado. Quien abre es la fila.
+
+Verificado en vivo en /compras: 50 filas enfocables, aro de 2px, Enter
+expande (aria-expanded=true y el detalle se renderiza), el click del raton
+sigue igual y no queda ningun boton muerto en el tbody.
+
+## v2.112.0 — Los 9 "guardar" del formulario lateral, y una familia que no era
+
+El clasificador los marcaba como "uno de N" y NO lo eran: el ternario que
+leia como estado seleccionado era el del MODO (crear azul / editar ambar /
+confirmar verde). Nueve botones, una sola anatomia repetida a mano:
+
+    w-full py-4 rounded-2xl font-black uppercase tracking-widest
+    + un Loader2 propio + el color segun el modo
+
+El canonico ya cubre las cuatro cosas: `size="lg"` son exactamente los 48px
+que tenian, `tone` da ambar y verde, `loading` reemplaza al Loader2 escrito a
+mano, y `icon` a los <Save/> sueltos. Lo unico que PIERDEN es el
+`uppercase tracking-widest`, que es justo la decision aprobada en T2.3
+("las mayusculas leian 'dashboard 2016'") — eran los ultimos nueve que
+seguian sin aplicarla.
+
+── Lo que aparecio al migrarlos ──────────────────────────────────────────
+En RequestsView el "Cancelar" de al lado YA era canonico, asi que los dos
+botones del pie del modal tenian ALTURAS DISTINTAS (40px contra ~44px).
+Ahora los dos miden 40 y comparten linea base. No se veia hasta medirlo.
+
+── Hallazgo aparte: FormTurnos es inalcanzable ───────────────────────────
+`manageShifts` esta definido en UnifiedModal (titulo, ancho, icono, render)
+y NADA en todo el codigo lo abre. Son 365 lineas que ademas duplican la
+pestana "Catalogo" de Horarios, que si esta viva y es mas completa. El
+CHANGELOG ya lo habia anotado dos veces (v2.17.28 y antes) sin que nadie
+actuara. NO lo borro: `updateShiftFlags` solo existe ahi, o sea que borrarlo
+se lleva la unica UI de esas banderas. Queda migrado y anotado — la decision
+de borrar es del usuario, no mia.
+
+Verificado en vivo 8 de 9 (avisos, cargos, vacaciones, encuestas, turnos y
+los dos del modal de solicitudes, estos con una fila sintetica interceptada
+en red). El CTA "estoy al dia" de Mis Avisos quedo verificado por codigo: sus
+datos vienen en el payload de boot, no en un GET propio que se pueda
+interceptar.
+
+## v2.111.0 — Una casilla simulada con `<button>` y un grupo partido en dos
+
+`FormPlanificador.BeautifulCheckbox` era una CASILLA ESCRITA A MANO con un
+`<button>`: caja de 16px, un `<Check>` adentro y un `theme` que solo elegia
+entre dos colores de relleno. El canonico `Checkbox` es exactamente eso —y
+ademas renderiza un `<input type="checkbox">` REAL, asi que un lector de
+pantalla lo anuncia como casilla y no como boton, y la barra espaciadora lo
+marca. Antes ninguna de las dos cosas pasaba.
+
+El `theme` se descarta a proposito: las dos instancias (almuerzo naranja,
+lactancia rosa) usaban color solo para diferenciarse entre si, y ya viven
+dentro de secciones con su propio encabezado de color.
+
+── Y en FormWfmAnalytics, un grupo partido en dos ────────────────────────
+La fila de los 7 dias YA era un `SegmentedControl`; la de arriba
+("Semana | General (Hr)") seguian siendo dos `<button>` sueltos. **Las dos
+controlan el MISMO `activeView`.** Es el mismo hallazgo que el
+`<button>Todos</button>` suelto de EmployeeProfileView: media opcion de un
+grupo se quedo fuera del grupo.
+
+Se dejan como dos `SegmentedControl` y no como uno solo porque 2 + 7
+opciones no entran en una fila; cada `label` dice cual es cual.
+
+## v2.110.1 — Medida la duplicacion de `filtersContent`: no vale arreglarla, y
+mi anotacion anterior era enganosa.
+
+Preguntado por el usuario: "¿que ganamos al corregir esto?". La respuesta
+honesta, medida y no estimada: **casi nada.** Las cuatro sospechas se
+cayeron una por una:
+
+  accesibilidad  `display:none` SI saca del arbol → 2 en el DOM, 1 alcanzable
+  listeners      `useSearchToggle`/`LiquidSelect` registran solo al ABRIR
+                 (`if (!active) return`) → contados envolviendo
+                 `addEventListener`: CERO de mas
+  rAF            el bucle de posicionamiento depende de `isOpen` → cero de mas
+  estado         con el buscador abierto y "pedialyte" escrito, al achicar a
+                 390px el filtro SIGUE aplicado y la lupa movil muestra su
+                 punto rojo. No se pierde nada
+
+Costo real: DOM duplicado — 14 nodos en /audit, 42 en /requests, 61 en
+/productos, sobre vistas de miles. Unificarlo tocaria las 34 vistas que usan
+la prop para ganar eso.
+
+── Y lo importante: corrijo lo que YO habia escrito ──────────────────────
+Mi comentario en `GlassViewLayout` decia que "abrir el buscador en
+escritorio y achicar la ventana deja el de movil cerrado". Es LITERALMENTE
+CIERTO Y ENGANOSO: el buscador colapsa, si, pero eso es lo correcto en
+movil, el filtro sigue puesto y hay senal visual.
+
+Lo habia dejado EN EL CODIGO FUENTE, donde el proximo lo iba a leer como un
+defecto conocido y quizas gastar un dia en "arreglarlo". Reemplazado por los
+cuatro numeros de arriba. Una alarma que se investiga y se descarta tambien
+es trabajo — pero hay que descartarla del todo, no dejarla a medias.
+
+## v2.110.0 — Las 5 pestañas de la ficha de empleado, y una alarma que resulto
+infundada.
+
+`EmployeeDetailView` tenia sus 5 pestañas escritas a mano con una PILDORA
+DESLIZANTE propia: un `<div absolute>` cuyo `translateX` salia de una cadena
+de cinco ternarios y cuyo ancho era `w-[calc(20%-2px)]`. O sea que agregar
+una sexta pestaña rompia la aritmetica **en silencio** — el indicador
+quedaria corrido y nadie lo veria hasta mirarlo. Y su fondo era `bg-white`
+FIJO: en los dos temas oscuros, una pildora blanca.
+
+`SegmentedControl` ya modela esto y trae el `role="radiogroup"` que faltaba.
+
+── Y una alarma que investigue y resulto infundada ───────────────────────
+Al verificar aparecieron DOS `radiogroup` con el mismo nombre, y pense que
+era un bug de accesibilidad: `GlassViewLayout` renderiza `filtersContent`
+dos veces, una rama para escritorio y otra para movil.
+
+Medido antes de "arreglarlo": las ramas se ocultan con `hidden lg:block` /
+`lg:hidden`, y **`display:none` SI saca del arbol de accesibilidad** — 2 en
+el DOM, 1 alcanzable. No hay duplicado para un lector de pantalla.
+
+Lo que si es real, y queda anotado en el propio archivo: son dos INSTANCIAS
+de React con estado propio (abrir el buscador en escritorio y achicar la
+ventana deja el de movil cerrado), y todo el contenido se renderiza dos
+veces por render. Unificarlo toca las 34 vistas que usan la prop.
+
+## v2.109.2 — Tres enlaces de accion de TabCatalogo al canonico
+
+"Cambiar foto", "Mostrar N inactivas" y "Ver N cambios anteriores" eran
+`<button>` con la MISMA cadena de clases —`text-caption font-bold
+transition-colors text-content-3 hover:text-content-2`— y encima envuelta
+en un template literal con una interpolacion CONSTANTE
+(`${'text-content-3 hover:text-content-2'}`), que es lo que hizo que el
+migrador automatico de v2.76.0 los saltara: veia `${` y se detenia.
+
+Son `Button variant="ghost" size="xs"`. Verificado en vivo expandiendo una
+fila del catalogo.
+
+## v2.109.1 — Los pares OK/Falta de los dos modales de llegada
+
+`LlegadaModal` y `ReenvioLlegadaModal` tienen, por cada caja especial, un
+par "✓ OK / ✗ Falta" escrito como dos `<button>` con `est === 'ok' ? … : …`.
+Es un uno-de-N: con `SegmentedControl` la caja se lee como UN control con
+dos estados y no como dos acciones sueltas, y el lector de pantalla anuncia
+"1 de 2".
+
+VERIFICADO POR CODIGO, no en vivo: estos modales solo se abren desde un
+pedido en estado "en ruta", y ahora mismo no hay ninguno. El cambio es
+identico —misma forma, mismos dos valores— al de EncuestaAdminView, que si
+se verifico en vivo hoy. Queda anotado como tal, no como "hecho y visto".
+
+## v2.109.0 — Los 7 encabezados de FacturacionView, y como se desbloqueo
+
+En v2.105.0 migre estos 7 encabezados a `ListRow`, compilaban, pasaban el
+lint — y **los revertí**, porque la cuenta no tiene facturas anuladas en
+ninguna pestaña ni mes y no habia forma de mirarlos en el navegador. Dije
+que hacia falta "una cuenta o un mes con datos".
+
+Estaba equivocado: **hacia falta interceptar la red**. `page.route()` de
+Playwright deja responder la consulta de PostgREST con filas sinteticas, sin
+tocar una linea de codigo de produccion ni escribir en la base. Doce
+facturas en dos sucursales y dos fechas, una con CCF, alcanzan para que las
+cabeceras tengan que pintar su badge, su tono de peligro y su contador.
+
+La leccion no es sobre facturacion: **"no hay datos para verificar" casi
+nunca es el final del camino.** Los datos de una vista entran por HTTP, y
+eso se puede responder.
+
+Migrados: 3 cabeceras de historial (icono en caja + titulo + subtitulo) y 4
+agrupadores de sucursal (icono suelto + nombre + badge + contador). Los 7
+eran `ListRow` con el chevron en `trailing`, escritos a mano con dos
+anatomias y cuatro rellenos distintos.
+
+Verificado contra una captura del ANTES: mismas agrupaciones, mismo badge
+CCF, mismo tono rosado en la sucursal con CCF, mismo contador.
+
+## v2.108.0 — La barra numero 13, y una opcion que estaba fuera de su grupo
+
+`EmployeeAnnouncementsView` tenia la barra de vista REESCRITA A MANO — la
+treceava. Su propio `useSearchToggle`, sus dos mitades colapsables con
+`inert`, su punto rojo de "hay busqueda activa" y su boton de lupa. Al
+migrarla a `ViewTabBar` quedaron **tres refs huerfanos**, que es la prueba
+de que era duplicado y no personalizacion. Y de regalo gana el colapso
+tactil en hoja inferior, que esta copia no tenia.
+
+Sus subfiltros de "Leidos" —que se deslizaban DENTRO de la misma barra con
+un `max-w-0` que los escondia a medias— son un uno-de-N: ahora van en
+`trailingActions` como `SegmentedControl`.
+
+── Y en `EmployeeProfileView`, una opcion fuera de su propio grupo ────────
+El filtro de tipo de evento tenia un `<button>Todos</button>` SUELTO al lado
+de un `SegmentedControl` con el resto. Visualmente parecia una opcion mas;
+para un lector de pantalla el grupo decia "1 de 4" cuando hay 5 opciones, y
+"Todos" ni siquiera figuraba como parte del conjunto.
+
+Es un error facil de cometer —la opcion "todos" se siente distinta de las
+demas— y solo se ve preguntando que anuncia el grupo, no mirandolo.
+
+## v2.107.1 — Los 8 bloques de encuesta a `ListRow`
+
+Las cabeceras de bloque del formulario de respuestas ("G · Datos Generales
+0/1", "B2 · Liderazgo Directo 0/11") estaban escritas a mano. Son `ListRow`
+con la ranura `leading` — que acepta una LETRA y no solo un icono, y que se
+agrego al canonico precisamente por estos bloques.
+
+Verificado en vivo navegando hasta el formulario: los 8 bloques con su
+letra, su nombre, su contador y su chevron, identicos a antes.
+
+## v2.107.0 — Dos filas del Inicio a `ListRow`, y un detalle que solo el
+canonico arregla.
+
+Las listas de "Solicitudes pendientes" y "Avisos" del Inicio eran la
+anatomia exacta de `ListRow` —caja de icono, titulo, subtitulo y algo al
+final— escrita a mano.
+
+Lo que gana no es solo consistencia: **sin `onClick`, `ListRow` renderiza un
+`<div>`, no un `<button>`**. Esas filas solo navegan si el usuario tiene
+permiso (`canManage`), y cuando no lo tiene el codigo pasaba `onClick =
+undefined` sobre un `<button>`: quedaba una parada de tabulacion que no
+hacia nada. Ahora, sin permiso, la fila directamente no es enfocable.
+
+Es la misma regla que ya trajo `Switch` (sin `onChange`, un `<span>`) y la
+misma clase de bug que el `<button>` anidado de AttendanceAudit: **un
+control que no hace nada no debe ser un control.**
+
+## v2.106.1 — El changelog sale de `src/`: 805 KB → 9 KB
+
+Este archivo lo importa `AppLayout` para pintar la version en el pie del
+menu, y habia crecido a **805 KB** con 1,012 entradas de changelog. Los
+comentarios NO llegan al bundle —verificado: cero coincidencias en `dist/`—
+asi que no era peso para el usuario. Lo que si costaba:
+
+  · babel se deoptimizaba en CADA build ("exceeds the max of 500KB")
+  · eslint lo recorria entero en cada pasada
+  · y era imposible de leer: para ver la ultima entrada habia que abrir
+    780 KB de JS
+
+Las 1,012 entradas pasan a `CHANGELOG.md` en la raiz, en markdown legible
+(sin el `// ` delante de cada linea). Acá quedan las 6 mas recientes, que es
+lo que uno mira al retomar.
+
+Verificado que no se perdio nada: 1,012 entradas en el original, 1,012 en el
+markdown, y la primera y la ultima presentes. Y el pie del menu sigue
+diciendo la version en vivo.
 
 ## v2.106.0 — 22 campos de texto sin nombre accesible, y el gate que los pesca.
 

@@ -38,3 +38,4 @@ dist-ssr
 # Migración de clientes: secreto (cookie de sesión del ERP) y volcado regenerable
 scripts/migracion-clientes/erp.env
 scripts/migracion-clientes/rep_cli.html
+dist-*

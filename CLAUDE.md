@@ -358,8 +358,34 @@ llevan trabajo ajeno sin commitear. Siempre paths explícitos, y **verificar
 protección real: lo commiteado se recupera, lo demás no. Y `git fetch` antes de
 pushear — el remoto puede haberse movido.
 
-**Al bumpear `APP_VERSION`**: leer `src/version.js` en el momento, nunca asumir
-"el anterior + 1". Otra sesión puede haber usado ese número ya.
+**Al bumpear `APP_VERSION`: `npm run version:bump -- patch|minor|major "Título"`.**
+Lee la versión, la sube y deja la entrada empezada en `CHANGELOG.md` de una
+sola pasada, y **relee justo antes de escribir** por si otra sesión se llevó ese
+número en el medio (pasó tres veces en una sola sesión el 2026-08-01). Nunca
+asumir "el anterior + 1", y nunca editar `src/version.js` a mano.
+
+**La entrada del changelog va en `CHANGELOG.md`, NUNCA en `src/version.js`.**
+Ese archivo tiene la constante y nada más. La regla vieja —"las últimas 6
+entradas en `version.js`"— se rompió sola: nada la verificaba, así que 164 de
+268 entradas nunca llegaron a `CHANGELOG.md` y el archivo volvió a 7,330 líneas
+en tres semanas. Pero el motivo de fondo no es el peso: con varias sesiones,
+todas escribían el mismo bloque al tope del mismo archivo y colisionaban
+siempre. Hoy `version-gate` exige las tres cosas — que `version.js` no tenga
+entradas, que la versión suba, y que `## v<versión>` exista en `CHANGELOG.md`
+**y esté preparado en el mismo commit**.
+
+**Para trabajo largo o riesgoso, un árbol propio**: `npm run worktree -- <nombre>`
+crea el worktree en `../Portal-Farmalasa-<nombre>` sobre la rama
+`sesion/<nombre>`, con `node_modules` enlazado y `.env` copiado. Deja de
+compartir archivos, índice y `dist/`. El costo es que hay que mergear a `main`
+en vez de pushear directo, así que para un arreglo corto no vale la pena.
+
+**El preview de QA es uno solo.** Las edge functions solo aceptan CORS de
+`http://localhost:4173`, así que **una sesión a la vez** puede tenerlo
+levantado; `npm run preview` lleva `--strictPort` para que un puerto ocupado
+falle claro en vez de moverse solo y producir un "error de CORS" que parece otra
+cosa. Para compilar sin pisar el `dist/` de otra sesión: `OUT_DIR=dist-<nombre>
+npm run build`.
 
 **El hook de pre-commit** (`.githooks/pre-commit`, se habilita una vez por clon con
 `npm run hooks:install`) cubre el caso mecánico: **bloquea el commit si un archivo
@@ -374,7 +400,8 @@ emergencia real, no para silenciar un hallazgo.
 - Siempre usar `LiquidSelect` en lugar de `<select>` nativo
 - Badges `es_antibiotico=true` → "Bajo Receta" (NUNCA "Abx")
 - Toda acción de usuario → `appendAuditLog` (staffStore → `audit_logs`)
-- Bumpar `APP_VERSION` en `src/version.js` en cada commit
+- Bumpar la versión en cada commit con `npm run version:bump` (la entrada del
+  changelog va en `CHANGELOG.md`, nunca en `src/version.js`)
 - **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
   crudos, elementos nativos del navegador), correr `npm run gate:design`.**
   Debe pasar en verde — las excepciones legítimas viven en

@@ -2,7 +2,7 @@ import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
-    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2, Truck
+    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2, Truck, Contact
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import LiquidModal from "./common/LiquidModal";
@@ -45,11 +45,12 @@ const FormSetPassword = React.lazy(() => import('./forms/FormSetPassword'));
 const FormChangeOwnPassword = React.lazy(() => import('./forms/FormChangeOwnPassword'));
 const FormEditContact = React.lazy(() => import('./forms/FormEditContact'));
 const FormProveedorDetail = React.lazy(() => import('./forms/FormProveedorDetail'));
+const FormClienteDetail = React.lazy(() => import('./forms/FormClienteDetail'));
 const FormNewPayrollPeriod = React.lazy(() => import('./forms/FormNewPayrollPeriod'));
 const FormEditPayrollEntry = React.lazy(() => import('./forms/FormEditPayrollEntry'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument", "viewPurchaseDte"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "editProveedor"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "editProveedor", "editCliente"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -177,6 +178,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "newPayrollPeriod": return "max-w-md";
             case "editPayrollEntry": return "max-w-2xl";
             case "editProveedor": return "max-w-3xl";
+            case "editCliente": return "max-w-3xl";
             default: return "max-w-lg";
         }
     };
@@ -216,6 +218,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "newPayrollPeriod": return "Nueva Quincena";
             case "editPayrollEntry": return "Editar Entrada";
             case "editProveedor": return formData?.nombre || "Detalle de Proveedor";
+            case "editCliente": return formData?.nombre || "Ficha del Cliente";
             default: return "Gestión Administrativa";
         }
     };
@@ -235,6 +238,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "newPayrollPeriod") return "PERÍODO DE NÓMINA";
         if (type === "editPayrollEntry") return (formData?._entry?.employee?.name || 'EMPLEADO').toUpperCase();
         if (type === "editProveedor") return formData?.nit || formData?.dui || 'PROVEEDOR';
+        if (type === "editCliente") return "FICHA FISCAL";
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
         if (type === "viewDocument") return "Vista Previa de Archivo";
         return "Panel de configuración";
@@ -755,6 +759,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand-text`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Edit2 size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editProveedor") return <div className={`${squircleClass} text-brand-text`}><Truck size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editCliente") return <div className={`${squircleClass} text-brand-text`}><Contact size={22} strokeWidth={2.5} /></div>;
 
                                     return <div className={`${squircleClass} text-content-3`}><Settings size={22} strokeWidth={2.5} /></div>;
                                 })()}
@@ -879,6 +884,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "newPayrollPeriod" && <FormNewPayrollPeriod formData={formData} setFormData={setFormData} />}
                                 {type === "editPayrollEntry" && <FormEditPayrollEntry formData={formData} setFormData={setFormData} />}
                                 {type === "editProveedor" && <FormProveedorDetail formData={formData} onClose={onClose} />}
+                                {type === "editCliente" && <FormClienteDetail formData={formData} />}
                             </Suspense>
                         </form>
                     </div>

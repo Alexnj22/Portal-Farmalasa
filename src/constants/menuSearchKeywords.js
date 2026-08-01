@@ -39,5 +39,6 @@ export const MODULE_SEARCH_KEYWORDS = {
     facturas_compra:    ['facturas de proveedores', 'correo de facturas', 'dte de compras', 'gastos'],
     libros_iva:         ['libro de ventas', 'libro de iva', 'consumidor final', 'contribuyentes', 'declaracion de iva', 'hacienda', 'contabilidad', 'anulados'],
     proveedores:        ['suppliers', 'contactos de proveedor', 'maestro de proveedores'],
+    clientes:           ['customers', 'ficha del cliente', 'ficha fiscal', 'receptor', 'dui', 'nit', 'nrc', 'contribuyente', 'consumidor final', 'distrito', 'municipio'],
     conteo_inventario:  ['auditoria de inventario', 'conteo fisico', 'cuadre de stock'],
 };

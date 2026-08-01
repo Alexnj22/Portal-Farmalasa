@@ -55,6 +55,7 @@ const ComprasView = lazy(IMPORTADORES.ComprasView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
 const LibrosIvaView = lazy(IMPORTADORES.LibrosIvaView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
+const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
 const ConteoDetailView = lazy(IMPORTADORES.ConteoDetailView);
 const FacturacionView = lazy(IMPORTADORES.FacturacionView);
@@ -628,6 +629,7 @@ function MainApp() {
                                     <Route path="ventas" element={<PermissionGuard moduleKey="ventas"><VentasView /></PermissionGuard>} />
                                     <Route path="facturacion" element={<PermissionGuard moduleKey="facturacion"><FacturacionView /></PermissionGuard>} />
                                     <Route path="cotizaciones" element={<PermissionGuard moduleKey="cotizaciones"><CotizacionesView /></PermissionGuard>} />
+                                    <Route path="clientes" element={<PermissionGuard moduleKey="clientes"><ClientesView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />

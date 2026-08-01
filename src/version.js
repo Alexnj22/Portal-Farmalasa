@@ -16,7 +16,45 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.318.0';
+export const APP_VERSION = '2.319.0';
+
+// v2.319.0 — Clientes: la vista. Y el catálogo deja de ser una lista de nombres
+// para volverse una cola de trabajo ordenada por plata.
+//
+// La vista del módulo, sobre la capa de datos de v2.318.0. Lista con buscador
+// global, píldora de filtros, tabla ordenable y paginada — todo **server-side**,
+// porque 24,502 fichas no entran en el cap de 1000 de PostgREST ni en el
+// navegador. La ficha se abre en modal (`editCliente`), con la cascada
+// departamento → municipio → distrito y las validaciones espejadas del servidor.
+//
+// Lo que la vuelve útil no es la lista, es el orden: la tarjeta **"Por
+// completar"** cruza ficha vacía con facturación real y da **24,300 fichas que
+// compran y no tienen un solo dato**. Ordenadas por monto, la primera es un
+// cliente de $30,070 en 54 facturas del que sólo sabemos el nombre.
+//
+// Tres cosas se midieron en el navegador en vez de estimarse (§17.0 dice que el
+// ancho se mide, no se estima — y tenía razón las tres veces):
+//
+// 1. **El carril y la píldora no entran en la misma fila.** A 1440 el área de
+//    contenido son 1110px, la píldora mide 975 y cinco tarjetas necesitan 772.
+//    Compartiendo fila el carril quedaba en **0 tarjetas visibles**. En filas
+//    separadas entran las dos enteras: 5 de 5.
+// 2. **`hideBelow: 'xl'` no alcanzaba para la última columna.** A 1440 de
+//    viewport ya estamos EN xl, así que la columna se prendía y la tabla se
+//    salía de su marco. Con `2xl` la tabla mide exactamente su marco (1046 =
+//    1046). Es el mismo tropiezo que la columna "Contó" del conteo.
+// 3. **En un iPhone 13 la columna "Ficha" salía cortada a la mitad del badge**,
+//    que es peor que no mostrarla. Con el escalonado nuevo quedan las dos que
+//    contestan algo en un teléfono —quién es y qué le falta— y la tabla mide
+//    332 contra un marco de 332.
+//
+// Verificado con Playwright en Chromium 1440 y en WebKit/iPhone 13 (que es
+// donde aparecen los bugs de Safari): cero errores de consola en los dos, cero
+// desborde horizontal, el modal abre y la pestaña Actividad carga.
+//
+// El módulo entra por los seis puntos del checklist: vista, ruta, importador,
+// `MODULE_MAP`, grupo Comercial del menú, `MODULE_GROUPS` de permisos y las
+// palabras del ⌘K. Los permisos ya se sembraron en v2.318.0.
 
 // v2.318.0 — Módulo de Clientes, capa de datos: la ficha se escribe por UN solo
 // camino, y la actividad deja de ser incalculable.

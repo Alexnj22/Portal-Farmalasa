@@ -58,7 +58,10 @@ const MENU_GROUPS = [
     { key: 'asistencia',    label: 'Asistencia',    icon: Monitor,       modules: ['monitor', 'time_audit']               },
     { key: 'horarios',      label: 'Horarios',      icon: Calendar,      modules: ['schedules', 'vacation_plan']          },
     { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['entrevistas']                        },
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones'] },
+    // `clientes` entra acá y no en un grupo propio: el receptor de la factura es
+    // el mismo asunto que Facturación y Cotizaciones, y quien factura es quien
+    // necesita su ficha fiscal correcta. Quedan 5 de los 6 que admite un grupo.
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'clientes'] },
     // La vista de Promociones se retiró el 2026-07-28 (pedido del usuario):
     // el grupo queda como el slot de Bonificaciones, que se construye después.
     { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift, modules: ['bonificaciones'] },

@@ -15,7 +15,7 @@ import {
     TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck,
-    BookOpen
+    BookOpen, Contact
 } from 'lucide-react';
 
 export const MODULE_GROUPS = [
@@ -77,6 +77,7 @@ export const MODULE_GROUPS = [
                 { key: 'facturacion_tab_observaciones', label: 'Observaciones' },
             ]},
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
+            { key: 'clientes',       label: 'Clientes',      desc: 'Ficha fiscal del cliente: identidad (DUI/NIT/NRC), categoría, contacto y ubicación con la cascada departamento-municipio-distrito. Muestra la facturación de cada cliente para saber qué ficha vale la pena completar. Editar = corregir la ficha; los datos de un contribuyente exigen confirmación aparte', icon: Contact, hasApprove: false },
             { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas (próximamente)', icon: Target,        hasApprove: false, comingSoon: true },
             { key: 'bonificaciones', label: 'Bonificaciones',desc: 'Esquemas de bonificación por ventas y metas alcanzadas (próximamente)',                icon: DollarSign,    hasApprove: false, comingSoon: true },
         ],

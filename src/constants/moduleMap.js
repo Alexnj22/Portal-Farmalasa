@@ -11,7 +11,7 @@ import {
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search, Wrench,
-    BookOpen
+    BookOpen, Contact
 } from 'lucide-react';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
@@ -42,6 +42,7 @@ export const MODULE_MAP = {
     metas:             { path: '/metas',            label: 'Metas',                    icon: Target,       comingSoon: true },
     facturacion:       { path: '/facturacion',      label: 'Facturación',              icon: FileText   },
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
+    clientes:          { path: '/clientes',         label: 'Clientes',                 icon: Contact    },
     encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },
     encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icon: PenLine    },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },

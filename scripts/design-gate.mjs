@@ -1578,7 +1578,15 @@ function scanFile(path) {
   // que no hay nada que tolerar en el baseline.
   if (!hasException(path, 'error-crudo')) {
     // Canales que terminan a la vista de una persona.
-    const SINK = /\b(showToast|setError|setErrorMsg|setValidationError|setChangePassError|setMensaje|fireBrowserNotif)\s*\(/;
+    //
+    // El `set…Error` se matchea por FORMA, no por lista de nombres. La primera
+    // versión de esta regla enumeraba cinco setters a mano y se le escapaban
+    // otros catorce (`setSubmitError`, `setSaveError`, `setBulkError`,
+    // `setRowError`, `setLoadError`…) con 25 fugas reales detrás. Una lista a
+    // mano se desincroniza del registro el día que alguien nombra un estado
+    // distinto — y acá el costo de que se desincronice es justo lo que la
+    // categoría existe para evitar.
+    const SINK = /\b(showToast|fireBrowserNotif|setMensaje|set[A-Z]\w*(?:Error|Err|Msg))\s*\(/;
     // `.message` / `.details` / `.hint` de un error, pelado.
     const CRUDO = /\b(err|error|e|ex|fnErr|authErr|profErr|updErr|empError|countError)\??\.(message|details|hint)\b/g;
     lines.forEach((line, i) => {

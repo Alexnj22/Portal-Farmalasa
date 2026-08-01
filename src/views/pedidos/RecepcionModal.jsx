@@ -24,6 +24,7 @@ import {
 import { updatePedidoSucursalStatus } from '../../data/pedidos';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
@@ -435,7 +436,7 @@ export default function RecepcionModal({
                 onClose();
             }
         } catch (e) {
-            setSaveError(e.message);
+            setSaveError(mensajeAmigable(e));
         } finally {
             setSaving(false);
         }
@@ -494,7 +495,7 @@ export default function RecepcionModal({
                 onClose();
             }
         } catch (e) {
-            setSaveError(e.message);
+            setSaveError(mensajeAmigable(e));
         } finally {
             setSaving(false);
         }
@@ -560,7 +561,7 @@ export default function RecepcionModal({
             onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
             onClose();
         } catch (e) {
-            setSaveError(e.message);
+            setSaveError(mensajeAmigable(e));
         } finally {
             setSaving(false);
         }
@@ -581,7 +582,7 @@ export default function RecepcionModal({
             onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
             onClose();
         } catch (e) {
-            setSaveError(e.message);
+            setSaveError(mensajeAmigable(e));
         } finally {
             setSaving(false);
         }

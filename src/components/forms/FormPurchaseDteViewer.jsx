@@ -170,7 +170,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
         try {
             await downloadPurchaseDtePackage(document);
         } catch (e) {
-            setDownloadAllError(e.message || 'No se pudo descargar el paquete');
+            setDownloadAllError(mensajeAmigable(e, 'No se pudo descargar el paquete'));
         } finally {
             setDownloadingAll(false);
         }

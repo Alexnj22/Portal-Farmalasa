@@ -709,7 +709,7 @@ function TabDocumentos({
             });
             load();
         } catch (e) {
-            setBulkError(e.message || 'No se pudo fusionar');
+            setBulkError(mensajeAmigable(e, 'No se pudo fusionar'));
         }
     };
 
@@ -724,7 +724,7 @@ function TabDocumentos({
                 codigo_generacion: row.codigo_generacion,
             });
         } catch (e) {
-            setBulkError(e.message);
+            setBulkError(mensajeAmigable(e));
         }
     };
     const downloadBulk = async () => {
@@ -741,7 +741,7 @@ function TabDocumentos({
             });
             useToastStore.getState().showToast('Descarga completa', `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`, 'success');
         } catch (e) {
-            setBulkError(e.message);
+            setBulkError(mensajeAmigable(e));
         } finally {
             setBulkDownloading(false);
             setBulkProgress(null);
@@ -1012,7 +1012,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             });
             bumpRefresh();
         } catch (e) {
-            setRowError(e.message || 'No se pudo descartar');
+            setRowError(mensajeAmigable(e, 'No se pudo descartar'));
         }
     };
 
@@ -1028,7 +1028,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             });
             bumpRefresh();
         } catch (e) {
-            setRowError(e.message || 'No se pudo confirmar');
+            setRowError(mensajeAmigable(e, 'No se pudo confirmar'));
         }
     };
 
@@ -1044,7 +1044,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             });
             bumpRefresh();
         } catch (e) {
-            setRowError(e.message || 'No se pudo emparejar');
+            setRowError(mensajeAmigable(e, 'No se pudo emparejar'));
         }
     };
 

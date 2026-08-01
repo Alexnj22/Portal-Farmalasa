@@ -129,7 +129,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             setCategoriaId(val || '');
             formData?.onSaved?.();
         } catch (e) {
-            setClasifError(e.message || 'No se pudo guardar la categoría');
+            setClasifError(mensajeAmigable(e, 'No se pudo guardar la categoría'));
         } finally {
             setSavingCategoria(false);
         }
@@ -146,7 +146,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             setSupplierId(val || '');
             formData?.onSaved?.();
         } catch (e) {
-            setClasifError(e.message || 'No se pudo guardar el match ERP');
+            setClasifError(mensajeAmigable(e, 'No se pudo guardar el match ERP'));
         } finally {
             setSavingSupplier(false);
         }

@@ -1526,7 +1526,7 @@ export default function TabCatalogo({
         } catch (e) {
             if (rid !== loadRef.current) return;
             console.error('loadProducts error:', JSON.stringify(e));
-            setLoadError(e?.message || 'Error al cargar productos');
+            setLoadError(mensajeAmigable(e, 'Error al cargar productos'));
         } finally {
             if (rid === loadRef.current) setLoading(false);
         }

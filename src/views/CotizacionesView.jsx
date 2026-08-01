@@ -24,6 +24,7 @@ import {
 import { fetchBranchesBasic } from '../data/system';
 import { clickable } from '../utils/clickable';
 import { formatMoney, formatQty } from '../utils/formatNumber';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -580,7 +581,7 @@ export default function CotizacionesView() {
             if (freshErr) console.error('handleSave: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
-        } catch (e) { setSaveError(e.message || 'Error al guardar.'); }
+        } catch (e) { setSaveError(mensajeAmigable(e, 'Error al guardar.')); }
         setSaving(false);
     };
 
@@ -598,7 +599,7 @@ export default function CotizacionesView() {
             if (freshErr) console.error('handleUpdate: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
-        } catch (e) { setSaveError(e.message || 'Error al guardar.'); }
+        } catch (e) { setSaveError(mensajeAmigable(e, 'Error al guardar.')); }
         setSaving(false);
     };
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 const KIOSK_LS_KEY = 'kiosk_config';
 const EMPTY_BRANCHES = [];
@@ -129,7 +130,7 @@ export default function useKioskDevice() {
     } catch (e) {
       // No debería pasar (validateKioskToken captura sus propios errores),
       // pero por seguridad se trata igual que un error de red.
-      setLastError(e?.message || 'Error verificando kiosco.');
+      setLastError(mensajeAmigable(e, 'Error verificando kiosco.'));
       const ageMs = local.lastVerifiedAt ? Date.now() - new Date(local.lastVerifiedAt).getTime() : Infinity;
       if (ageMs <= GRACE_MS) {
         return { config: resolveCachedConfig(local), networkError: true };

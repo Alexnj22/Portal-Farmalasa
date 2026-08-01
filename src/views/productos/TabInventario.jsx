@@ -20,6 +20,7 @@ import {
 import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 import { useToastStore } from '../../store/toastStore';
 import { formatMoney } from '../../utils/formatNumber';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -175,7 +176,7 @@ export default function TabInventario({ searchTerm = '' }) {
         } catch (e) {
             if (rid !== loadRef.current) return;
             console.error(e);
-            setLoadError(e?.message || 'Error al cargar inventario');
+            setLoadError(mensajeAmigable(e, 'Error al cargar inventario'));
         } finally {
             if (rid === loadRef.current) setLoading(false);
         }

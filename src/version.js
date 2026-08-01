@@ -16,8 +16,28 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.320.1';
+export const APP_VERSION = '2.320.2';
 
+// v2.320.2 — el gate `error-crudo` tenía una LISTA A MANO y se le escapaban 25.
+//
+// La regla que cerró v2.320.0 enumeraba cinco setters de error a mano
+// (`setError`, `setErrorMsg`, `setValidationError`, `setChangePassError`,
+// `setMensaje`). Auditando el alcance de las notificaciones apareció
+// `setSubmitError(e.message || …)` en `WidgetAnnulmentRequest` — un nombre que
+// no estaba en la lista. Barriendo por forma salieron **14 setters más** y
+// **25 fugas** en 12 archivos: `setSaveError`, `setBulkError`, `setRowError`,
+// `setLoadError`, `setClasifError`, `setLastError`, `setDownloadAllError`…
+//
+// Es el mismo error que la regla vino a corregir, un nivel más arriba: el
+// traductor se hizo por FORMA justamente porque un diccionario llega tarde al
+// mensaje nuevo, y después el gate que lo vigila se escribió por diccionario.
+// Ahora matchea `set[A-Z]\w*(Error|Err|Msg)`, así que un estado con nombre
+// nuevo entra solo.
+//
+// Las 25 migradas a `mensajeAmigable`. Una de ellas —`FormAiSchedulerPreview`—
+// concatenaba `"Error al guardar: " + err.message`, que es la forma en que el
+// texto de Postgres se cuela sin que el grep de `.message ||` la vea.
+//
 // v2.320.1 — MIN·MAX: con borrador, la acción a mano es DESCARTAR.
 //
 // En una fila con borrador pendiente los dos botones visibles eran

@@ -21,6 +21,7 @@ import { fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth } from '../../
 import { searchCustomersByTokens } from '../../data/customers';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import ListRow from '../../components/common/ListRow';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const GRACE_DAYS = 3;
 
@@ -366,7 +367,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         });
       }
       onSuccess('annul', target?.name);
-    } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
   };
 
@@ -489,7 +490,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         });
       }
       onSuccess('pay_change', target?.name);
-    } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
   };
 
@@ -586,7 +587,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         });
       }
       onSuccess('vendor_change', target?.name);
-    } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
   };
 
@@ -721,7 +722,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         });
       }
       onSuccess('client_change', target?.name);
-    } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
+    } catch (e) { setSubmitError(mensajeAmigable(e, 'Error al enviar solicitud')); }
     finally { setSubmitting(false); }
   };
 

@@ -17,6 +17,7 @@ import {
     fetchSucursalesConCoords, updateRutaStatus, fetchBranchIdsForSucursales,
 } from '../../data/pedidos';
 
+import { mensajeAmigable } from '../../utils/errorMessages';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -442,7 +443,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       onClose();
     } catch (e) {
       console.error('[CrearRutaModal] submit error:', e);
-      setSubmitError(e?.message ?? 'Error al crear la ruta. Intenta de nuevo.');
+      setSubmitError(mensajeAmigable(e, 'Error al crear la ruta. Intenta de nuevo.'));
     } finally {
       setSubmitting(false);
     }

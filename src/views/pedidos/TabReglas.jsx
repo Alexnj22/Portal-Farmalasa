@@ -20,6 +20,7 @@ import {
     deleteDispatchRule, updateDispatchRule, insertDispatchRule,
 } from '../../data/dispatchRules';
 import PortalInput from '../../components/common/PortalInput';
+import { mensajeAmigable } from '../../utils/errorMessages';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
@@ -541,7 +542,7 @@ export default function TabReglas({ searchTerm = '' }) {
             clearTimeout(justSavedTimer.current);
             justSavedTimer.current = setTimeout(() => setJustSaved(false), 2200);
         } catch (e) {
-            setSaveError(e.message);
+            setSaveError(mensajeAmigable(e));
         } finally {
             setSaving(false);
         }

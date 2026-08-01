@@ -167,7 +167,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
             if(onClose) onClose();
         } catch (err) {
-            setSaveError("Error al guardar: " + err.message);
+            setSaveError(mensajeAmigable(err, "Error al guardar"));
             setIsSaving(false);
         }
     };

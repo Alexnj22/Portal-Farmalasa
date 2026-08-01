@@ -16,7 +16,24 @@
 // retomar. El resto se lee en CHANGELOG.md, que ademas se puede abrir sin
 // cargar un modulo de JS.
 
-export const APP_VERSION = '2.324.0';
+export const APP_VERSION = '2.324.1';
+
+// v2.324.1 — sync de compras: modo background, porque el ERP es más lento que
+// el límite de una Edge Function.
+//
+// Medido: `descargar_compras_json.php` tarda **167s en un mes de Bodega** y 68s
+// en 10 días. La respuesta de una Edge Function muere a los 150s, así que un
+// backfill por mes daba 504 aunque el trabajo estuviera bien hecho — y encima
+// dejaba escrituras a medias sin registro.
+//
+// `background: true` en el body responde 202 al instante y sigue el sync con
+// `EdgeRuntime.waitUntil`. Es opt-in y el cron NO lo usa a propósito: pide 2
+// días, termina en segundos y quiere el resultado en la respuesta para que un
+// fallo se vea. En background el único rastro es `purchase_sync_log` —
+// suficiente para un backfill que uno mira después, insuficiente para el camino
+// de todos los días. El catch escribe ahí también: si el error se pierde, el
+// backfill falla en silencio, que es el modo de falla que este proyecto ya pagó
+// caro en las alertas.
 
 // v2.324.0 — seis tipos de notificación dejan de verse todos iguales.
 //

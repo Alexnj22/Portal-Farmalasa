@@ -416,6 +416,7 @@ Deno.serve(async (req) => {
       discover     = false,
       retryFailed: doRetry = false,
       since        = '2025-05-01',  // fecha mínima para retry
+      background   = false,         // ver "Modo background" más abajo
     } = body;
 
     const hoy       = new Date(Date.now() - 6 * 3600_000).toISOString().split('T')[0];
@@ -458,48 +459,82 @@ Deno.serve(async (req) => {
     if (purchaseBranches.length === 0)
       throw new Error(`branchId ${onlyBranch} no está en el mapa de sucursales de compras.`);
 
-    const results: any[] = [];
-    const logRows: any[] = [];
+    const correr = async () => {
+      const results: any[] = [];
+      const logRows: any[] = [];
 
-    for (const { branchId, erpId } of purchaseBranches) {
-      let lastErr: string | null = null;
-      let result: any = null;
+      for (const { branchId, erpId } of purchaseBranches) {
+        let lastErr: string | null = null;
+        let result: any = null;
 
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          result  = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate);
-          lastErr = null;
-          break;
-        } catch (e: any) {
-          lastErr = e.message;
-          if (attempt < 3) await new Promise(r => setTimeout(r, 3000 * attempt));
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            result  = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate);
+            lastErr = null;
+            break;
+          } catch (e: any) {
+            lastErr = e.message;
+            if (attempt < 3) await new Promise(r => setTimeout(r, 3000 * attempt));
+          }
+        }
+
+        if (result) {
+          results.push({ branchId, erpId, ...result });
+          logRows.push({
+            branch_id: branchId, erp_sucursal_id: erpId,
+            fini: startDate, ffin: endDate,
+            receipts_total: result.total, receipts_new: result.new,
+            items_inserted: result.items, success: true,
+          });
+        } else {
+          results.push({ branchId, erpId, error: lastErr });
+          logRows.push({
+            branch_id: branchId, erp_sucursal_id: erpId,
+            fini: startDate, ffin: endDate,
+            receipts_total: 0, receipts_new: 0, items_inserted: 0,
+            success: false, error_msg: lastErr,
+          });
         }
       }
 
-      if (result) {
-        results.push({ branchId, erpId, ...result });
-        logRows.push({
-          branch_id: branchId, erp_sucursal_id: erpId,
-          fini: startDate, ffin: endDate,
-          receipts_total: result.total, receipts_new: result.new,
-          items_inserted: result.items, success: true,
-        });
-      } else {
-        results.push({ branchId, erpId, error: lastErr });
-        logRows.push({
-          branch_id: branchId, erp_sucursal_id: erpId,
+      if (logRows.length > 0)
+        await supabase.from('purchase_sync_log').insert(logRows);
+
+      return results;
+    };
+
+    // ── Modo background ───────────────────────────────────────────────────────
+    // El ERP tarda **167s en devolver un mes de Bodega** (medido), y la respuesta
+    // de una Edge Function muere a los 150s: un backfill por mes daba 504 aunque
+    // el trabajo estuviera bien. Con `waitUntil` la respuesta sale ya y el sync
+    // sigue corriendo, que es lo que un backfill necesita.
+    //
+    // Es opt-in y no lo usa el cron a propósito: el cron pide 2 días, termina en
+    // segundos, y quiere el resultado en la respuesta para que un fallo se vea.
+    // En background el único rastro es `purchase_sync_log` — suficiente para un
+    // backfill que uno mira después, insuficiente para el camino de todos los
+    // días.
+    if (background) {
+      // @ts-ignore — EdgeRuntime es global del runtime de Supabase
+      EdgeRuntime.waitUntil(correr().catch(async (e: any) => {
+        // Un error acá no tiene a quién contarle: la respuesta ya salió. Que
+        // quede en el log o el backfill falla en silencio.
+        await supabase.from('purchase_sync_log').insert({
+          branch_id: onlyBranch ?? null, erp_sucursal_id: null,
           fini: startDate, ffin: endDate,
           receipts_total: 0, receipts_new: 0, items_inserted: 0,
-          success: false, error_msg: lastErr,
+          success: false, error_msg: `background: ${e?.message ?? e}`,
         });
-      }
+      }));
+      return new Response(
+        JSON.stringify({ accepted: true, background: true, range: { startDate, endDate },
+                         branches: purchaseBranches.map(b => b.branchId) }),
+        { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
-    if (logRows.length > 0)
-      await supabase.from('purchase_sync_log').insert(logRows);
-
     return new Response(
-      JSON.stringify({ success: true, range: { startDate, endDate }, results }),
+      JSON.stringify({ success: true, range: { startDate, endDate }, results: await correr() }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
 

@@ -52,11 +52,18 @@ Deno.serve(async (req) => {
     // backfill-proveedores-dte — una NC/ND cuyo original todavía no llegó
     // (sinMatch) queda en la cabeza de la cola para siempre, hasMore nunca
     // baja. Cursor explícito (after_id / nextAfterId).
+    // El filtro es `doc_relacionado_ref IS NULL` y ya no
+    // `documento_relacionado_id IS NULL`: son dos preguntas distintas y confundir
+    // una con la otra era el problema de fondo. "¿Ya leí el JSON de esta nota?"
+    // la responde la referencia cruda; "¿encontré el documento que corrige?" la
+    // responde el id. Con el filtro viejo, una nota cuyo CCF original nunca llegó
+    // por correo se releía de Storage en cada corrida, para siempre, y nunca
+    // guardaba nada — 85 de 139 notas estaban en ese estado.
     const { data: rows, error: rowsErr } = await admin
       .from("purchase_dte_documents")
-      .select("id, tipo_dte, json_path")
+      .select("id, tipo_dte, json_path, emisor_nit")
       .in("tipo_dte", ["05", "06"])
-      .is("documento_relacionado_id", null)
+      .is("doc_relacionado_ref", null)
       .gt("id", after_id)
       .order("id", { ascending: true })
       .limit(BATCH_SIZE);
@@ -64,6 +71,7 @@ Deno.serve(async (req) => {
 
     let processed = 0;
     let matched    = 0;
+    let ligadasACompra = 0;
     let sinMatch    = 0;
     let lastId      = after_id;
     const warnings: string[] = [];
@@ -90,24 +98,55 @@ Deno.serve(async (req) => {
       const ref = extractRelatedDocRef(json);
       if (!ref) { sinMatch++; continue; }
 
+      // La referencia CRUDA se guarda siempre, resuelva o no. Es lo que permite
+      // reintentar el vínculo con un UPDATE el día que la compra aparezca, en vez
+      // de volver a bajar el JSON de Storage.
+      const refCruda = ref.byCodigoGeneracion ?? ref.byNumeroControl;
       const relatedId = await resolveRelatedDocId(admin, ref);
-      if (!relatedId) { sinMatch++; continue; }
+
+      // Y además se busca la COMPRA que la nota corrige. El CCF original muchas
+      // veces no llegó por correo pero sí está en el ERP, que es donde la
+      // contadora lo necesita. Se liga solo si hay exactamente una y el NIT del
+      // proveedor coincide: el documento del ERP viene truncado a 20 caracteres
+      // y su propio sync advierte que "no siempre es único".
+      let compraId: number | null = null;
+      if (ref.byCodigoGeneracion && row.emisor_nit) {
+        const { data: compras, error: cErr } = await admin
+          .from("purchase_receipts")
+          .select("id, proveedores_maestro!inner(nit)")
+          .eq("documento_numero", ref.byCodigoGeneracion.toUpperCase().slice(0, 20))
+          .eq("proveedores_maestro.nit", row.emisor_nit)
+          .limit(2);
+        if (cErr) warnings.push(`doc ${row.id}: buscando la compra — ${cErr.message}`);
+        else if ((compras ?? []).length === 1) compraId = compras![0].id;
+      }
+
+      if (!refCruda && !relatedId && !compraId) { sinMatch++; continue; }
 
       const { error: updErr } = await admin
         .from("purchase_dte_documents")
-        .update({ documento_relacionado_id: relatedId })
+        .update({
+          doc_relacionado_ref: refCruda,
+          ...(relatedId ? { documento_relacionado_id: relatedId } : {}),
+          ...(compraId  ? { corrige_purchase_receipt_id: compraId } : {}),
+        })
         .eq("id", row.id);
       if (updErr) {
-        warnings.push(`doc ${row.id}: set documento_relacionado_id — ${updErr.message}`);
+        warnings.push(`doc ${row.id}: guardando la relación — ${updErr.message}`);
         sinMatch++;
         continue;
       }
-      matched++;
+      // Se cuentan por separado los dos destinos, porque son dos preguntas
+      // distintas: encontrar el DTE original (que puede no haber llegado nunca)
+      // y encontrar la compra del ERP (que es lo que la contadora necesita).
+      if (relatedId) matched++;
+      if (compraId)  ligadasACompra++;
+      if (!relatedId && !compraId) sinMatch++;
     }
 
     const hasMore = cutOff || (rows ?? []).length === BATCH_SIZE;
     return new Response(JSON.stringify({
-      success: true, hasMore, processed, matched, sinMatch,
+      success: true, hasMore, processed, matched, ligadasACompra, sinMatch,
       // nextAfterId avanza incluso en sinMatch (original aún no sincronizado)
       // — a diferencia de backfill-proveedores-dte, esos SÍ podrían resolver
       // en el futuro cuando el original llegue. El cursor solo evita

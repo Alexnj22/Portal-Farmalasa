@@ -293,6 +293,7 @@ const COLS_NOTAS = [
     { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
     { key: 'nrc',       label: 'NRC',        align: 'left', hideBelow: 'md' },
     { key: 'corrige',   label: 'Corrige a',  align: 'left', hideBelow: '2xl' },
+    { key: 'compra',    label: 'Compra',     align: 'left', hideBelow: 'lg' },
     { key: 'monto',     label: 'Monto',      align: 'right' },
     { key: 'iva',       label: 'IVA',        align: 'right' },
 ];
@@ -393,6 +394,7 @@ const ACCESO = {
         proveedor: r => r.proveedor || '',
         nrc:       r => r.nrc || '',
         corrige:   r => r.documento_corregido || '',
+        compra:    r => (r.vinculo === 'ligada' ? r.compra_documento : r.vinculo),
         monto:     r => Number(r.monto || 0),
         iva:       r => Number(r.iva || 0),
     }),
@@ -1258,14 +1260,28 @@ export default function LibrosIvaView() {
                                 <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
                                 {/* Guión y no `CeldaDocumento`: esa celda marca el
                                     vacío con un badge rojo "Sin número", y acá
-                                    falta en 85 de 139 porque el proveedor no
-                                    declaró qué documento corrige. No es un error
-                                    nuestro, y pintarlo en rojo sería alarma falsa
-                                    en la mayoría de las filas. */}
+                                    puede faltar porque el proveedor no declaró qué
+                                    documento corrige. No es un error nuestro, y
+                                    pintarlo en rojo sería alarma falsa. */}
                                 <DataCell hideBelow="2xl">
                                     {r.documento_corregido
                                         ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">{r.documento_corregido}</span>
                                         : <span className="text-content-3">—</span>}
+                                </DataCell>
+                                {/* A qué compra del libro corresponde la nota. Es
+                                    lo que la contadora necesita para saber qué
+                                    ajustar, y hasta hoy no existía: la relación
+                                    apuntaba de la nota a otro DTE recibido por
+                                    correo, así que si el CCF original no llegó a
+                                    la casilla no había a qué apuntar. */}
+                                <DataCell hideBelow="lg">
+                                    {r.vinculo === 'ligada'
+                                        ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">
+                                              {r.compra_documento}
+                                          </span>
+                                        : <Badge variant="neutral" size="sm">
+                                              {r.vinculo === 'sin referencia' ? 'Sin referencia' : 'No está en el libro'}
+                                          </Badge>}
                                 </DataCell>
                                 <DataCell align="right"><CeldaMonto v={r.monto} /></DataCell>
                                 <DataCell align="right"><CeldaMonto v={r.iva} fuerte /></DataCell>

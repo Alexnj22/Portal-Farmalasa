@@ -21,6 +21,56 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.343.0 — Las notas de crédito apuntan a la compra que corrigen
+
+**El vínculo que faltaba iba al lado equivocado.** `documento_relacionado_id`
+apuntaba de una nota de crédito a **otro DTE recibido por correo**. Si el CCF
+original no llegó a la casilla —o lo mandaron a otra, o el proveedor solo envió
+la nota— no había a qué apuntar, y la referencia **se descartaba**: de 139 notas,
+**85 quedaban sin ninguna relación guardada** y su JSON se volvía a bajar de
+Storage en cada corrida, para siempre, sin guardar nada.
+
+Pero el CCF que la nota corrige casi siempre sí está en el portal — está en
+`purchase_receipts`, que viene del ERP. Ése es el vínculo que la contadora
+necesita para saber qué compra ajustar, y no existía.
+
+Ahora hay dos columnas: `corrige_purchase_receipt_id`, la compra que la nota
+corrige, y `doc_relacionado_ref`, **la referencia cruda del JSON, que se guarda
+resuelva o no**. Sin esa segunda, reintentar el vínculo obliga a releer Storage;
+con ella, el día que la compra aparezca alcanza un `UPDATE`.
+
+El resolvedor liga **solo cuando no hay duda**: exactamente una compra con ese
+documento **y** el NIT del proveedor coincide con el emisor. Con una sola de las
+dos condiciones alcanzaría hoy —cero ambiguas, medido— pero el documento del ERP
+viene truncado a 20 caracteres y su propio sync ya advierte que *"no siempre es
+único"*.
+
+Resultado sobre las 139 notas:
+
+| | Notas | Monto |
+|---|---|---|
+| **Ligadas a su compra** | **51** | $6,104.12 |
+| El CCF original no está en el portal | 57 | $6,501.63 |
+| **El CCF es de junio+ y la compra NO está en el ERP** | **19** | **$9,157.16** |
+| La referencia no es un código de generación | 12 | — |
+
+Las 12 últimas traen el correlativo interno del proveedor (`37966`, `1220`) en
+vez de un DTE: son notas contra documentos que el proveedor identifica con su
+propio número. Eso es del origen, no del portal.
+
+**Y las 19 son un hallazgo propio**: hay notas de crédito emitidas contra CCF de
+junio y julio 2026 —el período que sí tiene el documento completo— cuyas compras
+nunca se registraron en el ERP. Verificado uno por uno con RONASA del 04/06
+($955.98): el proveedor tiene 196 compras, cinco de esa semana, y ninguna es ese
+código de generación.
+
+En la pestaña de notas hay una columna **Compra** que dice a cuál corresponde, o
+por qué no se pudo.
+
+El backfill que lee el JSON cambió su filtro de `documento_relacionado_id IS
+NULL` a `doc_relacionado_ref IS NULL`. Son dos preguntas distintas y confundirlas
+era el problema de fondo: *"¿ya leí el JSON?"* no es *"¿encontré el documento?"*.
+
 ## v2.342.1 — El NIT de 9 dígitos se ve como DUI, y el proveedor no se corta
 
 **El NIT salvadoreño tiene dos formatos y el libro mostraba los dos con la misma

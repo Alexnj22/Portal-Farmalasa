@@ -21,6 +21,53 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.337.0 — Cuadre diario de ventas, proveedores ligados y compras al 88%
+
+### El cuadre de ventas que faltaba
+
+Compras tenía cuadre diario contra el origen desde v2.326.0; **ventas no**. Y esa
+ausencia costó un caso real: al portal le faltaba una venta de **$45.98** en la
+sucursal 4 del 20-jun, y **el libro cuadraba consigo mismo** — sin error, sin
+hueco visible, simplemente un documento menos. Sólo apareció comparando contra
+afuera.
+
+`check-sales-reconciliation` corre a las **07:30 UTC**, compara día por día el
+conteo y el total del libro de consumidor contra el archivo del origen en las 7
+sucursales, y avisa al rol de alertas técnicas cuando no cierra. Primera corrida
+sobre junio: **180 días revisados, 0 diferencias**.
+
+Avisa, no arregla: recuperar un documento exige un `sync-dte-sales` de ese día, y
+una diferencia también puede ser una anulación legítima.
+
+### Los proveedores quedaron ligados
+
+El NIT nunca faltó: estaba en el maestro y coincide con el del origen. Lo que
+faltaba era el **vínculo**, porque el nombre se escribe distinto entre módulos
+(`SAVONA S.A. DE C.V. (LA NEVERIA)` contra `SAVONA, S.A. DE C.V.` — una coma).
+
+Se ligaron **6 fichas** emparejando por nombre normalizado —sin puntuación, sin
+paréntesis, sin sufijos societarios— y **sólo donde el candidato era único**. Los
+proveedores con NIT pasaron de 52 a **58 de 67**; los 9 restantes no tienen ficha
+en el maestro porque no envían documentos por correo.
+
+### Resultado de la verificación contra el origen
+
+Junio, 7 sucursales, comparando por contenido:
+
+| Reporte | Antes | Ahora |
+|---|---|---|
+| **Consumidor** | 130 / 180 | **180 / 180** |
+| **Anulados** | 78 / 80 | **80 / 80** |
+| Compras | 226 / 389 | **343 / 389** |
+| Percepción | 8 / 226 | **117 / 226** |
+| Contribuyentes | 47 / 49 | 47 / 49 |
+
+Lo que queda difiriendo está medido: los 9 proveedores sin ficha, la precisión de
+4 decimales que el sync redondea a 2 (menos de $1 en el mes), y dos nombres de
+cliente que difieren en una coma.
+
+_(pendiente de redactar)_
+
 ## v2.336.0 — Los libros van en orden cronológico y sale Sujeto Excluido
 
 ### El orden: el criterio es la norma, no el reporte del ERP

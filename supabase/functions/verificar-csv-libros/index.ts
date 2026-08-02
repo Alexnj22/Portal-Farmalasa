@@ -156,6 +156,35 @@ Deno.serve(async (req) => {
             return true;
           };
 
+          // Modo CONJUNTO: cada línea del origen tiene que existir en el portal,
+          // sin importar en qué posición. Aísla las diferencias de CONTENIDO de
+          // las de orden, que es lo que interesa cuando se está midiendo si el
+          // dato coincide.
+          if (body.porConjunto) {
+            const clave = (l: string) => l.split(';')
+              .filter((_, i) => !omitidas.has(i))
+              .map(c => normalizar(c)).join(';');
+            const bolsa = new Map<string, number>();
+            for (const l of lineasPortal) bolsa.set(clave(l), (bolsa.get(clave(l)) ?? 0) + 1);
+            let enBolsa = 0;
+            const faltantes: string[] = [];
+            for (const l of lineasErp) {
+              const k = clave(l);
+              const q = bolsa.get(k) ?? 0;
+              if (q > 0) { bolsa.set(k, q - 1); enBolsa++; }
+              else if (faltantes.length < maxDif) faltantes.push(l);
+            }
+            out.push({
+              branchId, reporte: rep, modo: 'conjunto',
+              lineas_erp: lineasErp.length, lineas_portal: lineasPortal.length,
+              iguales: enBolsa, distintas: lineasErp.length - enBolsa,
+              veredicto: (lineasErp.length > 0 && enBolsa === lineasErp.length)
+                ? 'IDENTICO' : (lineasErp.length === 0 ? 'AMBOS VACIOS' : 'DIFIERE'),
+              diferencias: faltantes.map(l => ({ erp: l, portal: null })),
+            });
+            continue;
+          }
+
           // — comparación línea por línea, en orden
           const n = Math.max(lineasErp.length, lineasPortal.length);
           let iguales = 0;

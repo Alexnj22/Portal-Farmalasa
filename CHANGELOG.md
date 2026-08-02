@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.344.0 — Avisos de CCF: observaciones, repaso de las 22 h y fin de mes
+
+Los CCF ya tenían aviso inmediato —cada 5 minutos, de 6 a.m. a medianoche— pero
+sólo para dos de las tres cosas que importan, y **sonaba una sola vez en la
+vida**.
+
+**Las observaciones no avisaban.** `SELLO_INVALIDO` y las demás clases sólo se
+veían entrando a la pestaña de Facturación. Ahora entran al mismo aviso
+inmediato, como `ccf_observacion`.
+
+**Un repaso a las 22:00.** No existía y era imposible: `sales_alert_log` excluye
+para siempre lo ya avisado, así que un CCF que nadie corrigiera no volvía a
+sonar nunca. El repaso usa **otra clave, con la fecha adentro**
+(`cierre_dia|2026-08-02|0000000083_CCF`), y por eso puede volver mañana si el
+problema sigue. Son dos cosas distintas a propósito: el inmediato **anuncia que
+algo apareció**, el repaso **recuerda que sigue ahí**.
+
+**Y el último día del mes**, el mismo repaso mira el mes entero. El único cron de
+cierre que existía corre el día 1 — o sea cuando ya no se puede corregir. No
+tiene cron propio porque cron no sabe decir "el último día del mes": la pregunta
+la responde `es_ultimo_dia_del_mes_sv()` en la base, que además se puede probar.
+
+**Los tres avisan sólo si hay algo.** Un aviso nocturno que dice "todo bien" deja
+de mirarse, y entonces tampoco se ve el que sí importa.
+
+**Un defecto que me encontré a mí mismo al probarlo.** La primera versión
+silenciaba la factura si estaba resuelta en **cualquiera** de las dos tablas de
+resoluciones. Está mal, y es exactamente la confusión que el proyecto ya había
+documentado al separarlas (migración `20260731193337`): *"revisé el pendiente de
+Hacienda"* y *"revisé la anomalía del documento"* son dos preguntas distintas.
+Colapsarlas hace que cerrar la cola de MH **apague una observación que nadie
+miró** — el mismo error que se evitó al separarlas, cometido al revés. Ahora cada
+problema se apaga con su propia resolución.
+
+Verificado bajo `BEGIN … ROLLBACK` sobre un CCF real: sin sello → detecta;
+`undefined` → detecta **los dos problemas a la vez** (*"sin sello de Hacienda +
+con observación: SELLO_INVALIDO"*); anulado sin completar → detecta. Y los dos
+modos del repaso levantan el caso con su clave fechada.
+
+El criterio de *"qué es un CCF con problema"* vive en **una sola función**,
+`get_ccf_con_problema`, que además pide las observaciones a
+`get_invoice_observations` en vez de recalcularlas. Dos definiciones de lo mismo
+se separan el día que alguien toque una sola — es la lección de H11.
+
 ## v2.343.3 — Histéresis en el hover de tarjeta
 
 **La sombra se activaba, se quitaba y se volvía a activar al entrar a una

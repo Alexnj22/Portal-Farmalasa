@@ -23,6 +23,13 @@ serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  // `inmediato` (el cron de cada 5 min) o `cierre_dia` (el de las 22:00 SV,
+  // que además hace el del último día del mes). Se lee del cuerpo para que un
+  // solo archivo cubra los dos ritmos: el mismo criterio de "qué es un CCF con
+  // problema" vale para los dos, y tenerlo dos veces sería tenerlo distinto.
+  const body = await req.json().catch(() => ({}));
+  const modo = String((body as any)?.modo ?? 'inmediato');
+
   try {
     // ── Empleados supervisores con posibles push subscriptions ──────────────
     const { data: supervisors } = await supabase
@@ -62,15 +69,54 @@ serve(async (req) => {
     }
 
     for (const row of (ccfAlerts ?? [])) {
-      const isNull = row.tipo === 'ccf_null';
+      const que = row.tipo === 'ccf_null'       ? 'ANULADA sin completar ante Hacienda'
+                : row.tipo === 'ccf_observacion' ? 'con una observación'
+                :                                  'pendiente de recibir MH';
       allAlerts.push({
         alertType: row.tipo,
         alertKey:  row.correlativo,
         branchId:  row.branch_id,
         title:     '🚨 Alerta urgente — CCF',
-        message:   `${row.branch_name}: CCF ${row.correlativo} está ${isNull ? 'ANULADA' : 'pendiente de recibir MH'}`,
+        message:   `${row.branch_name}: CCF ${row.correlativo} está ${que}`,
         urgent:    true,
       });
+    }
+
+    // ── El repaso: 22:00 y último día del mes ────────────────────────────────
+    //
+    // Modo `cierre_dia` (lo dispara el cron de las 04:00 UTC = 22:00 SV): vuelve
+    // sobre los CCF de HOY que sigan con problema. No es lo mismo que el aviso
+    // inmediato y por eso usa otra clave: el inmediato anuncia que algo apareció
+    // y suena una sola vez; el repaso recuerda que sigue ahí, y su `alert_key`
+    // lleva la fecha para poder volver a sonar mañana si nadie lo cerró.
+    //
+    // Si NO hay nada, no se manda nada. Un aviso nocturno que dice "todo bien"
+    // deja de mirarse, y entonces tampoco se ve el que sí importa.
+    //
+    // El último día del mes agrega el repaso del mes entero: es el momento en
+    // que todavía se puede corregir. El único cron de cierre que existía corre
+    // el día 1, o sea cuando ya no se puede.
+    if (modo === 'cierre_dia') {
+      const { data: esUltimo, error: eU } = await supabase.rpc('es_ultimo_dia_del_mes_sv');
+      if (eU) throw eU;
+
+      const modos = esUltimo ? ['cierre_dia', 'fin_de_mes'] : ['cierre_dia'];
+      for (const m of modos) {
+        const { data: repaso, error: eR } = await supabase.rpc('get_ccf_repaso', { p_modo: m });
+        if (eR) throw eR;
+        for (const row of (repaso ?? [])) {
+          allAlerts.push({
+            alertType: 'ccf_repaso',
+            alertKey:  row.alert_key,
+            branchId:  row.branch_id,
+            title: m === 'fin_de_mes'
+              ? '📅 Último día del mes — CCF sin corregir'
+              : '🌙 Cierre del día — CCF sin corregir',
+            message: `${row.branch_name}: CCF ${row.correlativo} del ${row.fecha} — ${(row.problemas ?? []).join(' · ')}`,
+            urgent: m === 'fin_de_mes',
+          });
+        }
+      }
     }
 
     if (allAlerts.length === 0) {

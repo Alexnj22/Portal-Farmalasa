@@ -8,8 +8,11 @@ llegaba nunca al ERP.
     python3 empujar_al_erp.py --escribir  # lo manda, verifica y salda la cola
 
 La cola sale de `cola_espejo_portal_erp()`: `customers_changelog` con
-`erp_synced_at IS NULL`, sin las fichas cuyo campo ya perdió una carrera contra
-el ERP. Al terminar se llama a `marcar_empujado_al_erp()`, y con eso
+`erp_synced_at IS NULL` **y `descartado_at IS NULL`**, o sea lo que todavía
+puede viajar. Lo segundo lo escribe el espejo cuando el campo pierde una carrera
+contra el ERP; antes eso se recalculaba cruzando contra `espejo_conflictos`, y
+como la entrada nunca se cerraba, el espejo la volvía a descartar en cada
+corrida. Al terminar se llama a `marcar_empujado_al_erp()`, y con eso
 `aplicar_espejo_erp` deja de proteger ese campo — el ERP vuelve a mandar.
 
 DOS COSAS QUE NO SE INVENTAN

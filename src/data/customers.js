@@ -120,6 +120,10 @@ export async function updateCustomerFiscal(id, campos, { confirmarFiscal = false
  * `erp_synced_at IS NULL`, o sea protegida contra el espejo y en la cola. La
  * recoge el próximo guardado o `empujar_al_erp.py`. Por eso esta función NUNCA
  * lanza: el resultado es informativo.
+ *
+ * La excepción es que el ERP se mueva primero: ahí el espejo cierra la entrada
+ * con `descartado_at` y la bitácora lo muestra como "Descartado" en vez de
+ * "Sin enviar al ERP". Es un estado final — ya no se reintenta.
  */
 export async function pushClienteAlErp(id) {
     try {

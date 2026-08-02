@@ -232,11 +232,41 @@ no tuvo chance de llegar al ERP:
 | el ERP no manda el dato (campo ausente) | no toca la columna |
 | no hay edición del portal pendiente | manda el ERP |
 | hay edición pendiente y el ERP sigue igual que cuando se editó | respeta la edición |
-| hay edición pendiente **y el ERP también cambió** | manda el ERP, y el descarte se anota en `espejo_conflictos` |
+| hay edición pendiente **y el ERP también cambió** | manda el ERP, el descarte se anota en `espejo_conflictos` y la entrada se cierra con `descartado_at` |
 
-La marca de "pendiente" es `customers_changelog.erp_synced_at IS NULL`. Cuando
-el empuje al ERP la marca, la protección se levanta sola y el ERP vuelve a
-mandar.
+La marca de "pendiente" es `customers_changelog.erp_synced_at IS NULL` **y
+`descartado_at IS NULL`**. Cuando el empuje al ERP marca la primera, la
+protección se levanta sola y el ERP vuelve a mandar.
+
+### `descartado_at`: por qué una decisión también tiene que anotarse
+
+Hasta el 2026-08-02 solo existía `erp_synced_at`, y el espejo y el push se
+trancaban entre sí. El espejo decidía que un campo perdía la carrera y lo
+anotaba; el push, al ver ese conflicto, dejaba de mandar el campo (regla 3 de
+§4b). Las dos reglas correctas — pero **nadie cerraba la entrada**, y
+"pendiente" es justamente lo que hace que el espejo la vuelva a detectar. Cada
+corrida la descartaba de nuevo:
+
+```
+espejo: "esta edición perdió"  →  push: "entonces no la mando"
+   ↑                                        ↓
+   └──── sigue pendiente ←── nadie la marca ─┘
+```
+
+Medido: **7 filas idénticas** en `espejo_conflictos` para el mismo
+`changelog_id 10`, una por corrida, y el badge *"Sin enviar al ERP"* encendido
+para siempre sobre un cambio ya decidido.
+
+`descartado_at` cierra la entrada sin mentir: **no** se reusó `erp_synced_at`,
+porque ese campo significa "viajó al ERP" y acá no viajó nada. La bitácora
+ahora distingue *"Sin enviar al ERP"* (todavía puede viajar) de *"Descartado: el
+ERP ya tenía otro valor"* (no va a viajar).
+
+De paso arregla algo que el candado viejo hacía mal: se marca el campo entero
+**en el momento del conflicto**, así que la cadena superada queda identificada
+por su fecha. El cruce contra `espejo_conflictos` bloqueaba el campo **de por
+vida**, incluso para una edición hecha meses después de la carrera perdida —
+que es intención nueva y sí tiene que viajar.
 
 El RPC además dejó de reescribir filas que no cambiaron — la misma cola pasó de
 826 filas actualizadas a 1.
@@ -288,12 +318,19 @@ Tres cosas que NO hace, todas a propósito:
 2. **No salda lo que no viajó.** Si de dos campos uno resuelve y el otro no, se
    marcan solo los `changelog_ids` del que llegó. El otro sigue pendiente y se
    reintenta.
-3. **No empuja un campo que perdió una carrera.** Si CUALQUIER entrada de ese
-   campo está en `espejo_conflictos`, el campo entero queda fuera: el ERP ya se
-   movió más allá y las entradas sin marcar son eslabones de una cadena
-   superada. Sin esta regla, el cliente 16164 habría recibido `'7538-5899'` —un
-   valor que la persona ya había reemplazado— porque esa entrada quedó limpia
-   mientras la siguiente perdía la carrera.
+3. **No empuja un campo que perdió una carrera.** Cuando el espejo descarta una
+   edición marca con `descartado_at` **todas** las entradas pendientes de ese
+   campo, no solo la última: las anteriores son eslabones de la misma cadena
+   superada. Sin esta regla, el `customer_id 16164` del portal habría recibido
+   `'7538-5899'` —un valor que la persona ya había reemplazado— porque esa
+   entrada quedó limpia mientras la siguiente perdía la carrera.
+
+   **Ese 16164 es el id del PORTAL, no del ERP.** Las dos numeraciones son
+   independientes y se pisan: `customers.id 16164` es la ficha basura `....`
+   (`erp_id 9810`), mientras que `id_cliente 16164` del ERP es MARIA ADILIA
+   SOSA DE VASQUEZ, otra persona. Escribir "el cliente 16164" a secas manda a
+   leer la ficha equivocada — pasó el 2026-08-02. Decir siempre de qué
+   numeración se habla.
 
 ### Lo que el viaje de ida y vuelta NO conserva
 

@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.335.2 — El espejo cierra la edición que descarta
+
+El espejo y el push de clientes se trancaban entre sí. Cuando el ERP se movía
+antes de que una edición del portal llegara, el espejo decidía —bien— que
+mandaba el ERP y anotaba el descarte en `espejo_conflictos`; el push, al ver ese
+conflicto, dejaba de mandar ese campo —también bien—. Pero **nadie cerraba la
+entrada del changelog**, y "pendiente" (`erp_synced_at IS NULL`) es justamente
+lo que hace que el espejo la vuelva a detectar:
+
+```
+espejo: "esta edición perdió"  →  push: "entonces no la mando"
+   ↑                                        ↓
+   └──── sigue pendiente ←── nadie la marca ─┘
+```
+
+Cada corrida la descartaba de nuevo. Medido: **7 filas idénticas** en
+`espejo_conflictos` para el mismo `changelog_id`, una por corrida del espejo, y
+el badge *"Sin enviar al ERP"* encendido para siempre sobre un cambio que el
+sistema ya había decidido descartar. El dato nunca estuvo mal —el valor del ERP
+es el que quedaba, que es la regla— pero el registro crecía sin techo y la
+bitácora mostraba una advertencia que no se podía apagar.
+
+Se agregó `customers_changelog.descartado_at`. **No se reusó `erp_synced_at`**:
+ese campo significa "viajó al ERP" y acá no viajó nada, así que marcarlo sería
+escribir una mentira en la bitácora. Ahora la bitácora distingue *"Sin enviar al
+ERP"* (todavía puede viajar) de *"Descartado: el ERP ya tenía otro valor"*
+(estado final).
+
+De paso corrige algo que el candado viejo hacía mal. Bloquear el campo cruzando
+contra `espejo_conflictos` lo dejaba bloqueado **de por vida**: una edición
+hecha meses después de la carrera perdida tampoco viajaba, aunque sea intención
+nueva y no tenga nada que ver con la cadena superada. Marcando la cadena en el
+momento del conflicto, lo viejo queda identificado por su fecha y lo nuevo pasa.
+
+Migración `20260802033803`.
+
 ## v2.335.1 — El anexo de percepción también sale en el formato del origen
 
 En la primera pasada este anexo se dio por vacío, y no lo estaba: **pide las

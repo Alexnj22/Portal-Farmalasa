@@ -129,8 +129,16 @@ function PanelActividad({ actividad, facturas, bitacora }) {
                                     <span className="text-caption text-content-3">· {h.changed_by_nombre}</span>
                                 )}
                                 {/* La bitácora es también la cola de la Fase 2:
-                                    lo que todavía no viajó al ERP se ve acá. */}
-                                {!h.erp_synced_at && <Badge size="sm" variant="warning">Sin enviar al ERP</Badge>}
+                                    lo que todavía no viajó al ERP se ve acá.
+                                    "Descartado" va primero porque es un estado
+                                    final: el ERP se movió antes de que esta
+                                    edición llegara, así que ya no va a viajar
+                                    nunca. Cuando las dos se veían igual, el
+                                    aviso de "sin enviar" quedaba encendido para
+                                    siempre sobre algo que ya estaba decidido. */}
+                                {h.descartado_at
+                                    ? <Badge size="sm" variant="neutral">Descartado: el ERP ya tenía otro valor</Badge>
+                                    : !h.erp_synced_at && <Badge size="sm" variant="warning">Sin enviar al ERP</Badge>}
                             </div>
                             <p className="text-caption text-content-3 mt-0.5 break-words">
                                 <span className="line-through">{h.valor_anterior || '(vacío)'}</span>

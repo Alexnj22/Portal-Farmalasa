@@ -9,9 +9,11 @@ import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 // que no funcione.
 //
 // La cola sigue siendo la misma —`customers_changelog` con `erp_synced_at IS
-// NULL`— así que esta función no reemplaza al script: lo adelanta. Si esta
-// llamada falla, la entrada QUEDA pendiente y el script (o el próximo guardado)
-// la recoge. Nunca se marca como sincronizado algo que no llegó.
+// NULL` y `descartado_at IS NULL`— así que esta función no reemplaza al script:
+// lo adelanta. Si esta llamada falla, la entrada QUEDA pendiente y el script (o
+// el próximo guardado) la recoge. Nunca se marca como sincronizado algo que no
+// llegó, y lo que el espejo ya descartó no se reintenta para siempre: eso se
+// anota con `descartado_at` y sale de la cola.
 //
 // ── Lo que no se puede olvidar del ERP ─────────────────────────────────────
 //  1. Un POST parcial BORRA lo que no se manda. Se lee la ficha entera, se le

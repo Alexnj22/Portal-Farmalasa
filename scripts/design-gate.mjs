@@ -68,7 +68,9 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 //             archivo — reservado para casos bespoke ya revisados, ninguno
 //             hoy), 'scale-tap' (active:scale-90/95 permitido — ninguno
 //             hoy), 'left-border' (border-l decorativo permitido — ninguno
-//             hoy).
+//             hoy), 'capa-flotante' (el portal anclado del archivo es un
+//             TOOLTIP: sigue al puntero y no se navega, así que apagarle el
+//             hover del fondo sería pelearse consigo mismo).
 const EXCEPTIONS = {
   // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
   // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
@@ -273,7 +275,13 @@ const EXCEPTIONS = {
   // dejarla junta. Se excepciona con motivo para que la categoría llegue a 0 y
   // quede BLOQUEANTE: a partir de acá, cualquier zIndex inline NUEVO falla.
   'src/views/DashboardView.jsx': ['color', 'z-index'],
-  'src/views/StaffManagementView.jsx': ['color', 'z-index'],
+  // 'capa-flotante': su portal anclado es el tooltip de la grilla de asistencia
+  // (`data-surface="tooltip"`), no un menú. Un tooltip aparece PORQUE estás
+  // hovereando algo y se va al salir: apagarle el hover del fondo sería
+  // pelearse consigo mismo.
+  'src/views/StaffManagementView.jsx': ['color', 'z-index', 'capa-flotante'],
+  // 'capa-flotante': es EL tooltip canónico. Mismo motivo que arriba.
+  'src/components/common/LiquidTooltip.jsx': ['capa-flotante'],
   'src/components/common/LiquidWeekPicker.jsx': ['z-index'],
   'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index'],
   'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
@@ -962,6 +970,44 @@ function scanFile(path) {
     // (src/components/MotionProvider.jsx, montado en main.jsx). Exigirlo
     // archivo por archivo sería cargo-cult — la preferencia ya se respeta,
     // y cualquier motion.* nuevo queda cubierto sin que su autor haga nada.
+  }
+
+  // ── `capa-flotante` (2026-08-01) ──────────────────────────────────────
+  // Un menú/popover ANCLADO a un disparador se dibuja por portal encima del
+  // contenido, pero el contenido sigue recibiendo el puntero: al moverse sobre
+  // el menú, la tarjeta que quedó debajo entra y sale de `:hover`, y como
+  // `[data-surface="card"]` se levanta 2px, salta un bloque de media pantalla.
+  // Medido cruzando el borde del menú de a 2px en el tablero: la tarjeta de
+  // 532×256 de atrás pasaba de dy=-2 a dy=0. Se corrige con `useCapaFlotante`
+  // (`src/utils/capaFlotante.js`), y esto es lo que impide que el próximo
+  // flotante se olvide — que es exactamente cómo se acumuló esta deuda.
+  //
+  // La firma estructural del flotante ANCLADO son las tres cosas juntas:
+  // `createPortal` + `document.body` (sale del árbol) + `getBoundingClientRect`
+  // (se posiciona contra un disparador). Un modal centrado no mide un
+  // disparador, así que no entra solo.
+  //
+  // Ya cubierto y por eso exento: `ModalShell` y quien lo use (su velo real
+  // tapa el fondo), y quien traiga su propio velo `fixed inset-0`. El resto de
+  // los tooltips van en EXCEPTIONS con su motivo escrito, no detectados por
+  // heurística: un archivo puede tener un tooltip Y un menú —`DashboardView`
+  // tiene los dos— así que exentar por "contiene un tooltip" dejaría pasar el
+  // menú de al lado.
+  if (!hasException(path, 'capa-flotante') &&
+      /\.jsx?$/.test(path) &&
+      text.includes('createPortal') &&
+      text.includes('document.body') &&
+      text.includes('getBoundingClientRect') &&
+      !text.includes('useCapaFlotante') &&
+      !text.includes('ModalShell') &&
+      !text.includes('fixed inset-0')) {
+    const linea = lines.findIndex((l, i) => !isComment[i] && l.includes('createPortal')) + 1;
+    findings.push({
+      line: linea || 1,
+      label: 'flotante anclado sin `useCapaFlotante` — lo de atrás sigue reaccionando al puntero (DESIGN.md §5.2)',
+      category: 'capa-flotante',
+      text: path,
+    });
   }
 
   if (!hasException(path, 'search-toggle') && !text.includes('useSearchToggle')) {

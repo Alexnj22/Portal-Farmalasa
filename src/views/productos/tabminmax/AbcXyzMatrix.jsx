@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { BarChart2, ChevronDown } from 'lucide-react';
 import { normXyz } from './helpers';
 import Button from '../../../components/common/Button';
+import useCapaFlotante from '../../../utils/capaFlotante';
 import useLayoutCompacto from '../../../hooks/useLayoutCompacto';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
@@ -43,6 +44,11 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
     const [caja, setCaja] = useState(null);
     const btnRef = useRef(null);
     const id = useId();
+
+    // Con el popover abierto, lo de atrás se queda quieto — ver
+    // `src/utils/capaFlotante.js`. En compacto no hay popover (se dibuja en
+    // línea) y en táctil no hay hover que apagar.
+    useCapaFlotante(abierto && !compacto);
 
     const matrix = useMemo(() => {
         const m = {};

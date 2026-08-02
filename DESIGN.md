@@ -525,6 +525,14 @@ Card hover (solo escritorio, `@media (hover: hover)`):
 }
 ```
 
+> ⚠️ **Este lift está bajo revisión (2026-08-01).** Lo aplican las **201**
+> `data-surface="card"` del proyecto y sólo ~8 son clickeables; en un barrido de
+> 70 posiciones sobre el tablero, **51 tienen una tarjeta moviéndose** bajo el
+> puntero. Además está clavado en `-2px` en vez de `var(--lift-hover)`, así que
+> en Solid —cuyo contrato de §2 dice "no se mueve"— se levanta igual (medido:
+> dy=-2 en los tres temas). Pendiente de decisión de diseño; no tomarlo como
+> patrón para superficies nuevas.
+
 ### 5.1 `data-tono` — la tarjeta marcada por su estado (2026-07-28)
 
 **El canónico era INDECORABLE, y eso explicaba las últimas tarjetas escritas a
@@ -572,6 +580,56 @@ darle tono quedaban dos anillos concéntricos. Una franja DENTRO de una tarjeta
 es `bg-surface-card-hover` + borde, no otra `data-surface="card"`.
 
 ---
+
+### 5.2 Capa flotante — un menú abierto deja quieto lo que hay atrás (2026-08-01)
+
+**Un menú anclado se dibuja por portal encima del contenido, pero el contenido
+sigue recibiendo el puntero.** Al moverse sobre el menú, la tarjeta que quedó
+debajo entra y sale de `:hover` — y con el lift de arriba, salta un bloque de
+media pantalla. Medido cruzando el borde del menú de a 2px en el tablero: la
+tarjeta de 532×256 de atrás pasaba de `dy=-2` a `dy=0`. Se leía como un rebote
+entre el select y la tarjeta.
+
+**Todo flotante ANCLADO a un disparador llama `useCapaFlotante(abierto)`**
+(`src/utils/capaFlotante.js`):
+
+```jsx
+import useCapaFlotante from '../../utils/capaFlotante';
+const [isOpen, setIsOpen] = useState(false);
+useCapaFlotante(isOpen);
+```
+
+Pone `data-capa-flotante` sobre **`#root`**, y ahí está la gracia: los portales
+cuelgan de `body`, o sea que son **hermanos** de `#root` y los selectores no los
+alcanzan. **El menú abierto conserva sus propios hovers y el resto de la app se
+queda quieto, sin una sola excepción escrita a mano.** Es un contador y no un
+booleano, porque puede haber un select abierto dentro de un modal.
+
+**Se apagan los efectos, NO el puntero.** El reflejo es un velo `fixed inset-0`
+—lo que ya hace `ModalShell`— y resuelve el hover de un saque, pero **rompe el
+scroll**: esta app no scrollea el `body` sino un contenedor interno, y el velo
+cuelga de `body`, así que la rueda se queda sin ancestro scrolleable. Verificado
+con el menú abierto: el scroller interno clavado en 400 mientras que con el menú
+cerrado sí se movía. En `ModalShell` no se nota porque ahí bloquear el fondo es
+lo que se quiere. La regla toca `transform`/`box-shadow` y nada más, así que el
+hit-testing queda intacto y un menú que abre por `mouseenter` sigue funcionando.
+
+**Quién NO lo necesita**, y por qué el gate los deja pasar solos: quien use
+`ModalShell` (su velo real ya tapa el fondo) y quien traiga su propio velo
+`fixed inset-0` — hoy `PeriodPicker`, `RangeDatePicker`, `FilterBar`,
+`InlineDayEditor`.
+
+**Los tooltips quedan afuera a propósito.** Un tooltip aparece *porque* estás
+hovereando algo y se va al salir: apagarle el hover del fondo sería pelearse
+consigo mismo. Van a `EXCEPTIONS` con su motivo escrito —no auto-detectados—
+porque un archivo puede tener un tooltip **y** un menú (`DashboardView` tiene
+los dos) y exentar el archivo entero dejaría pasar el menú de al lado.
+
+Lo vigila la categoría **`capa-flotante`** de `npm run gate:design`, bloqueante
+en cero. La firma estructural que busca son las tres cosas juntas —
+`createPortal` + `document.body` + `getBoundingClientRect`— o sea "sale del
+árbol y se posiciona contra un disparador". Un modal centrado no mide un
+disparador, así que no entra solo.
 
 ## 6. Color System
 

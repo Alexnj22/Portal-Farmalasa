@@ -39,6 +39,7 @@ import {
 } from '../data/dashboard';
 import { clickable } from '../utils/clickable';
 import { formatMoney } from '../utils/formatNumber';
+import useCapaFlotante from '../utils/capaFlotante';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -331,6 +332,10 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
     if (btnRef.current) { const r = btnRef.current.getBoundingClientRect(); setCoords({ top: r.bottom + 8, left: r.left + r.width / 2 }); }
     setViewYear(value.getFullYear()); setOpen(true);
   };
+  // Con el selector de mes abierto, los widgets de atrás se quedan quietos —
+  // ver `src/utils/capaFlotante.js`. Es justo el tablero donde se midió el
+  // salto: 51 de 70 posiciones del puntero tenían una tarjeta moviéndose.
+  useCapaFlotante(open);
   useEffect(() => {
     if (!open) return;
     const close = e => { if (!btnRef.current?.contains(e.target)) setOpen(false); };

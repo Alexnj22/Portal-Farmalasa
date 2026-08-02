@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import { signPhotosDeep } from '../../utils/storageFiles';
+import useCapaFlotante from '../../utils/capaFlotante';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus, Check, ChevronLeft, Box, Truck, Star,
@@ -140,6 +141,11 @@ export default function RecepcionModal({
     const extrasEndRef    = useRef(null);
     const extraBuscarRef  = useRef(null);
     const [extraDropCoords, setExtraDropCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    // Con la lista de resultados abierta, lo de atrás se queda quieto — ver
+    // `src/utils/capaFlotante.js`. Acá hay tarjetas debajo del campo de
+    // búsqueda, así que es el mismo salto que en el tablero.
+    useCapaFlotante(extraResults.length > 0);
 
     // Contrato estándar de todo buscador toggleable (DESIGN.md §24): Escape
     // cierra Y limpia; click afuera cierra SOLO si está vacío. Declarado acá

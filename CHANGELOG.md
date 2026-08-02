@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.337.3 — La capa flotante como regla, con gate
+
+v2.337.2 arregló el canónico pero dejó la regla viviendo sólo en comentarios de
+código y en el changelog — que es exactamente cómo se acumula la deuda que
+después hay que auditar. Ahora está escrita y vigilada.
+
+**`DESIGN.md` §5.2** documenta la capa flotante: qué llama `useCapaFlotante`,
+por qué el atributo va en `#root` y no en `<html>` (los portales cuelgan de
+`body`, o sea que son hermanos de `#root`, y por eso el menú conserva sus
+hovers sin una sola excepción a mano), y por qué se apagan los efectos y no el
+puntero (un velo `fixed inset-0` rompe el scroll: esta app scrollea un
+contenedor interno). También queda anotado quién NO lo necesita —`ModalShell` y
+quien traiga velo propio— y que los tooltips van afuera a propósito.
+
+**Categoría nueva del gate: `capa-flotante`**, bloqueante en cero. La firma
+estructural que busca son las tres cosas juntas —`createPortal` +
+`document.body` + `getBoundingClientRect`— o sea "sale del árbol y se posiciona
+contra un disparador"; un modal centrado no mide un disparador, así que no entra
+solo. Probado quitándole el hook a `RecepcionModal`: lo marcó, `SUBIÓ +1`.
+
+**El barrido encontró 4 flotantes más sin cubrir**, todos wireados: el selector
+de mes del tablero (`DashboardView`), la lista de resultados de
+`RecepcionModal`, el popover de `AbcXyzMatrix` y el menú "Más" de `RowActions`.
+Ese último abre por `mouseenter`: no se rompe porque la regla toca
+`transform`/`box-shadow` y nunca `pointer-events`.
+
+**Dos tooltips van a `EXCEPTIONS` con su motivo escrito** (`LiquidTooltip` y el
+de la grilla de `StaffManagementView`): un tooltip aparece *porque* estás
+hovereando algo, apagarle el hover del fondo sería pelearse consigo mismo. No se
+auto-detectan porque un archivo puede tener un tooltip **y** un menú
+—`DashboardView` tiene los dos— y exentar el archivo entero dejaría pasar el
+menú de al lado.
+
+Verificado en vivo el selector de mes: `aria-expanded=true`, atributo puesto,
+**0 tarjetas moviéndose**, atributo removido al cerrar.
+
+Además quedó marcado en `DESIGN.md` §5 que **el lift de `data-surface="card"`
+está bajo revisión**: lo aplican las 201 tarjetas y sólo ~8 son clickeables (51
+de 70 posiciones del tablero con algo moviéndose), y está clavado en `-2px` en
+vez de `var(--lift-hover)`, así que Solid se levanta igual pese a que su
+contrato dice que no. Sigue pendiente de decisión de diseño.
+
 ## v2.337.2 — Un menú abierto deja quieto lo que hay atrás
 
 Con un desplegable abierto, mover el mouse sobre él hacía **saltar la tarjeta

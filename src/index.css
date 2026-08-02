@@ -317,6 +317,15 @@
      en el canónico y en 200 botones a mano, así que el tema sólido levantaba
      igual que el de vidrio — contradiciendo su propia promesa de ser liviano. */
   --lift-hover:  -1px;
+  /* Token propio para SUPERFICIES (card, page-header), separado de
+     `--lift-hover` que es el de los CONTROLES. Son dos números distintos a
+     propósito: un botón de 32px y una tarjeta de 1080px no necesitan el mismo
+     desplazamiento — 2px en el botón se lee como salto, 1px en la tarjeta no
+     se ve. Existe porque el lift de la tarjeta estaba clavado en `-2px` y por
+     eso NO se apagaba en Solid: la neutralización de tema sólo alcanza a las
+     clases Tailwind, no a una regla de `data-surface`. Medido el 2026-08-01:
+     dy=-2 en los tres temas, incluido el que promete no moverse. */
+  --lift-card:   -2px;
 
   --tooltip-bg:      rgba(13,20,48,0.86);
   --tooltip-border:  rgba(255,255,255,0.14);
@@ -918,6 +927,7 @@
      superficie, y ponerlo solo acá sería el mismo error que los 54
      `rounded-full` fijos peleando contra su propio tema. */
   --lift-hover:  0px;
+  --lift-card:   0px;
 
   --tooltip-bg:      #16203D;
   --tooltip-border:  rgba(255,255,255,0.10);
@@ -1045,6 +1055,7 @@
      escalón sobre la tarjeta (#1e293b) por el mismo motivo que en Liquid
      oscuro: dos oscuros iguales no se separan. */
   --lift-hover:  0px;
+  --lift-card:   0px;
 
   --tooltip-bg:      #33415C;
   --tooltip-border:  rgba(255,255,255,0.14);
@@ -1531,13 +1542,16 @@
    Mismo mecanismo que la neutralización de Solid de acá arriba —incluida la
    razón para tocar SOLO la variable del delta y nunca `translate` entero, que
    rompería los `-translate-x-1/2` que centran popovers. */
-#root[data-capa-flotante] [data-surface="card"]:hover {
-  transform: none;
-  box-shadow: var(--card-shadow);
-}
+/* Se apaga el MOVIMIENTO y nada más: la sombra de hover se conserva. Decisión
+   del usuario (2026-08-01) tras comparar las tres opciones en un mockup con los
+   tokens reales — el lift se queda como canónico porque es la sensación Liquid
+   Glass, pero con un menú abierto la superficie de atrás se ilumina sin
+   moverse. Es lo que en el mockup era la opción B, y elimina el rebote igual
+   que quitar el hover entero: `box-shadow` no toca el hit-testing, `transform`
+   sí. Por eso acá NO va un `box-shadow` — dejarlo pasar es el punto. */
+#root[data-capa-flotante] [data-surface="card"]:hover,
 #root[data-capa-flotante] [data-surface="page-header"]:hover {
   transform: none;
-  box-shadow: var(--header-shadow);
 }
 #root[data-capa-flotante] [class*="hover:-translate-y"]:hover,
 #root[data-capa-flotante] [class*="hover:translate-y"]:hover {
@@ -1924,7 +1938,7 @@
 @media (hover: hover) {
   [data-surface="card"]:hover {
     box-shadow: var(--card-shadow-hover);
-    transform: translateY(-2px);
+    transform: translateY(var(--lift-card));
   }
 }
 
@@ -1940,7 +1954,7 @@
 @media (hover: hover) {
   [data-surface="page-header"]:hover {
     box-shadow: 0 32px 64px -12px rgba(0,0,0,0.22);
-    transform: translateY(-1px);
+    transform: translateY(var(--lift-hover));
   }
 }
 

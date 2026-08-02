@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.339.1 — El lift sale de un token y se apaga con un menú abierto
+
+Cierra la decisión que quedó abierta en v2.337.2: **el lift se queda como
+canónico para toda superficie** —es la sensación Liquid Glass— **pero con un
+menú abierto la superficie de atrás se ilumina sin moverse.** Elegido
+comparando tres opciones en un mockup construido con los tokens reales.
+
+**Dos tokens, no uno.** `--lift-card` para SUPERFICIES, `--lift-hover` para
+CONTROLES: un botón de 32px y una tarjeta de 1080px no necesitan el mismo
+desplazamiento — 2px en el botón se lee como salto, 1px en la tarjeta no se ve.
+
+| token | quién | liquid / dark | solid / solid-dark |
+|---|---|---|---|
+| `--lift-card` | `data-surface="card"` | `-2px` | `0px` |
+| `--lift-hover` | `Button`, `TablePagination`, `page-header` | `-1px` | `0px` |
+
+**Con esto Solid deja de contradecirse.** El lift de la tarjeta estaba clavado
+en `-2px`, y la neutralización de tema sólo alcanza a las clases Tailwind
+`[class*="hover:-translate-y"]` — nunca a una regla de `data-surface`. O sea que
+en Solid, cuyo contrato de `DESIGN.md` §2 dice "no se mueve; sólo cambia de
+color", las tarjetas se levantaban igual. Medido antes: `dy=-2` en los tres
+temas. Después: `-2` en liquid y dark, `0` en solid y solid-dark.
+
+**La capa flotante pasa a apagar sólo el MOVIMIENTO.** Antes reseteaba también
+la sombra; ahora `--card-shadow-hover` se conserva y sólo `transform` se va a
+`none`. Elimina el rebote igual que apagar el hover entero, porque `box-shadow`
+no toca el hit-testing y `transform` sí — que es toda la razón por la que el
+rebote existía.
+
+Verificado en vivo: menú cerrado `dy=-2` con sombra de hover; menú abierto
+`dy=0` **con la sombra de hover puesta**; 0 de 5 posiciones cruzando el borde
+del menú con una tarjeta moviéndose; al cerrar vuelve a `-2`. Sin errores de JS,
+`gate:design` en verde.
+
+`DESIGN.md` §2, §5 y §5.2 actualizados. La advertencia de "lift bajo revisión"
+se reemplazó por la regla: **nunca clavar el número** — `var(--lift-card)` en
+una superficie nueva, `var(--lift-hover)` en un control.
+
+**Queda pendiente** el barrido de los ~92 `hover:-translate-y-*` escritos a mano
+en 53 archivos, que van de 1px a 8px sin pasar por ningún token. Son controles,
+así que no producen el salto de bloque grande que motivó todo esto, pero son la
+misma deuda: un número clavado que ningún tema puede rescatar.
+
 ## v2.339.0 — Bloque A: los candados de proveedores
 
 Primer bloque del `PLAN-CONTABILIDAD-2026-08-02`. Va primero por una razón de

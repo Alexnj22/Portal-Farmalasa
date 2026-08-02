@@ -132,14 +132,17 @@ literalmente el artefacto que hace que algo lea como vidrio.
 | forma | píldora (`9999px`), tarjeta muy redondeada | rectángulo tenso (8–12px) | `--btn-radius`, `--card-radius` |
 | sombra | doble eje: elevación **+ brillo interior** | solo elevación, y más corta | `--shadow-glass-*`, `--shadow-shine*` |
 | color de acento | halo difuso de 8–40px | **aro nítido** de 1–3px | `--shadow-glow-*` |
-| hover | el control **se levanta** (`--lift-hover: -1px`) | no se mueve; solo cambia de color | `--lift-hover` |
+| hover | **se levanta**: el control `-1px`, la superficie `-2px` | no se mueve; solo cambia de color | `--lift-hover`, `--lift-card` |
 | movimiento | entradas, deriva ambiental, barrido | apagado | reglas `[data-theme="solid"] .animate-*` |
 
 **Consecuencias para escribir código nuevo**
 
-- Nunca clavar `hover:-translate-y-px` — usar `hover:translate-y-[var(--lift-hover)]`.
-  Los 176 que ya estaban escritos así se neutralizan con una regla de tema
-  (`index.css`), pero eso es un parche, no el patrón.
+- Nunca clavar el lift — `hover:translate-y-[var(--lift-hover)]` en un control,
+  `var(--lift-card)` en una superficie (§5). Los 176 que ya estaban escritos a
+  mano se neutralizan con una regla de tema (`index.css`), pero eso es un parche,
+  no el patrón — y sólo alcanza a las clases Tailwind: el canónico de la tarjeta
+  estaba clavado en `-2px` y por eso se levantaba **también en Solid** hasta el
+  2026-08-01.
 - Nunca clavar un radio. `rounded-btn` / `rounded-card` ya cambian solos.
 - `transition-all` en Solid se acota por regla de tema a color/fondo/borde/
   opacidad. Si necesitás animar geometría, nombrá las propiedades.
@@ -520,18 +523,35 @@ The `[data-surface]` attribute is the canonical way to apply Liquid Glass stylin
 Card hover (solo escritorio, `@media (hover: hover)`):
 ```css
 [data-surface="card"]:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-hover);
+  transform: translateY(var(--lift-card));
+  box-shadow: var(--card-shadow-hover);
 }
 ```
 
-> ⚠️ **Este lift está bajo revisión (2026-08-01).** Lo aplican las **201**
-> `data-surface="card"` del proyecto y sólo ~8 son clickeables; en un barrido de
-> 70 posiciones sobre el tablero, **51 tienen una tarjeta moviéndose** bajo el
-> puntero. Además está clavado en `-2px` en vez de `var(--lift-hover)`, así que
-> en Solid —cuyo contrato de §2 dice "no se mueve"— se levanta igual (medido:
-> dy=-2 en los tres temas). Pendiente de decisión de diseño; no tomarlo como
-> patrón para superficies nuevas.
+**El lift se queda — es la sensación Liquid Glass, y es el canónico para toda
+superficie** (decisión del usuario, 2026-08-01, tras comparar tres opciones en
+un mockup con los tokens reales). Lo que cambió es de dónde sale el número:
+
+**`--lift-card` es el lift de las SUPERFICIES; `--lift-hover` el de los
+CONTROLES.** Son dos tokens a propósito: un botón de 32px y una tarjeta de
+1080px no necesitan el mismo desplazamiento — 2px en el botón se lee como
+salto, 1px en la tarjeta no se ve.
+
+| token | quién lo usa | liquid / dark | solid / solid-dark |
+|---|---|---|---|
+| `--lift-card` | `data-surface="card"` | `-2px` | `0px` |
+| `--lift-hover` | `Button`, `TablePagination`, `data-surface="page-header"` | `-1px` | `0px` |
+
+Existe porque el lift de la tarjeta estaba **clavado en `-2px`**, y por eso no
+se apagaba en Solid: la neutralización de tema (`index.css`) sólo alcanza a las
+clases Tailwind `[class*="hover:-translate-y"]`, nunca a una regla de
+`data-surface`. Medido antes del arreglo: `dy=-2` en los tres temas, incluido el
+que promete no moverse. Verificado después: `-2` en liquid y dark, `0` en solid
+y solid-dark.
+
+> **Nunca clavar el número.** Una superficie nueva usa `var(--lift-card)`; un
+> control, `var(--lift-hover)`. Clavar `-2px` es exactamente el bug que esto
+> arregla, y no hay tema que lo pueda rescatar después.
 
 ### 5.1 `data-tono` — la tarjeta marcada por su estado (2026-07-28)
 
@@ -604,6 +624,22 @@ cuelgan de `body`, o sea que son **hermanos** de `#root` y los selectores no los
 alcanzan. **El menú abierto conserva sus propios hovers y el resto de la app se
 queda quieto, sin una sola excepción escrita a mano.** Es un contador y no un
 booleano, porque puede haber un select abierto dentro de un modal.
+
+**Se apaga el MOVIMIENTO, no el hover entero.** La superficie de atrás sigue
+iluminándose —conserva `--card-shadow-hover`— pero no se desplaza:
+
+| | menú cerrado | menú abierto |
+|---|---|---|
+| `transform` | `translateY(var(--lift-card))` | `none` |
+| `box-shadow` | `var(--card-shadow-hover)` | `var(--card-shadow-hover)` — **se conserva** |
+
+Es exactamente el criterio que se eligió comparando las tres opciones en el
+mockup: el lift se queda como canónico porque es la sensación Liquid Glass, y
+mientras hay un menú abierto la superficie se ilumina sin moverse. Elimina el
+rebote igual que apagar el hover entero, porque **`box-shadow` no toca el
+hit-testing y `transform` sí** — que es toda la razón por la que el rebote
+existía. Por eso la regla de `index.css` declara `transform: none` y **ninguna**
+`box-shadow`: dejarla pasar es el punto, no un olvido.
 
 **Se apagan los efectos, NO el puntero.** El reflejo es un velo `fixed inset-0`
 —lo que ya hace `ModalShell`— y resuelve el hover de un saque, pero **rompe el

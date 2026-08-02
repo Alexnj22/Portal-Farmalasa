@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.345.1 — Arreglo: el portal no cargaba por MODULE_MAP incompleto
+
+**Outage. El portal no abría para nadie**, con
+`TypeError: undefined is not an object (evaluating 'ut.path.replace')`.
+
+Causa: al agregar el módulo `libro_compras_completo` en v2.345.0 lo puse en el
+grupo de menú de `AppLayout` pero **no en `MODULE_MAP`**. El layout recorre los
+módulos del grupo y hace `m.path.replace(...)` para saber cuál está activo — con
+la entrada faltante, `m` es `undefined` y revienta antes de pintar nada. No es
+que fallara la vista nueva: fallaba el layout, o sea todas las pantallas.
+
+El checklist de módulo nuevo dice literalmente *"add entry to `MODULE_MAP` **and**
+add key to the relevant `MENU_GROUPS` array"*. Hice la segunda mitad y me salté
+la primera, y ninguno de los gates lo atrapa: compila, lintea y pasa los cinco
+gates igual, porque el error solo existe en tiempo de ejecución.
+
+Verificado después del arreglo: **cero** claves de `MENU_GROUPS` sin entrada en
+`MODULE_MAP`, comprobado recorriendo los dos archivos.
+
 ## v2.345.0 — Libro de Compras Completo: vista propia
 
 **Vista nueva y separada, no una pestaña.** El libro de Libros IVA sale del ERP

@@ -55,6 +55,7 @@ export const MODULE_MAP = {
     compras:           { path: '/compras',           label: 'Compras',                  icon: ShoppingCart  },
     facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de Compra',       icon: Mail          },
     libros_iva:        { path: '/libros-iva',         label: 'Libros IVA',               icon: BookOpen      },
+    libro_compras_completo: { path: '/libro-compras-completo', label: 'Compras Completo',  icon: BookOpen      },
     proveedores:       { path: '/proveedores',        label: 'Proveedores',              icon: Truck         },
     conteo_inventario: { path: '/conteo-inventario',  label: 'Conteo de Inventario',     icon: ClipboardCheck },
 };

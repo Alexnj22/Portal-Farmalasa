@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getCorsHeaders, getErpBranchMap } from "../_shared/security.ts";
+import { selectAllPaged } from "../_shared/db.ts";
 
 // Cuadre diario del libro de compras: ERP contra portal, por sucursal y mes.
 //
@@ -154,17 +155,30 @@ Deno.serve(async (req) => {
         const erpN     = Number(dt?.recordsFiltered ?? filas.length);
         const erpTotal = filas.reduce((s, f) => s + (Number(f[5]) || 0), 0);
 
+        // A4/H14 (PLAN-CONTABILIDAD-2026-08-02): esto era un `.select()` pelado.
+        // PostgREST corta en 1000 filas sin avisar, así que el día que una
+        // sucursal-mes cruce ese número el cuadre compara 1000 contra las que
+        // el ERP diga y reporta una diferencia que no existe — o sea, el
+        // control que existe para detectar faltantes empieza a inventarlos.
+        // Bodega ya va en 414 al mes. Se pagina con el helper del proyecto.
+        //
         // El error del query NO se descarta: sin esto una consulta fallida
         // daría portalN = 0 y dispararía una alerta falsa por cada sucursal.
-        const { data: propias, error } = await supabase
-          .from('purchase_receipts')
-          .select('total')
-          .eq('branch_id', branchId)
-          .gte('fecha', desde).lte('fecha', hasta);
-        if (error) throw new Error(`purchase_receipts (${branchId}, ${etiqueta}): ${error.message}`);
+        let propias: any[];
+        try {
+          propias = await selectAllPaged<any>((from, to) => supabase
+            .from('purchase_receipts')
+            .select('total')
+            .eq('branch_id', branchId)
+            .gte('fecha', desde).lte('fecha', hasta)
+            .order('id')
+            .range(from, to));
+        } catch (e) {
+          throw new Error(`purchase_receipts (${branchId}, ${etiqueta}): ${(e as any)?.message ?? e}`);
+        }
 
-        const portalN     = (propias ?? []).length;
-        const portalTotal = (propias ?? []).reduce((s, r: any) => s + (Number(r.total) || 0), 0);
+        const portalN     = propias.length;
+        const portalTotal = propias.reduce((s, r: any) => s + (Number(r.total) || 0), 0);
 
         revisados.push({ branchId, mes: etiqueta, erpN, portalN });
         if (erpN !== portalN || Math.abs(erpTotal - portalTotal) > TOLERANCIA) {

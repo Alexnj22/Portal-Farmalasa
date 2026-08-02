@@ -21,6 +21,71 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.339.0 — Bloque A: los candados de proveedores
+
+Primer bloque del `PLAN-CONTABILIDAD-2026-08-02`. Va primero por una razón de
+oportunidad: **hoy la base está limpia** (0 `supplier_id` duplicados, verificado
+al aplicar la migración), así que poner el candado no obliga a reparar nada
+antes. Cada semana que pasaba era una chance de que alguien hiciera el clic que
+lo ensucia.
+
+**A1 · El candado.** `proveedores_maestro.supplier_id` no tenía índice único, y
+los tres RPC del libro de compras hacen `LEFT JOIN` por esa columna. Un solo
+duplicado multiplica filas: simulado sobre junio 2026, **389 → 503 filas y
+$203,947 → $295,805**. Y lo peor no es que se pueda inflar — es que el
+verificador de CSV lo declararía `IDENTICO`, porque solo comprueba que cada
+línea del ERP esté en el portal y nunca que al portal no le sobre nada (H10, se
+arregla en el Bloque B). Índice único parcial: `NULL` = sin vincular, y eso sí
+se repite (hoy 39 fichas, todas de gastos y servicios que nunca pasan por el
+módulo de compras del ERP).
+
+**A2 · El mensaje, en vez del error crudo.** El select "Match ERP" de la ficha
+llamaba a `set_proveedor_supplier` sin ningún chequeo. Con el índice puesto, el
+23505 se traducía a *"Ya existe un registro con esos datos"* — cierto y
+perfectamente inútil: no dice cuál ni con quién choca. Ahora dice **"Ese
+proveedor del ERP ya está vinculado a X — quita el vínculo allí antes de
+asignarlo aquí"**. La comprobación va en el manejador de la excepción y no antes
+del `UPDATE`: chequear primero deja una ventana en la que otra sesión toma el
+mismo supplier. El índice es el árbitro; el `SELECT` solo corre para nombrar al
+otro.
+
+**A3 · Los lookups del upsert eran no deterministas.** El de NRC hacía `LIMIT 1`
+sin `ORDER BY`. Pero lo que importaba era otra cosa: sin defensa, el índice de
+A1 haría fallar el `INSERT` de `upsert_proveedor_from_dte` con 23505 y **se
+caería el sync de correos entero** — el candado rompiendo justo el camino
+automático que debía proteger. Ahora exige que el supplier no esté ya tomado y
+prefiere dejar el vínculo vacío antes que romper. De paso, un NRC que normaliza
+a cadena vacía (`'---'`, `'N/A'`) ya no matchea con todo supplier igualmente
+vacío.
+
+**A4 · El cuadre de compras leía sin paginar.** `.select('total')` pelado sobre
+`purchase_receipts`: PostgREST corta en 1000 filas sin avisar, así que el día
+que una sucursal-mes cruce ese número el cuadre compara 1000 contra lo que diga
+el ERP y **reporta una diferencia que no existe** — el control que existe para
+detectar faltantes empezaría a inventarlos. Bodega ya va en 414 al mes. Paginado
+con `selectAllPaged` y `ORDER BY id`, que es lo que hace estable al `.range()`.
+
+**A5 · Una función que nadie podía ejecutar.** `get_libro_sujeto_excluido` tenía
+`EXECUTE` solo para `postgres` y `service_role`: código muerto que habría
+fallado con *permission denied* el día que se recolgara en la vista.
+
+**A7 · Por qué `get_notas_credito_compras` no lleva scope de sucursal.** Había
+motivo y no estaba escrito: `purchase_dte_documents` no tiene columna de
+sucursal — los DTE llegan por correo a una casilla de la empresa. Queda en un
+`COMMENT` para que la próxima auditoría no lo levante de nuevo.
+
+Verificado contra producción bajo `BEGIN … ROLLBACK`: el índice rechaza el
+duplicado, la RPC responde con el nombre de la otra ficha, y liberar y reasignar
+sigue funcionando.
+
+Queda pendiente **A6** (scope de sucursal en dos ramas del RLS de
+`purchase_receipts` y `sales_invoices`): son tablas calientes, así que va a
+staging primero.
+
+De paso, tres migraciones de otra sesión de hoy tenían el archivo local nombrado
+con una versión inventada en vez de la que asignó el servidor. El contenido
+coincidía; se renombraron y `npm run gate:migrations --remote` volvió a verde.
+
 ## v2.338.0 — Diez bloques seguidos: 10,625 fichas de clientes
 
 **5,057 → 10,625 fichas procesadas** (bloques 11 a 20), frente secuencial en

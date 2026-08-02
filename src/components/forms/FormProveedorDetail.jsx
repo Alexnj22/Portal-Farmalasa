@@ -9,7 +9,7 @@ import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
 import PortalInput from '../common/PortalInput';
-import { mensajeAmigable } from '../../utils/errorMessages';
+import { mensajeAmigable, mensajeConPrefijo } from '../../utils/errorMessages';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -146,7 +146,14 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             setSupplierId(val || '');
             formData?.onSaved?.();
         } catch (e) {
-            setClasifError(mensajeAmigable(e, 'No se pudo guardar el match ERP'));
+            // A2 del PLAN-CONTABILIDAD-2026-08-02: desde el índice único, elegir
+            // un proveedor del ERP que otra ficha ya tiene devuelve
+            // `SUPPLIER_YA_VINCULADO: <copy>`. Va por `mensajeConPrefijo` y no
+            // por `mensajeAmigable` porque el texto de después del prefijo ya
+            // está escrito para una persona y nombra a la otra ficha — que es
+            // lo único accionable. Con el traductor genérico se vería "Ya
+            // existe un registro con esos datos", cierto e inútil.
+            setClasifError(mensajeConPrefijo(e, 'SUPPLIER_YA_VINCULADO', 'No se pudo guardar el match ERP'));
         } finally {
             setSavingSupplier(false);
         }

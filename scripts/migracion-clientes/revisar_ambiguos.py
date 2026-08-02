@@ -74,28 +74,44 @@ def main():
               if a.fichas else candidatas(ck))
     print(f'{len(fichas)} fichas se resolvieron por desempate. Releyéndolas del ERP…\n')
 
-    cambian, iguales = [], 0
+    cambian, iguales, sorteos = [], 0, 0
     for eid in fichas:
         campos, ops = bloque.leer_ficha(eid)
         etiq = dict(ops.get('distrito', []))
         actual = campos.get('distrito', '')
+        # La semilla del sorteo es el `portal_id` con el que se PLANIFICÓ la
+        # ficha ('erp:4420'), no el erp_id pelado ('4420') — `planificar` pasa
+        # `cliente['id']`. Con la semilla equivocada esto era otro sorteo: para
+        # una ficha que ninguna regla resuelve reportaba "CAMBIA" la mitad de
+        # las veces, y con --corregir escribía la otra cara de la misma moneda.
+        # El checkpoint guarda el portal_id justamente porque los primeros
+        # bloques se armaron desde el portal y ahí NO es 'erp:N'.
+        semilla = (ck.get(eid) or {}).get('portal_id') or f'erp:{eid}'
         nuevo, motivo, _ = bloque.elegir_distrito(
-            eid, campos.get('direccion', ''), ops.get('distrito', []),
+            semilla, campos.get('direccion', ''), ops.get('distrito', []),
             bloque.ubicacion_de(campos, ops))
-        marca = 'igual' if nuevo == actual else 'CAMBIA'
+        ambigua = 'ambiguo' in motivo
+        marca = 'igual' if nuevo == actual else ('SORTEO' if ambigua else 'CAMBIA')
         if nuevo == actual:
             iguales += 1
+        elif ambigua:
+            # Ninguna regla la resuelve: el valor nuevo es otro sorteo entre los
+            # mismos candidatos, no una corrección. Escribirlo haría oscilar la
+            # ficha en el ERP a cada pasada sin acercarse a la respuesta.
+            sorteos += 1
         else:
             cambian.append({'eid': eid, 'campos': campos, 'ops': ops,
                             'nuevo': nuevo, 'antes': etiq.get(actual, '(vacío)'),
                             'despues': etiq.get(nuevo, '?')})
         print(f'  {marca:<6} erp {eid:<6} {(campos.get("direccion") or "")[:38]:<40} '
               f'{etiq.get(actual, "(vacío)"):<26} -> {etiq.get(nuevo, "?")}')
-        if 'ambiguo' in motivo:
-            print(f'         (sigue ambigua: {motivo} — leerla a mano)')
+        if ambigua:
+            print(f'         (sigue ambigua: {motivo} — leerla a mano; '
+                  f'{"no se escribe: sería otro sorteo" if nuevo != actual else "el valor de hoy coincide"})')
         time.sleep(a.pausa)
 
-    print(f'\n{iguales} quedaron bien · {len(cambian)} cambian con las reglas de hoy')
+    print(f'\n{iguales} quedaron bien · {len(cambian)} cambian con las reglas de hoy'
+          + (f' · {sorteos} sin regla que las resuelva (NO se escriben)' if sorteos else ''))
     if not cambian:
         return
     if not a.corregir:

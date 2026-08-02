@@ -726,5 +726,253 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "JOSE ANTONIO DELGADO"
+ },
+ {
+  "erp_id": "4005",
+  "campo": "dui",
+  "valor": "03446671-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE ALFREDO MORALES"
+ },
+ {
+  "erp_id": "4141",
+  "campo": "dui",
+  "valor": "01559930-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MIRIAM SANDRA GARCIA"
+ },
+ {
+  "erp_id": "4146",
+  "campo": "dui",
+  "valor": "01768036-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "CRUZ ANTONIO NUÑEZ"
+ },
+ {
+  "erp_id": "4217",
+  "campo": "dui",
+  "valor": "00870716-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANGEL FRANCISCO MEJIA"
+ },
+ {
+  "erp_id": "4268",
+  "campo": "dui",
+  "valor": "03830717-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "KAREN MELISSA JIMENEZ GUEVARA"
+ },
+ {
+  "erp_id": "4313",
+  "campo": "dui",
+  "valor": "03375435-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "HENRY ANIBAL CALDERON FIGUEROA"
+ },
+ {
+  "erp_id": "4327",
+  "campo": "dui",
+  "valor": "03795028-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "EDWIN ERNESTO ALVARADO ZAMORA"
+ },
+ {
+  "erp_id": "4342",
+  "campo": "dui",
+  "valor": "02464110-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "CARLOS ALFONSO LEON MELGAR"
+ },
+ {
+  "erp_id": "4348",
+  "campo": "dui",
+  "valor": "00509054-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ARGUETA AYALA"
+ },
+ {
+  "erp_id": "4366",
+  "campo": "dui",
+  "valor": "05389090-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "WENDY AZUCENA ROSA MARTINEZ"
+ },
+ {
+  "erp_id": "4414",
+  "campo": "dui",
+  "valor": "03499679-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARTHA ALICIA HERNANDEZ ALVARENGA"
+ },
+ {
+  "erp_id": "4459",
+  "campo": "dui",
+  "valor": "02099997-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ISABEL ANAYA MOYA DE MERLOS"
+ },
+ {
+  "erp_id": "4463",
+  "campo": "dui",
+  "valor": "04224682-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "DANIEL ALEXANDER MARTINEZ"
+ },
+ {
+  "erp_id": "4505",
+  "campo": "dui",
+  "valor": "03570842-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "RAUL ANTONIO RIVERA"
+ },
+ {
+  "erp_id": "4539",
+  "campo": "dui",
+  "valor": "04148977-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ROSIBEL MENJIVAR PINEDA"
+ },
+ {
+  "erp_id": "4541",
+  "campo": "dui",
+  "valor": "05929658-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA ALEJANDRA GARCIA LOPEZ"
+ },
+ {
+  "erp_id": "4555",
+  "campo": "dui",
+  "valor": "00587378-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANTHONIA CONCEPCION ORTIZ"
+ },
+ {
+  "erp_id": "4564",
+  "campo": "dui",
+  "valor": "01378243-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MAYRA GUADALUPE LOPEZ FRANCO"
+ },
+ {
+  "erp_id": "4653",
+  "campo": "dui",
+  "valor": "05710999-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "CAROLINA LISSETH CALDERON GUARDADO"
+ },
+ {
+  "erp_id": "4673",
+  "campo": "dui",
+  "valor": "05516481-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "NIEVES ARISTIDES GALEAS ACOSTA"
+ },
+ {
+  "erp_id": "4682",
+  "campo": "dui",
+  "valor": "05500762-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "KELVIN RONALDO GUARDADO RAMOS"
+ },
+ {
+  "erp_id": "4683",
+  "campo": "dui",
+  "valor": "01182550-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA CANDIDA RAMIREZ DE RAMIREZ"
+ },
+ {
+  "erp_id": "4722",
+  "campo": "dui",
+  "valor": "05729841-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MAYBEL AVILA GARCIA"
+ },
+ {
+  "erp_id": "4724",
+  "campo": "dui",
+  "valor": "04489801-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ERICK ROSA"
+ },
+ {
+  "erp_id": "4741",
+  "campo": "dui",
+  "valor": "01419304-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE MARIA MELARA"
+ },
+ {
+  "erp_id": "4773",
+  "campo": "dui",
+  "valor": "05653605-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "FRANCISCA ABIGAIL MIRANDA DE LOPEZ"
+ },
+ {
+  "erp_id": "4803",
+  "campo": "dui",
+  "valor": "03714743-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ABIGAIL HERNANDEZ"
+ },
+ {
+  "erp_id": "4846",
+  "campo": "dui",
+  "valor": "01248607-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "FELIX ANTONIO LANDAVERDE LOPEZ"
+ },
+ {
+  "erp_id": "4905",
+  "campo": "dui",
+  "valor": "01715167-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SANDRA GUADALUPE CASTRO DE MEJIA"
+ },
+ {
+  "erp_id": "4939",
+  "campo": "dui",
+  "valor": "05486871-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "DIANA CAROLINA NUÑEZ MURCIA"
+ },
+ {
+  "erp_id": "4957",
+  "campo": "dui",
+  "valor": "01691981-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JUAN FRANCISCO MENA"
  }
 ]

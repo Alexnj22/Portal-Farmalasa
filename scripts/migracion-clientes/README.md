@@ -13,18 +13,18 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 <!-- ESTADO:INICIO -->
 ```
 catálogo del ERP        27,602 fichas
-procesadas               4,061 fichas    (checkpoint.json)
-portadas al portal       3,394 de 24,542  (customers.erp_id no nulo)
-  de ellas con distrito  3,298
-pendientes              23,613          (48 bloques de 500)
+procesadas               5,057 fichas    (checkpoint.json)
+portadas al portal       4,197 de 24,542  (customers.erp_id no nulo)
+  de ellas con distrito  4,101
+pendientes              22,615          (46 bloques de 500)
 ```
 
-**Verificadas OK: 4,061 · a revisar: 0.** El frente secuencial va por `erp_id 3,991`; hay 72 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
+**Verificadas OK: 5,057 · a revisar: 0.** El frente secuencial va por `erp_id 5,143`; hay 69 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-`revision_manual.json`: **91 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
+`revision_manual.json`: **122 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
-`faltantes_dte.json`: **95 fichas** no se pueden facturar todavía bajo DTE 2.0, 82 de ellas fiscales.
-Les falta: distrito 95 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2 · telefono1 1 · departamento 1 · municipio 1.
+`faltantes_dte.json`: **96 fichas** no se pueden facturar todavía bajo DTE 2.0, 82 de ellas fiscales.
+Les falta: distrito 95 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2 · departamento 2 · telefono1 1 · municipio 1.
 
 <sub>Generado por `python3 estado.py --escribir`. No editar a mano: los números se generan, las decisiones se escriben.</sub>
 <!-- ESTADO:FIN -->
@@ -89,6 +89,41 @@ candidatos, o sea exactamente las fichas anotadas con `ambiguo` en
 `cambios.distrito`, que son enumerables desde el checkpoint. Se reencolaron las
 5 a mano. Subir REGLAS habría releído las 2,078 (una hora contra el servidor del
 proveedor) para corregir esas mismas 5.
+
+### El sorteo es determinista, pero SOLO con la misma semilla
+
+`elegir_distrito` siembra con `sha256(portal_id)`, y `planificar` le pasa
+`cliente['id']` — que es `'erp:4420'`, **no** `'4420'`. Hasta el 2026-08-02
+`revisar_ambiguos.py` le pasaba el `erp_id` pelado, así que comparaba contra
+**otro sorteo**: para una ficha que ninguna regla resuelve reportaba "CAMBIA"
+alrededor de la mitad de las veces y, con `--corregir`, escribía la otra cara de
+la misma moneda. La ficha oscilaba en el ERP a cada pasada sin acercarse a la
+respuesta.
+
+Dos arreglos, y el segundo es el de fondo:
+
+1. **La semilla sale del `portal_id` que guarda el checkpoint**, no reconstruida
+   como `f'erp:{eid}'`. Tiene que ser el guardado: los primeros bloques se
+   armaron desde el portal y ahí el id no tiene esa forma.
+2. **`--corregir` ya no escribe una ficha que sigue ambigua.** Se muestra como
+   `SORTEO` y se dice por qué. Un sorteo distinto no es una corrección — la
+   semilla equivocada solo hacía visible ese agujero.
+
+Las correcciones anteriores no estaban afectadas: 176, 380, 2112, 2304, 2423 y
+2457 se resolvieron por REGLA (nombre completo, abreviatura, descarte del
+homónimo), y ahí la semilla no interviene. La única escrita por el camino del
+sorteo fue la `erp 4420`.
+
+**`erp 4420` acertó por el mecanismo equivocado.** Dirección
+`BA LAS FLORES SAN LUIS DEL CARMEN`, candidatos SAN JOSE FLORES y SAN LUIS
+CARMEN; quedó en SAN LUIS CARMEN, que es el valor correcto —`BA LAS FLORES` es
+el barrio— pero salió de un sorteo, no de una regla. Se dejó porque revertirla
+sería escribir el valor peor.
+
+Y es **el primer dato malo que justifica implementar la regla pendiente**: la
+dirección salvadoreña va de lo específico a lo general, así que con dos
+candidatos nombrados enteros gana el nombrado MÁS TARDE. Hasta acá el README la
+descartaba por falta de un caso real; `erp 4420` es ese caso.
 
 ## 2. Puesta en marcha
 

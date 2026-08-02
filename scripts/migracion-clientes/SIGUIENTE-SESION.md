@@ -64,14 +64,20 @@ NÚMEROS se generan, las DECISIONES se escriben.
 README §3. Sí conviene simular si cambiaste una regla de `planificar`.
 
 Si `revisar_ambiguos.py` dice **"sigue ambigua"** en alguna, es que ninguna
-regla la resuelve y ganó el sorteo: leerla a mano. Patrón conocido sin resolver:
-`B LAS FLORES SAN JOSE CANCASQUE` (erp 2423), donde los DOS candidatos están
-nombrados enteros. La dirección salvadoreña va de lo específico a lo general
-(barrio → cantón → distrito → departamento), así que preferir el candidato
-nombrado MÁS TARDE lo resolvería — pero solo después del filtro del
-departamento, porque `NUEVA TRINIDAD, CHALATENANGO` tiene el departamento al
-final. No se implementó: hoy ese caso quedó bien y no hay dato malo que lo
-justifique.
+regla la resuelve y ganó el sorteo: leerla a mano. **Desde el 2026-08-02 esas
+NO se escriben** aunque uses `--corregir` — salen marcadas `SORTEO`. Antes sí se
+escribían, y era un sorteo distinto, no una corrección: la herramienta sembraba
+con el `erp_id` pelado (`'4420'`) y el bloque con el `portal_id` (`'erp:4420'`),
+así que la ficha oscilaba entre dos valores a cada pasada. Ver README §1.
+
+**La regla pendiente ya tiene su caso.** Patrón: los DOS candidatos nombrados
+enteros — `B LAS FLORES SAN JOSE CANCASQUE` (erp 2423, quedó bien) y
+`BA LAS FLORES SAN LUIS DEL CARMEN` (**erp 4420, el sorteo lo puso mal**). La
+dirección salvadoreña va de lo específico a lo general (barrio → cantón →
+distrito → departamento), así que preferir el candidato nombrado MÁS TARDE los
+resuelve — pero solo después del filtro del departamento, porque
+`NUEVA TRINIDAD, CHALATENANGO` tiene el departamento al final. Sigue sin
+implementarse; lo que cambió es que ahora hay un dato malo que lo justifica.
 
 ## Lo primero que va a pasar
 

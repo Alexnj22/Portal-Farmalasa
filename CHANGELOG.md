@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.337.1 — Bloques 9 y 10, y el sorteo deja de re-sortear
+
+**4,061 → 5,057 fichas procesadas**, frente secuencial en `erp 5,143`, 22,615
+pendientes (46 bloques). Cero campos perdidos y cero alterados. El espejo llevó
+al portal 4,197 fichas emparejadas, 4,101 de ellas con distrito. Los dos bloques
+cerraron con `a revisar: 1`, y en ambos es la misma: la `erp 3883` duplicada, que
+el ERP rechaza por su control de nombres y que se reintenta en cada bloque
+porque no se checkpointea.
+
+**`revisar_ambiguos.py` sorteaba de nuevo en vez de corregir.**
+`elegir_distrito` siembra con `sha256(portal_id)` y `planificar` le pasa
+`cliente['id']` — que es `'erp:4420'`, no `'4420'`. La herramienta de revisión le
+pasaba el `erp_id` pelado, así que comparaba contra **otro sorteo**: para una
+ficha que ninguna regla resuelve reportaba "CAMBIA" cerca de la mitad de las
+veces y, con `--corregir`, escribía la otra cara de la misma moneda. La ficha
+oscilaba en el ERP a cada pasada sin acercarse a la respuesta.
+
+Dos arreglos, y el segundo es el de fondo:
+
+1. La semilla sale del `portal_id` **que guarda el checkpoint**, no reconstruida
+   como `f'erp:{eid}'`. Tiene que ser el guardado: los primeros bloques se
+   armaron desde el portal y ahí el id no tiene esa forma.
+2. `--corregir` ya no escribe una ficha que sigue ambigua — sale marcada
+   `SORTEO`, con el motivo. Un sorteo distinto no es una corrección; la semilla
+   equivocada solo hacía visible ese agujero.
+
+Las correcciones anteriores no estaban afectadas: 176, 380, 2112, 2304, 2423 y
+2457 se resolvieron por REGLA, donde la semilla no interviene. La única escrita
+por el camino del sorteo fue la `erp 4420` — y **acertó por el mecanismo
+equivocado**: dirección `BA LAS FLORES SAN LUIS DEL CARMEN`, quedó en SAN LUIS
+CARMEN, que es correcto porque `BA LAS FLORES` es el barrio, pero salió de un
+sorteo y no de una regla. Se dejó porque revertirla sería escribir el valor peor.
+
+Con eso, la regla que el README venía descartando por falta de un caso real ya
+lo tiene: con dos candidatos nombrados enteros, gana el nombrado **más tarde**
+—la dirección salvadoreña va de lo específico a lo general—. Sigue sin
+implementarse, pero ahora hay un dato malo que la justifica.
+
 ## v2.337.0 — Cuadre diario de ventas, proveedores ligados y compras al 88%
 
 ### El cuadre de ventas que faltaba

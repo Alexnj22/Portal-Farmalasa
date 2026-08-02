@@ -606,8 +606,14 @@ def _es_login(h):
 # entrado —confirmado leyendo la ficha— pero el script murió, así que la cola no
 # se saldó y el trabajo quedó a medias por una lectura, no por la escritura.
 # Sin esto, un parpadeo de red en una corrida de 34 horas la mata.
-REINTENTOS_RED = 3
-PAUSA_RED = 3.0
+# Ampliado el 2026-08-02: con 3 intentos y 3s/6s el margen era ~9s, y un
+# parpadeo de red mató `revisar_ambiguos` con RemoteDisconnected pese a los
+# reintentos. Sondeado el ERP inmediatamente después: 5 lecturas en 0.44-1.64s,
+# o sea sano — el corte duró más que la tolerancia, no fue degradación del
+# servidor. 4 intentos con 5s/10s/15s dan 30s, que es lo que una corrida
+# desatendida de varias horas necesita para no morir por un hipo.
+REINTENTOS_RED = 4
+PAUSA_RED = 5.0
 
 
 def pedir(url, datos=None, _reintentar=True):
@@ -625,7 +631,16 @@ def pedir(url, datos=None, _reintentar=True):
                     timeout=45) as r:
                 h = r.read().decode('utf-8', 'replace')
             break
-        except (socket.timeout, urllib.error.URLError, http.client.HTTPException) as e:
+        # OSError y no (socket.timeout, URLError, HTTPException): en CPython 3.9
+        # `urllib` envuelve en URLError solo el ENVÍO del request —
+        # `h.getresponse()` queda fuera del try—, así que un corte mientras se
+        # lee la respuesta sale CRUDO como ConnectionResetError/TimeoutError y
+        # esquivaba este bucle entero. Los tres cortes del 2026-08-02 vinieron
+        # todos de getresponse(): el reintento no llegó a ejecutarse ni una vez,
+        # y por eso ampliar el backoff no había cambiado nada.
+        # URLError y HTTPError son subclases de OSError, así que el guard del
+        # 4xx de abajo sigue disparando primero.
+        except (OSError, http.client.HTTPException) as e:
             # Un 4xx es una respuesta del ERP, no un corte: no se reintenta.
             if isinstance(e, urllib.error.HTTPError) and e.code < 500:
                 raise

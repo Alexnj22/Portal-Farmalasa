@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.338.0 — Diez bloques seguidos: 10,625 fichas de clientes
+
+**5,057 → 10,625 fichas procesadas** (bloques 11 a 20), frente secuencial en
+`erp 10,672`, 17,014 pendientes (35 bloques). En el portal quedaron 8,828 fichas
+emparejadas, 8,738 con distrito. **Cero campos perdidos y cero alterados en las
+10,625** — verificado releyendo el checkpoint entero, no solo los bloques nuevos.
+
+La corrida cortó **cuatro veces**, y los tres primeros diagnósticos fueron
+equivocados o incompletos. Queda escrito porque los tres parecían correctos:
+
+1. `aplicar_espejo.py` no reintentaba nada y un timeout mataba la corrida. Real
+   —ahora reintenta ante timeout/5xx y no ante 4xx, que es el servidor diciendo
+   que no— pero no era la causa.
+2. "Parpadeos de red": se amplió el backoff de `bloque.py` de 9s a 30s. **Ese
+   cambio no servía**, y el motivo importa.
+3. `bloque.pedir` **no capturaba el error**. En CPython 3.9 `urllib` envuelve en
+   `URLError` solo el ENVÍO del request; `h.getresponse()` queda fuera del try,
+   así que un corte al leer la respuesta sale crudo como `ConnectionResetError`
+   o `TimeoutError` y esquivaba el bucle de reintentos entero. Por eso ampliar
+   el backoff no cambió nada: el bucle nunca se ejecutaba. Hoy captura
+   `OSError`, que cubre los seis modos de fallo — y como `HTTPError` es subclase
+   suya, el guard que evita reintentar un 4xx sigue disparando primero.
+4. La causa real **no era la red ni el ERP, era la Mac**. `pmset` con `sleep 1`,
+   `powernap 1`, `standby 1`: se duerme al minuto y tira las conexiones en
+   vuelo. Confirmado cruzando `pmset -g log` con la hora exacta de cada corte y
+   sondeando el ERP justo después — 20 lecturas, 0 fallos, ninguna sobre 3s.
+   `caffeinate -i` no alcanza: frena el sueño por *idle*, no el *Maintenance
+   Sleep* de Power Nap.
+
+Como sin `sudo` no se puede evitar el sueño, el orquestador pasó a
+**sobrevivirlo**: decide el corte por **progreso real** —fichas nuevas en el
+checkpoint— y no por el código de salida del proceso. Un bloque que murió
+habiendo avanzado 250 fichas se reintenta y retoma donde quedó; solo se corta si
+dos intentos seguidos no avanzan.
+
+Y el guardián de "a revisar" pasó a ser **semántico**. Un tope numérico de 3
+cortó la cadena en el bloque 16 por un falso positivo: las 4 fichas eran
+rechazos del ERP por nombre duplicado, que **suben solos** a medida que el frente
+cruza cada ficha de cada par —hay 19 nombres duplicados, así que puede llegar a
+~38, todos esperados—. Ahora se compara contra los rechazos con `duplicado: true`
+de `ambiguos.json`: lo que corta es un caso que NO sea uno de esos.
+
 ## v2.337.3 — La capa flotante como regla, con gate
 
 v2.337.2 arregló el canónico pero dejó la regla viviendo sólo en comentarios de

@@ -81,14 +81,36 @@ implementarse; lo que cambió es que ahora hay un dato malo que lo justifica.
 
 ## Lo primero que va a pasar
 
-**Una ficha va a salir rechazada, y está bien.** La `erp 3883` (FLOR DE MARIA
-GUARDADO GUARDADO) es una de las dos duplicadas sin resolver: el ERP contesta
-`Ya se registro un cliente con estos datos!` porque choca con la 8598. El script
-no reintenta —ese rechazo es un hallazgo, no un glitch—, verifica que la ficha
-quedó intacta y **no la anota en el checkpoint**, así que se reintenta en cada
-bloque y falla igual. Va a aparecer como `a revisar: 1` hasta que alguien purgue
-el duplicado en el ERP (decisión abierta #3). No es deuda nueva: es la misma
-decisión, ahora con un costo visible por bloque.
+**Cinco fichas van a salir rechazadas, y está bien.** Son nombres duplicados en
+el ERP: contesta `Ya se registro un cliente con estos datos!` al escribir
+cualquiera de las dos fichas de un par. El script no reintenta —ese rechazo es
+un hallazgo, no un glitch—, verifica que la ficha quedó intacta y **no la anota
+en el checkpoint**, así que vuelve a intentarse en cada bloque y falla igual.
+
+| erp | nombre |
+|---|---|
+| 3883 / 8598 | FLOR DE MARIA GUARDADO GUARDADO |
+| 7280 / 7284 | WILLIAM ENRIQUE ALEMAN ALFARO |
+| 10290 | JOSE MARDOQUEO RAMIREZ MEJIA |
+
+**Este número sube solo** a medida que el frente cruza cada ficha duplicada: hay
+19 nombres duplicados en el catálogo, así que puede llegar a ~38. No es
+deterioro. Si automatizás bloques, el corte NO puede ser un tope numérico de
+"a revisar" — tiene que comparar contra los rechazos con `duplicado: true` de
+`ambiguos.json` (ver README §3). Un tope de 3 cortó una cadena por falso
+positivo el 2026-08-02.
+
+Se resuelve purgando los duplicados en el ERP, que es decisión de persona
+(decisión abierta #3).
+
+## Si vas a encadenar bloques desatendidos
+
+Leé README §3, "Encadenar bloques desatendidos". El resumen: **esta Mac se
+duerme al minuto** (`pmset`: `sleep 1`, `powernap 1`) y tira las conexiones en
+vuelo; `caffeinate -i` no frena el *Maintenance Sleep*. Sin `sudo pmset -a sleep
+0 powernap 0` no se puede evitar, así que el orquestador tiene que **sobrevivirlo**:
+decidir el corte por progreso real en el checkpoint —no por el código de salida—
+y reintentar el bloque, que retoma donde quedó.
 
 Las 5 fichas reencoladas del handoff anterior (161, 176, 380, 1641, 1791) ya
 están: **176 quedó NUEVA TRINIDAD y 380 SAN ANTONIO DEL MONTE**, verificadas

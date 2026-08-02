@@ -669,14 +669,6 @@
    "distrito"
   ]
  },
- "6313": {
-  "erp_id": "6313",
-  "name": "ANA IRIS RIVERA DE RIVERA",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "6549": {
   "erp_id": "6549",
   "name": "LUCIA MARLENE VARELA GUARDADO",
@@ -693,41 +685,9 @@
    "distrito"
   ]
  },
- "7026": {
-  "erp_id": "7026",
-  "name": "MARIA MAGDALENA GUARDADO DERAS",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "8016": {
   "erp_id": "8016",
   "name": "JOSE MANUEL MENJIVAR MENJIVAR",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "8254": {
-  "erp_id": "8254",
-  "name": "CLIENTE FRECUENTE",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
- "8432": {
-  "erp_id": "8432",
-  "name": "JAQUELINE JANETH MENJIVAR NUÑEZ",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
- "9370": {
-  "erp_id": "9370",
-  "name": "WALTER AMILCAR MANCIA ( 5 )",
   "categoria": "Contribuyente",
   "faltan": [
    "distrito"
@@ -757,33 +717,51 @@
    "distrito"
   ]
  },
- "9810": {
-  "erp_id": "9810",
-  "name": "....",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
- "9889": {
-  "erp_id": "9889",
-  "name": "DIHARE SA DE CV",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "9997": {
-  "erp_id": "9997",
-  "name": "DR. JOSE VALDEMAR FUENTES",
-  "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
  "4495": {
   "erp_id": "4495",
   "name": "EDGARDO GUARDADO ESCOBAR",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "6268": {
+  "erp_id": "6268",
+  "name": "ANGEL LOPEZ URBINA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "8722": {
+  "erp_id": "8722",
+  "name": "MARIA JESUS LOPEZ MENJIVAR",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "9812": {
+  "erp_id": "9812",
+  "name": "ISSS, FONDO CIRCULANTE UM CHALATENANGO",
+  "categoria": "Gran Contribuyente",
+  "faltan": [
+   "distrito",
+   "nrc",
+   "sel_giro"
+  ]
+ },
+ "10164": {
+  "erp_id": "10164",
+  "name": "LUIS EDGARDO LOPEZ",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "10478": {
+  "erp_id": "10478",
+  "name": "GLENDA EVELYN TOBIAS",
   "categoria": "Consumidor",
   "faltan": [
    "departamento"

@@ -14,6 +14,7 @@ Credenciales en el `.env` del repo: `portal-user` / `portal-password`
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -42,14 +43,39 @@ def credenciales():
     return url.rstrip('/'), key, usuario, clave
 
 
-def pedir_json(url, cuerpo, cabeceras):
+def pedir_json(url, cuerpo, cabeceras, reintentos=4):
+    """POST con reintento ante fallos TRANSITORIOS de red (timeout, 5xx).
+
+    Sin esto, un solo timeout mataba la corrida entera — pasó el 2026-08-02 en
+    el bloque 12 de una cadena de 10, con la cola ya en 24 lotes. Y el riesgo
+    crece con la campaña: el payload se rearma desde el archivo append-only, así
+    que reenvía TODAS las fichas procesadas hasta hoy (~40 lotes al llegar a
+    10,000). Más lotes sin reintento = el fallo pasa de posible a casi seguro.
+
+    Reintentar es seguro porque el RPC es idempotente: escribe con guard de
+    `IS DISTINCT FROM`, y desde `descartado_at` un conflicto se anota UNA vez
+    —la entrada queda cerrada— así que un lote reenviado no duplica nada, ni
+    siquiera cuando el timeout llegó después de que el servidor lo aplicara.
+
+    Un 4xx NO se reintenta: es el servidor diciendo que no, y no cambia por
+    insistir. Misma distinción que hace `bloque.py` con el ERP.
+    """
     datos = json.dumps(cuerpo).encode()
-    req = urllib.request.Request(url, data=datos, headers=cabeceras, method='POST')
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.loads(r.read().decode())
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f'{url}\n  HTTP {e.code}: {e.read().decode()[:400]}')
+    for intento in range(1, reintentos + 1):
+        req = urllib.request.Request(url, data=datos, headers=cabeceras, method='POST')
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                return json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            detalle = e.read().decode()[:400]
+            if e.code < 500 or intento == reintentos:
+                raise SystemExit(f'{url}\n  HTTP {e.code}: {detalle}')
+            print(f'  HTTP {e.code} — reintento {intento} de {reintentos - 1}')
+        except OSError as e:                      # timeout, DNS, conexión cortada
+            if intento == reintentos:
+                raise SystemExit(f'{url}\n  red: {e!r} (tras {reintentos} intentos)')
+            print(f'  {e!r} — reintento {intento} de {reintentos - 1}')
+        time.sleep(2 ** intento)
 
 
 def token(url, key, usuario, clave):

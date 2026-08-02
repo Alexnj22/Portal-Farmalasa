@@ -10,6 +10,59 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-01 22:21:30"
+  "ts": "2026-08-02 09:24:42"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:7280",
+  "name": "WILLIAM ENRIQUE ALEMAN ALFARO",
+  "erp_id": "7280",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
+  },
+  "ts": "2026-08-02 09:24:45"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:7284",
+  "name": "WILLIAM ENRIQUE ALEMAN ALFARO",
+  "erp_id": "7284",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
+   "dui": "INVÁLIDO '08666142-6' -> se borra"
+  },
+  "ts": "2026-08-02 09:24:48"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:8598",
+  "name": "FLOR DE MARIA GUARDADO GUARDADO",
+  "erp_id": "8598",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
+  },
+  "ts": "2026-08-02 09:24:51"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:10290",
+  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "erp_id": "10290",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "ts": "2026-08-02 09:34:32"
  }
 ]

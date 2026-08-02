@@ -13,18 +13,18 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 <!-- ESTADO:INICIO -->
 ```
 catálogo del ERP        27,602 fichas
-procesadas               5,057 fichas    (checkpoint.json)
-portadas al portal       4,197 de 24,542  (customers.erp_id no nulo)
-  de ellas con distrito  4,101
-pendientes              22,615          (46 bloques de 500)
+procesadas              10,625 fichas    (checkpoint.json)
+portadas al portal       8,828 de 24,553  (customers.erp_id no nulo)
+  de ellas con distrito  8,738
+pendientes              17,014          (35 bloques de 500)
 ```
 
-**Verificadas OK: 5,057 · a revisar: 0.** El frente secuencial va por `erp_id 5,143`; hay 69 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
+**Verificadas OK: 10,625 · a revisar: 0.** El frente secuencial va por `erp_id 10,672`; hay 36 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-`revision_manual.json`: **122 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
+`revision_manual.json`: **239 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
-`faltantes_dte.json`: **96 fichas** no se pueden facturar todavía bajo DTE 2.0, 82 de ellas fiscales.
-Les falta: distrito 95 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2 · departamento 2 · telefono1 1 · municipio 1.
+`faltantes_dte.json`: **93 fichas** no se pueden facturar todavía bajo DTE 2.0, 80 de ellas fiscales.
+Les falta: distrito 88 · direccion 8 · departamento 6 · sel_giro 4 · nrc 4 · nit 3 · correo 2 · telefono1 1 · municipio 1.
 
 <sub>Generado por `python3 estado.py --escribir`. No editar a mano: los números se generan, las decisiones se escriben.</sub>
 <!-- ESTADO:FIN -->
@@ -210,6 +210,46 @@ sobrevivió tres intentos no se lee igual que uno contestado a la primera.
 
 Existe porque pasó: **una vez en 365 escrituras**, y el mismo payload entró a la
 primera al reintentarlo. A escala de 20,000 escrituras son ~55 cortes.
+
+### Encadenar bloques desatendidos: lo que se aprendió en la corrida de 10
+
+El 2026-08-02 se corrieron 10 bloques seguidos. Cortó **cuatro veces**, y cada
+diagnóstico corrigió al anterior. Vale la pena el detalle porque los tres
+primeros parecían correctos:
+
+1. **`aplicar_espejo.py` no reintentaba nada.** Un timeout mataba la corrida.
+   Real, arreglado — pero no era la causa de fondo.
+2. **"Parpadeos de red"**: se amplió el backoff de `bloque.py` de 9s a 30s.
+   **Ese cambio no servía para nada**, y conviene saber por qué antes de repetir
+   el error.
+3. **`bloque.pedir` no capturaba el error.** En CPython 3.9 `urllib` envuelve en
+   `URLError` solo el ENVÍO del request: `h.getresponse()` queda fuera del try,
+   así que un corte mientras se lee la respuesta sale crudo como
+   `ConnectionResetError`/`TimeoutError` y **esquivaba el bucle de reintentos
+   entero**. Por eso ampliar el backoff no cambió nada: el bucle no llegaba a
+   ejecutarse. Hoy captura `OSError`, que cubre los seis modos de fallo
+   (`URLError` y `HTTPError` son subclases suyas, así que el guard del 4xx sigue
+   disparando primero).
+4. **La causa real era la Mac, no la red ni el ERP.** `pmset` con `sleep 1`,
+   `powernap 1`, `standby 1`: se duerme al minuto y tira las conexiones en
+   vuelo. Se confirmó cruzando `pmset -g log` con la hora exacta de cada corte,
+   y sondeando el ERP justo después: 20 lecturas, 0 fallos, ninguna sobre 3s.
+   **`caffeinate -i` no alcanza** — frena el sueño por *idle*, no el
+   *Maintenance Sleep* de Power Nap. Cambiar `pmset` necesita `sudo`.
+
+La lección operativa: **no se puede evitar el sueño sin sudo, así que hay que
+sobrevivirlo**. Un orquestador de bloques tiene que decidir el corte por
+**progreso real** —cuántas fichas nuevas quedaron en el checkpoint— y no por el
+código de salida del proceso. Un bloque que murió habiendo avanzado 250 fichas
+no es un fallo del que haya que huir: se reintenta y el checkpoint lo retoma
+donde quedó. Solo se corta si dos intentos seguidos no avanzan nada.
+
+Y el guardián de "a revisar" tiene que ser **semántico, no un tope numérico**.
+Un tope de 3 cortó la cadena en el bloque 16 por un falso positivo: las 4 fichas
+eran los rechazos por nombre duplicado, que suben solos a medida que el frente
+cruza cada ficha de cada par. Con 19 nombres duplicados en el catálogo esto
+puede llegar a ~38, todas esperadas. Lo que importa es si aparece un caso que
+**no** sea uno de esos rechazos — eso sí es un patrón nuevo.
 
 ### Qué produce
 

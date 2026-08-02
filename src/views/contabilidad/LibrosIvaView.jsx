@@ -14,6 +14,7 @@ import TablePagination from '../../components/common/TablePagination';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
+import { formatearNit, formatearNrc } from '../../utils/nitUtils';
 import { normalizeText } from '../../utils/helpers';
 import { exportCsv } from '../../utils/csvExport';
 import {
@@ -334,8 +335,11 @@ const ACCESO = {
         fecha:    r => r.fecha,
         ccf:      r => soloNumero(r.correlativo),
         cliente:  r => r.cliente || '',
-        nrc:      r => r.nrc || '',
-        nit:      r => r.nit || '',
+        // Este export es el espejo de la tabla, así que el NIT va formateado
+        // igual que en pantalla. El CSV FISCAL no pasa por acá: usa `docId()`,
+        // que quita los guiones.
+        nrc:      r => formatearNrc(r.nrc),
+        nit:      r => formatearNit(r.nit),
         exentas:  r => Number(r.ventas_exentas || 0),
         gravadas: r => Number(r.ventas_gravadas || 0),
         debito:   r => Number(r.debito_fiscal || 0),
@@ -428,7 +432,18 @@ const CeldaDocumento = ({ numero }) => (
 
 const CeldaNrc = ({ nrc }) => (
     nrc
-        ? <span className="font-mono text-caption whitespace-nowrap">{nrc}</span>
+        ? <span className="font-mono text-caption whitespace-nowrap">{formatearNrc(nrc)}</span>
+        : <Badge variant="warning" size="sm">Falta</Badge>
+);
+
+// El NIT se REFORMATEA al mostrarlo porque el dato viene guardado con la máscara
+// equivocada: `customers.nit` tiene 29 filas con la forma `0177-7948--2`, que es
+// un NIT de 9 dígitos —o sea un DUI— vestido con la máscara de 14. Ver
+// `src/utils/nitUtils.js`. El CSV del libro no depende de esto: ahí va sin
+// guiones.
+const CeldaNit = ({ nit }) => (
+    nit
+        ? <span className="font-mono text-caption whitespace-nowrap">{formatearNit(nit)}</span>
         : <Badge variant="warning" size="sm">Falta</Badge>
 );
 
@@ -438,12 +453,23 @@ const CeldaMonto = ({ v, fuerte }) => (
 
 // El `max-w` va en la celda y no en el `<span>`: la tabla es de ancho
 // automático, así que sin un tope en el `<td>` la columna crece hasta el nombre
-// más largo y el `truncate` no llega a activarse nunca. Es el mismo patrón que
+// más largo y el recorte no llega a activarse nunca. Es el mismo patrón que
 // `VentasView` (`truncate max-w-[140px]` sobre el `DataCell`).
+//
+// A DOS LÍNEAS y no `truncate`: en un libro fiscal la razón social es el dato,
+// no una etiqueta. Con una sola línea a 11rem, "UNISERFA S.A. DE C.V. (LOS
+// ROBLES)" y "CONGELADOS DEL SABOR, EL SALVADOR SA DE CV" quedaban cortadas en
+// el paréntesis, que es justo donde vive el nombre con el que la farmacia
+// conoce al proveedor. Medido: la mediana son 32 caracteres y el máximo 45
+// ("FARMACIAS EUROPEAS S.A. DE C.V. (FARMA VALUE)"), así que a 16rem entran
+// completos en dos líneas. El `line-clamp-2` sigue siendo el tope: si algún día
+// aparece uno más largo, se recorta en vez de estirar la fila sin control.
 const CeldaProveedor = ({ nombre, anulada }) => (
-    <DataCell className="max-w-[11rem]">
-        <div className="flex items-center gap-2 min-w-0">
-            <span className="truncate" title={nombre || undefined}>{nombre || '—'}</span>
+    <DataCell className="max-w-[16rem]">
+        <div className="flex items-start gap-2 min-w-0">
+            <span className="line-clamp-2 break-words leading-tight" title={nombre || undefined}>
+                {nombre || '—'}
+            </span>
             {anulada && <Badge variant="warning" size="sm" className="shrink-0">Anulada</Badge>}
         </div>
     </DataCell>
@@ -830,7 +856,7 @@ export default function LibrosIvaView() {
                         r.tipo_dte,
                         r.numero_control || '',
                         (r.codigo_generacion || '').toUpperCase(),
-                        r.proveedor || '', r.nrc || '', r.nit || '',
+                        r.proveedor || '', formatearNrc(r.nrc), formatearNit(r.nit),
                         r.documento_corregido || '',
                         num(r.monto), num(r.iva),
                     ]),
@@ -1123,16 +1149,8 @@ export default function LibrosIvaView() {
                                 <DataCell className="truncate max-w-[11rem]" title={r.cliente || undefined}>
                                     {r.cliente || '—'}
                                 </DataCell>
-                                <DataCell>
-                                    {r.nrc
-                                        ? <span className="font-mono text-caption">{r.nrc}</span>
-                                        : <Badge variant="warning" size="sm">Falta</Badge>}
-                                </DataCell>
-                                <DataCell hideBelow="xl">
-                                    {r.nit
-                                        ? <span className="font-mono text-caption whitespace-nowrap">{r.nit}</span>
-                                        : <Badge variant="warning" size="sm">Falta</Badge>}
-                                </DataCell>
+                                <DataCell><CeldaNrc nrc={r.nrc} /></DataCell>
+                                <DataCell hideBelow="xl"><CeldaNit nit={r.nit} /></DataCell>
                                 <DataCell align="right">{formatMoney(r.ventas_gravadas)}</DataCell>
                                 <DataCell align="right" hideBelow="md">{formatMoney(r.debito_fiscal)}</DataCell>
                                 <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>

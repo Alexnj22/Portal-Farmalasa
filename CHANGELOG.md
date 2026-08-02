@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.342.1 — El NIT de 9 dígitos se ve como DUI, y el proveedor no se corta
+
+**El NIT salvadoreño tiene dos formatos y el libro mostraba los dos con la misma
+máscara.** En el libro de contribuyentes se veía así:
+
+```
+0177-7948--2     ← doble guion, y sobra un tramo
+0539-1795--5
+```
+
+No era un error de pintado: **está guardado así en `customers.nit`**. El dato
+llega del DTE con la máscara de 14 dígitos aplicada a un número de 9, y hoy
+conviven cuatro formas para lo mismo — medido: 52 filas con el NIT clásico bien
+formado, **29 rotas**, 1 bien. Desde 2018 una persona natural usa su DUI de 9
+dígitos como NIT, así que el formato correcto para esas es `01777948-2`.
+
+`formatearNit` reformatea al mostrar: 9 dígitos → máscara de DUI, 14 → la
+clásica `MMMM-DDMMAA-NNN-V`, y **lo que no tiene ni 9 ni 14 se devuelve tal
+cual**. Eso último es a propósito: inventarle una máscara a un número que no la
+tiene disimula que está mal, y el `111` de PHARMALAND tiene que verse feo.
+
+El **CSV fiscal no cambia**: ahí el NIT va sin guiones (`docId()` los quita), así
+que el archivo que se presenta nunca dependió de esto. Los exports que sí son
+espejo de la pantalla ahora muestran el mismo formato que la pantalla.
+
+**El nombre del proveedor deja de cortarse.** En un libro fiscal la razón social
+es el dato, no una etiqueta, y a una línea de 11rem quedaban cortadas justo en el
+paréntesis — que es donde vive el nombre con el que la farmacia conoce al
+proveedor (`UNISERFA S.A. DE C.V. (LOS ROBLES)`). Medido: la mediana son 32
+caracteres y el máximo 45, así que a 16rem entran completos en dos líneas. El
+`line-clamp-2` queda como tope para que un nombre futuro no estire la fila sin
+control.
+
 ## v2.342.0 — Barrido de los 79 lifts a mano y gate extendido a controles
 
 **79 `hover:-translate-y-*` escritos a mano, de 1px a 8px, ahora salen del

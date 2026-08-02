@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.345.4 — Plan de materiales: identidad de los dos temas
+
+`docs/PLAN-MATERIALES-2026-08-02.md` — el contrato de identidad de Liquid Glass
+y Solid, decidido sobre mockups interactivos con los tokens reales. **Nada
+implementado todavía**: el documento se va completando elemento por elemento y
+la implementación viene después, de una sola vez.
+
+**Cerrado: la superficie (`data-surface="card"`).** Liquid Glass replica las tres
+capas que describe Apple —highlight, shadow, illumination— con el reflejo
+siguiendo al puntero, canto vivo y lente en el filo. Solid **no copia la luz**:
+la profundidad sale de apilar superficies opacas, con el escalón de tono como
+recurso principal y la sombra como secundario, que es lo que permite que el mismo
+set de tokens funcione en claro y en oscuro sin variantes.
+
+**Rendimiento medido, no estimado.** Con la CPU estrangulada vía CDP y 60
+tarjetas: los tres casos a **60fps sostenidos, cero cuadros sobre 33ms**. Las
+capas nuevas no cuestan nada — lo que cuesta es implementarlas mal: un handler de
+`pointermove` que recorre todas las piezas y llama `getBoundingClientRect()` bajó
+a 27.6ms (36fps), contra 16.7ms de la versión que toca sólo la pieza hovereada
+con el rect cacheado. Esa regla queda escrita y con gate pendiente.
+
+**Dos verificaciones que corrigieron suposiciones mías:** `--solid-filo: 0`
+funciona en oscuro (la superficie separa 1.22:1 del fondo por tono y borde, sin
+necesitar el filo), y la refracción real con `feDisplacementMap` renderiza en
+Chromium pero WebKit headless no dibuja **ningún** `backdrop-filter`, así que no
+puede responder por Safari — queda como mejora progresiva, nunca como base.
+
+**Queda anotado que `DESIGN.md` §2 hay que cambiarlo**: dice que Solid "no se
+mueve" y el valor elegido es `-1px`. Es decisión del usuario, pero el texto tiene
+que seguir al valor — dejarlo reproduce el mismo bug que originó todo esto.
+
 ## v2.345.3 — La pantalla habla del portal, y los filtros al borde derecho
 
 **Dos reglas que ya estaban escritas y no apliqué al crear Compras Completo.**

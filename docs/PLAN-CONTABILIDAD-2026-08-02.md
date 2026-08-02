@@ -4,6 +4,10 @@ Fecha: 2026-08-02 · Sucede a `AUDITORIA-PROVEEDORES-Y-LIBROS-IVA-2026-08-02.md`
 que quedó **incompleta y con dos conclusiones equivocadas**. Este documento es el
 que manda.
 
+**H15 quedó CERRADO el mismo día** — ver Parte 4: se bajó el CSV por el botón real
+con Playwright y se comparó byte a byte contra el archivo del ERP. Resultado:
+donde los dos difieren, **el portal tiene razón en todos los casos adjudicables**.
+
 ---
 
 # Parte 0 — Qué faltaba, y qué estaba mal
@@ -424,3 +428,139 @@ decimales + **la decisión sobre el costo de venta**.
 pasa de "replica bien" a "no se puede romper sin que alguien se entere".
 
 **Después:** el sello como clave, las notas adentro, y los anexos que faltan.
+
+---
+
+# Parte 4 — La verificación que faltaba (H15), hecha
+
+2026-08-02. `verificar-csv-libros` declara en su encabezado lo que **no** puede
+probar: *"que el navegador escriba el archivo igual (BOM, CRLF, escape de
+comillas)"*. Eso nunca se había medido. Acá está.
+
+## Cómo
+
+**El archivo del portal se bajó por el botón real**, con Playwright contra
+`vite preview` (build de producción, `OUT_DIR=dist-verif`, puerto 4174, cuenta
+`qa.test`): login → `/libros-iva` → retroceder al mes con el stepper de la vista →
+clic en Exportar → capturar la descarga y leer los **bytes crudos**. Es el único
+camino que ejercita a la vez el RPC, el mapeo de columnas de `LibrosIvaView` y
+`exportCsv`. No se reimplementó nada.
+
+**El archivo del ERP** se bajó con `erp-csv-probe` vía `pg_net` desde SQL, para
+no sacar el secreto de la bóveda.
+
+Comparado: **libro de compras, Bodega (branch 30 = el id más alto, o sea el último
+bloque del archivo), junio 2026, 335 filas**, y **libro de consumidor, sucursal 2,
+junio 2026, 30 filas**.
+
+## Resultado 1 — El formato de archivo difiere en tres cosas
+
+| | ERP | Portal |
+|---|---|---|
+| BOM UTF-8 | no aparece | **SÍ** (`EF BB BF`) |
+| Fin de línea | **LF** (`\n`) | **CRLF** (`\r\n`) |
+| Salto al final | **SÍ** | **NO** |
+| Comillas | nunca, en 335 filas | RFC 4180 cuando hace falta (4 filas) |
+| Decimales | **inconsistente** — `1166` en 10 filas y `1166.00` en 20, misma columna | siempre 2 |
+
+Las tres primeras nunca estuvieron documentadas y **ninguna es un error del
+portal**: el BOM es deliberado (sin él Excel en es-SV rompe los acentos de
+"Droguería"), y el CRLF es la convención CSV. Pero son una decisión que hoy no
+está escrita en ningún lado, y si algún día el archivo se sube a un sistema
+externo, es lo primero que hay que confirmar.
+
+*(El BOM del ERP no se pudo determinar: `Response.text()` lo elimina al decodificar
+según la especificación. Se declara como no medido en vez de suponerlo.)*
+
+## Resultado 2 — Libro de compras: 329 de 335 filas idénticas
+
+| Filtro | Idénticas |
+|---|---|
+| Byte a byte | 4 / 335 |
+| Ignorando NIT (col 4), sello (col 22) y espacios en col 3 | **329 / 335** |
+
+Y las diferencias, una por una:
+
+**Col 22, el sello — 331 filas.** El ERP lo trae, el portal lo deja vacío. Es
+**H13** y es la única diferencia donde al portal le falta el dato.
+
+**Col 4, el NIT — 19 filas, 6 proveedores. El portal acierta en los 6.**
+Adjudicado contra el DTE firmado que el proveedor emitió y Hacienda aceptó
+(`purchase_dte_documents.emisor_nit`), que es la fuente con autoridad:
+
+| Proveedor | ERP | Portal = DTE firmado |
+|---|---|---|
+| PHARMALAND | `111` | `06141210161052` |
+| GUARDADO | `06142808921106` | `06142808921104` |
+| LABORATORIOS VIJOSA | `04142407750010` | `06142407750010` |
+| DROGUERÍA DROMEDIC | `06141907740020` | `06142602241077` |
+| VITAL MEDICAL | `06141303151077` | `06141303151073` |
+| PROQUIFAR | *(vacío)* | `06142710811041` |
+
+**El maestro de proveedores del ERP tiene 6 NIT equivocados** —dos con el dígito
+verificador cambiado, uno con el código de municipio, uno con basura (`111`), uno
+completamente distinto y uno vacío— y el portal ya los tiene bien.
+
+**Col 5, el nombre del proveedor — 6 filas. El ERP le borra las comas.**
+
+```
+ERP    : OPERADORA DEL SUR S.A. DE C.V. (WALMART  DESP…
+portal : OPERADORA DEL SUR S.A. DE C.V. (WALMART, DESP…
+ERP    : DNA PHARMACEUTICALS  S.A. DE C.V.
+portal : DNA PHARMACEUTICALS, S.A. DE C.V.
+```
+
+El ERP reemplaza `,` por espacio —presumiblemente para no romper algún CSV suyo—
+y con eso **muta la razón social** del proveedor. El portal escribe el nombre real
+y, cuando el nombre trae comillas (`JOSE SALVADOR GUEVARA "AGUA FRIA"`, 4 filas),
+las escapa como manda RFC 4180. El ERP no comilla nunca.
+
+**Col 3, el nº de documento — 2 filas, y solo por espacios** (` 6144BD51-…` contra
+`6144BD51-…`). Descontando espacios: **0 diferencias reales**. El truncado a 20 es
+idéntico de los dos lados, que es lo que ya sabíamos (H2).
+
+## Resultado 3 — Libro de consumidor: 30 de 30
+
+| Filtro | Idénticas |
+|---|---|
+| Byte a byte | 0 / 30 |
+| Ignorando cols 7-8 y el formato decimal | **30 / 30** |
+
+Las dos únicas causas:
+
+1. **Cols 7 y 8, los códigos de generación** — las 30 filas. Es §4.1: el ERP
+   reporta los del medio del día y el portal los correctos. La divergencia es
+   deliberada y está documentada.
+2. **Col 14 (gravadas), 10 filas de formato decimal**: el ERP escribe `1166` en
+   unas filas y `1166.00` en otras, **en la misma columna del mismo archivo**. Como
+   número son idénticas en las 30 filas (`float(erp) == float(portal)` en las tres
+   columnas de dinero).
+
+**Todos los montos del libro de consumidor coinciden exactamente.**
+
+## Hallazgos nuevos que salieron de acá
+
+| # | Hallazgo |
+|---|---|
+| **H17** | El ERP **muta la razón social** de los proveedores: reemplaza las comas por espacios. El portal las tiene bien. |
+| **H18** | El maestro del ERP tiene **6 NIT equivocados**, verificado contra el DTE firmado. El portal los tiene bien. |
+| **H19** | La columna del sello del ERP está **contaminada**: 6 de 331 no miden 40 caracteres — hay un código de generación (36), uno con un espacio adentro (41), y tres con texto pegado a mano (`…FFEFGbenicar`, `…RVBD C-2274298`). **Capturar el sello exige validarlo**, no copiarlo. |
+| **H20** | El formato del archivo (BOM, CRLF, salto final) difiere del ERP y **nunca estuvo documentado**. |
+| **H21** | El ERP escribe **decimales inconsistentes** dentro de una misma columna. `normalizar()` del verificador lo tapa, y por eso nunca se vio. |
+
+## Qué significa para el criterio "no replicar lo que el ERP hace mal"
+
+El resultado es el mejor posible, y no era obvio: **de las 5 clases de diferencia
+del libro de compras, 4 son defectos del ERP que el portal ya corrige** —el NIT,
+la razón social, las comillas, el formato decimal— y **1 sola es un dato que al
+portal le falta**: el sello.
+
+Dicho de otro modo: si alguien hubiera "arreglado" el portal para que coincidiera
+al 100% con el ERP, habría metido 6 NIT equivocados y 6 razones sociales mutiladas
+en un libro fiscal.
+
+**Eso reordena la Fase 3.** Capturar el sello (H13) deja de ser una mejora y pasa
+a ser *lo único* que le falta al libro de compras para ser mejor que su origen en
+todas sus columnas. Con H19, la regla de captura es: tomar el sello del ERP **solo
+si mide exactamente 40 caracteres alfanuméricos**; si no, dejarlo vacío y
+marcarlo, porque un sello con `benicar` pegado atrás no es un sello.

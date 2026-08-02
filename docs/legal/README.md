@@ -16,6 +16,17 @@ el resumen de negocio del DTE aplicado a esta farmacia.
 | `ley_iva.pdf` | Ley de Impuesto a la Transferencia de Bienes Muebles y a la Prestación de Servicios (Ley de IVA) | Ministerio de Hacienda (transparenciafiscal.gob.sv) | Portal oficial de transparencia fiscal |
 | `ley_renta.pdf` | Ley de Impuesto Sobre la Renta | Ministerio de Hacienda (transparenciafiscal.gob.sv) | Portal oficial de transparencia fiscal |
 | `dte_guia_tecnica.pdf` | "Documento Técnico de Lineamientos de Integración — Facturación Electrónica" (estructura JSON de los DTE, catálogos, firma electrónica) | factura.gob.sv (Ministerio de Hacienda / DGII) | Guía técnica oficial — la normativa DTE 2.0 (2026) puede traer cambios de campos no reflejados aquí; para el esquema JSON exacto en producción, la fuente de verdad sigue siendo el JSON real que llega por correo (ver `purchase_dte_documents`) |
+| `codigo_comercio.pdf` | Código de Comercio, Decreto Legislativo N.º 671. **Título II "Contabilidad", Arts. 435-455** — la obligación de llevar contabilidad formal, los registros obligatorios (Estados Financieros, Diario y Mayor), la legalización de libros y el balance anual | Asamblea Legislativa (asamblea.gob.sv) | Agregado el **2026-08-01**. Texto con reformas incorporadas hasta la fecha de publicación del archivo; verificado que contiene los Arts. 435-455 |
+
+**Por qué se agregó el Código de Comercio (2026-08-01).** Faltaba el documento
+que en realidad **manda** en materia contable. El Código Tributario define la
+contabilidad formal (Art. 139) pero *remite* la obligación: «están obligados a
+llevar contabilidad formal los sujetos pasivos que **de conformidad a lo
+establecido en el Código de Comercio** o en las leyes especiales están obligados
+a ello». Sin este PDF, la cadena de la obligación quedaba cortada.
+
+Ver `docs/CONTABILIDAD-ALCANCE-2026-08-01.md` para qué cubre el portal hoy y qué
+no, con los artículos citados.
 
 ## ⚠️ Limitación importante
 

@@ -77,14 +77,18 @@ const fmtFecha = (iso) => {
     return `${d}/${m}/${y}`;
 };
 
+// Los rótulos hablan del PORTAL: nunca se nombra el sistema de origen ni la
+// procedencia del dato (ver CLAUDE.md). Lo que la vista quiere decir no es "de
+// dónde vino" sino en qué estado está: la compra quedó registrada, o solo existe
+// el documento que emitió el proveedor.
 const TABS = [
     { key: 'todos',      label: 'Todos'          },
-    { key: 'sin_compra', label: 'Sin compra ERP' },
+    { key: 'sin_compra', label: 'Sin registrar'  },
 ];
 
 const COLS = [
     { key: 'fecha',     label: 'Fecha',      align: 'left'  },
-    { key: 'origen',    label: 'Origen',     align: 'left'  },
+    { key: 'origen',    label: 'Registro',   align: 'left'  },
     { key: 'documento', label: 'Documento',  align: 'left'  },
     { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
     { key: 'nrc',       label: 'NRC',        align: 'left',  hideBelow: 'lg' },
@@ -134,7 +138,7 @@ export default function LibroComprasCompletoView() {
         [branches]);
 
     const delTab = useMemo(
-        () => (activeTab === 'sin_compra' ? filas.filter(r => r.origen !== 'ERP') : filas),
+        () => (activeTab === 'sin_compra' ? filas.filter(r => r.origen !== 'registrada') : filas),
         [filas, activeTab]);
 
     const filasVistas = useMemo(() => {
@@ -152,7 +156,7 @@ export default function LibroComprasCompletoView() {
             acc.docs++;
             acc.credito += Number(r.credito_fiscal || 0);
             acc.total   += Number(r.total || 0);
-            if (r.origen !== 'ERP') {
+            if (r.origen !== 'registrada') {
                 acc.sinCompra++;
                 acc.creditoSinCompra += Number(r.credito_fiscal || 0);
             }
@@ -172,11 +176,13 @@ export default function LibroComprasCompletoView() {
         const [desde] = rangoDelMes(mes);
         exportCsv(
             `libro-compras-completo_${desde.slice(0, 7)}`,
-            ['FECHA', 'ORIGEN', 'SUCURSAL', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
+            ['FECHA', 'REGISTRO', 'SUCURSAL', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
              'EXENTAS', 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'PERCEPCION', 'RETENCION', 'ANULADA'],
             [
                 ...filas.map(r => [
-                    fmtFecha(r.fecha), r.origen, nombreSucursal(r.branch_id),
+                    fmtFecha(r.fecha),
+                    r.origen === 'registrada' ? 'Registrada' : 'Sin registrar',
+                    nombreSucursal(r.branch_id),
                     r.documento_tipo || '',
                     // El COMPLETO, no el cortado a 20 del ERP: es justamente lo
                     // que este libro hace mejor que su origen.
@@ -194,7 +200,7 @@ export default function LibroComprasCompletoView() {
         );
         useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_COMPLETO_EXPORT', mes, {
             documentos: totales.docs, credito_fiscal: totales.credito,
-            sin_compra_en_erp: totales.sinCompra,
+            sin_registrar: totales.sinCompra,
         });
     }, [filas, mes, totales, nombreSucursal]);
 
@@ -261,7 +267,7 @@ export default function LibroComprasCompletoView() {
             : { icon: BookOpen,
                 message: `Sin compras en ${etiquetaMes(mes)}`,
                 subtext: activeTab === 'sin_compra'
-                    ? 'Todos los documentos del mes están registrados como compra en el ERP.'
+                    ? 'Todos los documentos del mes ya están registrados como compra.'
                     : undefined };
 
     return (
@@ -273,9 +279,9 @@ export default function LibroComprasCompletoView() {
         >
             <div className="p-5 md:p-6 space-y-5">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    <CarrilCards>
+                    <CarrilCards className="flex-1" ariaLabel="Resumen del libro completo">
                         <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
-                            sub={`${totales.docs - totales.sinCompra} del ERP · ${totales.sinCompra} por correo`} />
+                            sub={`${totales.docs - totales.sinCompra} registradas · ${totales.sinCompra} sin registrar`} />
                         <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
                             sub="Del período" loading={loading} />
                         <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
@@ -289,19 +295,18 @@ export default function LibroComprasCompletoView() {
                 )}
 
                 <Notice variant="info" icon={BookOpen} compact>
-                    No reemplaza al libro de <b>Libros IVA</b>, que sale del ERP y sirve para
-                    cotejarse contra el archivo del origen. Éste suma las compras del ERP y los
-                    DTE recibidos por correo que no están registrados como compra, y exporta el
-                    número de documento completo.
+                    Todas las compras del período, incluidas las que llegaron como documento
+                    del proveedor y todavía no se registraron. El número de documento va
+                    completo. Para presentar, el libro del Art. 86 sigue siendo el de <b>Libros IVA</b>.
                 </Notice>
 
                 {!loading && totales.sinCompra > 0 && (
                     <Notice variant="warning" icon={AlertTriangle}>
-                        <b>{totales.sinCompra}</b> documento(s) llegaron por correo y no están
-                        registrados como compra en el ERP — <b>{formatMoney(totales.creditoSinCompra)}</b> de
-                        crédito fiscal que el libro del ERP no incluye. El Art. 65 de la Ley de IVA
-                        da tres períodos para reclamarlo. Antes de reclamar nada hay que revisarlos
-                        uno por uno: que no esté registrado con otro número no prueba que falte.
+                        <b>{totales.sinCompra}</b> documento(s) del proveedor todavía no están
+                        registrados como compra — <b>{formatMoney(totales.creditoSinCompra)}</b> de
+                        crédito fiscal que no entra al libro del Art. 86. La Ley de IVA da tres
+                        períodos para reclamarlo. Antes de reclamar nada hay que revisarlos uno por
+                        uno: que esté registrado con otro número no es lo mismo que falte.
                     </Notice>
                 )}
 
@@ -310,8 +315,8 @@ export default function LibroComprasCompletoView() {
                         <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}>
                             <DataCell>{fmtFecha(r.fecha)}</DataCell>
                             <DataCell>
-                                <Badge variant={r.origen === 'ERP' ? 'neutral' : 'warning'} size="sm">
-                                    {r.origen === 'ERP' ? 'ERP' : 'Por correo'}
+                                <Badge variant={r.origen === 'registrada' ? 'neutral' : 'warning'} size="sm">
+                                    {r.origen === 'registrada' ? 'Registrada' : 'Sin registrar'}
                                 </Badge>
                             </DataCell>
                             <DataCell className="max-w-[15rem]">

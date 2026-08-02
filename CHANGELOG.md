@@ -21,6 +21,43 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.345.3 — La pantalla habla del portal, y los filtros al borde derecho
+
+**Dos reglas que ya estaban escritas y no apliqué al crear Compras Completo.**
+
+**1 · La pantalla nombraba al sistema de origen.** La vista salió con una pestaña
+«Sin compra ERP», un badge «ERP» en cada fila, dos avisos que lo nombraban cuatro
+veces y una columna `ORIGEN` en el CSV con los valores `ERP` / `DTE recibido`.
+Quien usa el portal **no sabe qué es un ERP**, y la procedencia del dato no va ni
+en la UI ni en los archivos que se entregan.
+
+Los rótulos ahora describen el **estado del negocio**, que además es lo que la
+vista quiere decir:
+
+| Antes | Ahora |
+|---|---|
+| pestaña `Sin compra ERP` | **Sin registrar** |
+| badge `ERP` / `Por correo` | **Registrada** / **Sin registrar** |
+| columna `Origen` | **Registro** |
+| CSV `ORIGEN` con `ERP` | **REGISTRO** con `Registrada` |
+
+Los valores del RPC pasaron de `'ERP'` / `'DTE recibido'` a `'registrada'` /
+`'solo_documento'`, para que la palabra no pueda volver a filtrarse al CSV. La
+regla quedó escrita en `CLAUDE.md`, porque es la segunda vez que se escapa — la
+primera fue el barrido de 9 archivos de v2.334.1.
+
+**Cómo se verificó, que es la parte que importa:** grepear el fuente NO alcanza.
+La última mención que quedaba vivía en un `aria-label` construido con un template
+literal (`${...} del ERP · ${...} por correo`) y ningún grep razonable la
+encuentra. Se barrió el **DOM pintado** más `title`, `aria-label` y `placeholder`
+con el navegador abierto. Resultado: cero.
+
+**2 · Los filtros no estaban anclados al borde derecho.** Faltaba
+`className="flex-1"` en `CarrilCards` — sin eso las tarjetas no crecen y la barra
+de filtros queda pegada a ellas en vez de al borde. Medido contra la vista
+hermana: el botón Exportar quedaba a media fila; ahora está a **75 px del borde,
+exactamente igual que en Libros IVA**.
+
 ## v2.345.2 — Arreglo: la vista nueva reventaba por props inventadas
 
 Al entrar a **Compras Completo** la pantalla moría con

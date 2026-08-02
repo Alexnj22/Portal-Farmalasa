@@ -243,6 +243,40 @@ regla del sello (`docs/` y memoria `feedback_el_sello_es_el_filtro_del_libro`):
 allá era no redondear una diferencia, acá es no declarar "sin diferencia" cuando
 ni se miró.
 
+## REGLA: la pantalla habla del PORTAL, nunca del sistema de origen
+
+Corregido por el usuario dos veces — el 2026-08-01 (barrido de 9 archivos,
+v2.334.1) y otra vez el **2026-08-02**, en la vista de Compras Completo, que
+salió a producción con una pestaña «SIN COMPRA ERP», un badge «ERP» en cada
+fila y dos avisos que nombraban al ERP cuatro veces.
+
+> «esa info no la necesito en el portal. además, ERP no saben qué es, no lo
+> pongas. que todo parezca que sale del portal.»
+
+Son **dos reglas distintas** y valen para toda la UI **y para los archivos que se
+exportan**:
+
+1. **Nunca nombrar el ERP** —ni ningún sistema de origen— en texto que ve el
+   usuario. No sabe qué es. Tampoco la jerga de la tubería: "sincronizar",
+   "sync", "resincronizá". Se dice en términos del negocio:
+   `Sin sincronizar` → **Sin número**; "Resincronizá el mes" → **hay que
+   completar el mes**; columna `ID ERP` del CSV → **ID INTERNO**;
+   "Match ERP" → **Registrado como**; "Sin match ERP" → **Sin vincular**.
+2. **La procedencia y la verificación no van en pantalla.** Que un libro cuadre
+   contra otro sistema es una nota de quien lo construyó. El aviso tiene que
+   decir **qué mira** el libro (el sello de Hacienda, las 7 sucursales, lo que
+   exige el Art. 86), no de dónde viene.
+
+**Los comentarios del código SÍ conservan la trazabilidad** — ahí sirve y no la
+ve nadie que use el portal. La regla es sobre la UI y los archivos exportados.
+
+**Grepear el fuente NO alcanza para verificarlo**: la mitad de estos textos viven
+en `title`/`aria-label`/`placeholder`, y el grep los confunde con identificadores
+que sí se quedan (`ERP_ORDER`, `erp_id`, `matchErpFilter`). La verificación es
+**abrir la vista en el navegador** y barrer el DOM pintado más esos tres
+atributos. Es la misma lección que el outage del mismo día: compilar y pasar los
+gates no prueba nada sobre lo que se ve.
+
 ## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
 
 Hardening completo aplicado 2026-07-02 (`supabase/migrations/20260702_db_hardening_*`).

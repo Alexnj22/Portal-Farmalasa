@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.343.1 — Bloques 21 a 26: 13,591 fichas de clientes
+
+**10,625 → 13,591 fichas procesadas**, frente secuencial en `erp 13,564`, 14,044
+pendientes (29 bloques). En el portal quedaron 11,127 fichas emparejadas, 11,037
+con distrito. **Cero campos perdidos y cero alterados en las 13,591** —
+verificado sobre el checkpoint entero.
+
+Seis bloques seguidos sin un solo corte, entre 476 y 481 fichas corregidas cada
+uno y ~27 min por bloque. La maquinaria endurecida en v2.338.0 (reintento por
+progreso real, `except OSError`, guardián semántico) no tuvo que intervenir ni
+una vez.
+
+La corrida se detuvo durante el bloque 27, y **la causa no fue técnica**: el
+registro de energía muestra que el `caffeinate` que envolvía la cadena sostuvo
+sus tres aserciones —incluida `PreventSystemSleep`— durante 2 h 49 min y después
+registró `ClientDied`. O sea que el proceso murió y por eso se soltaron las
+aserciones, no al revés. Queda descartado el sueño (no hubo evento a esa hora),
+la batería (pasó a batería 40 min después), un fallo del bloque (sin traceback
+ni mensaje de corte) y el ERP (el bloque 26 cerró limpio minutos antes). El
+árbol de procesos fue terminado desde afuera.
+
+No se perdió nada: el bloque 27 retoma donde quedó.
+
 ## v2.343.0 — Las notas de crédito apuntan a la compra que corrigen
 
 **El vínculo que faltaba iba al lado equivocado.** `documento_relacionado_id`

@@ -48,14 +48,6 @@
    "distrito"
   ]
  },
- "13471": {
-  "erp_id": "13471",
-  "name": "CLARIEL WILFREDO ALFARO MENJIVAR",
-  "categoria": "Consumidor",
-  "faltan": [
-   "distrito"
-  ]
- },
  "13700": {
   "erp_id": "13700",
   "name": "LABORATORIOS VIJOSA, S.A. DE C.V.",
@@ -765,6 +757,49 @@
   "categoria": "Consumidor",
   "faltan": [
    "departamento"
+  ]
+ },
+ "11184": {
+  "erp_id": "11184",
+  "name": "ADELA JUDITH SANTIZO GRAMAJO",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "11516": {
+  "erp_id": "11516",
+  "name": "BLANCA CONCEPCION MENDEZ DE CORTEZ",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
+ },
+ "11634": {
+  "erp_id": "11634",
+  "name": "PAULINA DE JESUS LOPEZ MARQUEZ",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "11812": {
+  "erp_id": "11812",
+  "name": "EFRAIN ELIAS RIVAS",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "sel_giro",
+   "correo"
   ]
  }
 }

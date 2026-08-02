@@ -117,7 +117,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
     };
 
     return (
-        <div className={`rounded-modal border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:-translate-y-1 ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
+        <div className={`rounded-modal border bg-surface-card backdrop-blur-2xl shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${tc.hover} transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden transform-gpu
             ${isUrgent ? 'border-danger' : isRejected ? 'border-danger/30' : `${tc.border}`}`}>
 
             {/* Compact header — click to expand */}

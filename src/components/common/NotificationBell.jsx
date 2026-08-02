@@ -310,7 +310,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                 onClick={() => setIsOpen(o => !o)}
                 aria-label="Notificaciones"
                 className={`relative flex items-center justify-center w-11 h-11 rounded-2xl backdrop-blur-2xl border
-                    hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200
+                    hover:translate-y-[var(--lift-hover)] hover:scale-105 active:scale-[0.97] active:translate-y-0 transition-all duration-200
                     ${isDark
                         ? `shadow-[var(--shadow-glass-3)]
                            ${hasUrgentAnn ? 'bg-danger/15 border-danger/40' : 'bg-white/[0.08] border-white/[0.14] hover:bg-white/[0.14]'}`

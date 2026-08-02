@@ -553,7 +553,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             openFlyout({ type: 'item', label, path, icon: Icon, x, y: rect.top + rect.height / 2, badge, alert, isActive });
         } : undefined;
 
-        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--sidebar-item-hover-shadow)]';
+        const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]';
         const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-white/42 group-hover:text-white/80';
         const accentBarInactive = 'bg-white/20';
@@ -730,7 +730,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         ${isExpanded ? 'gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3' : 'justify-center gap-0 px-0 py-2.5 xl:py-3'}
                         ${hasActiveChild
                             ? 'text-white'
-                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
+                            : 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]'}
                         ${focusRing}
                         active:scale-[0.99] active:translate-y-0`}
                 >
@@ -943,7 +943,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 className={`w-full flex items-center rounded-2xl transition duration-[var(--dur-base)] group relative text-left overflow-hidden
                                     ${isExpanded ? 'gap-2.5 px-3 py-3 xl:px-4 xl:py-3.5' : 'justify-center gap-0 px-0 py-3 xl:py-3.5'}
                                     bg-white/[0.045] border border-white/[0.07]
-                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:-translate-y-[1px] hover:shadow-[var(--sidebar-item-hover-shadow)]
+                                    text-white/65 hover:text-white/95 hover:bg-white/[0.09] hover:border-white/[0.12] hover:translate-y-[var(--lift-hover)] hover:shadow-[var(--sidebar-item-hover-shadow)]
                                     ${focusRing}
                                     active:scale-[0.99] active:translate-y-0`}
                             >
@@ -1051,7 +1051,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
                                             onMouseLeave={closeFlyout} aria-label="Mi Perfil"
-                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:-translate-y-0.5 active:scale-[0.97]
+                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:translate-y-[var(--lift-hover)] active:scale-[0.97]
                                                 bg-white/[0.08] border border-white/[0.12] text-white/55
                                                 shadow-[var(--shadow-glass-1)]
                                                 hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>

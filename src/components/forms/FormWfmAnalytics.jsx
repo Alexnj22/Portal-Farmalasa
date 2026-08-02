@@ -275,7 +275,7 @@ const FormWfmAnalytics = ({ branches }) => {
     return (
         <div className="w-full flex flex-col gap-6 animate-in fade-in duration-700">
             {/* CONTROLES SUPERIORES (HEATMAP HEADER PILL STYLE) */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] transform-gpu hover:-translate-y-0.5 transition-transform duration-500">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-surface-card backdrop-blur-xl p-3.5 sm:p-4 rounded-full border border-border-card shadow-[var(--shadow-glass-sm)] transform-gpu hover:translate-y-[var(--lift-card)] transition-transform duration-500">
                 <div className="w-full sm:w-auto flex items-center gap-3">
                      <div className="relative group/saly w-11 h-11 flex items-center justify-center rounded-full shrink-0 border-0 shadow-[var(--shadow-glow-chart-9-md)] hover:shadow-[var(--shadow-glow-chart-9-lg)] transition-shadow duration-500">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400 via-cyan-500 to-indigo-500 rounded-full opacity-30 group-hover/saly:opacity-100 transition-opacity duration-500 group-hover/saly:animate-spin [animation-duration:4s]"></div>
@@ -283,7 +283,7 @@ const FormWfmAnalytics = ({ branches }) => {
                         <TrendingUp size={20} strokeWidth={2.5} className="text-chart-9-text group-hover/saly:text-chart-3-text relative z-base transition-colors duration-300" />
                     </div>
                     
-                    <div className="w-full sm:w-[250px] overflow-visible group/branch hover:-translate-y-0.5 transition-transform duration-300">
+                    <div className="w-full sm:w-[250px] overflow-visible group/branch hover:translate-y-[var(--lift-hover)] transition-transform duration-300">
                         <LiquidSelect value={selectedBranch} onChange={setSelectedBranch} options={branchOptions} clearable={false} compact icon={Building2} />
                     </div>
                 </div>

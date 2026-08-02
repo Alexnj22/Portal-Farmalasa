@@ -184,7 +184,7 @@ export default function ViewTabBar({
   const ActiveTabIcon = activeTabObj?.icon || activeTabObj?.Icon;
 
   const activeTabCls = 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]';
-  const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active';
+  const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:translate-y-[var(--lift-hover)] hover:shadow-md hover:border-surface-tab-active';
   const dividerCls   = 'bg-divider';
   const inputCls     = 'text-content-2 placeholder:text-content-3';
   const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand-text hover:shadow-md';
@@ -192,7 +192,7 @@ export default function ViewTabBar({
 
   return (
     <div {...containerProps} ref={trackRef} data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
-      hover:-translate-y-[2px] transform-gpu
+      hover:translate-y-[var(--lift-card)] transform-gpu
       h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
       shadow-[var(--shadow-glass-sm)] hover:shadow-[var(--shadow-glass-md)]`}>
 
@@ -234,7 +234,7 @@ export default function ViewTabBar({
         )}
         <button aria-label="Cerrar el buscador" onClick={closeSearch}
           className={`w-11 h-11 rounded-btn flex items-center justify-center
-            shrink-0 transition-all hover:shadow-md hover:-translate-y-0.5 ml-2 ${closeBtnCls}`}>
+            shrink-0 transition-all hover:shadow-md hover:translate-y-[var(--lift-hover)] ml-2 ${closeBtnCls}`}>
           <ChevronRight size={18} strokeWidth={2.5} />
         </button>
       </div>
@@ -305,7 +305,7 @@ export default function ViewTabBar({
         {mostrarLupa && (
           <button aria-label="Buscar" onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
-              transition-[background-color,transform] duration-200 hover:-translate-y-px active:scale-[0.97] transform-gpu relative
+              transition-[background-color,transform] duration-200 hover:translate-y-[var(--lift-hover)] active:scale-[0.97] transform-gpu relative
               bg-brand text-white hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (

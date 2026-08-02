@@ -279,7 +279,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Antigüedad',  value: tenure,           icon: Award, color: 'text-chart-1-text',  bg: 'bg-chart-1/10'  },
                             { label: 'Pendientes',  value: activeCount ?? 0, icon: Zap,   color: 'text-warning', bg: 'bg-warning/10' },
                         ].map(({ label, value, icon: Icon, color, bg }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
+                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 flex flex-col items-center text-center hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
                                 <p className="text-subtitle font-black text-content-2 leading-tight">{value}</p>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{label}</p>
@@ -295,7 +295,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             { label: 'Tipo de Contrato',    value: emp.contract_type || '—',                           icon: Briefcase, color: 'text-chart-3-text', bg: 'bg-chart-3/10' },
                             { label: 'Horas Semanales',     value: emp.weekly_hours ? `${emp.weekly_hours}h` : '—',   icon: Clock,     color: 'text-warning',  bg: 'bg-warning/10'  },
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
-                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
+                            <div key={label} className={`${bg} backdrop-blur-sm border border-border-card rounded-2xl p-4 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1">{label}</p>
                                 <p className="text-body font-black text-content-2 leading-tight">{value}</p>
@@ -339,7 +339,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
                     {/* Emergencia */}
                     {(emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type) && (
-                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:-translate-y-0.5 transition-all duration-300">
+                        <div className="bg-danger/10 backdrop-blur-2xl border border-danger/30 rounded-modal p-5 shadow-[var(--shadow-glow-danger)] hover:shadow-[var(--shadow-glow-danger)] hover:translate-y-[var(--lift-card)] transition-all duration-300">
                             <SectionLabel icon={HeartPulse} label="Contacto de Emergencia" color="text-danger" />
                             <div className="space-y-2">
                                 <Field label="Avisar a"            value={emp.emergency_contact_name}  icon={User} />
@@ -358,8 +358,15 @@ const EmployeeProfileView = ({ openModal }) => {
                                     const s = VAC_STATUS[vp.status] || VAC_STATUS.PLANNED;
                                     const fmt = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
                                     const isUpcoming = vp.end_date >= new Date().toISOString().split('T')[0];
+                                    // Un solo ternario para las dos cosas, porque dependen de la MISMA
+                                    // condición: cuando la vacación ya pasó el elemento es
+                                    // `data-surface="card"` y el canónico lo levanta con `--lift-card`;
+                                    // cuando es próxima no hay superficie que lo levante, así que el
+                                    // lift va a mano. Las dos ramas dan los mismos 2px. Antes estaban
+                                    // separados y el lift a mano se SUMABA al canónico en la rama de
+                                    // tarjeta: la misma fila se movía 4px o 2px según la fecha.
                                     return (
-                                        <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30' : ''}`}>
+                                        <div key={vp.id} data-surface={isUpcoming ? undefined : 'card'} className={`flex items-center gap-3 p-3 border rounded-2xl hover:shadow-[var(--shadow-elevation-sm)] transition-all duration-200 ${isUpcoming ? 'bg-success/10 border-success/30 hover:translate-y-[var(--lift-card)]' : ''}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-success/10' : 'bg-surface-card-hover'}`}>
                                                 <Palmtree size={13} className={isUpcoming ? 'text-success' : 'text-content-3'} strokeWidth={2} />
                                             </div>

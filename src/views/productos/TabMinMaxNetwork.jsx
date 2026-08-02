@@ -191,7 +191,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
             <div className="flex items-center gap-2.5 flex-wrap">
 
                 {/* Filter pill: ABC | Alert | Clear */}
-                <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-glass-3)] hover:-translate-y-0.5 shrink-0">
+                <div className="flex items-center gap-0 rounded-2xl border border-divider bg-surface-card backdrop-blur-sm shadow-[var(--shadow-glass-1)] transition-all duration-300 hover:shadow-[var(--shadow-glass-3)] hover:translate-y-[var(--lift-card)] shrink-0">
                     {/* ABC */}
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (

@@ -22,7 +22,7 @@ const BranchTabInmueble = ({
         willChange: 'transform'
     };
 
-    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
+    const islandHoverClass = "transition-[transform,box-shadow,background-color,border-color] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-elevation-sm)] hover:bg-surface-card hover:border-border-card";
     const inputHoverClass = "transition-[box-shadow,border-color] duration-300 hover:shadow-md hover:border-brand/30 focus-within:ring-4 focus-within:ring-brand/10";
 
     const extinguisherOptions = useMemo(() => [

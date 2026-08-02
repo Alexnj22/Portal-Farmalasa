@@ -582,7 +582,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {href:'https://farmalasa.com',Icon:Pill,label:'FarmaLasa',color:'#6929C4'},
                 ].map(({href,Icon,label,color})=>(
                     <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:-translate-y-0.5">
+                        className="group flex items-center gap-2 px-4 py-2.5 bg-white/[0.22] hover:bg-white/[0.50] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-200 active:scale-[0.97] hover:scale-[1.03] hover:translate-y-[var(--lift-card)]">
                         <Icon size={14} strokeWidth={2} style={{color}} className="transition-transform duration-200 group-hover:scale-110" />
                         <span className="text-caption font-black uppercase tracking-widest text-content-3 group-hover:text-content-2 transition-colors">{label}</span>
                     </a>
@@ -624,7 +624,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     {!isMobileOrApp() && (
                         <div className="relative">
                             <button type="button" onClick={goToKiosko}
-                                className="group w-full p-4 rounded-card bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5">
+                                className="group w-full p-4 rounded-card bg-white/[0.18] backdrop-blur-md border border-border-card flex items-center justify-between transition-all duration-250 active:scale-[0.97] hover:bg-white/[0.35] hover:border-border-card hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)]">
                                 <div className="flex items-center gap-3.5">
                                     <div className="w-11 h-11 rounded-2xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-all duration-200 shadow-sm group-hover:shadow-[var(--shadow-glow-brand)]">
                                         <Clock size={18} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
@@ -656,7 +656,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         {href:'https://farmalasa.com',Icon:Pill,label:'Farmalasa',sub:'Sitio web oficial',color:'#6929C4',glow:'rgba(105,41,196,0.22)'},
                     ].map(({href,Icon,label,sub,color,glow})=>(
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:-translate-y-0.5 w-[210px] overflow-hidden"
+                            className="relative group flex items-center gap-3 px-3.5 py-3 bg-white/[0.22] hover:bg-white/[0.55] backdrop-blur-md border border-border-card hover:border-border-card rounded-2xl transition-all duration-250 active:scale-[0.97] hover:scale-[1.02] hover:translate-y-[var(--lift-card)] w-[210px] overflow-hidden"
                             onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 8px 24px ${glow}, inset 0 1px 0 rgba(255,255,255,0.7)`; }}
                             onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; }}>
                             <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">

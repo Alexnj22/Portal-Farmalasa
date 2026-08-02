@@ -47,7 +47,7 @@ const safeParse = (obj) => {
     try { return JSON.parse(obj) || {}; } catch { return {}; }
 };
 
-const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-300 hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:-translate-y-0.5 active:scale-[0.97]";
+const CLASS_INTERACTIVE_GLASS_ELEMENT = "bg-surface-card border border-border-card shadow-[var(--shadow-glass-1)] cursor-pointer transition-all duration-300 hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] active:scale-[0.97]";
 
 // ============================================================================
 // 🧠 FUNCIONES PURAS
@@ -308,7 +308,7 @@ const BranchCard = memo(({
     };
 
     return (
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:-translate-y-1 hover:shadow-[var(--shadow-glass-5)]'}`}>
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '350px', '--stagger-delay': `${staggerIndex * 55}ms` }} className={`animate-stagger-child group relative rounded-header transition-all duration-500 flex flex-col h-full will-change-transform overflow-hidden ${alertStatus.cardStyles} ${isInactive ? 'opacity-80 grayscale-[30%] hover:grayscale-0 hover:opacity-100' : 'hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-5)]'}`}>
             
             {/* ✨ OVERLAY HOLOGRÁFICO DE IA ✨ */}
             <div inert={!(aiMode) ? true : undefined} className={`absolute inset-0 z-sidebar bg-surface-card backdrop-blur-3xl transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col border border-chart-3/20 ${aiMode ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-full pointer-events-none'}`}>
@@ -371,7 +371,7 @@ const BranchCard = memo(({
                                 if(aiMode) { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); }
                                 else { generateBranchAiSummary(e); }
                             }}
-                            className="relative group/ai-btn w-8 h-8 min-w-[var(--tap-min)] min-h-[var(--tap-min)] flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:-translate-y-0.5"
+                            className="relative group/ai-btn w-8 h-8 min-w-[var(--tap-min)] min-h-[var(--tap-min)] flex items-center justify-center rounded-full shrink-0 transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)]"
                             title={aiMode ? "Cerrar Diagnóstico IA" : "Diagnóstico Inteligente"}
                         >
                             {aiMode ? (
@@ -479,7 +479,7 @@ const BranchCard = memo(({
                             onWhatsApp={(e) => handleWhatsAppAction(e, branch.cell)} />
                     </div>
 
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:-translate-y-0.5'}`} title="Configurar Horarios">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchHorarios', branch); }} disabled={!canEdit} className={`group/horario w-full rounded-2xl px-4 py-3 border flex items-center justify-between transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed ${!scheduleDefined ? 'bg-danger/10 border-danger/30 shadow-[var(--shadow-glow-danger)] hover:bg-danger/10 hover:shadow-sm' : 'bg-surface-card border-border-card shadow-[var(--shadow-glass-1)] hover:bg-surface-card-hover hover:shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-hover)]'}`} title="Configurar Horarios">
                         <div className="flex items-center gap-2">
                             <Clock size={14} className={`transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-brand-text'}`} strokeWidth={2.5} />
                             <span className={`text-caption font-black uppercase tracking-widest transition-colors duration-300 ${!scheduleDefined ? 'text-danger' : 'text-content-3 group-hover/horario:text-content-2'}`}>

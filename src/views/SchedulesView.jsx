@@ -192,7 +192,7 @@ const HolidaysPanel = ({
                                             className="group relative flex items-center overflow-hidden
                                                 bg-surface-card backdrop-blur-md border border-border-card rounded-3xl
                                                 shadow-[var(--shadow-elevation-xs)]
-                                                hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-0.5
+                                                hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)]
                                                 transition-all duration-300">
                                             {/* Color stripe */}
                                             <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />

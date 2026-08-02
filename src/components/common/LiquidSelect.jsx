@@ -510,7 +510,7 @@ const LiquidSelect = ({
 
     return (
         <div
-            className={`relative group w-full transition-transform duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:-translate-y-0.5' : ''}`}
+            className={`relative group w-full transition-transform duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:translate-y-[var(--lift-hover)]' : ''}`}
             ref={selectRef}
         >
             {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}

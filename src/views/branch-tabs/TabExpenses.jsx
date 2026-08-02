@@ -64,7 +64,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
     return (
         <div
-            className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:-translate-y-1 hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
+            className={`group relative backdrop-blur-md rounded-modal p-5 transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in fill-mode-both flex flex-col hover:translate-y-[var(--lift-card)] hover:shadow-lg ${statusObj.colorClass} ${isPendingReceipt ? 'animate-pulse' : ''}`}
             style={{ animationDelay: `${delay}ms`, willChange: 'transform, opacity' }}
         >
             <div className="absolute inset-0 bg-surface-card rounded-modal opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
@@ -388,7 +388,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         </div>
 
                         {/* Tarjeta de Servicio Más Caro */}
-                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1">
+                        <div className="group bg-gradient-to-br from-warning/10 to-warning/5 backdrop-blur-xl border border-warning/30 rounded-modal p-6 shadow-sm flex-1 flex flex-col justify-center relative overflow-hidden transition-all duration-500 hover:shadow-md hover:translate-y-[var(--lift-card)]">
                             <div className="absolute right-0 bottom-0 w-24 h-24 bg-warning/30 rounded-full blur-2xl translate-x-1/3 translate-y-1/3 transition-transform duration-700 group-hover:scale-150"></div>
                             <div className="flex items-center gap-2 mb-2 relative z-base">
                                 <div className="w-8 h-8 rounded-lg bg-surface-card flex items-center justify-center shadow-sm border border-border-card">

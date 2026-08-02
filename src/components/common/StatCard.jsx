@@ -103,7 +103,12 @@ export default function StatCard({
     // Hover solo en clickable. Nota: el scope @media (hover:hover) es
     // trabajo transversal pendiente (B2); las clases hover: de Tailwind
     // se disparan en todos los dispositivos por ahora.
-    const hoverCls = isClickable && !active ? 'hover:shadow-md hover:-translate-y-px' : '';
+    // Sin lift a mano: el elemento lleva `data-surface="card"` y el canónico ya
+    // lo levanta con `--lift-card`. Cuando además traía uno acá los dos se
+    // sumaban —`transform` del canónico + `translate` de Tailwind son
+    // propiedades distintas— y la tarjeta se movía 3px en vez de 2 (medido el
+    // 2026-08-02 en /staff, donde encima vive anidada dentro de otra tarjeta).
+    const hoverCls = isClickable && !active ? 'hover:shadow-md' : '';
 
     return (
         <Tag

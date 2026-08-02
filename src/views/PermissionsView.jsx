@@ -141,9 +141,9 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     ? `bg-surface-card backdrop-blur-2xl border-border-card
                        shadow-[var(--shadow-glass-2)]
                        hover:shadow-[var(--shadow-glass-4)]
-                       hover:-translate-y-2 hover:scale-[1.018] hover:bg-surface-card
+                       hover:translate-y-[var(--lift-card)] hover:scale-[1.018] hover:bg-surface-card
                        ${flash ? 'ring-2 ring-chart-1/45 shadow-[var(--shadow-glass-3)]' : ''}`
-                    : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-shine)] opacity-55 hover:opacity-80 hover:-translate-y-0.5 hover:bg-surface-card'
+                    : 'bg-surface-card backdrop-blur-xl border-border-card shadow-[var(--shadow-shine)] opacity-55 hover:opacity-80 hover:translate-y-[var(--lift-card)] hover:bg-surface-card'
         }`}>
             <div className="p-4">
                 {/* Header */}
@@ -642,7 +642,7 @@ const PermissionsView = () => {
                                     key={r.id}
                                     aria-pressed={isActive}
                                     onClick={() => setSelectedRoleId(r.id)}
-                                    className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] transform-gpu ${
+                                    className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-300 hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
                                         isActive
                                             ? isSURol
                                                 ? 'bg-gradient-to-br from-warning/10 to-chart-4/10 border-warning/30 shadow-[var(--shadow-glow-chart-4-lg)]'

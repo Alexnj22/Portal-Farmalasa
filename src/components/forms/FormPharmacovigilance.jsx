@@ -79,7 +79,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <label className="text-caption font-black text-content-3 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-chart-3-text transition-colors">
                         Referente Técnico Asignado
                     </label>
-                    <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-3xl">
+                    <div className="transition-all duration-300 transform-gpu hover:translate-y-[var(--lift-card)] hover:shadow-md rounded-3xl">
                         <LiquidSelect 
                             value={legalData.farmacovigilanciaId || ""} 
                             onChange={(val) => updateLegalField('farmacovigilanciaId', val)} 

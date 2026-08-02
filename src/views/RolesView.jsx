@@ -347,7 +347,7 @@ const RolesView = ({ openModal }) => {
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
 
         return (
-            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
+            <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[var(--shadow-glass-3)] rounded-3xl p-4 mx-2 mt-2 mb-8 hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-surface-card-hover/70 border border-divider' : 'bg-surface-card border border-border-card'}`}>
 
                 {/* Etiqueta Staff reubicada a la izquierda si existe */}
                 {isExternal && !isExporting && (

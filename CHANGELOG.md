@@ -21,6 +21,57 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.342.0 — Barrido de los 79 lifts a mano y gate extendido a controles
+
+**79 `hover:-translate-y-*` escritos a mano, de 1px a 8px, ahora salen del
+token.** Iban a `var(--lift-card)` si el sitio es una SUPERFICIE (53) o a
+`var(--lift-hover)` si es un CONTROL (26). La clasificación se hizo sitio por
+sitio, no por el valor que tenían: las 27 de 4px resultaron ser tarjetas y
+paneles a mano (`islandHoverClass`, `bg-surface-card border border-border-card`,
+los paneles del kiosco), no controles.
+
+**Los 14 `group-hover:-translate-y-*` quedan afuera a propósito.** Mueven a un
+HIJO y no tocan la caja de hit-testing del padre: son animación decorativa (un
+ícono que sube dentro de la tarjeta), no un lift.
+
+**El gate `lift-clavado` ahora cubre controles**, no sólo tarjetas: marca
+cualquier `hover:-translate-y-*` con el número clavado. Probado reintroduciendo
+uno en `NotificationBell`: `SUBIÓ +1`.
+
+### Tres bugs que aparecieron al verificar en el navegador
+
+**1. El regex del gate cortaba en el primer `>`.** Dentro de un tag JSX ese `>`
+aparece en cualquier `=>` o `===`, así que una tarjeta cuyo `data-tono` lleva un
+`===` quedaba "cerrada" antes de su propio `className`. Por eso
+`AnnouncementsView` —una tarjeta con lift a mano— pasó la auditoría de v2.340.1
+con el gate en verde, y el barrido le agregó encima `--lift-card`: medido, 4px.
+Reemplazado por un escáner que respeta llaves y comillas (`tagQueContiene`).
+
+**2. Tarjetas ANIDADAS sumaban sus lifts.** `:hover` matchea al elemento y a
+todos sus ancestros, así que al apuntar la interna se levantaban las dos: 4px
+contra los 2px de una tarjeta suelta, en `/staff`, `/schedules` y
+`/announcements`. §5.1 ya dice que no se anidan tarjetas, pero mientras existan
+no deben sumarse — regla nueva: `[data-surface="card"] [data-surface="card"]:hover
+{ transform: none }`. La externa se sigue levantando y se lleva a la interna.
+
+**3. `StatCard` es una tarjeta y recibió token de control**, porque su lift vive
+en una variable (`hoverCls`) separada del tag y ningún escáner estático puede
+atribuirla. Se movía 3px. Se le quitó el lift a mano: `data-surface="card"` ya lo
+levanta.
+
+**Límite conocido del gate:** una clase compuesta en una variable no se puede
+atribuir a su elemento. `StatCard` salió por medición en el navegador, no por el
+gate.
+
+Verificado en vivo tras los arreglos: `/overview`, `/announcements`,
+`/schedules`, `/staff`, `/branches` y `/requests` — todas las tarjetas medidas se
+desplazan exactamente 2px, y los controles 1px en liquid y 0px en los dos temas
+Solid. Sin errores de JS.
+
+`EmployeeProfileView` va a `EXCEPTIONS` con su motivo: es tarjeta O tiene lift a
+mano según `isUpcoming`, nunca las dos, y ambas ramas dan 2px — el gate no puede
+probar que las condiciones son complementarias.
+
 ## v2.341.0 — Bloque B: las alarmas pueden sonar
 
 Ninguno de estos era un bug del libro. Son **defectos de los instrumentos que lo

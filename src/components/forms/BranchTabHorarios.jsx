@@ -14,9 +14,9 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
     
     if (open) {
         if (isInvalid) {
-            cardClass += "bg-danger/10 border border-danger/30 shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:bg-danger/10";
+            cardClass += "bg-danger/10 border border-danger/30 shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-3)] hover:bg-danger/10";
         } else {
-            cardClass += "bg-surface-card border border-border-card shadow-[var(--shadow-glass-2)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-3)] hover:border-brand/30";
+            cardClass += "bg-surface-card border border-border-card shadow-[var(--shadow-glass-2)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-3)] hover:border-brand/30";
         }
     } else {
         cardClass += "bg-surface-card-hover/40 border border-border-card opacity-80 hover:opacity-100 hover:bg-surface-card hover:shadow-sm";
@@ -87,7 +87,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
 const BranchTabHorarios = ({ setDay, copyPreviousDay, safeDay }) => {
 
     const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
     return (
         <div className="w-full">

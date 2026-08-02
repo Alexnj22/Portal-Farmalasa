@@ -1008,7 +1008,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const roleOpts = roles?.map(r => ({ value: String(r.id), label: r.name })) || [];
 
     const islandClass = "bg-surface-card rounded-3xl p-4 md:p-5 border border-border-card shadow-[var(--shadow-glass-3)]";
-    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
+    const islandHoverClass = "transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:translate-y-[var(--lift-card)] hover:shadow-[var(--shadow-glass-4)] hover:bg-surface-card";
 
     // 🚨 Propiedades base para que los selects floten libres del Modal
     const portalSelectProps = {
@@ -1671,7 +1671,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <Button variant="ghost" icon={Plus} onClick={addDependent}>Agregar Persona</Button>
                         </div>
 
-                        <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}>
+                        <div className={`bg-danger/10 rounded-3xl p-4 md:p-5 border border-danger/30 shadow-[var(--shadow-elevation-xs)] transition-all duration-300 hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
                             <h4 className="text-body-sm font-black uppercase tracking-widest text-danger mb-4 flex items-center gap-2"><HeartPulse size={16} strokeWidth={2.5} /> Ficha Médica y Emergencia</h4>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2038,7 +2038,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Usuario (Auto-generado)" name="username" value={formData.username} onChange={handleChange} readOnly={true} icon={User} />
                             </div>
 
-                            <div className={`bg-brand/5 rounded-3xl p-4 md:p-5 border border-brand/20 shadow-[var(--shadow-glow-brand)] transition-all hover:-translate-y-1 hover:shadow-md`}>
+                            <div className={`bg-brand/5 rounded-3xl p-4 md:p-5 border border-brand/20 shadow-[var(--shadow-glow-brand)] transition-all hover:translate-y-[var(--lift-card)] hover:shadow-md`}>
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="p-2 bg-brand text-white rounded-xl shadow-[var(--shadow-glow-brand)]"><Lock size={16} strokeWidth={2.5} /></div>
                                     <h4 className="text-body-sm font-black uppercase tracking-widest text-brand-text">Seguridad Kiosko</h4>

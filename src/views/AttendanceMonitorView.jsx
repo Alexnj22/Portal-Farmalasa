@@ -602,7 +602,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 card.bg, card.border,
                 isActive
                   ? "shadow-[var(--shadow-glow-brand)] ring-2 ring-brand/45 scale-[1.02] -translate-y-0.5"
-                  : "hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1",
+                  : "hover:shadow-lg hover:scale-[1.02] hover:translate-y-[var(--lift-card)]",
               ].join(" ")}
             >
               {Icon && (

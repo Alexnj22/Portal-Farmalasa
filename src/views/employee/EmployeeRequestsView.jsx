@@ -196,7 +196,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
         'border-border-card bg-surface-card backdrop-blur-md';
 
     return (
-        <div className={`rounded-header border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:-translate-y-0.5 ${cardBg}`}>
+        <div className={`rounded-header border flex flex-col transition-all duration-300 relative transform-gpu shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-sm)] hover:translate-y-[var(--lift-card)] ${cardBg}`}>
             {/* ── Header ── */}
             <div className="p-5 flex items-center gap-3">
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transform-gpu overflow-hidden ${typeConf.color} border ${typeConf.border}`}>

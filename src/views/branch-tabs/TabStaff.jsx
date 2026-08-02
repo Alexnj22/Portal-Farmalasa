@@ -85,7 +85,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     }
 
     return (
-        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
+        <div onClick={onEditRole} className={`group relative overflow-hidden flex flex-col p-5 rounded-3xl backdrop-blur-xl border border-border-card cursor-pointer transition-all duration-300 hover:translate-y-[var(--lift-card)] shadow-[var(--shadow-glass-1)] ${theme.bg} ${theme.shadow}`}>
 
             <CardIcon className={`absolute -bottom-4 -right-4 w-28 h-28 opacity-[0.03] -rotate-12 pointer-events-none transition-transform duration-500 group-hover:scale-110 ${theme.text}`} strokeWidth={1} />
 
@@ -565,7 +565,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                     {/* 🤖 BOTÓN MAESTRO DE IA — solo farmacias */}
                     {isFarmacia && <button
                         onClick={aiMode ? () => { setAiMode(false); setTimeout(() => setAiSummaryData(null), 500); } : generateStaffAiSummary}
-                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:-translate-y-1 z-sidebar animate-in zoom-in-95"
+                        className="relative group/ai-btn w-10 h-10 ml-1 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-500 border-0 shadow-[var(--shadow-glow-chart-3-md)] hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:translate-y-[var(--lift-hover)] z-sidebar animate-in zoom-in-95"
                         title={aiMode ? "Cerrar Diagnóstico WFM" : "Diagnóstico Inteligente WFM"}
                     >
                         {aiMode ? (

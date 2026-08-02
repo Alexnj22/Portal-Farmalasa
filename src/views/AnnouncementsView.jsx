@@ -45,7 +45,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
     <div
       data-surface="card"
                     data-tono={isEditingThis ? 'warning' : ann.priority === 'URGENT' ? 'danger' : undefined}
-                    className={`p-6 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu hover:-translate-y-1 ${
+                    className={`p-6 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group relative transform-gpu ${
                         isEditingThis ? 'animate-subtle-shake z-base'
                         : ann.isCompleted ? 'opacity-80 hover:opacity-100'
                         : isScheduled ? 'border-chart-3/30 shadow-[var(--shadow-glow-chart-3-lg)] bg-chart-3/10' : ''

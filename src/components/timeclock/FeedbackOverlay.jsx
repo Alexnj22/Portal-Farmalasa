@@ -144,7 +144,7 @@ export default function FeedbackOverlay({
 
             {/* COLUMNA DERECHA: Tarjeta de Aviso Liquid Glass */}
             {announcement && (
-              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[var(--shadow-glass-dark)] hover:-translate-y-1 ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
+              <div className={`group flex-1 w-full max-w-md flex flex-col rounded-modal overflow-hidden transition-all duration-500 animate-in zoom-in-95 slide-in-from-right-8 cursor-default backdrop-blur-[40px] backdrop-saturate-[150%] shadow-[var(--shadow-glass-dark)] hover:translate-y-[var(--lift-card)] ${isBirthday ? 'bg-gradient-to-b from-chart-6/40 to-warning/30 border border-chart-6/30 hover:border-chart-6/50' : 'bg-white/[0.03] border border-white/10 hover:bg-white/[0.04] hover:border-white/20'}`}>
                 {isBirthday && (
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-modal">
                     <div className="absolute -top-8 -right-8 text-[120px] opacity-[0.07] select-none">🎂</div>

@@ -1940,6 +1940,16 @@
     box-shadow: var(--card-shadow-hover);
     transform: translateY(var(--lift-card));
   }
+  /* Una tarjeta DENTRO de otra no agrega su propio lift. `:hover` matchea al
+     elemento y a todos sus ancestros, así que al apuntar la interna se
+     levantaban las dos y el desplazamiento se acumulaba: medido el 2026-08-02,
+     4px en /staff, /schedules y /announcements contra los 2px de una tarjeta
+     suelta. §5.1 ya dice que no se anidan tarjetas —una franja interna va con
+     `bg-surface-card-hover` + borde— pero mientras existan, que no se sumen.
+     La externa sigue levantándose y se lleva a la interna con ella. */
+  [data-surface="card"] [data-surface="card"]:hover {
+    transform: none;
+  }
 }
 
 [data-surface="page-header"] {

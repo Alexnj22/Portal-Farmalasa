@@ -300,7 +300,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
       <div className="flex flex-col gap-2 flex-1">
         {types.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
           <button key={key} onClick={() => onSelect(key)}
-            className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left hover:-translate-y-0.5 transition-all ${bg}`}>
+            className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left hover:translate-y-[var(--lift-hover)] transition-all ${bg}`}>
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
               <Icon size={15} strokeWidth={2} className={color} />
             </div>

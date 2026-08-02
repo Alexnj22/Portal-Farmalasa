@@ -882,7 +882,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             hover: 'hover:bg-warning/10 hover:border-warning/40 hover:shadow-[var(--shadow-glow-warning)]' };
 
                                                     return (
-                                                        <div key={ev.id || idx} className={`group/card ${cfg.bg} border ${cfg.border} rounded-3xl p-4 flex flex-col gap-3 ${cfg.hover} hover:-translate-y-0.5 transition-all duration-300 shadow-sm cursor-default`}>
+                                                        <div key={ev.id || idx} className={`group/card ${cfg.bg} border ${cfg.border} rounded-3xl p-4 flex flex-col gap-3 ${cfg.hover} hover:translate-y-[var(--lift-card)] transition-all duration-300 shadow-sm cursor-default`}>
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className="flex items-center gap-2.5">
                                                                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge} border group-hover/card:scale-110 transition-transform duration-300`}>

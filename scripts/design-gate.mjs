@@ -235,7 +235,13 @@ const EXCEPTIONS = {
   'src/views/AnnouncementsView.jsx': ['white'],
   'src/views/PermissionsView.jsx': ['white'],
   'src/views/BranchDetailView.jsx': ['white'],
-  'src/views/employee/EmployeeProfileView.jsx': ['white'],
+  // 'lift-clavado': la fila de vacaciones es tarjeta O tiene lift a mano, nunca
+  // las dos — ambas ramas cuelgan del MISMO `isUpcoming` y dan 2px
+  // (`data-surface="card"` cuando ya pasó; lift a mano cuando es próxima y no
+  // hay superficie que la levante). El gate ve las dos cosas en la etiqueta y
+  // no puede probar que las condiciones son complementarias; queda anotado acá
+  // en vez de reescribir el marcado sólo para esconderlo del escáner.
+  'src/views/employee/EmployeeProfileView.jsx': ['white', 'lift-clavado'],
   'src/views/productos/tabminmax/LabsPanel.jsx': ['white'],
   // Barridos especulares (`via-white/[0.08-0.25]`) sobre botones brand: el
   // fondo es azul en los 4 temas, así que el destello blanco es correcto —
@@ -355,6 +361,36 @@ const NATIVE_PATTERNS = [
 // legado sin efecto) no es un elemento nativo, es un bug de props aparte.
 const DATE_TYPE_RE = /type=["'](date|time|datetime-local|month|week)["']/g;
 const TAG_OPEN_RE = /<([A-Za-z][\w.]*)/g;
+
+/**
+ * Devuelve la etiqueta de apertura COMPLETA que contiene la posición `pos`,
+ * respetando llaves, comillas y template literals.
+ *
+ * Existe porque el atajo `<[A-Za-z][^>]*?…>` corta en el primer `>`, y dentro
+ * de un tag JSX ese `>` aparece en cualquier `=>` o `===`. Con ese regex, una
+ * tarjeta cuyo `data-tono` lleva un `===` quedaba "cerrada" antes de su propio
+ * `className`, así que su lift a mano era invisible para el gate: fue
+ * exactamente el falso negativo de `AnnouncementsView` (2026-08-02), detectado
+ * midiendo 4px en el navegador con el gate en verde.
+ */
+function tagQueContiene(txt, pos) {
+  let ini = txt.lastIndexOf('<', pos);
+  while (ini > 0 && !/[A-Za-z]/.test(txt[ini + 1] || '')) ini = txt.lastIndexOf('<', ini - 1);
+  if (ini < 0) return null;
+  let i = ini + 1, llaves = 0, comilla = null;
+  while (i < txt.length) {
+    const c = txt[i];
+    if (comilla) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === comilla) comilla = null;
+    } else if (c === '"' || c === "'" || c === '`') comilla = c;
+    else if (c === '{') llaves++;
+    else if (c === '}') llaves--;
+    else if (c === '>' && llaves === 0) return { texto: txt.slice(ini, i + 1), ini };
+    i++;
+  }
+  return null;
+}
 
 function nearestOpenTag(lines, lineIdx) {
   for (let i = lineIdx; i >= 0 && i >= lineIdx - 20; i--) {
@@ -987,20 +1023,58 @@ function scanFile(path) {
   // es exactamente el tipo de regla que se rompe sola si nada la verifica.
   // Bloqueante en cero desde que se corrigieron las 11.
   if (!hasException(path, 'lift-clavado') && /\.jsx$/.test(path)) {
-    const APERTURA_CARD = /<[A-Za-z][^>]*?data-surface="card"[\s\S]{0,500}?>/g;
+    // (a) La tarjeta que ya se levanta sola y encima trae un lift a mano.
+    //     `data-surface` se acepta literal Y dinámico (`={x ? 'card' : …}`):
+    //     `EmployeeProfileView` lo tenía condicional, así que la MISMA fila se
+    //     movía 4px o 2px según la fecha.
+    //
+    //     La etiqueta de apertura se delimita con un escáner que respeta
+    //     llaves y comillas, NO con `[^>]*?…>`: ese regex corta en el primer
+    //     `>`, que dentro de un tag aparece en cualquier `=>` o `===`. Por eso
+    //     dejó pasar `AnnouncementsView` —una tarjeta con lift a mano— y el
+    //     gate daba verde con el bug adentro.
+    const CARD_ATTR = /data-surface=(?:"card"|\{[^}]*'card'[^}]*\})/g;
     let m;
-    while ((m = APERTURA_CARD.exec(text))) {
-      const clases = m[0].match(/hover:-?translate-y-[^\s"'`}]+|hover:scale-[^\s"'`}]+/g);
+    while ((m = CARD_ATTR.exec(text))) {
+      const tag = tagQueContiene(text, m.index);
+      if (!tag) continue;
+      const clases = tag.texto.match(
+        /(?<![\w-])hover:-translate-y-(?:\[[^\]]+\]|[\w.]+)|(?<![\w-])hover:translate-y-\[var\(--lift-[a-z]+\)\]|(?<![\w-])hover:scale-[^\s"'`}]+/g);
       if (!clases) continue;
-      const linea = text.slice(0, m.index).split('\n').length;
+      const linea = text.slice(0, tag.ini).split('\n').length;
       if (isComment[linea - 1]) continue;
       findings.push({
         line: linea,
         label: `\`${clases[0]}\` sobre una tarjeta que YA se levanta con \`--lift-card\` — se SUMAN (DESIGN.md §5)`,
         category: 'lift-clavado',
-        text: m[0].replace(/\s+/g, ' ').slice(0, 120),
+        text: tag.texto.replace(/\s+/g, ' ').slice(0, 120),
       });
     }
+
+    // (b) CUALQUIER lift propio con el número clavado, en control o superficie.
+    //     Barridos los 79 el 2026-08-02 (v2.341.0): iban de 1px a 8px sin pasar
+    //     por ningún token, así que dos botones hermanos se movían distinto y
+    //     ningún tema podía apagarlos —la neutralización de Solid los alcanza
+    //     por el nombre de la clase, pero eso es un parche, no el patrón.
+    //
+    //     `group-hover:` queda FUERA a propósito: mueve a un HIJO y no toca la
+    //     caja de hit-testing del padre, así que no es un lift sino una
+    //     animación decorativa (un ícono que sube dentro de la tarjeta). Son 14
+    //     y tienen sus propios valores por buenas razones.
+    const LIFT_CLAVADO = /(?<![\w-])hover:-translate-y-(?:\[[^\]]+\]|[\w.]+)/g;
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      LIFT_CLAVADO.lastIndex = 0;
+      let mm;
+      while ((mm = LIFT_CLAVADO.exec(line))) {
+        findings.push({
+          line: i + 1,
+          label: `\`${mm[0]}\` con el número clavado — \`hover:translate-y-[var(--lift-card)]\` en una superficie, \`var(--lift-hover)\` en un control (DESIGN.md §2/§5)`,
+          category: 'lift-clavado',
+          text: line.trim().slice(0, 120),
+        });
+      }
+    });
   }
 
   // ── `capa-flotante` (2026-08-01) ──────────────────────────────────────

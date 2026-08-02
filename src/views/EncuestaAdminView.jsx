@@ -995,7 +995,7 @@ export default function EncuestaAdminView() {
                                         ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card backdrop-blur-2xl z-base'
                                         : isEditing
                                             ? 'bg-surface-card backdrop-blur-xl border-warning/40 shadow-[var(--shadow-elevation-sm)]'
-                                            : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:-translate-y-1 bg-surface-card backdrop-blur-2xl'
+                                            : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)] bg-surface-card backdrop-blur-2xl'
                                 }`}>
 
                                     {/* ── Card header ── */}

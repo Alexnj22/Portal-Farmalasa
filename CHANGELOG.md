@@ -21,6 +21,66 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.340.0 — E4: el maestro de proveedores del ERP
+
+El libro de compras sacaba el NIT del proveedor **solo** de la ficha del portal,
+sin ningún respaldo. Y 21 proveedores con 142 compras no tenían ficha: sus filas
+salían con el NIT en blanco. **98 filas y $17,757 en doce meses.** Este bloque
+las llena trayendo el maestro de proveedores del ERP.
+
+**Por qué una edge function y no un script local.** Las credenciales que sirven
+son las de compras, y viven en la bóveda del servidor. Sacarlas a disco para
+correr un script hubiera sido el único paso de todo esto que empeora la
+seguridad. `scrape-erp-proveedores` hace login, descubre los 133 proveedores del
+catálogo y lee cada ficha, con tres modos de los cuales dos no escriben nada.
+
+**H23 · El `id_proveedor` del ERP no es global.** Probado con las dos cuentas
+contra los mismos ids: con la de clientes, el 112 viene vacío y el 125 trae
+ficha; con la de compras es exactamente al revés. El mismo número apunta a
+proveedores distintos según con qué usuario se entre. `suppliers.erp_supplier_id`
+sale de la descarga de compras, así que ésa es la única cuenta que numera igual
+que nosotros — con la otra, el barrido habría importado datos de otra empresa
+encima de fichas reales.
+
+**La regla: el ERP solo llena lo que el portal no tiene.** Nunca pisa. No es
+prudencia genérica, está medido: el maestro del ERP tiene 6 NIT equivocados, y
+esta sesión lo confirmó desde una segunda fuente — la ficha de
+`editar_proveedor.php` trae los mismos errores que el libro de compras del ERP,
+**52 de 52 coincidencias entre ambos**, incluido el `111` de PHARMALAND. Los 6
+están respaldados en el portal por DTE firmados. Si el ERP pisara, el libro
+empeoraría. Por eso `nit` no se toca nunca en una ficha existente, y `percibe_1`
+es asimétrico: el ERP puede encenderlo, nunca apagarlo.
+
+**Ligar en vez de duplicar.** Al traer los proveedores sin compras aparecieron
+DIALCA y BANCO PROMÉRICA, que el portal ya conoce por DTE pero sin vínculo al
+ERP. Crearles ficha nueva habría dejado dos del mismo contribuyente, y el libro
+habría usado la que tuviera `supplier_id` —la del ERP— en vez de la del DTE
+firmado. Ahora se busca por NIT y por NRC normalizado antes de crear: si existe
+sin vínculo se liga, y si ya está vinculada a otro se reporta y no se toca.
+Sirvió de inmediato: **MIO PHARMA comparte NIT con GENACOL** y quedó reportado
+como conflicto en vez de duplicar.
+
+**`nit_sv_valido`, y las dos veces que se equivocó.** El catálogo del ERP tiene
+`PROVEEDOR PRUEBA` con NIT `43532453245325`. Copiar un identificador sin medirlo
+es como no tenerlo, así que el barrido valida la forma. La primera versión exigía
+que los dos primeros dígitos fueran un departamento (01-14) y **descartaba 5
+proveedores legítimos** con NIT `9x` —uno de ellos con compras reales, y otro que
+el ERP declara con ese mismo número en su libro—. La segunda validaba la fecha
+embebida y **descartaba a las personas naturales**, que desde 2018 usan su DUI de
+9 dígitos como NIT; el portal ya tenía dos así, traídas por DTE firmados. Las dos
+las delató el ensayo `BEGIN … ROLLBACK` con los datos reales, no la lectura.
+
+**H25 · Un séptimo NIT malo, y éste es imposible.** NEGOCIOS VIDZA tiene
+`06014018141032` en el ERP — día 40, mes 18 — y el ERP lo declara así en su libro
+hoy. No entra.
+
+Resultado, verificado después de aplicar: **54 fichas creadas, 1 ligada, 31
+completadas**, 107 → 161 fichas, cero duplicados de `supplier_id`, de NIT y de
+NRC. Las filas del libro sin NIT pasan de **98 / $17,757 a 28 / $866.12**, y lo
+que queda es casi todo **PEPSI**, que el ERP no identifica con NIT, NRC ni DUI.
+`source='erp'` distingue estas fichas de las que nacieron de un DTE: el origen
+decide a quién creerle.
+
 ## v2.339.1 — El lift sale de un token y se apaga con un menú abierto
 
 Cierra la decisión que quedó abierta en v2.337.2: **el lift se queda como

@@ -413,7 +413,7 @@ solo. Y la deriva —que hoy ocurre y nadie ve— pasa a ser un aviso.
 | **E1** | **Empezar a guardar el costo unitario por línea vendida** | **Es lo único irreversible de todo el documento.** El resto se puede hacer en dos meses sin perder nada; esto no: lo que no se capture hoy no existe mañana, y sin él no hay costo de ventas ni Estado de Resultados. Aunque nada lo consuma todavía, hay que empezar a escribirlo. |
 | E2 | Notas de crédito: vista "libro ajustado" con las dos verdades lado a lado; y capturarlas donde nacen | $1,677.61 de julio se declara estos días |
 | E3 | Anexo de retención de Renta (Art. 156); alarma de sujeto excluido (Art. 119) | `retiene_renta` existe y no se usa en ningún lado |
-| **E4** | **Barrido del maestro de proveedores del ERP** vía `editar_proveedor.php` | trae lo que ningún CSV publica (giro, categoría, percibe 1%, teléfono, dirección, DUI) y los 49 proveedores que el portal nunca vio. **Va después de A1.** Ver Parte 5 |
+| ~~**E4**~~ | ~~**Barrido del maestro de proveedores del ERP**~~ | ✅ **HECHO** el 2026-08-02 (v2.340.0). Ver Parte 6 |
 
 ---
 
@@ -810,3 +810,73 @@ declaran aparte, se duplicarían.
 | **H22** | El NIT del proveedor viaja en la **columna 4** del CSV del libro que `fastBackfill` ya descarga, y no se lee. 21 proveedores con 142 compras salen en el libro **sin NIT** (98 filas / $17,757 en 12 meses) porque no tienen ficha. |
 | **H23** | El `id_proveedor` del ERP **no es global**: el mismo número devuelve proveedores distintos según con qué cuenta se entre. El barrido exige la cuenta de compras. |
 | **H24** | **495 DTE de gastos de 2026** (299 CCF, $1,176.23 de IVA) de servicios que no pasan por el módulo de compras del ERP **no aparecen en ningún libro**. Si no se declaran por otra vía, es crédito fiscal perdido. |
+
+---
+
+# Parte 6 — E4 hecho: el maestro de proveedores del ERP (2026-08-02)
+
+Migraciones `20260802203718` … `20260802204432` · edge function
+`scrape-erp-proveedores` · v2.340.0.
+
+## Resultado
+
+| | Antes | Después |
+|---|---|---|
+| Fichas en `proveedores_maestro` | 107 | **161** |
+| Fichas con vínculo al ERP | 68 | **123** |
+| **Filas del libro sin NIT (12 meses)** | **98 · $17,757** | **28 · $866.12** |
+| `supplier_id` / NIT / NRC duplicados | 0 | **0** |
+
+54 creadas, 1 ligada, 31 completadas. Lo que queda sin NIT es casi todo **PEPSI**
+(27 filas, $784.93): el ERP no lo identifica con NIT, NRC ni DUI, y el CHECK
+`nit IS NOT NULL OR dui IS NOT NULL` impide crearle ficha — correctamente, porque
+una ficha que no identifica a un contribuyente no sirve en un libro de IVA.
+
+## Las reglas que hacen que esto sea seguro
+
+1. **El ERP solo llena lo vacío. Nunca pisa.** `nit` no se toca jamás en una
+   ficha existente; solo se escribe al crear una, que por definición no tenía.
+2. **`percibe_1` es asimétrico**: el ERP puede encenderlo, nunca apagarlo. Un
+   `true` del portal salió de un DTE con percepción real; un `false` del ERP solo
+   dice que nadie tildó la casilla. Y `percibe_1_override` gana siempre.
+3. **Ligar antes que crear**: se busca ficha por NIT y por NRC normalizado. Si
+   existe sin vínculo, se liga. Si está vinculada a otro, se reporta y no se toca.
+4. **El NIT se valida por forma antes de creerle** (`nit_sv_valido`).
+5. **La cuenta de compras, no la de clientes** (H23).
+
+## Hallazgos nuevos
+
+| # | Hallazgo |
+|---|---|
+| **H25** | **NEGOCIOS VIDZA tiene un NIT imposible en el ERP**: `06014018141032`, día 40 y mes 18. Y el ERP lo declara así en su libro de compras hoy. Es un séptimo NIT malo, distinto de los 6 de la Parte 4 porque éste no es "diferente del DTE" sino **demostrablemente inválido**. Queda fuera del portal. |
+| **H26** | **`MIO PHARMA` y `GENACOL LATIN AMERICA` comparten NIT** (`06141006091029`) en el maestro del ERP. Son dos fichas del ERP para un mismo contribuyente, o una de las dos tiene el NIT de la otra. El barrido lo reportó como conflicto y no duplicó. **Sin resolver: hay que mirarlo en el ERP.** |
+| **H27** | La ficha de `editar_proveedor.php` y el libro de compras del ERP **coinciden en 52 de 52 NIT**, errores incluidos. O sea que el maestro del ERP es internamente consistente: sus 6 NIT malos no son un desajuste entre pantallas, son el dato que declara. |
+
+## Lo que quedó afuera, y por qué
+
+De los 133 proveedores del catálogo del ERP, **12 no entraron**:
+
+- **Sin NIT ni DUI utilizables (9)**: PEPSI, BRULAB, AVANT PHARMACEUTICAL, DRAGAZ,
+  ADAMS, BANCO PROMÉRICA, NO DEFINIDO, INVERSIONES DROMED, GLOBAL PAY SOLUTIONS.
+- **NIT con forma inválida (3)**: `PROVEEDOR PRUEBA` (`43532453245325`, mes 53),
+  CACELA (`0614160758`, 10 dígitos), NEGOCIOS VIDZA (H25). PHARMALAND entró con
+  su NIT bueno del DTE — el `111` del ERP se descartó.
+
+**BANCO PROMÉRICA es el caso que más molesta**: el portal ya tiene su ficha por
+DTE y el ERP tiene su `id_proveedor`, pero el ERP no le registra NIT, así que no
+hay por dónde ligarlos automáticamente sin inventar el vínculo. Se puede resolver
+a mano desde el select "Match ERP" de la ficha — que ahora, con A2, avisa si ese
+proveedor del ERP ya está tomado.
+
+## Riesgo conocido que queda abierto
+
+Las 54 fichas nuevas llevan el NIT **del ERP**, no de un DTE firmado. Si mañana
+llega un DTE de uno de esos proveedores con un NIT distinto —que es exactamente
+lo que pasó con los 6 de la Parte 4—, `upsert_proveedor_from_dte` busca por NIT,
+no lo encuentra, y **crea una segunda ficha**. La primera seguiría con el vínculo
+al ERP, así que el libro usaría el NIT del ERP y no el firmado.
+
+Hoy no puede pasar en silencio: el barrido dejó **0 NRC duplicados**, así que un
+detector de "dos fichas con el mismo NRC normalizado" arrancaría en cero y
+cualquier caso nuevo sería visible. **Va al Bloque B**, que es donde viven las
+alarmas.

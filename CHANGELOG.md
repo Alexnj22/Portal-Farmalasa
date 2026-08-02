@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.345.2 — Arreglo: la vista nueva reventaba por props inventadas
+
+Al entrar a **Compras Completo** la pantalla moría con
+`Minified React error #130` — *"element type is invalid: got undefined"*, o sea
+que estaba renderizando un componente que no existe.
+
+Eran cuatro props y componentes que inventé en vez de mirar cómo los llama la
+vista hermana:
+
+| Escribí | Existe |
+|---|---|
+| `FilterBar.Pill` | `FilterBar.Chip` |
+| `GlassViewLayout` con `searchValue` / `barraFiltros` | `filtersContent`, y la barra va dentro del cuerpo |
+| `TablePagination` sin `totalPages` | lo necesita |
+| `PeriodStepper` con `onCurrent` | `onReset` |
+
+Reescrita con la **misma firma** que `LibrosIvaView`, que es la vista hermana y
+la que está probada. Queda anotado en el encabezado del archivo: si hay que
+cambiar algo, mirar primero cómo lo hace la de al lado.
+
+**Y esta vez la abrí en un navegador antes de pushear**, que es exactamente el
+paso que faltó las dos veces que rompí algo hoy: compilar, lintear y pasar los
+cinco gates no prueba que la pantalla monte. Verificado con Playwright contra un
+build de producción: Libros IVA sigue montando, Compras Completo monta con sus
+filas, el aviso de crédito fiscal fuera del libro aparece, y la pestaña *Sin
+compra ERP* filtra.
+
 ## v2.345.1 — Arreglo: el portal no cargaba por MODULE_MAP incompleto
 
 **Outage. El portal no abría para nadie**, con

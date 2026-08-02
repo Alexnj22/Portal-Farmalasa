@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookOpen, Download, AlertTriangle, SearchX, Mail, Database } from 'lucide-react';
+import { BookOpen, Download, AlertTriangle, SearchX, Mail, Percent } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
+import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import CarrilCards from '../../components/common/CarrilCards';
@@ -21,15 +22,14 @@ import { fetchLibroComprasCompleto } from '../../data/libroComprasCompleto';
 // ─────────────────────────────────────────────────────────────────────────────
 // Libro de compras COMPLETO — vista propia, no una pestaña de Libros IVA.
 //
-// Está separado a propósito y por pedido explícito (2026-08-02): el libro de
-// Libros IVA sale del ERP y su valor es que se puede cotejar contra el archivo
-// del origen —mismo contenido, mismo formato— para confirmar que no sobra ni
-// falta nada. Mezclarlos rompería esa prueba.
+// Separada a propósito y por pedido explícito (2026-08-02): el libro de Libros
+// IVA sale del ERP y su valor es que se puede cotejar contra el archivo del
+// origen —mismo contenido, mismo formato— para confirmar que no sobra ni falta
+// nada. Mezclarlos rompería esa prueba.
 //
 // Éste responde otra pregunta: **qué compró la farmacia de verdad**. Suma a las
 // compras del ERP los DTE que llegaron por correo y nunca se registraron como
-// compra. Junio-julio 2026: 528 documentos y $10,921.99 de crédito fiscal que el
-// otro libro no ve.
+// compra.
 //
 // Y hace dos cosas mejor que el ERP, a propósito:
 //   · el número de documento va COMPLETO (el ERP lo corta a 20 y así su libro no
@@ -39,6 +39,12 @@ import { fetchLibroComprasCompleto } from '../../data/libroComprasCompleto';
 // Lo que NO hace: restar las notas de crédito. El ajuste del Art. 62 está
 // pendiente de confirmación con el contador, y meterlo sin esa confirmación
 // sería inventar una tercera verdad.
+//
+// NOTA DE ESTRUCTURA: los componentes se llaman con la MISMA firma que
+// `LibrosIvaView`, que es la vista hermana y la que está probada. La primera
+// versión inventó props (`FilterBar.Pill`, `searchValue` en GlassViewLayout,
+// `TablePagination` sin `totalPages`) y reventó con React #130 al abrirla. Si
+// hay que cambiar algo acá, mirar primero cómo lo hace la de al lado.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -71,13 +77,18 @@ const fmtFecha = (iso) => {
     return `${d}/${m}/${y}`;
 };
 
+const TABS = [
+    { key: 'todos',      label: 'Todos'          },
+    { key: 'sin_compra', label: 'Sin compra ERP' },
+];
+
 const COLS = [
     { key: 'fecha',     label: 'Fecha',      align: 'left'  },
     { key: 'origen',    label: 'Origen',     align: 'left'  },
     { key: 'documento', label: 'Documento',  align: 'left'  },
     { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
-    { key: 'nrc',       label: 'NRC',        align: 'left', hideBelow: 'lg' },
-    { key: 'nit',       label: 'NIT',        align: 'left', hideBelow: 'xl' },
+    { key: 'nrc',       label: 'NRC',        align: 'left',  hideBelow: 'lg' },
+    { key: 'nit',       label: 'NIT',        align: 'left',  hideBelow: 'xl' },
     { key: 'gravadas',  label: 'Gravadas',   align: 'right' },
     { key: 'credito',   label: 'Crédito',    align: 'right', hideBelow: 'md' },
     { key: 'total',     label: 'Total',      align: 'right' },
@@ -87,15 +98,15 @@ export default function LibroComprasCompletoView() {
     const { getScope } = useAuth();
     const branches = useStaffStore((s) => s.branches);
 
-    const [mes, setMes]           = useState(mesActual());
-    const [filterBranch, setFB]   = useState('');
-    const [filas, setFilas]       = useState([]);
-    const [loading, setLoading]   = useState(true);
-    const [error, setError]       = useState('');
-    const [busqueda, setBusqueda] = useState('');
-    const [pagina, setPagina]     = useState(1);
-    const [porPagina, setPorPag]  = useState(50);
-    const [soloSinCompra, setSoloSinCompra] = useState(false);
+    const [activeTab, setActiveTab]   = useState('todos');
+    const [mes, setMes]               = useState(mesActual());
+    const [filterBranch, setFB]       = useState('');
+    const [filas, setFilas]           = useState([]);
+    const [loading, setLoading]       = useState(true);
+    const [error, setError]           = useState('');
+    const [busqueda, setBusqueda]     = useState('');
+    const [pagina, setPagina]         = useState(1);
+    const [tamPagina, setTamPagina]   = useState(50);
 
     const cargar = useCallback(async () => {
         setLoading(true);
@@ -122,26 +133,25 @@ export default function LibroComprasCompletoView() {
         (id) => branches.find(b => b.id === id)?.name ?? (id ? `Suc. ${id}` : 'Sin sucursal'),
         [branches]);
 
-    const visibles = useMemo(() => {
-        let out = filas;
-        if (soloSinCompra) out = out.filter(r => r.origen !== 'ERP');
-        if (busqueda) {
-            const q = normalizeText(busqueda);
-            out = out.filter(r =>
-                normalizeText(r.proveedor || '').includes(q) ||
-                normalizeText(r.documento_completo || '').includes(q) ||
-                normalizeText(r.nit || '').includes(q));
-        }
-        return out;
-    }, [filas, soloSinCompra, busqueda]);
+    const delTab = useMemo(
+        () => (activeTab === 'sin_compra' ? filas.filter(r => r.origen !== 'ERP') : filas),
+        [filas, activeTab]);
+
+    const filasVistas = useMemo(() => {
+        const q = normalizeText(busqueda.trim());
+        if (!q) return delTab;
+        return delTab.filter(r =>
+            normalizeText(r.proveedor || '').includes(q) ||
+            normalizeText(r.documento_completo || '').includes(q) ||
+            normalizeText(r.nit || '').includes(q));
+    }, [delTab, busqueda]);
 
     const totales = useMemo(() => {
-        const acc = { docs: 0, gravadas: 0, credito: 0, total: 0, sinCompra: 0, creditoSinCompra: 0 };
+        const acc = { docs: 0, credito: 0, total: 0, sinCompra: 0, creditoSinCompra: 0 };
         for (const r of filas) {
             acc.docs++;
-            acc.gravadas += Number(r.compras_gravadas || 0);
-            acc.credito  += Number(r.credito_fiscal || 0);
-            acc.total    += Number(r.total || 0);
+            acc.credito += Number(r.credito_fiscal || 0);
+            acc.total   += Number(r.total || 0);
             if (r.origen !== 'ERP') {
                 acc.sinCompra++;
                 acc.creditoSinCompra += Number(r.credito_fiscal || 0);
@@ -150,12 +160,13 @@ export default function LibroComprasCompletoView() {
         return acc;
     }, [filas]);
 
+    const totalPaginas = Math.max(1, Math.ceil(filasVistas.length / tamPagina));
     const paginadas = useMemo(() => {
-        const ini = (pagina - 1) * porPagina;
-        return visibles.slice(ini, ini + porPagina);
-    }, [visibles, pagina, porPagina]);
+        const ini = (pagina - 1) * tamPagina;
+        return filasVistas.slice(ini, ini + tamPagina);
+    }, [filasVistas, pagina, tamPagina]);
 
-    useEffect(() => { setPagina(1); }, [busqueda, soloSinCompra, mes, filterBranch]);
+    useEffect(() => { setPagina(1); }, [busqueda, activeTab, mes, filterBranch]);
 
     const exportar = useCallback(() => {
         const [desde] = rangoDelMes(mes);
@@ -168,7 +179,7 @@ export default function LibroComprasCompletoView() {
                     fmtFecha(r.fecha), r.origen, nombreSucursal(r.branch_id),
                     r.documento_tipo || '',
                     // El COMPLETO, no el cortado a 20 del ERP: es justamente lo
-                    // que este libro hace mejor.
+                    // que este libro hace mejor que su origen.
                     r.documento_completo || '',
                     r.nrc || '', r.nit || '', r.proveedor || '',
                     Number(r.compras_exentas || 0), Number(r.compras_gravadas || 0),
@@ -177,8 +188,8 @@ export default function LibroComprasCompletoView() {
                     r.retencion_iva == null ? '' : Number(r.retencion_iva),
                     r.anulada ? 'SI' : '',
                 ]),
-                ['TOTALES', '', '', '', '', '', '', '',
-                 '', totales.gravadas, totales.credito, totales.total, '', '', ''],
+                ['TOTALES', '', '', '', '', '', '', '', '', '',
+                 totales.credito, totales.total, '', '', ''],
             ],
         );
         useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_COMPLETO_EXPORT', mes, {
@@ -187,14 +198,25 @@ export default function LibroComprasCompletoView() {
         });
     }, [filas, mes, totales, nombreSucursal]);
 
-    const puedeElegirSucursal = getScope('libro_compras_completo') !== 'BRANCH';
     const branchOptions = useMemo(
         () => branches.map(b => ({ value: String(b.id), label: b.name })), [branches]);
+    const puedeElegirSucursal = getScope('libro_compras_completo') !== 'BRANCH';
+
+    const filtersContent = (
+        <ViewTabBar
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            searchValue={busqueda}
+            onSearchChange={setBusqueda}
+            placeholder="Buscar proveedor, documento o NIT…"
+        />
+    );
 
     const barraFiltros = (
         <FilterBar
-            onClear={() => { setFB(''); setMes(mesActual()); setSoloSinCompra(false); }}
-            activeCount={[filterBranch, mes !== mesActual(), soloSinCompra].filter(Boolean).length}
+            onClear={() => { setFB(''); setMes(mesActual()); }}
+            activeCount={[filterBranch, mes !== mesActual()].filter(Boolean).length}
             acciones={[{
                 key: 'exportar',
                 icon: Download,
@@ -217,114 +239,127 @@ export default function LibroComprasCompletoView() {
                     onPrev={() => setMes(m => correrMes(m, -1))}
                     onNext={() => setMes(m => correrMes(m, 1))}
                     nextDisabled={mes >= mesActual()}
+                    onReset={() => setMes(mesActual())}
                     isCurrent={mes === mesActual()}
-                    onCurrent={() => setMes(mesActual())} />
+                    resetLabel="Ir al mes actual"
+                />
             </FilterBar.Section>
         </FilterBar>
     );
 
+    // El vacío se explica en vez de quedar en "no hay datos": un fallo de la
+    // consulta y un mes sin movimiento se ven igual, y confundirlos es lo que
+    // haría presentar un libro incompleto sin saberlo.
+    const vacio = error
+        ? { icon: AlertTriangle,
+            message: 'No se pudo generar el libro',
+            subtext: 'Es un fallo de la consulta, no un mes sin movimiento. No presentes nada de esta pantalla.' }
+        : busqueda.trim()
+            ? { icon: SearchX,
+                message: `Sin coincidencias para «${busqueda.trim()}»`,
+                subtext: 'La búsqueda recorta lo que ves; el CSV sigue saliendo con el libro completo.' }
+            : { icon: BookOpen,
+                message: `Sin compras en ${etiquetaMes(mes)}`,
+                subtext: activeTab === 'sin_compra'
+                    ? 'Todos los documentos del mes están registrados como compra en el ERP.'
+                    : undefined };
+
     return (
         <GlassViewLayout
-            title="Libro de Compras Completo"
             icon={BookOpen}
-            searchValue={busqueda}
-            onSearchChange={setBusqueda}
-            searchPlaceholder="Buscar proveedor, documento o NIT..."
-            barraFiltros={barraFiltros}>
+            title="Compras Completo"
+            filtersContent={filtersContent}
+            transparentBody={true}
+        >
+            <div className="p-5 md:p-6 space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    <CarrilCards>
+                        <StatCard icon={BookOpen} label="Documentos" value={totales.docs} loading={loading}
+                            sub={`${totales.docs - totales.sinCompra} del ERP · ${totales.sinCompra} por correo`} />
+                        <StatCard icon={Mail} label="Compras" value={formatMoney(totales.total)}
+                            sub="Del período" loading={loading} />
+                        <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.credito)}
+                            sub="Documentado" loading={loading} />
+                    </CarrilCards>
+                    <div className="flex justify-end min-w-0">{barraFiltros}</div>
+                </div>
 
-            <Notice variant="info" icon={BookOpen}>
-                No reemplaza al libro de <b>Libros IVA</b>, que sale del ERP y sirve para
-                cotejarse contra el archivo del origen. Éste suma las compras del ERP y
-                los DTE recibidos por correo que nunca se registraron como compra, y
-                exporta el <b>número de documento completo</b>.
-            </Notice>
+                {error && (
+                    <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>
+                )}
 
-            {totales.sinCompra > 0 && (
-                <Notice variant="warning" icon={AlertTriangle}>
-                    <b>{totales.sinCompra}</b> documento(s) llegaron por correo y no están
-                    registrados como compra en el ERP — <b>{formatMoney(totales.creditoSinCompra)}</b> de
-                    crédito fiscal que el libro del ERP no incluye. El Art. 65 de la Ley de IVA
-                    da tres períodos para reclamarlo.
+                <Notice variant="info" icon={BookOpen} compact>
+                    No reemplaza al libro de <b>Libros IVA</b>, que sale del ERP y sirve para
+                    cotejarse contra el archivo del origen. Éste suma las compras del ERP y los
+                    DTE recibidos por correo que no están registrados como compra, y exporta el
+                    número de documento completo.
                 </Notice>
-            )}
 
-            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+                {!loading && totales.sinCompra > 0 && (
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        <b>{totales.sinCompra}</b> documento(s) llegaron por correo y no están
+                        registrados como compra en el ERP — <b>{formatMoney(totales.creditoSinCompra)}</b> de
+                        crédito fiscal que el libro del ERP no incluye. El Art. 65 de la Ley de IVA
+                        da tres períodos para reclamarlo. Antes de reclamar nada hay que revisarlos
+                        uno por uno: que no esté registrado con otro número no prueba que falte.
+                    </Notice>
+                )}
 
-            <CarrilCards>
-                <StatCard icon={BookOpen} label="Documentos" value={totales.docs}
-                    sub={`${totales.docs - totales.sinCompra} del ERP · ${totales.sinCompra} por correo`} />
-                <StatCard icon={Database} label="Compras" value={formatMoney(totales.total)}
-                    sub="Del período" />
-                <StatCard icon={Mail} label="Crédito fiscal" value={formatMoney(totales.credito)}
-                    sub="Documentado" />
-            </CarrilCards>
+                <DataTable columns={COLS} loading={loading} empty={vacio}>
+                    {paginadas.map((r, i) => (
+                        <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}>
+                            <DataCell>{fmtFecha(r.fecha)}</DataCell>
+                            <DataCell>
+                                <Badge variant={r.origen === 'ERP' ? 'neutral' : 'warning'} size="sm">
+                                    {r.origen === 'ERP' ? 'ERP' : 'Por correo'}
+                                </Badge>
+                            </DataCell>
+                            <DataCell className="max-w-[15rem]">
+                                <span className="font-mono text-micro break-all">
+                                    {r.documento_completo || '—'}
+                                </span>
+                            </DataCell>
+                            <DataCell className="max-w-[16rem]">
+                                <span className="line-clamp-2 break-words leading-tight">
+                                    {r.proveedor || '—'}
+                                </span>
+                            </DataCell>
+                            <DataCell hideBelow="lg">
+                                {r.nrc
+                                    ? <span className="font-mono text-caption whitespace-nowrap">{formatearNrc(r.nrc)}</span>
+                                    : <Badge variant="warning" size="sm">Falta</Badge>}
+                            </DataCell>
+                            <DataCell hideBelow="xl">
+                                {r.nit
+                                    ? <span className="font-mono text-caption whitespace-nowrap">{formatearNit(r.nit)}</span>
+                                    : <Badge variant="warning" size="sm">Falta</Badge>}
+                            </DataCell>
+                            <DataCell align="right">
+                                <span className="whitespace-nowrap">{formatMoney(r.compras_gravadas)}</span>
+                            </DataCell>
+                            <DataCell align="right" hideBelow="md">
+                                <span className="whitespace-nowrap">{formatMoney(r.credito_fiscal)}</span>
+                            </DataCell>
+                            <DataCell align="right">
+                                <span className="font-black whitespace-nowrap">{formatMoney(r.total)}</span>
+                            </DataCell>
+                        </DataRow>
+                    ))}
+                </DataTable>
 
-            <div className="flex items-center gap-2 flex-wrap">
-                <FilterBar.Pill
-                    active={soloSinCompra}
-                    onClick={() => setSoloSinCompra(v => !v)}
-                    label={`Solo los que no están en el ERP (${totales.sinCompra})`} />
-            </div>
-
-            {!loading && visibles.length === 0 ? (
-                <Notice variant="neutral" icon={SearchX}>
-                    {filas.length === 0
-                        ? `No hay compras registradas en ${etiquetaMes(mes)}.`
-                        : 'Ningún documento coincide con el filtro.'}
-                </Notice>
-            ) : (
-                <>
-                    <DataTable columns={COLS} loading={loading}>
-                        {paginadas.map((r, i) => (
-                            <DataRow key={`${r.origen}-${r.documento_completo}-${i}`}>
-                                <DataCell>{fmtFecha(r.fecha)}</DataCell>
-                                <DataCell>
-                                    <Badge variant={r.origen === 'ERP' ? 'neutral' : 'warning'} size="sm">
-                                        {r.origen === 'ERP' ? 'ERP' : 'Por correo'}
-                                    </Badge>
-                                </DataCell>
-                                <DataCell className="max-w-[15rem]">
-                                    <span className="font-mono text-micro break-all">
-                                        {r.documento_completo || '—'}
-                                    </span>
-                                </DataCell>
-                                <DataCell className="max-w-[16rem]">
-                                    <span className="line-clamp-2 break-words leading-tight">
-                                        {r.proveedor || '—'}
-                                    </span>
-                                </DataCell>
-                                <DataCell hideBelow="lg">
-                                    {r.nrc
-                                        ? <span className="font-mono text-caption whitespace-nowrap">{formatearNrc(r.nrc)}</span>
-                                        : <Badge variant="warning" size="sm">Falta</Badge>}
-                                </DataCell>
-                                <DataCell hideBelow="xl">
-                                    {r.nit
-                                        ? <span className="font-mono text-caption whitespace-nowrap">{formatearNit(r.nit)}</span>
-                                        : <Badge variant="warning" size="sm">Falta</Badge>}
-                                </DataCell>
-                                <DataCell align="right">
-                                    <span className="whitespace-nowrap">{formatMoney(r.compras_gravadas)}</span>
-                                </DataCell>
-                                <DataCell align="right" hideBelow="md">
-                                    <span className="whitespace-nowrap">{formatMoney(r.credito_fiscal)}</span>
-                                </DataCell>
-                                <DataCell align="right">
-                                    <span className="font-black whitespace-nowrap">{formatMoney(r.total)}</span>
-                                </DataCell>
-                            </DataRow>
-                        ))}
-                    </DataTable>
-
+                {filasVistas.length > 0 && (
                     <TablePagination
-                        total={visibles.length}
                         page={pagina}
-                        pageSize={porPagina}
+                        totalPages={totalPaginas}
                         onPageChange={setPagina}
-                        onPageSizeChange={setPorPag}
-                        unit="documentos" />
-                </>
-            )}
+                        pageSize={tamPagina}
+                        onPageSizeChange={setTamPagina}
+                        total={delTab.length}
+                        filteredTotal={busqueda.trim() ? filasVistas.length : undefined}
+                        unit="documentos"
+                    />
+                )}
+            </div>
         </GlassViewLayout>
     );
 }

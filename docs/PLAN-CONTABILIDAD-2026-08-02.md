@@ -991,3 +991,61 @@ aritmética y la estructura de los libros. Eso está bien.
 contra ~$8,500 de menos) y es tentador leerlo como "queda parejo". No queda: son
 dos incumplimientos distintos y solo uno de ellos se sanciona. Se arreglan por
 separado.
+
+---
+
+# Parte 8 — El cruce del libro completo, y una corrección que estaba mal
+
+## H28 corregido: el número era $8,532, no $10,922 — y tampoco $1,581
+
+H28 dio **$10,921.99** de crédito fiscal fuera del libro. Al revisar el cruce
+apareció que `documento_numero` no siempre guarda el código de generación:
+
+| Forma | Compras jun-jul |
+|---|---|
+| Código de generación cortado a 20 | 733 |
+| **Número de CONTROL** | 56 |
+| **Correlativo del proveedor** | 27 |
+| Otras (espacio adentro, `O` por `0`, punto final) | ~59 |
+
+De ahí salió una "corrección" que decía que cruzando **por número de control** lo
+sin registrar bajaba de $7,375 a **$1,581**. **Esa corrección era falsa**, y esta
+es la parte que importa dejar escrita:
+
+> Un número de control mide 31 caracteres y el ERP lo guarda **cortado a 20**,
+> que es exactamente donde vive el correlativo. Los 1,180 DTE de junio-julio
+> tienen **1,171 números de control distintos** y, truncados a 20, quedan
+> **48 claves**. Cruzar por ahí junta ~25 documentos ajenos en cada una.
+
+O sea que el "412 cruzados por número de control" eran falsos positivos masivos.
+Se detectó contando las claves distintas — no leyendo el código.
+
+## El cruce que quedó: dos caminos, y por qué no hay un tercero
+
+| Camino | DTE jun-jul | Qué es |
+|---|---|---|
+| **Código de generación**, normalizado | **654** | 36 caracteres, único. La clave real |
+| Número de control completo | **0** | ninguna compra lo guarda entero |
+| **Proveedor + monto exacto ±3 días** | **81** | **heurística**, no prueba. Recupera $2,356.14 |
+| **Sin cruce** | **445** | **$8,532.37** |
+
+La normalización del documento del ERP (quitar espacios y puntos, `O`→`0`) es
+necesaria porque hay filas tecleadas a mano: `9D063633- C6`, `13130.`,
+`4999COBE-B30`. Un código de generación es hexadecimal, así que una `O` siempre
+es un cero mal escrito.
+
+**Verificado al aplicar:** la rama `registrada` da **$49,525.79**, idéntico al
+libro del Art. 86 — el libro que se presenta no se movió. Y lo "sin registrar"
+baja de 528 documentos a **445**: se fueron **83 falsos positivos por $2,389.62**.
+
+## La lección de método
+
+En una misma sesión el número pasó por **$1,176 → $10,922 → $1,581 → $8,532**, y
+sólo el último está verificado en las dos direcciones. Las tres primeras veces el
+error fue el mismo: **medir con una clave sin comprobar que la clave identifique
+lo que se cree**. El NIT del proveedor, el número truncado a 20, el
+`documento_numero` que guarda tres cosas distintas.
+
+Antes de dar un número que salga de un cruce, hay que contar **cuántas claves
+distintas produce ese cruce**. Si 1,180 documentos colapsan en 48 claves, el
+cruce no identifica nada — y lo dice la aritmética, no la lectura del código.

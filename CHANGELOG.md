@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.346.0 — El cruce del libro completo, con la clave que sí identifica
+
+El libro completo cruzaba las compras con los documentos recibidos **sólo por el
+código de generación cortado a 20**, y mostraba como "sin registrar" 528
+documentos con $10,921.99 de crédito fiscal. Había falsos positivos: el número
+del documento no siempre es el código de generación — de 875 compras, 733 lo son,
+**56 guardan el número de control**, 27 el correlativo del proveedor y ~59 vienen
+tecleadas a mano (`9D063633- C6`, `13130.`, `4999COBE-B30`, con una `O` donde va
+un cero).
+
+**La corrección intermedia era falsa, y vale la pena que quede escrita.** Parecía
+que faltaba cruzar *por número de control*, y con eso lo "sin registrar" bajaba a
+$1,581. Pero **un número de control mide 31 caracteres y el ERP lo guarda cortado
+a 20 — justo donde vive el correlativo**. Los 1,180 documentos de junio-julio
+tienen **1,171 números de control distintos** y, truncados a 20, quedan **48
+claves**: cruzar por ahí junta ~25 documentos ajenos en cada una. Se detectó
+contando las claves distintas, no leyendo el código.
+
+El cruce que quedó son dos caminos:
+
+| Camino | Documentos | Qué es |
+|---|---|---|
+| **Código de generación**, normalizado | **654** | 36 caracteres, único. La clave real |
+| Número de control completo | **0** | ninguna compra lo guarda entero |
+| **Proveedor + monto exacto ±3 días** | **81** | **heurística**, no prueba. Recupera $2,356.14 |
+
+Resultado: lo "sin registrar" baja de **528 a 445 documentos** y de **$10,921.99
+a $8,532.37** — se fueron **83 falsos positivos por $2,389.62**. Y la rama de
+compras registradas sigue dando **$49,525.79**, idéntico al libro del Art. 86: lo
+que se presenta no se movió.
+
+**El número sigue sin ser plata segura**, y el aviso de la vista lo dice: que no
+aparezca una compra con ese monto no prueba que no exista, y el Art. 65-A pide
+que el gasto sea indispensable para el giro. Es el techo.
+
+En una misma sesión el número pasó por **$1,176 → $10,922 → $1,581 → $8,532**, y
+sólo el último está verificado en las dos direcciones. Las tres primeras veces el
+error fue el mismo: medir con una clave sin comprobar que la clave identifique lo
+que se cree. **Antes de dar un número que sale de un cruce hay que contar cuántas
+claves distintas produce ese cruce** — si 1,180 documentos colapsan en 48, el
+cruce no identifica nada, y eso lo dice la aritmética, no la lectura del código.
+
 ## v2.345.4 — Plan de materiales: identidad de los dos temas
 
 `docs/PLAN-MATERIALES-2026-08-02.md` — el contrato de identidad de Liquid Glass

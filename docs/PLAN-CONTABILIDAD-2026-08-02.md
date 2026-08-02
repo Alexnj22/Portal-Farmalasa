@@ -355,6 +355,8 @@ gana el portal**; esta es la única que pierde.
 | | Qué | Nota |
 |---|---|---|
 | C1 | **`purchase_receipts.sello_recibido`** desde la columna 22 del libro y la 6 del anexo, que `fastBackfill` ya descarga (H13) | **con validación (H19)**: solo si mide exactamente 40 alfanuméricos; si no, NULL + marca. 6 de 331 vienen con texto pegado a mano |
+| C1b | **Del mismo archivo, la columna 4: el NIT del proveedor** (H22) | mismo código, un índice más. Ver Parte 5 |
+| C8 | **Ficha automática para los 21 proveedores con compras y sin ficha** (H22) | cierra 98 filas del libro con NIT vacío. Depende de C1b |
 | C2 | Cruce `purchase_receipts` ↔ `purchase_dte_documents` **por sello** | clave exacta; reemplaza el 86.7% difuso |
 | C3 | Exportar el **número de control real** del DTE en vez del stub de 20 del ERP (H2), con respaldo al del ERP cuando no haya cruce | acá el portal deja de copiar y empieza a corregir |
 | C4 | `subtotal` a `numeric(14,4)` + re-sync (H6) | **bloqueado por la respuesta del contador** |
@@ -393,6 +395,7 @@ solo. Y la deriva —que hoy ocurre y nadie ve— pasa a ser un aviso.
 | **E1** | **Empezar a guardar el costo unitario por línea vendida** | **Es lo único irreversible de todo el documento.** El resto se puede hacer en dos meses sin perder nada; esto no: lo que no se capture hoy no existe mañana, y sin él no hay costo de ventas ni Estado de Resultados. Aunque nada lo consuma todavía, hay que empezar a escribirlo. |
 | E2 | Notas de crédito: vista "libro ajustado" con las dos verdades lado a lado; y capturarlas donde nacen | $1,677.61 de julio se declara estos días |
 | E3 | Anexo de retención de Renta (Art. 156); alarma de sujeto excluido (Art. 119) | `retiene_renta` existe y no se usa en ningún lado |
+| **E4** | **Barrido del maestro de proveedores del ERP** vía `editar_proveedor.php` | trae lo que ningún CSV publica (giro, categoría, percibe 1%, teléfono, dirección, DUI) y los 49 proveedores que el portal nunca vio. **Va después de A1.** Ver Parte 5 |
 
 ---
 
@@ -406,13 +409,21 @@ solo. Y la deriva —que hoy ocurre y nadie ve— pasa a ser un aviso.
 | 4 | **D** | El mes cierra, se congela y se vigila solo. |
 | después | **E2**, **E3** | Lo que hoy no se declara y debería. |
 
-## Tres decisiones que necesito de vos
+## Decisiones tomadas — 2026-08-02
 
-1. **¿El anexo de percepción se presenta con 2 o con 4 decimales?** (contador).
-   Bloquea C4. Si es con 2, C4 se borra del plan.
-2. **¿Las notas de crédito se van a capturar en el ERP, o el ajuste se hace al
-   declarar?** Cambia si E2 es una vista o un flujo de captura.
-3. **¿Arranco E1 ya?** Es la única con costo por esperar.
+Repasado bloque por bloque con Alex el 2026-08-02. **Lo aprobado se ejecuta; lo
+demás queda escrito acá y no se vuelve a discutir hasta que él lo reabra.**
+
+| | Decisión | Nota |
+|---|---|---|
+| **A, B, C, D** | ✅ **Aprobados**, en ese orden | el camino principal completo |
+| **C4** (`subtotal` a `numeric(14,4)`) | ⏸️ **Bloqueado** — Alex consulta al contador si el anexo de percepción se presenta con 2 o 4 decimales | el resto de C avanza igual |
+| **E1** (costo por línea vendida) | 📄 **Documentado, no se ejecuta** | queda dicho que es lo único irreversible: cada día que pasa es historia que no se recupera. La decisión es de Alex y está tomada a sabiendas |
+| **E2** (notas de crédito) | 📄 Documentado | |
+| **E3** (retención de Renta / sujeto excluido) | 📄 Documentado | |
+| **E4** (barrido del maestro de proveedores) | ✅ **Aprobado, apenas termine A** | idea de Alex, verificada contra el ERP — ver Parte 5 |
+| **Cosas chicas** (Parte 3 §6) | ✅ Aprobadas | |
+| Los 495 DTE de gastos fuera del libro | 🔍 **Investigar a fondo** antes de tocar nada | Parte 5 §4 |
 
 ## Una nota de higiene
 
@@ -661,3 +672,123 @@ a ser *lo único* que le falta al libro de compras para ser mejor que su origen 
 todas sus columnas. Con H19, la regla de captura es: tomar el sello del ERP **solo
 si mide exactamente 40 caracteres alfanuméricos**; si no, dejarlo vacío y
 marcarlo, porque un sello con `benicar` pegado atrás no es un sello.
+
+---
+
+# Parte 5 — Los proveedores que el portal no tiene (2026-08-02)
+
+Alex propuso barrer el maestro de proveedores del ERP por
+`editar_proveedor.php?id_proveedor=N` para obtener el id del ERP y enlazarlo con
+el portal. Lo probé contra el ERP. **Funciona, pero la premisa se corrige en un
+punto y el alcance crece en otro.**
+
+## 1. El id del ERP ya lo tenemos — lo que falta es la ficha
+
+`suppliers.erp_supplier_id` guarda el id del ERP de los 89 proveedores a los que
+alguna vez se les compró. Para eso no hace falta barrer nada. El hueco real es
+otro:
+
+| | |
+|---|---|
+| Fichas en `proveedores_maestro` | 107 (68 con `supplier_id`, 39 sin) |
+| `suppliers` con compras | 89 |
+| **Con compras y SIN ficha** | **21 · 142 compras · $33,900** |
+| Ids del ERP entre 1 y 138 que el portal nunca vio | 49 |
+
+`get_libro_compras` saca el NIT **solo** de `pm.nit`, sin fallback. Entonces esos
+21 proveedores salen en el libro **con el NIT en blanco**:
+
+| Últimos 12 meses | 98 filas · $17,757 |
+|---|---|
+| 2025-09 | 33 filas · $7,023.88 |
+| 2026-06 | 2 filas · $75.12 |
+| 2026-07 | 1 fila · $28.00 |
+
+Y **ninguno de los 21 tiene un DTE en el portal** (0 coincidencias por NRC, con y
+sin normalizar). O sea: el portal no tiene de dónde sacar su NIT por su cuenta.
+
+## 2. H22 · El NIT viaja en un archivo que ya bajamos y no leemos
+
+El CSV del libro de compras del ERP —**el mismo que `fastBackfill` descarga en
+cada sync** (`LIBRO_CSV`, `sync-erp-purchases:391`)— trae el NIT en la columna 4:
+
+```
+02/09/2025;4;; 32F0F1C2-7433-4017-;06141007840010;DROGUERIA COMERCIAL SALVADOREÑA SA DE CV;…
+                                   └── col 4: el NIT que al portal le falta
+```
+
+Bajado y verificado en Bodega, septiembre 2025: las 22 filas de ese proveedor lo
+traen. `columnaPorNumero(csv, 3, 21)` ya recorre este archivo leyendo las
+columnas 3 y 21 — **el NIT está a un índice de distancia, igual que el sello de
+H13 (columna 22)**. Son la misma corrección de código.
+
+→ Por eso C1 se amplía a C1b y aparece C8: con la columna 4 se puede crear la
+ficha faltante y cerrar las 98 filas sin NIT, **sin barrer nada**.
+
+## 3. E4 · El barrido sirve para lo que ningún CSV publica
+
+Probado: no hay endpoint JSON (`descargar_proveedores_json.php`,
+`reporte_proveedores_json.php`, `proveedores_json.php` → 404 los tres). Hay que
+leer el HTML de `editar_proveedor.php`, ~41 kB por ficha. Lo que devuelve y no
+está en ningún CSV: `nombre_proveedor`, `direccion`, `dui`, `giro`, `telefono1`,
+`hi_percibe` (si percibe el 1%), y los selects `departamento`, `municipio`,
+`distrito`, `categoria_proveedor`, `tipo`, `pais`.
+
+La máquina ya existe: `scripts/migracion-clientes/bloque.py` hace login, cookie,
+reintentos, parseo y checkpoint contra `editar_cliente.php`. Son ~140 fichas, no
+27,591 — minutos, no días. **El código nuevo va en `scripts/migracion-proveedores/`**
+para no colisionar con la migración de clientes, que corre en otra sesión.
+
+### H23 · El `id_proveedor` depende de con qué cuenta del ERP entrás
+
+Probé los mismos ids con las dos credenciales:
+
+| `id_proveedor` | cuenta de clientes (`.env`) | cuenta de compras (`ERP_PURCHASES_CREDS`) |
+|---|---|---|
+| 112 | ficha vacía | **DROGUERIA COMERCIAL SALVADOREÑA** ✅ |
+| 125 | **"PROVEEDOR NO DEFINIDO"** | ficha vacía |
+
+**El mismo número apunta a proveedores distintos según la cuenta.** Es el mismo
+patrón que `feedback_un_id_sin_su_numeracion_apunta_a_dos_cosas`. El barrido
+tiene que usar **la cuenta de compras** — la misma que produce `proveedor.id` en
+`descargar_compras_json.php`. Con la otra importaría datos de otra empresa.
+
+### Dos reglas firmes para el barrido
+
+1. **El ERP solo llena lo que el portal no tiene.** La Parte 4 probó que su
+   maestro tiene 6 NIT equivocados y le borra las comas a las razones sociales.
+   Donde el portal tenga un DTE firmado, gana el portal. Sin esta regla, importar
+   el maestro del ERP **empeora** el libro fiscal.
+2. **Va después de A1.** Crear ~140 fichas de golpe es exactamente el evento que
+   puede generar el `supplier_id` duplicado de H1 — y hoy, sin B1, ese duplicado
+   pasaría la verificación con veredicto IDENTICO.
+
+## 4. H24 · 495 DTE de gastos que no están en ningún libro de compras
+
+Fui a ver las **39 fichas sin `supplier_id`** esperando otro hueco de vinculación.
+No lo son. Las 39 tienen `source='dte'`, cero coincidencia de NRC con algún
+`supplier` libre, y son **gastos y servicios**: ANDA, CAESS, Telefónica/CTE, el
+banco, Boxful, Calleja, fumigaciones, talleres, personas naturales.
+
+Llegan por correo como DTE y **nunca pasan por el módulo de compras del ERP**, así
+que no tienen contraparte en `purchase_receipts` y **no entran al libro**:
+
+| 2026 (al 2 de agosto) | 495 documentos · 299 CCF · **$1,176.23 de IVA** · $16,584.93 |
+|---|---|
+
+Ni el portal ni el ERP los declara, porque el ERP tampoco los conoce.
+
+**No está determinado si la contadora los declara por otra vía** — es
+perfectamente posible que lleve los gastos aparte. Se declara como **no medido**
+en vez de suponerlo. La decisión tomada es **investigarlo a fondo primero**
+(histórico completo, separar lo que da crédito fiscal de lo que no) y recién
+entonces consultarlo. **No incorporarlos al libro sin confirmar**: si ya se
+declaran aparte, se duplicarían.
+
+## Hallazgos nuevos de esta parte
+
+| # | Hallazgo |
+|---|---|
+| **H22** | El NIT del proveedor viaja en la **columna 4** del CSV del libro que `fastBackfill` ya descarga, y no se lee. 21 proveedores con 142 compras salen en el libro **sin NIT** (98 filas / $17,757 en 12 meses) porque no tienen ficha. |
+| **H23** | El `id_proveedor` del ERP **no es global**: el mismo número devuelve proveedores distintos según con qué cuenta se entre. El barrido exige la cuenta de compras. |
+| **H24** | **495 DTE de gastos de 2026** (299 CCF, $1,176.23 de IVA) de servicios que no pasan por el módulo de compras del ERP **no aparecen en ningún libro**. Si no se declaran por otra vía, es crédito fiscal perdido. |

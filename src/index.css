@@ -1511,6 +1511,44 @@
   --tw-scale-z: 100%;
 }
 
+/* ═══ Capa flotante abierta: lo de ATRÁS se queda quieto (2026-08-01) ═════
+   Con un menú abierto, mover el mouse por encima de él hacía entrar y salir
+   de `:hover` a la tarjeta que quedó DEBAJO — y como esa tarjeta se levanta
+   2px, media pantalla saltaba mientras uno elegía una opción. Medido en el
+   tablero cruzando el borde del menú de a 2px: la tarjeta de 532×256 de atrás
+   pasaba de dy=-2 a dy=0.
+
+   El atributo lo pone `src/utils/capaFlotante.js` sobre `#root`, y ahí está la
+   gracia: los portales cuelgan de `body`, o sea que son HERMANOS de `#root` y
+   estos selectores no los alcanzan. El menú abierto conserva sus propios
+   hovers; el resto de la app se queda quieta. Sin una sola excepción a mano.
+
+   Se apagan los efectos y NO el puntero (`pointer-events`/velo `fixed
+   inset-0`) porque el velo rompe el scroll: esta app scrollea un contenedor
+   interno, y un velo colgado de `body` deja la rueda sin ancestro scrolleable.
+   Está medido y anotado en el encabezado de `capaFlotante.js`.
+
+   Mismo mecanismo que la neutralización de Solid de acá arriba —incluida la
+   razón para tocar SOLO la variable del delta y nunca `translate` entero, que
+   rompería los `-translate-x-1/2` que centran popovers. */
+#root[data-capa-flotante] [data-surface="card"]:hover {
+  transform: none;
+  box-shadow: var(--card-shadow);
+}
+#root[data-capa-flotante] [data-surface="page-header"]:hover {
+  transform: none;
+  box-shadow: var(--header-shadow);
+}
+#root[data-capa-flotante] [class*="hover:-translate-y"]:hover,
+#root[data-capa-flotante] [class*="hover:translate-y"]:hover {
+  --tw-translate-y: 0px;
+}
+#root[data-capa-flotante] [class*="hover:scale-"]:hover {
+  --tw-scale-x: 100%;
+  --tw-scale-y: 100%;
+  --tw-scale-z: 100%;
+}
+
 /* `transition-all` anima TODAS las propiedades, incluidas las que fuerzan
    recálculo de layout. Hay 624 usos. En Liquid Glass es parte del material —
    el control responde a todo. En Solid se acota a lo que cambia de verdad al

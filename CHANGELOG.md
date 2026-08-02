@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.337.2 — Un menú abierto deja quieto lo que hay atrás
+
+Con un desplegable abierto, mover el mouse sobre él hacía **saltar la tarjeta
+que quedaba debajo**: el menú se dibuja por portal encima del contenido, pero
+el contenido seguía recibiendo el puntero, así que entraba y salía de `:hover`
+— y `[data-surface="card"]` se levanta 2px. Medido en el tablero cruzando el
+borde del menú de a 2px: la tarjeta de 532×256 de atrás pasaba de `dy=-2` a
+`dy=0`. Se leía como un rebote entre el select y la tarjeta.
+
+Ahora un menú abierto se comporta como capa: mientras esté abierto, lo de atrás
+no reacciona al puntero. El atributo `data-capa-flotante` lo pone
+`src/utils/capaFlotante.js` sobre **`#root`**, y ahí está la gracia — los
+portales cuelgan de `body`, o sea que son hermanos de `#root` y los selectores
+no los alcanzan: **el menú conserva sus propios hovers y el resto de la app se
+queda quieto, sin una sola excepción escrita a mano.** Es un contador y no un
+booleano, porque puede haber un select abierto dentro de un modal.
+
+**El primer intento fue un velo `fixed inset-0`** —lo que ya hace `ModalShell`—
+y resolvía el hover de un saque, sin enumerar efectos. **Rompía el scroll.**
+Esta app no scrollea el `body` sino un contenedor interno, y el velo cuelga de
+`body`: la rueda busca un ancestro scrolleable del velo, encuentra `body`/`html`
+—que no scrollean— y no pasa nada. Verificado con el menú abierto: el scroller
+interno clavado en 400 mientras que con el menú cerrado sí se movía. En
+`ModalShell` no se nota porque ahí bloquear el fondo es lo que se quiere. Por
+eso se apagan los **efectos** y no el **puntero**: el hit-testing queda intacto.
+
+Aplicado a `LiquidSelect`, `SidebarSettingsMenu` y `ThemeToggle`.
+`PeriodPicker`/`RangeDatePicker` ya traían velo propio y `LiquidDatePicker` va
+por `ModalShell`. `LiquidTooltip` queda afuera a propósito: aparece *porque*
+estás hovereando algo, apagarle el hover de atrás sería pelearse consigo mismo.
+
+Verificado en vivo: bouncing eliminado en las 9 posiciones del barrido, scroll
+intacto, la opción bajo el puntero sigue resaltando, el atributo se remueve al
+cerrar y el hover normal vuelve. Sin errores de JS.
+
+**Queda abierto** —requiere decisión de diseño— que el lift de 2px lo aplican
+las **201** `[data-surface="card"]`, de las cuales solo ~8 son clickeables: en
+un barrido de 70 posiciones sobre el tablero, **51 tienen una tarjeta
+moviéndose** bajo el puntero sin que haya ningún menú abierto. Además el
+canónico está clavado en `-2px` en vez de `var(--lift-hover)`, así que en tema
+Solid —cuyo contrato dice "no se mueve; solo cambia de color"— las tarjetas se
+levantan igual en los tres temas.
+
 ## v2.337.1 — Bloques 9 y 10, y el sorteo deja de re-sortear
 
 **4,061 → 5,057 fichas procesadas**, frente secuencial en `erp 5,143`, 22,615

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Moon, Sun, Layers, Monitor, ChevronDown } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import useCapaFlotante from '../../utils/capaFlotante';
 
 const STYLE_META = {
   liquid: { label: 'Liquid Glass', Icon: Layers },
@@ -88,6 +89,11 @@ export default function ThemeToggle({ variant = 'sidebar', className = '' }) {
   const popoverRef = useRef(null);
   const lastCoordsRef = useRef(null);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 220, openUp: false });
+
+  // Con el popover abierto, el contenido de atrás se queda quieto — si no, la
+  // tarjeta que queda debajo entra y sale de :hover mientras uno recorre el
+  // menú. Ver `src/utils/capaFlotante.js`.
+  useCapaFlotante(isOpen);
 
   // Mismo patrón de posicionamiento que LiquidSelect (fix histórico:
   // recalcular en cada frame mientras está abierto, no solo al abrir, para

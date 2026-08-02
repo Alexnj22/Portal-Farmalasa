@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import useCoarsePointer from '../../hooks/useCoarsePointer';
+import useCapaFlotante from '../../utils/capaFlotante';
 import SelectorTactil from './SelectorTactil';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -190,6 +191,12 @@ const LiquidSelect = ({
     const CORTE_HOJA = 12;
     const esTactil = useCoarsePointer();
     const usaHoja = esTactil && !nano && (serverSearch || options.length > CORTE_HOJA);
+
+    // Con el menú abierto, el contenido de ATRÁS deja de reaccionar al puntero
+    // (ver `src/utils/capaFlotante.js`). La hoja táctil no lo necesita: va
+    // dentro de ModalShell, que ya tapa el fondo con un velo real — y en un
+    // dispositivo táctil no hay hover que apagar.
+    useCapaFlotante(isOpen && !usaHoja);
 
     useEffect(() => {
         const handleClickOutside = (e) => {

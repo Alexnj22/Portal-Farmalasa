@@ -21,6 +21,40 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.343.3 — Histéresis en el hover de tarjeta
+
+**La sombra se activaba, se quitaba y se volvía a activar al entrar a una
+tarjeta**, incluso sin ningún menú abierto.
+
+La causa es el lift mismo: `transform` mueve la **caja de hit-testing** junto
+con el elemento, así que al entrar por el borde inferior la tarjeta se levanta y
+su borde pasa por encima del cursor — `:hover` se apaga sola y vuelve a
+encenderse. Medido en el tablero con el puntero apoyado cerca del borde
+inferior: a **1, 2 y 3px la tarjeta queda hovereada el 0% del tiempo**; a 5px,
+el 100%. Una **banda muerta de ~4px**.
+
+**Honestidad sobre la reproducción:** el pulso visual NO se pudo reproducir con
+mouse sintético —Playwright no emula la frecuencia ni el subpíxel de un mouse
+real, y una entrada continua daba 1 sola transición—. Lo que sí quedó medido es
+la banda muerta y que el hover no se sostiene ahí, que es la misma causa.
+
+**El arreglo es histéresis al SALIR.** `--card-espera-salida` (140ms) se aplica
+sólo a la transición de salida, así que el des-hover momentáneo que produce el
+propio lift se agota antes de que la sombra empiece a volver. Funciona porque la
+transición que manda es la del estilo **después** del cambio: al entrar manda la
+de `:hover`, con espera 0.
+
+Verificado: una salida transitoria de 60ms o 120ms mueve la sombra **0px**; una
+salida real de 400ms la devuelve completa (40→32px); entrar sigue siendo
+inmediato (**30ms** hasta que la sombra empieza a crecer).
+
+**Lo que NO cierra: la banda muerta.** Para eso habría que compensar el área de
+impacto con un pseudo-elemento que extienda la caja hacia abajo `var(--lift-card)`,
+y eso exige `position: relative` en las **175** tarjetas que hoy no declaran
+posición, con riesgo de re-anclar sus hijos absolutos. Queda documentado en
+`DESIGN.md` §5 con el número, para que la decisión no se vuelva a tomar a
+ciegas.
+
 ## v2.343.2 — Con un menú abierto el fondo deja de pulsar
 
 **La sombra de la tarjeta de atrás parpadeaba mientras uno usaba un menú.** Se

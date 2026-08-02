@@ -1875,9 +1875,32 @@
   box-shadow: var(--card-shadow);
   border-radius: var(--card-radius);
   backdrop-filter: var(--backdrop-card);
-  transition: transform var(--dur-base) var(--ease-spring),
-              box-shadow var(--dur-base) var(--ease-spring);
+  /* ── Histéresis al SALIR (2026-08-02) ─────────────────────────────────
+     Un lift mueve la caja de hit-testing junto con el elemento, así que al
+     entrar por el borde INFERIOR la tarjeta se levanta y el borde pasa por
+     encima del cursor: `:hover` se apaga sola y vuelve a encenderse. El ojo lo
+     ve como "se activa, se quita y se activa".
+
+     Medido en el tablero: apoyando el puntero a 1, 2 y 3px del borde inferior,
+     la tarjeta queda hovereada el **0%** del tiempo; a 5px, el 100%. O sea una
+     banda de ~4px donde el hover no se sostiene.
+
+     La espera sólo aplica al SALIR: la transición que manda es la del estilo
+     DESPUÉS del cambio, y al entrar manda la de `:hover` (0ms). Así el
+     des-hover momentáneo que produce el propio lift se agota antes de que la
+     sombra empiece a volver, y no se ve nada; salir de verdad sigue sintiéndose
+     inmediato porque 140ms por debajo del umbral de percepción de un cambio de
+     sombra.
+
+     NO cierra la banda muerta —para eso habría que compensar el área de
+     impacto con un pseudo-elemento, y eso exige `position: relative` en 175
+     tarjetas que hoy no declaran posición, con riesgo de re-anclar sus hijos
+     absolutos. Ver DESIGN.md §5. */
+  --card-espera-salida: 140ms;
+  transition: transform var(--dur-base) var(--ease-spring) var(--card-espera-salida),
+              box-shadow var(--dur-base) var(--ease-spring) var(--card-espera-salida);
 }
+[data-surface="card"]:hover { --card-espera-salida: 0ms; }
 
 /* ── `data-tono`: la tarjeta MARCADA por su estado (2026-07-28) ──────────
    Esta regla existe porque el canónico era INDECORABLE, y eso explicaba las

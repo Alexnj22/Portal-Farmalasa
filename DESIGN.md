@@ -553,6 +553,26 @@ y solid-dark.
 > control, `var(--lift-hover)`. Clavar `-2px` es exactamente el bug que esto
 > arregla, y no hay tema que lo pueda rescatar después.
 
+**El lift mueve la caja de hit-testing, y eso tiene un costo conocido.** Al
+entrar por el borde INFERIOR la tarjeta se levanta y su borde pasa por encima
+del cursor, así que `:hover` se apaga sola y vuelve a encenderse — el ojo lo ve
+como *"se activa, se quita y se activa"*. Medido en el tablero: con el puntero a
+1, 2 y 3px del borde inferior la tarjeta queda hovereada el **0%** del tiempo; a
+5px, el 100%. Es una **banda muerta de ~4px** en el borde inferior.
+
+Lo que hay hoy es **histéresis**: la transición espera `--card-espera-salida`
+(140ms) sólo al SALIR, así que el des-hover momentáneo que produce el propio
+lift se agota antes de que la sombra empiece a volver. Verificado: una salida de
+60ms o 120ms mueve la sombra **0px**; una salida real de 400ms la devuelve
+completa. Entrar sigue siendo inmediato (30ms medidos), porque la transición que
+manda es la del estilo DESPUÉS del cambio y al entrar esa es la de `:hover`.
+
+**La banda muerta sigue ahí.** Cerrarla requiere compensar el área de impacto
+con un pseudo-elemento que extienda la caja hacia abajo `var(--lift-card)`, y eso
+exige `position: relative` en las **175** tarjetas que hoy no declaran posición
+—con riesgo de re-anclar sus hijos absolutos—. No se hizo por eso; queda escrito
+para que la próxima vez la decisión arranque con el número.
+
 **Y nunca agregarle un `hover:-translate-y-*` a una tarjeta: no la reemplaza,
 se SUMA.** En Tailwind v4 esas clases compilan a la propiedad `translate`, que
 es distinta de `transform` —donde vive el canónico—, así que las dos aplican.

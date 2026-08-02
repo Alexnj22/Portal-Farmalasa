@@ -273,57 +273,154 @@ son dos implementaciones del portal que no coinciden entre sí.
   no lo que sobra (H1) ni lo que viene cortado (H2).
 
 ---
+# Parte 2 — Plan de ejecución
 
-# Parte 2 — Plan de corrección
+**Reescrito el 2026-08-02 tras la Parte 4.** El objetivo no es "arreglar 21
+hallazgos" sino uno solo, que los ordena a todos:
 
-## Fase 1 — Los candados (1 día, sin riesgo)
+> Que un mes cierre **correcto y solo**, y que si algo sale mal, alguien se
+> entere sin haber ido a mirar.
 
-Todo esto es defensivo: hoy la base está limpia, así que entra sin reparar nada.
+Hoy el módulo no puede ser autónomo, y no por los bugs: **por los puntos ciegos
+de sus verificaciones**. Automatizar un cierre cuyos controles no pueden fallar
+no da autonomía, da confianza falsa. Por eso el orden es: primero que nada pueda
+empeorar (A), después que las alarmas puedan sonar (B), después completar el dato
+(C), y recién ahí congelar el mes (D).
 
-1. **Índice único** `proveedores_maestro(supplier_id) WHERE supplier_id IS NOT NULL`.
-   Cierra H1 de raíz. Mensaje de error propio en `set_proveedor_supplier` para que
-   la UI diga "ese proveedor ya está vinculado a X" y no un `23505` crudo.
-2. **`ORDER BY id`** en el lookup por NRC de `upsert_proveedor_from_dte`. Un
-   `LIMIT 1` sin orden en un camino fiscal no es aceptable.
-3. **Alinear `_docs_sin_numero_control`** con el filtro del libro (H12).
-4. **Unificar el orden** de `generar_csv_libro` con el de los RPC (H16), y correr
-   la verificación de nuevo. Los porcentajes van a moverse — ese es el punto.
-5. **`fetchAllRows`** en `check-purchases-reconciliation` (H14).
-6. **GRANT** a `get_libro_sujeto_excluido` (H8) y scope explícito comentado en
-   `get_notas_credito_compras` (H7).
+## Cinco condiciones para que un mes cierre solo
 
-## Fase 2 — Que el verificador pueda fallar (2 días)
-
-7. **`porConjunto` bidireccional** (H10): el veredicto exige que la bolsa quede
-   **vacía** al terminar. Hoy sobrar es gratis.
-8. **Cuadre de ventas bidireccional** (H5): recorrer la unión de los días.
-9. **Comparar el archivo de verdad** (H15): un modo que devuelva los bytes del CSV
-   del portal —BOM, CRLF, comillas— y los compare con los del ERP. Es la única
-   verificación que hoy no existe en ninguna forma.
-10. **Cuadre por documento y no por total** en compras: el sello (H13) es único
-    por DTE, así que comparar el *conjunto de sellos* detecta un intercambio que
-    el total esconde.
-
-## Fase 3 — Capturar lo que ya está ahí (3 días)
-
-11. **`purchase_receipts.sello_recibido`** (H13). Un índice de array en
-    `fastBackfill`. Desbloquea todo lo de la Parte 3.
-12. **`subtotal` a `numeric(14,4)`** (H6) — después de la respuesta del contador,
-    y solo si dice "4 decimales".
-13. **`docs_count` derivado** (H4), no acumulado.
-14. **Aviso de "ventas sin DTE sellado"** (H3) en el libro de consumidor: *"N
-    ventas del período, $X, no tienen DTE sellado y no entran al libro"*. Que deje
-    de ser invisible.
-
-## Fase 4 — Limpieza (1 día)
-
-15. Ramas de RLS sin scope (H9); `fetchLibroSujetoExcluido`/`COLS_EXCLUIDO`
-    muertos; y **corregir los tres documentos** que hoy afirman cosas falsas: el
-    sello de compras "no viene en la fuente", el NRC de CCF "todavía no se
-    captura", "15 de 67 proveedores sin NIT".
+| # | Condición | Hoy | Bloque |
+|---|---|---|---|
+| 1 | El dato llega completo | cuadres diarios ✅, pero ciegos de un lado | B |
+| 2 | El dato no se corrompe en silencio | `supplier_id` sin candado | A |
+| 3 | El libro sale bien armado | orden divergente, identificadores cortados | B, C |
+| 4 | Si algo falla, suena una alarma **que puede sonar** | el verificador no ve sobrantes | B |
+| 5 | Lo declarado queda congelado y la deriva se detecta | **no existe** | D |
 
 ---
 
+## Bloque A — Los candados · ~1 día, riesgo cero
+
+Va primero porque **hoy la base está limpia**: aplicar el candado ahora no
+requiere reparar nada. Cada semana que pasa es una oportunidad de que alguien
+haga el clic que lo ensucia y entonces sí haya que limpiar antes.
+
+| | Qué | Dónde |
+|---|---|---|
+| A1 | Índice único parcial en `proveedores_maestro(supplier_id) WHERE supplier_id IS NOT NULL` | migración |
+| A2 | `set_proveedor_supplier` atrapa el `23505` y devuelve *"ese proveedor del ERP ya está vinculado a X"* | RPC + `FormProveedorDetail` |
+| A3 | `ORDER BY id` en el lookup por NRC de `upsert_proveedor_from_dte` (H1b) | RPC |
+| A4 | `fetchAllRows` en `check-purchases-reconciliation` (H14) | edge function |
+| A5 | `GRANT EXECUTE … TO authenticated` en `get_libro_sujeto_excluido` (H8) | migración |
+| A6 | Scope de sucursal en las ramas `minmax_ver_costos` / `productos_tab_catalogo_costos` de las policies de `purchase_receipts` y `sales_invoices` (H9) | migración · **tablas calientes: `lock_timeout`, ventana 06:00–11:59 UTC, staging primero** |
+| A7 | Comentario explícito de por qué `get_notas_credito_compras` no lleva scope (H7) | RPC |
+
+**Verificación del bloque:** intentar vincular dos fichas al mismo proveedor y
+recibir el mensaje, no un error crudo.
+
+---
+
+## Bloque B — Que las alarmas puedan sonar · ~2-3 días
+
+Es el bloque que convierte "anda bien" en "me entero si deja de andar bien".
+Ninguno de estos es un bug del libro: son **defectos de los instrumentos**.
+
+| | Qué | Por qué |
+|---|---|---|
+| B1 | `porConjunto` bidireccional: el veredicto exige que la bolsa quede **vacía** (H10) | hoy sobrar es gratis, y es justo el modo de fallo de A1 |
+| B2 | Cuadre de ventas sobre la **unión** de los días, no solo los del ERP (H5) | un día que solo existe en el portal es invisible |
+| B3 | Unificar el orden de `generar_csv_libro` con el de los RPC (H16) y **re-correr la verificación** | 38% de las líneas de compras se comparaban contra otra posición |
+| B4 | `_docs_sin_numero_control` con el **mismo filtro de sello** que el libro (H12) | la cola pide un documento y el libro necesita otro |
+| B5 | `normalizar()` deja de tapar: las diferencias de formato decimal se reportan aparte en vez de desaparecer (H21) | así se ven, y se decide si importan |
+| B6 | **Jubilar `generar_csv_libro` como "segunda implementación"** (H11) y reemplazarla por el camino de la Parte 4: bajar el CSV real con Playwright y compararlo contra el del ERP | dos copias de la misma regla no son dos testigos; el navegador sí es un testigo distinto |
+
+**B6 es el más importante y el que menos parece.** La verificación que corrí en la
+Parte 4 ya existe como script; hay que convertirla en algo que se pueda correr
+solo (un `npm run verificar:libros` que baje los dos archivos y escupa la tabla de
+diferencias por columna). Con eso, la pregunta *"¿el libro de este mes coincide con
+el origen y donde no, por qué?"* se responde en un comando en vez de en una
+sesión de auditoría.
+
+**Verificación del bloque:** simular una ficha duplicada en staging y confirmar
+que B1 lo reporta como DIFIERE. Hoy diría IDENTICO.
+
+---
+
+## Bloque C — Que el libro sea mejor que su origen · ~3-4 días
+
+Después de la Parte 4 esto dejó de ser "mejoras" y pasó a ser lo que le falta al
+libro para estar completo. De las 5 clases de diferencia contra el ERP, **4 ya las
+gana el portal**; esta es la única que pierde.
+
+| | Qué | Nota |
+|---|---|---|
+| C1 | **`purchase_receipts.sello_recibido`** desde la columna 22 del libro y la 6 del anexo, que `fastBackfill` ya descarga (H13) | **con validación (H19)**: solo si mide exactamente 40 alfanuméricos; si no, NULL + marca. 6 de 331 vienen con texto pegado a mano |
+| C2 | Cruce `purchase_receipts` ↔ `purchase_dte_documents` **por sello** | clave exacta; reemplaza el 86.7% difuso |
+| C3 | Exportar el **número de control real** del DTE en vez del stub de 20 del ERP (H2), con respaldo al del ERP cuando no haya cruce | acá el portal deja de copiar y empieza a corregir |
+| C4 | `subtotal` a `numeric(14,4)` + re-sync (H6) | **bloqueado por la respuesta del contador** |
+| C5 | `docs_count` derivado, no acumulado (H4) | hoy dice el doble |
+| C6 | Aviso *"N ventas del período, $X, sin DTE sellado — no entran al libro"* (H3) | $288.60 que hoy nadie ve |
+| C7 | Documentar en `DESIGN.md`/el doc de formato la decisión de BOM + CRLF + sin salto final (H20) | no es un error; es una decisión sin escribir |
+
+**Verificación del bloque:** re-correr B6 y que la columna 22 pase de 331
+diferencias a 0, y la 4 y la 5 sigan en "el portal acierta".
+
+---
+
+## Bloque D — El cierre de período · ~3 días
+
+**Es lo que hace que "autónomo" sea comprobable en vez de una promesa.** Hoy no
+existe registro de qué se declaró: cualquier mes se re-exporta y puede salir
+distinto, y el archivo que bajó la contadora hace dos semanas no se puede
+reproducir.
+
+| | Qué |
+|---|---|
+| D1 | Tabla `libros_iva_cierres`: período, libro, **los bytes exactos del CSV**, su SHA-256, quién y cuándo |
+| D2 | Un período cerrado se **lee del snapshot**, no de la tabla viva |
+| D3 | Cron diario: recalcular el libro de los meses cerrados y comparar el hash. Si cambió, avisar con el detalle (*"junio cambió después de declararse: +1 documento, +$45.98"*) |
+| D4 | En la vista: sello visible de *"declarado el DD/MM por X"* y bloqueo de la re-exportación silenciosa |
+
+**D3 es la pieza de autonomía.** Con eso, el mes no solo cierra: se queda vigilado
+solo. Y la deriva —que hoy ocurre y nadie ve— pasa a ser un aviso.
+
+---
+
+## Bloque E — Fuera del camino del mes, pero urgente por otra razón
+
+| | Qué | Por qué no espera |
+|---|---|---|
+| **E1** | **Empezar a guardar el costo unitario por línea vendida** | **Es lo único irreversible de todo el documento.** El resto se puede hacer en dos meses sin perder nada; esto no: lo que no se capture hoy no existe mañana, y sin él no hay costo de ventas ni Estado de Resultados. Aunque nada lo consuma todavía, hay que empezar a escribirlo. |
+| E2 | Notas de crédito: vista "libro ajustado" con las dos verdades lado a lado; y capturarlas donde nacen | $1,677.61 de julio se declara estos días |
+| E3 | Anexo de retención de Renta (Art. 156); alarma de sujeto excluido (Art. 119) | `retiene_renta` existe y no se usa en ningún lado |
+
+---
+
+## Cronograma
+
+| Semana | Bloques | Qué queda logrado |
+|---|---|---|
+| 1 | **A** + **E1** + las 3 decisiones | Nada puede empeorar. El reloj irreversible arranca. |
+| 2 | **B** | Las alarmas pueden sonar. `npm run verificar:libros` responde en un comando. |
+| 3 | **C** | El libro es mejor que su origen en **todas** sus columnas. |
+| 4 | **D** | El mes cierra, se congela y se vigila solo. |
+| después | **E2**, **E3** | Lo que hoy no se declara y debería. |
+
+## Tres decisiones que necesito de vos
+
+1. **¿El anexo de percepción se presenta con 2 o con 4 decimales?** (contador).
+   Bloquea C4. Si es con 2, C4 se borra del plan.
+2. **¿Las notas de crédito se van a capturar en el ERP, o el ajuste se hace al
+   declarar?** Cambia si E2 es una vista o un flujo de captura.
+3. **¿Arranco E1 ya?** Es la única con costo por esperar.
+
+## Una nota de higiene
+
+Para la verificación de la Parte 4 usé la cuenta `qa.test`, que desde el
+2026-07-25 tiene permisos sobre **los 60 módulos** para poder auditar visualmente.
+No la toqué, pero quedó pendiente desde entonces decidir si se le devuelve el
+alcance mínimo. Con B6 convertido en script recurrente, esa cuenta va a usarse
+seguido — conviene resolverlo.
 # Parte 3 — Hacia dónde llevar el módulo
 
 Dijiste que el portal va a ser el sistema principal y único de la farmacia. Eso

@@ -78,9 +78,19 @@ Verificado contra producción bajo `BEGIN … ROLLBACK`: el índice rechaza el
 duplicado, la RPC responde con el nombre de la otra ficha, y liberar y reasignar
 sigue funcionando.
 
-Queda pendiente **A6** (scope de sucursal en dos ramas del RLS de
-`purchase_receipts` y `sales_invoices`): son tablas calientes, así que va a
-staging primero.
+**A6 · Dos ramas del RLS sin scope de sucursal.** Las policies de lectura de
+`purchase_receipts` y `sales_invoices` filtran bien por sucursal en su rama
+principal, pero las ramas que existen para que otros módulos vean **costos**
+estaban sueltas: alguien con scope de UNA sucursal en Compras, si además podía
+ver costos, leía las compras de las siete. El permiso de costos es sobre el dato
+"costo", no sobre el alcance geográfico. Hoy no le quita acceso a nadie —las 6
+roles con esos permisos los tienen con `scope = 'ALL'`, verificado antes de
+aplicar— así que es candado, no restricción. Se usó `ALTER POLICY` y no
+`DROP`+`CREATE`, que dejaría un instante sin policy en el que nadie ve nada.
+Probado primero en el branch de staging por ser tablas calientes; las llamadas
+siguen envueltas en `(SELECT …)` y se midió después de aplicar: `count()` de
+23,617 filas de `sales_invoices` en **27 ms** (sin el initplan, esa misma
+consulta tardaba 25 segundos — fue el outage del 2026-07-08).
 
 De paso, tres migraciones de otra sesión de hoy tenían el archivo local nombrado
 con una versión inventada en vez de la que asignó el servidor. El contenido

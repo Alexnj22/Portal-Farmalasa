@@ -299,7 +299,23 @@ empeorar (A), después que las alarmas puedan sonar (B), después completar el d
 
 ---
 
-## Bloque A — Los candados · ~1 día, riesgo cero
+## Bloque A — Los candados · ✅ HECHO el 2026-08-02 (v2.339.0)
+
+Migraciones `20260802201721`, `20260802201854` y `20260802202628`. Verificado
+contra prod bajo `BEGIN … ROLLBACK`: el índice rechaza el duplicado, la RPC
+responde con el nombre de la otra ficha, y liberar y reasignar sigue andando.
+A6 fue primero a staging; después de aplicar, `count()` de 23,617 filas de
+`sales_invoices` en 27 ms — el initplan intacto.
+
+Un hallazgo que salió al hacerlo: **el candado podía romper el sync de correos**.
+`upsert_proveedor_from_dte` asignaba `supplier_id` sin mirar si ya estaba
+tomado, así que con el índice puesto el `INSERT` habría fallado con 23505 y se
+habría caído el sync entero — el candado rompiendo justo el camino automático
+que venía a proteger. Por eso A3 se aplicó **antes** que A1, en la misma
+migración.
+
+<details><summary>El plan original del bloque</summary>
+
 
 Va primero porque **hoy la base está limpia**: aplicar el candado ahora no
 requiere reparar nada. Cada semana que pasa es una oportunidad de que alguien
@@ -317,6 +333,8 @@ haga el clic que lo ensucia y entonces sí haya que limpiar antes.
 
 **Verificación del bloque:** intentar vincular dos fichas al mismo proveedor y
 recibir el mensaje, no un error crudo.
+
+</details>
 
 ---
 

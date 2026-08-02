@@ -216,7 +216,7 @@ en las 7 sucursales.
 | Reporte | Coinciden | % |
 |---|---|---|
 | **Anulados** | 80 / 80 | **100%** |
-| **Consumidor** | 179 / 180 | **99.4%** |
+| **Consumidor** | 180 / 180 | **100%** (tras el resync del 4.4) |
 | **Contribuyentes** | 47 / 49 | **96%** |
 | Compras | 226 / 389 | 58% |
 | Percepción | 8 / 226 | 3.5% |
@@ -253,3 +253,39 @@ esas sucursales no es sólo `erp_purchase_id`. Sin resolver.
    elegían por correlativo, que no es el mismo orden. Consumidor pasó de 130 a
    **179 de 180**. Cambiar el criterio metió 760 documentos nuevos en la cola del
    número de control, que se drenaron el mismo día.
+
+
+---
+
+## 7. HALLAZGO — el sync de ventas puede perder documentos
+
+La única línea de consumidor que seguía difiriendo (sucursal 4, 2026-06-20) no
+era un problema de formato ni de criterio: **al portal le faltaba una venta**.
+
+| | Documentos | Total |
+|---|---|---|
+| Portal antes | 138 | $1,617.65 |
+| Origen | 139 | $1,663.63 |
+| **Portal tras re-sincronizar ese día** | **139** | **$1,663.63** |
+
+Un `sync-dte-sales` acotado a ese día y sucursal la trajo, y el total cerró **al
+centavo**. Con eso el libro de consumidor de junio quedó en **180 de 180**.
+
+**Lo que importa no es el documento, es el modo de fallo.** El libro no falla ni
+avisa cuando le falta una venta: sale con un documento menos y cuadra consigo
+mismo. Sólo se ve comparando contra el origen.
+
+Ya existe `check-purchases-reconciliation` (diario, 07:20 UTC) que hace
+exactamente este cuadre **para compras** — conteo y monto, 7 sucursales, y avisa
+al rol de alertas técnicas cuando no cierra. **No existe el equivalente para
+ventas.** Es el hueco de control más grande que dejó esta auditoría.
+
+### El NIT de proveedores: el dato está, falta el vínculo
+
+Corrección a lo dicho en §5: no es que falte el NIT. Está en
+`proveedores_maestro` y **coincide con el del origen** — SAVONA `06142105670017`,
+SKY SOLUTIONS `06140311061010`, COMERCIALIZADORA INTERAMERICANA `06142008011037`.
+Lo que falta es `supplier_id`, que está en NULL: esas fichas nacieron de los DTE
+(`source: dte`) y nunca se ligaron al proveedor del módulo de Compras. Son 11 de
+los 15 casos. El libro las busca por ese vínculo, no las encuentra, y escribe la
+columna vacía.

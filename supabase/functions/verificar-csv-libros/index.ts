@@ -1,17 +1,32 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret, getErpBranchMap } from "../_shared/security.ts";
+// La comparación por conjunto vive aparte porque es la pieza que falló (H10) y
+// necesitaba una prueba que no dependa del ERP ni de producción:
+// tests/unit/compararLibros.test.js arma el caso de 503 líneas contra 389 —el
+// que ya no se puede reproducir en prod, porque el índice único de A1 lo
+// impide— y exige que el veredicto sea DIFIERE.
+import { compararPorConjunto, normalizar, crudo } from "../_shared/compararLibros.ts";
 
 // Compara, línea por línea, el CSV que produce el portal contra el archivo real
 // del ERP — por reporte y por sucursal.
 //
-// El CSV del portal no se pide al frontend: lo genera `generar_csv_libro`, una
-// SEGUNDA implementación escrita por separado en SQL. Si dos implementaciones
-// independientes coinciden entre sí Y con el archivo del origen, la prueba vale
-// mucho más que reusar el mismo código para verificarse a sí mismo.
+// QUÉ PRUEBA Y QUÉ NO. El encabezado anterior decía que `generar_csv_libro` era
+// «una SEGUNDA implementación escrita por separado» y que por eso la prueba
+// valía el doble. **Es falso, y la auditoría del 2026-08-02 (H11) lo verificó
+// leyendo las dos**: `generar_csv_libro` transcribe las mismas reglas que los
+// RPC — el mismo `length(recibido_mh)=40`, el mismo `subtotal − percepcion`, el
+// mismo `LEFT JOIN proveedores_maestro ON supplier_id`. Hereda sus defectos
+// enteros. Dos copias de la misma regla no son dos testigos.
 //
-// Lo que NO puede probar: que el navegador escriba el archivo igual (BOM,
-// CRLF, escape de comillas). Eso lo cubre `exportCsv`, que es común a todos los
-// módulos y no cambió.
+// Lo que esta función SÍ prueba, y es mucho, es lo único que importaba: **que
+// las líneas coincidan con el archivo del ERP**, que es una fuente
+// verdaderamente independiente. Esa es toda su fuerza; la "segunda
+// implementación" no aportaba nada.
+//
+// Lo que NO puede probar: que el navegador escriba el archivo igual (BOM, CRLF,
+// escape de comillas). Eso ahora tiene su propio verificador —
+// `npm run verificar:libros`, que baja el archivo apretando el botón real con
+// Playwright— y ése sí es un testigo distinto.
 
 const BASE       = "https://clientesdte3.oss.com.sv/farma_salud/";
 const LOGIN_URL  = `${BASE}login.php`;
@@ -48,18 +63,10 @@ async function login(username: string, password: string): Promise<string> {
   return cookie;
 }
 
-/** Normaliza para comparar: el origen mezcla `1166` y `1166.00` en la misma columna. */
-function normalizar(linea: string): string {
-  return linea.split(';').map(c => {
-    const t = c.trim();
-    // Sólo toca lo que es un número decimal puro; deja intactos códigos y textos.
-    if (/^-?\d+(\.\d+)?$/.test(t) && t !== '') {
-      const n = Number(t);
-      if (Number.isFinite(n)) return n.toFixed(4);
-    }
-    return t;
-  }).join(';');
-}
+// `normalizar` y `crudo` viven en ../_shared/compararLibros.ts, junto con la
+// comparación que los usa. B5 (H21): normalizar sigue siendo lo correcto para el
+// VEREDICTO —como número, `1166` y `1166.00` son el mismo valor— pero antes
+// además las hacía invisibles. Ahora se cuentan en `formato_decimal`.
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -156,31 +163,23 @@ Deno.serve(async (req) => {
             return true;
           };
 
-          // Modo CONJUNTO: cada línea del origen tiene que existir en el portal,
-          // sin importar en qué posición. Aísla las diferencias de CONTENIDO de
-          // las de orden, que es lo que interesa cuando se está midiendo si el
-          // dato coincide.
+          // Modo CONJUNTO: las líneas tienen que coincidir sin importar en qué
+          // posición. Aísla las diferencias de CONTENIDO de las de orden.
+          //
+          // B1 (H10) — ESTE MODO ERA CIEGO DE UN LADO. Comprobaba que cada línea
+          // del ERP existiera en el portal y nunca lo inverso, así que **al
+          // portal le podía sobrar y el veredicto salía IDENTICO igual**. Con
+          // 503 líneas del portal contra 389 del ERP —que es exactamente lo que
+          // produce un `supplier_id` duplicado (H1)— las 389 se encontraban y la
+          // verificación daba el visto bueno a $92 mil de compras inventadas.
+          //
+          // La red de seguridad tenía el mismo punto ciego que el bug que debía
+          // atrapar. Ahora el veredicto exige que **la bolsa quede vacía**: lo
+          // que sobra se cuenta, se muestra y hace DIFERIR.
           if (body.porConjunto) {
-            const clave = (l: string) => l.split(';')
-              .filter((_, i) => !omitidas.has(i))
-              .map(c => normalizar(c)).join(';');
-            const bolsa = new Map<string, number>();
-            for (const l of lineasPortal) bolsa.set(clave(l), (bolsa.get(clave(l)) ?? 0) + 1);
-            let enBolsa = 0;
-            const faltantes: string[] = [];
-            for (const l of lineasErp) {
-              const k = clave(l);
-              const q = bolsa.get(k) ?? 0;
-              if (q > 0) { bolsa.set(k, q - 1); enBolsa++; }
-              else if (faltantes.length < maxDif) faltantes.push(l);
-            }
             out.push({
               branchId, reporte: rep, modo: 'conjunto',
-              lineas_erp: lineasErp.length, lineas_portal: lineasPortal.length,
-              iguales: enBolsa, distintas: lineasErp.length - enBolsa,
-              veredicto: (lineasErp.length > 0 && enBolsa === lineasErp.length)
-                ? 'IDENTICO' : (lineasErp.length === 0 ? 'AMBOS VACIOS' : 'DIFIERE'),
-              diferencias: faltantes.map(l => ({ erp: l, portal: null })),
+              ...compararPorConjunto(lineasErp, lineasPortal, omitidas, maxDif),
             });
             continue;
           }
@@ -188,11 +187,24 @@ Deno.serve(async (req) => {
           // — comparación línea por línea, en orden
           const n = Math.max(lineasErp.length, lineasPortal.length);
           let iguales = 0;
+          // B5 (H21): líneas que coinciden como número pero no como texto —
+          // el ERP escribe `1166` en unas filas y `1166.00` en otras, en la
+          // misma columna del mismo archivo. No son una diferencia fiscal, pero
+          // tampoco son "iguales": se cuentan aparte para que se vean.
+          let formatoDecimal = 0;
           const difs: any[] = [];
           for (let i = 0; i < n; i++) {
             const a = lineasErp[i] ?? null;
             const b = lineasPortal[i] ?? null;
-            if (a !== null && b !== null && igualSalvoOmitidas(a, b)) { iguales++; continue; }
+            if (a !== null && b !== null && igualSalvoOmitidas(a, b)) {
+              iguales++;
+              const ca = a.split(';'), cb = b.split(';');
+              for (let c = 0; c < Math.max(ca.length, cb.length); c++) {
+                if (omitidas.has(c)) continue;
+                if (crudo(ca[c] ?? '') !== crudo(cb[c] ?? '')) { formatoDecimal++; break; }
+              }
+              continue;
+            }
             if (difs.length < maxDif) {
               // Qué columnas difieren, para no leer dos líneas enteras a ojo.
               const ca = (a ?? '').split(';'), cb = (b ?? '').split(';');
@@ -211,6 +223,9 @@ Deno.serve(async (req) => {
             lineas_portal: lineasPortal.length,
             iguales,
             distintas: n - iguales,
+            // Iguales como número, distintas como texto. No cambian el veredicto
+            // —son el mismo valor— pero dejan de ser invisibles.
+            formato_decimal: formatoDecimal,
             veredicto: (n > 0 && iguales === n) ? 'IDENTICO' : (n === 0 ? 'AMBOS VACIOS' : 'DIFIERE'),
             diferencias: difs,
           });

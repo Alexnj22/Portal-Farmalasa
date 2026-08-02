@@ -21,6 +21,81 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.341.0 — Bloque B: las alarmas pueden sonar
+
+Ninguno de estos era un bug del libro. Son **defectos de los instrumentos que lo
+vigilan** — que es peor, porque un control roto no se nota: sigue diciendo que
+todo está bien.
+
+**B1 · El verificador no podía ver un sobrante.** El modo conjunto comprobaba
+que cada línea del ERP existiera en el portal y **nunca lo inverso**. Con 503
+líneas del portal contra 389 del ERP —que es exactamente lo que produce un
+`supplier_id` duplicado (H1)— las 389 se encontraban igual y el veredicto salía
+`IDENTICO`. La red de seguridad tenía el mismo punto ciego que el bug que debía
+atrapar: el libro no solo se podía inflar, se podía inflar **y pasar la
+verificación**. Ahora el veredicto exige que la bolsa quede vacía, y lo que sobra
+se cuenta, se nombra y hace DIFERIR.
+
+Como en producción ese caso ya no se puede reproducir —el índice único de A1 lo
+impide— la comparación se sacó a `_shared/compararLibros.ts` y el candado quedó
+en un test: `tests/unit/compararLibros.test.js` arma las 503 contra 389 y exige
+`DIFIERE`. Con la lógica vieja, ese test falla.
+
+**B2 · El cuadre de ventas solo sabía detectar faltantes.** Recorría los días del
+ERP, así que un día que existía en el portal y no en el origen era invisible: una
+venta duplicada por un re-sync, o cargada con la fecha equivocada, no producía
+ningún hallazgo. Ahora recorre la **unión** de los dos lados y dice cuál de los
+dos no conoce el día.
+
+**B3 · Lo verificado y lo presentado ordenaban distinto.** `generar_csv_libro`
+—lo que compara el verificador— y los RPC —lo que descarga la contadora— tenían
+otro `ORDER BY` en **cuatro de los cinco reportes**: a todos les faltaba la fecha
+y a percepción le faltaba además la sucursal. Sobre junio, 148 de 389 líneas de
+compras y 95 de 226 de percepción caían en otra posición, así que el
+"226/389 idénticas línea por línea" nunca se midió sobre el archivo que se
+presenta. En percepción pesaba el doble: la primera columna es un **correlativo**,
+así que otro orden no mueve las filas — les cambia el número. Verificado después
+de aplicar: **335/335 y 211/211 en la misma posición**, correlativo incluido.
+
+Y explica el misterio que quedó abierto como *"orden residual en 3 sucursales,
+sin resolver"*: no era un criterio desconocido del ERP, eran dos
+implementaciones del portal que no coincidían entre sí.
+
+**B4 · La cola del número de control pedía otra cosa que el libro.** El libro
+toma el primero y el último documento del día **entre los sellados**; la cola los
+calculaba entre todos. Medido sobre toda la historia: **3 documentos que el libro
+necesita y la cola nunca pedía**, y 3 que pedía de más. Los anulados siguen sin
+filtro de sello a propósito, porque su libro tampoco lo lleva — verificado
+función por función, no asumido.
+
+**B5 · El formato decimal dejó de ser invisible.** El ERP escribe `1166` en unas
+filas y `1166.00` en otras, en la misma columna del mismo archivo. Normalizar
+para el veredicto está bien —es el mismo valor— pero además las hacía
+desaparecer: se contaban como iguales y nadie supo nunca cuántas eran. Ahora van
+en `formato_decimal`.
+
+**B6 · `npm run verificar:libros`.** El encabezado del verificador decía que
+`generar_csv_libro` era «una SEGUNDA implementación» y que por eso la prueba
+valía el doble. Es falso: transcribe las mismas reglas que los RPC y hereda sus
+defectos. Dos copias de la misma regla no son dos testigos. El comentario ahora
+dice lo que la función realmente prueba —que las líneas coincidan con el archivo
+del ERP, que sí es una fuente independiente— y el testigo que faltaba es un
+script nuevo: **baja el archivo apretando el botón real**, con Playwright contra
+un build de producción, y mide lo que ninguna de las dos podía ver (BOM, CRLF,
+salto final, el mapeo de columnas de la vista y `exportCsv`).
+
+El script **comprueba que el archivo que bajó es el que pidió** antes de decir
+nada. No es paranoia: su primera versión exportó julio de todas las sucursales
+creyendo que era junio de Bodega, porque confiaba en que el stepper había
+llegado. Un verificador que no verifica dónde quedó parado no verifica nada.
+
+**Detector de fichas de proveedor duplicadas**, que sale de E4: las 54 fichas
+nuevas llevan el NIT del ERP, y si mañana llega un DTE con otro NIT se crearía
+una segunda ficha sin que el índice único de A1 lo note (los `supplier_id` serían
+distintos). Lo que delata el caso es el NRC repetido, hoy en cero. Lo consume el
+cron de cuadre de compras, que ya alerta — y si el detector falla, el error va en
+`problemas` de la respuesta en vez de hacerse pasar por "no hay duplicados".
+
 ## v2.340.1 — Auditoría del lift: 11 tarjetas sumaban dos lifts
 
 Auditoría pedida tras cerrar v2.339.1: ¿todas las tarjetas cumplen el canónico,

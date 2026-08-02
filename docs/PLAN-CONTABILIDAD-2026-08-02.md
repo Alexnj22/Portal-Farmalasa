@@ -338,7 +338,27 @@ recibir el mensaje, no un error crudo.
 
 ---
 
-## Bloque B — Que las alarmas puedan sonar · ~2-3 días
+## Bloque B — Que las alarmas puedan sonar · ✅ HECHO el 2026-08-02 (v2.341.0)
+
+Migración `20260802205606` · `_shared/compararLibros.ts` + su test ·
+`scripts/verificar-libros.mjs`.
+
+| | Qué quedó | Verificado con |
+|---|---|---|
+| B1 | El veredicto exige que al portal no le sobre nada | test de 503 líneas contra 389 → `DIFIERE` |
+| B2 | El cuadre recorre la unión de los días | — |
+| B3 | Mismo orden en lo verificado y lo presentado | 335/335 y 211/211 en la misma posición |
+| B4 | La cola usa el filtro del libro que la consume | 3 documentos que el libro necesitaba y no se pedían |
+| B5 | Las diferencias de formato decimal se cuentan | `formato_decimal` en la respuesta |
+| B6 | `npm run verificar:libros` baja el archivo por el botón | BOM sí · CRLF · sin salto final · 467 líneas |
+| + | Detector de fichas de proveedor duplicadas | arranca en 0 |
+
+**Pendiente de B6:** el script mide el formato y ya baja el archivo real, pero la
+mitad de contenido necesita `ADMIN_INVOKE_SECRET` (o la service key) en el `.env`
+local para poder pedirle el archivo al ERP. Sin eso dice explícitamente que el
+contenido **no** se verificó, en vez de declarar algo que no midió.
+
+<details><summary>El plan original del bloque</summary>
 
 Es el bloque que convierte "anda bien" en "me entero si deja de andar bien".
 Ninguno de estos es un bug del libro: son **defectos de los instrumentos**.
@@ -361,6 +381,8 @@ sesión de auditoría.
 
 **Verificación del bloque:** simular una ficha duplicada en staging y confirmar
 que B1 lo reporta como DIFIERE. Hoy diría IDENTICO.
+
+</details>
 
 ---
 

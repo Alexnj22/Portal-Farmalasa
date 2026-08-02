@@ -187,7 +187,30 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (hallazgos.length === 0) {
+    // ── Fichas de proveedor duplicadas ────────────────────────────────────
+    // Nace de E4 (2026-08-02). Las 54 fichas que creó el barrido llevan el NIT
+    // del ERP, no el de un DTE firmado. Si mañana llega un DTE de uno de esos
+    // proveedores con OTRO NIT —que es exactamente lo que pasa con los 6 que la
+    // Parte 4 encontró mal—, `upsert_proveedor_from_dte` busca por NIT, no lo
+    // encuentra y crea una segunda ficha. La primera se queda con el vínculo al
+    // ERP, así que el libro seguiría usando el NIT del ERP y no el firmado.
+    //
+    // El índice único de A1 no lo atrapa: los `supplier_id` serían distintos
+    // (uno de ellos NULL). Lo que delata el caso es el NRC repetido, y hoy hay
+    // cero — así que este detector arranca limpio y cualquier aparición es real.
+    //
+    // Si el detector falla, NO se traga el error ni se hace pasar por "no hay
+    // duplicados": va en `problemas` de la respuesta, que es lo que queda en el
+    // log del cron. Un control que falla en silencio es peor que no tenerlo.
+    const problemas: string[] = [];
+    let duplicados: any[] = [];
+    {
+      const { data, error } = await supabase.rpc('detectar_proveedores_duplicados');
+      if (error) problemas.push(`detectar_proveedores_duplicados: ${error.message}`);
+      else duplicados = data ?? [];
+    }
+
+    if (hallazgos.length === 0 && duplicados.length === 0 && problemas.length === 0) {
       return new Response(JSON.stringify({ ok: true, revisados: revisados.length, diferencias: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -248,8 +271,50 @@ Deno.serve(async (req) => {
       else console.error('push:', await push.text());
     }
 
+    // — alerta de fichas duplicadas, con su propio dominio en el log
+    if (duplicados.length > 0) {
+      const claves = duplicados.map((d: any) => `${d.motivo}:${d.clave}`).sort().join(',');
+      const { data: ins, error: e2 } = await supabase
+        .from('sync_alert_log')
+        .upsert(
+          { domain: 'proveedores-duplicados', scope_key: 'global', alert_key: claves.slice(0, 200) },
+          { onConflict: 'domain,scope_key,alert_key', ignoreDuplicates: true },
+        )
+        .select('id');
+      if (e2) problemas.push(`sync_alert_log duplicados: ${e2.message}`);
+      else if (ins && ins.length > 0 && recipientIds.length > 0) {
+        const d0 = duplicados[0];
+        const push = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
+            'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '',
+          },
+          body: JSON.stringify({
+            title: 'Dos fichas para el mismo proveedor',
+            message: duplicados.length === 1
+              ? `${d0.motivo} (${d0.clave}): hay dos fichas del mismo proveedor y el libro solo usa una.`
+              : `${duplicados.length} proveedores tienen ficha repetida. El libro usa una sola de cada par.`,
+            url: '/proveedores',
+            urgent: false,
+            target_type: 'EMPLOYEE',
+            target_value: recipientIds,
+            announcement_id: `prov-dup-${claves.slice(0, 60)}`,
+          }),
+        });
+        if (push.ok) enviadas++;
+        else console.error('push duplicados:', await push.text());
+      }
+    }
+
     return new Response(
-      JSON.stringify({ ok: true, revisados: revisados.length, diferencias: hallazgos.length, enviadas, hallazgos }),
+      JSON.stringify({
+        ok: true, revisados: revisados.length, diferencias: hallazgos.length,
+        enviadas, hallazgos,
+        proveedores_duplicados: duplicados.length, duplicados,
+        problemas,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
 

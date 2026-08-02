@@ -105,15 +105,27 @@ Deno.serve(async (req) => {
           porDiaPortal.set(String(f.fecha), { docs: Number(f.documentos), total: Number(f.total) });
         }
 
-        for (const [dia, totalErp] of porDiaErp) {
-          const p = porDiaPortal.get(dia);
+        // B2 (H5): se recorre la UNIÓN de los dos lados, no solo los días del
+        // ERP. Antes, un día que existía en el portal y no en el origen era
+        // invisible: el bucle nunca llegaba a él, así que una venta de más
+        // —duplicada por un re-sync, o cargada con la fecha equivocada— no
+        // producía ningún hallazgo. El cuadre solo sabía detectar faltantes,
+        // que es la mitad de lo que un cuadre tiene que hacer.
+        const dias = [...new Set([...porDiaErp.keys(), ...porDiaPortal.keys()])].sort();
+        for (const dia of dias) {
+          const totalErp    = porDiaErp.get(dia) ?? 0;
+          const p           = porDiaPortal.get(dia);
           const totalPortal = p?.total ?? 0;
           const dif = Math.abs(totalErp - totalPortal);
           revisados.push({ branchId, dia });
           if (dif > TOLERANCIA) {
             hallazgos.push({ branchId, dia, totalErp, totalPortal,
                              diferencia: Number((totalErp - totalPortal).toFixed(2)),
-                             enPortal: p ? p.docs : 0 });
+                             enPortal: p ? p.docs : 0,
+                             // Cuál de los dos lados no conoce el día: es lo
+                             // primero que se pregunta al leer la alerta.
+                             soloEn: !porDiaErp.has(dia) ? 'portal'
+                                   : (!porDiaPortal.has(dia) ? 'ERP' : null) });
           }
         }
       } catch (e) {

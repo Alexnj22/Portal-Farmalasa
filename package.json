@@ -19,7 +19,8 @@
     "gate:migrations": "node scripts/migration-gate.mjs",
     "hooks:install": "git config core.hooksPath .githooks",
     "version:bump": "node scripts/version-bump.mjs",
-    "worktree": "bash scripts/worktree.sh"
+    "worktree": "bash scripts/worktree.sh",
+    "verificar:libros": "node scripts/verificar-libros.mjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

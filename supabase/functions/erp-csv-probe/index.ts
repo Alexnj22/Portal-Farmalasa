@@ -17,7 +17,7 @@ const BASE       = "https://clientesdte3.oss.com.sv/farma_salud/";
 const LOGIN_URL  = `${BASE}login.php`;
 const SESION_URL = `${BASE}cambio_sesion.php`;
 
-const MAX_LINEAS = 40;
+const MAX_LINEAS = 500;
 
 function getPurchaseCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_PURCHASES_CREDS");

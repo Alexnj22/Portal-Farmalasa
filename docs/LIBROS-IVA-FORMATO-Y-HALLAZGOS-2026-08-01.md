@@ -186,3 +186,70 @@ verificados columna por columna. El número de control de ventas está completo
   redondea a `577.71`, así que el anexo del portal sale con `571.9900` donde el
   del ERP dice `571.9915`. ~0.0015 por fila. Se corrige en el sync, no en el
   exportador.
+
+
+---
+
+## 6. VERIFICACIÓN CONTRA EL ORIGEN — junio 2026, 7 sucursales
+
+Hecha el 2026-08-02 con `verificar-csv-libros`, que baja el archivo real por
+sucursal y lo compara **línea por línea** contra una **segunda implementación**
+del exportador escrita aparte en SQL (`generar_csv_libro`). Dos implementaciones
+independientes que coinciden entre sí y con el origen valen más que reusar el
+mismo código para verificarse a sí mismo.
+
+### El conteo de líneas coincide EXACTO en los cinco
+
+| Reporte | Origen | Portal |
+|---|---|---|
+| Consumidor | 180 | 180 |
+| Contribuyentes | 49 | 49 |
+| Anulados | 80 | 80 |
+| Compras | 389 | 389 |
+| Percepción | 226 | 226 |
+
+Eso prueba que el filtro, el período y el universo de documentos son correctos
+en las 7 sucursales.
+
+### Filas idénticas, excluyendo las columnas con causa conocida
+
+| Reporte | Coinciden | % |
+|---|---|---|
+| **Anulados** | 80 / 80 | **100%** |
+| **Consumidor** | 179 / 180 | **99.4%** |
+| **Contribuyentes** | 47 / 49 | **96%** |
+| Compras | 226 / 389 | 58% |
+| Percepción | 8 / 226 | 3.5% |
+
+### Columnas excluidas, cada una con su motivo
+
+| Reporte | Col | Motivo |
+|---|---|---|
+| Consumidor | 7, 8 | **el origen las reporta mal** (§4.1); el portal emite las correctas |
+| Contribuyentes | 17 | el origen deja el NIT vacío; el portal lo tiene |
+| Compras | 4 | NIT del proveedor que al portal le falta — **15 de 67 proveedores** |
+| Compras | 22 | el sello, que no viene en la fuente |
+| Percepción | 3, 6 | mismo NIT y mismo sello |
+
+### Lo que todavía difiere, y por qué
+
+**Percepción — precisión.** El origen guarda `253.4428`; el sync redondea a
+`253.44` al guardarlo, así que el portal escribe `253.4400`. **No es formato: es
+pérdida de precisión en el sync.** Se arregla guardando más decimales en
+`purchase_receipts`, y eso merece su propia verificación porque esa columna hoy
+cuadra al centavo en 12 de 12 branch-meses.
+
+**Compras — orden residual en 3 sucursales.** Las filas quedan desplazadas una
+posición (el origen trae 15/06 donde el portal trae 16/06). Como los totales
+coinciden, no falta ni sobra ningún documento: es un criterio de orden que en
+esas sucursales no es sólo `erp_purchase_id`. Sin resolver.
+
+### Correcciones que salieron de esta verificación
+
+1. **Orden por id interno** en compras, percepción, retención, anulados y
+   contribuyentes. Antes iban por número de documento y eso desalineaba el
+   archivo entero. Anulados pasó de 78 a **80 de 80**.
+2. **Extremos del día por id interno** en el libro de consumidor. Antes se
+   elegían por correlativo, que no es el mismo orden. Consumidor pasó de 130 a
+   **179 de 180**. Cambiar el criterio metió 760 documentos nuevos en la cola del
+   número de control, que se drenaron el mismo día.

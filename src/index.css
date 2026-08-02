@@ -1542,16 +1542,28 @@
    Mismo mecanismo que la neutralización de Solid de acá arriba —incluida la
    razón para tocar SOLO la variable del delta y nunca `translate` entero, que
    rompería los `-translate-x-1/2` que centran popovers. */
-/* Se apaga el MOVIMIENTO y nada más: la sombra de hover se conserva. Decisión
-   del usuario (2026-08-01) tras comparar las tres opciones en un mockup con los
-   tokens reales — el lift se queda como canónico porque es la sensación Liquid
-   Glass, pero con un menú abierto la superficie de atrás se ilumina sin
-   moverse. Es lo que en el mockup era la opción B, y elimina el rebote igual
-   que quitar el hover entero: `box-shadow` no toca el hit-testing, `transform`
-   sí. Por eso acá NO va un `box-shadow` — dejarlo pasar es el punto. */
-#root[data-capa-flotante] [data-surface="card"]:hover,
+/* Con una capa abierta la superficie de atrás NO responde al puntero: ni se
+   mueve ni cambia de sombra.
+   ── Por qué no alcanzaba con apagar el movimiento (corregido 2026-08-02) ──
+   La primera versión conservaba la sombra de hover a propósito ("opción B" del
+   mockup: se ilumina sin moverse). Se veía mal, y la medición explicó por qué:
+   apagar el `transform` no apaga el `:hover`, y ese estado SIGUE alternando
+   cuando el puntero cruza el borde del menú. Medido cruzándolo 4 veces: **8
+   cambios de `:hover` y 96 de `box-shadow`**, o sea la sombra de la tarjeta de
+   atrás encendiéndose y apagándose —con su transición de 200ms cortada a la
+   mitad cada vez— mientras uno elige una opción.
+   La opción B se eligió sobre un mockup donde la tarjeta estaba hovereada de
+   forma continua; ahí el artefacto no existía. Con el menú encima, cualquier
+   respuesta al puntero es mentira: el puntero está operando el menú.
+   Se hace por VARIABLE para no pisar los `data-tono`, que declaran box-shadow
+   propio: subir la especificidad acá les borraría el aro de color. */
+#root[data-capa-flotante] [data-surface="card"] {
+  --card-lift-activo:   0px;
+  --card-sombra-activa: var(--card-shadow);
+}
 #root[data-capa-flotante] [data-surface="page-header"]:hover {
   transform: none;
+  box-shadow: var(--header-shadow);
 }
 #root[data-capa-flotante] [class*="hover:-translate-y"]:hover,
 #root[data-capa-flotante] [class*="hover:translate-y"]:hover {
@@ -1935,10 +1947,18 @@
 /* `dashed`: la tarjeta VACÍA que invita a llenarla (documento faltante, cargo
    sin asignar). No es severidad, es ausencia — por eso no lleva color. */
 [data-surface="card"][data-tono="dashed"]  { border-style: dashed; border-color: var(--divider); background: transparent; }
+/* El hover de la tarjeta se resuelve por VARIABLE, no escribiendo `box-shadow`
+   en otra regla más específica. Así la capa flotante (más abajo) apaga la
+   respuesta redefiniendo dos custom properties, sin subir la especificidad ni
+   pisar los `data-tono`, que declaran su propio box-shadow. */
+[data-surface="card"] {
+  --card-lift-activo:   var(--lift-card);
+  --card-sombra-activa: var(--card-shadow-hover);
+}
 @media (hover: hover) {
   [data-surface="card"]:hover {
-    box-shadow: var(--card-shadow-hover);
-    transform: translateY(var(--lift-card));
+    box-shadow: var(--card-sombra-activa);
+    transform: translateY(var(--card-lift-activo));
   }
   /* Una tarjeta DENTRO de otra no agrega su propio lift. `:hover` matchea al
      elemento y a todos sus ancestros, así que al apuntar la interna se

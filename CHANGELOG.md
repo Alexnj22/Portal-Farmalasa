@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.343.2 — Con un menú abierto el fondo deja de pulsar
+
+**La sombra de la tarjeta de atrás parpadeaba mientras uno usaba un menú.** Se
+cortaba y volvía a empezar al mover el mouse — ni fluido ni premium.
+
+La causa: v2.339.1 apagaba el **movimiento** de la superficie de atrás pero le
+conservaba la sombra de hover a propósito (la "opción B" del mockup). Apagar el
+`transform` **no apaga el `:hover`**, y ese estado sigue alternando cada vez que
+el puntero cruza el borde del menú. Medido cruzándolo 4 veces con muestreo por
+frame: **8 cambios de `:hover` y 96 de `box-shadow`, 80 valores distintos** — la
+sombra encendiéndose y apagándose con su transición de 200ms cortada a la mitad
+en cada cruce.
+
+Por qué se coló: el mockup con el que se eligió la opción B tenía la tarjeta
+hovereada de forma continua, así que el artefacto no podía aparecer ahí. **Con
+el menú encima, cualquier respuesta al puntero es mentira** — el puntero está
+operando el menú, no el fondo. Ahora la superficie de atrás no responde: ni se
+mueve ni cambia de sombra. Mismos 4 cruces: **0 cambios de `box-shadow`, 1 solo
+valor**.
+
+**Se implementa por variable, no por especificidad.** El hover de la tarjeta
+pasa a resolverse con `--card-lift-activo` / `--card-sombra-activa`, y la capa
+flotante sólo las redefine. Escribir `box-shadow` en una regla con `#root[…]`
+—que es lo que hacía la versión anterior para el `transform`— habría ganado por
+especificidad sobre los `data-tono`, borrándoles el aro de color.
+
+Verificado en vivo: menú cerrado `dy=-2` con sombra de hover; menú abierto
+`dy=0` y sombra de reposo; al cerrar vuelve el canónico; el aro de `data-tono`
+intacto. Las tarjetas de las 6 rutas siguen en 2px. Sin errores de JS.
+
 ## v2.343.1 — Bloques 21 a 26: 13,591 fichas de clientes
 
 **10,625 → 13,591 fichas procesadas**, frente secuencial en `erp 13,564`, 14,044

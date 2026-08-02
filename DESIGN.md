@@ -634,21 +634,32 @@ alcanzan. **El menú abierto conserva sus propios hovers y el resto de la app se
 queda quieto, sin una sola excepción escrita a mano.** Es un contador y no un
 booleano, porque puede haber un select abierto dentro de un modal.
 
-**Se apaga el MOVIMIENTO, no el hover entero.** La superficie de atrás sigue
-iluminándose —conserva `--card-shadow-hover`— pero no se desplaza:
+**Con una capa abierta, la superficie de atrás NO responde al puntero:** ni se
+mueve ni cambia de sombra.
 
 | | menú cerrado | menú abierto |
 |---|---|---|
-| `transform` | `translateY(var(--lift-card))` | `none` |
-| `box-shadow` | `var(--card-shadow-hover)` | `var(--card-shadow-hover)` — **se conserva** |
+| `transform` | `translateY(var(--lift-card))` | sin desplazamiento |
+| `box-shadow` | `var(--card-shadow-hover)` | `var(--card-shadow)` — la de reposo |
 
-Es exactamente el criterio que se eligió comparando las tres opciones en el
-mockup: el lift se queda como canónico porque es la sensación Liquid Glass, y
-mientras hay un menú abierto la superficie se ilumina sin moverse. Elimina el
-rebote igual que apagar el hover entero, porque **`box-shadow` no toca el
-hit-testing y `transform` sí** — que es toda la razón por la que el rebote
-existía. Por eso la regla de `index.css` declara `transform: none` y **ninguna**
-`box-shadow`: dejarla pasar es el punto, no un olvido.
+**Apagar sólo el movimiento no alcanzaba** (corregido 2026-08-02). La primera
+versión conservaba la sombra de hover a propósito. Se veía cortado, y la
+medición explicó por qué: apagar el `transform` no apaga el `:hover`, y ese
+estado **sigue alternando** cuando el puntero cruza el borde del menú. Medido
+cruzándolo 4 veces: **8 cambios de `:hover` y 96 de `box-shadow`** — la sombra de
+la tarjeta de atrás encendiéndose y apagándose, con su transición de 200ms
+cortada a la mitad cada vez, mientras uno elige una opción. Tras el arreglo, los
+mismos 4 cruces dan **0 cambios de `box-shadow`**.
+
+La lección: el mockup con el que se eligió tenía la tarjeta hovereada de forma
+continua, así que el artefacto no aparecía. **Con el menú encima, cualquier
+respuesta al puntero es mentira** — el puntero está operando el menú, no el
+fondo.
+
+Se implementa **redefiniendo dos custom properties**
+(`--card-lift-activo` / `--card-sombra-activa`), no escribiendo `box-shadow` en
+una regla más específica: los `data-tono` declaran box-shadow propio y subir la
+especificidad acá les borraría el aro de color.
 
 **Se apagan los efectos, NO el puntero.** El reflejo es un velo `fixed inset-0`
 —lo que ya hace `ModalShell`— y resuelve el hover de un saque, pero **rompe el

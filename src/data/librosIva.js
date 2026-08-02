@@ -55,8 +55,9 @@ export function fetchLibroRetencion(desde, hasta, branchId) {
     return supabase.rpc('get_libro_retencion', params(desde, hasta, branchId));
 }
 
-// Reporte de sujeto excluido (Art. 119 CT). El filtro es la clase de documento,
-// no "proveedor sin NRC" — son cosas distintas.
+// Reporte de sujeto excluido (Art. 119 CT). RETIRADO de la vista el 2026-08-02:
+// cero documentos en toda la historia y el reporte no existe en el origen. Se
+// conserva para volver a colgarlo si algún día aparece uno.
 export function fetchLibroSujetoExcluido(desde, hasta, branchId) {
     return supabase.rpc('get_libro_sujeto_excluido', params(desde, hasta, branchId));
 }

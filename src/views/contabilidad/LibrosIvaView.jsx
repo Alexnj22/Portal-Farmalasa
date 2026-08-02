@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, UserX, SearchX } from 'lucide-react';
+import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, SearchX } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -19,7 +19,6 @@ import { exportCsv } from '../../utils/csvExport';
 import {
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
-    fetchLibroSujetoExcluido,
     fetchNotasCreditoCompras,
 } from '../../data/librosIva';
 
@@ -76,7 +75,11 @@ const TABS = [
     { key: 'anulados',      label: 'Anulados'       },
     { key: 'percepcion',    label: 'Percepción'     },
     { key: 'retencion',     label: 'Retención'      },
-    { key: 'excluido',      label: 'Excluido'       },
+    // 'excluido' se retiró el 2026-08-02: cero documentos de sujeto excluido en
+    // toda la historia y el reporte no existe siquiera en el origen. Una pestaña
+    // que siempre sale vacía enseña a ignorar las pestañas vacías — y Retención,
+    // que también sale vacía, SÍ hay que seguir mirándola: el día que aparezca
+    // una retención es un dato real. El RPC queda vivo para volver a colgarla.
     // Octava, y el rótulo corto no es capricho: "Notas de crédito" completo
     // suma ~120px a una fila que ya colapsa al desplegable a 1440. El nombre
     // entero está en el subtítulo de la sección y en el CSV.
@@ -265,7 +268,6 @@ const ETIQUETAS = {
     compras:       { icon: ShoppingCart, monto: 'Compras',      impuesto: 'Crédito fiscal' },
     percepcion:    { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA percibido'  },
     retencion:     { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA retenido'   },
-    excluido:      { icon: UserX,        monto: 'Compras',      impuesto: 'Crédito fiscal' },
     // "Ajuste" y no "Crédito fiscal": este número no es el crédito del período,
     // es lo que hay que MOVERLE — y va neto, porque las de crédito lo bajan y
     // las de débito lo suben.
@@ -379,16 +381,6 @@ const ACCESO = {
         sujeto:    r => Number(r.monto_sujeto || 0),
         impuesto:  r => Number(r.retencion_iva || 0),
     }),
-    excluido: (nom) => ({
-        n:         r => r._n,
-        fecha:     r => r.fecha,
-        sucursal:  r => nom(r.branch_id),
-        proveedor: r => r.proveedor || '',
-        nit:       r => r.nit || '',
-        dui:       r => r.dui || '',
-        doc:       r => r.documento_numero || '',
-        total:     r => Number(r.total || 0),
-    }),
     notas: () => ({
         n:         r => r._n,
         fecha:     r => r.fecha,
@@ -487,7 +479,6 @@ export default function LibrosIvaView() {
     const [compras,       setCompras]       = useState([]);
     const [percepcion,    setPercepcion]    = useState([]);
     const [retencion,     setRetencion]     = useState([]);
-    const [excluido,      setExcluido]      = useState([]);
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
@@ -499,14 +490,13 @@ export default function LibrosIvaView() {
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a, co, pe, re, ex, nc] = await Promise.all([
+        const [c, k, a, co, pe, re, nc] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
             fetchLibroCompras(desde, hasta, filterBranch),
             fetchLibroPercepcion(desde, hasta, filterBranch),
             fetchLibroRetencion(desde, hasta, filterBranch),
-            fetchLibroSujetoExcluido(desde, hasta, filterBranch),
             // Sin sucursal: el origen no la trae. Ver `fetchNotasCreditoCompras`.
             fetchNotasCreditoCompras(desde, hasta),
         ]);
@@ -514,7 +504,7 @@ export default function LibrosIvaView() {
         // vacío por error de red es indistinguible de un mes sin movimiento, y
         // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
         // Excluido, que salen vacíos aun cuando todo funciona.
-        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || ex.error || nc.error;
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
@@ -522,7 +512,6 @@ export default function LibrosIvaView() {
         setCompras(co.data || []);
         setPercepcion(pe.data || []);
         setRetencion(re.data || []);
-        setExcluido(ex.data || []);
         setNotas(nc.data || []);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
@@ -581,8 +570,6 @@ export default function LibrosIvaView() {
                              gravadas: suma(retencion, 'monto_sujeto'),
                              debito:   suma(retencion, 'retencion_iva'),
                              total:    suma(retencion, 'monto_sujeto') },
-            excluido:      { docs: excluido.length, exentas: 0, gravadas: 0, debito: 0,
-                             total: suma(excluido, 'total') },
             // El IVA va NETO: las notas de crédito bajan el crédito fiscal y las
             // de débito lo suben, así que sumarlas todas juntas daría un ajuste
             // mayor al real. Es el número que contabilidad tiene que mover.
@@ -593,7 +580,7 @@ export default function LibrosIvaView() {
                                      - suma(notas.filter(r => r.tipo_dte === '06'), 'iva'),
                              total:    suma(notas, 'monto') },
         };
-    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido, notas]);
+    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas]);
 
     const t = totales[activeTab];
 
@@ -856,17 +843,6 @@ export default function LibrosIvaView() {
                 `notas-credito-compras_${sufijoArchivo}.csv`);
             return;
         }
-        exportCsv(
-            ['No', 'FECHA DE EMISION', 'NOMBRE', 'NIT', 'DUI', 'No DOCUMENTO',
-             'ESTABLECIMIENTO', 'TOTAL'],
-            [
-                ...excluido.map((r, i) => [
-                    i + 1, fmtFecha(r.fecha), r.proveedor || '', r.nit || '', r.dui || '',
-                    r.documento_numero || '', nombreSucursal(r.branch_id), num(r.total),
-                ]),
-                ['TOTALES', '', '', '', '', '', '', num(t.total)],
-            ],
-            `reporte-sujeto-excluido_${sufijoArchivo}.csv`);
     };
 
     // Memoizado y no un objeto literal suelto: si `filas` cambia de identidad en
@@ -874,8 +850,8 @@ export default function LibrosIvaView() {
     // —numerar, filtrar, ordenar, paginar— sobre 467 filas y en cada tecleo del
     // buscador.
     const filas = useMemo(
-        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido, notas }[activeTab] ?? []),
-        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, excluido, notas]);
+        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas }[activeTab] ?? []),
+        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, notas]);
 
     const acceso = useMemo(
         () => (ACCESO[activeTab] || ACCESO.consumidor)(nombreSucursal),
@@ -1237,29 +1213,6 @@ export default function LibrosIvaView() {
                                 <DataCell align="right">
                                     <CeldaMonto fuerte v={activeTab === 'percepcion' ? r.percepcion_iva : r.retencion_iva} />
                                 </DataCell>
-                            </DataRow>
-                        ))}
-                    </DataTable>
-                )}
-
-                {activeTab === 'excluido' && (
-                    <DataTable {...propsTabla(sinSucursal(COLS_EXCLUIDO, !!filterBranch))}
-                        empty={vacioDe(
-                            UserX,
-                            `Sin compras a sujetos excluidos en ${etiquetaMes(mes)}`,
-                            'Todas las compras registradas son con crédito fiscal: no hay ninguna Factura de Sujeto Excluido.')}>
-                        {filasPagina.map((r, i) => (
-                            <DataRow key={`${r.branch_id}-${r.documento_numero}-${r._n}`} index={i}>
-                                <DataCell align="right">{r._n}</DataCell>
-                                <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
-                                {!filterBranch && (
-                                    <DataCell hideBelow="2xl" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
-                                )}
-                                <CeldaProveedor nombre={r.proveedor} />
-                                <DataCell hideBelow="md"><span className="font-mono text-caption whitespace-nowrap">{r.nit || '—'}</span></DataCell>
-                                <DataCell hideBelow="md"><span className="font-mono text-caption whitespace-nowrap">{r.dui || '—'}</span></DataCell>
-                                <DataCell hideBelow="sm"><CeldaDocumento numero={r.documento_numero} /></DataCell>
-                                <DataCell align="right"><CeldaMonto v={r.total} fuerte /></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>

@@ -21,6 +21,48 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.336.0 — Los libros van en orden cronológico y sale Sujeto Excluido
+
+### El orden: el criterio es la norma, no el reporte del ERP
+
+Los libros ordenaban por número de documento; después se cambió a id interno
+porque así los lista el ERP. **Ninguno de los dos era el criterio correcto.**
+
+El **Art. 139 del Código Tributario** dice: «Los asientos se harán en orden
+cronológico». Ordenar sólo por id interno **no lo cumple**: medido en junio, **8
+de 389 compras** quedaban fuera de orden de fecha, porque un documento del día 16
+puede tener id menor que uno del día 15 si se capturó antes.
+
+Ahora manda la **fecha**, y el id interno desempata dentro del mismo día — que es
+donde sí refleja el orden real de captura. El libro cumple la norma, y de paso
+coincide con el reporte del origen sin que eso sea el motivo.
+
+Los montos y las cantidades **nunca dependieron del orden**: el conteo de
+documentos y los totales ya coincidían al centavo antes y después.
+
+### Sujeto Excluido sale del módulo
+
+Nunca ocurrió, y se verificó por tres vías independientes:
+
+| Evidencia | Resultado |
+|---|---|
+| `purchase_receipts`, toda la historia | CCF 1,682 · COF 7 · **cero FSE** |
+| 1,511 DTE recibidos | **ningún tipo 14** |
+| Reporte del origen | **no existe** (9 nombres probados) |
+
+Una pestaña que siempre sale vacía enseña a ignorar las pestañas vacías — y
+**Retención, que también sale vacía, SÍ hay que seguir mirándola**: el día que
+aparezca una retención es un dato real.
+
+El RPC queda vivo pero sin exponer a la app, así que si algún día se emite una
+Factura de Sujeto Excluido el reporte se vuelve a colgar en un commit.
+
+*(Salvedad honesta: 3,438 compras anteriores a junio-2026 tienen el tipo de
+documento en NULL, así que ahí no se puede probar la ausencia. El origen tampoco
+las reporta.)*
+
+_(pendiente de redactar)_
+
 ## v2.335.3 — Bloques 7 y 8 de la migración de clientes
 
 **3,067 → 4,061 fichas procesadas**, frente secuencial en `erp 3,991`, 23,613

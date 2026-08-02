@@ -1,1 +1,26 @@
-[]
+[
+ {
+  "tipo": "distrito",
+  "portal_id": "erp:3630",
+  "erp_id": "3630",
+  "direccion": "BO LAS FLORES, SAN JOSE CANCASQUE",
+  "candidatos": [
+   "SAN J CANCASQUE",
+   "SAN JOSE FLORES"
+  ],
+  "elegido": "SAN J CANCASQUE (ambiguo (2 candidatos))"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:3883",
+  "name": "FLOR DE MARIA GUARDADO GUARDADO",
+  "erp_id": "3883",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
+  },
+  "ts": "2026-08-01 21:36:35"
+ }
+]

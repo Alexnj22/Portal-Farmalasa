@@ -574,5 +574,157 @@
   "accion": "borrado",
   "motivo": "DUI inválido — requiere revisión manual",
   "name": "JOSE ANGEL CASTILLO LOPEZ"
+ },
+ {
+  "erp_id": "3038",
+  "campo": "dui",
+  "valor": "00261773-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "YANIRA GOMEZ"
+ },
+ {
+  "erp_id": "3063",
+  "campo": "dui",
+  "valor": "04755853-5",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA MARCELA ORELLANA AVALOS"
+ },
+ {
+  "erp_id": "3099",
+  "campo": "dui",
+  "valor": "01502010-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "GABRIEL ANTONIO JIMENEZ ALAS"
+ },
+ {
+  "erp_id": "3102",
+  "campo": "dui",
+  "valor": "04041608-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "GLENDA MAGALY MARTINEZ"
+ },
+ {
+  "erp_id": "3263",
+  "campo": "dui",
+  "valor": "05071301-8",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MERCEDES HERNANDEZ ORELLANA"
+ },
+ {
+  "erp_id": "3306",
+  "campo": "dui",
+  "valor": "76023606-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LISBETH ALEJANDRA CASTRO TOBIAS"
+ },
+ {
+  "erp_id": "3364",
+  "campo": "dui",
+  "valor": "00104741-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ELMER RIGOBERTO MENJIVAR"
+ },
+ {
+  "erp_id": "3366",
+  "campo": "dui",
+  "valor": "05873877-3",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SINDY CAROLINA GOMEZ ESCOBAR"
+ },
+ {
+  "erp_id": "3375",
+  "campo": "dui",
+  "valor": "05604101-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ANA ELIZABETH FLORES SANTAMARIA"
+ },
+ {
+  "erp_id": "3434",
+  "campo": "dui",
+  "valor": "04966814-7",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ADALBERTO GEOVANY GUILLEN LEON"
+ },
+ {
+  "erp_id": "3518",
+  "campo": "dui",
+  "valor": "05732534-1",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE WILFREDO ALAS VASQUEZ"
+ },
+ {
+  "erp_id": "3573",
+  "campo": "dui",
+  "valor": "04441765-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE RAFAEL SERRANO SERRANO"
+ },
+ {
+  "erp_id": "3575",
+  "campo": "dui",
+  "valor": "05760394-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "FATIMA ROSICELA CASTILLO RAMIREZ"
+ },
+ {
+  "erp_id": "3599",
+  "campo": "dui",
+  "valor": "06066464-0",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "LISVETH YASMIN GALDAMEZ GALDAMEZ"
+ },
+ {
+  "erp_id": "3614",
+  "campo": "dui",
+  "valor": "05609695-4",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "SARA EUNICE LEIVA DE GOMEZ"
+ },
+ {
+  "erp_id": "3864",
+  "campo": "dui",
+  "valor": "0506310-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "ILIANA DEL CARMEN PEREZ"
+ },
+ {
+  "erp_id": "3941",
+  "campo": "dui",
+  "valor": "06210671-2",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "RICARDO JOSE RODRIGUEZ"
+ },
+ {
+  "erp_id": "3966",
+  "campo": "dui",
+  "valor": "02601116-9",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "MARIA DEL CARMEN LEMUS VALLE"
+ },
+ {
+  "erp_id": "3976",
+  "campo": "dui",
+  "valor": "01682570-6",
+  "accion": "borrado",
+  "motivo": "DUI inválido — requiere revisión manual",
+  "name": "JOSE ANTONIO DELGADO"
  }
 ]

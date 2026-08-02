@@ -46,6 +46,13 @@ actúa si el campo está VACÍO, y estas ya tienen uno — el equivocado. Salen 
 cambios" y, peor, pierden la marca de `ambiguo`, así que la detección
 automática ya no las ve. Si te pasa, `--fichas 2112,2304` las nombra a mano.
 
+**La lista de candidatas ya no crece sola.** Hasta el 2026-08-02 la detección
+buscaba la subcadena pelada `ambiguo` en la anotación del checkpoint, y el texto
+que escribe la propia corrección dice `(corregido por revisar_ambigu**os**)`: se
+detectaba a sí misma, así que cada ficha corregida volvía a la lista para
+siempre y se releía del ERP en cada pasada. Eran 9 candidatas de las cuales 6
+ya estaban resueltas. Ahora se busca `\(ambiguo\b` y quedan las 3 reales.
+
 **El tercer comando no es opcional.** El estado del README se generaba a mano y
 por eso envejecía: llegó a decir 1,085 cuando iban 2,073, y este mismo prompt
 decía 585 estando cuatro bloques atrás. Un número viejo se lee igual que uno
@@ -68,11 +75,27 @@ justifique.
 
 ## Lo primero que va a pasar
 
-Las **5 fichas reencoladas** (161, 176, 380, 1641, 1791) entran al arranque del
-próximo bloque, antes que las nuevas, porque van ordenadas por id. Se les borró
-la entrada del checkpoint a propósito para que se rehagan con el matcher
-corregido: dos de ellas tenían el distrito MAL. Verificá que queden con
-NUEVA TRINIDAD (176) y SAN ANTONIO DEL MONTE (380).
+**Una ficha va a salir rechazada, y está bien.** La `erp 3883` (FLOR DE MARIA
+GUARDADO GUARDADO) es una de las dos duplicadas sin resolver: el ERP contesta
+`Ya se registro un cliente con estos datos!` porque choca con la 8598. El script
+no reintenta —ese rechazo es un hallazgo, no un glitch—, verifica que la ficha
+quedó intacta y **no la anota en el checkpoint**, así que se reintenta en cada
+bloque y falla igual. Va a aparecer como `a revisar: 1` hasta que alguien purgue
+el duplicado en el ERP (decisión abierta #3). No es deuda nueva: es la misma
+decisión, ahora con un costo visible por bloque.
+
+Las 5 fichas reencoladas del handoff anterior (161, 176, 380, 1641, 1791) ya
+están: **176 quedó NUEVA TRINIDAD y 380 SAN ANTONIO DEL MONTE**, verificadas
+releyéndolas del ERP. Reencolarlas no había alcanzado —tal como avisaba este
+mismo archivo— y se arreglaron con `revisar_ambiguos.py --fichas 176,380
+--corregir`.
+
+La `erp 1791` (JOSE MARIO ABARCA) es un caso aparte que **no hay que "arreglar"**:
+alguien le cambió el municipio a mano en el ERP después de procesarla, y como los
+ids de distrito van por (departamento, municipio), el distrito que le habíamos
+escrito **se reetiquetó solo** — el portal decía POTONICO y el ERP EL PARAÍSO,
+sin que nada fallara. Por decisión del usuario se dejó el ERP como está y se
+espejó al portal. Si volvés a verla, ya coincide.
 
 ## Lo que ya NO hay que hacer
 
@@ -95,6 +118,9 @@ NUEVA TRINIDAD (176) y SAN ANTONIO DEL MONTE (380).
 3. **Dos nombres duplicados sin resolver**: FLOR DE MARIA GUARDADO GUARDADO
    (3883/8598) y WILLIAM ENRIQUE ALEMAN ALFARO (7280/7284). Tienen DUI distintos
    en cada ficha, así que pueden ser dos personas — no lo resuelve un script.
+   **La 3883 ya empezó a costar**: el ERP rechaza su escritura por duplicado en
+   cada bloque, y como no se checkpointea, se reintenta para siempre. La 7280 va
+   a hacer lo mismo cuando el frente llegue ahí.
 4. **El reproceso completo**, si se quiere prolijidad del mecanismo de `REGLAS`:
    el matcher se arregló sin subirla, reencolando las 5 afectadas a mano. Está
    justificado en el README, pero si se prefiere, subir REGLAS a 7 relee las

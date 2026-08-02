@@ -29,6 +29,7 @@ No hace falta una lista aparte — que además se desincronizaría.
 """
 import argparse
 import os
+import re
 import sys
 import time
 
@@ -37,10 +38,19 @@ sys.path.insert(0, D)
 import bloque  # noqa: E402
 
 
+# El motivo real viene de `elegir_distrito` como 'ambiguo (N candidatos)', y en
+# el checkpoint queda entre paréntesis: "SAN J CANCASQUE (ambiguo (2 ...))".
+# Buscar la subcadena pelada 'ambiguo' se detectaba a sí misma: el texto que
+# escribe la corrección dice "(corregido por revisar_ambiguos)", así que cada
+# ficha corregida volvía a la lista para siempre y se releía del ERP en cada
+# pasada. Una lista de trabajo que nunca se vacía deja de leerse.
+MARCA_AMBIGUO = re.compile(r'\(ambiguo\b')
+
+
 def candidatas(ck):
     """Las fichas que se resolvieron por desempate, en orden de erp_id."""
     return sorted((k for k, v in ck.items()
-                   if 'ambiguo' in str(v.get('cambios', {}).get('distrito', ''))),
+                   if MARCA_AMBIGUO.search(str(v.get('cambios', {}).get('distrito', '')))),
                   key=int)
 
 

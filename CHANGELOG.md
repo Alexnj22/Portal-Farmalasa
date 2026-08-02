@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.335.3 — Bloques 7 y 8 de la migración de clientes
+
+**3,067 → 4,061 fichas procesadas**, frente secuencial en `erp 3,991`, 23,613
+pendientes (48 bloques). Cero campos perdidos y cero alterados. El espejo llevó
+al portal 3,394 fichas emparejadas, 3,298 de ellas con distrito.
+
+Antes de arrancar se corrigieron dos distritos que el handoff anterior mandaba
+verificar y seguían mal: `erp 176` → NUEVA TRINIDAD y `erp 380` → SAN ANTONIO
+DEL MONTE. Reencolarlas no había alcanzado —la regla del distrito solo actúa si
+el campo está vacío, y estas ya tenían uno, el equivocado—, así que se
+escribieron con `revisar_ambiguos.py --fichas`.
+
+**El bloque 8 trajo un rechazo del ERP, y el mecanismo se comportó bien.** La
+`erp 3883` (FLOR DE MARIA GUARDADO GUARDADO) es una de las dos duplicadas sin
+resolver: el ERP contesta `Ya se registro un cliente con estos datos!` porque
+choca con la 8598. El script no reintentó —ese rechazo no cambia por insistir—,
+verificó que la ficha quedara intacta y no la anotó en el checkpoint. Como
+consecuencia se reintenta en cada bloque y va a fallar igual hasta que alguien
+purgue el duplicado en el ERP: es una decisión de persona, porque las dos fichas
+traen DUI distintos y pueden ser dos personas.
+
+**`revisar_ambiguos.py` se detectaba a sí mismo.** La lista de fichas resueltas
+por desempate salía de buscar la subcadena `ambiguo` en la anotación del
+checkpoint, y el texto que escribe la propia corrección dice `(corregido por
+revisar_ambiguos)`. Cada ficha corregida volvía a la lista para siempre y se
+releía del ERP en cada pasada: eran 9 candidatas, de las cuales 6 ya estaban
+resueltas. Ahora la marca se busca como `\(ambiguo\b` y quedan las 3 reales.
+
+También se sacaron del README dos números escritos a mano que ya habían
+envejecido — el bloque generado entre `ESTADO:INICIO/FIN` los cubre.
+
 ## v2.335.2 — El espejo cierra la edición que descarta
 
 El espejo y el push de clientes se trancaban entre sí. Cuando el ERP se movía

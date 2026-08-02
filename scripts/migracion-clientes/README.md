@@ -4,7 +4,7 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 (`clientesdte3.oss.com.sv/farma_salud`) y espejar el resultado a
 `customers` en el portal.
 
-**Estado al 2026-08-01, 21:00 UTC.** Escrito para retomar sin contexto previo.
+**Estado al 2026-08-02, 04:00 UTC.** Escrito para retomar sin contexto previo.
 
 ---
 
@@ -12,19 +12,19 @@ Herramienta para completar y corregir las fichas de clientes en el ERP
 
 <!-- ESTADO:INICIO -->
 ```
-catálogo del ERP        27,594 fichas
-procesadas               3,067 fichas    (checkpoint.json)
-portadas al portal       2,633 de 24,533  (customers.erp_id no nulo)
-  de ellas con distrito  2,535
-pendientes              24,604          (50 bloques de 500)
+catálogo del ERP        27,602 fichas
+procesadas               4,061 fichas    (checkpoint.json)
+portadas al portal       3,394 de 24,542  (customers.erp_id no nulo)
+  de ellas con distrito  3,298
+pendientes              23,613          (48 bloques de 500)
 ```
 
-**Verificadas OK: 3,067 · a revisar: 0.** El frente secuencial va por `erp_id 2,991`; hay 77 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
+**Verificadas OK: 4,061 · a revisar: 0.** El frente secuencial va por `erp_id 3,991`; hay 72 fichas ya hechas más adelante, del primer bloque que se armó por nombre desde el portal.
 
-`revision_manual.json`: **72 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
+`revision_manual.json`: **91 DUI** borrados con su número original guardado (acumula entre bloques; si alguna vez baja, algo se rompió).
 
-`faltantes_dte.json`: **98 fichas** no se pueden facturar todavía bajo DTE 2.0, 83 de ellas fiscales.
-Les falta: distrito 98 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2 · telefono1 1 · departamento 1 · municipio 1.
+`faltantes_dte.json`: **95 fichas** no se pueden facturar todavía bajo DTE 2.0, 82 de ellas fiscales.
+Les falta: distrito 95 · direccion 8 · sel_giro 3 · nit 3 · nrc 3 · correo 2 · telefono1 1 · departamento 1 · municipio 1.
 
 <sub>Generado por `python3 estado.py --escribir`. No editar a mano: los números se generan, las decisiones se escriben.</sub>
 <!-- ESTADO:FIN -->
@@ -39,8 +39,7 @@ eso "procesadas" puede bajar de un momento a otro — es intencional, y el
 motivo queda en el commit que lo hizo.
 
 
-Cero campos perdidos y cero alterados en las 1,580 fichas acumuladas. En el
-bloque 3 se estrenó en vivo la rama del salto con la ficha `erp 1419`
+En el bloque 3 se estrenó en vivo la rama del salto con la ficha `erp 1419`
 (FRANCISCO NOE LEMUS UMAÑA, Contribuyente): no se tocó en el ERP y sí se espejó
 al portal, que es el comportamiento correcto.
 

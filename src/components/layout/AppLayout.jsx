@@ -74,7 +74,7 @@ const MENU_GROUPS = [
     // DTE, su JSON/PDF y el proveedor fiscal—, no para decidir qué reponer, que
     // es de lo que trata el resto de ese grupo. Y aquí nace Libros IVA, que se
     // apoya en el mismo dato fiscal desde el otro lado del mostrador.
-    { key: 'contabilidad', label: 'Datos Contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva'] },
+    { key: 'contabilidad', label: 'Datos Contables', icon: BookOpen,    modules: ['facturas_compra', 'libros_iva', 'libro_compras_completo'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'maintenance', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
 ];

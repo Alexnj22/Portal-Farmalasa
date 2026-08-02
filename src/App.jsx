@@ -54,6 +54,7 @@ const VentasPperdidasView = lazy(IMPORTADORES.VentasPperdidasView);
 const ComprasView = lazy(IMPORTADORES.ComprasView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
 const LibrosIvaView = lazy(IMPORTADORES.LibrosIvaView);
+const LibroComprasCompletoView = lazy(IMPORTADORES.LibroComprasCompletoView);
 const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
@@ -638,6 +639,7 @@ function MainApp() {
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="libros-iva" element={<PermissionGuard moduleKey="libros_iva"><LibrosIvaView /></PermissionGuard>} />
+                                    <Route path="libro-compras-completo" element={<PermissionGuard moduleKey="libro_compras_completo"><LibroComprasCompletoView /></PermissionGuard>} />
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
@@ -731,6 +733,7 @@ const ROUTE_TITLES = {
     '/compras':           'Compras',
     '/facturas-compra':   'Facturas de Compra',
     '/libros-iva':        'Libros IVA',
+    '/libro-compras-completo': 'Libro de Compras Completo',
     '/conteo-inventario': 'Conteo de Inventario',
     '/branches':          'Sucursales',
     '/roles':             'Roles',

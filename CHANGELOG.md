@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.345.0 — Libro de Compras Completo: vista propia
+
+**Vista nueva y separada, no una pestaña.** El libro de Libros IVA sale del ERP
+y **se queda exactamente igual**: su valor es que se puede cotejar contra el
+archivo del origen —mismo contenido, mismo formato— para confirmar que no sobra
+ni falta nada. Mezclarlos rompería esa prueba.
+
+Éste responde otra pregunta: **qué compró la farmacia de verdad**. Suma a las
+compras del ERP los DTE que llegaron por correo, firmados y sellados, y que
+nunca se registraron como compra.
+
+Junio-julio 2026 — contra **$49,525.79** de crédito fiscal declarado:
+
+| | Docs | Crédito fiscal |
+|---|---|---|
+| La compra falta de verdad | **143** | **$7,375.57** |
+| Gastos que nunca entran (agua, luz, teléfono, banco) | **302** | **$1,156.80** |
+| El cruce falla pero la compra existe | 83 | $2,389.62 |
+| **Total que el libro del ERP no ve** | **528** | **$10,921.99** |
+
+**Y hace dos cosas mejor que su origen, a propósito.** El ERP corta el código de
+generación a 20 caracteres, y con eso su propio libro no identifica sus
+documentos: 778 de 875 filas están en el tope. El portal tiene el código entero
+en 658 de ellas porque el DTE llegó por correo, así que **exporta el completo
+cuando lo tiene**. Medido al aplicar: **1,167 de 1,384 filas** salen con el
+código completo, contra cero en el libro del ERP. Y cada fila dice **de dónde
+salió**, para que la diferencia sea auditable en vez de misteriosa.
+
+**Lo que no hace:** restar las notas de crédito. El ajuste del Art. 62 está
+pendiente de confirmación con el contador, y meterlo sin esa confirmación sería
+inventar una tercera verdad.
+
+La deduplicación es por código de generación truncado a 20 —la única clave que
+los dos lados comparten— y exige **además** que el NIT del proveedor coincida,
+porque el propio sync del ERP advierte que ese truncado *"no siempre es único"*.
+
+Verificado: la rama del ERP da **$49,525.79**, idéntico al libro actual. No se
+movió nada de lo que ya estaba.
+
+Dos cautelas escritas en el código y en el plan, para que el número no se lea
+como plata segura: *"no encontré una compra con ese monto"* no es *"no existe"*,
+y el **Art. 65-A** pide que el gasto sea indispensable para el giro. Es el techo,
+no lo confirmado.
+
 ## v2.344.0 — Avisos de CCF: observaciones, repaso de las 22 h y fin de mes
 
 Los CCF ya tenían aviso inmediato —cada 5 minutos, de 6 a.m. a medianoche— pero

@@ -902,3 +902,92 @@ Hoy no puede pasar en silencio: el barrido dejó **0 NRC duplicados**, así que 
 detector de "dos fichas con el mismo NRC normalizado" arrancaría en cero y
 cualquier caso nuevo sería visible. **Va al Bloque B**, que es donde viven las
 alarmas.
+
+---
+
+# Parte 7 — La mirada contable, y el libro de compras incompleto (2026-08-02)
+
+Alex preguntó qué pensaría un contador viendo los libros. Al medirlo para
+responder apareció el hallazgo más grande del día, y **corrige un número que yo
+mismo había dado mal**.
+
+## H28 · El libro de compras deja afuera ~$8,500 de crédito fiscal en dos meses
+
+Antes había medido "495 DTE de gastos con $1,176 de IVA fuera del libro" (H24) y
+lo presenté como el tamaño del problema. **Estaba mal**: esa consulta solo miraba
+proveedores de servicios (los que no tienen ninguna compra en el ERP) y se
+perdía lo más grande.
+
+Simulando el libro completo —compras del ERP más los DTE recibidos que no tienen
+compra, deduplicando por código de generación— junio-julio 2026 da:
+
+| Clase | Docs | Crédito fiscal | Monto |
+|---|---|---|---|
+| **La compra FALTA de verdad** — el proveedor tiene compras en el ERP, pero ese CCF no está y no hay ninguna con ese monto ±3 días | **143** | **$7,375.57** | $65,800 aprox |
+| **Gastos que nunca entran** — proveedor sin ninguna compra en el ERP | **302** | **$1,156.80** | $16,414.25 |
+| El cruce falla pero la compra existe | 83 | $2,389.62 | — |
+| **Total fuera del libro** | **528** | **$10,921.99** | $101,880.54 |
+
+Contra un crédito fiscal declarado de **$49,525.79** en el mismo período.
+
+**Dos cautelas que hay que decir con el número:**
+
+1. *"No encontré una compra con ese monto"* no es *"no existe"*. Puede haber
+   diferencias de redondeo, compras parciales o fechas corridas. El grupo de 143
+   necesita revisión documento por documento antes de reclamar nada.
+2. El **Art. 65-A de la Ley de IVA** pide que el gasto sea indispensable para el
+   giro. No todo CCF recibido es crédito deducible. **$8,532 es el techo, no lo
+   confirmado.**
+
+## H29 · Los CCF de las 19 notas SÍ están en el portal
+
+Los 19 CCF que las notas de crédito corrigen y que no aparecen como compra
+**están en `purchase_dte_documents`** — llegaron por correo, firmados y sellados.
+Lo que falta es que estén en el ERP.
+
+Refuerza H28: el portal ya tiene el documento. El único motivo por el que no
+entra al libro es que el libro se arma desde el ERP y no desde lo que el portal
+sabe.
+
+## H30 · El libro de junio ya cambió después de junio
+
+Evidencia concreta y de hoy: junio 2026 tenía **2 filas con el NIT en blanco**;
+el barrido de proveedores (E4) creó las fichas faltantes y esas dos filas **ahora
+traen NIT**. Ningún monto cambió, pero cambió una columna que el Art. 86 exige.
+
+Además hay **102 cambios registrados en ventas de junio después del 1 de julio**
+(estado, sello, cliente, total), con su antes y su después en
+`sales_invoice_changelog`.
+
+Es la justificación empírica del Bloque D: **no es que el libro *pueda* cambiar
+después de declararse — ya cambió.**
+
+## H31 · El portal tiene el número completo y exporta el cortado
+
+**778 de 875** compras de junio en adelante tienen el documento en exactamente 20
+caracteres, copiado del ERP. Pero **658 de ellas tienen el código de generación
+completo disponible** en `purchase_dte_documents`, porque el DTE llegó por correo.
+
+O sea que **el 75% del H2 se puede cerrar hoy sin pedirle nada a nadie**: unir por
+el código que ya está y exportar el completo.
+
+## Lo que un contador cambiaría, en orden
+
+Con los artículos que lo respaldan. **No es asesoría legal — hay que confirmarlo
+con el contador de la empresa.**
+
+| # | Qué | Base | Riesgo si no se hace |
+|---|---|---|---|
+| 1 | **Restar las notas de crédito del libro de compras** | Art. 62 Ley de IVA | Se declara crédito fiscal **de más**: $2,737.87 sobre $49,525.79 en jun-jul (5.5%). Es lo único donde el riesgo es multa, no pérdida |
+| 2 | **Libro de compras completo** (ERP + DTE recibidos) | Art. 65 Ley de IVA — 3 períodos para reclamar | Hasta ~$8,500 de crédito fiscal que caduca por calendario |
+| 3 | **Anexo de retención de Renta** | Art. 156 CT | Responsabilidad solidaria por el impuesto no retenido — la única exposición personal |
+| 4 | **Cierre de período** (Bloque D) | Art. 139 CT | No se puede probar qué se declaró. Ya hay deriva medida (H30) |
+| 5 | **Número de documento completo** | Art. 86 RCT | El libro no identifica sus propios documentos. 75% arreglable hoy (H31) |
+
+Lo que **no** hay que cambiar: el filtro del sello, los NIT del portal, la
+aritmética y la estructura de los libros. Eso está bien.
+
+**Una observación de método:** los puntos 1 y 2 casi se compensan ($2,737 de más
+contra ~$8,500 de menos) y es tentador leerlo como "queda parejo". No queda: son
+dos incumplimientos distintos y solo uno de ellos se sanciona. Se arreglan por
+separado.

@@ -289,3 +289,54 @@ Lo que falta es `supplier_id`, que está en NULL: esas fichas nacieron de los DT
 (`source: dte`) y nunca se ligaron al proveedor del módulo de Compras. Son 11 de
 los 15 casos. El libro las busca por ese vínculo, no las encuentra, y escribe la
 columna vacía.
+
+
+---
+
+## 8. PENDIENTE — la precisión de 2 vs 4 decimales
+
+**Para consultar con el contador antes de tocar nada.**
+
+El anexo de percepción del origen muestra los montos con **cuatro decimales**;
+`purchase_receipts` los guarda con **dos**, porque el sync los redondea al
+guardarlos.
+
+```
+Origen : 253.4428          Origen : 571.9915
+Portal : 253.4400          Portal : 571.9900
+```
+
+### Cuánto es
+
+| | Junio 2026 |
+|---|---|
+| Filas del anexo | 226 |
+| Monto sujeto declarado | $153,148.40 |
+| Percepción declarada | $1,531.44 |
+| **Error acumulado del redondeo** | **menos de $1 en el mes** |
+
+Son unas 3 milésimas por fila. En plata es despreciable; lo que lo hace visible
+es que aparece en **todas** las filas, porque la comparación es texto contra
+texto.
+
+### La pregunta para el contador
+
+**¿El anexo de percepción se presenta con 2 o con 4 decimales?** De eso depende
+qué hacer:
+
+- **Si se presenta con 2** — no hay nada que hacer. El portal ya declara el valor
+  redondeado y coincide con lo que se informa.
+- **Si se presenta con 4** — hay que cambiar la precisión con la que el sync
+  guarda `subtotal` y `percepcion_iva` en `purchase_receipts`, y **rehacer el
+  histórico**.
+
+### Por qué no se cambió por las dudas
+
+Esa columna **hoy cuadra al centavo en 12 de 12 branch-meses** contra el origen.
+Cambiarle la precisión toca el dato base de un libro que ya está verificado, así
+que merece su propia verificación completa — no se hace "de paso". Y si la
+respuesta es "se presenta con 2", el cambio sería trabajo y riesgo por nada.
+
+Lo mismo aplica al libro de compras, que usa `subtotal − percepción`: hoy da
+`571.99` donde el origen calcula `571.9915`. En el libro se presenta con 2
+decimales de todas formas, así que ahí la diferencia no llega al archivo.

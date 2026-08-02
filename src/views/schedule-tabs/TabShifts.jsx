@@ -36,7 +36,7 @@ const formatBranchNames = (names) => {
 const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
     const isError = insight.type === 'error';
     return (
-        <div data-surface="card" className={`p-5 rounded-header border backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all hover:-translate-y-1 group h-full
+        <div data-surface="card" className={`p-5 rounded-header border backdrop-saturate-[180%] flex flex-col gap-4 relative transform-gpu transition-all group h-full
             ${isError
                 ? 'border-danger/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glow-danger-lg)]'
                 : 'border-chart-9/30 shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-elevation-xl)]'}`}>
@@ -97,8 +97,8 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
         <div data-surface="card" data-tono={isEditingThis ? 'warning' : undefined}
                     className={`p-5 flex flex-col gap-4 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group/card relative transform-gpu w-full h-full ${
                         isEditingThis ? 'animate-subtle-shake z-tabs'
-                        : isArchived ? 'opacity-80 hover:opacity-100 hover:-translate-y-1 z-base'
-                        : 'hover:-translate-y-1 z-base hover:z-content'
+                        : isArchived ? 'opacity-80 hover:opacity-100 z-base'
+                        : 'z-base hover:z-content'
                     }`}>
 
             {confirmAction && (

@@ -994,7 +994,7 @@ const EmployeeRequestsView = () => {
 
     // ── Filtros ──────────────────────────────────────────────────────────────
     const renderFiltersContent = () => (
-        <div data-surface="card" className="flex items-center hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
+        <div data-surface="card" className="flex items-center hover:shadow-[var(--shadow-glass-md)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]  transform-gpu animate-in fade-in slide-in-from-right-8 w-max max-w-full">
             <div className="flex items-center gap-1 md:gap-1.5 pl-2 pr-2 md:pr-3">
                 <SegmentedControl
                     label="Estado de las solicitudes"

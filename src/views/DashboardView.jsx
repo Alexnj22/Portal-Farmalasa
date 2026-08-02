@@ -281,7 +281,7 @@ const SalesBranchSkeleton = () => (
 
 const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" {...clickable(onClick)}
-    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
+    className={`group animate-kpi-enter relative bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-3xl border border-border-card shadow-[var(--shadow-glass-3)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[var(--shadow-glass-4)] active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ background: 'linear-gradient(to bottom right, var(--card-sheen-strong), transparent)' }} />
     {/* Icon + label in the same row — breaks the "icon alone in corner" hero-metric pattern */}
     <div className="relative flex items-center gap-2">
@@ -302,7 +302,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
 const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => {
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
-    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
+    <div data-surface="card" className={`h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>
       {/* backdrop-filter on inner absolute div — Chrome bug: overflow-hidden + backdrop-filter on same element breaks blur */}
       <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
       {/* Glass shine */}
@@ -1408,7 +1408,7 @@ const DashboardView = ({ openModal }) => {
       const nowH=new Date().getHours();
       const fHr=h=>h<12?`${h}a`:h===12?'12p':`${h-12}p`;
       return wrapWidget(wid,
-        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden">
           {/* Mismas 2 capas que WidgetCard (blur + glass shine) — antes esta
               mini-card se pintaba a mano sin la capa de brillo, por eso se
               veía más opaca/gris que el resto de widgets del dashboard. */}
@@ -1690,7 +1690,7 @@ const DashboardView = ({ openModal }) => {
         : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
-        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col overflow-hidden">
+        <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col overflow-hidden">
           <div className="absolute inset-0 bg-surface-card backdrop-blur-[18px] backdrop-saturate-[180%] rounded-card pointer-events-none" />
           {/* Mismas 2 capas que WidgetCard — este widget era hand-rolled sin
               el glass shine ni data-surface="card" (mismo bug que

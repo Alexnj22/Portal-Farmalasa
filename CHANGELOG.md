@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.340.1 — Auditoría del lift: 11 tarjetas sumaban dos lifts
+
+Auditoría pedida tras cerrar v2.339.1: ¿todas las tarjetas cumplen el canónico,
+y la regla quedó vigilada para lo que se agregue después? **Las dos respuestas
+eran que no.**
+
+**11 tarjetas traían un `hover:-translate-y-*` de Tailwind ADEMÁS del canónico,
+y no lo reemplazaban: lo sumaban.** En Tailwind v4 esas clases compilan a la
+propiedad `translate`, que es distinta de `transform` —donde vive
+`--lift-card`—, así que las dos aplican. Verificado sobre el mismo elemento
+quitándole la clase: **4.00px con ella, 2.00px sin ella.** Se movían entre 3 y
+6px mientras la tarjeta de al lado se movía 2. Y como `translate` no está en la
+transición del canónico, ese sobrante saltaba sin animar.
+
+Corregidas las 11: `DashboardView` (×4), `TabShifts` (×3), `SrsBuscadorWidget`,
+`RolesView`, `TabExpediente`, `EmployeeAnnouncementsView`,
+`EmployeeRequestsView`. Ninguna pierde animación — el canónico
+(`[data-surface="card"]`) ya declara su propia `transition` de `transform` y
+`box-shadow`.
+
+**Categoría nueva del gate: `lift-clavado`**, bloqueante en cero. Marca cualquier
+`data-surface="card"` que además traiga `hover:-translate-y-*` o `hover:scale-*`.
+Probado reintroduciendo uno en `TabExpediente`: lo marcó, `SUBIÓ +1`. Existía el
+hueco porque la regla "nunca clavar el número" vivía **sólo en prosa** en
+`DESIGN.md` — el tipo de regla que se rompe sola si nada la verifica.
+
+Verificado en vivo recorriendo el tablero: las 8 tarjetas medidas se desplazan
+**exactamente 2px**, ninguna fuera del canónico. Sin errores de JS.
+
+También auditado y limpio: `data-surface="page-header"` (1 uso, sin lift
+clavado), las tarjetas escritas a mano (categoría `tarjeta a mano` en 0), y la
+capa flotante sobre las tarjetas con doble lift — neutralizaba las dos
+propiedades correctamente incluso antes de la corrección.
+
+`DESIGN.md` §5 documenta ahora que el lift de Tailwind se SUMA al canónico.
+
 ## v2.340.0 — E4: el maestro de proveedores del ERP
 
 El libro de compras sacaba el NIT del proveedor **solo** de la ficha del portal,

@@ -44,7 +44,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
     return (
         <div data-surface="card" data-tono={isMissing ? 'dashed' : undefined}
-                            className="group relative flex flex-col p-5 transition-all duration-300 ease-out transform hover:-translate-y-1 hover:z-sidebar">
+                            className="group relative flex flex-col p-5 transition-all duration-300 ease-out transform hover:z-sidebar">
 
             {/* 🚨 HOVER ACTIONS NORMALES */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all duration-300 z-base translate-y-2 group-hover:translate-y-0">

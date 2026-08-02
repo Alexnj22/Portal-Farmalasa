@@ -972,6 +972,37 @@ function scanFile(path) {
     // y cualquier motion.* nuevo queda cubierto sin que su autor haga nada.
   }
 
+  // ── `lift-clavado` (2026-08-01) ───────────────────────────────────────
+  // Una superficie `data-surface="card"` YA se levanta sola: el canónico de
+  // `index.css` le aplica `transform: translateY(var(--lift-card))`. Agregarle
+  // además un `hover:-translate-y-*` de Tailwind no la reemplaza — **la suma**.
+  // En Tailwind v4 esas clases compilan a la propiedad `translate`, que es
+  // DISTINTA de `transform`, así que las dos aplican y el desplazamiento se
+  // acumula. Medido el 2026-08-01 sobre el mismo elemento, quitándole la clase:
+  // 4.00px con ella, 2.00px sin ella. Eran 11 tarjetas moviéndose entre 3 y 6px
+  // mientras la de al lado se movía 2 — y encima `translate` no está en la
+  // transición del canónico, así que ese sobrante saltaba sin animar.
+  //
+  // La regla ya estaba escrita en DESIGN.md §5 ("nunca clavar el número"), que
+  // es exactamente el tipo de regla que se rompe sola si nada la verifica.
+  // Bloqueante en cero desde que se corrigieron las 11.
+  if (!hasException(path, 'lift-clavado') && /\.jsx$/.test(path)) {
+    const APERTURA_CARD = /<[A-Za-z][^>]*?data-surface="card"[\s\S]{0,500}?>/g;
+    let m;
+    while ((m = APERTURA_CARD.exec(text))) {
+      const clases = m[0].match(/hover:-?translate-y-[^\s"'`}]+|hover:scale-[^\s"'`}]+/g);
+      if (!clases) continue;
+      const linea = text.slice(0, m.index).split('\n').length;
+      if (isComment[linea - 1]) continue;
+      findings.push({
+        line: linea,
+        label: `\`${clases[0]}\` sobre una tarjeta que YA se levanta con \`--lift-card\` — se SUMAN (DESIGN.md §5)`,
+        category: 'lift-clavado',
+        text: m[0].replace(/\s+/g, ' ').slice(0, 120),
+      });
+    }
+  }
+
   // ── `capa-flotante` (2026-08-01) ──────────────────────────────────────
   // Un menú/popover ANCLADO a un disparador se dibuja por portal encima del
   // contenido, pero el contenido sigue recibiendo el puntero: al moverse sobre

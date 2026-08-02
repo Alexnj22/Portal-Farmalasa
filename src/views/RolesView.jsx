@@ -650,7 +650,7 @@ const RolesView = ({ openModal }) => {
                                             key={role.id}
                                             data-surface="card" data-tono={isEditingThis ? 'warning' : undefined}
                                 className={`p-5 flex flex-col group relative transition-all duration-500 transform-gpu ${
-                                    isEditingThis ? 'animate-subtle-shake z-base' : 'hover:-translate-y-1'
+                                    isEditingThis ? 'animate-subtle-shake z-base' : ''
                                 }`}
                                         >
                                             {/* 🚨 INDICADOR DE LÍMITE REUBICADO A LA DERECHA */}

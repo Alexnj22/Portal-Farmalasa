@@ -553,6 +553,15 @@ y solid-dark.
 > control, `var(--lift-hover)`. Clavar `-2px` es exactamente el bug que esto
 > arregla, y no hay tema que lo pueda rescatar después.
 
+**Y nunca agregarle un `hover:-translate-y-*` a una tarjeta: no la reemplaza,
+se SUMA.** En Tailwind v4 esas clases compilan a la propiedad `translate`, que
+es distinta de `transform` —donde vive el canónico—, así que las dos aplican.
+Medido el 2026-08-01 sobre el mismo elemento, quitándole la clase: **4.00px con
+ella, 2.00px sin ella.** Eran 11 tarjetas moviéndose entre 3 y 6px mientras la
+de al lado se movía 2, y encima `translate` no está en la transición del
+canónico, así que ese sobrante saltaba sin animar. Corregidas las 11; lo vigila
+la categoría **`lift-clavado`** de `npm run gate:design`, bloqueante en cero.
+
 ### 5.1 `data-tono` — la tarjeta marcada por su estado (2026-07-28)
 
 **El canónico era INDECORABLE, y eso explicaba las últimas tarjetas escritas a

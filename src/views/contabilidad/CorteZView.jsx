@@ -9,7 +9,6 @@ import StatCard from '../../components/common/StatCard';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import LiquidTooltip from '../../components/common/LiquidTooltip';
 
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
@@ -77,114 +76,73 @@ const LineaCotejo = ({ rotulo, z, portal, dif }) => {
 //
 // Se pintan las cinco líneas aunque vayan en cero: en el documento del origen
 // están las cinco, y esconder una porque vale cero es decidir por quien lo lee
-// que ese cero no importa. Lo que SÍ se marca es cuando `gravadas` y `total`
-// discrepan — que no debería pasar nunca y en Salud 3 pasa.
-const SeccionTicket = ({ titulo, datos = {} }) => {
-    const discrepa = !cuadra((Number(datos.gravadas) || 0) - (Number(datos.total) || 0));
-    return (
-        <div className="min-w-0">
-            <h4 className="text-caption font-semibold text-content-2 mb-1 truncate">{titulo}</h4>
-            <dl className="space-y-0.5">
-                {[
-                    ['Exentas', datos.exentas, false],
-                    ['Gravadas', datos.gravadas, discrepa],
-                    ['No sujetas', datos.no_sujetas, false],
-                    ['Retención', datos.retencion, false],
-                ].map(([r, v, marcar]) => (
-                    <div key={r} className="flex justify-between items-center gap-2 min-w-0">
-                        <dt className="text-micro text-content-3 flex items-center gap-1 min-w-0">
-                            <span className="truncate">{r}</span>
-                            {/* El aviso va PEGADO a la cifra que discrepa, no en
-                                el título: como badge de encabezado ocupaba más
-                                ancho que la columna y partía la grilla de tres.
-                                Y acá además es más preciso — la contradicción es
-                                entre esta línea y el total, no de la sección. */}
-                            {marcar && (
-                                <LiquidTooltip content="El origen imprime esta línea distinta de su propio TOTAL. En el resto de las sucursales son iguales.">
-                                    <AlertTriangle size={11} className="shrink-0 text-warning-text"
-                                        aria-label="No coincide con el total de esta sección" />
-                                </LiquidTooltip>
-                            )}
-                        </dt>
-                        <dd className="font-mono text-micro tabular-nums text-content-2 shrink-0">{formatMoney(v)}</dd>
-                    </div>
-                ))}
-                <div className="flex justify-between gap-2 pt-1 border-t border-divider">
-                    <dt className="text-micro font-semibold text-content-2">Total</dt>
-                    <dd className="font-mono text-caption tabular-nums font-bold shrink-0">{formatMoney(datos.total)}</dd>
+// que ese cero no importa.
+//
+// `TOTAL = GRAVADAS − RETENCIÓN`, y se cumple en las 12 filas cargadas con
+// desviación cero. Una versión anterior marcaba `gravadas ≠ total` como si el
+// ticket se contradijera; lo corrigió el usuario mirando la tarjeta —la resta
+// estaba a la vista— y la marca se retiró: no había nada que marcar.
+const SeccionTicket = ({ titulo, datos = {} }) => (
+    <div className="min-w-0">
+        <h4 className="text-caption font-semibold text-content-2 mb-1 truncate">{titulo}</h4>
+        <dl className="space-y-0.5">
+            {[
+                ['Exentas', datos.exentas],
+                ['Gravadas', datos.gravadas],
+                ['No sujetas', datos.no_sujetas],
+                ['Retención', datos.retencion],
+            ].map(([r, v]) => (
+                <div key={r} className="flex justify-between items-center gap-2 min-w-0">
+                    <dt className="text-micro text-content-3 truncate">{r}</dt>
+                    <dd className="font-mono text-micro tabular-nums text-content-2 shrink-0">{formatMoney(v)}</dd>
                 </div>
-            </dl>
-        </div>
-    );
-};
+            ))}
+            <div className="flex justify-between gap-2 pt-1 border-t border-divider">
+                <dt className="text-micro font-semibold text-content-2">Total</dt>
+                <dd className="font-mono text-caption tabular-nums font-bold shrink-0">{formatMoney(datos.total)}</dd>
+            </div>
+        </dl>
+    </div>
+);
 
-// ── Por qué difiere ──────────────────────────────────────────────────────────
+// ── Por qué difiere ─────────────────────────────────────────────────────────
 //
-// «Difiere $42.92» no sirve de nada si no dice de dónde sale. La diferencia se
-// parte en dos sumandos que llevan a acciones OPUESTAS:
+// «Difiere $9.00» no sirve de nada si no dice de dónde sale.
 //
-//   · lo que el Corte Z se contradice a sí mismo — su línea GRAVADAS contra su
-//     línea TOTAL. No hay ningún documento que buscar: es un defecto del
-//     reporte, y se le reclama al proveedor del sistema.
-//   · el residuo — eso sí es un hueco de documentos y se persigue uno por uno.
-//
-// Medido el 2026-08-03: en Salud 3 la diferencia entera es del primer tipo
-// (6.03 de 6.03 en junio, 42.92 de 42.92 en julio, residuo CERO). En Salud 1 es
-// del segundo: contradicción 0.00 y residuo 9.00.
+// Antes de llegar acá ya se descontó la RETENCIÓN: el Corte Z declara el total
+// NETO (`TOTAL = GRAVADAS − RETENCIÓN`) y `sales_invoices.total` es el BRUTO,
+// así que compararlos de frente inventaba una diferencia que no existía —
+// Salud 3 aparecía con $42.92 y en realidad cuadraba. Lo que llega hasta este
+// panel es el residuo REAL: documentos que un lado tiene y el otro no.
 const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
-    const interna = Number(fila.contradiccion_interna) || 0;
     const residuo = Number(fila.residuo) || 0;
 
-    // Los tokens del aviso son los de `Notice` variant="warning" (§T7): la pareja
-    // que escribí primero —`border-warning-border`, `bg-warning-surface`— NO
-    // EXISTE, así que Tailwind no generaba nada y el borde caía al negro por
-    // defecto. Una clase escrita no es una clase que existe.
     return (
-        <div className="rounded-xl border bg-warning/10 border-warning/30 text-warning-text p-3 space-y-2">
+        <div className="rounded-card border bg-warning/10 border-warning/30 text-warning-text p-3 space-y-2">
             <h4 className="text-caption font-semibold flex items-center gap-1.5">
                 <AlertTriangle size={13} aria-hidden="true" />
-                Por qué difiere {formatMoney(Math.abs(fila.dif_total))}
+                Por qué difiere {formatMoney(Math.abs(residuo))}
             </h4>
 
-            {!cuadra(interna) && (
-                <p className="text-micro leading-relaxed">
-                    <b>{formatMoney(interna)}</b> — el Corte Z <b>se contradice a sí mismo</b>:
-                    imprime una cifra en «gravadas» y otra en «total». La de gravadas es la que
-                    coincide con el libro. No hay documentos que buscar por esta parte.
-                </p>
-            )}
+            <p className="text-micro leading-relaxed">
+                El libro tiene <b>{residuo > 0 ? 'más' : 'menos'}</b> que el Corte Z, y ya está
+                descontada la retención. El Corte Z es mensual: no lista documentos. Para ubicarlo
+                hay que comparar día por día contra el reporte diario, y de ahí bajar al documento.
+                {!cuadra(fila.dif_ccf) && (
+                    <> Parte de la diferencia está en los créditos fiscales
+                    ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
+                    contribuyentes, que los lista uno por uno.</>
+                )}
+            </p>
 
-            {!cuadra(residuo) ? (
-                <>
-                    <p className="text-micro leading-relaxed">
-                        <b>{formatMoney(residuo)}</b> — sin explicar. El libro tiene{' '}
-                        {residuo > 0 ? 'más' : 'menos'} que el Corte Z, y el Corte Z es mensual:
-                        no lista documentos. Para ubicarlo hay que comparar día por día contra el
-                        reporte diario, y de ahí bajar al documento.
-                        {!cuadra(fila.dif_ccf) && (
-                            <> Ojo: parte de la diferencia está en los créditos fiscales
-                            ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
-                            contribuyentes, que los lista uno por uno.</>
-                        )}
-                    </p>
-                    {!dias && (
-                        <Button size="sm" variant="secondary" onClick={onVerDias} disabled={cargandoDias}>
-                            {cargandoDias ? 'Cargando…' : 'Ver día por día'}
-                        </Button>
-                    )}
-                </>
-            ) : (
-                <p className="text-micro leading-relaxed">
-                    <b>Sin residuo.</b> La diferencia se explica entera por la contradicción de
-                    arriba — no falta ni sobra ningún documento.
-                </p>
+            {!dias && (
+                <Button size="sm" variant="secondary" onClick={onVerDias} disabled={cargandoDias}>
+                    {cargandoDias ? 'Cargando…' : 'Ver día por día'}
+                </Button>
             )}
 
             {dias && (
                 <div className="max-h-64 overflow-y-auto rounded-card bg-surface-card-hover border border-divider">
-                    {/* Solo ventas con factura: es lo que el reporte diario del
-                        origen también lista, y mezclarle los créditos fiscales daba
-                        rangos de control imposibles (dos series distintas). */}
                     <p className="px-2 pt-2 text-micro text-content-3">
                         Ventas con factura, día por día — para enfrentarlo al reporte diario.
                     </p>
@@ -204,8 +162,6 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                                     <td className="px-2 py-1 text-right tabular-nums">{d.documentos}</td>
                                     <td className="px-2 py-1 text-right font-mono tabular-nums">{formatMoney(d.total)}</td>
                                     <td className="px-2 py-1 font-mono text-content-3">
-                                        {/* Solo el correlativo: el prefijo DTE-01-SxxxPxxx es
-                                            igual en toda la columna y solo gasta ancho. */}
                                         {(d.numero_control_del || '—').slice(-9)} → {(d.numero_control_al || '—').slice(-9)}
                                     </td>
                                 </tr>
@@ -266,6 +222,18 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 <LineaCotejo rotulo="Total general" z={fila.total_general}
                     portal={fila.portal_total} dif={fila.dif_total} />
             </div>
+
+            {/* La retención, dicha en voz alta. Sin esto la columna «Corte Z» y
+                la columna «Libro» muestran números distintos con un guión en la
+                diferencia, y se lee como un error de la tabla. Es la resta que
+                el propio ticket hace: TOTAL = GRAVADAS − RETENCIÓN. */}
+            {!cuadra(fila.retencion) && (
+                <p className="text-micro text-content-3 leading-relaxed">
+                    El Corte Z declara <b>{formatMoney(fila.retencion)}</b> de retención de IVA y
+                    la resta de su total, por eso su cifra es menor que la del libro. Descontada,
+                    los dos coinciden.
+                </p>
+            )}
 
             {!ok && (
                 <PorQueDifiere fila={fila} dias={dias}

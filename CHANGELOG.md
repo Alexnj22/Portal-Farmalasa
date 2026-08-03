@@ -21,6 +21,50 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.353.3 — El Corte Z no se contradice: resta la retención
+
+**Corrección de una explicación equivocada que salió en v2.352.0 y v2.353.1.**
+La detectó el usuario mirando la tarjeta: «¿aquí no es por la retención que
+difiere?». Sí. La fórmula del ticket es
+
+```
+TOTAL = GRAVADAS − RETENCIÓN
+```
+
+y se cumple en **las 12 filas cargadas con desviación cero**. Salud 3, con
+factura: 48,564.53 − 39.32 = 48,525.21. Con crédito fiscal: 980.33 − 3.60 =
+976.73. La resta estaba impresa en la línea de al lado.
+
+Yo lo había leído como que **el ticket se contradecía a sí mismo** —GRAVADAS
+contra TOTAL— y lo escribí así en una migración, en el changelog, en el doc y en
+la propia UI, con un ⚠ sobre la cifra. Era falso. El Corte Z declara el **neto de
+retención**; `sales_invoices.total` es el **bruto**, y compararlos de frente
+inventaba una diferencia que no existía.
+
+**Qué cambia con el número correcto:** de 12 branch-meses, **11 cuadran al
+centavo**. Salud 3 —que parecía la más rota, con $42.92 y $6.03— **cuadra
+perfecto**: esas cifras eran exactamente su retención (39.32 + 3.60 y 2.21 +
+3.82). El tablero pasa de «2 con observación» a **1**.
+
+**La única diferencia real que queda** es Salud 1 julio, **$9.00**, con retención
+0: el Z y el libro del origen coinciden entre sí y los dos omiten una venta
+FINALIZADA y con sello de Hacienda. Eso sigue en pie y sigue siendo lo único que
+hay que perseguir.
+
+En la vista: se retira el ⚠ de «gravadas» (no había nada que marcar), el panel
+deja de hablar de contradicción, y cuando hay retención la tarjeta **lo dice** —
+«El Corte Z declara $X de retención de IVA y la resta de su total, por eso su
+cifra es menor que la del libro» —, porque si no las dos columnas muestran
+números distintos con un guión en la diferencia y se lee como un error de la
+tabla.
+
+**Y un hueco que esto destapa:** `sales_invoices` **no tiene columna de
+retención** y el sync no la trae, así que el único lado que conoce la retención
+de ventas es el propio Corte Z. Peor: el anexo de retención (Art. 162) sale
+**vacío del origen en toda la historia**, pero el Corte Z de Salud 3 sí declara
+retención en junio y julio. Una de las dos cosas está mal en el origen. Queda
+anotado, sin investigar.
+
 ## v2.353.2 — Corte Z: la tarjeta usa el canónico y el texto vuelve a ser legible
 
 Reportado por el usuario: «verifica liquidglass, el texto es ilegible. ¿estás

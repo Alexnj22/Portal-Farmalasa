@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.353.0 — Vista de Corte Z: tarjeta por sucursal, cotejo contra el libro y PDF
+
+La otra mitad del módulo. La capa de datos salió en v2.352.0; esto es lo que se
+ve.
+
+**Una tarjeta por sucursal, no el ticket.** El origen lo imprime en formato de
+40 columnas para impresora térmica; acá van los números en tarjetas. Replicar el
+ticket sería copiar una limitación de la impresora, no un requisito del dato —
+pero **el original se guarda y se abre con «Ver el original»**, porque el día que
+haya que defender una cifra, el texto que emitió el origen es la prueba.
+
+**El cotejo se muestra SIEMPRE**, cuadre o no: un informe que solo enseña la
+comparación cuando falla no deja constancia de que se hizo. Cada tarjeta lleva su
+badge —«Cuadra con el libro» o «Difiere $X»— y las tres líneas enfrentadas.
+
+**PDF por sucursal y de todas juntas** (una por hoja, con numeración de página:
+sin numerar, dos hojas sueltas no se sabe si son de la misma corrida). pdfmake
+va por `await import()` — 809 kB que solo hacen falta al apretar el botón.
+
+Se pintan las cinco líneas de cada sección aunque vayan en cero: en el documento
+del origen están las cinco, y esconder una porque vale cero es decidir por quien
+lo lee que ese cero no importa.
+
+### Verificado en el navegador, julio 2026
+
+6 tarjetas · badges correctos en las 6 (4 cuadran, **Salud 1 difiere $9.00** y
+**Salud 3 $42.92**, que son exactamente las diferencias conocidas) · el original
+se abre · PDF de sucursal 21 kB y el de todas 34 kB con **6 páginas** · cero
+errores de consola. El mes en curso muestra el vacío explicado, no una tabla
+vacía: agosto todavía no se cierra.
+
+**Un defecto de layout encontrado ahí y corregido:** el aviso de «gravadas ≠
+total» iba como badge en el título de la sección y ocupaba más ancho que la
+columna, partiendo la grilla de tres en Salud 3 —la única sucursal donde
+aparece—. Pasó a ser un ícono **pegado a la cifra que discrepa**, que además es
+más preciso: la contradicción es entre esa línea y el total, no de la sección
+entera.
+
+Alta de módulo completa (los 5 pasos): vista, ruta, `moduleMap`, menú de Datos
+Contables y `permissionModules`, más los permisos en base copiados de
+`libros_iva` — quien puede ver los libros es exactamente quien tiene que poder
+cotejar el Corte Z contra ellos. **`can_edit` en falso para todos**, incluido
+Gerente General: un Corte Z no se edita; si el número está mal, está mal en el
+origen.
+
 ## v2.352.0 — Corte Z: se guarda el Gran Z del origen y se contrasta contra el libro
 
 Primera mitad del módulo de Corte Z: **la capa de datos**. La vista todavía no

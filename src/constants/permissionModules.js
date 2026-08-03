@@ -130,6 +130,7 @@ export const MODULE_GROUPS = [
                 { key: 'facturas_compra_ver_montos', label: 'Cards Contables' },
             ]},
             { key: 'libros_iva', label: 'Libros IVA', desc: 'Los siete libros y anexos de IVA, con exportación a CSV. Ventas: consumidor final (Art. 83), contribuyentes (Art. 85) y anexo de anulados, solo con sello de Hacienda. Compras: libro del Art. 86 y los anexos de percepción, retención y sujeto excluido', icon: BookOpen, hasApprove: false, hasScope: true },
+            { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por Hacienda, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icon: Receipt, hasApprove: false, hasScope: true },
             { key: 'libro_compras_completo', label: 'Libro de Compras Completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras del ERP más los DTE recibidos por correo que nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sale del ERP y sirve para cotejarse contra el archivo del origen. Exporta el número de documento completo, no el cortado a 20 caracteres', icon: BookOpen, hasApprove: false, hasScope: true },
         ],
     },

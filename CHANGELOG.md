@@ -21,6 +21,65 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.352.0 — Corte Z: se guarda el Gran Z del origen y se contrasta contra el libro
+
+Primera mitad del módulo de Corte Z: **la capa de datos**. La vista todavía no
+está; esto es lo que la va a alimentar.
+
+**El endpoint no era un archivo aparte.** Buscarlo como `reportez_gz.php`,
+`granz.php`, `print_gz.php` y cinco nombres más da 404 en los ocho. Es un `POST`
+a la misma pantalla:
+
+```
+POST reportez.php   process=imprimir_gz&fini=&ffin=&selectSucursal=&id_sucursal_dom=
+```
+
+Devuelve JSON con el ticket entero en `movimiento`, y **pide las credenciales de
+COMPRAS** — con las de ventas contesta «No tiene permiso para este modulo» y
+devuelve **HTTP 200**, así que un chequeo de status no lo atrapa.
+
+**Qué se guarda.** Tabla `corte_z`, una fila por sucursal y mes: los cuatro
+totales parseados, el detalle de las tres secciones en `jsonb`, y **el texto
+crudo del ticket**. Lo crudo no es redundancia: el día que haya que defender una
+cifra, lo que emitió el origen es la prueba, y un parser nuevo no puede
+reescribir el pasado.
+
+**Cron el día 1 de cada mes** (`corte-z-mensual`, 09:00 UTC) trayendo el mes
+anterior, que es el único ya cerrado. Sin fechas escritas en el cron: la función
+resuelve sola el mes anterior en hora de El Salvador. Junio y julio 2026 ya
+están cargados — 12 filas, 6 sucursales × 2 meses.
+
+`get_cortes_z` devuelve **el Z y el número del portal en la misma fila**, con la
+diferencia ya calculada. Juntos y no en dos consultas: el cruce ES el dato que se
+quiere mirar.
+
+### El contraste, y lo que encontró
+
+De 12 branch-meses, **9 con diferencia cero**. Los 3 restantes son del origen, y
+resultaron ser dos cosas distintas:
+
+**El ticket se contradice a sí mismo.** Su línea `VENTAS GRAVADAS` y su línea
+`TOTAL` son idénticas en 10 de 12 filas. En Salud 3 difieren — y **`GRAVADAS`
+coincide con el portal al centavo**:
+
+| | GRAVADAS | TOTAL | Portal |
+|---|---|---|---|
+| Salud 3 · jul · factura | **48,564.53** | 48,525.21 | **48,564.53** |
+| Salud 3 · jul · CCF | **980.33** | 976.73 | **980.33** |
+| Salud 3 · jun · factura | **40,047.09** | 40,044.88 | **40,047.09** |
+
+**Y una venta sellada que el origen no reporta.** Salud 1, julio, $9.00: acá el
+Z y el libro del origen coinciden entre sí y los dos omiten un documento que
+existe, está FINALIZADA y **tiene sello de Hacienda** (14/07 08:10:17, id interno
+328969), y que cae **dentro del propio rango 328931–329608 que el origen declara
+ese día**. El portal tiene 127 documentos por $1,930.40; el origen dice
+$1,921.40. Si se declara desde el origen, esa venta no se declara.
+
+**Trampa del rótulo, para no repetirla:** la línea dice «VENTAS GRAVADAS» pero
+trae el **total con IVA**. En un CCF de $170.10 el libro de contribuyentes
+reporta 150.54 de base y 19.56 de débito. Por eso el contraste va contra
+`sum(total)` y no contra la columna «gravadas» del libro.
+
 ## v2.351.2 — La herramienta de diagnóstico del origen puede leer pantallas HTML
 
 `erp-csv-probe` descartaba el HTML: cuando se busca un CSV, recibir una página

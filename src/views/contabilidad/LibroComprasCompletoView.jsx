@@ -77,6 +77,14 @@ const fmtFecha = (iso) => {
     return `${d}/${m}/${y}`;
 };
 
+// El dinero va SIEMPRE con dos decimales. Sin esto el CSV escribía el número
+// crudo de JavaScript: `5` en vez de `5.00`, y en la fila de totales
+// `30549.219999999994` — la suma de flotantes asomando en un archivo contable.
+const num = (n) => (Number(n) || 0).toFixed(2);
+// Vacío ≠ 0.00: NULL significa "no sabemos si hubo percepción", y escribir cero
+// sería afirmar que no la hubo. Misma regla que en el libro de compras.
+const numOpcional = (n) => (n == null ? '' : num(n));
+
 // Los rótulos hablan del PORTAL: nunca se nombra el sistema de origen ni la
 // procedencia del dato (ver CLAUDE.md). Lo que la vista quiere decir no es "de
 // dónde vino" sino en qué estado está: la compra quedó registrada, o solo existe
@@ -174,8 +182,12 @@ export default function LibroComprasCompletoView() {
 
     const exportar = useCallback(() => {
         const [desde] = rangoDelMes(mes);
+        // El orden es `(headers, rows, filename)`. Estaba llamado
+        // `(filename, headers, rows)`, así que `buildCsvText` recibía el nombre
+        // del archivo como fila de encabezado y hacía `"…".map(...)` sobre una
+        // cadena: TypeError antes de generar un solo byte. El botón no daba
+        // ningún aviso — el error moría en la consola y no pasaba nada.
         exportCsv(
-            `libro-compras-completo_${desde.slice(0, 7)}`,
             ['FECHA', 'REGISTRO', 'SUCURSAL', 'TIPO', 'DOCUMENTO', 'NRC', 'NIT', 'PROVEEDOR',
              'EXENTAS', 'GRAVADAS', 'CREDITO FISCAL', 'TOTAL', 'PERCEPCION', 'RETENCION', 'ANULADA'],
             [
@@ -188,15 +200,18 @@ export default function LibroComprasCompletoView() {
                     // que este libro hace mejor que su origen.
                     r.documento_completo || '',
                     r.nrc || '', r.nit || '', r.proveedor || '',
-                    Number(r.compras_exentas || 0), Number(r.compras_gravadas || 0),
-                    Number(r.credito_fiscal || 0), Number(r.total || 0),
-                    r.percepcion_iva == null ? '' : Number(r.percepcion_iva),
-                    r.retencion_iva == null ? '' : Number(r.retencion_iva),
+                    num(r.compras_exentas), num(r.compras_gravadas),
+                    num(r.credito_fiscal), num(r.total),
+                    numOpcional(r.percepcion_iva),
+                    numOpcional(r.retencion_iva),
                     r.anulada ? 'SI' : '',
                 ]),
                 ['TOTALES', '', '', '', '', '', '', '', '', '',
-                 totales.credito, totales.total, '', '', ''],
+                 num(totales.credito), num(totales.total), '', '', ''],
             ],
+            // Con la extensión: sin ella el navegador guarda un archivo sin tipo
+            // y Excel no lo abre con doble click.
+            `libro-compras-completo_${desde.slice(0, 7)}.csv`,
         );
         useStaffStore.getState().appendAuditLog('LIBRO_COMPRAS_COMPLETO_EXPORT', mes, {
             documentos: totales.docs, credito_fiscal: totales.credito,

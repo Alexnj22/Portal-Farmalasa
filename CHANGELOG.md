@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.350.3 — El CSV de Compras Completo se descarga (y con dos decimales)
+
+Reportado por el usuario: el botón Exportar de Compras Completo no hacía nada.
+
+**Los argumentos estaban en el orden equivocado.** `exportCsv` es
+`(headers, rows, filename)` y se lo llamaba `(filename, headers, rows)`. Con eso
+`buildCsvText` recibía el nombre del archivo como fila de encabezado y terminaba
+haciendo `"libro-compras-completo_2026-07".map(...)` sobre una **cadena**:
+TypeError antes de generar un solo byte. El click no producía nada —ni archivo,
+ni aviso— porque el error moría en la consola.
+
+Nunca funcionó desde que la vista salió. Barrí los otros 4 llamadores de
+`exportCsv` en el portal y están bien. Ayuda a explicar cómo se coló:
+`TabMinMax.jsx` define **su propia** función llamada `exportCsv` con firma
+distinta —`(rows, name, …)`, el nombre primero—, así que el reflejo de escribir
+el nombre de archivo al principio tiene de dónde salir.
+
+**De paso, el formato de moneda.** El archivo escribía los números crudos de
+JavaScript: `5` en vez de `5.00`, `0` en vez de `0.00`, y en la fila de totales
+`30549.219999999994` — la suma de flotantes asomando en un archivo contable.
+Ahora todo el dinero va con dos decimales. Se mantiene la distinción entre
+**vacío y 0.00** en percepción y retención: NULL significa "no sabemos si la
+hubo", y escribir cero sería afirmar que no.
+
+Y le faltaba la extensión `.csv` al nombre, así que el navegador guardaba un
+archivo sin tipo.
+
+Verificado en el navegador contra julio 2026: 712 documentos y las tres
+tarjetas de la vista —$273,735.28 de compras y $30,549.22 de crédito fiscal—
+idénticas a la fila de TOTALES del archivo. Cero errores de consola.
+
 ## v2.350.2 — El sello de compras al máximo que da el origen en junio, julio y agosto
 
 Salió de una pregunta del usuario: «¿el sello de compra sí está en el CSV del

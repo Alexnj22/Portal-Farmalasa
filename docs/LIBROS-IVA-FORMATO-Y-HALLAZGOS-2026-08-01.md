@@ -131,6 +131,28 @@ El resto de la fila **sí es correcto**: número de control, sello, IDs y montos
 coinciden con el primer y último documento del día. El problema está acotado a
 esas dos columnas.
 
+#### La causa — identificada el 2026-08-03, julio 2026, sucursal 2
+
+No son documentos al azar: el origen ordena los códigos de generación
+**alfabéticamente** y toma el primero y el último. O sea `MIN()`/`MAX()` sobre la
+columna de texto, en vez del primer y último documento del día.
+
+Como el código de generación es un UUID aleatorio, el resultado es un documento
+cualquiera — pero siempre uno que empieza en `00…`/`01…`/`02…` para la columna
+"del" y en `FF…`/`FE…`/`FC…` para la "al". Los cuatro casos de junio de la tabla
+de arriba encajan solos (`010D5CAF`, `0042379F` / `FF69D633`, `FDA8EC5F`).
+
+Verificado en **31 de 31 días de julio 2026** de La Popular: reconstruyendo la
+columna como `min(codigo_generacion)` / `max(codigo_generacion)` por día, el md5
+del conjunto `fecha;del;al` da **`5b9a8836e47dd9db9e9ff79fb25de431`** en los dos
+lados — identidad exacta, no coincidencia parcial.
+
+Las otras 19 columnas de las 31 filas son **idénticas** entre los dos archivos,
+sello incluido. La única diferencia adicional es de formato, no de dato: en
+`gravadas` (col. 14) el origen suelta el cero final (`884.1`) mientras escribe el
+total (col. 20) con dos decimales (`884.10`) — se contradice dentro de la misma
+fila. El portal escribe las dos con dos decimales, que es lo que pide el formato.
+
 **Qué hace el portal:** emite los códigos **correctos** — los del primer y
 último documento del día ordenados por correlativo. No se replica el error: es
 un dato que se declara, y copiar un identificador equivocado en un libro fiscal

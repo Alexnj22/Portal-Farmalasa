@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.349.2 — El libro de consumidor del origen ordena los códigos de generación alfabéticamente
+
+Solo documentación. El hallazgo 4.1 de
+`docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md` decía que el libro de
+consumidor del sistema de origen reporta códigos de generación «del medio del
+día». Era el síntoma; ahora está la causa.
+
+Comparando julio 2026 de La Popular contra el archivo del origen, las dos
+columnas de código de generación difieren en **31 de 31 filas** — y no al azar:
+la que llama «del» empieza siempre en `00…`/`01…`/`02…` y la «al» en
+`FF…`/`FE…`/`FC…`. El origen hace `MIN()`/`MAX()` sobre el código de generación
+**como texto**. Como es un UUID aleatorio, eso devuelve un documento cualquiera
+del día en vez del primero y el último.
+
+Verificado por identidad, no por muestreo: reconstruida la columna como
+`min(codigo_generacion)`/`max(codigo_generacion)` por día, el md5 del conjunto
+`fecha;del;al` da `5b9a8836e47dd9db9e9ff79fb25de431` en los dos lados. Los
+cuatro casos de junio que ya estaban anotados encajan solos con la misma regla.
+
+Las otras **19 columnas de las 31 filas son idénticas**, sello incluido. La
+única diferencia adicional es de formato y también es del origen: escribe
+`gravadas` sin el cero final (`884.1`) y el total con dos decimales (`884.10`)
+dentro de la misma fila. El portal usa dos decimales en ambas.
+
+El portal sigue emitiendo los códigos correctos. La diferencia es a su favor.
+
 ## v2.349.1 — El avance de la descarga deja de hacer parpadear la píldora
 
 Reportado por el usuario apenas salió v2.349.0: durante la descarga masiva la

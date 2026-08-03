@@ -396,7 +396,7 @@ gana el portal**; esta es la única que pierde.
 |---|---|---|
 | C1 | **`purchase_receipts.sello_recibido`** desde la columna 22 del libro y la 6 del anexo, que `fastBackfill` ya descarga (H13) | **con validación (H19)**: solo si mide exactamente 40 alfanuméricos; si no, NULL + marca. 6 de 331 vienen con texto pegado a mano |
 | C1b | **Del mismo archivo, la columna 4: el NIT del proveedor** (H22) | mismo código, un índice más. Ver Parte 5 |
-| C8 | **Ficha automática para los 21 proveedores con compras y sin ficha** (H22) | cierra 98 filas del libro con NIT vacío. Depende de C1b |
+| C8 | ~~**Ficha automática para los 21 proveedores con compras y sin ficha**~~ (H22) | ✅ hecho v2.348.4, pero **el agujero ya lo había cerrado E4**: quedaban 3 filas y un proveedor, cuyo NIT el origen tampoco tiene. Ver el estado al inicio del documento |
 | C2 | Cruce `purchase_receipts` ↔ `purchase_dte_documents` **por sello** | clave exacta; reemplaza el 86.7% difuso |
 | C3 | Exportar el **número de control real** del DTE en vez del stub de 20 del ERP (H2), con respaldo al del ERP cuando no haya cruce | acá el portal deja de copiar y empieza a corregir |
 | C4 | `subtotal` a `numeric(14,4)` + re-sync (H6) | **bloqueado por la respuesta del contador** |
@@ -448,6 +448,50 @@ solo. Y la deriva —que hoy ocurre y nadie ve— pasa a ser un aviso.
 | 3 | **C** | El libro es mejor que su origen en **todas** sus columnas. |
 | 4 | **D** | El mes cierra, se congela y se vigila solo. |
 | después | **E2**, **E3** | Lo que hoy no se declara y debería. |
+
+## DÓNDE QUEDÓ ESTO — al cierre del 2026-08-03
+
+**Leé esto antes que el resto del documento.** Lo de abajo se escribió el 2026-08-02
+y varias de sus cifras ya no son ciertas; acá está el estado real.
+
+| Bloque | Estado | Dónde |
+|---|---|---|
+| **A** — los candados | ✅ **Hecho** | v2.339.x |
+| **E4** — barrido del maestro de proveedores | ✅ **Hecho** | v2.340.0 |
+| **B** — que las alarmas suenen | ✅ **Hecho** | incl. las 3 alarmas de CCF y el cron de repaso 22:00 |
+| **C** — que el libro sea mejor que su origen | ✅ **Hecho, menos C4** | C1 y C2 v2.348.0 · C3 v2.348.2 · C5 v2.347.2 · C6 y C7 v2.348.1 · C1b y C8 v2.348.4 |
+| **C4** — `subtotal` a `numeric(14,4)` | ⏸️ **Bloqueado** | espera al contador: ¿2 o 4 decimales? |
+| **D** — el cierre de período | 📄 **Documentado, pendiente de confirmación** | `docs/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado + la deriva MEDIDA + 4 decisiones abiertas |
+| **E3** — anexo de retención de Renta | ✅ Construido, ❌ **sin dato** | hay **0** proveedores marcados `retiene_renta`; el anexo sale vacío hasta que el contador marque cuáles de los 14 candidatos aplican |
+| **Cosas chicas** (Parte 3 §6) | ⬜ **Aprobadas, no hechas** | las 4 |
+| Los DTE de gastos fuera del libro | ⬜ **Sin investigar** | hoy son **436 documentos / $8,184.31** (el cruce se rehízo; ya no son 495) |
+
+### Cifras de este documento que quedaron desactualizadas
+
+- **C8 / H22 — «21 proveedores con compras y sin ficha, 98 filas con NIT vacío,
+  $17,757»**: era cierto al medirlo, y **E4 lo cerró antes de que C8 existiera**. Al
+  2026-08-03 quedan **3 filas y un solo proveedor** (PEPSI), y su fila en el libro
+  del origen trae la columna del NIT **vacía** — el origen tampoco lo sabe. No es
+  recuperable por código. Ver §11 del doc de formato.
+- **«los 495 DTE de gastos»**: el cruce se rehízo con el sello como camino
+  adicional. Hoy son **436 / $8,184.31**.
+- **C1 — el sello**: la lectura de «julio 56.7%, falta backfill» era equivocada. El
+  sello **falta por SUCURSAL, no por fecha**: Bodega 63%, Salud 3 31%, y Salud 1,
+  Salud 2, Salud 4 y La Popular en **cero**, porque el origen no lo emite para
+  ellas. Ningún backfill lo va a completar. Ver §11 del doc de formato.
+- **El aviso de «CCF sin NRC»**: más pesimista que la realidad. Los 29 nombres de
+  cliente distintos de junio y julio resuelven a **exactamente una** ficha con NRC.
+  Falta el vínculo, no el dato. Ver §12 del doc de formato — y por qué NO se
+  arregló en el acto.
+
+### Lo que sigue abierto y necesita una persona, no código
+
+PEPSI sin NIT en ninguna fuente · MIO PHARMA y GENACOL comparten NIT (H26) ·
+NEGOCIOS VIDZA con un NIT imposible (H25) · BANCO PROMÉRICA sin vincular · 7
+totales que difieren exactamente por ÷1.13 · la cuenta `qa.test` con permisos sobre
+los 60 módulos desde el 2026-07-25.
+
+---
 
 ## Decisiones tomadas — 2026-08-02
 

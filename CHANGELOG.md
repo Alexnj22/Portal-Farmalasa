@@ -21,6 +21,35 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.7 — El plan dice dónde quedó todo
+
+Solo documentación.
+
+### El plan de contabilidad dice dónde quedó todo
+
+`docs/PLAN-CONTABILIDAD-2026-08-02.md` arranca ahora con un bloque de estado, y
+está antes que el resto a propósito: el documento se escribió el 2026-08-02 y
+varias de sus cifras dejaron de ser ciertas en dos días. Sin eso, mañana alguien
+—yo incluido— construye otra vez para un hueco que ya está tapado. Es justo lo que
+pasó hoy con C8.
+
+Las cuatro cifras que quedaron viejas, corregidas en su lugar y con el motivo:
+
+- **C8/H22, «21 proveedores sin ficha, 98 filas, $17,757»**: era cierto al medirlo,
+  y el barrido del maestro (E4) lo cerró antes de que C8 existiera. Quedan 3 filas
+  y un proveedor, cuyo NIT el origen tampoco tiene.
+- **«los 495 DTE de gastos»**: hoy son 436 / $8,184.31, tras rehacer el cruce.
+- **C1, «julio 56.7%, falta backfill»**: lectura equivocada. El sello falta por
+  SUCURSAL, no por fecha — cuatro sucursales en cero porque el origen no lo emite.
+- **El aviso de CCF sin NRC**: más pesimista que la realidad; falta el vínculo, no
+  el dato.
+
+Queda también lo que sigue abierto y necesita una persona en vez de código, para
+no tener que reconstruirlo de la conversación.
+
+
+_(pendiente de redactar)_
+
 ## v2.348.6 — Cierre de los 10 bloques: 15,648 fichas
 
 Bloque corto de 200 fichas para cerrar la tanda: **15,453 → 15,648 procesadas**,

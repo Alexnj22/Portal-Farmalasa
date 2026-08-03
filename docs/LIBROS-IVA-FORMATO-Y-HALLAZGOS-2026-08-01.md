@@ -194,6 +194,90 @@ de junio y agosto —en ventanas de ≤10 días—, después se emite en las **d
 transcripciones: el `exportCsv` de `LibrosIvaView` y la rama `compras` de
 `generar_csv_libro`.
 
+#### De quién es ese sello — verificado el 2026-08-03
+
+Es del **proveedor**, no nuestro. Hacienda le da el sello a quien EMITE el DTE, y
+en una compra el emisor es el proveedor: esa columna prueba que **el documento
+del proveedor** llegó a Hacienda, que es lo que el Art. 86 necesita para que el
+crédito fiscal esté respaldado.
+
+| Prueba | Resultado |
+|---|---|
+| Contra el DTE que el proveedor manda por correo (`purchase_dte_documents`) | **82 de 82 idénticos**, 28 proveedores |
+| Contra nuestros sellos de venta (`sales_invoices.recibido_mh`) | **0 de 356** coinciden |
+
+#### El techo por sucursal — medido contra el archivo del origen, julio 2026
+
+Bajado con `erp-csv-probe` sucursal por sucursal y contada la columna 23,
+aplicándole **la regla del portal** (40 alfanuméricos exactos; descartar si un
+mismo documento trae dos sellos distintos):
+
+| Sucursal | Filas | Sellos que da el origen | Los que tenía el portal | Faltaban |
+|---|---|---|---|---|
+| Bodega | 414 | **407** | 260 | **147** |
+| Salud 3 | 16 | 7 | 5 | 2 |
+| La Popular | 12 | **0** | 0 | 0 |
+| Salud 1 | 15 | **0** | 0 | 0 |
+| Salud 2 | 9 | **0** | 0 | 0 |
+| Salud 4 | 1 | **0** | 0 | 0 |
+
+Dos conclusiones distintas, y conviene no mezclarlas:
+
+1. **En Bodega el hueco es NUESTRO.** El origen trae el sello en 412 de 414 filas
+   y nuestra propia regla aceptaría 407 —con **cero** casos ambiguos—, así que no
+   lo está rechazando el filtro: el backfill no había pasado por todo el mes.
+2. **En las otras cuatro sucursales no hay nada que traer.** El origen manda la
+   columna **vacía en las 37 filas**. Esto confirma, ya medido, lo que
+   `20260803014738` afirmaba sin evidencia (y que remitía a un «§11» de este
+   documento que no existía).
+
+**El techo real de julio es 414 de 467 (88.7%), no 100%.** Salud 3 lo muestra
+bien: tiene 15 filas con algo en la columna pero solo 7 son sellos — las demás
+traen el código de generación (36 caracteres) o texto pegado a mano, que es la
+contaminación H19 que `selloValido` filtra a propósito.
+
+#### Backfill corrido el 2026-08-03 — junio, julio y agosto
+
+Solo **Bodega y Salud 3**: son las únicas donde el origen emite la columna, así
+que correrlo en las otras cinco serían ~200 upserts incondicionales a cambio de
+nada. 14 llamadas (7 ventanas de ≤10 días × 2 sucursales), las 14 en verde.
+
+| Mes | Bodega | Salud 3 |
+|---|---|---|
+| Junio | 260 → **325 de 335 (97.0%)** | 5 → 7 |
+| Julio | 260 → **409 de 414 (98.8%)** | 5 → 7 |
+| Agosto | 0 → **27 de 28 (96.4%)** | 0 → 1 |
+
+Julio quedó **por encima** del techo que se había medido con el archivo del mes
+entero (409 contra 407): una ventana de 10 días desambigua documentos que en el
+mes completo compartían clave. No es un error de la medición anterior — es que
+el techo depende del tamaño de la ventana.
+
+#### TRAMPA: el origen escribe TODOS los CSV en un único archivo temporal
+
+Descubierto al lanzar 14 sondas en paralelo. El generador del origen hace
+`fopen('csv/libro_compras.csv')` en una ruta **fija y compartida**, así que dos
+peticiones simultáneas chocan y una recibe esto en vez del CSV:
+
+```
+Warning: fopen(csv/libro_compras.csv): failed to open stream: File exists …
+Warning: fwrite() expects parameter 1 to be resource, bool given …
+Warning: readfile(csv/libro_compras.csv): failed to open stream: No such file …
+```
+
+Devuelve **HTTP 200**, así que ni el `r.ok` ni el chequeo de HTML lo atrapan: son
+líneas de texto plano. De 21 sondas, 1 salió así.
+
+**Esto es peligroso en `fastBackfill`, no solo en el probe.** Si le toca el
+archivo contaminado, `columnaPorNumero` arma un mapa vacío y **todas** las filas
+de esa ventana reciben `sello_recibido: null` — o sea que borraría sellos buenos
+en silencio, en una columna fiscal. En la corrida del 2026-08-03 no pasó
+(verificado ventana por ventana: 94.9%–100%, ninguna en cero), pero fue suerte.
+
+**Mientras no haya guarda, las llamadas al origen van de a una.** La guarda
+natural es rechazar el archivo si trae `Warning:` / `failed to open stream`, o
+—más robusto— si el número de filas no se parece al que informa el DataTable.
+
 <details><summary>Texto original del hallazgo (incorrecto)</summary>
 
 El archivo del ERP lo trae (columna 23), pero no viene en la fuente que alimenta

@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.350.2 — El sello de compras al máximo que da el origen en junio, julio y agosto
+
+Salió de una pregunta del usuario: «¿el sello de compra sí está en el CSV del
+origen, y el problema es solo nuestro?». Se comprobó bajando el archivo real con
+`erp-csv-probe`, sucursal por sucursal. La respuesta es **mitad y mitad**, y las
+dos mitades importan por separado.
+
+**De quién es ese sello:** del **proveedor**, no nuestro. Hacienda se lo da a
+quien emite el DTE, y en una compra el emisor es el proveedor. Verificado por los
+dos lados: **82 de 82 idénticos** contra el DTE que el proveedor manda por correo
+(28 proveedores distintos), y **0 de 356** coinciden con nuestros propios sellos
+de venta.
+
+**Donde el problema era nuestro:** en Bodega —el 89% de las compras— el archivo
+del origen trae el sello en 412 de 414 filas de julio y el portal tenía 260.
+Aplicándole al archivo del origen **la regla del propio portal** (40
+alfanuméricos exactos, descartar si un documento trae dos sellos distintos) daban
+**407 aceptables con cero casos ambiguos**: no lo rechazaba el filtro, el
+backfill no había pasado.
+
+**Donde no lo era:** en La Popular, Salud 1, Salud 2 y Salud 4 el origen manda esa
+columna **vacía en las 37 filas**. Ahí no hay nada que traer. Esto confirma, ya
+medido, lo que `20260803014738` afirmaba sin evidencia —y que remitía a un «§11»
+del doc de formato que no existía.
+
+**Backfill corrido** sobre junio, julio y agosto, solo en Bodega y Salud 3 (las
+otras cinco serían ~200 upserts incondicionales a cambio de nada). 14 llamadas,
+las 14 en verde:
+
+| Mes | Bodega | Salud 3 |
+|---|---|---|
+| Junio | 260 → **325 de 335 (97.0%)** | 5 → 7 |
+| Julio | 260 → **409 de 414 (98.8%)** | 5 → 7 |
+| Agosto | 0 → **27 de 28 (96.4%)** | 0 → 1 |
+
+**Y una trampa del origen que conviene no volver a pisar:** genera *todos* los
+CSV en un único archivo temporal de ruta fija, así que dos peticiones
+simultáneas chocan y una recibe warnings de PHP en vez del CSV — con **HTTP
+200**, así que ni el `r.ok` ni el chequeo de HTML lo atrapan. De 21 sondas en
+paralelo, 1 salió así. En `fastBackfill` eso sería peor que un error: el mapa
+sale vacío y toda la ventana recibiría `sello_recibido: null`, borrando sellos
+buenos en silencio. En esta corrida no pasó —verificado ventana por ventana,
+94.9%–100%, ninguna en cero— pero fue suerte. Documentado en §4.3; **mientras no
+haya guarda, las llamadas al origen van de a una.**
+
+El CSV de compras del portal **sigue sin emitir la columna**: mayo hacia atrás
+está en 0% y emitirla ahora daría un archivo que declara el sello en unos meses y
+no en otros.
+
 ## v2.350.1 — El NIT de contribuyentes tenía columna pero no título
 
 En el libro de Contribuyentes, entre 1280 y 1535px de pantalla —o sea **en 1440,

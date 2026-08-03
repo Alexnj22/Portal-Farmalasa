@@ -503,3 +503,42 @@ compras el sello hay que sacarlo del cruce con la factura que llega por correo
 
 Corolario práctico: el 56.7% de julio es 63% de Bodega diluido por cinco
 sucursales en cero, no un backfill a medio hacer.
+
+---
+
+## 12. El NRC del cliente en los CCF: el aviso del portal es más pesimista que la realidad
+
+La pestaña de Contribuyentes avisa que *«el portal todavía no captura el receptor
+del DTE: el libro se puede revisar, pero no presentar»*. La primera mitad es
+cierta —`sales_invoices` guarda `cliente` (el nombre) y **ninguna columna de NRC o
+NIT del receptor**—. La segunda ya no.
+
+Medido el 2026-08-03 sobre junio y julio: los nombres de cliente distintos que
+aparecen en CCF son **29**, y los **29 resuelven contra `customers` a exactamente
+una ficha con NRC**. Cero ambiguos, cero sin match. O sea que el dato que el Art.
+85 exige **ya está en la base**; lo que falta es el vínculo.
+
+### Por qué esto NO se resolvió en el acto
+
+Porque el cruce es **por nombre**, que es exactamente la clase de vínculo contra la
+que existe la memoria `feedback_ligar_proveedores_por_nit_no_por_nombre` (Movistar
+= TELEFONICA, dos "AGUA FRIA" que son contribuyentes distintos). Que hoy dé 29 de
+29 no lo hace seguro para mañana: un nombre escrito distinto no da un match
+equivocado, da **ningún** match — y entonces el NRC sale vacío sin que nadie se
+entere, que es el modo de falla silencioso de siempre.
+
+La forma correcta es resolver el vínculo **una vez y guardarlo**
+(`sales_invoices.customer_id`, o una columna de NRC del receptor poblada por el
+sync), no cruzar por nombre en cada lectura del libro. Eso es trabajo de una tarde,
+no de una línea, y no entraba en el Bloque C.
+
+### Qué hacer con esto
+
+1. Está medido y escrito, que era lo que faltaba: el blocker es **más chico** de lo
+   que el portal declara.
+2. Cuando se retome, el orden es: columna en `sales_invoices` → poblarla desde el
+   sync o desde un backfill por nombre **verificando la unicidad en el momento** →
+   recién ahí cambiar el texto del aviso.
+3. **Hasta que eso exista, el aviso se queda como está.** Decir "ya se puede
+   presentar" apoyado en un cruce que no está implementado sería exactamente el
+   error del §4.3: declarar cerrado algo que no se miró.

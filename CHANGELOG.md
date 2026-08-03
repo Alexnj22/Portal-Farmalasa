@@ -21,6 +21,52 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.5 — Bloque D documentado con la deriva medida
+
+Solo documentación. No cambia una línea de la aplicación.
+
+### Bloque D documentado, con la deriva medida en vez de afirmada
+
+`docs/BLOQUE-D-CIERRE-DE-PERIODO.md` — diseño cerrado, pendiente de confirmación.
+Lo que agrega respecto del plan es la evidencia:
+
+Documentos que entran a un mes **después** de que el mes cerró: mayo 87 ($718.55),
+junio 124 ($996.65), julio 181 ($1,614.76). Con la aclaración honesta de que casi
+todo cae el día 1 del mes siguiente — es el retraso normal del sync, no deriva de
+meses.
+
+La deriva que de verdad rompe la reproducibilidad es la otra, la que no agrega ni
+quita una operación pero cambia **lo que el libro dice**. Cuatro casos reales de
+las últimas dos semanas, tres causados hoy mismo: el re-sync de mayo (21
+documentos), el sello de compras (junio de 0 a 91 de 93), `docs_count` derivado (93
+de 161 fichas estaban infladas) y el número de control real (380 de 467 filas de
+julio). Si alguien hubiera declarado julio el 1 de agosto, el libro que ve hoy no
+es el que presentó, y no hay forma de saberlo.
+
+El documento deja además cuatro decisiones que no son mías: quién puede cerrar, si
+se puede reabrir, qué pasa si el mes cierra con avisos rojos, y si el cierre es por
+libro o por mes completo.
+
+### El aviso del NRC en Contribuyentes es más pesimista que la realidad
+
+La pestaña dice que «el portal todavía no captura el receptor del DTE» y que el
+libro no se puede presentar. La primera mitad es cierta: `sales_invoices` guarda el
+nombre del cliente y ninguna columna de NRC. La segunda ya no: medido sobre junio y
+julio, los **29** nombres de cliente distintos que aparecen en CCF resuelven contra
+`customers` a **exactamente una** ficha con NRC. Cero ambiguos, cero sin match. El
+dato que el Art. 85 exige ya está en la base; falta el vínculo.
+
+No se arregló en el acto **a propósito**: el cruce es por nombre, la clase de
+vínculo contra la que existe la lección de Movistar/TELEFONICA. Que hoy dé 29 de 29
+no lo hace seguro mañana — un nombre escrito distinto no da un match equivocado, da
+ninguno, y el NRC sale vacío en silencio. La forma correcta es resolver el vínculo
+una vez y guardarlo, no cruzar por nombre en cada lectura. Hasta que eso exista, el
+aviso se queda como está: declarar "ya se puede presentar" apoyado en un cruce no
+implementado sería el mismo error del hallazgo §4.3.
+
+
+_(pendiente de redactar)_
+
 ## v2.348.4 — El NIT del libro completa la ficha, y lo que el origen no sabe se dice
 
 ### El NIT del libro completa —o crea— la ficha del proveedor (C1b · C8)

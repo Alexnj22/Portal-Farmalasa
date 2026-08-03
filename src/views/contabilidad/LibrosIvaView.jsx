@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, SearchX } from 'lucide-react';
+import { BookOpen, AlertTriangle, FileText, Receipt, Percent, Download, Ban, ShoppingCart, SearchX, Archive } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -16,7 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { formatearNit, formatearNrc } from '../../utils/nitUtils';
 import { normalizeText } from '../../utils/helpers';
-import { exportCsv } from '../../utils/csvExport';
+import { exportCsv, buildCsvText } from '../../utils/csvExport';
 import {
     fetchAnexoRetencionRenta,
     fetchVentasFueraDelLibro,
@@ -514,6 +514,386 @@ const CeldaProveedor = ({ nombre, anulada }) => (
     </DataCell>
 );
 
+// `client-zip` solo hace falta al apretar "Paquete del mes", así que va por
+// `await import()` y no en el chunk de la vista — regla de librerías pesadas de
+// CLAUDE.md. Mismo patrón (y misma librería) que `facturasCompra.js`: escribe
+// entrada por entrada en vez de pedir todo en memoria antes de empezar.
+let zipPromise = null;
+function getZipLib() {
+    if (!zipPromise) {
+        zipPromise = import('client-zip')
+            .catch(err => { zipPromise = null; throw err; });  // reintentar, no quedar roto
+    }
+    return zipPromise;
+}
+
+// ── Totales de un juego de libros ────────────────────────────────────────────
+//
+// A nivel de módulo y no dentro del componente porque el ZIP los necesita **por
+// sucursal**: cada archivo del paquete lleva su propia fila de TOTALES, y
+// calcularla sobre el total del mes le pondría a cada sucursal el número de
+// todas.
+const calcularTotales = (d) => {
+    const suma = (filas, campo) => filas.reduce((s, r) => s + Number(r[campo] || 0), 0);
+    const gravadasCons = suma(d.consumidor, 'ventas_gravadas');
+
+    return {
+        consumidor:    { docs: suma(d.consumidor, 'documentos'),
+                         exentas: suma(d.consumidor, 'ventas_exentas'),
+                         gravadas: gravadasCons,
+                         debito: debitoDeConsumidor(gravadasCons),
+                         total: suma(d.consumidor, 'total_diario') },
+        contribuyente: { docs: d.contribuyente.length,
+                         exentas: suma(d.contribuyente, 'ventas_exentas'),
+                         gravadas: suma(d.contribuyente, 'ventas_gravadas'),
+                         debito: suma(d.contribuyente, 'debito_fiscal'),
+                         total: suma(d.contribuyente, 'total') },
+        anulados:      { docs: d.anulados.length, exentas: 0, gravadas: 0, debito: 0,
+                         total: suma(d.anulados, 'total') },
+        // En compras la tercera tarjeta es el crédito fiscal, no el débito:
+        // es el impuesto que se resta, no el que se paga.
+        compras:       { docs: d.compras.length,
+                         exentas:  suma(d.compras, 'compras_exentas'),
+                         gravadas: suma(d.compras, 'compras_gravadas'),
+                         debito:   suma(d.compras, 'credito_fiscal'),
+                         total:    suma(d.compras, 'total') },
+        percepcion:    { docs: d.percepcion.length, exentas: 0,
+                         gravadas: suma(d.percepcion, 'monto_sujeto'),
+                         debito:   suma(d.percepcion, 'percepcion_iva'),
+                         total:    suma(d.percepcion, 'monto_sujeto') },
+        renta:         { docs: d.renta.length, exentas: 0,
+                         gravadas: suma(d.renta, 'base_sin_iva'),
+                         debito:   suma(d.renta, 'retencion_10'),
+                         total:    suma(d.renta, 'base_sin_iva') },
+        retencion:     { docs: d.retencion.length, exentas: 0,
+                         gravadas: suma(d.retencion, 'monto_sujeto'),
+                         debito:   suma(d.retencion, 'retencion_iva'),
+                         total:    suma(d.retencion, 'monto_sujeto') },
+        // El IVA va NETO: las notas de crédito bajan el crédito fiscal y las
+        // de débito lo suben, así que sumarlas todas juntas daría un ajuste
+        // mayor al real. Es el número que contabilidad tiene que mover.
+        notas:         { docs: d.notas.length, exentas: 0,
+                         gravadas: suma(d.notas.filter(r => r.tipo_dte === '05'), 'monto')
+                                 - suma(d.notas.filter(r => r.tipo_dte === '06'), 'monto'),
+                         debito:   suma(d.notas.filter(r => r.tipo_dte === '05'), 'iva')
+                                 - suma(d.notas.filter(r => r.tipo_dte === '06'), 'iva'),
+                         total:    suma(d.notas, 'monto') },
+    };
+};
+
+const construirLibro = (tab, d, tot) => {
+    if (tab === 'consumidor') {
+        // Art. 83: fecha · del→al · máquina/establecimiento · exentas ·
+        // gravadas locales · exportaciones · total diario · cuenta de terceros.
+        // Además del Art. 83, la identidad del DTE que el libro del ERP
+        // lleva: clase y tipo, el código de generación del primero y del
+        // último del día, el sello del primero y los IDs del ERP. Los cinco
+        // estaban guardados y este CSV no los sacaba.
+        // Réplica del archivo real (22 columnas, sin encabezado), verificada
+        // columna por columna contra junio 2026 el 2026-08-01.
+        //
+        // Las columnas 10-13 y 15-19 van en cero porque están en cero en TODA
+        // la muestra disponible. No se pudo determinar cuál es cuál —haría
+        // falta un día con ventas exentas o exportaciones, y no existe uno en
+        // el histórico—, así que quedan escritas como constantes y dichas
+        // acá en vez de adivinadas.
+        //
+        // Las de código de generación son las DOS que el reporte original
+        // trae MAL: verificado en 2 de 2 días, no son las del primero ni las
+        // del último documento del día sino las de documentos del medio, y
+        // encima invertidas entre sí (el que llama "al" tenía correlativo
+        // MENOR que el "del"). Acá van las correctas. Replicar un dato
+        // equivocado en un libro que se declara sería copiar el error, no el
+        // formato — misma decisión que con las notas de crédito.
+        return { base: 'libro-consumidor-final', headers: null, rows:
+            d.consumidor.map(r => [
+                fmtFecha(r.fecha), '4', '01',
+                ncPelado(r.numero_control_del),
+                r.sello_del || '',
+                r.erp_id_del || '', r.erp_id_al || '',
+                cgEspacios(r.codigo_gen_del), cgEspacios(r.codigo_gen_al),
+                '',
+                num(r.ventas_exentas), '0.00', '0.00', '0.0000',
+                num(r.ventas_gravadas),
+                '0.00', '0.00', '0.00', '0.00', '0.00',
+                num(r.total_diario),
+                '2',
+            ]) };
+    }
+    if (tab === 'contribuyente') {
+        // Art. 85 más la identidad del DTE: sello de recepción, código de
+        // generación, NIT, la clase/tipo del documento y —desde el
+        // 2026-08-01— el número de control, que es el que faltaba de verdad.
+        //
+        // Va en columna propia y NO reemplazando a "No CCF", que sigue
+        // llevando el correlativo: son dos numeraciones distintas y todavía
+        // no está verificado cuál de las dos consigna el reporte en esa
+        // columna. Mientras la duda exista, el archivo lleva las dos —
+        // sobra un dato, no falta.
+        // Réplica del archivo real (19 columnas, sin encabezado), verificada
+        // contra junio 2026. Clase 4 = documento tributario electrónico;
+        // tipo 03 = comprobante de crédito fiscal — códigos del catálogo de
+        // Hacienda, no una numeración nuestra.
+        //
+        // El NRC va en la columna 8 y el NIT en la 18, los dos SIN guión.
+        // Las columnas 11 y 12 quedan en cero: están en cero en toda la
+        // muestra y no se pudo determinar cuál es cuál.
+        //
+        // Este reporte SÍ trae bien sus identificadores —número de control,
+        // sello y código de generación coinciden con el documento de la
+        // fila—, a diferencia del de consumidor.
+        return { base: 'libro-contribuyentes', headers: null, rows:
+            d.contribuyente.map(r => [
+                fmtFecha(r.fecha), '4', '03',
+                ncPelado(r.numero_control),
+                r.sello_recepcion || '',
+                cgPelado(r.codigo_generacion),
+                r.erp_invoice_id || '',
+                docId(r.nrc),
+                r.cliente || '',
+                num(r.ventas_exentas), '0.00', '0',
+                num(r.ventas_gravadas), num(r.debito_fiscal),
+                '0.00', '0.00',
+                num(r.total),
+                docId(r.nit),
+                '1',
+            ]) };
+    }
+    if (tab === 'anulados') {
+        // El sello y el ID del ERP se agregaron el 2026-08-01: el anexo del
+        // ERP los lleva y acá estaban guardados sin salir. Al revés, el ERP
+        // NO trae fecha, cliente ni total — esas tres quedan porque hacen
+        // el anexo legible sin tener que ir a buscar cada documento.
+        // Réplica del archivo real (10 columnas, sin encabezado). El número
+        // de control es la PRIMERA, y era la única que no se podía llenar
+        // hasta el backfill del 2026-08-01.
+        //
+        // Las seis constantes (`4`, `0`, `0`, `D`, `0`, `0`) se verificaron
+        // sobre las 80 filas de junio: son iguales en todas. El anexo no
+        // lleva fecha, cliente ni total — por eso no van, aunque la pantalla
+        // sí los muestre para poder leer la fila sin ir a buscar cada
+        // documento.
+        return { base: 'anexo-anulados', headers: null, rows:
+            d.anulados.map(r => [
+                ncPelado(r.numero_control),
+                '4', '0', '0',
+                r.tipo_documento === 'CCF' ? '03' : '01',
+                'D',
+                r.sello_recepcion || '',
+                '0', '0',
+                cgPelado(r.codigo_generacion),
+            ]) };
+    }
+    if (tab === 'compras') {
+        // Art. 86: correlativo · fecha · clase y número del documento ·
+        // NRC · proveedor · exentas · gravadas internas · importaciones ·
+        // crédito fiscal · total · percibido · retenido.
+        // Réplica del archivo real (23 columnas, sin encabezado), verificada
+        // contra junio 2026 en Bodega. La columna 5 es el **NIT**, no el NRC
+        // (INCOFA `06142609031027`, LETERAGO `06142505071078`), y las
+        // gravadas son `subtotal − percepción` — LETERAGO: 577.71 − 5.72 =
+        // 571.99, que es exactamente lo que trae el archivo.
+        //
+        // La percepción va con CUATRO decimales, no dos.
+        //
+        // Las constantes `1;1;2;5;3` de las columnas 17-21 son iguales en
+        // todas las filas de la muestra; no se pudo determinar qué
+        // significan, así que se copian tal cual.
+        //
+        // La última columna es el SELLO y sale vacía. Vacío y no un cero,
+        // porque no sabemos el valor — declararlo sería inventarlo.
+        //
+        // Ojo, el motivo cambió: hasta C1 era que el sello «no venía en la
+        // fuente», y eso resultó falso — está en la columna 22 del reporte de
+        // referencia y desde v2.348.0 el sync lo guarda en
+        // `purchase_receipts.sello_recibido`. Hoy el motivo es que todavía no
+        // está en todas las compras: julio 56.7% (265 de 467), junio y agosto
+        // 0%, porque el sello solo se captura cuando el sync vuelve a correr
+        // ese rango. Emitirlo ahora daría un archivo que dice el sello en
+        // unos meses y no en otros. **Primero el backfill de junio y agosto
+        // —en ventanas de ≤10 días, que es lo que aguanta la fuente—, después
+        // se emite.** Cuando se haga, cambiar también el `''` final de la
+        // rama `compras` de `generar_csv_libro`: son dos transcripciones
+        // independientes a propósito, y el verificador compara una contra
+        // otra.
+        //
+        // Lo de arriba cierra el §4.3 del doc de formato, que daba por
+        // sentado que el dato no existía.
+        return { base: 'libro-compras', headers: null, rows:
+            d.compras.map(r => [
+                fmtFecha(r.fecha), '4', '',
+                r.documento_numero || '',
+                docId(r.nit),
+                r.proveedor || '',
+                num(r.compras_exentas), '0.00', '0.00',
+                num(r.compras_gravadas),
+                '0.00', '0.00', '0.00',
+                num(r.credito_fiscal),
+                num(r.total),
+                '',
+                '1', '1', '2', '5', '3',
+                // Vacío ≠ 0.0000: si el documento se sincronizó antes de
+                // que existiera la columna no sabemos si hubo percepción,
+                // y escribir cero sería afirmar que no la hubo.
+                r.percepcion_iva == null ? '' : (Number(r.percepcion_iva) || 0).toFixed(4),
+                '',
+            ]) };
+    }
+    if (tab === 'renta') {
+        // Lo que CORRESPONDERÍA retener, no lo retenido: la retención se
+        // practica al pagar y el portal registra lo que se factura. El
+        // encabezado lo dice para que nadie lo presente como otra cosa.
+        return { base: 'anexo-retencion-renta',
+            headers: ['N.', 'FECHA', 'PROVEEDOR', 'NIT', 'NRC', 'TIPO', 'NUMERO DE CONTROL',
+                      'CODIGO DE GENERACION', 'MONTO', 'BASE SIN IVA', 'RETENCION 10%'],
+            rows: [
+                ...d.renta.map((r, i) => [
+                    i + 1, fmtFecha(r.fecha), r.proveedor || '',
+                    formatearNit(r.nit), formatearNrc(r.nrc),
+                    r.tipo_documento || '', r.numero_control || '',
+                    (r.codigo_generacion || '').toUpperCase(),
+                    num(r.monto_total), num(r.base_sin_iva), num(r.retencion_10),
+                ]),
+                ['TOTALES', '', '', '', '', '', '', '',
+                 '', num(tot.gravadas), num(tot.debito)],
+            ] };
+    }
+
+    if (tab === 'percepcion' || tab === 'retencion') {
+        const esPerc = tab === 'percepcion';
+        const filasAnexo = esPerc ? d.percepcion : d.retencion;
+        // Réplica del anexo real (9 columnas, sin encabezado), verificada
+        // contra Bodega en junio 2026. Los montos van con CUATRO decimales.
+        //
+        // Dos diferencias conocidas, y las dos son de origen:
+        //
+        //   · El SELLO (columna 7) sale vacío: el anexo del ERP lo trae, pero
+        //     no viene en la fuente que alimenta Compras. Vacío y no cero —
+        //     no sabemos el valor.
+        //   · El monto sujeto va a diferir en la tercera y cuarta decimal:
+        //     el ERP guarda 577.7115 y el sync redondea a 577.71 al
+        //     guardarlo, así que acá sale 571.9900 donde el anexo dice
+        //     571.9915. Son ~0.0015 por fila. Recuperarlo exige cambiar la
+        //     precisión del sync, no el exportador.
+        //
+        // El de retención usa el mismo formato porque es su hermano, pero eso
+        // NO está verificado con datos: el archivo del ERP salió vacío en
+        // toda su historia (2025-01 → 2026-07, 7 sucursales).
+        return { base: `anexo-${esPerc ? 'percepcion' : 'retencion'}`, headers: null, rows:
+            filasAnexo.map((r, i) => [
+                i + 1, fmtFecha(r.fecha),
+                r.proveedor || '',
+                docId(r.nit),
+                r.documento_tipo === 'CCF' ? '03' : '01',
+                r.documento_numero || '',
+                '',
+                (Number(r.monto_sujeto) || 0).toFixed(4),
+                (Number(esPerc ? r.percepcion_iva : r.retencion_iva) || 0).toFixed(4),
+            ]) };
+    }
+    if (tab === 'notas') {
+        // No replica ningún reporte: este archivo no existe del otro lado,
+        // que es justamente el problema que la sección hace visible. Las
+        // columnas son las que trae el documento, y el TOTAL va NETO —
+        // crédito menos débito— porque es el ajuste que hay que aplicar.
+        return { base: 'notas-credito-compras',
+            headers: ['No', 'FECHA', 'TIPO', 'CODIGO', 'NUMERO DE CONTROL',
+                      'CODIGO DE GENERACION', 'PROVEEDOR', 'NRC', 'NIT',
+                      'DOCUMENTO QUE CORRIGE', 'MONTO', 'IVA'],
+            rows: [
+                ...d.notas.map((r, i) => [
+                    i + 1, fmtFecha(r.fecha),
+                    r.tipo_dte === '05' ? 'NOTA DE CREDITO' : 'NOTA DE DEBITO',
+                    r.tipo_dte,
+                    r.numero_control || '',
+                    (r.codigo_generacion || '').toUpperCase(),
+                    r.proveedor || '', formatearNrc(r.nrc), formatearNit(r.nit),
+                    r.documento_corregido || '',
+                    num(r.monto), num(r.iva),
+                ]),
+                ['TOTALES', '', '', '', '', '', '', '', '', '',
+                 num(tot.total), num(d.notas.reduce((s, r) =>
+                     s + (r.tipo_dte === '05' ? 1 : -1) * Number(r.iva || 0), 0))],
+                ['AJUSTE NETO AL CREDITO FISCAL', '', '', '', '', '', '', '', '', '',
+                 '', num(tot.debito)],
+            ] };
+    }
+    return null;
+};
+
+// ── El paquete del mes: un ZIP con carpeta por libro y un CSV por sucursal ───
+//
+// Lo que contabilidad hace hoy es entrar ocho veces, cambiar la sucursal seis
+// veces y bajar 44 archivos a mano. Un archivo mal nombrado o una sucursal
+// salteada en esa rutina no se nota hasta que Hacienda cruza el mes.
+//
+// Trae los libros SIN filtro de sucursal —una llamada por libro, no una por
+// libro y sucursal— y los reparte acá por `branch_id`. Son 8 consultas en vez de
+// 44, el servidor ya aplica el scope del usuario, y el orden dentro de cada
+// sucursal es el que devolvió el RPC, que es el orden legal.
+//
+// Renta y notas de crédito NO se reparten: sus documentos llegan por correo y no
+// traen sucursal (ver `librosIva.js`). Van sueltos en la raíz del ZIP.
+// Inventarles una carpeta de sucursal sería inventarles el dato.
+//
+// Devuelve `null` si no hay una sola fila en el período — quien llama decide qué
+// decir. Lanza si algún libro falla: un paquete al que le falta un libro en
+// silencio es peor que no tener paquete.
+const POR_SUCURSAL = ['consumidor', 'contribuyente', 'compras', 'anulados',
+                      'percepcion', 'retencion'];
+const SIN_SUCURSAL = ['renta', 'notas'];
+const LIBROS_VACIOS = { consumidor: [], contribuyente: [], anulados: [], compras: [],
+                        percepcion: [], retencion: [], notas: [], renta: [] };
+
+async function armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal }) {
+    const { downloadZip } = await getZipLib();
+    const [cons, contrib, anul, comp, perc, ret, nts, rent] = await Promise.all([
+        fetchLibroConsumidor(desde, hasta, null),
+        fetchLibroContribuyente(desde, hasta, null),
+        fetchLibroAnulados(desde, hasta, null),
+        fetchLibroCompras(desde, hasta, null),
+        fetchLibroPercepcion(desde, hasta, null),
+        fetchLibroRetencion(desde, hasta, null),
+        fetchNotasCreditoCompras(desde, hasta),
+        fetchAnexoRetencionRenta(desde, hasta),
+    ]);
+    for (const r of [cons, contrib, anul, comp, perc, ret, nts, rent])
+        if (r.error) throw r.error;
+
+    const todo = {
+        consumidor: cons.data || [], contribuyente: contrib.data || [],
+        anulados: anul.data || [], compras: comp.data || [],
+        percepcion: perc.data || [], retencion: ret.data || [],
+        notas: nts.data || [], renta: rent.data || [],
+    };
+
+    // Las sucursales que APARECEN en el período, no una lista a mano: el día que
+    // abra una sucursal entra sola, y una que no vendió ni compró no genera seis
+    // archivos vacíos.
+    const ids = [...new Set(POR_SUCURSAL.flatMap(k => todo[k].map(r => r.branch_id)))]
+        .filter(id => id != null)
+        .sort((a, b) => a - b);
+
+    const entradas = [];
+    const agregar = (tab, filasDelLibro, nombre) => {
+        if (filasDelLibro.length === 0) return;   // sin filas no hay archivo
+        const d = { ...LIBROS_VACIOS, [tab]: filasDelLibro };
+        const libro = construirLibro(tab, d, calcularTotales(d)[tab]);
+        entradas.push({ name: nombre(libro), input: buildCsvText(libro.headers, libro.rows) });
+    };
+
+    for (const tab of POR_SUCURSAL)
+        for (const id of ids)
+            agregar(tab, todo[tab].filter(r => r.branch_id === id),
+                l => `${l.base}/${nombreSucursal(id).replace(/\s+/g, '-')}.csv`);
+
+    for (const tab of SIN_SUCURSAL)
+        agregar(tab, todo[tab], l => `${l.base}_${mes}.csv`);
+
+    if (entradas.length === 0) return null;
+    return { blob: await downloadZip(entradas).blob(), nombre: `libros-iva_${mes}.zip` };
+}
+
 export default function LibrosIvaView() {
     const { getScope, user } = useAuth();
     const branches = useStaffStore((s) => s.branches);
@@ -549,6 +929,9 @@ export default function LibrosIvaView() {
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
+    // El paquete del mes vuelve a pedir los ocho libros sin filtro de sucursal,
+    // así que tarda más que un CSV suelto y necesita su propio estado.
+    const [zipeando, setZipeando] = useState(false);
 
     const [desde, hasta] = useMemo(() => rangoDelMes(mes), [mes]);
 
@@ -609,55 +992,13 @@ export default function LibrosIvaView() {
             .map(id => ({ value: String(id), label: nombreSucursal(id) }));
     }, [consumidor, contribuyente, anulados, compras, nombreSucursal]);
 
-    const totales = useMemo(() => {
-        const gravadasCons = consumidor.reduce((s, r) => s + Number(r.ventas_gravadas || 0), 0);
-        const exentasCons  = consumidor.reduce((s, r) => s + Number(r.ventas_exentas  || 0), 0);
-        const totalCons    = consumidor.reduce((s, r) => s + Number(r.total_diario    || 0), 0);
-        const docsCons     = consumidor.reduce((s, r) => s + Number(r.documentos      || 0), 0);
+    // El juego completo de libros cargados, en un solo objeto: es lo que comen
+    // `calcularTotales` y `construirLibro`, y lo que el ZIP arma por sucursal.
+    const datos = useMemo(
+        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta }),
+        [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta]);
 
-        const gravadasCcf = contribuyente.reduce((s, r) => s + Number(r.ventas_gravadas || 0), 0);
-        const exentasCcf  = contribuyente.reduce((s, r) => s + Number(r.ventas_exentas  || 0), 0);
-        const debitoCcf   = contribuyente.reduce((s, r) => s + Number(r.debito_fiscal   || 0), 0);
-        const totalCcf    = contribuyente.reduce((s, r) => s + Number(r.total           || 0), 0);
-
-        const totalAnul = anulados.reduce((s, r) => s + Number(r.total || 0), 0);
-
-        const suma = (filas, campo) => filas.reduce((s, r) => s + Number(r[campo] || 0), 0);
-
-        return {
-            consumidor:    { docs: docsCons, exentas: exentasCons, gravadas: gravadasCons, debito: debitoDeConsumidor(gravadasCons), total: totalCons },
-            contribuyente: { docs: contribuyente.length, exentas: exentasCcf, gravadas: gravadasCcf, debito: debitoCcf, total: totalCcf },
-            anulados:      { docs: anulados.length, exentas: 0, gravadas: 0, debito: 0, total: totalAnul },
-            // En compras la tercera tarjeta es el crédito fiscal, no el débito:
-            // es el impuesto que se resta, no el que se paga.
-            compras:       { docs: compras.length,
-                             exentas:  suma(compras, 'compras_exentas'),
-                             gravadas: suma(compras, 'compras_gravadas'),
-                             debito:   suma(compras, 'credito_fiscal'),
-                             total:    suma(compras, 'total') },
-            percepcion:    { docs: percepcion.length, exentas: 0,
-                             gravadas: suma(percepcion, 'monto_sujeto'),
-                             debito:   suma(percepcion, 'percepcion_iva'),
-                             total:    suma(percepcion, 'monto_sujeto') },
-            renta:         { docs: renta.length, exentas: 0,
-                             gravadas: suma(renta, 'base_sin_iva'),
-                             debito:   suma(renta, 'retencion_10'),
-                             total:    suma(renta, 'base_sin_iva') },
-            retencion:     { docs: retencion.length, exentas: 0,
-                             gravadas: suma(retencion, 'monto_sujeto'),
-                             debito:   suma(retencion, 'retencion_iva'),
-                             total:    suma(retencion, 'monto_sujeto') },
-            // El IVA va NETO: las notas de crédito bajan el crédito fiscal y las
-            // de débito lo suben, así que sumarlas todas juntas daría un ajuste
-            // mayor al real. Es el número que contabilidad tiene que mover.
-            notas:         { docs: notas.length, exentas: 0,
-                             gravadas: suma(notas.filter(r => r.tipo_dte === '05'), 'monto')
-                                     - suma(notas.filter(r => r.tipo_dte === '06'), 'monto'),
-                             debito:   suma(notas.filter(r => r.tipo_dte === '05'), 'iva')
-                                     - suma(notas.filter(r => r.tipo_dte === '06'), 'iva'),
-                             total:    suma(notas, 'monto') },
-        };
-    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta]);
+    const totales = useMemo(() => calcularTotales(datos), [datos]);
 
     const t = totales[activeTab];
 
@@ -697,276 +1038,48 @@ export default function LibrosIvaView() {
 
     const sufijoArchivo = `${mes}${filterBranch ? `_${nombreSucursal(Number(filterBranch)).replace(/\s+/g, '-')}` : ''}`;
 
-    const exportar = () => {
-        if (activeTab === 'consumidor') {
-            // Art. 83: fecha · del→al · máquina/establecimiento · exentas ·
-            // gravadas locales · exportaciones · total diario · cuenta de terceros.
-            // Además del Art. 83, la identidad del DTE que el libro del ERP
-            // lleva: clase y tipo, el código de generación del primero y del
-            // último del día, el sello del primero y los IDs del ERP. Los cinco
-            // estaban guardados y este CSV no los sacaba.
-            // Réplica del archivo real (22 columnas, sin encabezado), verificada
-            // columna por columna contra junio 2026 el 2026-08-01.
-            //
-            // Las columnas 10-13 y 15-19 van en cero porque están en cero en TODA
-            // la muestra disponible. No se pudo determinar cuál es cuál —haría
-            // falta un día con ventas exentas o exportaciones, y no existe uno en
-            // el histórico—, así que quedan escritas como constantes y dichas
-            // acá en vez de adivinadas.
-            //
-            // Las de código de generación son las DOS que el reporte original
-            // trae MAL: verificado en 2 de 2 días, no son las del primero ni las
-            // del último documento del día sino las de documentos del medio, y
-            // encima invertidas entre sí (el que llama "al" tenía correlativo
-            // MENOR que el "del"). Acá van las correctas. Replicar un dato
-            // equivocado en un libro que se declara sería copiar el error, no el
-            // formato — misma decisión que con las notas de crédito.
-            exportCsv(null,
-                [
-                    ...consumidor.map(r => [
-                        fmtFecha(r.fecha), '4', '01',
-                        ncPelado(r.numero_control_del),
-                        r.sello_del || '',
-                        r.erp_id_del || '', r.erp_id_al || '',
-                        cgEspacios(r.codigo_gen_del), cgEspacios(r.codigo_gen_al),
-                        '',
-                        num(r.ventas_exentas), '0.00', '0.00', '0.0000',
-                        num(r.ventas_gravadas),
-                        '0.00', '0.00', '0.00', '0.00', '0.00',
-                        num(r.total_diario),
-                        '2',
-                    ]),
-                ],
-                `libro-consumidor-final_${sufijoArchivo}.csv`);
-            return;
-        }
-        if (activeTab === 'contribuyente') {
-            // Art. 85 más la identidad del DTE: sello de recepción, código de
-            // generación, NIT, la clase/tipo del documento y —desde el
-            // 2026-08-01— el número de control, que es el que faltaba de verdad.
-            //
-            // Va en columna propia y NO reemplazando a "No CCF", que sigue
-            // llevando el correlativo: son dos numeraciones distintas y todavía
-            // no está verificado cuál de las dos consigna el reporte en esa
-            // columna. Mientras la duda exista, el archivo lleva las dos —
-            // sobra un dato, no falta.
-            // Réplica del archivo real (19 columnas, sin encabezado), verificada
-            // contra junio 2026. Clase 4 = documento tributario electrónico;
-            // tipo 03 = comprobante de crédito fiscal — códigos del catálogo de
-            // Hacienda, no una numeración nuestra.
-            //
-            // El NRC va en la columna 8 y el NIT en la 18, los dos SIN guión.
-            // Las columnas 11 y 12 quedan en cero: están en cero en toda la
-            // muestra y no se pudo determinar cuál es cuál.
-            //
-            // Este reporte SÍ trae bien sus identificadores —número de control,
-            // sello y código de generación coinciden con el documento de la
-            // fila—, a diferencia del de consumidor.
-            exportCsv(null,
-                [
-                    ...contribuyente.map(r => [
-                        fmtFecha(r.fecha), '4', '03',
-                        ncPelado(r.numero_control),
-                        r.sello_recepcion || '',
-                        cgPelado(r.codigo_generacion),
-                        r.erp_invoice_id || '',
-                        docId(r.nrc),
-                        r.cliente || '',
-                        num(r.ventas_exentas), '0.00', '0',
-                        num(r.ventas_gravadas), num(r.debito_fiscal),
-                        '0.00', '0.00',
-                        num(r.total),
-                        docId(r.nit),
-                        '1',
-                    ]),
-                ],
-                `libro-contribuyentes_${sufijoArchivo}.csv`);
-            return;
-        }
-        if (activeTab === 'anulados') {
-            // El sello y el ID del ERP se agregaron el 2026-08-01: el anexo del
-            // ERP los lleva y acá estaban guardados sin salir. Al revés, el ERP
-            // NO trae fecha, cliente ni total — esas tres quedan porque hacen
-            // el anexo legible sin tener que ir a buscar cada documento.
-            // Réplica del archivo real (10 columnas, sin encabezado). El número
-            // de control es la PRIMERA, y era la única que no se podía llenar
-            // hasta el backfill del 2026-08-01.
-            //
-            // Las seis constantes (`4`, `0`, `0`, `D`, `0`, `0`) se verificaron
-            // sobre las 80 filas de junio: son iguales en todas. El anexo no
-            // lleva fecha, cliente ni total — por eso no van, aunque la pantalla
-            // sí los muestre para poder leer la fila sin ir a buscar cada
-            // documento.
-            exportCsv(null,
-                [
-                    ...anulados.map(r => [
-                        ncPelado(r.numero_control),
-                        '4', '0', '0',
-                        r.tipo_documento === 'CCF' ? '03' : '01',
-                        'D',
-                        r.sello_recepcion || '',
-                        '0', '0',
-                        cgPelado(r.codigo_generacion),
-                    ]),
-                ],
-                `anexo-anulados_${sufijoArchivo}.csv`);
-            return;
-        }
-        if (activeTab === 'compras') {
-            // Art. 86: correlativo · fecha · clase y número del documento ·
-            // NRC · proveedor · exentas · gravadas internas · importaciones ·
-            // crédito fiscal · total · percibido · retenido.
-            // Réplica del archivo real (23 columnas, sin encabezado), verificada
-            // contra junio 2026 en Bodega. La columna 5 es el **NIT**, no el NRC
-            // (INCOFA `06142609031027`, LETERAGO `06142505071078`), y las
-            // gravadas son `subtotal − percepción` — LETERAGO: 577.71 − 5.72 =
-            // 571.99, que es exactamente lo que trae el archivo.
-            //
-            // La percepción va con CUATRO decimales, no dos.
-            //
-            // Las constantes `1;1;2;5;3` de las columnas 17-21 son iguales en
-            // todas las filas de la muestra; no se pudo determinar qué
-            // significan, así que se copian tal cual.
-            //
-            // La última columna es el SELLO y sale vacía. Vacío y no un cero,
-            // porque no sabemos el valor — declararlo sería inventarlo.
-            //
-            // Ojo, el motivo cambió: hasta C1 era que el sello «no venía en la
-            // fuente», y eso resultó falso — está en la columna 22 del reporte de
-            // referencia y desde v2.348.0 el sync lo guarda en
-            // `purchase_receipts.sello_recibido`. Hoy el motivo es que todavía no
-            // está en todas las compras: julio 56.7% (265 de 467), junio y agosto
-            // 0%, porque el sello solo se captura cuando el sync vuelve a correr
-            // ese rango. Emitirlo ahora daría un archivo que dice el sello en
-            // unos meses y no en otros. **Primero el backfill de junio y agosto
-            // —en ventanas de ≤10 días, que es lo que aguanta la fuente—, después
-            // se emite.** Cuando se haga, cambiar también el `''` final de la
-            // rama `compras` de `generar_csv_libro`: son dos transcripciones
-            // independientes a propósito, y el verificador compara una contra
-            // otra.
-            //
-            // Lo de arriba cierra el §4.3 del doc de formato, que daba por
-            // sentado que el dato no existía.
-            exportCsv(null,
-                [
-                    ...compras.map(r => [
-                        fmtFecha(r.fecha), '4', '',
-                        r.documento_numero || '',
-                        docId(r.nit),
-                        r.proveedor || '',
-                        num(r.compras_exentas), '0.00', '0.00',
-                        num(r.compras_gravadas),
-                        '0.00', '0.00', '0.00',
-                        num(r.credito_fiscal),
-                        num(r.total),
-                        '',
-                        '1', '1', '2', '5', '3',
-                        // Vacío ≠ 0.0000: si el documento se sincronizó antes de
-                        // que existiera la columna no sabemos si hubo percepción,
-                        // y escribir cero sería afirmar que no la hubo.
-                        r.percepcion_iva == null ? '' : (Number(r.percepcion_iva) || 0).toFixed(4),
-                        '',
-                    ]),
-                ],
-                `libro-compras_${sufijoArchivo}.csv`);
-            return;
-        }
-        if (activeTab === 'renta') {
-            // Lo que CORRESPONDERÍA retener, no lo retenido: la retención se
-            // practica al pagar y el portal registra lo que se factura. El
-            // encabezado lo dice para que nadie lo presente como otra cosa.
-            exportCsv(
-                ['N.', 'FECHA', 'PROVEEDOR', 'NIT', 'NRC', 'TIPO', 'NUMERO DE CONTROL',
-                 'CODIGO DE GENERACION', 'MONTO', 'BASE SIN IVA', 'RETENCION 10%'],
-                [
-                    ...renta.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha), r.proveedor || '',
-                        formatearNit(r.nit), formatearNrc(r.nrc),
-                        r.tipo_documento || '', r.numero_control || '',
-                        (r.codigo_generacion || '').toUpperCase(),
-                        num(r.monto_total), num(r.base_sin_iva), num(r.retencion_10),
-                    ]),
-                    ['TOTALES', '', '', '', '', '', '', '',
-                     '', num(t.gravadas), num(t.debito)],
-                ],
-                `anexo-retencion-renta_${sufijoArchivo}.csv`);
-            return;
-        }
+    // Arma UN libro y devuelve sus filas — no descarga nada. La descarga suelta
+    // (`exportar`) y el ZIP de todas las sucursales pasan los dos por acá, a
+    // propósito: el día que una columna cambie, cambia en los dos archivos o en
+    // ninguno. Dos transcripciones del mismo libro fiscal es exactamente el
+    // problema que este módulo ya tuvo entre el RPC y `generar_csv_libro`.
+    //
+    // `d` es el juego de libros y `tot` sus totales — explícitos y no tomados
+    // del estado, porque el ZIP los arma POR SUCURSAL.
 
-        if (activeTab === 'percepcion' || activeTab === 'retencion') {
-            const esPerc = activeTab === 'percepcion';
-            const filasAnexo = esPerc ? percepcion : retencion;
-            // Réplica del anexo real (9 columnas, sin encabezado), verificada
-            // contra Bodega en junio 2026. Los montos van con CUATRO decimales.
-            //
-            // Dos diferencias conocidas, y las dos son de origen:
-            //
-            //   · El SELLO (columna 7) sale vacío: el anexo del ERP lo trae, pero
-            //     no viene en la fuente que alimenta Compras. Vacío y no cero —
-            //     no sabemos el valor.
-            //   · El monto sujeto va a diferir en la tercera y cuarta decimal:
-            //     el ERP guarda 577.7115 y el sync redondea a 577.71 al
-            //     guardarlo, así que acá sale 571.9900 donde el anexo dice
-            //     571.9915. Son ~0.0015 por fila. Recuperarlo exige cambiar la
-            //     precisión del sync, no el exportador.
-            //
-            // El de retención usa el mismo formato porque es su hermano, pero eso
-            // NO está verificado con datos: el archivo del ERP salió vacío en
-            // toda su historia (2025-01 → 2026-07, 7 sucursales).
-            exportCsv(null,
-                [
-                    ...filasAnexo.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha),
-                        r.proveedor || '',
-                        docId(r.nit),
-                        r.documento_tipo === 'CCF' ? '03' : '01',
-                        r.documento_numero || '',
-                        '',
-                        (Number(r.monto_sujeto) || 0).toFixed(4),
-                        (Number(esPerc ? r.percepcion_iva : r.retencion_iva) || 0).toFixed(4),
-                    ]),
-                ],
-                `anexo-${esPerc ? 'percepcion' : 'retencion'}_${sufijoArchivo}.csv`);
-            return;
-        }
-        if (activeTab === 'notas') {
-            // No replica ningún reporte: este archivo no existe del otro lado,
-            // que es justamente el problema que la sección hace visible. Las
-            // columnas son las que trae el documento, y el TOTAL va NETO —
-            // crédito menos débito— porque es el ajuste que hay que aplicar.
-            exportCsv(
-                ['No', 'FECHA', 'TIPO', 'CODIGO', 'NUMERO DE CONTROL',
-                 'CODIGO DE GENERACION', 'PROVEEDOR', 'NRC', 'NIT',
-                 'DOCUMENTO QUE CORRIGE', 'MONTO', 'IVA'],
-                [
-                    ...notas.map((r, i) => [
-                        i + 1, fmtFecha(r.fecha),
-                        r.tipo_dte === '05' ? 'NOTA DE CREDITO' : 'NOTA DE DEBITO',
-                        r.tipo_dte,
-                        r.numero_control || '',
-                        (r.codigo_generacion || '').toUpperCase(),
-                        r.proveedor || '', formatearNrc(r.nrc), formatearNit(r.nit),
-                        r.documento_corregido || '',
-                        num(r.monto), num(r.iva),
-                    ]),
-                    ['TOTALES', '', '', '', '', '', '', '', '', '',
-                     num(t.total), num(notas.reduce((s, r) =>
-                         s + (r.tipo_dte === '05' ? 1 : -1) * Number(r.iva || 0), 0))],
-                    ['AJUSTE NETO AL CREDITO FISCAL', '', '', '', '', '', '', '', '', '',
-                     '', num(t.debito)],
-                ],
-                `notas-credito-compras_${sufijoArchivo}.csv`);
-            return;
-        }
+    const exportar = () => {
+        const libro = construirLibro(activeTab, datos, t);
+        if (libro) exportCsv(libro.headers, libro.rows, `${libro.base}_${sufijoArchivo}.csv`);
+    };
+
+    // El armado vive a nivel de módulo (`armarPaqueteDelMes`); acá solo el
+    // estado. El `try/catch` tiene que quedar AFUERA del componente: el
+    // compilador de React se rinde con un componente que contiene una sentencia
+    // `try`, y cuando se rinde pierde la memoización de TODA la vista —lo detectó
+    // `react-hooks/set-state-in-effect`, que dejó de reportar en dos líneas que
+    // no se habían tocado. Por eso el handler encadena promesas en vez de usar
+    // `await` con `try`.
+    const descargarZip = () => {
+        setZipeando(true);
+        armarPaqueteDelMes({ desde, hasta, mes, nombreSucursal })
+            .then(paquete => {
+                if (!paquete) { setError('No hay libros con datos en este período.'); return; }
+                const a = Object.assign(document.createElement('a'), {
+                    href: URL.createObjectURL(paquete.blob),
+                    download: paquete.nombre,
+                });
+                a.click();
+                URL.revokeObjectURL(a.href);
+            })
+            .catch(e => setError(e?.message || 'No se pudo generar el paquete.'))
+            .finally(() => setZipeando(false));
     };
 
     // Memoizado y no un objeto literal suelto: si `filas` cambia de identidad en
     // cada render, se la lleva puesta toda la cadena de `useMemo` de abajo
     // —numerar, filtrar, ordenar, paginar— sobre 467 filas y en cada tecleo del
     // buscador.
-    const filas = useMemo(
-        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta }[activeTab] ?? []),
-        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta]);
+    const filas = useMemo(() => datos[activeTab] ?? [], [datos, activeTab]);
 
     const acceso = useMemo(
         () => (ACCESO[activeTab] || ACCESO.consumidor)(nombreSucursal),
@@ -1074,6 +1187,19 @@ export default function LibrosIvaView() {
                 title: `Exportar el libro de ${TABS.find(x => x.key === activeTab)?.label} en CSV — ${filas.length} filas, completo y en orden legal (no lo recortan la búsqueda ni el orden de pantalla)`,
                 onClick: exportar,
                 disabled: loading || filas.length === 0,
+            }, {
+                key: 'paquete',
+                icon: Archive,
+                // El rótulo es CONSTANTE a propósito: `FilterBar` mide la fila a
+                // partir de los rótulos de las acciones (`claveRotulos`), así que
+                // cambiarlo a "Generando…" mientras trabaja vuelve a medir y la
+                // píldora parpadea. Es el mismo defecto que se corrigió en
+                // v2.349.1 con el avance de la descarga. El estado se muestra
+                // deshabilitando el botón, que no toca la medida.
+                label: 'Paquete del mes',
+                title: `Descargar TODOS los libros de ${etiquetaMes(mes)} en un ZIP, con una carpeta por libro y un archivo por sucursal adentro`,
+                onClick: descargarZip,
+                disabled: loading || zipeando,
             }]}>
             {puedeElegirSucursal && branchOptions.length > 0 && (
                 <FilterBar.Section active={!!filterBranch} onClear={() => setFilterBranch('')} label="sucursal">

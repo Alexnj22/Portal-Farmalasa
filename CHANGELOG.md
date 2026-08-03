@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.350.0 — Paquete del mes: todos los libros de IVA en un ZIP, por libro y por sucursal
+
+Botón nuevo en Libros IVA. Baja **un ZIP con todos los libros del período**, con
+una carpeta por libro y adentro un archivo por sucursal:
+
+```
+libros-iva_2026-07.zip
+├── libro-consumidor-final/   La-Popular.csv · Salud-1.csv · …
+├── libro-contribuyentes/     …
+├── libro-compras/            … (incluye Bodega)
+├── anexo-anulados/           …
+├── anexo-percepcion/         …
+└── notas-credito-compras_2026-07.csv
+```
+
+Antes había que entrar ocho veces, cambiar la sucursal seis veces y bajar 44
+archivos a mano. Una sucursal salteada en esa rutina no se nota hasta que
+Hacienda cruza el mes.
+
+**Renta y notas de crédito NO se reparten por sucursal** y van sueltos en la
+raíz: sus documentos llegan por correo y no traen sucursal. Inventarles una
+carpeta sería inventarles el dato. Una sucursal sin filas en un libro no genera
+un archivo vacío — julio 2026 da 29 archivos, no 48.
+
+Trae cada libro **una sola vez sin filtro de sucursal** y los reparte en el
+navegador por `branch_id`: 8 consultas en vez de 44, y el servidor ya aplica el
+scope del usuario.
+
+**Una sola transcripción.** El CSV suelto y el del ZIP pasan los dos por
+`construirLibro` + el nuevo `buildCsvText` de `csvExport.js`, extraído de
+`exportCsv` justo para esto — dos transcripciones del mismo libro fiscal se
+separan sola la primera vez que alguien toca una. Verificado en el navegador:
+el `libro-consumidor-final/La-Popular.csv` que sale del ZIP tiene el **mismo
+md5** (`8c5cb57e…`) que el que produce `generar_csv_libro` en el servidor, que
+es la segunda implementación independiente.
+
+**Y un hallazgo del compilador de React, atrapado por el linter.** Escribir el
+handler con `try/catch/finally` adentro del componente hace que el compilador se
+**rinda con la vista entera** y pierda toda la memoización. No lo dijo un error
+sino `react-hooks/set-state-in-effect`, que dejó de reportar en dos líneas que
+nadie había tocado — un `eslint-disable` que de golpe sobra es la señal. El
+armado del paquete vive ahora en `armarPaqueteDelMes`, a nivel de módulo, y el
+handler encadena promesas. Este archivo no tenía **ni un** `try` antes; ahora se
+sabe por qué.
+
+El rótulo del botón es constante mientras trabaja: `FilterBar` mide la fila a
+partir de los rótulos de las acciones, así que cambiarlo a «Generando…» haría
+parpadear la píldora — el mismo defecto que se corrigió en v2.349.1.
+
 ## v2.349.3 — El libro elige el primer y último documento del día por correlativo, no por id interno
 
 Salió de una pregunta del usuario —«los códigos no coinciden, ¿tenemos datos

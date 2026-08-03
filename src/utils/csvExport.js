@@ -34,14 +34,33 @@ function escapeCell(value) {
  * @param {string} filename
  */
 export function exportCsv(headers, rows, filename) {
-    const SEP = ';';
-    const todas = headers == null ? rows : [headers, ...rows];
-    const lines = todas.map(row => row.map(escapeCell).join(SEP));
-    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([buildCsvText(headers, rows)], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), {
         href: URL.createObjectURL(blob),
         download: filename,
     });
     a.click();
     URL.revokeObjectURL(a.href);
+}
+
+/**
+ * El MISMO texto que escribe `exportCsv`, devuelto en vez de descargado. Existe
+ * para el ZIP de los libros de IVA, que necesita 40+ archivos en una sola
+ * descarga y no puede disparar 40 clicks.
+ *
+ * Es una función aparte y `exportCsv` la usa, en lugar de que el ZIP se arme el
+ * texto por su cuenta: dos transcripciones del mismo archivo se separan sola la
+ * primera vez que alguien toca una — y acá la diferencia serían los tres bytes
+ * del BOM o el CRLF, que es exactamente lo que rompe el `diff` contra el archivo
+ * de referencia.
+ *
+ * @param {string[]|null} headers
+ * @param {Array<Array<string|number>>} rows
+ * @returns {string}
+ */
+export function buildCsvText(headers, rows) {
+    const SEP = ';';
+    const todas = headers == null ? rows : [headers, ...rows];
+    const lines = todas.map(row => row.map(escapeCell).join(SEP));
+    return '﻿' + lines.join('\r\n');
 }

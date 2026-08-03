@@ -21,6 +21,55 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.350.5 — El mes que cierra ya no se pierde del resumen de ventas por producto
+
+Reportado desde Ventas → Productos: un producto decía **7 unidades** en el
+período «Últimos 3 meses» y su propio detalle, abierto justo debajo, decía **35**.
+Las dos cifras eran del mismo período. La que estaba mal era la de arriba: **era
+junio solo, sin julio**.
+
+La fila de producto no lee las ventas para los meses ya cerrados — lee una tabla
+resumen mensual. La mantiene un trabajo cada hora que busca «lo tocado desde la
+última corrida» (una marca de agua sobre `updated_at`) pero solo procesa facturas
+**de meses ya cerrados**. Las dos condiciones se cumplen en momentos distintos:
+
+- mientras julio estaba en curso, la factura pasaba la marca de agua y la
+  descartaba el filtro de mes cerrado;
+- cuando julio cerró, ya pasaba el filtro, pero su `updated_at` había quedado
+  muy por detrás de la marca — que subió igual, cada hora, aunque no hubiera
+  procesado nada.
+
+Así que **el mes que cierra se perdía para siempre**. Julio 2026 quedó con
+$38,431.95 de $214,226.46 y 657 productos de 2,719 (17.9%): lo único que entró
+fueron las facturas de fin de mes que el sincronizador volvió a tocar ya en
+agosto. Abril, mayo y junio estaban perfectos porque los escribió la carga
+inicial del 17 de julio, cuando el trabajo se volvió incremental — **julio fue el
+primer mes en cerrar con el mecanismo nuevo**. A agosto le tocaba el 1 de
+septiembre, y así todos los meses.
+
+No afectaba solo esa pantalla: la misma tabla alimenta los tres cálculos de
+Pedidos a Sucursales, que leen 6 meses de ventas para decidir cuánto reponer.
+
+**El arreglo** (migración `20260803171700`) agrega un *barrido de cierre de mes*:
+el trabajo guarda cuál era el mes en curso en su corrida anterior y, cuando
+cambia, reconstruye completos los meses que cerraron en el medio. Se guarda el
+mes y no una fecha de último barrido para que el criterio sea el cambio de mes:
+si el cron estuviera caído dos meses, reconstruye los dos. La reconstrucción vive
+en una función propia, `rebuild_product_sales_monthly_agg(desde, hasta)`, porque
+también sirve para reparaciones puntuales.
+
+No se arregló quitando el filtro de mes cerrado, que sería lo directo: eso mete
+el mes en curso a la tabla y rompe a sus consumidores — la «última venta» pasaría
+a ser una fecha futura, y Pedidos empezaría a sumar un mes a medio andar dentro
+de su demanda de 6 meses.
+
+Verificado: probado entero (funciones, marca y corrida real) en una transacción
+con ROLLBACK antes de aplicar; después, en producción, julio quedó en
+**$214,226.46 y 2,719 productos, idéntico al centavo** a las ventas en vivo, y
+abril, mayo, junio y julio dan diferencia **$0.00 y 0 unidades**. El mes en curso
+sigue con cero filas en la tabla, como debe ser. La segunda corrida escribió
+**0 filas** — es idempotente y no genera escritura de más.
+
 ## v2.350.4 — El nombre del cliente ya no se corta en Contribuyentes
 
 Reportado por el usuario con una captura: «REINA ELIZETH PORTILLO SO…»,

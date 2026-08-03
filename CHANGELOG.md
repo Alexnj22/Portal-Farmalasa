@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.351.0 — Filtro por tipo en Facturas de Compra
+
+Pedido del usuario. Vuelve el filtro por tipo de documento, que se había quitado
+el 2026-07-22 —también a pedido suyo, «ya en el buscador los filtra»—. El
+buscador lo sigue matcheando por texto; lo que cambia es que «todas las notas de
+crédito del mes» pasa a ser una opción en vez de algo que hay que escribir.
+
+Las opciones salen de **los tipos que aparecen en el período, con su conteo**, no
+del catálogo de Hacienda: de los 11 tipos, julio 2026 trae seis, y ofrecer cinco
+opciones que dan cero es ruido. El día que llegue un tipo nuevo entra solo.
+Ordenadas por frecuencia. Julio 2026:
+
+```
+Todos (863) · Crédito Fiscal (CCF) (674) · Doc. Contable de Liquidación (101)
+Nota de Crédito (75) · Factura (9) · Nota de Débito (3) · Comp. de Retención (1)
+```
+
+Verificado en el navegador y cruzado contra la base: los seis conteos coinciden
+exacto (`03`→674, `09`→101, `05`→75, `01`→9, `06`→3, `07`→1, suman 863), y al
+elegir CCF el pie pasa a «1–25 de 674 documentos». Cero errores de consola.
+
+Detalles que no se ven pero importan: la sección **no se pinta si el período trae
+un solo tipo** —un filtro que no puede cambiar nada solo ocupa ancho de la
+píldora—, entra al `activeCount` y al «limpiar», resetea la paginación, y los
+documentos sin tipo (confirmados sin JSON) tienen su propia opción «Sin tipo» en
+vez de un guión, que en un desplegable no se lee como opción.
+
+**Las cards NO siguen el filtro**, igual que con el buscador: se calculan sobre
+todo el período a propósito, para que no salten mientras se tipea.
+
 ## v2.350.5 — El mes que cierra ya no se pierde del resumen de ventas por producto
 
 Reportado desde Ventas → Productos: un producto decía **7 unidades** en el

@@ -622,6 +622,12 @@ function TabDocumentos({
     // en la card de abajo en vez de un select dedicado.
     const [filterInvalidados, setFilterInvalidados] = useState(false);
     const [filterSinProveedor, setFilterSinProveedor] = useState(false);
+    // Tipo vuelve como filtro propio (pedido del usuario 2026-08-03). Lo de
+    // arriba explica por qué se había quitado; el buscador lo sigue matcheando
+    // por texto, pero "todas las notas de crédito del mes" es una pregunta que
+    // se hace seguido y escribirla cada vez no es lo mismo que elegirla.
+    // '' = todos · 'SIN' = documentos sin tipo (confirmados sin JSON).
+    const [filterTipo, setFilterTipo] = useState('');
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -667,8 +673,33 @@ function TabDocumentos({
         return { totalCompras, creditoFiscal, comprasNetas, invalidadosCount, invalidadosMonto, sinProveedorCount };
     }, [rows]);
 
+    // Los tipos que APARECEN en el período, con su conteo — no el catálogo
+    // entero: de los 11 tipos de Hacienda, un mes trae tres o cuatro, y ofrecer
+    // ocho opciones que dan cero es ruido. El día que llegue un tipo nuevo entra
+    // solo. Ordenados por frecuencia: el que más se busca queda arriba.
+    const tipoOptions = useMemo(() => {
+        const conteo = new Map();
+        for (const r of rows) {
+            const k = r.tipo_dte || 'SIN';
+            conteo.set(k, (conteo.get(k) || 0) + 1);
+        }
+        return [
+            { value: '', label: `Todos (${rows.length})` },
+            ...[...conteo.entries()]
+                .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+                .map(([k, n]) => ({
+                    value: k,
+                    // "Sin tipo" y no "—": en el desplegable un guión no se lee
+                    // como una opción. Son los confirmados sin JSON, donde nunca
+                    // se supo qué documento era.
+                    label: `${k === 'SIN' ? 'Sin tipo' : dteTypeLabel(k)} (${n})`,
+                })),
+        ];
+    }, [rows]);
+
     const filtered = useMemo(() => {
         return rows.filter(r => {
+            if (filterTipo && (filterTipo === 'SIN' ? !!r.tipo_dte : r.tipo_dte !== filterTipo)) return false;
             if (filterInvalidados && !r.invalidado) return false;
             // H4: mismo criterio que la card — los tipos sin proveedor posible
             // no son "pendientes", así que tampoco entran a este filtro.
@@ -680,9 +711,9 @@ function TabDocumentos({
             if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.proveedor_alias, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
             return true;
         });
-    }, [rows, filterInvalidados, filterSinProveedor, searchTerm]);
+    }, [rows, filterTipo, filterInvalidados, filterSinProveedor, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterInvalidados, filterSinProveedor, searchTerm]);  
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterTipo, filterInvalidados, filterSinProveedor, searchTerm]);
 
     // Fase 3.2: candidatos para "Adjuntar JSON" — documentos con JSON completo
     // dentro del mismo rango de fechas ya cargado (no dispara un fetch aparte).
@@ -892,8 +923,8 @@ function TabDocumentos({
                     y por eso la píldora no quedaba justificada a la derecha: había
                     otro bloque disputándole el borde. */}
                 <FilterBar
-                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterInvalidados(false); }}
-                    activeCount={[dateDirty, filterSinProveedor, filterInvalidados].filter(Boolean).length}
+                    onClear={() => { setDateRange(defaultDateRange()); setFilterSinProveedor(false); setFilterInvalidados(false); setFilterTipo(''); }}
+                    activeCount={[dateDirty, filterSinProveedor, filterInvalidados, !!filterTipo].filter(Boolean).length}
                     acciones={[
                         ...(filtered.length > 0 ? [{
                             key: 'descargar', icon: Download,
@@ -929,6 +960,22 @@ function TabDocumentos({
                             resetLabel="Ir al mes actual"
                         />
                     </FilterBar.Section>
+
+                    {/* Solo si el período trae más de un tipo: con uno solo, el
+                        filtro no puede cambiar nada y ocupa ancho de la píldora.
+                        `umbral={0}` fuerza el desplegable — los tipos pueden ser
+                        cinco o seis y un segmentado de seis no entra. */}
+                    {tipoOptions.length > 2 && (
+                        <FilterBar.Section active={!!filterTipo}
+                            onClear={() => setFilterTipo('')} label="tipo">
+                            <FilterBar.Opciones
+                                icon={FileText} label="Tipo" placeholder="Tipo"
+                                ancho="200px" umbral={0}
+                                value={filterTipo} onChange={setFilterTipo}
+                                options={tipoOptions}
+                            />
+                        </FilterBar.Section>
+                    )}
                 </FilterBar>
             </div>
             </div>

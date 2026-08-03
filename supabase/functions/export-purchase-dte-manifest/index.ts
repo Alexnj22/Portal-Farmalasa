@@ -174,19 +174,38 @@ Deno.serve(async (req) => {
     }
 
     const files: { name: string; url: string }[] = [];
-    for (let i = 0; i < entradas.length; i += SIGN_CHUNK) {
-      const lote = entradas.slice(i, i + SIGN_CHUNK);
+
+    // No está documentado cuántas rutas acepta createSignedUrls en una sola
+    // llamada, y de ese número depende TODA la descarga. En vez de asumirlo:
+    // si un lote falla entero, se parte a la mitad y se reintenta hasta llegar
+    // a 25. Así un tope más bajo del que creemos degrada a más llamadas
+    // (milisegundos) en vez de romper la función.
+    async function firmar(lote: Entrada[]): Promise<void> {
       const { data, error } = await admin.storage.from(BUCKET)
         .createSignedUrls(lote.map((e) => e.rel), SIGN_TTL_SEGUNDOS);
-      if (error) throw new Error(error.message);
+
+      if (error || !data) {
+        if (lote.length > 25) {
+          const mitad = Math.ceil(lote.length / 2);
+          await firmar(lote.slice(0, mitad));
+          await firmar(lote.slice(mitad));
+          return;
+        }
+        throw new Error(error?.message ?? "no se pudieron firmar los archivos");
+      }
+
       lote.forEach((e, j) => {
-        const firmada = data?.[j]?.signedUrl;
+        const firmada = data[j]?.signedUrl;
         // createSignedUrls devuelve la fila con .error cuando el objeto no
         // existe (fila en BD apuntando a un archivo borrado). Se reporta en
         // el manifiesto de errores del ZIP en vez de romper toda la descarga.
         if (firmada) files.push({ name: e.name, url: firmada });
-        else warnings.push(`${e.name}: ${data?.[j]?.error ?? "no se pudo firmar"}`);
+        else warnings.push(`${e.name}: ${data[j]?.error ?? "no se pudo firmar"}`);
       });
+    }
+
+    for (let i = 0; i < entradas.length; i += SIGN_CHUNK) {
+      await firmar(entradas.slice(i, i + SIGN_CHUNK));
     }
 
     if (files.length === 0) {

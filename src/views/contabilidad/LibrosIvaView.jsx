@@ -18,6 +18,7 @@ import { formatearNit, formatearNrc } from '../../utils/nitUtils';
 import { normalizeText } from '../../utils/helpers';
 import { exportCsv } from '../../utils/csvExport';
 import {
+    fetchAnexoRetencionRenta,
     fetchLibroConsumidor, fetchLibroContribuyente, fetchLibroAnulados,
     fetchLibroCompras, fetchLibroPercepcion, fetchLibroRetencion,
     fetchNotasCreditoCompras,
@@ -76,6 +77,9 @@ const TABS = [
     { key: 'anulados',      label: 'Anulados'       },
     { key: 'percepcion',    label: 'Percepción'     },
     { key: 'retencion',     label: 'Retención'      },
+    // Renta (Art. 156) NO es IVA. Va aparte y al final justamente para que no
+    // se lea como una variante de la retención de IVA de al lado.
+    { key: 'renta',         label: 'Renta'          },
     // 'excluido' se retiró el 2026-08-02: cero documentos de sujeto excluido en
     // toda la historia y el reporte no existe siquiera en el origen. Una pestaña
     // que siempre sale vacía enseña a ignorar las pestañas vacías — y Retención,
@@ -269,6 +273,7 @@ const ETIQUETAS = {
     compras:       { icon: ShoppingCart, monto: 'Compras',      impuesto: 'Crédito fiscal' },
     percepcion:    { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA percibido'  },
     retencion:     { icon: ShoppingCart, monto: 'Monto sujeto', impuesto: 'IVA retenido'   },
+    renta:         { icon: ShoppingCart, monto: 'Base sin IVA',  impuesto: 'Retención 10%'  },
     // "Ajuste" y no "Crédito fiscal": este número no es el crédito del período,
     // es lo que hay que MOVERLE — y va neto, porque las de crédito lo bajan y
     // las de débito lo suben.
@@ -285,6 +290,19 @@ const sinSucursal = (cols, filtrada) =>
 // No lleva Sucursal, y es el único que no la lleva: estos documentos llegan por
 // correo y el origen no la trae. Antes que repartir mal un dato fiscal, no se
 // reparte — el aviso de la pestaña lo dice con todas las letras.
+// Art. 156 CT. La base va SIN IVA: si la persona natural está inscrita emite
+// CCF y la base es el gravado; si no lo está el documento no lleva IVA y la base
+// es el total. `monto - iva` cubre los dos casos sin ramas.
+const COLS_RENTA = [
+    { key: 'n',         label: 'N.º',        align: 'right' },
+    { key: 'fecha',     label: 'Fecha',      align: 'left'  },
+    { key: 'proveedor', label: 'Proveedor',  align: 'left'  },
+    { key: 'nit',       label: 'NIT',        align: 'left', hideBelow: 'lg' },
+    { key: 'doc',       label: 'Documento',  align: 'left', hideBelow: 'sm' },
+    { key: 'base',      label: 'Base',       align: 'right' },
+    { key: 'retencion', label: 'Retención',  align: 'right' },
+];
+
 const COLS_NOTAS = [
     { key: 'n',         label: 'N.º',        align: 'right' },
     { key: 'fecha',     label: 'Fecha',      align: 'left'  },
@@ -507,6 +525,7 @@ export default function LibrosIvaView() {
     const [compras,       setCompras]       = useState([]);
     const [percepcion,    setPercepcion]    = useState([]);
     const [retencion,     setRetencion]     = useState([]);
+    const [renta,         setRenta]         = useState([]);
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);
@@ -518,7 +537,7 @@ export default function LibrosIvaView() {
     // y el carril puede mostrar el total del período sin importar dónde estés.
     const load = useCallback(async () => {
         setLoading(true);
-        const [c, k, a, co, pe, re, nc] = await Promise.all([
+        const [c, k, a, co, pe, re, nc, rt] = await Promise.all([
             fetchLibroConsumidor(desde, hasta, filterBranch),
             fetchLibroContribuyente(desde, hasta, filterBranch),
             fetchLibroAnulados(desde, hasta, filterBranch),
@@ -527,12 +546,15 @@ export default function LibrosIvaView() {
             fetchLibroRetencion(desde, hasta, filterBranch),
             // Sin sucursal: el origen no la trae. Ver `fetchNotasCreditoCompras`.
             fetchNotasCreditoCompras(desde, hasta),
+            // Sin sucursal, igual que las notas: los documentos llegan a una
+            // casilla de la empresa y no traen sucursal.
+            fetchAnexoRetencionRenta(desde, hasta),
         ]);
         // Un libro que falla NO puede quedar como "no hubo operaciones": un mes
         // vacío por error de red es indistinguible de un mes sin movimiento, y
         // acá eso se declara a Hacienda. Vale doble para Retención y Sujeto
         // Excluido, que salen vacíos aun cuando todo funciona.
-        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error;
+        const fallo = c.error || k.error || a.error || co.error || pe.error || re.error || nc.error || rt.error;
         setError(fallo ? fallo.message : null);
         setConsumidor(c.data || []);
         setContribuyente(k.data || []);
@@ -541,6 +563,7 @@ export default function LibrosIvaView() {
         setPercepcion(pe.data || []);
         setRetencion(re.data || []);
         setNotas(nc.data || []);
+        setRenta(rt.data || []);
         setLoading(false);
     }, [desde, hasta, filterBranch]);
 
@@ -594,6 +617,10 @@ export default function LibrosIvaView() {
                              gravadas: suma(percepcion, 'monto_sujeto'),
                              debito:   suma(percepcion, 'percepcion_iva'),
                              total:    suma(percepcion, 'monto_sujeto') },
+            renta:         { docs: renta.length, exentas: 0,
+                             gravadas: suma(renta, 'base_sin_iva'),
+                             debito:   suma(renta, 'retencion_10'),
+                             total:    suma(renta, 'base_sin_iva') },
             retencion:     { docs: retencion.length, exentas: 0,
                              gravadas: suma(retencion, 'monto_sujeto'),
                              debito:   suma(retencion, 'retencion_iva'),
@@ -608,7 +635,7 @@ export default function LibrosIvaView() {
                                      - suma(notas.filter(r => r.tipo_dte === '06'), 'iva'),
                              total:    suma(notas, 'monto') },
         };
-    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas]);
+    }, [consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta]);
 
     const t = totales[activeTab];
 
@@ -806,6 +833,28 @@ export default function LibrosIvaView() {
                 `libro-compras_${sufijoArchivo}.csv`);
             return;
         }
+        if (activeTab === 'renta') {
+            // Lo que CORRESPONDERÍA retener, no lo retenido: la retención se
+            // practica al pagar y el portal registra lo que se factura. El
+            // encabezado lo dice para que nadie lo presente como otra cosa.
+            exportCsv(
+                ['N.', 'FECHA', 'PROVEEDOR', 'NIT', 'NRC', 'TIPO', 'NUMERO DE CONTROL',
+                 'CODIGO DE GENERACION', 'MONTO', 'BASE SIN IVA', 'RETENCION 10%'],
+                [
+                    ...renta.map((r, i) => [
+                        i + 1, fmtFecha(r.fecha), r.proveedor || '',
+                        formatearNit(r.nit), formatearNrc(r.nrc),
+                        r.tipo_documento || '', r.numero_control || '',
+                        (r.codigo_generacion || '').toUpperCase(),
+                        num(r.monto_total), num(r.base_sin_iva), num(r.retencion_10),
+                    ]),
+                    ['TOTALES', '', '', '', '', '', '', '',
+                     '', num(t.gravadas), num(t.debito)],
+                ],
+                `anexo-retencion-renta_${sufijoArchivo}.csv`);
+            return;
+        }
+
         if (activeTab === 'percepcion' || activeTab === 'retencion') {
             const esPerc = activeTab === 'percepcion';
             const filasAnexo = esPerc ? percepcion : retencion;
@@ -878,8 +927,8 @@ export default function LibrosIvaView() {
     // —numerar, filtrar, ordenar, paginar— sobre 467 filas y en cada tecleo del
     // buscador.
     const filas = useMemo(
-        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas }[activeTab] ?? []),
-        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, notas]);
+        () => ({ consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta }[activeTab] ?? []),
+        [activeTab, consumidor, contribuyente, anulados, compras, percepcion, retencion, notas, renta]);
 
     const acceso = useMemo(
         () => (ACCESO[activeTab] || ACCESO.consumidor)(nombreSucursal),
@@ -1233,6 +1282,26 @@ export default function LibrosIvaView() {
                                 <DataCell align="right">
                                     <CeldaMonto fuerte v={activeTab === 'percepcion' ? r.percepcion_iva : r.retencion_iva} />
                                 </DataCell>
+                            </DataRow>
+                        ))}
+                    </DataTable>
+                )}
+
+                {activeTab === 'renta' && (
+                    <DataTable {...propsTabla(COLS_RENTA)}
+                        empty={vacioDe(
+                            ShoppingCart,
+                            `Sin retención de Renta en ${etiquetaMes(mes)}`,
+                            'Ningún proveedor está marcado como sujeto a retención del Art. 156. Se marca en su ficha, en Proveedores.')}>
+                        {filasPagina.map((r, i) => (
+                            <DataRow key={`${r.codigo_generacion}-${r._n}`} index={i}>
+                                <DataCell align="right">{r._n}</DataCell>
+                                <DataCell><CeldaFecha iso={r.fecha} /></DataCell>
+                                <CeldaProveedor nombre={r.proveedor} />
+                                <DataCell hideBelow="lg"><CeldaNit nit={r.nit} /></DataCell>
+                                <DataCell hideBelow="sm"><CeldaDocumento numero={r.numero_control} /></DataCell>
+                                <DataCell align="right"><CeldaMonto v={r.base_sin_iva} /></DataCell>
+                                <DataCell align="right"><CeldaMonto fuerte v={r.retencion_10} /></DataCell>
                             </DataRow>
                         ))}
                     </DataTable>

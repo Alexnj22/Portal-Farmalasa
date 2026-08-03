@@ -72,3 +72,22 @@ export function fetchLibroSujetoExcluido(desde, hasta, branchId) {
 export function fetchNotasCreditoCompras(desde, hasta) {
     return supabase.rpc('get_notas_credito_compras', { p_desde: desde, p_hasta: hasta });
 }
+
+// Anexo de retención de Renta (Art. 156 CT) — 10% sobre servicios prestados por
+// personas naturales. NO es el libro de retención de IVA (Art. 162), que ya vive
+// arriba en `fetchLibroRetencion`: son dos impuestos distintos y confundirlos
+// sería declarar uno por el otro.
+//
+// Sin sucursal a propósito, como las notas de crédito: los documentos llegan por
+// correo a una casilla de la empresa y no traen sucursal — inventarle una sería
+// peor que no tenerla.
+export function fetchAnexoRetencionRenta(desde, hasta) {
+    return supabase.rpc('get_anexo_retencion_renta', { p_desde: desde, p_hasta: hasta });
+}
+
+// Los proveedores que PODRÍAN estar sujetos a la retención del Art. 156, para
+// que el contador marque. El portal no puede decidirlo solo: distinguir un
+// servicio de una compra de mercadería es una lectura del documento, no un dato.
+export function fetchCandidatosRetencionRenta(desde, hasta) {
+    return supabase.rpc('get_candidatos_retencion_renta', { p_desde: desde, p_hasta: hasta });
+}

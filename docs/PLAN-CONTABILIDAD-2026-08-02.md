@@ -1049,3 +1049,56 @@ lo que se cree**. El NIT del proveedor, el número truncado a 20, el
 Antes de dar un número que salga de un cruce, hay que contar **cuántas claves
 distintas produce ese cruce**. Si 1,180 documentos colapsan en 48 claves, el
 cruce no identifica nada — y lo dice la aritmética, no la lectura del código.
+
+
+---
+
+# Parte 9 — Decisiones del 2026-08-02 (cierre de sesión)
+
+| | Decisión de Alex |
+|---|---|
+| **Notas de crédito (Art. 62)** | **Solo documentar.** Lo confirma con el contador antes de tocar el libro. El monto medido ($2,737.87 de IVA sobre $49,525.79 declarados en jun-jul) queda escrito en la Parte 7 |
+| **Bloque D — cierre de período** | **Solo documentar**, se evalúa después. La justificación empírica ya está en H30: el libro de junio *ya cambió* después de junio |
+| **E3 — retención de Renta** | ✅ **APLICADO** — ver abajo |
+| Las 11 ventas de agosto sin código de generación | **Descartado.** El mes en curso lo valida Alex antes de cerrarlo |
+
+## E3 aplicado — lo que quedó
+
+`get_candidatos_retencion_renta` · `get_anexo_retencion_renta` ·
+`update_proveedor_manual` extendido · pestaña **Renta** en Libros IVA · campo en
+la ficha del proveedor.
+
+**Por qué E3 es distinto del resto del plan:** los otros hallazgos son crédito
+fiscal que se pierde o que se declara de más. Éste no — si se le paga a una
+persona natural por un servicio y no se retiene el 10%, **la empresa responde
+solidariamente** por el impuesto no retenido, más la multa. No es plata que se
+deja de ganar: es una deuda que aparece.
+
+**Lo que el portal puede y no puede saber.** La retención se practica **al
+pagar** y el portal registra lo que se **factura**. Por eso el anexo dice *lo que
+correspondería retener*, no *lo retenido* — quien declara tiene que cruzarlo con
+los pagos.
+
+Y el portal **no decide quién**: distinguir un servicio de una compra de
+mercadería es una lectura del documento, no un dato. `ANA FRANCISCA CEDILLOS` es
+persona natural y le compran mercadería para reventa — ahí no aplica. El portal
+acorta la lista (14 personas naturales con documentos en junio-julio, de 100
+proveedores con movimiento) y el contador marca.
+
+**El caso más claro medido:** `OMAR ARNULFO SERRANO CRESPIN`, NIT `018398946`
+(DUI haciendo de NIT), categoría **Alquileres**, **$2,938.00** en junio-julio.
+Marcándolo, el anexo devuelve 2 documentos y **$260.00** de retención — probado
+bajo `BEGIN … ROLLBACK`.
+
+**Un error propio corregido en el camino:** la primera migración creó un setter
+suelto para `retiene_renta`. La ficha ya tiene **un** camino de escritura
+(`update_proveedor_manual`), y dos formas de escribir el mismo registro se
+separan el día que una gane un chequeo y la otra no. El setter se eliminó y el
+campo entra por el camino de siempre.
+
+**Lo que quedó sin verificar:** el campo nuevo en la ficha del proveedor compila,
+lintea y pasa los gates, y espeja exactamente el control de «Percibe 1%» de al
+lado — pero **no se pudo abrir ese modal desde el chequeo automático** (la
+primera celda de la fila corta la propagación del clic). La pestaña **Renta** sí
+está verificada en el navegador: monta, muestra las tarjetas correctas y explica
+el vacío.

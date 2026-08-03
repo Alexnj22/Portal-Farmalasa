@@ -94,6 +94,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         notas: formData?.notas || '',
         activo: formData?.activo !== false,
         percibe_1_override: formData?.percibe_1_override ?? null,
+        retiene_renta: formData?.retiene_renta ?? false,
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -347,6 +348,25 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                                 Hoy: {formData?.percibe_1 ? 'sí percibe' : 'no percibe'} (observado en sus DTE)
                             </p>
                         )}
+                    </div>
+                    <div>
+                        {/* Art. 156 CT: 10% sobre servicios de personas naturales.
+                            NO tiene modo automático como la percepción — nada en el
+                            documento dice si lo que se pagó es un servicio o
+                            mercadería, así que es una decisión del contador y se
+                            marca a mano. Si no se retiene, la empresa responde
+                            solidariamente por el impuesto no retenido. */}
+                        <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block"
+                            title="Art. 156 CT — 10% sobre servicios prestados por personas naturales. Marcarlo incluye a este proveedor en el anexo de retención de Renta">
+                            Retención de Renta
+                        </label>
+                        <LiquidSelect
+                            value={form.retiene_renta ? 'si' : 'no'}
+                            onChange={(v) => setForm(p => ({ ...p, retiene_renta: v === 'si' }))}
+                            options={[{ value: 'no', label: 'No aplica' }, { value: 'si', label: 'Sí, retener 10%' }]}
+                            disabled={!canEdit}
+                            clearable={false}
+                        />
                     </div>
                     <div className="sm:col-span-2">
                         <label className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block">Notas</label>

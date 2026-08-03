@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.347.0 — E3: el anexo de retención de Renta (Art. 156)
+
+**Es el único hallazgo del plan donde no se pierde plata: aparece una deuda.** Si
+se le paga a una persona natural por un servicio y no se retiene el 10%, la
+empresa **responde solidariamente** por el impuesto no retenido, más la multa.
+Los demás puntos son crédito fiscal que se deja de tomar; éste no.
+
+Y era el único artículo que el portal no tocaba de ninguna forma:
+`proveedores_maestro.retiene_renta` existe desde siempre, estaba en `false` para
+los 161 proveedores, y **no se leía ni se escribía en ningún lado**.
+
+**No confundir con la retención de IVA.** `get_libro_retencion` (Art. 162) ya
+existía, es de IVA y tiene cero filas en toda la historia. Son dos impuestos
+distintos, así que la pestaña nueva va **al final y aparte** para que no se lea
+como una variante de la de al lado.
+
+**Lo que el portal puede y no puede saber.** La retención se practica **al
+pagar**; el portal registra lo que se **factura**. Por eso el anexo dice *lo que
+correspondería retener*, no *lo retenido*. Y el portal **no decide quién**:
+distinguir un servicio de una compra de mercadería es una lectura del documento,
+no un dato — `ANA FRANCISCA CEDILLOS` es persona natural y le compran mercadería
+para reventa, y ahí no aplica. El portal **acorta la lista** (14 personas
+naturales con movimiento en junio-julio, de 100 proveedores) y el contador marca.
+
+El caso más claro que salió al medirlo: `OMAR ARNULFO SERRANO CRESPIN`, NIT de 9
+dígitos, categoría **Alquileres**, **$2,938.00** en dos meses. Marcándolo, el
+anexo devuelve 2 documentos y **$260.00** de retención — probado bajo
+`BEGIN … ROLLBACK`.
+
+**Un error propio corregido en el camino.** La primera versión creó un setter
+suelto para `retiene_renta`. La ficha del proveedor ya tiene **un** camino de
+escritura, `update_proveedor_manual`, y dos formas de escribir el mismo registro
+se separan el día que una gane un chequeo y la otra no — el override de
+percepción, que ajusta dos columnas a la vez, lo demuestra. El setter se eliminó.
+
+El campo **no** lleva modo automático como la percepción: no hay nada en el
+documento que diga si lo que se pagó es un servicio. Es una decisión del contador
+y se marca a mano.
+
+**Verificado en el navegador:** la pestaña Renta monta, muestra las tarjetas
+correctas (*Base sin IVA* / *Retención 10%*) y explica el vacío en vez de quedar
+en «no hay datos». **Sin verificar:** el campo nuevo en la ficha del proveedor —
+compila, lintea, pasa los gates y espeja el control de «Percibe 1%» de al lado,
+pero no se pudo abrir ese modal desde el chequeo automático.
+
 ## v2.346.1 — Botón cerrado en el plan de materiales
 
 Segundo elemento cerrado en `docs/PLAN-MATERIALES-2026-08-02.md`. En Liquid el

@@ -62,6 +62,10 @@ export async function updateProveedorManual(id, fields) {
         p_activo: fields.activo !== false,
         p_alias: fields.alias || null,
         p_percibe_1_override: fields.percibe_1_override ?? null,
+        // `retiene_renta` va por ACA y no por un setter propio: la ficha tiene un
+        // solo camino de escritura, y dos formas de escribir el mismo registro se
+        // separan el día que una gane un chequeo y la otra no.
+        p_retiene_renta: fields.retiene_renta ?? null,
     });
     if (error) throw error;
 }

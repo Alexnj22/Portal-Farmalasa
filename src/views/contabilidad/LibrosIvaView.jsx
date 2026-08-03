@@ -1379,12 +1379,24 @@ export default function LibrosIvaView() {
                                 <DataCell align="right">{r._n}</DataCell>
                                 <DataCell>{fmtFecha(r.fecha)}</DataCell>
                                 <DataCell><span className="font-mono text-caption">{soloNumero(r.correlativo)}</span></DataCell>
-                                {/* Acotado como el proveedor (§25.7): sin tope
-                                    en la celda la columna crece hasta el nombre
-                                    más largo —son razones sociales completas— y
-                                    el `truncate` no llega a activarse nunca. */}
-                                <DataCell className="truncate max-w-[11rem]" title={r.cliente || undefined}>
-                                    {r.cliente || '—'}
+                                {/* DOS líneas, como el proveedor de Compras
+                                    Completo (§25.7) — no `truncate`.
+                                    El tope sigue haciendo falta: sin él la
+                                    columna crece hasta la razón social más larga
+                                    y se come el resto de la tabla. Pero con UNA
+                                    línea el tope cortaba 38 a 49 de cada 50
+                                    nombres en TODOS los anchos (medido de 1280 a
+                                    2560), y no por falta de espacio —la tabla ya
+                                    ocupa el 100% del contenedor y nunca
+                                    desborda— sino porque una razón social no
+                                    entra en una línea: "RAMIREZ GIRON SOCIEDAD
+                                    ANONIMA DE CAPITAL VARIABLE" son 49
+                                    caracteres. Dos líneas a 16rem dan ~64. */}
+                                <DataCell className="min-w-[12rem] max-w-[16rem]">
+                                    <span className="line-clamp-2 break-words leading-tight"
+                                          title={r.cliente || undefined}>
+                                        {r.cliente || '—'}
+                                    </span>
                                 </DataCell>
                                 <DataCell><CeldaNrc nrc={r.nrc} /></DataCell>
                                 {/* `2xl` y no `xl`: TIENE que ser el mismo peldaño

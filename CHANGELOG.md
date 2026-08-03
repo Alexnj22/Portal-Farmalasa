@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.350.4 — El nombre del cliente ya no se corta en Contribuyentes
+
+Reportado por el usuario con una captura: «REINA ELIZETH PORTILLO SO…»,
+«FRANCISCO ANTONIO ALVAR…». La celda tenía `truncate max-w-[11rem]` — **una
+línea** con tope fijo.
+
+Medido en el navegador de 1280 a 2560 antes de tocar nada, y el número
+sorprende: se cortaban **entre 38 y 49 de cada 50 nombres en TODOS los anchos**,
+incluso a 2560. Y no era falta de espacio —la tabla ya ocupa el 100% del
+contenedor y la página nunca desborda— sino que una razón social no entra en una
+línea: «RAMIREZ GIRON SOCIEDAD ANONIMA DE CAPITAL VARIABLE» son 49 caracteres.
+
+Pasa a **dos líneas**, que es el patrón que el portal ya usa para el proveedor
+en Compras Completo (`line-clamp-2 break-words`, §25.7). El tope sigue —sin él
+la columna crece hasta el nombre más largo y se come la tabla— y se le agrega un
+**piso** de 12rem: sin piso el `auto layout` le daba 131px a 1280, más angosto
+que antes, y el arreglo no servía justo en la pantalla más chica.
+
+| Ancho | Cortados antes | Ahora |
+|---|---|---|
+| 1280 | 49/50 | 21/50 |
+| 1440 | 49/50 | 12/50 |
+| 1728 | 48/50 | 12/50 |
+| 1920 | 43/50 | **0/50** |
+| 2560 | 38/50 | **0/50** |
+
+Verificado que la **página** no desborda en horizontal en ningún ancho; a 1280 la
+tabla scrollea dentro de su propia tarjeta, que es lo correcto. El `title` sigue
+dando el nombre entero en los que todavía no entran.
+
+**Trampa de la medición, anotada porque casi me la creo:** con `truncate` el
+recorte es horizontal (`scrollWidth > clientWidth`) pero con `line-clamp` es
+**vertical**. Con el criterio viejo el arreglo daba «0/50 cortados» en todos los
+anchos — un número que ya no podía fallar. Corregido a medir la altura del
+`<span>`, y ahí aparecieron los 21 y los 12 reales.
+
 ## v2.350.3 — El CSV de Compras Completo se descarga (y con dos decimales)
 
 Reportado por el usuario: el botón Exportar de Compras Completo no hacía nada.

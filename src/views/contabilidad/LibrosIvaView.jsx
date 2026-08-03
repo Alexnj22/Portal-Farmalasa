@@ -1387,7 +1387,16 @@ export default function LibrosIvaView() {
                                     {r.cliente || '—'}
                                 </DataCell>
                                 <DataCell><CeldaNrc nrc={r.nrc} /></DataCell>
-                                <DataCell hideBelow="xl"><CeldaNit nit={r.nit} /></DataCell>
+                                {/* `2xl` y no `xl`: TIENE que ser el mismo peldaño
+                                    que el `hideBelow` de esta columna en
+                                    COLS_CONTRIBUYENTE. Cuando no coinciden, entre
+                                    1280 y 1535 el encabezado esconde el NIT y la
+                                    celda no: la tabla queda con 9 columnas y 8
+                                    títulos, cada monto se lee bajo el rótulo del
+                                    vecino —GRAVADAS sobre el NIT, DÉBITO sobre las
+                                    gravadas— y Total se sale del encabezado. En
+                                    1440, que es el ancho de laptop más común. */}
+                                <DataCell hideBelow="2xl"><CeldaNit nit={r.nit} /></DataCell>
                                 <DataCell align="right">{formatMoney(r.ventas_gravadas)}</DataCell>
                                 <DataCell align="right" hideBelow="md">{formatMoney(r.debito_fiscal)}</DataCell>
                                 <DataCell align="right"><span className="font-black">{formatMoney(r.total)}</span></DataCell>

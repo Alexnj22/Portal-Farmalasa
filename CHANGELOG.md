@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.350.1 — El NIT de contribuyentes tenía columna pero no título
+
+En el libro de Contribuyentes, entre 1280 y 1535px de pantalla —o sea **en 1440,
+el ancho de laptop más común**— la tabla mostraba nueve columnas bajo ocho
+títulos: el encabezado escondía el NIT y la celda no. El resultado es que cada
+número se leía bajo el rótulo del vecino (GRAVADAS sobre el NIT, DÉBITO sobre las
+gravadas, TOTAL sobre el débito) y la columna de Total quedaba fuera del
+encabezado, cortada contra el borde.
+
+Los datos siempre estuvieron bien —el CSV, los totales del carril y el orden no
+pasan por acá—, pero un libro fiscal que se lee con las etiquetas corridas es
+peor que uno que no se ve: nada avisa que el número que decís "gravadas" es en
+realidad el débito.
+
+La causa: el `hideBelow` de la columna se corrigió a `2xl` cuando se midió que a
+1440 el NIT empujaba Total fuera del marco, y el de la celda se quedó en `xl`.
+Ahora los dos declaran el mismo peldaño, y el comentario al lado de la celda dice
+que tienen que coincidir. Verificado en el navegador a 1024, 1280, 1440, 1536 y
+1920: títulos y celdas dan el mismo número en los cinco, y a 1440 la tabla dejó
+de desbordar su marco.
+
+Barridas también las otras siete pestañas del módulo a los mismos anchos, por si
+el defecto se repetía: no se repite.
+
 ## v2.350.0 — Paquete del mes: todos los libros de IVA en un ZIP, por libro y por sucursal
 
 Botón nuevo en Libros IVA. Baja **un ZIP con todos los libros del período**, con

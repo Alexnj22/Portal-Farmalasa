@@ -1,6 +1,5 @@
 // Facturas de Compra — capa de datos. Lectura vía RPC Patrón C (json_agg, sin
 // paginación server-side — el rango de fechas acota el payload).
-import JSZip from 'jszip';
 import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
@@ -106,149 +105,169 @@ export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null }
     return data;
 }
 
+// El ZIP se arma en el NAVEGADOR con client-zip (~3 kB), no con JSZip: JSZip
+// necesita TODOS los archivos en memoria antes de generar nada, client-zip
+// escribe entrada por entrada a medida que las recibe. Con los 181 MB de un
+// mes eso es la diferencia entre un pico de memoria de ~700 MB y uno de ~0
+// (ver downloadPurchaseDteZipBulk). Va por await import() — regla de
+// librerías pesadas: solo hace falta al apretar Descargar, no al entrar.
+let zipPromise = null;
+function getZip() {
+    if (!zipPromise) {
+        zipPromise = import('client-zip')
+            .catch(err => { zipPromise = null; throw err; });  // reintentar, no quedar roto
+    }
+    return zipPromise;
+}
+
+export function nombreZipFacturas() {
+    return `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`;
+}
+
 // ZIP con JSON+PDF de un solo documento — liviano, se arma en el navegador
 // (no amerita ida al servidor, ver decisión en el plan). "row" para no
 // shadowear el `document` global (document.createElement más abajo).
 export async function downloadPurchaseDtePackage(row) {
-    const zip = new JSZip();
-    let included = 0;
+    const { downloadZip } = await getZip();
     const baseName = row.codigo_generacion || `doc-${row.id}`;
+    const entradas = [];
 
-    const jsonUrl = await getSignedFileUrl(row.json_path);
-    if (jsonUrl) {
-        const res = await fetch(jsonUrl);
-        if (res.ok) { zip.file(`${baseName}.json`, await res.blob()); included++; }
+    for (const [ext, path] of [['json', row.json_path], ['pdf', row.pdf_path]]) {
+        if (!path) continue;
+        const url = await getSignedFileUrl(path);
+        if (!url) continue;
+        const res = await fetch(url);
+        if (res.ok) entradas.push({ name: `${baseName}.${ext}`, input: await res.blob() });
     }
-    if (row.pdf_path) {
-        const pdfUrl = await getSignedFileUrl(row.pdf_path);
-        if (pdfUrl) {
-            const res = await fetch(pdfUrl);
-            if (res.ok) { zip.file(`${baseName}.pdf`, await res.blob()); included++; }
-        }
-    }
-    if (included === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
+    if (entradas.length === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
 
-    const blob = await zip.generateAsync({ type: 'blob' });
-    triggerDownload(blob, `${baseName}.zip`);
+    triggerDownload(await downloadZip(entradas).blob(), `${baseName}.zip`);
 }
 
-// Descarga masiva — el edge function arma cada tanda server-side (tope 300
-// docs por llamada, límite real de tiempo de ejecución, no del usuario) y el
-// navegador las mergea en un solo ZIP final con JSZip. Sin tope para quien
-// descarga — un rango de 1000+ documentos simplemente hace más tandas.
-const ZIP_BATCH_SIZE = 300; // debe coincidir con MAX_ITEMS de export-purchase-dte-zip
-const ZIP_BATCH_TIMEOUT_MS = 120_000; // ver nota de invokeWithProgress abajo
+// ── Descarga masiva ────────────────────────────────────────────────────────
+// El servidor NO mueve archivos: `export-purchase-dte-manifest` devuelve la
+// lista de entradas del ZIP con su URL firmada, y el navegador baja cada
+// archivo del CDN de Storage directo. Reemplaza (2026-08-03) al diseño de
+// tandas de 300 documentos que armaba cada ZIP server-side.
+//
+// El motivo es el reintento. Medido con julio 2026 — 863 documentos, 1,726
+// archivos, 181 MB — el diseño anterior bajaba en 3 tandas dentro de un
+// `Promise.all`: si una se cortaba, se descartaban también las que ya habían
+// terminado y se perdían los 181 MB completos. Encima las 3 tandas se
+// disputaban el mismo ancho de banda, así que cada una tardaba lo que tardaba
+// TODA la descarga y rozaba su propio timeout de 120s con la red en buen
+// estado. Acá la unidad de reintento es UN archivo (~83 kB de promedio): un
+// corte de red cuesta reintentar eso, no la descarga entera.
+//
+// Los otros dos problemas se caen solos con el mismo cambio: los bytes ya no
+// viajan dos veces (Storage → edge function → navegador), y el ZIP se escribe
+// en streaming en vez de acumular 181 MB de blobs + desempaquetarlos + volver
+// a empaquetarlos, que era un pico de ~4× el tamaño de la descarga.
+//
+// Nota sobre el "~1.5-2MB/s sostenido" que medía el comentario anterior: ese
+// número medía el proxy, no la red. Sin la ida y vuelta por la función, el
+// techo lo pone la conexión del usuario contra el CDN.
+const DESCARGA_CONCURRENCIA = 8;
+// 5 intentos con espera 1s/2s/4s/8s = ~15s de tolerancia por archivo. El caso
+// que hay que aguantar no es un 500 puntual sino la conexión que se cae y
+// vuelve: con 3 intentos rápidos un bache de 10s ya perdía el archivo.
+const INTENTOS_POR_ARCHIVO = 5;
 
-// Medido en vivo 2026-07-23 (caso real: "Este mes", 518 docs, 2 tandas):
-// el cuello de botella NO es el server (concurrencia de descarga probada
-// en 16/40/80 sin diferencia — no era eso) ni la compresión (DEFLATE
-// reduce <5% sobre PDFs ya comprimidos, y a esa escala directamente
-// rompió el edge function por CPU) — es transferencia de datos real
-// (~1.5-2MB/s sostenido, no mejora con más paralelismo del lado servidor).
-// Con eso claro, dos cambios que sí ayudan sin arriesgar nada:
-// (1) invocar las tandas en PARALELO (antes esperaban una a la otra sin
-// ninguna dependencia real entre ellas — cada una es una llamada
-// independiente al edge function); (2) reportar progreso real en bytes
-// (Content-Length + ReadableStream) en vez de "tanda x/y" estático, para
-// que la espera se sienta activa en vez de trabada — pedido explícito del
-// usuario ("debe sentirse fluido"). Se usa fetch() crudo en vez de
-// supabase.functions.invoke() porque este último no expone el Response
-// crudo (necesario para leer el stream y su Content-Length).
-async function invokeWithProgress(fnName, body, onBytes) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ZIP_BATCH_TIMEOUT_MS);
-    try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fnName}`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${session?.access_token}`,
-                apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-        });
-        if (!res.ok) {
-            let msg = `HTTP ${res.status}`;
-            try { const j = await res.json(); if (j.error) msg = j.error; } catch { /* respuesta no era JSON */ }
-            throw new Error(msg);
+const esperar = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Nunca rechaza: devuelve { blob } o { error }. Un archivo que no se pudo
+// bajar tras los reintentos no puede tumbar la descarga completa — se anota
+// en manifest-errores.txt dentro del ZIP y el resto sigue.
+async function bajarArchivo(url) {
+    let ultimo = 'no se pudo descargar';
+    for (let intento = 1; intento <= INTENTOS_POR_ARCHIVO; intento++) {
+        try {
+            const res = await fetch(url);
+            if (res.ok) return { blob: await res.blob() };
+            ultimo = `HTTP ${res.status}`;
+            // 404 = el objeto no está en Storage (fila apuntando a un archivo
+            // borrado). Reintentar no lo va a traer.
+            if (res.status === 404) break;
+        } catch (e) {
+            ultimo = e?.message || 'conexión interrumpida';
         }
-        const total = Number(res.headers.get('Content-Length')) || 0;
-        if (!res.body) return await res.blob(); // fallback (navegadores sin streams body en respuestas)
-        const reader = res.body.getReader();
-        const parts = [];
-        let received = 0;
-        for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            parts.push(value);
-            received += value.length;
-            onBytes?.(received, total);
-        }
-        return new Blob(parts);
-    } catch (e) {
-        if (controller.signal.aborted) throw new Error('Tiempo de espera agotado armando el ZIP — probá con un rango de fechas más chico.');
-        throw e;
-    } finally {
-        clearTimeout(timer);
+        if (intento < INTENTOS_POR_ARCHIVO) await esperar(1000 * 2 ** (intento - 1));
     }
+    return { error: ultimo };
+}
+
+async function pedirManifiesto(ids, includePendingReview) {
+    const { data, error } = await supabase.functions.invoke('export-purchase-dte-manifest', {
+        body: { ids, include_pending_review: includePendingReview },
+    });
+    if (error) throw new Error(await extractFunctionErrorMessage(error));
+    if (!data?.files?.length) throw new Error('No hay archivos para descargar en este período.');
+    return data;
 }
 
 // includePendingReview: pedido del usuario 2026-07-22 — la descarga masiva
 // también trae lo que sigue pendiente en Revisión (PDFs huérfanos, JSON
-// inválido, etc.) en su propia carpeta "Revisar" dentro del ZIP. Se pide
-// solo en la primera tanda para no duplicarlo cuando el rango necesita
-// varias llamadas al edge function.
+// inválido, etc.) en su propia carpeta "Revisar" dentro del ZIP.
 //
-// onProgress recibe { received, total } en bytes (agregado de todas las
-// tandas en curso) — el llamador decide cómo mostrarlo (ej. "34/67 MB").
-export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendingReview = true } = {}) {
-    const chunks = [];
-    for (let i = 0; i < ids.length; i += ZIP_BATCH_SIZE) chunks.push(ids.slice(i, i + ZIP_BATCH_SIZE));
-    if (chunks.length === 0) chunks.push([]); // ids vacío pero includePendingReview (solo carpeta Revisar)
+// onProgress recibe { hechos, total, bytes, fallidos } — el denominador ahora
+// es la cantidad de ARCHIVOS, que se conoce desde el manifiesto y solo sube.
+// El de antes eran bytes contra un Content-Length que aparecía tarde y por
+// tanda, así que la barra arrancaba quieta mientras el servidor armaba el ZIP.
+//
+// fileHandle (File System Access API): si el llamador lo pasa, el ZIP se
+// escribe DIRECTO al disco y la memoria del navegador queda constante sin
+// importar el tamaño. Tiene que crearlo el llamador dentro del gesto del
+// click (showSaveFilePicker lo exige). Sin él se cae al Blob de siempre, que
+// igual es 1× el tamaño en vez de las 4× del diseño anterior.
+export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendingReview = true, fileHandle = null } = {}) {
+    const { files, warnings } = await pedirManifiesto(ids, includePendingReview);
+    const { downloadZip } = await getZip();
 
-    const progressByBatch = chunks.map(() => ({ received: 0, total: 0 }));
-    const reportProgress = () => {
-        onProgress?.({
-            received: progressByBatch.reduce((s, p) => s + p.received, 0),
-            total: progressByBatch.reduce((s, p) => s + p.total, 0),
-        });
-    };
+    const total = files.length;
+    const fallidos = [...(warnings || [])];   // los que ni se pudieron firmar
+    let hechos = 0, incluidos = 0, bytes = 0;
+    onProgress?.({ hechos, total, bytes, fallidos: fallidos.length });
 
-    const blobs = await Promise.all(chunks.map((chunk, i) => invokeWithProgress(
-        'export-purchase-dte-zip',
-        { ids: chunk, include_pending_review: includePendingReview && i === 0 },
-        (received, total) => { progressByBatch[i] = { received, total }; reportProgress(); },
-    )));
+    // Ventana deslizante: client-zip consume esta secuencia EN ORDEN y de a
+    // una, así que la concurrencia tiene que venir de acá — se mantienen N
+    // descargas en vuelo y se van entregando a medida que les toca el turno.
+    // Acotada a propósito: sin tope, 1,726 fetch simultáneos volverían a
+    // meter la descarga entera en memoria, que es justo lo que se quitó.
+    async function* entradas() {
+        const enVuelo = new Map();
+        const lanzar = (i) => { if (i < files.length) enVuelo.set(i, bajarArchivo(files[i].url)); };
+        for (let i = 0; i < DESCARGA_CONCURRENCIA; i++) lanzar(i);
 
-    const filename = `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`;
+        for (let i = 0; i < files.length; i++) {
+            const pendiente = enVuelo.get(i);
+            enVuelo.delete(i);
+            lanzar(i + DESCARGA_CONCURRENCIA);
 
-    // Camino rápido: con una sola tanda no hace falta desempacar+reempacar
-    // el ZIP que ya arma el edge function — se descarga tal cual.
-    if (blobs.length === 1) {
-        triggerDownload(blobs[0], filename);
-        return;
-    }
+            const { blob, error } = await pendiente;
+            hechos++;
+            if (blob) { incluidos++; bytes += blob.size; }
+            else fallidos.push(`${files[i].name}: ${error}`);
+            onProgress?.({ hechos, total, bytes, fallidos: fallidos.length });
 
-    const master = new JSZip();
-    const manifestParts = [];
-    for (const blob of blobs) {
-        const batchZip = await JSZip.loadAsync(blob);
-        for (const [path, file] of Object.entries(batchZip.files)) {
-            if (file.dir) continue;
-            // manifest-errores.txt viene por tanda — juntarlas en vez de que
-            // master.file() pise el de la tanda anterior (mismo nombre en
-            // cada ZIP intermedio).
-            if (path === 'manifest-errores.txt') { manifestParts.push(await file.async('string')); continue; }
-            master.file(path, await file.async('uint8array'));
+            if (blob) yield { name: files[i].name, input: blob };
+        }
+
+        if (fallidos.length > 0) {
+            yield {
+                name: 'manifest-errores.txt',
+                input: `Archivos que no se pudieron incluir en este ZIP:\n\n${fallidos.join('\n')}\n`,
+            };
         }
     }
-    if (manifestParts.length > 0) master.file('manifest-errores.txt', manifestParts.join('\n'));
 
-    // STORE: los ZIP de cada tanda ya vienen sin comprimir (ver
-    // export-purchase-dte-zip) — re-comprimir acá sería costo de CPU del
-    // navegador sin beneficio real de tamaño (los PDF ya están comprimidos).
-    const finalBlob = await master.generateAsync({ type: 'blob', compression: 'STORE' });
-    triggerDownload(finalBlob, filename);
+    const res = downloadZip(entradas());
+    if (fileHandle) {
+        // pipeTo cierra el writable al terminar; si falla, lo aborta.
+        await res.body.pipeTo(await fileHandle.createWritable());
+    } else {
+        triggerDownload(await res.blob(), nombreZipFacturas());
+    }
+
+    if (incluidos === 0) throw new Error('No se pudo descargar ningún archivo.');
+    return { total, incluidos, fallidos: fallidos.length };
 }

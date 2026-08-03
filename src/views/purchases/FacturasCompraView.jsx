@@ -28,7 +28,7 @@ import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
     setPurchaseDteProveedor, resolvePurchaseDteReview, syncPurchaseEmailsNow,
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
-    findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview,
+    findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview, nombreZipFacturas,
 } from '../../data/facturasCompra';
 import { clickable } from '../../utils/clickable';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
@@ -749,7 +749,7 @@ function TabDocumentos({
     };
 
     const [bulkDownloading, setBulkDownloading] = useState(false);
-    const [bulkProgress, setBulkProgress] = useState(null); // {received, total} en bytes
+    const [bulkProgress, setBulkProgress] = useState(null); // {hechos, total, bytes, fallidos}
     const [bulkError, setBulkError] = useState('');
     const downloadPackage = async (row) => {
         setBulkError('');
@@ -763,18 +763,46 @@ function TabDocumentos({
         }
     };
     const downloadBulk = async () => {
+        // showSaveFilePicker EXIGE el gesto del click: hay que pedirlo antes
+        // del primer await, si no el navegador lo rechaza por "no user
+        // activation". Con destino elegido el ZIP se escribe directo al disco
+        // y la memoria queda constante — un mes son 181 MB que si no viven
+        // enteros en un Blob. Donde no existe (Safari/Firefox) se cae al Blob.
+        let fileHandle = null;
+        if (typeof window.showSaveFilePicker === 'function') {
+            try {
+                fileHandle = await window.showSaveFilePicker({
+                    suggestedName: nombreZipFacturas(),
+                    types: [{ description: 'Archivo ZIP', accept: { 'application/zip': ['.zip'] } }],
+                });
+            } catch (e) {
+                if (e?.name === 'AbortError') return;   // el usuario canceló
+                fileHandle = null;                      // bloqueado por el navegador → Blob
+            }
+        }
+
         setBulkDownloading(true);
         setBulkError('');
         setBulkProgress(null);
         try {
-            await downloadPurchaseDteZipBulk(
+            const { total, incluidos, fallidos } = await downloadPurchaseDteZipBulk(
                 filtered.map(r => r.id),
-                ({ received, total }) => setBulkProgress(total > 0 ? { received, total } : null),
+                (p) => setBulkProgress(p),
+                { fileHandle },
             );
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
-                cantidad: filtered.length, dateStart, dateEnd,
+                cantidad: filtered.length, archivos: total, incluidos, fallidos, dateStart, dateEnd,
             });
-            useToastStore.getState().showToast('Descarga completa', `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`, 'success');
+            // Un archivo que no entró se dice acá, no solo dentro del ZIP: el
+            // manifest-errores.txt lo lee quien lo abre, y el punto de este
+            // rediseño es que un corte de red deje de pasar desapercibido.
+            useToastStore.getState().showToast(
+                fallidos > 0 ? 'Descarga completa, con faltantes' : 'Descarga completa',
+                fallidos > 0
+                    ? `${incluidos.toLocaleString()} de ${total.toLocaleString()} archivos. Los ${fallidos.toLocaleString()} que faltan están listados en manifest-errores.txt.`
+                    : `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`,
+                fallidos > 0 ? 'warning' : 'success',
+            );
         } catch (e) {
             setBulkError(mensajeAmigable(e));
         } finally {
@@ -854,9 +882,12 @@ function TabDocumentos({
                     acciones={[
                         ...(filtered.length > 0 ? [{
                             key: 'descargar', icon: Download,
+                            // El denominador son ARCHIVOS (se conoce desde el
+                            // arranque y solo sube), no MB contra un total que
+                            // antes aparecía tarde y dejaba la barra quieta.
                             label: bulkProgress?.total > 0
-                                ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
-                                : bulkDownloading ? 'Armando ZIP…' : 'Descargar',
+                                ? `Descargando… ${bulkProgress.hechos.toLocaleString()} / ${bulkProgress.total.toLocaleString()} · ${fmtMB(bulkProgress.bytes)}`
+                                : bulkDownloading ? 'Preparando…' : 'Descargar',
                             title: 'Descargar todos los filtrados en un ZIP',
                             disabled: bulkDownloading, onClick: downloadBulk,
                         }] : []),

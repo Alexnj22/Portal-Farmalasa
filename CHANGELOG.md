@@ -21,6 +21,64 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.349.0 — Descarga masiva de facturas de compra: reintento por archivo
+
+### Un corte de red deja de costar la descarga entera
+
+Reportado por el usuario: descargar los documentos de un mes tarda, y si la
+conexión se corta a la mitad «se cancela todo». Medido el caso de la captura
+—julio 2026: **863 documentos, 1,726 archivos, 181 MB**— el reporte era
+literal, y la causa estaba en una sola línea:
+
+```js
+const blobs = await Promise.all(chunks.map(...));   // 3 tandas de 300
+```
+
+`Promise.all` rechaza al primer fallo. Si la segunda tanda se cortaba a los
+55 MB, se descartaban también la primera y la tercera **aunque hubieran
+terminado completas**, y no había reintento de ninguna clase. Encima las tres
+tandas se disputaban el mismo ancho de banda, así que cada una tardaba lo que
+tardaba *toda* la descarga y llegaba a su propio `abort` de 120 s incluso con
+la red en buen estado — julio ya estaba justo en el límite por diseño.
+
+**El servidor deja de mover bytes.** La edge function nueva
+(`export-purchase-dte-manifest`) devuelve la lista de entradas del ZIP con su
+URL firmada y nada más; el navegador baja cada archivo del CDN de Storage
+directo, con **reintento por archivo** (5 intentos, espera 1/2/4/8 s ≈ 15 s de
+tolerancia). La unidad que se pierde en un bache de red pasó de 181 MB a
+**83 kB promedio**. Lo que no entra se lista en `manifest-errores.txt` dentro
+del ZIP *y* se dice en el aviso al terminar — un faltante no puede quedar
+escondido adentro del archivo.
+
+Se caen dos problemas más con el mismo cambio:
+
+- **Los bytes viajaban dos veces** (Storage → edge function → navegador). El
+  «~1.5-2 MB/s sostenido» que documentaba el código medía el proxy, no la red.
+- **El pico de memoria era de ~4×**: 181 MB de blobs, desempaquetados con
+  JSZip, reempaquetados en un ZIP maestro y serializados otra vez. Ahora el ZIP
+  se arma en streaming con `client-zip`, y si el navegador soporta
+  `showSaveFilePicker` (Chrome/Edge) se escribe **directo al disco**: memoria
+  constante, sin importar el tamaño. Donde no existe, un solo Blob de 1×.
+
+La edge function tampoco tiene ya techo: no baja archivos ni arma nada en
+memoria, así que desaparece el tope de 300 documentos por tanda y el riesgo de
+reventar los ~256 MB de la instancia.
+
+**El progreso ahora cuenta archivos, no MB.** Antes decía
+`48.7 MB / 181.8 MB`, con un total que aparecía tarde y por tanda —la barra
+arrancaba quieta mientras el servidor armaba el ZIP—. Ahora el denominador se
+conoce desde el manifiesto: `412 / 1,726 · 48.7 MB`.
+
+**El ZIP sale igual que antes**: un solo archivo, carpetas por tipo de
+documento (`Factura/`, `Credito Fiscal (CCF)/`, …) más `Revisar/` con lo
+pendiente de revisión. Se agregó una defensa que no existía: dos entradas con
+el mismo nombre se renombran (`… (2).pdf`) en vez de que una tape a la otra sin
+avisar — un ZIP admite nombres repetidos y ningún extractor lo dice.
+
+`jszip` sale del proyecto (no lo usaba nadie más). El cierre estático de
+FacturasCompraView baja de **232 a 169 kB gzip**: 63 kB menos cada vez que se
+entra a la vista, no solo al descargar.
+
 ## v2.348.7 — El plan dice dónde quedó todo
 
 Solo documentación.

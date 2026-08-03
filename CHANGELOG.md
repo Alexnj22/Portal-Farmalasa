@@ -21,6 +21,44 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.353.1 — El Corte Z dice por qué difiere y da el desglose por día
+
+Pedido del usuario: «esos que difieren, podrías poner el porqué, los id o algo
+para verificar». «Difiere $42.92» no sirve si no dice de dónde sale.
+
+**La diferencia se parte en dos sumandos**, y llevan a acciones **opuestas**:
+
+| | Diferencia | El Z se contradice a sí mismo | Sin explicar |
+|---|---|---|---|
+| Salud 3 · jun | 6.03 | **6.03** | **0.00** |
+| Salud 3 · jul | 42.92 | **42.92** | **0.00** |
+| Salud 1 · jul | 9.00 | 0.00 | **9.00** |
+
+El primer sumando es `GRAVADAS − TOTAL` **dentro del propio ticket**: en Salud 3
+el origen imprime una cifra en «gravadas» y otra en «total», y la de gravadas es
+la que coincide con el libro al centavo. **No hay ningún documento que buscar** —
+se le reclama al proveedor del sistema. La tarjeta lo dice con esas palabras y no
+ofrece el desglose por día, porque no hay nada que perseguir.
+
+El residuo sí es un hueco de documentos, y ahí la tarjeta ofrece **«Ver día por
+día»**: fecha, cantidad de documentos, total y **el rango de números de control**,
+que es la coordenada que el reporte diario del origen también imprime. Así se
+ubica el día y de ahí se baja al documento — que es exactamente como se encontró
+el de Salud 1 (14/07).
+
+**Un defecto encontrado al verificarlo en el navegador y corregido:** el desglose
+mezclaba facturas y créditos fiscales, que llevan **series de correlativo
+distintas**. El rango del 06/07 salía `000000054 → 000031617` — el mínimo lo
+ponía un CCF (numeración en las decenas) y el máximo una factura (en los treinta
+mil). Un rango así no se puede cotejar contra nada. Acotado a ventas con factura,
+que es lo que el reporte diario del origen también lista; el 06/07 pasó a
+`000031468 → 000031617` y el 14/07 arranca en `000032547`, **el mismo número de
+control que imprime el origen ese día**.
+
+Verificado: 2 paneles (solo las que difieren), Salud 3 declara «sin residuo» y no
+ofrece el desglose, Salud 1 lo ofrece y carga sus 31 días. Cero errores de
+consola.
+
 ## v2.353.0 — Vista de Corte Z: tarjeta por sucursal, cotejo contra el libro y PDF
 
 La otra mitad del módulo. La capa de datos salió en v2.352.0; esto es lo que se

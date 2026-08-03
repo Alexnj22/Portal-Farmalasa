@@ -14,7 +14,7 @@ import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { useAuth } from '../../context/AuthContext';
 import { formatMoney } from '../../utils/formatNumber';
 import { mensajeAmigable } from '../../utils/errorMessages';
-import { fetchCortesZ } from '../../data/corteZ';
+import { fetchCortesZ, fetchCorteZDias } from '../../data/corteZ';
 import { descargarCorteZPdf, etiquetaPeriodo } from '../../utils/corteZPrint';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -118,8 +118,104 @@ const SeccionTicket = ({ titulo, datos = {} }) => {
     );
 };
 
+// ── Por qué difiere ──────────────────────────────────────────────────────────
+//
+// «Difiere $42.92» no sirve de nada si no dice de dónde sale. La diferencia se
+// parte en dos sumandos que llevan a acciones OPUESTAS:
+//
+//   · lo que el Corte Z se contradice a sí mismo — su línea GRAVADAS contra su
+//     línea TOTAL. No hay ningún documento que buscar: es un defecto del
+//     reporte, y se le reclama al proveedor del sistema.
+//   · el residuo — eso sí es un hueco de documentos y se persigue uno por uno.
+//
+// Medido el 2026-08-03: en Salud 3 la diferencia entera es del primer tipo
+// (6.03 de 6.03 en junio, 42.92 de 42.92 en julio, residuo CERO). En Salud 1 es
+// del segundo: contradicción 0.00 y residuo 9.00.
+const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
+    const interna = Number(fila.contradiccion_interna) || 0;
+    const residuo = Number(fila.residuo) || 0;
+
+    return (
+        <div className="rounded-xl border border-warning-border bg-warning-surface p-3 space-y-2">
+            <h4 className="text-caption font-semibold flex items-center gap-1.5">
+                <AlertTriangle size={13} aria-hidden="true" />
+                Por qué difiere {formatMoney(Math.abs(fila.dif_total))}
+            </h4>
+
+            {!cuadra(interna) && (
+                <p className="text-micro leading-relaxed">
+                    <b>{formatMoney(interna)}</b> — el Corte Z <b>se contradice a sí mismo</b>:
+                    imprime una cifra en «gravadas» y otra en «total». La de gravadas es la que
+                    coincide con el libro. No hay documentos que buscar por esta parte.
+                </p>
+            )}
+
+            {!cuadra(residuo) ? (
+                <>
+                    <p className="text-micro leading-relaxed">
+                        <b>{formatMoney(residuo)}</b> — sin explicar. El libro tiene{' '}
+                        {residuo > 0 ? 'más' : 'menos'} que el Corte Z, y el Corte Z es mensual:
+                        no lista documentos. Para ubicarlo hay que comparar día por día contra el
+                        reporte diario, y de ahí bajar al documento.
+                        {!cuadra(fila.dif_ccf) && (
+                            <> Ojo: parte de la diferencia está en los créditos fiscales
+                            ({formatMoney(fila.dif_ccf)}), y esos se persiguen en el libro de
+                            contribuyentes, que los lista uno por uno.</>
+                        )}
+                    </p>
+                    {!dias && (
+                        <Button size="sm" variant="secondary" onClick={onVerDias} disabled={cargandoDias}>
+                            {cargandoDias ? 'Cargando…' : 'Ver día por día'}
+                        </Button>
+                    )}
+                </>
+            ) : (
+                <p className="text-micro leading-relaxed">
+                    <b>Sin residuo.</b> La diferencia se explica entera por la contradicción de
+                    arriba — no falta ni sobra ningún documento.
+                </p>
+            )}
+
+            {dias && (
+                <div className="max-h-64 overflow-y-auto rounded-lg bg-surface-1">
+                    {/* Solo ventas con factura: es lo que el reporte diario del
+                        origen también lista, y mezclarle los créditos fiscales daba
+                        rangos de control imposibles (dos series distintas). */}
+                    <p className="px-2 pt-2 text-micro text-content-3">
+                        Ventas con factura, día por día — para enfrentarlo al reporte diario.
+                    </p>
+                    <table className="w-full text-micro">
+                        <thead className="sticky top-0 bg-surface-1">
+                            <tr className="text-content-3 text-left">
+                                <th className="px-2 py-1 font-semibold">Día</th>
+                                <th className="px-2 py-1 font-semibold text-right">Docs</th>
+                                <th className="px-2 py-1 font-semibold text-right">Total</th>
+                                <th className="px-2 py-1 font-semibold">N.º de control</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dias.map(d => (
+                                <tr key={d.fecha} className="border-t border-divider">
+                                    <td className="px-2 py-1 whitespace-nowrap">{d.fecha}</td>
+                                    <td className="px-2 py-1 text-right tabular-nums">{d.documentos}</td>
+                                    <td className="px-2 py-1 text-right font-mono tabular-nums">{formatMoney(d.total)}</td>
+                                    <td className="px-2 py-1 font-mono text-content-3">
+                                        {/* Solo el correlativo: el prefijo DTE-01-SxxxPxxx es
+                                            igual en toda la columna y solo gasta ancho. */}
+                                        {(d.numero_control_del || '—').slice(-9)} → {(d.numero_control_al || '—').slice(-9)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ── La tarjeta de una sucursal ───────────────────────────────────────────────
-const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket }) => {
+const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDias, onVerDias }) => {
     const sec = fila.detalle?.secciones || {};
     const ok = cuadra(fila.dif_total);
 
@@ -167,6 +263,11 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket }) => {
                     portal={fila.portal_total} dif={fila.dif_total} />
             </div>
 
+            {!ok && (
+                <PorQueDifiere fila={fila} dias={dias}
+                    cargandoDias={cargandoDias} onVerDias={onVerDias} />
+            )}
+
             <div className="flex flex-wrap items-center gap-2">
                 <Button size="sm" variant="secondary" icon={FileText} onClick={() => onVerTicket(fila)}>
                     {verTicket ? 'Ocultar el original' : 'Ver el original'}
@@ -199,6 +300,10 @@ export default function CorteZView() {
     const [error, setError] = useState('');
     const [abierto, setAbierto] = useState(null);   // branch_id con el ticket desplegado
     const [pdfeando, setPdfeando] = useState(false);
+    // El desglose por día se pide BAJO DEMANDA y por sucursal: son ~31 filas
+    // cada uno y solo hacen falta cuando alguien va a investigar un residuo.
+    const [dias, setDias] = useState({});            // branch_id → filas
+    const [cargandoDias, setCargandoDias] = useState(null);
 
     const [desde, hasta] = useMemo(() => rangoDelMes(mes), [mes]);
 
@@ -207,6 +312,7 @@ export default function CorteZView() {
         setError('');
         try {
             setFilas(await fetchCortesZ(desde, hasta, filterBranch));
+            setDias({});   // el desglose es del período viejo: no sirve para el nuevo
         } catch (e) {
             setError(mensajeAmigable(e, 'No se pudo cargar el Corte Z'));
             setFilas([]);
@@ -234,6 +340,18 @@ export default function CorteZView() {
         }
         return { total, factura, ccf, difieren, sucursales: filas.length };
     }, [filas]);
+
+    const verDias = useCallback(async (fila) => {
+        setCargandoDias(fila.branch_id);
+        try {
+            const filas = await fetchCorteZDias(fila.branch_id, fila.periodo);
+            setDias(d => ({ ...d, [fila.branch_id]: filas }));
+        } catch (e) {
+            setError(mensajeAmigable(e, 'No se pudo cargar el desglose por día'));
+        } finally {
+            setCargandoDias(null);
+        }
+    }, []);
 
     const pdfDe = useCallback(async (fila) => {
         setPdfeando(true);
@@ -364,6 +482,9 @@ export default function CorteZView() {
                                 onPdf={pdfDe}
                                 verTicket={abierto === f.branch_id}
                                 onVerTicket={() => setAbierto(a => (a === f.branch_id ? null : f.branch_id))}
+                                dias={dias[f.branch_id]}
+                                cargandoDias={cargandoDias === f.branch_id}
+                                onVerDias={() => verDias(f)}
                             />
                         ))}
                     </div>

@@ -18,3 +18,19 @@ export async function fetchCortesZ(desde, hasta, branchId) {
     if (error) throw error;
     return data ?? [];
 }
+
+// El día por día de una sucursal y período, con el rango de números de control.
+// Es la coordenada para perseguir un residuo: el Corte Z es mensual y no lista
+// documentos, así que ubicar la diferencia pasa por enfrentar el día contra el
+// reporte diario del origen y de ahí bajar al documento.
+//
+// Se pide BAJO DEMANDA, no con el resto: son ~31 filas por tarjeta y solo hacen
+// falta cuando alguien va a investigar una diferencia.
+export async function fetchCorteZDias(branchId, periodo) {
+    const { data, error } = await supabase.rpc('get_corte_z_dias', {
+        p_branch_id: Number(branchId),
+        p_periodo: periodo,
+    });
+    if (error) throw error;
+    return data ?? [];
+}

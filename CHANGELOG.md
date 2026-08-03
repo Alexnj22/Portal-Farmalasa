@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.351.2 — La herramienta de diagnóstico del origen puede leer pantallas HTML
+
+`erp-csv-probe` descartaba el HTML: cuando se busca un CSV, recibir una página
+significa que la sesión se cayó y volcarla entera solo estorba. Pero hay reportes
+del origen que **son** una pantalla —`reportez.php`, el Corte Z— y sin poder
+leerla no hay forma de replicarlos, que es justo el agujero que esta función
+existe para tapar. Con `html: true` la devuelve.
+
+Primer uso, en el arranque del Corte Z: la pantalla contesta **«No tiene permiso
+para este modulo»** con las credenciales de VENTAS y sí abre con las de COMPRAS.
+Su formulario deja a la vista el endpoint del PDF —
+`reportez_pdf.php?fini=&ffin=&selectSucursal=N`, por GET— y dos botones más que
+dispara JS.
+
+**Gotcha del deploy, anotado porque costó una vuelta entera:** `supabase
+functions deploy` **resetea la verificación de JWT** si no se le pasa
+`--no-verify-jwt`. Esta función va detrás de `ADMIN_INVOKE_SECRET`, que no es un
+JWT, así que tras el primer deploy toda invocación moría en la puerta de enlace
+con `UNAUTHORIZED_INVALID_JWT_FORMAT` sin llegar nunca al código. Cualquier
+redeploy de una función con secreto propio necesita ese flag.
+
 ## v2.351.1 — Las cards de Facturas de Compra siguen al filtro de tipo
 
 Preguntado por el usuario apenas salió v2.351.0 —«¿las cards se actualizan

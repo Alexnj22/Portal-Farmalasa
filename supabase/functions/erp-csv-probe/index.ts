@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
     const lineas          = Math.min(Number(body.lineas) || 6, MAX_LINEAS);
     const erpId           = body.erpId != null ? Number(body.erpId) : null;
     const usarVentas      = body.credenciales === 'ventas';
+    const verHtml         = body.html === true;
 
     if (rutas.length === 0) throw new Error('faltan `rutas`');
 
@@ -99,12 +100,19 @@ Deno.serve(async (req) => {
         const trim = txt.trim();
         // Un 200 con HTML es el login o un 404 maquillado: no es un CSV.
         const esHtml = /^\s*<(!doctype|html)/i.test(trim);
+        // El HTML se descarta por defecto: cuando se busca un CSV, recibirlo es
+        // señal de que la sesión se cayó y volcar la página entera solo estorba.
+        // Pero hay reportes del origen que SON una pantalla (`reportez.php`, el
+        // Gran Z), y para replicarlos hay que poder leerla. `html: true` la
+        // devuelve. Sin esto la herramienta contesta "HTML (no es CSV)" y no
+        // queda forma de mirar el reporte desde una sesión de desarrollo, que es
+        // justo el agujero que esta función existe para tapar.
         out.push({
           ruta: limpio,
           status: res.status,
           bytes: txt.length,
           tipo: esHtml ? 'HTML (no es CSV)' : (trim ? 'texto' : 'vacio'),
-          primeras: esHtml ? [] : trim.split('\n').slice(0, lineas),
+          primeras: esHtml && !verHtml ? [] : trim.split('\n').slice(0, lineas),
         });
       } catch (e) {
         out.push({ ruta: limpio, error: (e as Error)?.message ?? String(e) });

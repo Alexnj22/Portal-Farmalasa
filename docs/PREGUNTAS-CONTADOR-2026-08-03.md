@@ -58,6 +58,56 @@ en su Corte Z: el sistema dice $1,921.40 ese día y el portal $1,930.40.
 3. ¿Le preocupa el mecanismo? Son $9.00, pero el defecto no tiene tamaño — puede
    volver a pasar con cualquier monto.
 
+### A4. Retención de Renta (Art. 156) — LA DECISIÓN QUE QUEDÓ PENDIENTE
+
+**Esta es la que estaba esperando su confirmación**, y sigue sin resolverse.
+
+El Art. 156 CT obliga a retener el **10% sobre servicios prestados por personas
+naturales**. No tiene modo automático como la percepción: **nada en el documento
+dice si lo que se pagó fue un servicio o mercadería**, así que el portal no puede
+decidirlo — hay que marcar proveedor por proveedor.
+
+**Hoy hay CERO proveedores marcados.** De 102 con compras entre mayo y julio
+2026, **16 tienen forma de persona natural**, por **$8,022.66**. Si todos fueran
+servicio, la retención sería **~$710**.
+
+| Proveedor | Documentos | Monto | Retención 10% |
+|---|---|---|---|
+| ANA FRANCISCA CEDILLOS | 8 | $3,951.64 | $349.70 |
+| OMAR ARNULFO SERRANO CRESPIN | 2 | $2,938.00 | $260.00 |
+| HENRY EDGARDO LARREYNAGA MATAMOROS | 2 | $289.00 | $25.58 |
+| CARMEN ELENA GUARDADO RAMIREZ | 2 | $199.50 | $17.65 |
+| BRAULIO ERASMO MENA RIVERA | 2 | $159.98 | $14.16 |
+| MARVIN EDMUNDO ESCOBAR ROMERO | 3 | $126.50 | $11.19 |
+| ZONIA MARIBEL MARTINEZ NUÑEZ | 3 | $85.04 | $7.53 |
+| GLENDA ELIZABETH CARTAGENA PALMA | 2 | $53.80 | $4.76 |
+| HAROLD FRANCISCO GONZÁLEZ MEJIA | 1 | $47.40 | $4.19 |
+| Alexander Benjamin Vasquez Landaverde | 1 | $43.90 | $3.88 |
+| JOSE ELIAS ESCOBAR ROMERO | 1 | $35.01 | $3.10 |
+| MARIA SUCIBEL HERNANDEZ DE ALAS | 1 | $26.42 | $2.34 |
+| ALAS DERAS, ALVARO ALEXANDER | 2 | $24.95 | $2.21 |
+| LEMUS DE ALVARENGA, DIGNA AMERICA | 4 | $22.80 | $2.02 |
+| JULIO ROBERTO ROMERO MENDOZA | 2 | $11.00 | $0.97 |
+| ANDA (Acueductos y Alcantarillados) | 2 | $7.72 | $0.68 |
+
+La lista sale de una heurística —NIT de 9 dígitos, DUI cargado, o nombre sin
+forma societaria—, así que **ANDA está de más** y puede haber otros. Es
+justamente el filtro que él tiene que revisar.
+
+**Por qué urge:** si correspondía retener y no se retuvo, **la empresa responde
+solidariamente por el impuesto no retenido**. Los dos primeros concentran el 86%
+del monto.
+
+**Preguntas:**
+1. ¿Cuáles de estos 16 son **servicios** y cuáles mercadería?
+2. Los dos grandes —ANA FRANCISCA CEDILLOS ($3,951.64) y OMAR ARNULFO SERRANO
+   ($2,938.00)—: ¿qué nos venden?
+3. ¿Se venía reteniendo por fuera del sistema? Si sí, ¿dónde está el registro?
+4. Si no se retuvo y correspondía, ¿cómo se regulariza?
+
+Una vez marcados, el portal arma el anexo solo: la pantalla ya existe (Libros IVA
+→ Renta) y hoy sale vacía porque no hay ninguno marcado.
+
 ---
 
 ## B. Retención de IVA sobre nuestras ventas

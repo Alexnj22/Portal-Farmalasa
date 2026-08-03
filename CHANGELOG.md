@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.347.1 — Campo y select cerrados en el plan de materiales
+
+Tercer y cuarto elemento del contrato de `docs/PLAN-MATERIALES-2026-08-02.md`.
+
+**El campo invierte el material: es un HUECO.** Una tarjeta y un botón
+sobresalen; un campo está hundido, así que su filo claro va **abajo**, se
+**aclara** en vez de levantarse, y no lleva reflejo — sería mentir sobre la
+forma. El portal ya lo trataba así sin nombrarlo (`inset 0 2px 8px`).
+
+**En Solid el hueco es un escalón de TONO, no una sombra.** La sombra sola daba
+**1.03:1** de profundidad —plano—, y como la tarjeta contenedora es blanca y
+`--surface-input` también, un campo blanco desaparece dentro de ella. Verificado
+con píxeles reales: texto **5.05:1** en Liquid y **4.94:1** en Solid, y el campo
+se distingue de su tarjeta 1.11:1 en los dos.
+
+**El hallazgo del select: sobre vidrio flotante el texto va en `--content`.** A
+0.58 de opacidad, donde un objeto saturado pasa por detrás, el texto de las
+opciones daba **3.37:1** — debajo de AA. Y **subir la opacidad casi no ayuda**:
+de 0.58 a 0.76 sólo llega a 3.59 y sigue fallando, porque el velo es claro pero
+un azul saturado detrás se mantiene en luminancia media. Lo que lo arregla es
+**oscurecer el texto**: `--content` lo lleva a **5.53:1** con la misma
+transparencia. El vidrio puede ser todo lo translúcido que se quiera; lo que no
+puede es llevar texto secundario encima.
+
+El disparador y el menú son **dos materiales opuestos a 8px de distancia** —
+hueco y capa flotante—, y según Apple la capa flotante es justo donde el vidrio
+más corresponde, al revés que las 220 tarjetas.
+
+La entrada del menú en Solid sale de `var(--dur-slow)` en vez de un 200ms
+clavado, que excedía el propio reloj del tema.
+
+Sigue sin implementarse nada: faltan modal, barra de pestañas y sidebar.
+
 ## v2.347.0 — E3: el anexo de retención de Renta (Art. 156)
 
 **Es el único hallazgo del plan donde no se pierde plata: aparece una deuda.** Si

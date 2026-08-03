@@ -5,7 +5,7 @@ sobre mockups interactivos con los tokens reales. Nada de esto está
 implementado todavía: este documento es el contrato que la implementación tiene
 que cumplir, y se va completando a medida que se cierra cada elemento.
 
-**Estado:** superficie (tarjeta) y botón CERRADOS · el resto pendiente.
+**Estado:** superficie, botón, campo y select/menú CERRADOS · faltan modal, barra de pestañas y sidebar.
 
 ---
 
@@ -188,7 +188,111 @@ menos color. Solid queda con **2 capas activas** contra **6** de Liquid.
 
 ---
 
-## 3. Rendimiento — medido, no estimado
+## 3. Campo ✅ CERRADO
+
+**El campo invierte el material: es un HUECO, no una superficie.** Una tarjeta y
+un botón sobresalen —la luz les pega arriba y se levantan al apuntarlos—; un
+campo está hundido. El portal ya lo trataba así sin nombrarlo: `data-surface="input"`
+lleva `box-shadow: inset 0 2px 8px`.
+
+```css
+:root {                                  /* Liquid Glass */
+  --campo-hueco:   2.00;   /* sombra interior de arriba */
+  --campo-luzinv:  1.25;   /* filo claro ABAJO */
+  --campo-aclara:  1.00;   /* deja pasar más luz al apuntar */
+  /* sin reflejo, sin canto vivo, sin lift: un hueco no sobresale */
+}
+[data-theme="solid"], [data-theme="solid-dark"] { --campo-hueco: 2.00; }
+```
+
+| rol | tarjeta / botón | campo |
+|---|---|---|
+| filo claro | arriba | **abajo** — la luz entra por el borde inferior |
+| al apuntar | se levanta | **se aclara** — un hueco no se levanta |
+| reflejo que sigue al puntero | sí | **no** — sería mentir sobre la forma |
+
+**En Solid el hueco es un escalón de TONO, no una sombra.** Medido: la sombra
+sola daba **1.03:1** de profundidad, o sea plano. Y como la tarjeta que lo
+contiene es blanca y `--surface-input` también, un campo blanco **desaparece**
+dentro de ella. El campo pasa a ser más oscuro que su contenedor — el mismo
+principio de §1.2: en Solid el tono es el recurso principal.
+
+**Verificado con los valores elegidos** (píxeles reales, no teoría):
+
+| | texto | campo vs tarjeta |
+|---|---|---|
+| Liquid | **5.05:1** ✅ AA | 1.114:1 ✅ |
+| Solid | **4.94:1** ✅ AA | 1.101:1 ✅ |
+
+**El foco y el estado inválido NO se reabren.** Se decidieron el 2026-07-26
+comparando cuatro mockups: cambio de color de borde puro, sin ring, sin glow y
+sin lift. Van con `outline` y no con `border` porque `data-surface="input"` pinta
+su borde desde una regla sin `@layer`, que le gana a cualquier utilidad de
+Tailwind.
+
+---
+
+## 4. Select abierto · menú flotante ✅ CERRADO
+
+**Dos materiales opuestos a 8px de distancia.** El disparador es un hueco (§3);
+el menú que sale de él es una capa flotante — y según Apple, la capa flotante es
+justo donde el vidrio **más** corresponde, al revés que las 220 tarjetas.
+
+```css
+:root {                                  /* Liquid Glass */
+  --menu-opacidad: 0.58;
+  --menu-blur:     60px;
+  --menu-sombra:   2.00;
+  --menu-halo:     1.00;
+  --menu-glow:     2.00;
+  --menu-entrada:  220ms;
+}
+[data-theme="solid"], [data-theme="solid-dark"] {
+  --menu-opacidad: 1;                 /* opaco */
+  --menu-blur:     0px;               /* no existe */
+  --menu-sombra:   2.00;
+  --menu-entrada:  var(--dur-slow);   /* 180ms — sale del reloj del tema */
+}
+```
+
+### 4.1 El hallazgo: sobre vidrio flotante el texto va en `--content`
+
+A 0.58 de opacidad, donde un objeto saturado del fondo pasa por detrás, el texto
+de las opciones daba **3.37:1** — debajo del mínimo AA de 4.5. Es la crítica
+documentada a Liquid Glass, medida sobre nuestros propios valores.
+
+**Subir la opacidad casi no ayuda:**
+
+| opacidad | peor contraste |
+|---|---|
+| 0.58 | 3.37:1 ❌ |
+| 0.64 | 3.45:1 ❌ |
+| 0.70 | 3.50:1 ❌ |
+| 0.76 | 3.59:1 ❌ |
+
+Sacrificar casi todo el vidrio gana 0.22 y **sigue fallando**: el velo es claro,
+pero un azul saturado detrás se mantiene en luminancia media.
+
+**Lo que lo arregla es oscurecer el texto**, con la misma opacidad de 0.58:
+
+| texto | peor contraste |
+|---|---|
+| `--content-2` (`#3c4a63`) | 3.37:1 ❌ |
+| **`--content` (`#1e293b`)** | **5.53:1** ✅ |
+
+> **Regla: texto sobre vidrio flotante va en `--content`, nunca en
+> `--content-2`.** El vidrio puede ser todo lo translúcido que se quiera; lo que
+> no puede es llevar texto secundario encima.
+
+### 4.2 Lo que ya está implementado
+
+Que el fondo deje de responder con el menú abierto ya existe
+(`capaFlotante.js`, v2.337.2–v2.343.2). Verificado en el mockup: la tarjeta de
+atrás se mueve **0.0px** con el menú abierto y **3.0px** con él cerrado.
+
+---
+
+## 5. Rendimiento — medido, no estimado
 
 Banco de pruebas con la CPU estrangulada vía CDP, barrido continuo del puntero,
 muestreo por cuadro.
@@ -227,15 +331,15 @@ componer. Su promesa de eficiencia es real, no retórica.
 
 ---
 
-## 4. Lo que la implementación tiene que incluir
+## 6. Lo que la implementación tiene que incluir
 
 Cuando se cierren todos los elementos:
 
-- [ ] Tokens de §1 y §2 en `src/index.css`, en los cuatro temas.
+- [ ] Tokens de §1 a §4 en `src/index.css`, en los cuatro temas.
 - [ ] `data-interactive` explícito en las tarjetas clicables — el gel y el
       hundido no tienen dónde aplicarse sin él. Hoy de **220**
       `data-surface="card"` apenas **3** declaran `onClick`.
-- [ ] Utilidad de seguimiento del puntero con las tres reglas de §3.
+- [ ] Utilidad de seguimiento del puntero con las tres reglas de §5.
 - [ ] Remover el barrido (`.sweep`): marcado, `index.css` y la sección de `DESIGN.md`.
 - [ ] `DESIGN.md` §2 y §5 actualizados, incluido el cambio de contrato de §1.4.
 - [ ] Categorías de gate nuevas: que no se pueda clavar un valor de material a
@@ -243,7 +347,7 @@ Cuando se cierren todos los elementos:
 
 ---
 
-## 5. Decisiones abiertas
+## 7. Decisiones abiertas
 
 **El alcance del vidrio.** Apple limita Liquid Glass a las capas de navegación y
 evita explícitamente el «vidrio sobre vidrio». El portal tiene **220**
@@ -261,14 +365,12 @@ motivo.
 
 ---
 
-## 6. Elementos pendientes de definir
+## 8. Elementos pendientes de definir
 
 Cada uno se cierra con su mockup y sus valores antes de tocar código:
 
 | elemento | por qué importa |
 |---|---|
-| Campo / `LiquidSelect` | superficie + foco + estado inválido |
-| Menú flotante / dropdown | ya tiene capa flotante; falta su material |
 | Modal | la «gota» tiene tokens propios (340/240ms) |
 | Barra de pestañas | `tab-track` es la única otra superficie con lift |
 | Sidebar | oscuro en los cuatro temas — caso aparte |
@@ -279,6 +381,9 @@ Cada uno se cierra con su mockup y sus valores antes de tocar código:
 
 - Mockup de Liquid Glass, capa por capa · `claude.ai/code/artifact/33d118ae-ab63-422c-bb5a-f397b3dab434`
 - Mockup de Solid · `claude.ai/code/artifact/ca3c7aa1-d223-400d-863c-40d753287937`
+- Mockup del botón · `claude.ai/code/artifact/d46fc8d4-1297-499b-9f97-b0655a7f7eb0`
+- Mockup del campo · `claude.ai/code/artifact/5103da29-f54d-4d95-85d3-89a3630c3e9b`
+- Mockup del select abierto · `claude.ai/code/artifact/02c65fc4-24a7-4d6e-9be3-3e6a614b15e0`
 - Banco de movimiento (escala de duraciones) · `claude.ai/code/artifact/5f3e5bd4-19f9-4cdd-9b37-95f856c05427`
 - [Apple — Liquid Glass](https://www.apple.com/newsroom/2025/06/apple-introduces-a-delightful-and-elegant-new-software-design/)
 - [Refracción con CSS y SVG — kube.io](https://kube.io/blog/liquid-glass-css-svg/) · la refracción real

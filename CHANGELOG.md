@@ -21,6 +21,39 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.353.4 — Reparado el histórico del resumen de ventas por producto
+
+Sin cambios de código: es el registro de una reparación de datos en producción,
+continuación de v2.350.5.
+
+Al cruzar el resumen mensual contra las ventas **mes por mes** —y no solo el mes
+del reporte— apareció una segunda deriva, más vieja y en dirección **contraria**
+a la de v2.350.5: de **2025-05 a 2026-02** la tabla tenía **$59,133.34 de más**,
+entre $2,695 y $8,232 por mes, en unas 376 combinaciones producto-sucursal-
+presentación mensuales sobre ~9,000.
+
+La causa es otra: la pasada incremental solo alcanza **3 meses hacia atrás**, así
+que una factura anulada o corregida después de ese plazo nunca actualiza su fila
+del resumen. La venta seguía contada aunque en `sales_invoices` ya no existiera.
+Parte se explica por anulaciones posteriores y el resto por líneas que el
+sincronizador corrigió.
+
+Reparado con `rebuild_product_sales_monthly_agg('2025-05-01','2026-02-01')`, la
+función que v2.350.5 dejó instalada justamente para esto: **4,726 filas en 19
+segundos**, medido antes en una transacción con ROLLBACK.
+
+Estado tras la reparación, verificado contra las ventas en vivo: **los 15 meses
+del histórico (2025-05 → 2026-07) dan diferencia $0.00, 0 unidades y 0
+productos.** El mes en curso sigue con 0 filas y la corrida siguiente del trabajo
+escribió **0 filas**.
+
+Queda una limitación conocida, ahora escrita: el barrido de cierre solo
+reconstruye **el mes que cierra**, y el incremental solo alcanza 3 meses atrás.
+Una corrección sobre una factura más vieja que eso sigue sin llegar al resumen.
+Se repara a mano con `rebuild_product_sales_monthly_agg(desde, hasta)`; si vuelve
+a acumularse, el paso siguiente es cruzar el resumen contra las ventas de forma
+periódica en vez de esperar a que alguien lo note en una pantalla.
+
 ## v2.353.3 — El Corte Z no se contradice: resta la retención
 
 **Corrección de una explicación equivocada que salió en v2.352.0 y v2.353.1.**

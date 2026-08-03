@@ -135,8 +135,12 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
     const interna = Number(fila.contradiccion_interna) || 0;
     const residuo = Number(fila.residuo) || 0;
 
+    // Los tokens del aviso son los de `Notice` variant="warning" (§T7): la pareja
+    // que escribí primero —`border-warning-border`, `bg-warning-surface`— NO
+    // EXISTE, así que Tailwind no generaba nada y el borde caía al negro por
+    // defecto. Una clase escrita no es una clase que existe.
     return (
-        <div className="rounded-xl border border-warning-border bg-warning-surface p-3 space-y-2">
+        <div className="rounded-xl border bg-warning/10 border-warning/30 text-warning-text p-3 space-y-2">
             <h4 className="text-caption font-semibold flex items-center gap-1.5">
                 <AlertTriangle size={13} aria-hidden="true" />
                 Por qué difiere {formatMoney(Math.abs(fila.dif_total))}
@@ -177,7 +181,7 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
             )}
 
             {dias && (
-                <div className="max-h-64 overflow-y-auto rounded-lg bg-surface-1">
+                <div className="max-h-64 overflow-y-auto rounded-card bg-surface-card-hover border border-divider">
                     {/* Solo ventas con factura: es lo que el reporte diario del
                         origen también lista, y mezclarle los créditos fiscales daba
                         rangos de control imposibles (dos series distintas). */}
@@ -185,7 +189,7 @@ const PorQueDifiere = ({ fila, dias, cargandoDias, onVerDias }) => {
                         Ventas con factura, día por día — para enfrentarlo al reporte diario.
                     </p>
                     <table className="w-full text-micro">
-                        <thead className="sticky top-0 bg-surface-1">
+                        <thead className="sticky top-0 bg-surface-modal">
                             <tr className="text-content-3 text-left">
                                 <th className="px-2 py-1 font-semibold">Día</th>
                                 <th className="px-2 py-1 font-semibold text-right">Docs</th>
@@ -220,7 +224,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
     const ok = cuadra(fila.dif_total);
 
     return (
-        <section className="rounded-2xl border border-divider bg-surface-1 p-4 md:p-5 space-y-4">
+        <section data-surface="card" className="flex flex-col p-4 md:p-5 gap-4">
             <header className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h3 className="text-body font-bold truncate">{fila.sucursal}</h3>
@@ -233,7 +237,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 </Badge>
             </header>
 
-            <div className="flex items-baseline justify-between gap-3 rounded-xl bg-surface-2 px-4 py-3">
+            <div className="flex items-baseline justify-between gap-3 rounded-card bg-surface-card-hover border border-divider px-4 py-3">
                 <span className="text-caption font-semibold text-content-2">TOTAL GENERAL</span>
                 <span className="font-mono text-title tabular-nums font-black">
                     {formatMoney(fila.total_general)}
@@ -268,7 +272,12 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     cargandoDias={cargandoDias} onVerDias={onVerDias} />
             )}
 
-            <div className="flex flex-wrap items-center gap-2">
+            {/* `mt-auto`: la grilla estira las tarjetas a la misma altura, así
+                que sin esto la que no tiene observación dejaba un hueco debajo
+                del cotejo y los botones colgando en el medio. Anclados abajo, el
+                aire sobrante queda repartido y las dos filas de botones se leen
+                alineadas. */}
+            <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                 <Button size="sm" variant="secondary" icon={FileText} onClick={() => onVerTicket(fila)}>
                     {verTicket ? 'Ocultar el original' : 'Ver el original'}
                 </Button>
@@ -280,7 +289,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
             {verTicket && (
                 // El texto tal cual lo emitió el origen. Es la prueba: el día que
                 // haya que defender una cifra, esto es lo que se muestra.
-                <pre className="rounded-xl bg-surface-2 p-3 overflow-x-auto font-mono text-micro leading-tight text-content-2">
+                <pre className="rounded-card bg-surface-card-hover border border-divider p-3 overflow-x-auto font-mono text-micro leading-tight text-content-2">
                     {fila.ticket}
                 </pre>
             )}
@@ -425,44 +434,37 @@ export default function CorteZView() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                     <CarrilCards className="flex-1" ariaLabel="Resumen del Corte Z">
                         <StatCard icon={Receipt} label="Sucursales" value={totales.sucursales}
-                            sub={totales.difieren ? `${totales.difieren} con diferencia` : 'Todas cuadran'}
-                            loading={loading} />
+                            sub="Del período" loading={loading} />
                         <StatCard icon={FileText} label="Total general" value={formatMoney(totales.total)}
                             sub="Del período" loading={loading} />
                         <StatCard icon={Percent} label="Crédito fiscal" value={formatMoney(totales.ccf)}
                             sub="Ventas con CCF" loading={loading} />
+                        {/* El recuento y nada más. El detalle —cuánto, por qué, y
+                            si hay algo que perseguir— vive en la tarjeta de cada
+                            sucursal, que es donde se puede hacer algo con él;
+                            repetirlo acá arriba solo lo aleja de su contexto. */}
+                        <StatCard icon={AlertTriangle} label="Con observación" value={totales.difieren}
+                            sub={totales.difieren
+                                ? `${totales.sucursales - totales.difieren} sin diferencia`
+                                : 'Todas cuadran'}
+                            loading={loading} />
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">{barraFiltros}</div>
                 </div>
 
                 {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
 
-                <Notice variant="info" icon={Receipt} compact>
-                    Lo que declaró cada sucursal en su Corte Z mensual, tal como lo emitió.
-                    Al lado va el mismo número calculado desde las facturas selladas por
-                    Hacienda, para cotejarlo. El período se cierra solo el día 1 del mes
-                    siguiente.
-                </Notice>
-
-                {!loading && totales.difieren > 0 && (
-                    <Notice variant="warning" icon={AlertTriangle}>
-                        <b>{totales.difieren}</b> sucursal(es) con diferencia contra el libro.
-                        Revisa el cotejo de cada tarjeta antes de presentar: la diferencia puede
-                        estar en el Corte Z y no en el libro.
-                    </Notice>
-                )}
-
                 {loading ? (
                     <div className="grid gap-4 xl:grid-cols-2">
                         {[0, 1].map(i => (
-                            <div key={i} className="h-64 rounded-2xl border border-divider bg-surface-1 animate-pulse" />
+                            <div key={i} data-surface="card" className="h-64 animate-pulse" />
                         ))}
                     </div>
                 ) : filas.length === 0 ? (
                     // El vacío se explica: un mes que todavía no se procesó y un
                     // fallo de la consulta se ven igual, y confundirlos es lo que
                     // haría dar por bueno un período que nadie trajo.
-                    <div className="rounded-2xl border border-divider bg-surface-1 p-10 text-center space-y-2">
+                    <div data-surface="card" className="p-10 text-center space-y-2">
                         <Receipt className="mx-auto text-content-3" size={28} aria-hidden="true" />
                         <p className="text-body font-semibold">
                             Sin Corte Z de {etiquetaPeriodo(desde)}

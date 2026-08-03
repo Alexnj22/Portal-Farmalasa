@@ -21,6 +21,51 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.353.2 — Corte Z: la tarjeta usa el canónico y el texto vuelve a ser legible
+
+Reportado por el usuario: «verifica liquidglass, el texto es ilegible. ¿estás
+usando el canónico de cards?». **No lo estaba usando**, y de ahí salió todo.
+
+**Siete clases que no existen.** La tarjeta llevaba `bg-surface-1` y las franjas
+internas `bg-surface-2`. Ninguno de los dos es un token del portal — los que hay
+son `surface-card`, `card-hover`, `header`, `modal`, `input`, `dropdown`,
+`tab-track`, `tab-active`. Tailwind no generaba nada, así que **la tarjeta salía
+transparente sobre el fondo del glass** y el texto quedaba encima de lo que
+hubiera detrás. Lo mismo con `border-warning-border` y `bg-warning-surface` en el
+aviso: sin regla que aplicar, el borde caía al **negro por defecto**, que es la
+caja dura que se veía en la captura.
+
+Es [[feedback_clase_escrita_no_existe]] siete veces seguidas en un archivo nuevo.
+Lo que lo cierra no es corregirlas una por una sino el paso que faltaba:
+**verificar que cada clase de color mapee a un token declarado en `index.css`**.
+Las 8 que quedan lo hacen.
+
+**Y el canónico.** Lo levantó `gate:design` con la categoría `tarjeta-a-mano`:
+el contenedor de tarjeta del portal es **`data-surface="card"`** (DESIGN.md §5),
+que además del fondo, borde, sombra y radio trae el **`backdrop-filter`** — o
+sea, el liquid glass. Escribiendo las clases a mano se obtiene una caja parecida
+**sin el glass**. Las tres tarjetas de la vista pasan al canónico.
+
+Las franjas internas —el total general, el ticket original, la tabla por día—
+**no** llevan `data-surface="card"`: anidarlo apila dos `backdrop-filter` y dos
+sombras (la lección que ya estaba escrita en `RolesView` §715). Van con
+`bg-surface-card-hover`, que es la superficie de realce.
+
+**Además, dos cambios pedidos:**
+
+- El aviso «2 sucursal(es) con diferencia…» pasa a **tarjeta del carril**, «Con
+  observación», con el recuento y nada más. El detalle —cuánto, por qué, y si hay
+  algo que perseguir— ya vive en la tarjeta de cada sucursal, que es donde se
+  puede hacer algo con él.
+- Se elimina el aviso explicativo de arriba.
+
+**Y el hueco desparejo:** la grilla estira las tarjetas a la misma altura, así
+que la que no tiene observación dejaba un vacío y los botones colgando en el
+medio. `mt-auto` los ancla abajo y las dos filas se leen alineadas.
+
+Verificado en el navegador, tema claro y oscuro: fondo `rgb(255,255,255)` en vez
+de `rgba(0,0,0,0)`, título en negro sólido, cero errores de consola.
+
 ## v2.353.1 — El Corte Z dice por qué difiere y da el desglose por día
 
 Pedido del usuario: «esos que difieren, podrías poner el porqué, los id o algo

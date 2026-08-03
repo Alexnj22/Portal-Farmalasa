@@ -43,6 +43,10 @@ def credenciales():
     return url.rstrip('/'), key, usuario, clave
 
 
+class RechazoServidor(Exception):
+    """El servidor contestó que no (4xx). Determinista: no cambia por insistir."""
+
+
 def pedir_json(url, cuerpo, cabeceras, reintentos=4):
     """POST con reintento ante fallos TRANSITORIOS de red (timeout, 5xx).
 
@@ -68,7 +72,12 @@ def pedir_json(url, cuerpo, cabeceras, reintentos=4):
                 return json.loads(r.read().decode())
         except urllib.error.HTTPError as e:
             detalle = e.read().decode()[:400]
-            if e.code < 500 or intento == reintentos:
+            if e.code < 500:
+                # Rechazo del servidor: excepción propia y NO SystemExit, para
+                # que `aplicar_lote` pueda aislar la fila culpable. Un fallo de
+                # red agotado sí corta — ahí no hay fila que aislar.
+                raise RechazoServidor(f'HTTP {e.code}: {detalle}')
+            if intento == reintentos:
                 raise SystemExit(f'{url}\n  HTTP {e.code}: {detalle}')
             print(f'  HTTP {e.code} — reintento {intento} de {reintentos - 1}')
         except OSError as e:                      # timeout, DNS, conexión cortada
@@ -85,6 +94,36 @@ def token(url, key, usuario, clave):
     if not r.get('access_token'):
         raise SystemExit(f'login al portal falló: {r}')
     return r['access_token']
+
+
+def aplicar_lote(url, lote, cab, total, rechazadas):
+    """Aplica un lote; si el servidor lo rechaza por UNA fila, la aísla partiendo.
+
+    El RPC hace un UPDATE masivo, así que una violación de constraint en una sola
+    fila aborta la sentencia entera — y con ella el lote de 250 y la corrida.
+    Pasó el 2026-08-02 tras el bloque 28: dos fichas del ERP con el MISMO NIT
+    (`0407-051066-002-0`, la misma persona cargada dos veces con el nombre en
+    distinto orden) chocaron contra `customers_nit_idx`, y el espejo quedó
+    trabado sin poder avanzar ni un lote.
+
+    Partir a la mitad aísla la culpable en ~log2(250) ≈ 8 llamadas extra, y solo
+    cuando hay un rechazo. Es general: sirve para cualquier constraint, sin tener
+    que anticipar cuál. Lo que NO se parte es un fallo de red agotado — ahí no
+    hay fila culpable que encontrar y `pedir_json` corta con SystemExit.
+    """
+    try:
+        r = pedir_json(f'{url}/rest/v1/rpc/aplicar_espejo_erp', {'p_filas': lote}, cab)
+    except RechazoServidor as e:
+        if len(lote) == 1:
+            rechazadas.append((lote[0], str(e)[:150]))
+            return None
+        mitad = len(lote) // 2
+        aplicar_lote(url, lote[:mitad], cab, total, rechazadas)
+        aplicar_lote(url, lote[mitad:], cab, total, rechazadas)
+        return None
+    for k in total:
+        total[k] += r.get(k, 0)
+    return r
 
 
 # El cuerpo va dentro de main() para que otro script pueda importar
@@ -148,17 +187,21 @@ def main():
     cab = {'apikey': key, 'Authorization': f'Bearer {jwt}',
            'Content-Type': 'application/json'}
     total = {'recibidas': 0, 'actualizadas': 0, 'sin_match': 0, 'duplicadas_omitidas': 0}
+    rechazadas = []
     for i in range(0, len(pendientes), LOTE):
         lote = pendientes[i:i + LOTE]
-        r = pedir_json(f'{url}/rest/v1/rpc/aplicar_espejo_erp', {'p_filas': lote}, cab)
-        print(f'  lote {i // LOTE + 1}: {r}')
-        for k in total:
-            total[k] += r.get(k, 0)
+        r = aplicar_lote(url, lote, cab, total, rechazadas)
+        print(f'  lote {i // LOTE + 1}: {r if r else "(partido por una fila rechazada)"}')
 
     print(f'\nTOTAL: {total}')
     if total['sin_match']:
         print(f"  ojo: {total['sin_match']} fichas del ERP no existen en el portal "
               f"(no se crean, solo se reportan)")
+    if rechazadas:
+        print(f'\n{len(rechazadas)} ficha(s) que el portal RECHAZÓ — el resto sí se '
+              f'aplicó:')
+        for fila, motivo in rechazadas:
+            print(f'   erp {fila.get("erp_id"):<8} {fila.get("match_name", "")[:44]:<46} {motivo}')
 
 
 if __name__ == '__main__':

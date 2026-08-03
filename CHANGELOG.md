@@ -21,6 +21,88 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.4 — El NIT del libro completa la ficha, y lo que el origen no sabe se dice
+
+### El NIT del libro completa —o crea— la ficha del proveedor (C1b · C8)
+
+El sync ya bajaba el libro de compras para el sello y la percepción. Ahora lee
+dos índices más del mismo archivo: la columna 4 (NIT del emisor) y la 5 (su
+nombre). Con eso completa la ficha del proveedor cuando está vacía, y la crea
+cuando no existe. Tres candados: NIT válido, nunca pisar uno existente, y nunca
+tomar un NIT que ya es de otra ficha — eso es una fusión de proveedores y la
+decide una persona, no un cron. Los seis caminos verificados con `BEGIN…ROLLBACK`.
+
+Corre solo, domingos 09:00 UTC, ventana móvil de 10 días. **Semanal y no diario a
+propósito**: `fastBackfill` hace un upsert incondicional, y la regla del proyecto
+lo prohíbe en un sync recurrente. Una vez por semana el costo es despreciable y un
+proveedor nuevo tarda como mucho 7 días en tener ficha, contra el infinito de hoy.
+
+### Lo que el origen tampoco sabe
+
+El plan hablaba de «21 proveedores sin ficha, 98 filas con NIT vacío». Medido hoy,
+después del barrido del maestro: **junio 2 filas, julio 1, agosto 0** — y las tres
+son el mismo proveedor. Se fue a buscarlo al archivo, y su fila dice:
+
+```
+16/06/2026;4;;DTE-1234291;;PEPSI;0.00;…
+                          ↑ columna 4: vacía
+```
+
+El origen tampoco tiene su NIT. No es un dato que el portal esté perdiendo: no
+existe en ninguna fuente disponible. Se completa a mano o no se completa. C1b no
+falló al no tomarlo — declinó con razón, verificado contra el archivo real.
+
+### El sello de compras no falta por fecha, falta por SUCURSAL
+
+C1 dejó julio en 56.7% y se leyó como «falta el backfill de los meses viejos».
+Abierto por sucursal es otra cosa: Bodega 63%, Salud 3 31%, y **Salud 1, Salud 2,
+Salud 4 y La Popular en cero**. Confirmado en el archivo: las filas de Salud 1
+traen la columna 22 vacía. El origen emite el sello para unas sucursales y no para
+otras, así que ningún backfill lo va a completar — el dato no está del otro lado.
+Para esas compras el sello sale del cruce con la factura del correo (C2), que es
+exactamente por lo que ese cruce existe.
+
+Confirmado de paso que el backfill sí sirve donde el dato existe: junio en Bodega
+pasó de 0 a **91 sellos de 93 compras**.
+
+
+_(pendiente de redactar)_
+
+## v2.348.3 — Bloques 27 a 29 y el espejo aisla la fila rechazada
+
+**13,591 → 15,453 fichas procesadas** (56% del catálogo), 12,180 pendientes
+(25 bloques). En el portal 12,277 fichas emparejadas, 12,186 con distrito. Cero
+campos perdidos y cero alterados en las 15,453.
+
+**Una fila mala bloqueaba la campaña entera.** Tras el bloque 28 el espejo cortó
+con `409 / 23505: duplicate key value violates unique constraint
+"customers_nit_idx"`. Como el RPC hace un UPDATE masivo, la violación en UNA
+fila aborta la sentencia completa — y con ella el lote de 250 y la corrida. Sin
+forma de avanzar.
+
+Ahora `aplicar_espejo.py` **parte el lote a la mitad recursivamente** ante un
+rechazo del servidor hasta aislar la fila culpable, aplica todo lo demás y
+reporta cuál falló y por qué. Cuesta ~log2(250) ≈ 8 llamadas extra y solo cuando
+hay rechazo. Es general: sirve para cualquier constraint sin anticipar cuál. Lo
+que NO se parte es un fallo de red agotado — ahí no hay fila culpable, y el 4xx
+se distingue del 5xx con una excepción propia (`RechazoServidor`) en vez de
+`SystemExit`.
+
+**El dato detrás del choque es un duplicado que la detección por nombre no puede
+ver**: `erp 4324` (FRANCISCO ANTONIO ALVARENGA ALVARENGA) y `erp 14318`
+(ALVARENGA ALVARENGA FRANCISCO ANTONIO) son la misma persona cargada dos veces
+con el nombre en orden invertido — mismo NIT, NRC, correo, giro y dirección.
+`revisar_duplicados.py` empareja por `match_name` normalizado, y estos dos
+normalizan distinto. Es el mismo tropiezo ya anotado en el módulo de
+proveedores: **el NIT es la llave, el nombre no**. Hay 1 solo choque en 14,568
+fichas de la cola (apenas 40 traen NIT: el catálogo es 99% consumidor final).
+
+Las corridas largas se detuvieron dos veces desde afuera, sin causa técnica: en
+ambas el `caffeinate` que envolvía la cadena sostuvo `PreventSystemSleep` hasta
+el final y registró `ClientDied` —el proceso murió primero y por eso se soltaron
+las aserciones—, sin evento de sueño, sin traceback y con el ERP respondiendo
+normal minutos antes. El checkpoint hizo que no se perdiera nada en ninguna.
+
 ## v2.348.2 — El libro de compras muestra el número que identifica al documento
 
 ### El libro de compras muestra el número que identifica al documento (C3)

@@ -86,9 +86,7 @@
   "name": "ALVARENGA ALVARENGA FRANCISCO ANTONIO",
   "categoria": "Contribuyente",
   "faltan": [
-   "distrito",
-   "nit",
-   "nrc"
+   "distrito"
   ]
  },
  "15079": {
@@ -103,14 +101,6 @@
   "erp_id": "15096",
   "name": "DRA. IRIS INES IGLESIAS",
   "categoria": "Contribuyente",
-  "faltan": [
-   "distrito"
-  ]
- },
- "15270": {
-  "erp_id": "15270",
-  "name": "JOSE RENE REYES ABREGO",
-  "categoria": "Consumidor",
   "faltan": [
    "distrito"
   ]
@@ -800,6 +790,81 @@
    "distrito",
    "sel_giro",
    "correo"
+  ]
+ },
+ "14010": {
+  "erp_id": "14010",
+  "name": "MARIA GLADIS MONGE NATAREN",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "14268": {
+  "erp_id": "14268",
+  "name": "LORENA NOHEMY CARRILLO NAVARRETE",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
+ },
+ "14269": {
+  "erp_id": "14269",
+  "name": "LORENA NOHEMY CARRILLO NAVARRATE",
+  "categoria": "?",
+  "faltan": [
+   "nombre",
+   "telefono1",
+   "departamento",
+   "municipio",
+   "distrito",
+   "nit",
+   "nrc",
+   "sel_giro",
+   "correo",
+   "direccion"
+  ]
+ },
+ "14560": {
+  "erp_id": "14560",
+  "name": "ELBA LIDIA LOPEZ",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "14727": {
+  "erp_id": "14727",
+  "name": "CREDICAMPO S.C DE R.L DE C.V",
+  "categoria": "Contribuyente",
+  "faltan": [
+   "distrito",
+   "sel_giro"
+  ]
+ },
+ "15088": {
+  "erp_id": "15088",
+  "name": "NOLVIA ALICIA MARQUEZ MEJIA",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
+  ]
+ },
+ "15266": {
+  "erp_id": "15266",
+  "name": "TERESA DE JESUS GUARDADO SERRANO",
+  "categoria": "Consumidor",
+  "faltan": [
+   "departamento"
   ]
  }
 }

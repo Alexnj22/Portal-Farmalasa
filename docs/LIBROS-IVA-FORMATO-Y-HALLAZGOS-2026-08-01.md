@@ -448,3 +448,58 @@ Un prefijo de 20 caracteres deja **11 dígitos de correlativo libres**, así que
 matchea contra media numeración del emisor. Cruzar por ahí sería elegir un
 documento al azar y mostrarlo como si fuera el bueno. Se quedan sin número real, y
 eso es la respuesta correcta.
+
+---
+
+## 11. El NIT y el sello del libro de compras: qué se pudo y qué no (C1b · C8 · H22)
+
+El sync ya baja el libro de compras para el sello y la percepción. C1b agrega dos
+índices al mismo archivo —**columna 4, el NIT del emisor; columna 5, su nombre**—
+y con eso completa la ficha del proveedor cuando está vacía, o la crea cuando no
+existe (C8, `completar_nit_proveedores`). Tres candados: NIT válido, nunca pisar
+uno existente, y nunca tomar un NIT que ya es de otra ficha —eso es una fusión de
+proveedores y la decide una persona, no un cron.
+
+### El agujero que este bloque venía a tapar ya estaba tapado
+
+El plan hablaba de *«21 proveedores con compras y sin ficha, 98 filas del libro
+con NIT vacío»*. Medido hoy, después del barrido del maestro (E4, v2.340.0):
+**junio 2 filas, julio 1, agosto 0** — y las tres son el mismo proveedor, PEPSI.
+
+### Y el que queda no se puede tapar desde acá
+
+Se fue a buscar al archivo. La fila de PEPSI en el libro del origen, Salud 1,
+16/06/2026:
+
+```
+16/06/2026;4;;DTE-1234291;;PEPSI;0.00;0.00;0.00;16.81;…
+                          ↑ columna 4: vacía
+```
+
+**El origen tampoco sabe el NIT de PEPSI.** No es un dato que el portal esté
+perdiendo: no existe en ninguna de las fuentes disponibles. Se completa a mano en
+la ficha o no se completa. C1b no falló al no tomarlo — declinó con razón, y eso
+se verificó contra el archivo real, no contra la intención del código.
+
+### El sello no falta por fecha, falta por SUCURSAL
+
+C1 dejó el sello en 56.7% de julio y se leyó como "falta correr el backfill de
+los meses viejos". Al abrirlo por sucursal se ve otra cosa:
+
+| Sucursal | Compras de julio | Con sello |
+|---|---|---|
+| Bodega | 414 | 260 (63%) |
+| Salud 3 | 16 | 5 (31%) |
+| Salud 1 | 15 | **0** |
+| La Popular | 12 | **0** |
+| Salud 2 | 9 | **0** |
+| Salud 4 | 1 | **0** |
+
+Y se confirmó en el archivo: las filas de Salud 1 de junio traen la columna 22
+vacía. **El origen emite el sello para unas sucursales y no para otras**, así que
+ningún backfill lo va a completar — el dato no está del otro lado. Para esas
+compras el sello hay que sacarlo del cruce con la factura que llega por correo
+(C2), que es justamente por lo que ese cruce existe.
+
+Corolario práctico: el 56.7% de julio es 63% de Bodega diluido por cinco
+sucursales en cero, no un backfill a medio hacer.

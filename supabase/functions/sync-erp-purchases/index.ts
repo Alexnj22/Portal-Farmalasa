@@ -406,6 +406,11 @@ async function fastBackfill(
   const libroCsv = await traer(`${LIBRO_CSV}?${rango}`, cookie);
   const percMap  = columnaPorNumero(libroCsv, 3, 21);
   const selloMap = columnaPorNumero(libroCsv, 3, 22);
+  // C1b (H22): la columna 4 es el NIT del emisor y la 5 su nombre. Mismo
+  // archivo, dos índices más — sirven para completar la ficha del proveedor
+  // cuando no lo tiene, o crearla cuando ni existe (C8).
+  const nitMap    = columnaPorNumero(libroCsv, 3, 4);
+  const nombreMap = columnaPorNumero(libroCsv, 3, 5);
   // La retención NO tiene columna en el libro: sale de su propio anexo. Se pide
   // igual aunque hoy salga vacío en toda la historia — asumir cero por
   // costumbre es exactamente cómo un dato real pasa desapercibido el día que
@@ -476,7 +481,74 @@ async function fastBackfill(
     if (error) throw new Error(`fastBackfill upsert ${i}: ${error.message}`);
   }
 
+  await completarFichasDeProveedor(supabase, rows, nitMap, nombreMap);
+
   return { documentos: filas.length, actualizados: rows.length, ambiguos: diasTurbios.length };
+}
+
+// ── C1b + C8 (H22): el NIT del libro completa —o crea— la ficha del proveedor ──
+//
+// Va DESPUÉS del upsert porque el `supplier_id` no está en el archivo: lo
+// resuelve el sync principal y queda en la fila. Acá se lee de vuelta.
+//
+// Nunca tumba el sync. Si esto falla, las compras ya se guardaron y lo único
+// que se pierde es una ficha completada — el sync es el trabajo, esto es el
+// extra. Un throw acá haría fallar un backfill entero por un NIT.
+async function completarFichasDeProveedor(
+  supabase: any,
+  rows: any[],
+  nitMap: Map<string, Set<string>>,
+  nombreMap: Map<string, Set<string>>,
+): Promise<void> {
+  try {
+    const ids = rows.map(r => r.erp_purchase_id).filter(Boolean);
+    if (ids.length === 0) return;
+
+    // El cap de 1000 de PostgREST aplica al INPUT del `.in()` igual que al
+    // output, así que se chunkea (regla del proyecto, patrón A).
+    const CHUNK = 1000;
+    const compras: any[] = [];
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const { data, error } = await supabase.from('purchase_receipts')
+        .select('supplier_id, documento_numero')
+        .in('erp_purchase_id', ids.slice(i, i + CHUNK))
+        .not('supplier_id', 'is', null);
+      if (error) throw new Error(error.message);
+      compras.push(...(data ?? []));
+    }
+
+    // Un valor por proveedor. Si el archivo le da DOS NIT distintos al mismo
+    // proveedor, no se manda ninguno: no sabríamos cuál, y la función de abajo
+    // no puede desempatar lo que acá ya llega mezclado.
+    const porProveedor = new Map<number, { nit: string; nombre: string | null } | null>();
+    for (const c of compras) {
+      const n = normNum(c.documento_numero ?? '');
+      if ((nitMap.get(n)?.size ?? 0) !== 1) continue;
+      const nit = [...(nitMap.get(n) ?? [])][0].replace(/[^0-9]/g, '');
+      if (!nit) continue;
+      const nombre = (nombreMap.get(n)?.size ?? 0) === 1
+        ? ([...(nombreMap.get(n) ?? [])][0] || '').trim() || null
+        : null;
+      const previo = porProveedor.get(c.supplier_id);
+      if (previo === undefined)          porProveedor.set(c.supplier_id, { nit, nombre });
+      else if (previo && previo.nit !== nit) porProveedor.set(c.supplier_id, null);
+    }
+
+    const pares = [...porProveedor.entries()]
+      .filter(([, v]) => v !== null)
+      .map(([supplier_id, v]) => ({ supplier_id, nit: v!.nit, nombre: v!.nombre }));
+    if (pares.length === 0) return;
+
+    const { data: res, error } = await supabase.rpc('completar_nit_proveedores', { p_pares: pares });
+    if (error) throw new Error(error.message);
+
+    // Solo se reporta lo que CAMBIÓ algo o lo que hay que mirar. `ya_tenia` es
+    // el caso normal de todas las corridas y llenaría el log de ruido.
+    const interesa = (res ?? []).filter((x: any) => x.resultado !== 'ya_tenia');
+    if (interesa.length) console.log('C1b/C8 fichas de proveedor:', JSON.stringify(interesa));
+  } catch (e) {
+    console.error('C1b/C8: no se pudieron completar fichas de proveedor —', String(e));
+  }
 }
 
 // ── retryFailed: detecta brechas y reintenta día a día ───────────────────────

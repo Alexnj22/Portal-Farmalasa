@@ -10,7 +10,7 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-02 15:17:28"
+  "ts": "2026-08-02 18:16:14"
  },
  {
   "tipo": "rechazo-erp",
@@ -23,7 +23,7 @@
   "cambios_intentados": {
    "distrito": "SN MIG MERCEDES (determinista (dirección no dice))"
   },
-  "ts": "2026-08-02 15:17:30"
+  "ts": "2026-08-02 18:16:17"
  },
  {
   "tipo": "rechazo-erp",
@@ -37,7 +37,7 @@
    "distrito": "CONCEPCIÓN QUEZALTEPEQUE (determinista (dirección no dice))",
    "dui": "INVÁLIDO '08666142-6' -> se borra"
   },
-  "ts": "2026-08-02 15:17:33"
+  "ts": "2026-08-02 18:16:21"
  },
  {
   "tipo": "rechazo-erp",
@@ -50,6 +50,19 @@
   "cambios_intentados": {
    "distrito": "SAN JOSE FLORES (dirección (abreviatura))"
   },
-  "ts": "2026-08-02 15:17:36"
+  "ts": "2026-08-02 18:16:24"
+ },
+ {
+  "tipo": "rechazo-erp",
+  "portal_id": "erp:10290",
+  "name": "JOSE MARDOQUEO RAMIREZ MEJIA",
+  "erp_id": "10290",
+  "motivo": "Ya se registro un cliente con estos datos!",
+  "intentos": 1,
+  "duplicado": true,
+  "cambios_intentados": {
+   "distrito": "CHALATENANGO (dirección (nombre completo))"
+  },
+  "ts": "2026-08-02 18:16:27"
  }
 ]

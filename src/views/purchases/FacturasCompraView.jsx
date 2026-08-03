@@ -784,10 +784,25 @@ function TabDocumentos({
         setBulkDownloading(true);
         setBulkError('');
         setBulkProgress(null);
+        // Variable local, no un ref: un ref leído dentro de un handler rompe
+        // al React Compiler en componentes con memoización manual (ver
+        // AppLayout, 2026-07-18). Acá no hace falta — el throttle solo tiene
+        // que vivir lo que dura ESTA descarga.
+        let ultimoTick = 0;
         try {
             const { total, incluidos, fallidos } = await downloadPurchaseDteZipBulk(
                 filtered.map(r => r.id),
-                (p) => setBulkProgress(p),
+                (p) => {
+                    // ~8 refrescos por segundo, no 1,726 (uno por archivo):
+                    // cada setState vuelve a renderizar la tabla entera. El
+                    // último pasa SIEMPRE, si no la barra queda clavada en
+                    // 1,724 de 1,726.
+                    const ahora = performance.now();
+                    if (p.hechos === p.total || ahora - ultimoTick >= 120) {
+                        ultimoTick = ahora;
+                        setBulkProgress(p);
+                    }
+                },
                 { fileHandle },
             );
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
@@ -882,12 +897,14 @@ function TabDocumentos({
                     acciones={[
                         ...(filtered.length > 0 ? [{
                             key: 'descargar', icon: Download,
-                            // El denominador son ARCHIVOS (se conoce desde el
-                            // arranque y solo sube), no MB contra un total que
-                            // antes aparecía tarde y dejaba la barra quieta.
-                            label: bulkProgress?.total > 0
-                                ? `Descargando… ${bulkProgress.hechos.toLocaleString()} / ${bulkProgress.total.toLocaleString()} · ${fmtMB(bulkProgress.bytes)}`
-                                : bulkDownloading ? 'Preparando…' : 'Descargar',
+                            // El rótulo NO lleva el contador, y es a propósito:
+                            // FilterBar arma su clave de medición con los
+                            // rótulos de las acciones (useMedidaPiezas), así
+                            // que un número que cambia por archivo la hacía
+                            // re-medir 1,726 veces y la píldora colapsaba y se
+                            // expandía sin parar. El avance va en su propia
+                            // barra, arriba de la tabla.
+                            label: bulkDownloading ? 'Descargando…' : 'Descargar',
                             title: 'Descargar todos los filtrados en un ZIP',
                             disabled: bulkDownloading, onClick: downloadBulk,
                         }] : []),
@@ -917,6 +934,42 @@ function TabDocumentos({
             </div>
 
             {bulkError && <div className="text-caption text-danger-text px-1">{bulkError}</div>}
+
+            {/* El avance vive acá, no en el rótulo del botón: adentro de la
+                píldora un contador que cambia por archivo la hacía re-medir y
+                colapsar sin parar. Acá además hay lugar para decirlo completo.
+                `tabular-nums` para que los dígitos no bailen al crecer. */}
+            {bulkDownloading && (
+                <div className="px-1 space-y-1.5">
+                    <div className="flex items-baseline justify-between gap-3 text-caption">
+                        <span className="text-content-2 font-semibold">
+                            {bulkProgress?.total > 0
+                                ? <>Descargando <span className="tabular-nums">{bulkProgress.hechos.toLocaleString()}</span> de <span className="tabular-nums">{bulkProgress.total.toLocaleString()}</span> archivos</>
+                                : 'Preparando la descarga…'}
+                        </span>
+                        <span className="text-content-3 tabular-nums">
+                            {bulkProgress?.total > 0 && fmtMB(bulkProgress.bytes)}
+                        </span>
+                    </div>
+                    <div
+                        className="w-full bg-surface-card-hover h-2.5 rounded-full overflow-hidden shadow-inner"
+                        role="progressbar"
+                        aria-valuenow={bulkProgress?.total > 0 ? Math.round((bulkProgress.hechos / bulkProgress.total) * 100) : undefined}
+                        aria-valuemin={0} aria-valuemax={100}
+                        aria-label="Avance de la descarga"
+                    >
+                        <div
+                            className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-300"
+                            style={{ width: bulkProgress?.total > 0 ? `${(bulkProgress.hechos / bulkProgress.total) * 100}%` : '0%' }}
+                        />
+                    </div>
+                    {bulkProgress?.fallidos > 0 && (
+                        <div className="text-caption text-warning-text tabular-nums">
+                            {bulkProgress.fallidos.toLocaleString()} archivo{bulkProgress.fallidos !== 1 ? 's' : ''} sin poder descargar — van listados dentro del ZIP.
+                        </div>
+                    )}
+                </div>
+            )}
 
             <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período' }}>
                 {pageRows.map((row, i) => (

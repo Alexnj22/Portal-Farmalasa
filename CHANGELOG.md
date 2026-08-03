@@ -21,6 +21,37 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.349.1 — El avance de la descarga deja de hacer parpadear la píldora
+
+Reportado por el usuario apenas salió v2.349.0: durante la descarga masiva la
+píldora de filtros «se pone y quita», y se ve mal.
+
+La causa estaba en el rótulo del botón. `FilterBar` arma su clave de medición
+con **los rótulos de las acciones** (`claveRotulos`, `FilterBar.jsx:511`), y esa
+clave es la dependencia de `useMedidaPiezas` — un `useLayoutEffect` que mide
+cuánto ocupa cada pieza para decidir cómo degradar la píldora cuando no entra.
+El rótulo nuevo llevaba el contador adentro (`Descargando… 412 / 1,726 · 48.7
+MB`), así que cambiaba **una vez por archivo**: 1,726 re-mediciones, con un
+ancho de texto que oscilaba y hacía cruzar el umbral de colapso en los dos
+sentidos, sin parar.
+
+Es una trampa que el propio componente anticipaba a medias: su comentario dice
+que hay que volver a medir si cambian los rótulos, «un contador que crece»
+incluido. Lo que no contemplaba es un contador que cambia decenas de veces por
+segundo. Un rótulo de acción no puede ser una superficie de progreso.
+
+Tres cambios:
+
+- **El botón vuelve a tener rótulo fijo** (`Descargando…`), así la clave de
+  medición cambia dos veces por descarga en vez de 1,726.
+- **El avance tiene su propia barra**, arriba de la tabla y con lugar para
+  decirlo entero: `Descargando 412 de 1,726 archivos`, los MB a la derecha, y
+  el aviso de faltantes en vivo si algún archivo no entró. Con `tabular-nums`
+  para que los dígitos no bailen al crecer.
+- **El progreso se refresca ~8 veces por segundo, no 1,726.** Cada `setState`
+  volvía a renderizar la tabla entera (863 filas). El último pasa siempre, para
+  que la barra no quede clavada en 1,724 de 1,726.
+
 ## v2.349.0 — Descarga masiva de facturas de compra: reintento por archivo
 
 ### Un corte de red deja de costar la descarga entera

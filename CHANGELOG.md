@@ -21,6 +21,45 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.349.3 — El libro elige el primer y último documento del día por correlativo, no por id interno
+
+Salió de una pregunta del usuario —«los códigos no coinciden, ¿tenemos datos
+erróneos?»— sobre el libro de consumidor final de La Popular, julio 2026. La
+respuesta a la pregunta era que no: los 62 documentos que nombra el archivo del
+origen existen los 62 en el portal, mismo día, misma sucursal, con sello. Pero
+mirando por qué difería aparecieron **dos** cosas, y la segunda es nuestra.
+
+**Lo del origen (ya estaba en v2.349.2):** ordena los códigos de generación
+alfabéticamente y toma el primero y el último, o sea `MIN()`/`MAX()` sobre un
+UUID aleatorio.
+
+**Lo nuestro:** el libro elegía el primer y último documento del día por **id
+interno**. `20260802033604` lo había cambiado el día anterior para parecerse al
+origen. La hora de emisión lo desmiente: sobre los 22,192 pares consecutivos de
+julio, ordenar por correlativo da **0** inversiones de hora y ordenar por id
+interno da **2,234** (10.1%). El caso que aquella migración citaba como prueba
+es el que la refuta — La Popular 08/06, el «primero» que señalaba se emitió a
+las 10:25:31 y el primero de verdad a las 07:15:33.
+
+Alcance: 252 días con el primero mal y 510 con el último, sobre 2,709
+branch-días de historia (**26%**). Afecta cuatro columnas de identificación.
+**Ningún monto** — el total diario es una suma sobre el día y no depende de qué
+documento se nombre: julio de La Popular da $42,957.84 antes y después, idéntico
+al del origen.
+
+Corregido en `20260803161220`, con las cinco columnas de identidad bajo el mismo
+criterio: sería peor una fila donde el sello es de un documento y el id interno
+de otro. El criterio vive en tres lugares —el libro, la cola del backfill y el
+generador de verificación— y los tres quedaron alineados.
+
+**Y una regresión propia, atrapada en el acto.** El cuerpo nuevo de
+`_docs_sin_numero_control` lo escribí partiendo del archivo de
+`20260802033604`, sin ver que `20260802205606` (B4) ya la había tocado después
+para agregarle el filtro del sello; la corrección se lo llevó puesto. Restaurado
+en `20260803161329`. Queda escrito en el doc: **el cuerpo de una función que se
+va a reemplazar se saca de `pg_get_functiondef`, no del último archivo de
+migración que uno encuentre.**
+
 ## v2.349.2 — El libro de consumidor del origen ordena los códigos de generación alfabéticamente
 
 Solo documentación. El hallazgo 4.1 de

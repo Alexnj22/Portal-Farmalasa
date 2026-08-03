@@ -204,6 +204,56 @@ el módulo de Compras del portal. En el archivo del portal esa columna sale
 
 </details>
 
+### 4.4 El id interno NO es el orden de emisión — corregido el 2026-08-03
+
+Hallazgo propio, no del origen: **el libro elegía mal el primer y el último
+documento del día**, y venía de una decisión nuestra del día anterior.
+
+`20260802033604` había cambiado el criterio de correlativo a **id interno**, para
+que nuestro archivo se pareciera al del origen («el origen lista por orden de
+captura»). Se tomó al origen como árbitro de lo correcto — el mismo error que
+§4.1 ya había desarmado para las columnas de al lado.
+
+**La hora de emisión lo decide sin ambigüedad.** Sobre los 22,192 pares
+consecutivos de julio 2026, contando cuántas veces la hora va *para atrás* al
+recorrer el día:
+
+| Criterio de orden | Inversiones de hora |
+|---|---|
+| Por **correlativo** | **0** |
+| Por **id interno** | **2,234** (10.1%) |
+
+Y el caso que aquella migración citaba como prueba es el que la refuta. La
+Popular, 2026-06-08:
+
+| | Documento | Hora |
+|---|---|---|
+| Lo que el libro llamaba «primero» | `…020977` (id interno 302651) | **10:25:31** |
+| El primero de verdad | `…020473` (id interno 302658) | **07:15:33** |
+
+El id interno es el orden en que el origen **capturó** las filas, no en que se
+**emitieron** los documentos.
+
+**Alcance:** 252 días con el primero mal y 510 con el último, sobre 2,709
+branch-días de historia — **26%**. Afectaba cuatro columnas de identificación
+del libro de consumidor. **Ningún monto**: el total diario es una suma sobre el
+día y no depende de qué documento se nombre (verificado: julio de La Popular da
+$42,957.84 antes y después, idéntico al del origen).
+
+Corregido en `20260803161220`, con las **cinco** columnas de identidad bajo el
+mismo criterio — sería peor una fila donde el sello es de un documento y el id
+interno de otro. Consecuencia aceptada: el archivo del portal ya no es un clon
+del origen en esas columnas, igual que desde §4.1 no lo es en los códigos de
+generación.
+
+**Trampa en la que caí al corregirlo, anotada porque casi cuesta caro:** escribí
+el cuerpo nuevo de `_docs_sin_numero_control` partiendo del archivo de
+`20260802033604`, sin ver que `20260802205606` (B4) ya la había tocado después
+para agregarle el filtro del sello. La migración correctora se llevó ese filtro
+puesto. Restaurado en `20260803161329`. **El cuerpo de una función que se va a
+reemplazar se saca de `pg_get_functiondef`, no del último archivo de migración
+que uno encuentre.**
+
 ## 5. Estado y pendientes
 
 **Cerrado:** los cinco archivos con datos salen con el formato del origen,

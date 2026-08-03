@@ -351,6 +351,18 @@ async function traer(url: string, cookie: string, ms = 60_000): Promise<string> 
   return await res.text();
 }
 
+// El sello de recepción de Hacienda son exactamente 40 caracteres alfanuméricos.
+//
+// H19: la columna del origen viene CONTAMINADA — de 331 sellos, 6 no miden 40:
+// un código de generación (36), uno con un espacio adentro (41) y tres con texto
+// pegado a mano (`…FFEFGbenicar`, `…RVBD C-2274298`). Un sello con `benicar`
+// atrás no es un sello, y guardarlo sería peor que no tenerlo: el día que se use
+// para cruzar documentos, cruzaría mal en silencio.
+function selloValido(v: unknown): string | null {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return /^[0-9A-Za-z]{40}$/.test(s) ? s : null;
+}
+
 // Devuelve numeroNormalizado → conjunto de valores distintos de la columna. El
 // conjunto y no el valor: si trae más de uno, ese número es ambiguo.
 function columnaPorNumero(csv: string, colNumero: number, colValor: number): Map<string, Set<string>> {
@@ -388,7 +400,12 @@ async function fastBackfill(
   if (filas.length === 0) return { documentos: 0, actualizados: 0, ambiguos: 0 };
 
   const rango   = `fechaInicio=${startDate}&fechaFin=${endDate}`;
-  const percMap = columnaPorNumero(await traer(`${LIBRO_CSV}?${rango}`, cookie), 3, 21);
+  // C1 (H13): el archivo se baja UNA vez y se leen las dos columnas. El sello
+  // estaba a un índice de la percepción y nadie lo miraba — es la única columna
+  // donde el libro del portal perdía contra su origen.
+  const libroCsv = await traer(`${LIBRO_CSV}?${rango}`, cookie);
+  const percMap  = columnaPorNumero(libroCsv, 3, 21);
+  const selloMap = columnaPorNumero(libroCsv, 3, 22);
   // La retención NO tiene columna en el libro: sale de su propio anexo. Se pide
   // igual aunque hoy salga vacío en toda la historia — asumir cero por
   // costumbre es exactamente cómo un dato real pasa desapercibido el día que
@@ -442,6 +459,12 @@ async function fastBackfill(
       documento_numero: numero || null,
       percepcion_iva:   fino ? fino.p : Number([...(percMap.get(n)  ?? ['0'])][0] || 0),
       retencion_iva:    fino ? fino.r : Number([...(retenMap.get(n) ?? ['0'])][0] || 0),
+      // Ambiguo = ese número de documento trae más de un sello en el archivo, y
+      // entonces no se sabe cuál es de esta compra. Se deja NULL: un sello
+      // equivocado es peor que ninguno.
+      sello_recibido:   (selloMap.get(n)?.size ?? 0) === 1
+                          ? selloValido([...(selloMap.get(n) ?? [])][0])
+                          : null,
       updated_at:       new Date().toISOString(),
     });
   }

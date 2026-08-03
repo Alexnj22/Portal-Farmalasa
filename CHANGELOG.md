@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.0 — C1 y C2: el sello de Hacienda en las compras
+
+**C1 — la única columna donde el libro perdía contra su origen.** De las cinco
+diferencias que la comparación byte a byte encontró, en cuatro el portal ya
+tenía razón —NIT, razón social, comillas, decimales— y en una sola le faltaba el
+dato: el sello. Y **ya se estaba descargando**: el sync baja el CSV del libro y
+lee las columnas 3 y 21. El sello es la 22. Estaba a un índice.
+
+**Con validación**, que es la lección de H19: la columna del origen viene
+contaminada — de 331 sellos, **6 no miden 40**: un código de generación (36), uno
+con un espacio adentro (41) y tres con texto pegado a mano
+(`…FFEFGbenicar`, `…RVBD C-2274298`). Un sello con `benicar` atrás no es un
+sello. Se toma sólo si son exactamente 40 alfanuméricos.
+
+Verificado corriendo el backfill sobre el 1-10 de julio: **124 de 138 compras con
+sello y cero inválidos guardados**.
+
+**C2 — y por qué el sello NO reemplaza al cruce viejo.** El plan prometía que
+«reemplaza el 86.7% difuso por 100% donde ambos lados lo tengan». La segunda
+mitad de esa frase es la que importa, y medida **hoy no se cumple**: el sello del
+lado de los documentos recibidos empezó a capturarse a mitad de julio —
+**junio 0%, julio 31%, agosto 100%**.
+
+Con eso, sobre el 22-31 de julio el cruce por sello da **90** y el de documento
+**127**. El sello es mejor *clave* —40 caracteres, único, sin truncar— pero el
+portal aún no lo tiene en suficientes documentos. **Reemplazar el cruce viejo por
+éste lo habría empeorado.**
+
+Así que entra como camino **adicional**, antes de la heurística de monto porque
+es exacto. Medido sobre julio-agosto: el documento cruza 385 de 486 y **el sello
+suma 13 más**. Poco hoy, y crece solo — agosto ya está al 100%.
+
+Resultado: lo "sin registrar" de junio-julio baja de **445 a 436** documentos y de
+$8,532.37 a **$8,184.31**. La rama de compras registradas sigue en **$49,525.79**,
+idéntica al libro del Art. 86.
+
 ## v2.347.2 — C5: `docs_count` se cuenta, no se acumula
 
 La ficha del proveedor decía cuántos documentos tenía sumando **+1 cada vez que

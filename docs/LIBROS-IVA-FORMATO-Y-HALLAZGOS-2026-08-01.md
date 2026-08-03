@@ -154,13 +154,33 @@ El portal **no las resta del libro** —para no crear dos verdades del mismo
 período— y las muestra en sección propia con su total, para que el ajuste se
 haga al declarar. La corrección de fondo es capturarlas donde nacen.
 
-### 4.3 El sello de las compras no está en la fuente
+### 4.3 El sello de las compras SÍ está en la fuente — corregido el 2026-08-03
+
+> **Este hallazgo era falso.** Se dejó el texto original abajo porque el error
+> importa más que la conclusión: se dio por inexistente un dato que estaba a la
+> vista, en la columna 22 del propio reporte de compras.
+
+Desde v2.348.0 (C1) el sync lo guarda en `purchase_receipts.sello_recibido`, con
+validación de 40 alfanuméricos y descartando la fila si el reporte trae más de un
+valor para el mismo documento. Verificado del 1 al 10 de julio: 124 de 138
+compras con sello, cero inválidos guardados.
+
+**Todavía no se emite en el CSV**, y el motivo es otro: solo está donde el sync
+volvió a correr. Julio 56.7% (265 de 467), junio y agosto 0%. Emitirlo hoy daría
+un archivo que declara el sello en unos meses y no en otros. Primero el backfill
+de junio y agosto —en ventanas de ≤10 días—, después se emite en las **dos**
+transcripciones: el `exportCsv` de `LibrosIvaView` y la rama `compras` de
+`generar_csv_libro`.
+
+<details><summary>Texto original del hallazgo (incorrecto)</summary>
 
 El archivo del ERP lo trae (columna 23), pero no viene en la fuente que alimenta
 el módulo de Compras del portal. En el archivo del portal esa columna sale
 **vacía**, no en cero: no sabemos el valor, y escribir uno sería inventarlo.
 
 ---
+
+</details>
 
 ## 5. Estado y pendientes
 
@@ -369,3 +389,62 @@ confirmar que lo que sacamos es real, no para copiarle los errores.
 
 Aplica a **todo** export del portal, no solo a los libros — `exportCsv` es
 compartida. Un export nuevo que quiera otro formato tiene que decir por qué.
+
+---
+
+## 10. El número de documento: cotejar y presentar no son el mismo uso (C3)
+
+`purchase_receipts.documento_numero` **no guarda un número de control**. Guarda un
+**código de generación cortado a 20 caracteres**: `7EC4501D-6456-4E0D-A`. Son 778
+de 872 compras de junio en adelante. Con ese string no se busca el documento ni se
+le reclama nada a un proveedor — no identifica nada.
+
+El número real existe del lado de las facturas que llegan por correo
+(`purchase_dte_documents.numero_control`, `DTE-03-M001P001-000000000003484`) y se
+recupera con el mismo cruce del Libro Completo: sello primero, que es exacto,
+después el código truncado, y siempre con el NIT del proveedor de guarda. Medido en
+julio 2026: **380 de 467**.
+
+**La pantalla muestra el real; el CSV sigue llevando el del origen.** No es una
+inconsistencia, son dos usos distintos:
+
+| | qué es | qué lleva |
+|---|---|---|
+| Pantalla del libro | el portal, que debe ser correcto | el número de control real, con el del origen en el `title` para reconciliar |
+| CSV del libro | la réplica que se COTEJA | el del origen, sin tocar |
+| Libro Completo | el libro que el portal sabe armar | el código de generación completo |
+
+El CSV no se toca por un motivo medible, no por prudencia: esa columna es la clave
+más discriminante del cotejo, y el número de control **no es derivable** del código
+truncado —son campos distintos—, así que tampoco se puede normalizar uno al otro
+para comparar. Cambiarlo dejaría el cotejo cruzando por fecha + proveedor + montos,
+que en un mes cargado colisiona de verdad.
+
+Si algún día el número real tiene que salir en un archivo, el archivo es el del
+Libro Completo, que existe justamente para eso.
+
+### Lo que el origen corta no siempre es un código de generación
+
+Mirando la pantalla de julio aparecen cuatro largos distintos en esa columna: 8,
+9, 20 y 31. Los de 31 son los que C3 recuperó. Los de 20 **no son todos códigos de
+generación cortados**: algunos son un *número de control* cortado a 20 —
+`DTE-03-M001P001-0000`—, o sea que el origen trunca a ciegas cualquier cosa que le
+pongan.
+
+Eso sugiere un cruce más: buscar por prefijo contra `numero_control`. **Se midió y
+se descartó.** De las 19 compras de julio sin cruzar cuyo número empieza con
+`DTE-`, ni una sola da un candidato único:
+
+| candidatos que da el prefijo | compras |
+|---|---|
+| 0 | 4 |
+| 8 | 1 |
+| 9 | 1 |
+| 11 | 8 |
+| 232 | 4 |
+| 1000 | 1 |
+
+Un prefijo de 20 caracteres deja **11 dígitos de correlativo libres**, así que
+matchea contra media numeración del emisor. Cruzar por ahí sería elegir un
+documento al azar y mostrarlo como si fuera el bueno. Se quedan sin número real, y
+eso es la respuesta correcta.

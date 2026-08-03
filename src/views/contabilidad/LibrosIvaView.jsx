@@ -378,7 +378,9 @@ const ACCESO = {
         n:         r => r._n,
         fecha:     r => r.fecha,
         sucursal:  r => nom(r.branch_id),
-        doc:       r => r.documento_numero || '',
+        // Ordena por lo que se VE, no por lo que guarda la tabla: la celda
+        // muestra el número de control real cuando existe (C3).
+        doc:       r => r.numero_control || r.documento_numero || '',
         proveedor: r => r.proveedor || '',
         nrc:       r => r.nrc || '',
         gravadas:  r => Number(r.compras_gravadas || 0),
@@ -445,9 +447,25 @@ const CeldaFecha = ({ iso }) => <span className="whitespace-nowrap">{fmtFecha(is
 // `text-micro` y no `text-caption`: son 20 caracteres monoespaciados y a caption
 // la columna pedía 168px, que es lo que empujaba Total fuera del visor. Es la
 // misma medida que el código de generación en la pestaña de Anulados.
-const CeldaDocumento = ({ numero }) => (
-    numero
-        ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">{numero}</span>
+// C3 — el número que se muestra es el que identifica el documento.
+//
+// En compras, `documento_numero` no es un número de control: es un **código de
+// generación cortado a 20 caracteres** (`7EC4501D-6456-4E0D-A`), 778 de 872
+// compras desde junio. Con ese string no se busca el documento ni se le reclama
+// nada a un proveedor. El número real vive del lado de las facturas que llegan
+// por correo y se recupera con el cruce del Libro Completo — 380 de 467 en julio.
+//
+// El archivo NO cambia: el CSV replica el reporte de referencia y esa columna es
+// la clave más discriminante del cotejo, así que sigue llevando lo del origen
+// (`generar_csv_libro`, que arma directo de la tabla). Cotejar y presentar no son
+// el mismo uso. Que pantalla y archivo lleven distinto se explica UNA vez, en el
+// aviso de la pestaña, y no por fila: envolver la celda en `LiquidTooltip` para
+// decirlo la trunca —el `inline-block` del wrapper hace que respete el ancho de
+// la columna y `DTE-03-M001P001-000000000014693` sale cortado en `…-0000`—, que
+// es el mismo choque que §15.10 anota para el caso (A).
+const CeldaDocumento = ({ numero, control }) => (
+    (control || numero)
+        ? <span className="font-mono text-micro text-content-2 whitespace-nowrap">{control || numero}</span>
         : <Badge variant="danger" size="sm">Sin número</Badge>
 );
 
@@ -810,9 +828,25 @@ export default function LibrosIvaView() {
             // todas las filas de la muestra; no se pudo determinar qué
             // significan, así que se copian tal cual.
             //
-            // La última columna es el SELLO y sale vacía: no viene en la fuente
-            // que alimenta el módulo de Compras. Vacío y no un cero, porque no
-            // sabemos el valor — declararlo sería inventarlo.
+            // La última columna es el SELLO y sale vacía. Vacío y no un cero,
+            // porque no sabemos el valor — declararlo sería inventarlo.
+            //
+            // Ojo, el motivo cambió: hasta C1 era que el sello «no venía en la
+            // fuente», y eso resultó falso — está en la columna 22 del reporte de
+            // referencia y desde v2.348.0 el sync lo guarda en
+            // `purchase_receipts.sello_recibido`. Hoy el motivo es que todavía no
+            // está en todas las compras: julio 56.7% (265 de 467), junio y agosto
+            // 0%, porque el sello solo se captura cuando el sync vuelve a correr
+            // ese rango. Emitirlo ahora daría un archivo que dice el sello en
+            // unos meses y no en otros. **Primero el backfill de junio y agosto
+            // —en ventanas de ≤10 días, que es lo que aguanta la fuente—, después
+            // se emite.** Cuando se haga, cambiar también el `''` final de la
+            // rama `compras` de `generar_csv_libro`: son dos transcripciones
+            // independientes a propósito, y el verificador compara una contra
+            // otra.
+            //
+            // Lo de arriba cierra el §4.3 del doc de formato, que daba por
+            // sentado que el dato no existía.
             exportCsv(null,
                 [
                     ...compras.map(r => [
@@ -1122,7 +1156,9 @@ export default function LibrosIvaView() {
                     <Notice variant="info" icon={BookOpen} compact>
                         Incluye las 7 sucursales. Las compras anuladas van incluidas y marcadas,
                         como pide el libro. Sin columna de sello: el Art. 86 no la exige para
-                        compras.
+                        compras.{activeTab === 'compras' && <> En pantalla, el documento se muestra
+                        con su número de control cuando se pudo identificar; el archivo lleva el
+                        número tal como está registrado, para poder cotejarlo.</>}
                     </Notice>
                 )}
 
@@ -1265,7 +1301,7 @@ export default function LibrosIvaView() {
                                 {!filterBranch && (
                                     <DataCell hideBelow="2xl" className="truncate max-w-[7rem]">{nombreSucursal(r.branch_id)}</DataCell>
                                 )}
-                                <DataCell><CeldaDocumento numero={r.documento_numero} /></DataCell>
+                                <DataCell><CeldaDocumento numero={r.documento_numero} control={r.numero_control} /></DataCell>
                                 <CeldaProveedor nombre={r.proveedor} anulada={r.anulada} />
                                 <DataCell hideBelow="md"><CeldaNrc nrc={r.nrc} /></DataCell>
                                 <DataCell align="right"><CeldaMonto v={r.compras_gravadas} /></DataCell>

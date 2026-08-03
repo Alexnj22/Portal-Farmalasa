@@ -21,6 +21,49 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.348.2 — El libro de compras muestra el número que identifica al documento
+
+### El libro de compras muestra el número que identifica al documento (C3)
+
+`documento_numero` no guardaba un número de control: guardaba un **código de
+generación cortado a 20 caracteres** — `7EC4501D-6456-4E0D-A`. Son 778 de 872
+compras desde junio. Con ese string no se busca el documento ni se le reclama nada
+a un proveedor.
+
+El número real existe del lado de las facturas que llegan por correo y se recupera
+con el mismo cruce del Libro Completo: sello primero —que es exacto—, después el
+código truncado, y siempre con el NIT del proveedor de guarda. **380 de 467
+compras de julio.** Las demás se quedan como estaban.
+
+**El archivo no cambia.** No es prudencia, es una medición: esa columna es la clave
+más discriminante del cotejo, y el número de control no es derivable del código
+truncado —son campos distintos—, así que tampoco se puede normalizar uno al otro
+para comparar. Cambiarlo dejaría el cotejo cruzando por fecha + proveedor + montos,
+que en un mes cargado colisiona de verdad. La pantalla es el portal y debe ser
+correcta; el CSV es la réplica que se cotea. Quien quiera el número completo en un
+archivo lo tiene en el Libro Completo, que existe para eso. La pestaña lo dice.
+
+### Un cruce más que se midió y se descartó
+
+En esa columna aparecen cuatro largos: 8, 9, 20 y 31. Los de 20 no son todos
+códigos de generación — algunos son un *número de control* cortado
+(`DTE-03-M001P001-0000`): el origen trunca a ciegas cualquier cosa. Eso invitaba a
+cruzar por prefijo, así que se midió: de las 19 compras de julio en ese caso, **ni
+una da un candidato único** — 11 candidatos las más, 232 cuatro de ellas, 1000 una.
+Un prefijo de 20 deja 11 dígitos de correlativo libres. Cruzar ahí sería elegir un
+documento al azar y mostrarlo como el bueno.
+
+### El sello de compras: el hallazgo §4.3 era falso
+
+Decía que el sello «no está en la fuente». Está, en la columna 22 del propio
+reporte, y desde v2.348.0 se guarda. Corregido en el doc, con el texto original a
+la vista porque el error importa más que la conclusión. Todavía no se emite en el
+CSV, y ahora por otro motivo: solo está donde el sync volvió a correr — julio
+56.7%, junio y agosto 0%. Primero el backfill, después se emite.
+
+
+_(pendiente de redactar)_
+
 ## v2.348.1 — El libro dice cuánto se queda afuera, y el CSV explica sus bytes
 
 ### El libro dice cuánta plata se queda afuera (C6 · H3)

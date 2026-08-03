@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.351.1 — Las cards de Facturas de Compra siguen al filtro de tipo
+
+Preguntado por el usuario apenas salió v2.351.0 —«¿las cards se actualizan
+también?»— y decidido por él: **sí al tipo, no al buscador**. Elegir un tipo es
+una decisión deliberada; tipear no, y esa era la razón original de que las cards
+se calcularan sobre todo el período.
+
+Lo que se gana es concreto: filtrando Nota de Crédito, las cards dan directo el
+**ajuste del Art. 62** que antes había que ir a sacar a Libros IVA. Julio 2026:
+Total $15,215.69 y Crédito IVA **−$1,745.73**, en negativo porque las notas de
+crédito bajan el crédito fiscal.
+
+**No siguen a `invalidados` ni a `sin proveedor`, y no es un olvido:** esos dos
+se activan clickeando las cards mismas, así que hacerlas seguir su propio filtro
+sería circular — se apretaría «3 invalidados» y la card pasaría a decir otra cosa.
+
+El criterio del tipo queda en **un solo lugar** (`rowsDelTipo`), del que salen
+tanto las cards como la tabla: antes de esto el filtro estaba escrito adentro de
+`filtered` y sumarlo a las cards habría sido una segunda copia.
+
+Verificado en el navegador: sin filtro $293,227.62 / $29,289.22 / $262,796.24 y
+863 documentos; con Factura (9) $7,754.06 / $167.16 / $7,754.06. Cero errores.
+
 ## v2.351.0 — Filtro por tipo en Facturas de Compra
 
 Pedido del usuario. Vuelve el filtro por tipo de documento, que se había quitado

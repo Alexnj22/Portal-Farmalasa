@@ -644,9 +644,24 @@ function TabDocumentos({
 
     useEffect(() => { load(); }, [load, refreshKey]);  
 
-    // Cards contables — ver StatCard más abajo. Se calculan sobre TODO el
-    // período (rows), no sobre `filtered`, para que no cambien solo porque
-    // el usuario tipeó algo en el buscador (mismo criterio que VentasView).
+    // El período acotado al TIPO elegido, y a nada más. Es la base de las cards
+    // y el punto de partida de `filtered`, para que el criterio del tipo viva en
+    // UN solo lugar.
+    const rowsDelTipo = useMemo(
+        () => (filterTipo
+            ? rows.filter(r => (filterTipo === 'SIN' ? !r.tipo_dte : r.tipo_dte === filterTipo))
+            : rows),
+        [rows, filterTipo]);
+
+    // Cards contables — ver StatCard más abajo. Siguen al filtro de TIPO
+    // (decisión del usuario, 2026-08-03) pero NO al buscador: elegir un tipo es
+    // una decisión deliberada, tipear no. Con esto, filtrar Nota de Crédito da
+    // directo el ajuste del Art. 62 que antes había que ir a buscar a Libros IVA.
+    //
+    // Tampoco siguen a `invalidados` ni a `sin proveedor`, y no es un olvido:
+    // esos dos se activan clickeando las cards mismas, así que hacer que muevan
+    // su propia tarjeta sería circular — se apretaría "3 invalidados" y la card
+    // pasaría a decir otra cosa.
     // Los invalidados se EXCLUYEN de los totales monetarios (Art. 119-E CT:
     // no amparan crédito fiscal) y se muestran aparte, no restados en
     // silencio. Las Notas de Crédito (tipo 05) entran en negativo — es la
@@ -655,7 +670,7 @@ function TabDocumentos({
     const cardStats = useMemo(() => {
         let totalCompras = 0, creditoFiscal = 0, comprasNetas = 0;
         let invalidadosCount = 0, invalidadosMonto = 0, sinProveedorCount = 0;
-        for (const r of rows) {
+        for (const r of rowsDelTipo) {
             const monto = parseFloat(r.monto_total) || 0;
             const iva = parseFloat(r.total_iva) || 0;
             if (r.invalidado) {
@@ -671,7 +686,7 @@ function TabDocumentos({
             if (!r.proveedor_id && dteAdmiteProveedor(r.tipo_dte)) sinProveedorCount++;
         }
         return { totalCompras, creditoFiscal, comprasNetas, invalidadosCount, invalidadosMonto, sinProveedorCount };
-    }, [rows]);
+    }, [rowsDelTipo]);
 
     // Los tipos que APARECEN en el período, con su conteo — no el catálogo
     // entero: de los 11 tipos de Hacienda, un mes trae tres o cuatro, y ofrecer
@@ -698,8 +713,7 @@ function TabDocumentos({
     }, [rows]);
 
     const filtered = useMemo(() => {
-        return rows.filter(r => {
-            if (filterTipo && (filterTipo === 'SIN' ? !!r.tipo_dte : r.tipo_dte !== filterTipo)) return false;
+        return rowsDelTipo.filter(r => {
             if (filterInvalidados && !r.invalidado) return false;
             // H4: mismo criterio que la card — los tipos sin proveedor posible
             // no son "pendientes", así que tampoco entran a este filtro.
@@ -711,7 +725,7 @@ function TabDocumentos({
             if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.proveedor_alias, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
             return true;
         });
-    }, [rows, filterTipo, filterInvalidados, filterSinProveedor, searchTerm]);
+    }, [rowsDelTipo, filterInvalidados, filterSinProveedor, searchTerm]);
 
     useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterTipo, filterInvalidados, filterSinProveedor, searchTerm]);
 

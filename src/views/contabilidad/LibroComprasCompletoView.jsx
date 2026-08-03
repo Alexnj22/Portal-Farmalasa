@@ -305,8 +305,7 @@ export default function LibroComprasCompletoView() {
                         <b>{totales.sinCompra}</b> documento(s) del proveedor todavía no están
                         registrados como compra — <b>{formatMoney(totales.creditoSinCompra)}</b> de
                         crédito fiscal que no entra al libro del Art. 86. La Ley de IVA da tres
-                        períodos para reclamarlo. Antes de reclamar nada hay que revisarlos uno por
-                        uno: que esté registrado con otro número no es lo mismo que falte.
+                        períodos para reclamarlo.
                     </Notice>
                 )}
 

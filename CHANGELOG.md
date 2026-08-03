@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.347.2 — C5: `docs_count` se cuenta, no se acumula
+
+La ficha del proveedor decía cuántos documentos tenía sumando **+1 cada vez que
+procesaba uno**. No es idempotente: reprocesar el mismo DTE —cosa que pasa en
+cada backfill y cada vez que se relee un correo— volvía a sumar.
+
+Medido antes de arreglarlo: **93 de las 161 fichas mal, las 93 infladas y ninguna
+corta**. Esa asimetría es la firma exacta de un contador que sólo sabe sumar. El
+peor caso: **COFARSAL decía 462 documentos cuando son 264**.
+
+Ahora se cuenta. Un número que se puede derivar del dato no se guarda — así no
+hay forma de que se desincronice, ni hay que acordarse de restar cuando un
+documento se invalida. Verificado tras aplicar: **0 fichas mal**.
+
+COFARSAL quedó en **232** y no en 264 porque las notas de crédito y débito no son
+documentos de compra: ajustan uno que ya se contó. Es el mismo criterio que tenía
+el contador viejo, que les sumaba 0.
+
+De paso, se sacó del aviso del libro completo la frase *"antes de reclamar nada
+hay que revisarlos uno por uno…"* — la cautela sigue escrita en el código y en el
+plan, que es donde sirve; en pantalla sobraba.
+
 ## v2.347.1 — Campo y select cerrados en el plan de materiales
 
 Tercer y cuarto elemento del contrato de `docs/PLAN-MATERIALES-2026-08-02.md`.
